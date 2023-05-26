@@ -354,14 +354,7 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.DIFFICULTY_FIELDNAME, difficulties).strategy(Strategy.SIMPLE).required(true))
                 .searchFor(new SearchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards).strategy(Strategy.SIMPLE).required(true))
 
-                // Exact matches
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
-
-                // Fuzzy matches (exact matches will match these criteria too)
+                // Fuzzy matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
@@ -410,14 +403,7 @@ public class GitContentManager {
                 // Further filtering
                 .includeContentTypes(Set.copyOf(documentTypes))
 
-                // Exact matches
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
-
-                // Fuzzy matches (exact matches will match these criteria too)
+                // Fuzzy matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
