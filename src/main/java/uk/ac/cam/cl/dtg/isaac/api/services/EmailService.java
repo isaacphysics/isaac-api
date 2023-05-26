@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import feign.FeignException;
 import com.google.common.base.Strings;
@@ -46,6 +47,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Map;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_EMAILS_BETA_OPT_IN;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
@@ -118,14 +120,16 @@ public class EmailService {
             EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
 
             if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
-                mailGunEmailManager.sendBatchEmails(
-                        groupManager.getUsersInGroup(userGroupDTO),
-                        emailTemplate,
-                        EmailType.ASSIGNMENTS,
-                        Constants.IsaacMailGunTemplate.ASSIGNMENT,
-                        variables,
-                        null
-                );
+                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE).forEach(userBatch -> {
+                    mailGunEmailManager.sendBatchEmails(
+                            userBatch,
+                            emailTemplate,
+                            EmailType.ASSIGNMENTS,
+                            Constants.IsaacMailGunTemplate.ASSIGNMENT,
+                            variables,
+                            null
+                    );
+                });
             } else {
                 // If user is not in the MailGun assignment emails beta list, use our standard email method
                 Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());

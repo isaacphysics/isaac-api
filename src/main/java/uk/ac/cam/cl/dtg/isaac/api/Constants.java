@@ -130,6 +130,8 @@ public final class Constants {
 
     public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
 
+    public static final Integer MAILGUN_BATCH_SIZE = 500;
+
     /**
      * Class to represent Isaac log types.
      */
