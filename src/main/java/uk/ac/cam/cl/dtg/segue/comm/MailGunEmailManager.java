@@ -73,7 +73,7 @@ public class MailGunEmailManager {
         this.globalStringTokens = globalStringTokens;
         this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;
-        this.executor = Executors.newFixedThreadPool(2);
+        this.executor = Executors.newFixedThreadPool(1);
     }
 
     private void createMessagesApiIfNeeded() {
@@ -107,8 +107,7 @@ public class MailGunEmailManager {
     public Future<Optional<MessageResponse>> sendBatchEmails(final Collection<RegisteredUserDTO> userDTOs, final EmailTemplateDTO emailContentTemplate,
                                                              final EmailType emailType, final IsaacMailGunTemplate templateType,
                                                              @Nullable final Map<String, Object> templateVariablesOrNull,
-                                                             @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull)
-            throws FeignException {
+                                                             @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull) {
 
         // Lazily construct the MailGun messages API
         this.createMessagesApiIfNeeded();
@@ -194,7 +193,7 @@ public class MailGunEmailManager {
             try {
                 return Optional.of(mailgunMessagesApi.sendMessage(globalProperties.getProperty(MAILGUN_DOMAIN), message));
             } catch (FeignException e) {
-                log.error("Failed to send email to {} users", userDTOs.size(), e);
+                log.error("Failed to send email to {} users via the MailGun API:", userDTOs.size(), e);
                 return Optional.empty();
             }
         });
