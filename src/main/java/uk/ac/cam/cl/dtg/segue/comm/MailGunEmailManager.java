@@ -49,6 +49,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,12 +66,14 @@ public class MailGunEmailManager {
     private MailgunMessagesApi mailgunMessagesApi;
     private final AbstractUserPreferenceManager userPreferenceManager;
     private final PropertiesLoader globalProperties;
+    private final ExecutorService executor;
 
     @Inject
     public MailGunEmailManager(final Map<String, String> globalStringTokens, final PropertiesLoader globalProperties, final AbstractUserPreferenceManager userPreferenceManager) {
         this.globalStringTokens = globalStringTokens;
         this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;
+        this.executor = Executors.newFixedThreadPool(2);
     }
 
     private void createMessagesApiIfNeeded() {
@@ -98,10 +104,10 @@ public class MailGunEmailManager {
         return mailgunTemplatesApi.storeNewTemplate(globalProperties.getProperty(MAILGUN_DOMAIN), request);
     }
 
-    public MessageResponse sendBatchEmails(final Collection<RegisteredUserDTO> userDTOs, final EmailTemplateDTO emailContentTemplate,
-                                           final EmailType emailType, final IsaacMailGunTemplate templateType,
-                                           @Nullable final Map<String, Object> templateVariablesOrNull,
-                                           @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull)
+    public Future<Optional<MessageResponse>> sendBatchEmails(final Collection<RegisteredUserDTO> userDTOs, final EmailTemplateDTO emailContentTemplate,
+                                                             final EmailType emailType, final IsaacMailGunTemplate templateType,
+                                                             @Nullable final Map<String, Object> templateVariablesOrNull,
+                                                             @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull)
             throws FeignException {
 
         // Lazily construct the MailGun messages API
@@ -184,7 +190,14 @@ public class MailGunEmailManager {
                 .recipientVariables(recipientVariables)
                 .build();
 
-        return mailgunMessagesApi.sendMessage(globalProperties.getProperty(MAILGUN_DOMAIN), message);
+        return executor.submit(() -> {
+            try {
+                return Optional.of(mailgunMessagesApi.sendMessage(globalProperties.getProperty(MAILGUN_DOMAIN), message));
+            } catch (FeignException e) {
+                log.error("Failed to send email to {} users", userDTOs.size(), e);
+                return Optional.empty();
+            }
+        });
     }
 
 }
