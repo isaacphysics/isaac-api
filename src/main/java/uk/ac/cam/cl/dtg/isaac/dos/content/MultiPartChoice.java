@@ -1,22 +1,21 @@
 package uk.ac.cam.cl.dtg.isaac.dos.content;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.MultiPartChoiceDTO;
 import java.util.List;
 
 @DTOMapping(MultiPartChoiceDTO.class)
 @JsonContentType("multiPartChoice")
 public class MultiPartChoice extends Choice {
-    private List<List<ChoiceDTO>> itemCategories;
+    private List<List<Choice>> itemCategories;
     private List<Integer> choiceTemplate;
 
     public MultiPartChoice() {
     }
 
-    public final List<List<ChoiceDTO>> getItemCategories() {
+    public final List<List<Choice>> getItemCategories() {
         return itemCategories;
     }
 
-    public final void setItemCategories(final List<List<ChoiceDTO>> itemCategories) {
+    public final void setItemCategories(final List<List<Choice>> itemCategories) {
         this.itemCategories = itemCategories;
     }
 
