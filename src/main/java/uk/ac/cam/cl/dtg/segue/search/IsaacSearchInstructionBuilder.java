@@ -132,7 +132,7 @@ public class IsaacSearchInstructionBuilder {
 
         // Exclude regression test content (based on config)
         if (this.excludeRegressionTestContent) {
-            instruction.mustNot(new MatchInstruction(Constants.TAGS_FIELDNAME, "false"));
+            instruction.mustNot(new MatchInstruction(Constants.TAGS_FIELDNAME, "regression_test"));
         }
 
         // Exclude "no-filter" content (based on user role)
