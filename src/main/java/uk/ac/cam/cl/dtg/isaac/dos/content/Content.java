@@ -50,6 +50,7 @@ public class Content extends ContentBase {
     protected Boolean published;
     protected Boolean deprecated;
     protected Integer level;
+    protected String prioritisedSearchableContent;
     protected String searchableContent;
     protected Boolean expandable;
 
@@ -220,6 +221,14 @@ public class Content extends ContentBase {
 
     public void setLevel(Integer level) {
         this.level = level;
+    }
+
+    public String getPrioritisedSearchableContent() {
+        return this.prioritisedSearchableContent;
+    }
+
+    public void setPrioritisedSearchableContent(String prioritisedSearchableContent) {
+        this.prioritisedSearchableContent = prioritisedSearchableContent;
     }
 
     public String getSearchableContent() {
