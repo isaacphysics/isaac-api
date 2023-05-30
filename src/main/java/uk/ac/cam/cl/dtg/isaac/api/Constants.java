@@ -49,6 +49,8 @@ public final class Constants {
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
+    public static final String REGRESSION_TEST_TAG = "regression_test";
+
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
