@@ -359,6 +359,7 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
 
                 // Boost topic summary pages as they are more important than concepts and questions for CS.

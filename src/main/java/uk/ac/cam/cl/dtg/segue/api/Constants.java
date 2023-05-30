@@ -436,6 +436,7 @@ public final class Constants {
     public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
+    public static final String PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME = "prioritisedSearchableContent";
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
