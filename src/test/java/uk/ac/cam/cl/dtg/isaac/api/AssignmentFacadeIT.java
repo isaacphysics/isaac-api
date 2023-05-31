@@ -56,7 +56,7 @@ import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Date.class, AssignmentFacade.class})
-@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*"})
+@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*", "ma.glasnost.orika.*"})
 public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;

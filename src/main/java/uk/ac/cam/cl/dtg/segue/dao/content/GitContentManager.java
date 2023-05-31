@@ -663,7 +663,7 @@ public class GitContentManager {
         HashMap<String, AbstractFilterInstruction> filters = new HashMap<>();
 
         if (this.hideRegressionTestContent) {
-            filters.put("tags", new SimpleExclusionInstruction("regression_test"));
+            filters.put("tags", new SimpleExclusionInstruction(REGRESSION_TEST_TAG));
         }
         if (this.showOnlyPublishedContent) {
             filters.put("published", new SimpleFilterInstruction("true"));
