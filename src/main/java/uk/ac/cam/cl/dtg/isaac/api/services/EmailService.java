@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import jakarta.annotation.Nullable;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.text.DateFormat;
@@ -61,14 +62,14 @@ public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
     private final MailGunEmailManager mailGunEmailManager;
     private final GroupManager groupManager;
     private final UserAccountManager userManager;
 
     @Inject
-    public EmailService(final PropertiesLoader properties, final EmailManager emailManager,
+    public EmailService(final AbstractConfigLoader properties, final EmailManager emailManager,
                         final GroupManager groupManager, final UserAccountManager userManager,
                         final MailGunEmailManager mailGunEmailManager) {
         this.properties = properties;

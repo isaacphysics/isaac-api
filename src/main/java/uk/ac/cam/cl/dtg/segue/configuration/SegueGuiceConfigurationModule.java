@@ -673,7 +673,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static MailGunEmailManager getMailGunEmailManager(final PropertiesLoader properties,
+    private static MailGunEmailManager getMailGunEmailManager(final AbstractConfigLoader properties,
                                                               final AbstractUserPreferenceManager userPreferenceManager) {
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", properties.getProperty(EMAIL_SIGNATURE));
