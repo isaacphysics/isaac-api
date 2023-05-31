@@ -77,9 +77,8 @@ public class YamlLoader extends AbstractConfigLoader {
             Map<String, String> subConfig;
 
             // check to see if this a resource or a file somewhere else
-            if (getClass().getClassLoader().getResourceAsStream(this.configPath) == null) {
-                File file = new File(path);
-                try (FileInputStream ioStream = new FileInputStream(file)) {
+            if (getClass().getClassLoader().getResourceAsStream(path) == null) {
+                try (FileInputStream ioStream = new FileInputStream(path)) {
                     // then we have to look further afield
                     subConfig = yaml.load(ioStream);
                 }
