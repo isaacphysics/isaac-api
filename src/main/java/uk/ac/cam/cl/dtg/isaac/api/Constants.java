@@ -209,7 +209,7 @@ public final class Constants {
     /**
      * Quiz constants
      */
-    public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(2023, 6, 5, 0, 0, 0);
+    public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, 5, 5, 0, 0, 0); // 2023-06-05
 
     /**
      * Private constructor to prevent this class being created.
