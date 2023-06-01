@@ -170,16 +170,16 @@ public class IsaacCoordinateValidator implements IValidator {
     }
 
     /**
-     * Lexicographically order the items in the list by their x coordinate, then by their y coordinate.
+     * Numerically order the items in the list by their x coordinate, then by their y coordinate.
      * @param items     The list of coordinate items to order
-     * @return          The (lexicographically) ordered list of coordinate items
+     * @return          The (numerically) ordered list of coordinate items
      */
     private List<CoordinateItem> orderCoordinates(final List<CoordinateItem> items) {
         return items.stream().sorted((a, b) -> {
-            if (a.getX().equals(b.getX())) {
-                return a.getY().compareTo(b.getY());
+            if (ValidationUtils.compareNumericValues(a.getX(), b.getX(), 3, ValidationUtils.ComparisonType.EQUAL_TO, log)) {
+                return ValidationUtils.compareNumericValues(a.getY(), b.getY(), 3, ValidationUtils.ComparisonType.LESS_THAN, log) ? -1 : 1;
             } else {
-                return a.getX().compareTo(b.getX());
+                return ValidationUtils.compareNumericValues(a.getX(), b.getX(), 3, ValidationUtils.ComparisonType.LESS_THAN, log) ? -1 : 1;
             }
         }).collect(Collectors.toList());
     }

@@ -54,20 +54,15 @@ public final class ValidationUtils {
         // Utility class
     }
 
-    /**
-     * Test whether two quantity values match. Parse the strings as doubles, supporting notation of 3x10^12 to mean
-     * 3e12, then test that they match to given number of s.f.
-     *
-     * @param trustedValue               - first number
-     * @param untrustedValue             - second number
-     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null, in
-     *                                   which case exact comparison is performed)
-     * @param log                        - logger
-     * @return true when the numbers match
-     * @throws NumberFormatException - when one of the values cannot be parsed
-     */
-    static boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
-                                      final Integer significantFiguresRequired, final Logger log
+    public enum ComparisonType {
+        LESS_THAN,
+        GREATER_THAN,
+        EQUAL_TO
+    }
+
+    static boolean compareNumericValues(final String trustedValue, final String untrustedValue,
+                                        final Integer significantFiguresRequired,
+                                        final ComparisonType comparisonType, final Logger log
     ) throws NumberFormatException {
         log.debug("\t[numericValuesMatch]");
         double trustedDouble, untrustedDouble;
@@ -86,7 +81,35 @@ public final class ValidationUtils {
 
         final double epsilon = 1e-50;
 
-        return Math.abs(trustedDouble - untrustedDouble) < max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
+        final double threshold = max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
+
+        switch (comparisonType) {
+            case EQUAL_TO:
+            default:
+                return Math.abs(trustedDouble - untrustedDouble) < threshold;
+            case LESS_THAN:
+                return trustedDouble < untrustedDouble && Math.abs(trustedDouble - untrustedDouble) > threshold;
+            case GREATER_THAN:
+                return trustedDouble > untrustedDouble && Math.abs(trustedDouble - untrustedDouble) > threshold;
+        }
+    }
+
+    /**
+     * Test whether two quantity values match. Parse the strings as doubles, supporting notation of 3x10^12 to mean
+     * 3e12, then test that they match to given number of s.f.
+     *
+     * @param trustedValue               - first number
+     * @param untrustedValue             - second number
+     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null, in
+     *                                   which case exact comparison is performed)
+     * @param log                        - logger
+     * @return true when the numbers match
+     * @throws NumberFormatException - when one of the values cannot be parsed
+     */
+    static boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
+                                      final Integer significantFiguresRequired, final Logger log
+    ) throws NumberFormatException {
+        return compareNumericValues(trustedValue, untrustedValue, significantFiguresRequired, ComparisonType.EQUAL_TO, log);
     }
 
     /**
