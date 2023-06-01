@@ -382,7 +382,10 @@ public class GitContentManager {
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue()).strategy(Strategy.SIMPLE).required(true));
+                boolean applyOrFilterBetweenValues = Constants.ID_FIELDNAME.equals(entry.getKey());
+                searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
+                        .strategy(Strategy.SIMPLE)
+                        .required(!applyOrFilterBetweenValues));
             }
         }
 
