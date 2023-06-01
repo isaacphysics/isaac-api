@@ -165,15 +165,22 @@ public abstract class IsaacIntegrationTest {
         }
     }
 
+    private static String getClassLoaderResourcePath(final String resource) {
+        return IsaacIntegrationTest.class.getClassLoader().getResource(resource)
+                .getPath()
+                // ":" is removed from the resource path for Windows compatibility
+                .replace(":", "");
+    }
+
     @BeforeClass
     public static void setUpClass() {
         postgres = new PostgreSQLContainer<>("postgres:12")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withUsername("rutherford")
-                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-create-script.sql").getPath(), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
-                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/postgres-rutherford-functions.sql").getPath(), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
-                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("db_scripts/quartz_scheduler_create_script.sql").getPath(), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
-                .withFileSystemBind(IsaacIntegrationTest.class.getClassLoader().getResource("test-postgres-rutherford-data-dump.sql").getPath(), "/docker-entrypoint-initdb.d/03-data-dump.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-create-script.sql"), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-functions.sql"), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/quartz_scheduler_create_script.sql"), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("test-postgres-rutherford-data-dump.sql"), "/docker-entrypoint-initdb.d/03-data-dump.sql")
         ;
 
         // TODO It would be nice if we could pull the version from pom.xml
