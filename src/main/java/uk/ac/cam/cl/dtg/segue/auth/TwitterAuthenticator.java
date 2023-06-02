@@ -111,6 +111,11 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
     }
 
     @Override
+    public String getFriendlyName() {
+        return "Twitter";
+    }
+
+    @Override
     public OAuth1Token getRequestToken() throws IOException {
         RequestToken requestToken;
         try {

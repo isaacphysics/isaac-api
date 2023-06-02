@@ -126,6 +126,11 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
+	public String getFriendlyName() {
+		return "Facebook";
+	}
+
+	@Override
 	public String getAuthorizationUrl(final String antiForgeryStateToken) {
         AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(AUTH_URL, clientId);
 

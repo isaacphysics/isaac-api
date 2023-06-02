@@ -165,6 +165,11 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
+    public String getFriendlyName() {
+        return "Google";
+    }
+
+    @Override
     public String getAuthorizationUrl(final String antiForgeryStateToken) {
         GoogleAuthorizationCodeRequestUrl urlBuilder;
         urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets.getDetails().getClientId(), callbackUri,

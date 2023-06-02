@@ -87,6 +87,11 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     }
 
     @Override
+    public String getFriendlyName() {
+        return "your email address and password";
+    }
+
+    @Override
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
             throws InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
         ensureValidPassword(plainTextPassword);

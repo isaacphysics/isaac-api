@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth2AuthenticatorWithSignupFlow;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
@@ -164,12 +165,15 @@ public class UserAuthenticationManager {
      *            - http request that we can attach the session to and that already has a redirect url attached.
      * @param provider
      *            - the provider the user wishes to authenticate with.
+     * @param isSignUp
+     *            - whether this is an initial sign-up, which may be used to direct the client to a sign-up flow on the IdP.
+     *
      * @return A json response containing a URI to the authentication provider if authorization / login is required.
      *         Alternatively a SegueErrorResponse could be returned.
      * @throws IOException - 
      * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    public URI getThirdPartyAuthURI(final HttpServletRequest request, final String provider) 
+    public URI getThirdPartyAuthURI(final HttpServletRequest request, final String provider, final boolean isSignUp)
             throws IOException, AuthenticationProviderMappingException {
         IAuthenticator federatedAuthenticator = mapToProvider(provider);
 
@@ -183,7 +187,12 @@ public class UserAuthenticationManager {
             // Store antiForgeryToken in the users session.
             request.getSession().setAttribute(STATE_PARAM_NAME, antiForgeryTokenFromProvider);
 
-            redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
+            if (federatedAuthenticator instanceof IOAuth2AuthenticatorWithSignupFlow) {
+                redirectLink = URI.create(((IOAuth2AuthenticatorWithSignupFlow) oauth2Provider).getAuthorizationUrl(
+                        antiForgeryTokenFromProvider, isSignUp));
+            } else {
+                redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
+            }
         } else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
             IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
             OAuth1Token token = oauth1Provider.getRequestToken();
@@ -730,9 +739,7 @@ public class UserAuthenticationManager {
                 continue;
             }
 
-            String providerName = provider.name().toLowerCase();
-            providerName = providerName.substring(0, 1).toUpperCase() + providerName.substring(1);
-            providerNames.add(providerName);
+            providerNames.add(authenticator.getFriendlyName());
         }
 
         String providersString;
