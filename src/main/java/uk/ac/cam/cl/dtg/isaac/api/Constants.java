@@ -19,6 +19,8 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -208,6 +210,11 @@ public final class Constants {
     public enum IsaacMailGunTemplate {
         ASSIGNMENT
     }
+
+    /**
+     * Quiz constants
+     */
+    public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, Calendar.JUNE, 12, 0, 0, 0); // 12/06/2023
 
     /**
      * Private constructor to prevent this class being created.
