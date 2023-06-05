@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 public class MailGunEmailManager {
 
@@ -79,7 +80,10 @@ public class MailGunEmailManager {
     private void createMessagesApiIfNeeded() {
         if (null == this.mailgunMessagesApi) {
             log.info("Creating singleton MailgunMessagesApi object.");
-            this.mailgunMessagesApi = MailgunClient.config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
+            this.mailgunMessagesApi = MailgunClient
+                    .config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
+                    .logLevel(feign.Logger.Level.NONE)
+                    .createApi(MailgunMessagesApi.class);
         }
     }
 
@@ -188,6 +192,8 @@ public class MailGunEmailManager {
                 .mailgunVariables(templateVariables)
                 .recipientVariables(recipientVariables)
                 .build();
+
+        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc();
 
         return executor.submit(() -> {
             try {

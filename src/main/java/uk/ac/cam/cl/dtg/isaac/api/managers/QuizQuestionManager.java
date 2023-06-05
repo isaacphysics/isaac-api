@@ -285,15 +285,15 @@ public class QuizQuestionManager {
                     // Include full validation details.
                     lastAttempt = questionManager.convertQuestionValidationResponseToDTO(lastResponse);
                 } else {
-                    // Manual extract only the safe details (questionId, answer, date attempted).
+                    // Manual extract only the safe details (questionId, answer).
                     Choice answer = lastResponse.getAnswer();
                     lastAttempt = new QuestionValidationResponseDTO();
                     DTOMapping dtoMapping = answer.getClass().getAnnotation(DTOMapping.class);
                     lastAttempt.setAnswer(mapper.getAutoMapper().map(lastResponse.getAnswer(),
                         (Class<? extends ChoiceDTO>) dtoMapping.value()));
                     lastAttempt.setQuestionId(lastResponse.getQuestionId());
-                    lastAttempt.setDateAttempted(lastResponse.getDateAttempted());
                 }
+                lastAttempt.setDateAttempted(null);  // Strip timestamps, since quiz responses may be seen by other users.
                 question.setBestAttempt(lastAttempt);
             }
         });
