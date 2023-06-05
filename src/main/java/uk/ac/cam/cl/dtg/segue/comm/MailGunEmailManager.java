@@ -73,7 +73,10 @@ public class MailGunEmailManager {
     private void createMessagesApiIfNeeded() {
         if (null == this.mailgunMessagesApi) {
             log.info("Creating singleton MailgunMessagesApi object.");
-            this.mailgunMessagesApi = MailgunClient.config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
+            this.mailgunMessagesApi = MailgunClient
+                    .config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
+                    .logLevel(feign.Logger.Level.NONE)
+                    .createApi(MailgunMessagesApi.class);
         }
     }
 
