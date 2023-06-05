@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 public class MailGunEmailManager {
 
@@ -186,6 +187,8 @@ public class MailGunEmailManager {
                 .mailgunVariables(templateVariables)
                 .recipientVariables(recipientVariables)
                 .build();
+
+        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc();
 
         return mailgunMessagesApi.sendMessage(globalProperties.getProperty(MAILGUN_DOMAIN), message);
     }
