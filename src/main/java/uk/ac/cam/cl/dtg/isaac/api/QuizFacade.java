@@ -1492,6 +1492,12 @@ public class QuizFacade extends AbstractIsaacFacade {
                     "That student has not completed this test assignment.").toResponse();
             }
 
+            if (!isUserAnAdmin(userManager, user) && !user.getId().equals(student.getId()) && assignment.getCreationDate().getTime() < QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You cannot view student's answers to test assignments created before "
+                                + new Date(QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) + ".").toResponse();
+            }
+
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
 
             quizAttempt = quizQuestionManager.augmentFeedbackFor(quizAttempt, quiz, QuizFeedbackMode.DETAILED_FEEDBACK);
