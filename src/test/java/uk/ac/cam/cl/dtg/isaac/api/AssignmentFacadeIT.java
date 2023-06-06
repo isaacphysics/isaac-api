@@ -20,12 +20,15 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
@@ -51,10 +54,10 @@ import java.util.Date;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
-
 @Ignore("PowerMock causes all sorts of problems here, disabling for now")
+@RunWith(PowerMockRunner.class)
 @PrepareForTest({Date.class, AssignmentFacade.class})
-@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.*", "ma.glasnost.orika.*"})
+@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*", "ma.glasnost.orika.*"})
 public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;
@@ -87,6 +90,14 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
         pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
         pst.executeUpdate();
+    }
+
+    @AfterClass
+    public static void cleanUp() throws SegueDatabaseException {
+        // reset additional manager privileges setting for Daves group
+        UserGroupDTO davesGroup = groupManager.getGroupById(ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
+        davesGroup.setAdditionalManagerPrivileges(false);
+        groupManager.editUserGroup(davesGroup);
     }
 
     @Test
