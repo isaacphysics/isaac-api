@@ -430,10 +430,8 @@ public final class Constants {
     public static final String TITLE_FIELDNAME = "title";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
-    public static final String VALUE_FIELDNAME = "value";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
-    public static final String CHILDREN_FIELDNAME = "children";
     public static final String DATE_FIELDNAME = "date";
     public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
