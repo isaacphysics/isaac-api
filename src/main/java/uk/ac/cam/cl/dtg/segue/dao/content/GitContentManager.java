@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COLLECTOR;
 
 /**
@@ -329,39 +330,67 @@ public class GitContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
-    public final ResultsWrapper<ContentDTO> searchForContent(@Nullable final String searchString, final Set<String> ids,
-                                                             final Set<String> tags, final Set<String> levels, final Set<String> stages,
-                                                             final Set<String> difficulties, final Set<String> examBoards,
-                                                             final Set<String> contentTypes, final Integer startIndex,
-                                                             final Integer limit, final boolean showNoFilterContent)
-            throws ContentManagerException {
+    public final ResultsWrapper<ContentDTO> searchForContent(
+            @Nullable final String searchString,
+            @Nullable final Set<String> ids, @Nullable final Set<String> tags, @Nullable Set<String> levels,
+            @Nullable Set<String> stages, @Nullable Set<String> difficulties, @Nullable Set<String> examBoards,
+            final Set<String> contentTypes, final Integer startIndex, final Integer limit, final boolean showNoFilterContent
+    ) throws ContentManagerException {
 
-        Set<String> searchTerms = Set.of();
+        // Create a set of search terms from the initial search string
+        Set<String> searchTerms = new HashSet<>();
         if (searchString != null && !searchString.isBlank()) {
+            searchTerms.add(searchString);
+            // If it is a search phrase, also try to match each word individually
+            if (searchString.contains(" ")) {
+                searchTerms.addAll(Arrays.asList(searchString.split(" ")));
+            }
             searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
         }
 
-        BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
-                this.showOnlyPublishedContent,
-                this.hideRegressionTestContent,
-                !showNoFilterContent)
+        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
+                searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+
+                // Restrict content types
                 .includeContentTypes(contentTypes)
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, ids).strategy(Strategy.SIMPLE))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, tags).strategy(Strategy.SIMPLE).required(true))
-                .searchFor(new SearchInField(Constants.LEVEL_FIELDNAME, levels).strategy(Strategy.SIMPLE).required(true))
-                .searchFor(new SearchInField(Constants.STAGE_FIELDNAME, stages).strategy(Strategy.SIMPLE).required(true))
-                .searchFor(new SearchInField(Constants.DIFFICULTY_FIELDNAME, difficulties).strategy(Strategy.SIMPLE).required(true))
-                .searchFor(new SearchInField(Constants.EXAM_BOARD_FIELDNAME, examBoards).strategy(Strategy.SIMPLE).required(true))
+
+                // Fuzzy search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.VALUE_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.CHILDREN_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
-                .build();
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+
+                // Boost topic summary pages as they are more important than concepts and questions for CS.
+                // They do not exist for Physics and so do not affect their results.
+                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
+
+                // Event specific queries
+                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
+                .includePastEvents(false);
+
+
+        // Additional per-field filters if specified
+        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {{
+            this.put(ID_FIELDNAME, ids);
+            this.put(TAGS_FIELDNAME, tags);
+            this.put(LEVEL_FIELDNAME, levels);
+            this.put(STAGE_FIELDNAME, stages);
+            this.put(DIFFICULTY_FIELDNAME, difficulties);
+            this.put(EXAM_BOARD_FIELDNAME, examBoards);
+        }};
+        // Add a required filtering rule for each field that has a value
+        for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                boolean applyOrFilterBetweenValues = Constants.ID_FIELDNAME.equals(entry.getKey());
+                searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
+                        .strategy(Strategy.SIMPLE)
+                        .required(!applyOrFilterBetweenValues));
+            }
+        }
 
         // If no search terms were provided, sort by ascending alphabetical order of title.
         Map<String, Constants.SortOrder> sortOrder = null;
-
         if (searchTerms.isEmpty()) {
             sortOrder = new HashMap<>();
             sortOrder.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
@@ -372,42 +401,8 @@ public class GitContentManager {
                 CONTENT_TYPE,
                 startIndex,
                 limit,
-                matchInstruction,
+                searchInstructionBuilder.build(),
                 sortOrder
-        );
-
-        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
-    }
-
-    public final ResultsWrapper<ContentDTO> siteWideSearch(
-            final String searchString, final List<String> documentTypes,
-            final boolean showNoFilterContent, final Integer startIndex, final Integer limit
-    ) throws  ContentManagerException {
-
-        BooleanInstruction matchInstruction = new IsaacSearchInstructionBuilder(searchProvider,
-                this.showOnlyPublishedContent,
-                this.hideRegressionTestContent,
-                !showNoFilterContent)
-                .includeContentTypes(Set.copyOf(documentTypes))
-                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, Set.of(searchString)))
-                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, Set.of(searchString)))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, Set.of(searchString)).priority(Priority.HIGH))
-                .includePastEvents(false)
-                .build();
-
-        ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
-                contentIndex,
-                CONTENT_TYPE,
-                startIndex,
-                limit,
-                matchInstruction,
-                null
         );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());

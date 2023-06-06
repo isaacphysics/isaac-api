@@ -27,6 +27,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -63,6 +64,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -220,8 +222,9 @@ public class IsaacController extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
-            ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    searchString, documentTypes, showNoFilterContent, startIndex, limit);
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
+                    searchString, null, null, null, null, null, null,
+                    new HashSet<>(documentTypes), startIndex, limit, showNoFilterContent);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
