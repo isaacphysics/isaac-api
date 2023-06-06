@@ -9,7 +9,6 @@ import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.powermock.modules.agent.PowerMockAgent;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,8 +178,6 @@ public abstract class IsaacIntegrationTest {
     }
 
     static {
-        PowerMockAgent.initializeIfNeeded();
-
         // Statically initialise Elasticsearch once - this instance is shared across test classes.
         elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.17.6"))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
