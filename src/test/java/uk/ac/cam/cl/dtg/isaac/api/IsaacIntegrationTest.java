@@ -7,8 +7,11 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -108,13 +111,15 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
- * Abstract superclass for integration tests, providing them with dependencies including ElasticSearch and PostgreSQL
- * (as docker containers) and other managers (some of which are mocked). These dependencies are created before and
- * destroyed after every test class.
+ * Abstract superclass for integration tests, providing them with dependencies including Elasticsearch and PostgreSQL
+ * (as docker containers) and other managers (some of which are mocked). Except for the Elasticsearch container, these
+ * dependencies are created before and destroyed after every test class.
  *
- * Subclasses should be named "*IT.java" so Maven Failsafe detects them. They are runnable via the "verify" Maven target.
+ * Subclasses should be named "*IT.java" so Maven Failsafe detects them. Use the "verify" Maven target to run them.
  */
 public abstract class IsaacIntegrationTest {
+
+    protected static final Logger log = LoggerFactory.getLogger(IsaacIntegrationTest.class);
 
     protected static HttpSession httpSession;
     protected static PostgreSQLContainer postgres;
@@ -172,18 +177,8 @@ public abstract class IsaacIntegrationTest {
                 .replace(":", "");
     }
 
-    @BeforeClass
-    public static void setUpClass() {
-        postgres = new PostgreSQLContainer<>("postgres:12")
-                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-                .withUsername("rutherford")
-                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-create-script.sql"), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
-                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-functions.sql"), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
-                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/quartz_scheduler_create_script.sql"), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
-                .withFileSystemBind(getClassLoaderResourcePath("test-postgres-rutherford-data-dump.sql"), "/docker-entrypoint-initdb.d/03-data-dump.sql")
-        ;
-
-        // TODO It would be nice if we could pull the version from pom.xml
+    static {
+        // Statically initialise Elasticsearch once - this instance is shared across test classes.
         elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.17.6"))
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh", 0100775), "/usr/local/bin/docker-entrypoint.sh")
@@ -196,28 +191,40 @@ public abstract class IsaacIntegrationTest {
                 .withStartupTimeout(Duration.ofSeconds(120));
         ;
 
-        postgres.start();
         elasticsearch.start();
+
+        try {
+            elasticSearchProvider = new ElasticSearchProvider(ElasticSearchProvider.getClient(
+                    "localhost",
+                    elasticsearch.getMappedPort(9200),
+                    "elastic",
+                    "elastic"
+            )
+            );
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @BeforeClass
+    public static void setUpClass() {
+        // Initialise Postgres - we will create a new, clean instance for each test class.
+        postgres = new PostgreSQLContainer<>("postgres:12")
+                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+                .withUsername("rutherford")
+                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-create-script.sql"), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-functions.sql"), "/docker-entrypoint-initdb.d/01-isaac-functions.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("db_scripts/quartz_scheduler_create_script.sql"), "/docker-entrypoint-initdb.d/02-isaac-quartz.sql")
+                .withFileSystemBind(getClassLoaderResourcePath("test-postgres-rutherford-data-dump.sql"), "/docker-entrypoint-initdb.d/03-data-dump.sql")
+        ;
+
+        postgres.start();
 
         postgresSqlDb = new PostgresSqlDb(
                 postgres.getJdbcUrl(),
                 "rutherford",
                 "somerandompassword"
         ); // user/pass are irrelevant because POSTGRES_HOST_AUTH_METHOD is set to "trust"
-
-        try {
-            elasticSearchProvider =
-                    new ElasticSearchProvider(ElasticSearchProvider.getClient(
-                            "localhost",
-                            elasticsearch.getMappedPort(9200),
-                            "elastic",
-                            "elastic"
-                    )
-                    );
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-
 
         String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
         if (System.getProperty("test.config.location") != null) {
@@ -336,6 +343,13 @@ public abstract class IsaacIntegrationTest {
         });
         Injector injector = Guice.createInjector(testModule);
          */
+
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        // Stop Postgres - we will create a new, clean instance for each test class.
+        postgres.stop();
     }
 
     protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
