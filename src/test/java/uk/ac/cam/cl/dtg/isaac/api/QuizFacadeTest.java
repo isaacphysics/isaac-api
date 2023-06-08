@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Request;
@@ -103,7 +103,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         requestForCaching = createMock(Request.class);
         expect(requestForCaching.evaluatePreconditions((EntityTag) anyObject())).andStubReturn(null);
 
-        PropertiesLoader properties = createMock(PropertiesLoader.class);
+        AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
         logManager = createNiceMock(ILogManager.class); // Nice mock because we're not generally bothered about logging.
         GitContentManager contentManager = createMock(GitContentManager.class);
         ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);

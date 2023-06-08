@@ -22,7 +22,6 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
@@ -31,6 +30,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -59,7 +60,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
 
      */
     @Inject
-    public SegueDefaultFacade(final PropertiesLoader properties, final ILogManager logManager) {
+    public SegueDefaultFacade(final AbstractConfigLoader properties, final ILogManager logManager) {
         super(properties, logManager);
     }
     

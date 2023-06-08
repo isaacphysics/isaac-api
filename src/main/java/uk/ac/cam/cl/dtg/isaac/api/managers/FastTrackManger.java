@@ -15,7 +15,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,7 +47,7 @@ public class FastTrackManger {
      *            - the current content index of interest.
      */
     @Inject
-    public FastTrackManger(final PropertiesLoader properties, final GitContentManager contentManager,
+    public FastTrackManger(final AbstractConfigLoader properties, final GitContentManager contentManager,
                            final GameManager gameboardManager, @Named(CONTENT_INDEX) final String contentIndex) {
 
         this.contentManager = contentManager;

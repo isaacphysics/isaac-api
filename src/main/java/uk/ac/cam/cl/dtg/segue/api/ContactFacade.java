@@ -32,7 +32,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -43,6 +42,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -72,8 +73,8 @@ public class ContactFacade extends AbstractSegueFacade {
      *            - An instance of the log manager used for recording usage of the CMS.
      */
     @Inject
-    public ContactFacade(final PropertiesLoader properties, final ContentMapper mapper,
-            final UserAccountManager userManager, final EmailManager emailManager, final ILogManager logManager) {
+    public ContactFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
+                         final UserAccountManager userManager, final EmailManager emailManager, final ILogManager logManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.emailManager = emailManager;

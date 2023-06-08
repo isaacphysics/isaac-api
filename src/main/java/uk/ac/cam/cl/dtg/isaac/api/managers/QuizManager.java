@@ -37,7 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import java.util.Collections;
@@ -57,7 +57,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class QuizManager {
     private static final Logger log = LoggerFactory.getLogger(QuizManager.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final ContentService contentService;
     private final GitContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
@@ -78,7 +78,7 @@ public class QuizManager {
      *            - so we can convert cached content DOs to DTOs.
      */
     @Inject
-    public QuizManager(final PropertiesLoader properties, final ContentService contentService,
+    public QuizManager(final AbstractConfigLoader properties, final ContentService contentService,
                        final GitContentManager contentManager,
                        final ContentSummarizerService contentSummarizerService,
                        final ContentMapper mapper) {

@@ -66,7 +66,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -146,7 +146,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - for parsing, validating, and persisting quiz question answers.
      */
     @Inject
-    public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
+    public QuizFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                       final GitContentManager contentManager, final QuizManager quizManager,
                       final UserAccountManager userManager, final UserAssociationManager associationManager,
                       final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,

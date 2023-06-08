@@ -18,7 +18,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,7 +39,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 public class DeleteEventAdditionalBookingInformationJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(DeleteEventAdditionalBookingInformationJob.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final PostgresSqlDb database;
     private final GitContentManager contentManager;
 
@@ -49,7 +49,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
      */
     public DeleteEventAdditionalBookingInformationJob() {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-        properties = injector.getInstance(PropertiesLoader.class);
+        properties = injector.getInstance(AbstractConfigLoader.class);
         contentManager = injector.getInstance(GitContentManager.class);
         database = injector.getInstance(PostgresSqlDb.class);
 

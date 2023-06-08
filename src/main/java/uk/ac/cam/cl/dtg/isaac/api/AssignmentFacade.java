@@ -65,7 +65,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -140,7 +140,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final GroupManager groupManager,
-                            final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
+                            final AbstractConfigLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
                             final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager,
                             final AssignmentService assignmentService) {
         super(propertiesLoader, logManager);

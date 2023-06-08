@@ -19,7 +19,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
@@ -37,7 +37,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public QuestionAttemptMisuseHandler(final PropertiesLoader properties) {
+    public QuestionAttemptMisuseHandler(final AbstractConfigLoader properties) {
         String overrideThresholdString = properties.getProperty(Constants.QUESTION_MISUSE_THRESHOLD_OVERRIDE);
         if (null != overrideThresholdString) {
             this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);

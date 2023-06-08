@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -89,7 +89,7 @@ public class UserManagerTest {
     private String dummyHMACSalt;
     private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
     private String dummyHostName;
-    private PropertiesLoader dummyPropertiesLoader;
+    private AbstractConfigLoader dummyPropertiesLoader;
     private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
     private MapperFacade dummyMapper;
@@ -123,7 +123,7 @@ public class UserManagerTest {
         this.dummyHostName = "bob";
         this.dummyMapper = createMock(MapperFacade.class);
         this.dummyQueue = createMock(EmailManager.class);
-        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
         this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 
         this.dummyUserCache = createMock(IAnonymousUserDataManager.class);

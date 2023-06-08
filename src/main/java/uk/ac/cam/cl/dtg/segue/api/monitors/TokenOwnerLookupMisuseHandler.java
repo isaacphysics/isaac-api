@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -40,7 +40,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     public static final Integer HARD_THRESHOLD = 50;
     public static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
 
     /**
@@ -50,7 +50,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public TokenOwnerLookupMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public TokenOwnerLookupMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }

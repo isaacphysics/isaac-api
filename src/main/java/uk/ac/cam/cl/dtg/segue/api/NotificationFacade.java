@@ -32,7 +32,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
@@ -44,6 +43,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.List;
 
 /**
@@ -72,8 +73,8 @@ public class NotificationFacade extends AbstractSegueFacade {
      *            - so we can identify which notifications are relevant.
      */
     @Inject
-    public NotificationFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final UserAccountManager userManager, final NotificationPicker notificationPicker) {
+    public NotificationFacade(final AbstractConfigLoader properties, final ILogManager logManager,
+                              final UserAccountManager userManager, final NotificationPicker notificationPicker) {
         super(properties, logManager);
         this.userManager = userManager;
         this.notificationPicker = notificationPicker;

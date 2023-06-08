@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -64,7 +64,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private final IUserAlerts userAlerts;
     private final ILogManager logManager;
     private final IStatisticsManager statisticsManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private Session session;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
@@ -112,7 +112,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                                final IUserAlerts userAlerts,
                                final ILogManager logManager,
                                final IStatisticsManager statisticsManager,
-                               final PropertiesLoader properties) {
+                               final AbstractConfigLoader properties) {
 
         this.userManager = userManager;
         this.userAuthenticationManager = userAuthenticationManager;

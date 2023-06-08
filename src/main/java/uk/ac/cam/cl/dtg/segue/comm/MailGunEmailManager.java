@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -66,11 +67,11 @@ public class MailGunEmailManager {
 
     private MailgunMessagesApi mailgunMessagesApi;
     private final AbstractUserPreferenceManager userPreferenceManager;
-    private final PropertiesLoader globalProperties;
+    private final AbstractConfigLoader globalProperties;
     private final ExecutorService executor;
 
     @Inject
-    public MailGunEmailManager(final Map<String, String> globalStringTokens, final PropertiesLoader globalProperties, final AbstractUserPreferenceManager userPreferenceManager) {
+    public MailGunEmailManager(final Map<String, String> globalStringTokens, final AbstractConfigLoader globalProperties, final AbstractUserPreferenceManager userPreferenceManager) {
         this.globalStringTokens = globalStringTokens;
         this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;

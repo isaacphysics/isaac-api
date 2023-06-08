@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.scheduler.jobs;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -29,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,7 +38,7 @@ public class SyncMailjetUsersJob implements Job {
 
     private final IExternalAccountManager externalAccountManager;
     private final EmailManager emailManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
@@ -49,7 +48,7 @@ public class SyncMailjetUsersJob implements Job {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
         emailManager = injector.getInstance(EmailManager.class);
         externalAccountManager = injector.getInstance(IExternalAccountManager.class);
-        properties = injector.getInstance(PropertiesLoader.class);
+        properties = injector.getInstance(AbstractConfigLoader.class);
     }
 
     @Override
