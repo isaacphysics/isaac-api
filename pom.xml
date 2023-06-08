@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v3.7.2-SNAPSHOT</segue.version>
+        <segue.version>v3.7.4-SNAPSHOT</segue.version>
         <log4j.version>2.19.0</log4j.version>
         <resteasy.version>6.2.2.Final</resteasy.version>
         <guice.version>5.1.0</guice.version>
@@ -518,7 +518,7 @@
                         <segue.version>${segue.version}</segue.version>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>${surefire.jacoco.args}</argLine>
+                    <argLine>@{surefire.jacoco.args}</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -527,13 +527,13 @@
                 <version>3.0.0-M7</version>
                 <configuration>
                     <forkCount>1</forkCount>
-                    <reuseForks>false</reuseForks>
+                    <reuseForks>true</reuseForks>
                     <systemPropertyVariables>
                         <segue.version>${segue.version}</segue.version>
                         <test.config.location>src/test/resources/segue-integration-test-config.yaml</test.config.location>
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>${failsafe.jacoco.args}</argLine>
+                    <argLine>@{failsafe.jacoco.args}</argLine>
                 </configuration>
                 <executions>
                     <execution>

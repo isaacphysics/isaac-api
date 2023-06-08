@@ -374,12 +374,12 @@ public class PagesFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentDTO> c;
             c = contentManager.searchForContent(
                     validatedSearchString,
-                    fieldsToMatch.getOrDefault(ID_FIELDNAME, Set.of()),
-                    fieldsToMatch.getOrDefault(TAGS_FIELDNAME, Set.of()),
-                    fieldsToMatch.getOrDefault(LEVEL_FIELDNAME, Set.of()),
-                    fieldsToMatch.getOrDefault(STAGE_FIELDNAME, Set.of()),
-                    fieldsToMatch.getOrDefault(DIFFICULTY_FIELDNAME, Set.of()),
-                    fieldsToMatch.getOrDefault(EXAM_BOARD_FIELDNAME, Set.of()),
+                    fieldsToMatch.get(ID_FIELDNAME),
+                    fieldsToMatch.get(TAGS_FIELDNAME),
+                    fieldsToMatch.get(LEVEL_FIELDNAME),
+                    fieldsToMatch.get(STAGE_FIELDNAME),
+                    fieldsToMatch.get(DIFFICULTY_FIELDNAME),
+                    fieldsToMatch.get(EXAM_BOARD_FIELDNAME),
                     fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
                     newStartIndex,
                     newLimit,

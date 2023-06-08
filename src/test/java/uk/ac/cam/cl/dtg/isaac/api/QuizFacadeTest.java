@@ -278,6 +278,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void getQuizAssignmentAttempt() {
         QuizAttemptDTO augmentedQuiz = new QuizAttemptDTO();
+
         forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(httpServletRequest, studentAssignment.getId(), student.getId()),
             requiresLogin(),
             as(studentsTeachersOrAdmin(),
@@ -297,11 +298,35 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(studentAttempt)),
                 failsWith(Status.FORBIDDEN)
             ),
-            as(studentsTeachersOrAdmin(),
-                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
+            forbiddenForEveryoneElse()
+        );
+
+        forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(httpServletRequest, studentAssignmentPreQuizAnswerChange.getId(), student.getId()),
+            requiresLogin(),
+            as(anyOf(teacher, secondTeacher),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignmentPreQuizAnswerChange)).andReturn(studentGroup)),
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
-                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(completedAttempt)),
-                prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttempt, studentQuiz, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignmentPreQuizAnswerChange, student)).andReturn(completedAttemptPreQuizAnswerChange)),
+                failsWith(Status.FORBIDDEN)
+            ),
+            as(adminUser,
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignmentPreQuizAnswerChange)).andReturn(studentGroup)),
+                prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignmentPreQuizAnswerChange, student)).andReturn(completedAttemptPreQuizAnswerChange)),
+                prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttemptPreQuizAnswerChange, studentQuizPreQuizAnswerChange, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
+                succeeds(),
+                check(response -> assertEquals(((QuizAttemptFeedbackDTO) response.getEntity()).getAttempt().getQuiz(), augmentedQuiz.getQuiz()))
+            ),
+            forbiddenForEveryoneElse()
+        );
+
+        forEndpoint(() -> quizFacade.getQuizAssignmentAttempt(httpServletRequest, studentAssignmentPostQuizAnswerChange.getId(), student.getId()),
+            requiresLogin(),
+            as(studentsTeachersOrAdmin(),
+                prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignmentPostQuizAnswerChange)).andReturn(studentGroup)),
+                prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
+                prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignmentPostQuizAnswerChange, student)).andReturn(completedAttemptPostQuizAnswerChange)),
+                prepare(quizQuestionManager, m -> expect(m.augmentFeedbackFor(completedAttemptPostQuizAnswerChange, studentQuizPostQuizAnswerChange, QuizFeedbackMode.DETAILED_FEEDBACK)).andReturn(augmentedQuiz)),
                 succeeds(),
                 check(response -> assertEquals(((QuizAttemptFeedbackDTO) response.getEntity()).getAttempt().getQuiz(), augmentedQuiz.getQuiz()))
             ),
