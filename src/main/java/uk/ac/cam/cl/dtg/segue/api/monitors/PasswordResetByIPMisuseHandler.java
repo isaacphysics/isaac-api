@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -42,14 +42,14 @@ public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
     private static final Integer HARD_THRESHOLD = 300;
     private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_HOUR;
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
 
     /**
      *  Constructor for Guice injection.
      */
     @Inject
-    public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }

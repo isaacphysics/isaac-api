@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import com.google.inject.Inject;
 
@@ -39,7 +39,7 @@ public class LogEventMisuseHandler implements IMisuseHandler {
     public static final Integer SOFT_THRESHOLD = 700000; // bytes
     public static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_DAY;
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
 
     /**
@@ -49,7 +49,7 @@ public class LogEventMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public LogEventMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public LogEventMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }

@@ -69,7 +69,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
@@ -157,7 +157,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - misuse monitor.
      */
     @Inject
-    public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
+    public AdminFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                        final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
                        final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
@@ -595,7 +595,7 @@ public class AdminFacade extends AbstractSegueFacade {
         try {
             if (isUserAnAdmin(userManager, request)) {
                 log.info("Triggering properties reload ...");
-                this.getProperties().triggerPropertiesRefresh();
+                this.getProperties().reloadConfig();
 
                 ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put("result",
                         "success").build();

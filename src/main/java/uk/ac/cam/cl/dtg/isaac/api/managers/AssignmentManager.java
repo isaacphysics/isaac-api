@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +51,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     private final GroupManager groupManager;
     private final EmailService emailService;
     private final GameManager gameManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     /**
      * AssignmentManager.
@@ -67,7 +67,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
                              final GroupManager groupManager, final EmailService emailService,
-                             final GameManager gameManager, final PropertiesLoader properties) {
+                             final GameManager gameManager, final AbstractConfigLoader properties) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
         this.emailService = emailService;

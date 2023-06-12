@@ -80,7 +80,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -137,7 +137,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @param mapper
      */
     @Inject
-    public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
+    public EventsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final GitContentManager contentManager,
                         @Named(Constants.CONTENT_INDEX) final String contentIndex,

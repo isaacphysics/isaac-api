@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Request;
@@ -60,7 +60,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         requestForCaching = createMock(Request.class);
         expect(requestForCaching.evaluatePreconditions((EntityTag) anyObject())).andStubReturn(null);
 
-        PropertiesLoader properties = createMock(PropertiesLoader.class);
+        AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
         expect(properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name());
 
         ILogManager logManager = createNiceMock(ILogManager.class); // We don't care about logging.

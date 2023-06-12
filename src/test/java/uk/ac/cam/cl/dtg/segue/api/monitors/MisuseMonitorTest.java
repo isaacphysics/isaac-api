@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.fail;
@@ -36,7 +36,7 @@ import static org.junit.Assert.fail;
  */
 @PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
-    private PropertiesLoader dummyPropertiesLoader;
+    private AbstractConfigLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;
 
     /**
@@ -48,7 +48,7 @@ public class MisuseMonitorTest {
     @Before
     public final void setUp() throws Exception {
         this.dummyCommunicator = createMock(EmailManager.class);
-        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 
 
         expect(dummyPropertiesLoader.getProperty(Constants.SERVER_ADMIN_ADDRESS)).andReturn("FROM ADDRESS").anyTimes();

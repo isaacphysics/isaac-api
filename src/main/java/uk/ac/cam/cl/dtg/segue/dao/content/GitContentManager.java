@@ -49,7 +49,7 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -82,7 +82,7 @@ public class GitContentManager {
     private final GitDb database;
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
-    private final PropertiesLoader globalProperties;
+    private final AbstractConfigLoader globalProperties;
     private final boolean showOnlyPublishedContent;
     private final boolean hideRegressionTestContent;
 
@@ -106,7 +106,7 @@ public class GitContentManager {
      */
     @Inject
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-                             final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
+                             final ContentMapper contentMapper, final AbstractConfigLoader globalProperties) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;

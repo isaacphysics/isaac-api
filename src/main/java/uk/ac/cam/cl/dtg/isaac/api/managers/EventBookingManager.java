@@ -51,7 +51,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -89,7 +89,7 @@ public class EventBookingManager {
     private final EventBookingPersistenceManager bookingPersistenceManager;
     private final EmailManager emailManager;
     private final UserAssociationManager userAssociationManager;
-    private final PropertiesLoader propertiesLoader;
+    private final AbstractConfigLoader propertiesLoader;
     private final GroupManager groupManager;
     private final IUserAccountManager userAccountManager;
     private final ITransactionManager transactionManager;
@@ -105,7 +105,7 @@ public class EventBookingManager {
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
                                final EmailManager emailManager,
                                final UserAssociationManager userAssociationManager,
-                               final PropertiesLoader propertiesLoader,
+                               final AbstractConfigLoader propertiesLoader,
                                final GroupManager groupManager,
                                final IUserAccountManager userAccountManager,
                                final ITransactionManager transactionManager) {

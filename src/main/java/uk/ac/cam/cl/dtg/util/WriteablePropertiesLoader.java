@@ -30,8 +30,8 @@ import com.google.inject.Inject;
  * 
  * @author Stephen Cummins
  */
-public class PropertiesManager extends PropertiesLoader {
-    private static final Logger log = LoggerFactory.getLogger(PropertiesManager.class);
+public class WriteablePropertiesLoader extends PropertiesLoader {
+    private static final Logger log = LoggerFactory.getLogger(WriteablePropertiesLoader.class);
 
     /**
      * This constructor will give attempt to read the contents of the file specified and load each key value pair into
@@ -43,7 +43,7 @@ public class PropertiesManager extends PropertiesLoader {
      *             - if we cannot read the file for whatever reason.
      */
     @Inject
-    public PropertiesManager(final String propertiesFile) throws IOException {
+    public WriteablePropertiesLoader(final String propertiesFile) throws IOException {
         super(propertiesFile);
 
     }
@@ -61,11 +61,11 @@ public class PropertiesManager extends PropertiesLoader {
     public synchronized void saveProperty(final String key, final String value) throws IOException {
         this.getLoadedProperties().setProperty(key, value);
 
-        File file = new File(this.getPropertiesFile());
+        File file = new File(this.getConfigPath());
         OutputStream out = new FileOutputStream(file);
         this.getLoadedProperties().store(out, "");
 
-        log.debug("Writing out properties file " + this.getPropertiesFile());
+        log.debug("Writing out properties file " + this.getConfigPath());
         out.close();
     }
 }

@@ -64,7 +64,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class QuestionFacade extends AbstractSegueFacade {
 
      */
     @Inject
-    public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
+    public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
                           final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,

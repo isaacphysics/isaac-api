@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -16,6 +15,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 /**
  *
@@ -34,7 +34,7 @@ public class ETLFacade extends AbstractSegueFacade {
      * @param properties the propertiesLoader.
      */
     @Inject
-    public ETLFacade(PropertiesLoader properties, ETLManager manager) {
+    public ETLFacade(AbstractConfigLoader properties, ETLManager manager) {
         super(properties, null);
         this.etlManager = manager;
     }

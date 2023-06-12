@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -55,7 +55,7 @@ public class EventBookingManagerTest {
     private EmailManager dummyEmailManager;
     private UserAssociationManager dummyUserAssociationManager;
     private Map<String, String> someAdditionalInformation;
-    private PropertiesLoader dummyPropertiesLoader;
+    private AbstractConfigLoader dummyPropertiesLoader;
     private GroupManager dummyGroupManager;
     private IUserAccountManager dummyUserAccountManager;
     private ITransactionManager dummyTransactionManager;
@@ -71,7 +71,7 @@ public class EventBookingManagerTest {
         this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);
         this.dummyUserAssociationManager = createMock(UserAssociationManager.class);
         this.dummyGroupManager = createMock(GroupManager.class);
-        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
         this.dummyUserAccountManager =  createMock(IUserAccountManager.class);
         this.dummyTransactionManager = createMock(ITransactionManager.class);
         this.dummyTransaction = createMock(ITransaction.class);
