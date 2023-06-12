@@ -224,9 +224,11 @@ public class ContentIndexer {
 
                     if (null != content) {
                         // Walk the content for site-wide searchable fields
-                        StringBuilder searchableContentBuilder = new StringBuilder();
-                        this.collateSearchableContent(content, searchableContentBuilder);
-                        content.setSearchableContent(searchableContentBuilder.toString());
+                        StringBuilder prioritisedContentCollector = new StringBuilder();
+                        StringBuilder contentCollector = new StringBuilder();
+                        this.collateSearchableContent(content, prioritisedContentCollector, contentCollector);
+                        content.setPrioritisedSearchableContent(prioritisedContentCollector.toString());
+                        content.setSearchableContent(contentCollector.toString());
 
                         // add children (and parent) from flattened Set to
                         // cache if they have ids
@@ -482,14 +484,16 @@ public class ContentIndexer {
         return content;
     }
 
-    private void collateSearchableContent(final Content content, final StringBuilder searchableContentBuilder) {
+    private void collateSearchableContent(
+            final Content content, final StringBuilder prioritisedContentCollector, final StringBuilder contentCollector
+    ) {
         if (null != content) {
             // Add the fields of interest to the string builder
             if (null != content.getTitle()) {
-                searchableContentBuilder.append(content.getTitle() + "\n");
+                prioritisedContentCollector.append(content.getTitle()).append("\n");
             }
             if (null != content.getValue()) {
-                searchableContentBuilder.append(content.getValue() + "\n");
+                contentCollector.append(content.getValue()).append("\n");
             }
 
             // Repeat the process for each child
@@ -497,7 +501,7 @@ public class ContentIndexer {
                 for (ContentBase childContentBase : content.getChildren()) {
                     if (childContentBase instanceof Content) {
                         Content child = (Content) childContentBase;
-                        this.collateSearchableContent(child, searchableContentBuilder);
+                        this.collateSearchableContent(child, prioritisedContentCollector, contentCollector);
                     }
                 }
             }
