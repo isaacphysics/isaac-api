@@ -52,6 +52,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -162,6 +163,8 @@ public abstract class IsaacIntegrationTest {
     // Services
     protected static AssignmentService assignmentService;
 
+    protected static AbstractUserPreferenceManager userPreferenceManager;
+
     protected class LoginResult {
         public RegisteredUserDTO user;
         public Cookie cookie;
@@ -269,7 +272,7 @@ public abstract class IsaacIntegrationTest {
         providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
         EmailCommunicator communicator = new EmailCommunicator("localhost", "default@localhost", "Howdy!");
-        AbstractUserPreferenceManager userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
+        userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
 
         Git git = createNiceMock(Git.class);
         GitDb gitDb = new GitDb(git);
@@ -319,6 +322,7 @@ public abstract class IsaacIntegrationTest {
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(), new RegistrationMisuseHandler(emailManager, properties));
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
@@ -374,6 +378,12 @@ public abstract class IsaacIntegrationTest {
     protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
         expect(request.getCookies()).andReturn(cookies).anyTimes();
+        return request;
+    }
+
+    protected HttpServletRequest createRequestWithSession() {
+        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
+        expect(request.getSession()).andReturn(httpSession).anyTimes();
         return request;
     }
 }

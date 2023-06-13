@@ -30,6 +30,8 @@
         <netty.version>4.1.77.Final</netty.version>
         <dependency-check.version>7.1.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
+        <surefire.jacoco.args />
+        <failsafe.jacoco.args />
     </properties>
 
     <repositories>

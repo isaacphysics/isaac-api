@@ -50,6 +50,10 @@ public final class ITConstants {
     public static final String TEST_TUTOR_PASSWORD = "test1234";
     public static final long TEST_TUTOR_ID = 12L;
 
+    public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
+    public static final String TEST_SIGNUP_PASSWORD = "aVeryGoodPassword";
+
+
     // Groups
     public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
     public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
