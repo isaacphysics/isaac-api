@@ -237,6 +237,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
         }
     }
 
+    @Override
     public List<QuizAssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
         if (null == timestamp) {
             throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");
