@@ -27,6 +27,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -44,7 +45,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DefaultValue;
@@ -59,10 +59,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -137,7 +140,7 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can summarize search results
      */
     @Inject
-    public IsaacController(final PropertiesLoader propertiesLoader,
+    public IsaacController(final AbstractConfigLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
@@ -220,8 +223,9 @@ public class IsaacController extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
-            ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    searchString, documentTypes, showNoFilterContent, startIndex, limit);
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
+                    searchString, null, null, null, null, null, null,
+                    new HashSet<>(documentTypes), startIndex, limit, showNoFilterContent);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)

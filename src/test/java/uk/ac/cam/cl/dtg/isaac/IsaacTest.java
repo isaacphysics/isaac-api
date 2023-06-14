@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
@@ -62,7 +63,12 @@ public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
     protected static Date someFurtherPastDate = new Date(System.currentTimeMillis() - 14*24*60*60*1000);
     protected static Date someFutureDate = new Date(System.currentTimeMillis() + 7*24*60*60*1000);
+    protected static Date someDateBeforeQuizAnswerView = new Date(Constants.QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP - 24*60*60*1000);
+    protected static Date someDateAfterQuizAnswerView = new Date(Constants.QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP + 24*60*60*1000);
+    protected static Date someDateMuchAfterQuizAnswerView = new Date(System.currentTimeMillis() + 14*24*60*60*1000);
     protected IsaacQuizDTO studentQuiz;
+    protected IsaacQuizDTO studentQuizPreQuizAnswerChange;
+    protected IsaacQuizDTO studentQuizPostQuizAnswerChange;
     protected IsaacQuiz studentQuizDO;
     protected IsaacQuizDTO teacherQuiz;
     protected IsaacQuizDTO otherQuiz;
@@ -84,6 +90,8 @@ public class IsaacTest {
     protected UserGroupDTO studentInactiveGroup;
 
     protected QuizAssignmentDTO studentAssignment;
+    protected QuizAssignmentDTO studentAssignmentPreQuizAnswerChange;
+    protected QuizAssignmentDTO studentAssignmentPostQuizAnswerChange;
     protected QuizAssignmentDTO overdueAssignment;
     private QuizAssignmentDTO completedAssignment;
     protected ImmutableList<Long> studentGroups;
@@ -95,6 +103,8 @@ public class IsaacTest {
     protected QuizAttemptDTO studentAttempt;
     protected QuizAttemptDTO overdueAttempt;
     protected QuizAttemptDTO completedAttempt;
+    protected QuizAttemptDTO completedAttemptPreQuizAnswerChange;
+    protected QuizAttemptDTO completedAttemptPostQuizAnswerChange;
     protected QuizAttemptDTO overdueCompletedAttempt;
     protected QuizAttemptDTO otherAttempt;
     protected QuizAttemptDTO ownAttempt;
@@ -150,6 +160,8 @@ public class IsaacTest {
         quizSection2.setChildren(ImmutableList.of(question2, question3));
 
         studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
+        studentQuizPreQuizAnswerChange = new IsaacQuizDTO("studentQuizPreQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
+        studentQuizPostQuizAnswerChange = new IsaacQuizDTO("studentQuizPostQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
         teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, false, ImmutableList.of("STUDENT"), null, null);
         otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
@@ -207,19 +219,23 @@ public class IsaacTest {
 
         completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, null, QuizFeedbackMode.OVERALL_MARK);
         studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, null, QuizFeedbackMode.DETAILED_FEEDBACK);
+        studentAssignmentPreQuizAnswerChange = new QuizAssignmentDTO(++id, studentQuizPreQuizAnswerChange.getId(), teacher.getId(), studentGroup.getId(), someDateBeforeQuizAnswerView, someDateAfterQuizAnswerView, null, QuizFeedbackMode.DETAILED_FEEDBACK);
+        studentAssignmentPostQuizAnswerChange = new QuizAssignmentDTO(++id, studentQuizPostQuizAnswerChange.getId(), teacher.getId(), studentGroup.getId(), someDateAfterQuizAnswerView, someDateMuchAfterQuizAnswerView, null, QuizFeedbackMode.DETAILED_FEEDBACK);
         overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, null, QuizFeedbackMode.SECTION_MARKS);
         otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK);
 
         studentInactiveIgnoredAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), somePastDate, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK);
         studentInactiveAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), someFurtherPastDate, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK);
 
-        studentAssignments = ImmutableList.of(completedAssignment, studentAssignment, overdueAssignment, otherAssignment, studentInactiveAssignment);
+        studentAssignments = ImmutableList.of(completedAssignment, studentAssignment, studentAssignmentPreQuizAnswerChange, studentAssignmentPostQuizAnswerChange, overdueAssignment, otherAssignment, studentInactiveAssignment);
 
         teacherAssignmentsToTheirGroups = ImmutableList.<QuizAssignmentDTO>builder().addAll(studentAssignments).add(studentInactiveIgnoredAssignment).build();
 
         studentAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), studentAssignment.getId(), somePastDate, null);
         overdueAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate, null);
         completedAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), studentAssignment.getId(), somePastDate, new Date());
+        completedAttemptPreQuizAnswerChange = new QuizAttemptDTO(++id, student.getId(), studentQuizPreQuizAnswerChange.getId(), studentAssignmentPreQuizAnswerChange.getId(), somePastDate, new Date());
+        completedAttemptPostQuizAnswerChange = new QuizAttemptDTO(++id, student.getId(), studentQuizPostQuizAnswerChange.getId(), studentAssignmentPostQuizAnswerChange.getId(), somePastDate, new Date());
         overdueCompletedAttempt = new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate, new Date());
         otherAttempt = new QuizAttemptDTO(++id, student.getId(), teacherQuiz.getId(), otherAssignment.getId(), somePastDate, null);
 
@@ -227,7 +243,7 @@ public class IsaacTest {
         ownAttempt = new QuizAttemptDTO(++id, student.getId(), otherQuiz.getId(), null, somePastDate, null);
         attemptOnNullFeedbackModeQuiz = new QuizAttemptDTO(101L, student.getId(), teacherQuiz.getId(), null, somePastDate, somePastDate);
 
-        studentAttempts = ImmutableList.of(studentAttempt, overdueAttempt, completedAttempt, overdueCompletedAttempt, otherAttempt, ownAttempt, ownCompletedAttempt, attemptOnNullFeedbackModeQuiz);
+        studentAttempts = ImmutableList.of(studentAttempt, overdueAttempt, completedAttempt, completedAttemptPreQuizAnswerChange, completedAttemptPostQuizAnswerChange, overdueCompletedAttempt, otherAttempt, ownAttempt, ownCompletedAttempt, attemptOnNullFeedbackModeQuiz);
     }
 
     protected void initializeMocks() throws ContentManagerException, SegueDatabaseException {
@@ -237,6 +253,8 @@ public class IsaacTest {
             expect(m.getAvailableQuizzes(true,"STUDENT", 0, 9000)).andStubReturn(wrap(studentQuizSummary));
             expect(m.getAvailableQuizzes(false,"TEACHER", 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
             expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
+            expect(m.findQuiz(studentQuizPreQuizAnswerChange.getId())).andStubReturn(studentQuizPreQuizAnswerChange);
+            expect(m.findQuiz(studentQuizPostQuizAnswerChange.getId())).andStubReturn(studentQuizPostQuizAnswerChange);
             expect(m.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
             expect(m.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
             expect(m.extractSectionObjects(studentQuiz)).andStubReturn(ImmutableList.of(quizSection1, quizSection2));

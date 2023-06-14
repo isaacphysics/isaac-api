@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Collections;
 import java.util.Date;
@@ -50,7 +50,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     @Before
     public void setUp() throws ContentManagerException, SegueDatabaseException {
-        PropertiesLoader properties = createMock(PropertiesLoader.class);
+        AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
         emailService = createMock(EmailService.class);
         quizAssignmentPersistenceManager = createMock(IQuizAssignmentPersistenceManager.class);
 

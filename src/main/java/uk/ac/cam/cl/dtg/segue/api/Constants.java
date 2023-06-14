@@ -430,14 +430,13 @@ public final class Constants {
     public static final String TITLE_FIELDNAME = "title";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
-    public static final String VALUE_FIELDNAME = "value";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
-    public static final String CHILDREN_FIELDNAME = "children";
     public static final String DATE_FIELDNAME = "date";
     public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
+    public static final String PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME = "prioritisedSearchableContent";
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";

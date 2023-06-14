@@ -37,7 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import com.google.inject.Inject;
 
@@ -53,7 +53,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     private final IPasswordDataManager passwordDataManager;
     private final IUserDataManager userDataManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     private final Map<String, ISegueHashingAlgorithm> possibleAlgorithms;
     private final ISegueHashingAlgorithm preferredAlgorithm;
@@ -71,7 +71,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      */
     @Inject
     public SegueLocalAuthenticator(final IUserDataManager userDataManager, final IPasswordDataManager passwordDataManager,
-                                   final PropertiesLoader properties,
+                                   final AbstractConfigLoader properties,
                                    final Map<String, ISegueHashingAlgorithm> possibleAlgorithms,
                                    final ISegueHashingAlgorithm preferredAlgorithm) {
         this.userDataManager = userDataManager;

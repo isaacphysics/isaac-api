@@ -55,7 +55,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 /**
  * Test class for the EmailManager class.
@@ -74,7 +74,7 @@ public class EmailManagerTest {
     private RegisteredUserDTO userDTOWithNulls;
     private static final Logger log = LoggerFactory.getLogger(EmailManagerTest.class);
     private EmailCommunicationMessage email = null;
-    private PropertiesLoader mockPropertiesLoader;
+    private AbstractConfigLoader mockPropertiesLoader;
     private GitContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
@@ -127,7 +127,7 @@ public class EmailManagerTest {
         // Create dummy email preferences
         userPreferenceManager = EasyMock.createMock(PgUserPreferenceManager.class);
 
-        mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
+        mockPropertiesLoader = EasyMock.createMock(AbstractConfigLoader.class);
         EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
         EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com").anyTimes();
         EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).andReturn("no-reply@isaacphysics.org").anyTimes();

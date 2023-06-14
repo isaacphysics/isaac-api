@@ -44,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 /**
  * Test class for the user manager class.
@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 public class GameboardsFacadeTest {
 
-	private PropertiesLoader dummyPropertiesLoader = null;
+	private AbstractConfigLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
 	private UserAccountManager userManager;
@@ -69,7 +69,7 @@ public class GameboardsFacadeTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+		this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
 		this.userManager = createMock(UserAccountManager.class);

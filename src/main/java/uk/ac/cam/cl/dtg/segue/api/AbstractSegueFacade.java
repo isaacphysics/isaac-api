@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,7 +45,7 @@ import java.util.List;
 public abstract class AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AbstractSegueFacade.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final ILogManager logManager;
 
     /**
@@ -56,7 +56,7 @@ public abstract class AbstractSegueFacade {
      * @param logManager
      *            - For logging interesting user events.
      */
-    public AbstractSegueFacade(final PropertiesLoader properties, final ILogManager logManager) {
+    public AbstractSegueFacade(final AbstractConfigLoader properties, final ILogManager logManager) {
         this.properties = properties;
         this.logManager = logManager;
     }
@@ -66,7 +66,7 @@ public abstract class AbstractSegueFacade {
      * 
      * @return the properties
      */
-    public PropertiesLoader getProperties() {
+    public AbstractConfigLoader getProperties() {
         return properties;
     }
 

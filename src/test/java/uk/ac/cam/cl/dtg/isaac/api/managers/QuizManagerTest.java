@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.List;
 
@@ -25,12 +25,12 @@ import static org.powermock.api.easymock.PowerMock.replayAll;
 public class QuizManagerTest extends AbstractManagerTest {
 
     private QuizManager quizManager;
-    private PropertiesLoader properties;
+    private AbstractConfigLoader properties;
     private IsaacQuizDTO brokenQuiz;
 
     @Before
     public void setUp() {
-        properties = createMock(PropertiesLoader.class);
+        properties = createMock(AbstractConfigLoader.class);
 
         ContentService contentService = createMock(ContentService.class);
         GitContentManager contentManager = createMock(GitContentManager.class);

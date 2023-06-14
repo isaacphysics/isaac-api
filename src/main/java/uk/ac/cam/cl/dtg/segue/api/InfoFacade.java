@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -71,7 +71,7 @@ public class InfoFacade extends AbstractSegueFacade {
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final PropertiesLoader properties, final GitContentManager contentManager,
+    public InfoFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
                       final SegueJobService segueJobService,
                       final ILogManager logManager) {
         super(properties, logManager);

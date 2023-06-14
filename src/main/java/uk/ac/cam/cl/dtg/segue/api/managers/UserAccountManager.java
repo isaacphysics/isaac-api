@@ -61,7 +61,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -103,7 +103,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final UserAuthenticationManager userAuthenticationManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     private final ISecondFactorAuthenticator secondFactorManager;
 
@@ -137,7 +137,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - Allows user preferences to be managed.
      */
     @Inject
-    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final PropertiesLoader properties,
+    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final AbstractConfigLoader properties,
                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                               final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,

@@ -67,7 +67,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -148,7 +148,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      *            - for parsing, validating, and persisting quiz question answers.
      */
     @Inject
-    public QuizFacade(final PropertiesLoader properties, final ILogManager logManager,
+    public QuizFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                       final GitContentManager contentManager, final QuizManager quizManager,
                       final UserAccountManager userManager, final UserAssociationManager associationManager,
                       final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,
@@ -1519,6 +1519,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                     "That student has not completed this test assignment.").toResponse();
+            }
+
+            if (!isUserAnAdmin(userManager, user) && !user.getId().equals(student.getId()) && assignment.getCreationDate().getTime() < QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You cannot view student's answers to test assignments created before "
+                                + new Date(QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) + ".").toResponse();
             }
 
             IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());

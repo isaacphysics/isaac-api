@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -50,7 +50,7 @@ import static org.junit.Assert.fail;
 @PowerMockIgnore({"jakarta.ws.*"})
 public class GroupManagerTest {
 
-	private PropertiesLoader dummyPropertiesLoader;
+	private AbstractConfigLoader dummyPropertiesLoader;
 
 	private MapperFacade dummyMapper;
 	private ICommunicator<EmailCommunicationMessage> dummyCommunicator;
@@ -70,7 +70,7 @@ public class GroupManagerTest {
 	public final void setUp() throws Exception {
 		this.dummyMapper = createMock(MapperFacade.class);
 		this.dummyCommunicator = createMock(ICommunicator.class);
-		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+		this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 		this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 		
 		this.groupDataManager = createMock(IUserGroupPersistenceManager.class);
