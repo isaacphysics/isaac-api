@@ -68,12 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -242,7 +237,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticate(request, someInvalidProvider);
+            userManager.authenticate(request, someInvalidProvider, false);
             fail("Exception expected");
         } catch (AuthenticationProviderMappingException e) {
             // pass
@@ -289,7 +284,7 @@ public class UserManagerTest {
         replay(dummyAuth);
 
         // Act
-        URI redirectURI = userManager.authenticate(request, someValidProviderString);
+        URI redirectURI = userManager.authenticate(request, someValidProviderString, false);
 
         // Assert
         verify(dummyQuestionDatabase, request);
@@ -366,6 +361,8 @@ public class UserManagerTest {
 
         expect(((IFederatedAuthenticator) dummyAuth).getAuthenticationProvider())
                 .andReturn(AuthenticationProvider.TEST).atLeastOnce();
+
+        expect(dummyAuth.getFriendlyName()).andReturn("Test").atLeastOnce();
 
         // User object back from provider
         UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",

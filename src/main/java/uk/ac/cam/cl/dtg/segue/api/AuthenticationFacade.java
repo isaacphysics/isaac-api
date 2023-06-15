@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -174,6 +175,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *            - the http request of the user wishing to authenticate
      * @param signinProvider
      *            - string representing the supported auth provider so that we know who to redirect the user to.
+     * @param isSignUp
+     *            - whether this is an initial sign-up, which may be used to direct the client to a sign-up flow on the IdP.
+     *
      * @return Redirect response to the auth providers site.
      */
     @GET
@@ -181,7 +185,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the SSO login redirect URL for an authentication provider.")
     public final Response authenticate(@Context final HttpServletRequest request,
-            @PathParam("provider") final String signinProvider) {
+                                       @PathParam("provider") final String signinProvider,
+                                       @QueryParam("signup") final boolean isSignUp) {
         
         if (userManager.isRegisteredUserLoggedIn(request)) {
             // if they are already logged in then we do not want to proceed with
@@ -192,7 +197,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         
         try {
             Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
-                    .put(REDIRECT_URL, userManager.authenticate(request, signinProvider)).build();
+                    .put(REDIRECT_URL, userManager.authenticate(request, signinProvider, isSignUp)).build();
             
             return Response.ok(redirectResponse).build();
         }  catch (IOException e) {
