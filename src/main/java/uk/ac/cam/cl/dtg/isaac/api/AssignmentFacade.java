@@ -996,8 +996,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // Assert that there is at least one assignment, and that multiple assignments are only set by staff
             if (assignmentDTOsFromClient.size() == 0) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You need to specify at least one assignment to set.").toResponse();
-            } else if (!userIsStaff && assignmentDTOsFromClient.size() > 1) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You need a staff account to set assignments to more than one group at once!").toResponse();
             }
 
             List<AssignmentStatusDTO> assigmentStatuses = new ArrayList<>();
