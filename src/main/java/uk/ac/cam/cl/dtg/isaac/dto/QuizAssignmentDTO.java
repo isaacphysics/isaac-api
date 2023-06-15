@@ -36,6 +36,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
     private Date creationDate;
     private Date dueDate;
     private QuizFeedbackMode quizFeedbackMode;
+    private String title;
 
     private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
     private List<QuizUserFeedbackDTO> userFeedback; // For augmenting all student's marks when a teacher fetches assignment.
@@ -58,9 +59,12 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *            - the optional date the assignment should be completed by.
      * @param quizFeedbackMode
      *            - what level of feedback to give to students.
+     * @param title
+     *           - the title of the assignment
      */
     public QuizAssignmentDTO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
-                             final Date creationDate, final Date dueDate, final QuizFeedbackMode quizFeedbackMode) {
+                             final Date creationDate, final Date dueDate, final QuizFeedbackMode quizFeedbackMode,
+                             @Nullable final String title) {
         this.id = id;
         this.quizId = quizId;
         this.ownerUserId = ownerUserId;
@@ -68,6 +72,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.creationDate = creationDate;
         this.dueDate = dueDate;
         this.quizFeedbackMode = quizFeedbackMode;
+        this.title = title;
     }
 
     /**
@@ -255,6 +260,14 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.quiz = quiz;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
     @Override
     public String toString() {
         return "QuizAssignmentDTO [" +
@@ -265,6 +278,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
             ", creationDate=" + creationDate +
             ", dueDate=" + dueDate +
             ", quizFeedbackMode=" + quizFeedbackMode +
+            ", title=" + title +
             ']';
     }
 }

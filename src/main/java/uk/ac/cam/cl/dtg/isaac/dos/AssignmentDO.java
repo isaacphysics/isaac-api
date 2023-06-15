@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import jakarta.annotation.Nullable;
+
 import java.util.Date;
 
 /**
@@ -29,6 +31,7 @@ public class AssignmentDO {
 	private Date creationDate;
 	private Date dueDate;
 	private Date scheduledStartDate;
+	private String title;
 
 	/**
 	 * Complete AssignmentDO constructor with all dependencies.
@@ -46,9 +49,12 @@ public class AssignmentDO {
 	 * @param dueDate
 	 * @param scheduledStartDate
 	 *        - the date and time the assignment should have notification emails sent to its group (using Quartz)
+	 * @param title
+	 *        - the title of the assignment
 	 */
     public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-						String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate) {
+						final String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate,
+						@Nullable final String title) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
@@ -57,6 +63,7 @@ public class AssignmentDO {
 		this.creationDate = creationDate;
 		this.dueDate = dueDate;
 		this.scheduledStartDate = scheduledStartDate;
+		this.title = title;
 	}
 	
 	/**
@@ -223,5 +230,13 @@ public class AssignmentDO {
 	 */
 	public void setScheduledStartDate(Date scheduledStartDate) {
 		this.scheduledStartDate = scheduledStartDate;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(final String title) {
+		this.title = title;
 	}
 }

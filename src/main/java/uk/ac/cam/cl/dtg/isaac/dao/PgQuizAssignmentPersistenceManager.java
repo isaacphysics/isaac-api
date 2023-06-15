@@ -64,8 +64,8 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     public Long saveAssignment(final QuizAssignmentDTO assignment) throws SegueDatabaseException {
         QuizAssignmentDO assignmentToSave = mapper.map(assignment, QuizAssignmentDO.class);
 
-        String query = "INSERT INTO quiz_assignments(quiz_id, group_id, owner_user_id, creation_date, due_date, quiz_feedback_mode)" +
-                " VALUES (?, ?, ?, ?, ?, ?);";
+        String query = "INSERT INTO quiz_assignments(quiz_id, group_id, owner_user_id, creation_date, due_date, quiz_feedback_mode, title)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -86,6 +86,12 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
             }
 
             pst.setString(6, assignmentToSave.getQuizFeedbackMode().name());
+
+            if (assignmentToSave.getTitle() != null) {
+                pst.setString(7, assignmentToSave.getTitle());
+            } else {
+                pst.setNull(7, Types.VARCHAR);
+            }
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save assignment.");
@@ -261,6 +267,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
         return new QuizAssignmentDO(sqlResults.getLong("id"), sqlResults.getString("quiz_id"),
                 sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate,
-                preciseDueDate, QuizFeedbackMode.valueOf(sqlResults.getString("quiz_feedback_mode")));
+                preciseDueDate, QuizFeedbackMode.valueOf(sqlResults.getString("quiz_feedback_mode")),
+                sqlResults.getString("title"));
     }
 }

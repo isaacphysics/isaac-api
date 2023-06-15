@@ -67,8 +67,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     public Long saveAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
         AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
 
-        String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes, scheduled_start_date)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?);";
+        String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes, scheduled_start_date, title)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -98,6 +98,12 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 pst.setTimestamp(7, new java.sql.Timestamp(assignmentToSave.getScheduledStartDate().getTime()));
             } else {
                 pst.setNull(7, Types.TIMESTAMP);
+            }
+
+            if (assignment.getTitle() != null) {
+                pst.setString(8, assignmentToSave.getTitle());
+            } else {
+                pst.setNull(8, Types.VARCHAR);
             }
 
             if (pst.executeUpdate() == 0) {
@@ -343,7 +349,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
         }
 
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
-                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), sqlResults.getString("notes"), preciseDate,
-                preciseDueDate, preciseScheduledStartDate);
+                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"),
+                sqlResults.getString("notes"), preciseDate, preciseDueDate, preciseScheduledStartDate,
+                sqlResults.getString("title"));
     }
 }

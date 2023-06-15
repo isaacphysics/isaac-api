@@ -67,7 +67,8 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
             null, studentQuiz.getId(),
             teacher.getId(), studentGroup.getId(),
             somePastDate, someFutureDate,
-            QuizFeedbackMode.OVERALL_MARK);
+            QuizFeedbackMode.OVERALL_MARK,
+            null);
     }
 
     @Test

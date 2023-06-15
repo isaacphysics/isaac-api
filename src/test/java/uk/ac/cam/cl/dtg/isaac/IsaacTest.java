@@ -217,15 +217,15 @@ public class IsaacTest {
 
         studentGroups = ImmutableList.of(studentGroup.getId(), studentInactiveGroup.getId());
 
-        completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK);
-        studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.DETAILED_FEEDBACK);
-        studentAssignmentPreQuizAnswerChange = new QuizAssignmentDTO(++id, studentQuizPreQuizAnswerChange.getId(), teacher.getId(), studentGroup.getId(), someDateBeforeQuizAnswerView, someDateAfterQuizAnswerView, QuizFeedbackMode.DETAILED_FEEDBACK);
-        studentAssignmentPostQuizAnswerChange = new QuizAssignmentDTO(++id, studentQuizPostQuizAnswerChange.getId(), teacher.getId(), studentGroup.getId(), someDateAfterQuizAnswerView, someDateMuchAfterQuizAnswerView, QuizFeedbackMode.DETAILED_FEEDBACK);
-        overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.SECTION_MARKS);
-        otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
+        completedAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.OVERALL_MARK, null);
+        studentAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.DETAILED_FEEDBACK, null);
+        studentAssignmentPreQuizAnswerChange = new QuizAssignmentDTO(++id, studentQuizPreQuizAnswerChange.getId(), teacher.getId(), studentGroup.getId(), someDateBeforeQuizAnswerView, someDateAfterQuizAnswerView, QuizFeedbackMode.DETAILED_FEEDBACK, null);
+        studentAssignmentPostQuizAnswerChange = new QuizAssignmentDTO(++id, studentQuizPostQuizAnswerChange.getId(), teacher.getId(), studentGroup.getId(), someDateAfterQuizAnswerView, someDateMuchAfterQuizAnswerView, QuizFeedbackMode.DETAILED_FEEDBACK, null);
+        overdueAssignment = new QuizAssignmentDTO(++id, studentQuiz.getId(), teacher.getId(), studentGroup.getId(), someFurtherPastDate, somePastDate, QuizFeedbackMode.SECTION_MARKS, null);
+        otherAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK, null);
 
-        studentInactiveIgnoredAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
-        studentInactiveAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), someFurtherPastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK);
+        studentInactiveIgnoredAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), somePastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK, null);
+        studentInactiveAssignment = new QuizAssignmentDTO(++id, teacherQuiz.getId(), teacher.getId(), studentInactiveGroup.getId(), someFurtherPastDate, someFutureDate, QuizFeedbackMode.OVERALL_MARK, null);
 
         studentAssignments = ImmutableList.of(completedAssignment, studentAssignment, studentAssignmentPreQuizAnswerChange, studentAssignmentPostQuizAnswerChange, overdueAssignment, otherAssignment, studentInactiveAssignment);
 

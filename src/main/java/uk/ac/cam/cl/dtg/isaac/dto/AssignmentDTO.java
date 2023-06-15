@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.Date;
 
+import jakarta.annotation.Nullable;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,6 +37,7 @@ public class AssignmentDTO implements IAssignmentLike {
     private Date creationDate;
     private Date dueDate;
     private Date scheduledStartDate;
+    private String title;
 
     /**
      * Complete AssignmentDTO constructor with all dependencies.
@@ -55,10 +57,12 @@ public class AssignmentDTO implements IAssignmentLike {
      *        - the date the assignment is due (should be completed by)
      * @param scheduledStartDate
      *        - the date the assignment should be shown to users/groups that it is set to
+     * @param title
+     *       - the title of the assignment
      */
     public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
                          String groupName, String notes, final Date creationDate, final Date dueDate,
-                         final Date scheduledStartDate) {
+                         final Date scheduledStartDate, @Nullable final String title) {
         this.id = id;
         this.gameboardId = gameboardId;
         this.ownerUserId = ownerUserId;
@@ -68,6 +72,7 @@ public class AssignmentDTO implements IAssignmentLike {
         this.creationDate = creationDate;
         this.dueDate = dueDate;
         this.scheduledStartDate = scheduledStartDate;
+        this.title = title;
     }
 
     /**
@@ -296,4 +301,11 @@ public class AssignmentDTO implements IAssignmentLike {
         this.scheduledStartDate = scheduledStartDate;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(final String title) {
+        this.title = title;
+    }
 }

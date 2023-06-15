@@ -29,6 +29,7 @@ public class QuizAssignmentDO {
     private Date creationDate;
     private Date dueDate;
     private QuizFeedbackMode quizFeedbackMode;
+    private String title;
 
     /**
      * Complete AssignmentDO constructor with all dependencies.
@@ -47,9 +48,12 @@ public class QuizAssignmentDO {
      *            - optional date the assignment should be completed by.
      * @param quizFeedbackMode
      *            - what level of feedback to give to students.
+     * @param title
+     *           - optional title for the assignment.
      */
     public QuizAssignmentDO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
-                            final Date creationDate, @Nullable final Date dueDate, final QuizFeedbackMode quizFeedbackMode) {
+                            final Date creationDate, @Nullable final Date dueDate, final QuizFeedbackMode quizFeedbackMode,
+                            @Nullable final String title) {
         this.id = id;
         this.quizId = quizId;
         this.ownerUserId = ownerUserId;
@@ -57,6 +61,7 @@ public class QuizAssignmentDO {
         this.creationDate = creationDate;
         this.dueDate = dueDate;
         this.quizFeedbackMode = quizFeedbackMode;
+        this.title = title;
     }
 
     /**
@@ -201,5 +206,13 @@ public class QuizAssignmentDO {
      */
     public void setQuizFeedbackMode(final QuizFeedbackMode quizFeedbackMode) {
         this.quizFeedbackMode = quizFeedbackMode;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(final String title) {
+        this.title = title;
     }
 }

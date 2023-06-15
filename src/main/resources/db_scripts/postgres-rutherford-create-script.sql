@@ -45,7 +45,8 @@ CREATE TABLE public.assignments (
     notes text,
     creation_date timestamp without time zone,
     due_date timestamp with time zone,
-    scheduled_start_date timestamp with time zone
+    scheduled_start_date timestamp with time zone,
+    title varchar(255)
 );
 
 
@@ -365,7 +366,8 @@ CREATE TABLE public.quiz_assignments (
     creation_date timestamp without time zone,
     due_date timestamp with time zone,
     quiz_feedback_mode text NOT NULL,
-    deleted boolean DEFAULT false NOT NULL
+    deleted boolean DEFAULT false NOT NULL,
+    title varchar(255),
 );
 
 

@@ -22,6 +22,9 @@ public interface IAssignmentLike {
     @Nullable
     Date getDueDate();
 
+    @Nullable
+    String getTitle();
+
     default boolean dueDateIsAfter(Date date) {
         Date dueDate = this.getDueDate();
         if (null == dueDate) {

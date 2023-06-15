@@ -71,7 +71,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         QuizAssignmentDTO quizAssignmentDTO = new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                 TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5),
-                QuizFeedbackMode.DETAILED_FEEDBACK);
+                QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // Act
         // make request
@@ -99,7 +99,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         QuizAssignmentDTO quizAssignmentDTO = new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                 TEST_TUTOR_ID, TEST_TUTORS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5),
-                QuizFeedbackMode.DETAILED_FEEDBACK);
+                QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // Act
         // make request
