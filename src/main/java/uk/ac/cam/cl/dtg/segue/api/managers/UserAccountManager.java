@@ -18,6 +18,9 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Response;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.EnumUtils;
@@ -27,12 +30,47 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.TOTPSharedSecret;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidNameException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -42,30 +80,8 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
-import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dos.users.TOTPSharedSecret;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
@@ -111,7 +127,9 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final Pattern restrictedSignupEmailRegex;
     private static final int USER_NAME_MAX_LENGTH = 255;
-    private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
+    private static final Pattern USER_NAME_PERMITTED_CHARS_REGEX = Pattern.compile("^[\\p{L}\\d_\\-' ]+$", Pattern.CANON_EQ);
+    private static final Pattern EMAIL_PERMITTED_CHARS_REGEX = Pattern.compile("^[a-zA-Z0-9!#$%&'+\\-=?^_`.{|}~@]+$");
+    private static final Pattern EMAIL_CONSECUTIVE_FULL_STOP_REGEX = Pattern.compile("\\.\\.");
 
     /**
      * Create an instance of the user manager class.
@@ -1008,7 +1026,7 @@ public class UserAccountManager implements IUserAccountManager {
      *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
-            final HttpServletResponse response, final RegisteredUser user, final String newPassword,
+                                                        final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
             EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
@@ -1071,7 +1089,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         // send an email confirmation and set up verification
         try {
-        	RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
+            RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
 
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL",
                     generateEmailVerificationURL(userToReturnDTO, userToReturn.getEmailVerificationToken()));
@@ -1084,7 +1102,7 @@ public class UserAccountManager implements IUserAccountManager {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         } catch (NoUserException e) {
             log.error("Registration email could not be sent due to not being able to locate the user: " + e.getMessage());
-		}
+        }
 
         // save the user again with updated token
         //TODO: do we need this?
@@ -1854,8 +1872,16 @@ public class UserAccountManager implements IUserAccountManager {
      * @return true if it meets the internal storage requirements, false if not.
      */
     private boolean isUserValid(final RegisteredUser userToValidate) {
-        if (userToValidate.getEmail() == null || userToValidate.getEmail().isEmpty()
-                || !userToValidate.getEmail().matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")) {
+        return (userToValidate.getEmail() != null) && isEmailValid(userToValidate.getEmail());
+    }
+
+    public static final boolean isEmailValid(String email) {
+        if (email == null
+                || email.isEmpty()
+                || !email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")
+                || !EMAIL_PERMITTED_CHARS_REGEX.matcher(email).matches()
+                || EMAIL_CONSECUTIVE_FULL_STOP_REGEX.matcher(email).find()
+        ) {
             return false;
         }
         return true;
@@ -1869,8 +1895,12 @@ public class UserAccountManager implements IUserAccountManager {
      * @return true if the name is valid, false otherwise.
      */
     public static final boolean isUserNameValid(final String name) {
-        if (null == name || name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
-                || name.isEmpty()) {
+        if (null == name
+                || name.isEmpty()
+                || name.isBlank()
+                || name.length() > USER_NAME_MAX_LENGTH
+                || !USER_NAME_PERMITTED_CHARS_REGEX.matcher(name).matches()
+        ) {
             return false;
         }
         return true;
