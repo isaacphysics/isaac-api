@@ -31,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+
 
 /**
  * Validator that only provides functionality to validate Numeric questions.
@@ -63,8 +65,8 @@ public class IsaacNumericValidator implements IValidator {
         Quantity answerFromUser = (Quantity) answer;
 
         // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
-        int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), ValidationUtils.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
-        int significantFiguresMin = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMin(), ValidationUtils.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int significantFiguresMin = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
 
         log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
                 + isaacNumericQuestion.getId() + "'");

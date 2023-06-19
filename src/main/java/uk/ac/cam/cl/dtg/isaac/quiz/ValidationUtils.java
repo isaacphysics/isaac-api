@@ -10,12 +10,12 @@ import java.util.Objects;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+
 /**
  * Utility class for validation of various types of input.
  */
 public final class ValidationUtils {
-
-    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
 
     /**
      * A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.

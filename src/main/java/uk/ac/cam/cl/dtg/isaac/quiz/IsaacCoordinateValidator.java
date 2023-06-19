@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+
 public class IsaacCoordinateValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacCoordinateValidator.class);
 
@@ -43,8 +45,8 @@ public class IsaacCoordinateValidator implements IValidator {
         CoordinateChoice submittedChoice = (CoordinateChoice) answer;
 
         // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
-        int significantFiguresMax = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), ValidationUtils.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
-        int significantFiguresMin = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), ValidationUtils.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int significantFiguresMax = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int significantFiguresMin = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
 
         // STEP 0: Is it even possible to answer this question?
 

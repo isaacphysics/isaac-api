@@ -128,6 +128,8 @@ public final class Constants {
 
     public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
 
+    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
+
     /**
      * Class to represent Isaac log types.
      */
