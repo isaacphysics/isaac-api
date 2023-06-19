@@ -60,7 +60,21 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = new Content("You did not provide an answer.");
         }
 
-        // Potentially unsafe cast, but we trust the front end to have sent us the right type of items.
+        // Check that all the items in the submitted answer are CoordinateItems.
+        for (Object item : submittedChoice.getItems()) {
+            if (!(item instanceof CoordinateItem)) {
+                log.error("Expected list of CoordinateItems, but found a different type of item in choice for question id: "
+                        + coordinateQuestion.getId());
+                feedback = new Content("You did not provide a valid answer.");
+                break;
+            }
+        }
+
+        if (feedback != null)  {
+            return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+        }
+
+        // Then cast the submitted items to CoordinateItems.
         List<CoordinateItem> submittedItems = submittedChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
 
         // Check if any coordinates are missing
