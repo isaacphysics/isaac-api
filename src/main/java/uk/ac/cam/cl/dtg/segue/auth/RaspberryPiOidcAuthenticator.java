@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
+public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSignupFlow {
     private static final Logger log = LoggerFactory.getLogger(RaspberryPiOidcAuthenticator.class);
 
     private static Cache<String, IdTokenResponse> credentialStore;
@@ -136,6 +136,11 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
+    public String getFriendlyName() {
+        return "Raspberry Pi Foundation";
+    }
+
+    @Override
     public synchronized UserFromAuthProvider getUserInfo(String internalProviderReference) throws NoUserException, IOException, AuthenticatorSecurityException {
         IdTokenResponse response = credentialStore.getIfPresent(internalProviderReference);
 
@@ -195,13 +200,25 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
 
     @Override
     public String getAuthorizationUrl(String antiForgeryStateToken) {
-        return new AuthorizationCodeRequestUrl(this.idpMetadata.getAuthorizationEndpoint(), this.clientId)
+        return this.getAuthorizationUrl(antiForgeryStateToken, false);
+    }
+
+    @Override
+    public String getAuthorizationUrl(String antiForgeryStateToken, boolean isSignUpFlow) {
+        AuthorizationCodeRequestUrl url =  new AuthorizationCodeRequestUrl(this.idpMetadata.getAuthorizationEndpoint(), this.clientId)
                 .setScopes(requestedScopes)
                 .setRedirectUri(callbackUri)
                 .setState(antiForgeryStateToken)
                 .set(LOGIN_OPTIONS_PARAM_NAME, LOGIN_OPTION_REDIRECT_AFTER_SIGNUP)
-                .set(BRAND_PARAM_NAME, BRAND)
-                .build();
+                .set(BRAND_PARAM_NAME, BRAND);
+
+        if (isSignUpFlow) {
+            url.set(LOGIN_OPTIONS_PARAM_NAME, String.format("%s,%s", LOGIN_OPTION_REDIRECT_AFTER_SIGNUP, LOGIN_OPTION_FORCE_SIGNUP));
+        } else {
+            url.set(LOGIN_OPTIONS_PARAM_NAME, LOGIN_OPTION_REDIRECT_AFTER_SIGNUP);
+        }
+
+        return url.build();
     }
 
     @Override

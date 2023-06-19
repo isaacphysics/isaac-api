@@ -126,7 +126,6 @@ public class EmailService {
                             userBatch,
                             emailTemplate,
                             EmailType.ASSIGNMENTS,
-                            Constants.IsaacMailGunTemplate.ASSIGNMENT,
                             variables,
                             null
                     );

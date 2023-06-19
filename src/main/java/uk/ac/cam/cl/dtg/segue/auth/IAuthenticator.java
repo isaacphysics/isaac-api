@@ -23,9 +23,16 @@ package uk.ac.cam.cl.dtg.segue.auth;
 public interface IAuthenticator {
 	
 	/**
-	 * Returns a string representation of the providers name.
+	 * Returns a string representation of the provider's name, which can be used to uniquely identify the provider.
 	 * 
 	 * @return AuthenticationProvider
 	 */
 	AuthenticationProvider getAuthenticationProvider();
+
+	/**
+	 * Returns a human-readable string representation of the provider's name, which can be used in user-facing messages.
+	 *
+	 * @return The provider's friendly name.
+	 */
+	String getFriendlyName();
 }
