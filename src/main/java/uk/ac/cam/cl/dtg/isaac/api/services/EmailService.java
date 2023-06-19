@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import feign.FeignException;
 import com.google.common.base.Strings;
@@ -39,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import jakarta.annotation.Nullable;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.text.DateFormat;
@@ -46,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Map;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_EMAILS_BETA_OPT_IN;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
@@ -59,14 +62,14 @@ public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
     private final MailGunEmailManager mailGunEmailManager;
     private final GroupManager groupManager;
     private final UserAccountManager userManager;
 
     @Inject
-    public EmailService(final PropertiesLoader properties, final EmailManager emailManager,
+    public EmailService(final AbstractConfigLoader properties, final EmailManager emailManager,
                         final GroupManager groupManager, final UserAccountManager userManager,
                         final MailGunEmailManager mailGunEmailManager) {
         this.properties = properties;
@@ -118,14 +121,15 @@ public class EmailService {
             EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
 
             if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
-                mailGunEmailManager.sendBatchEmails(
-                        groupManager.getUsersInGroup(userGroupDTO),
-                        emailTemplate,
-                        EmailType.ASSIGNMENTS,
-                        Constants.IsaacMailGunTemplate.ASSIGNMENT,
-                        variables,
-                        null
-                );
+                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE).forEach(userBatch -> {
+                    mailGunEmailManager.sendBatchEmails(
+                            userBatch,
+                            emailTemplate,
+                            EmailType.ASSIGNMENTS,
+                            variables,
+                            null
+                    );
+                });
             } else {
                 // If user is not in the MailGun assignment emails beta list, use our standard email method
                 Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
@@ -145,8 +149,6 @@ public class EmailService {
             log.error("Could not send assignment email because owner did not exist.", e);
         } catch (ContentManagerException | ResourceNotFoundException e) {
             log.error("Could not send assignment email because of content error.", e);
-        } catch (FeignException e) {
-            log.error("Error sending assignment email via MailGun API.", e);
         }
     }
 }

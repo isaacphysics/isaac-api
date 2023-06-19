@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import com.google.inject.Inject;
 
@@ -41,7 +41,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
     public static final Integer HARD_THRESHOLD = 50;
     public static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
-    private PropertiesLoader properties;
+    private AbstractConfigLoader properties;
     private EmailManager emailManager;
 
     /**
@@ -51,7 +51,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public GroupManagerLookupMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public GroupManagerLookupMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }

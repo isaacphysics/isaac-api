@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,12 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -89,7 +84,7 @@ public class UserManagerTest {
     private String dummyHMACSalt;
     private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
     private String dummyHostName;
-    private PropertiesLoader dummyPropertiesLoader;
+    private AbstractConfigLoader dummyPropertiesLoader;
     private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
     private MapperFacade dummyMapper;
@@ -123,7 +118,7 @@ public class UserManagerTest {
         this.dummyHostName = "bob";
         this.dummyMapper = createMock(MapperFacade.class);
         this.dummyQueue = createMock(EmailManager.class);
-        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
         this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 
         this.dummyUserCache = createMock(IAnonymousUserDataManager.class);
@@ -242,7 +237,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticate(request, someInvalidProvider);
+            userManager.authenticate(request, someInvalidProvider, false);
             fail("Exception expected");
         } catch (AuthenticationProviderMappingException e) {
             // pass
@@ -289,7 +284,7 @@ public class UserManagerTest {
         replay(dummyAuth);
 
         // Act
-        URI redirectURI = userManager.authenticate(request, someValidProviderString);
+        URI redirectURI = userManager.authenticate(request, someValidProviderString, false);
 
         // Assert
         verify(dummyQuestionDatabase, request);
@@ -366,6 +361,8 @@ public class UserManagerTest {
 
         expect(((IFederatedAuthenticator) dummyAuth).getAuthenticationProvider())
                 .andReturn(AuthenticationProvider.TEST).atLeastOnce();
+
+        expect(dummyAuth.getFriendlyName()).andReturn("Test").atLeastOnce();
 
         // User object back from provider
         UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",

@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
@@ -49,10 +50,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 public class MailGunEmailManager {
 
@@ -61,48 +67,31 @@ public class MailGunEmailManager {
 
     private MailgunMessagesApi mailgunMessagesApi;
     private final AbstractUserPreferenceManager userPreferenceManager;
-    private final PropertiesLoader globalProperties;
+    private final AbstractConfigLoader globalProperties;
+    private final ExecutorService executor;
 
     @Inject
-    public MailGunEmailManager(final Map<String, String> globalStringTokens, final PropertiesLoader globalProperties, final AbstractUserPreferenceManager userPreferenceManager) {
+    public MailGunEmailManager(final Map<String, String> globalStringTokens, final AbstractConfigLoader globalProperties, final AbstractUserPreferenceManager userPreferenceManager) {
         this.globalStringTokens = globalStringTokens;
         this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;
+        this.executor = Executors.newFixedThreadPool(1);
     }
 
     private void createMessagesApiIfNeeded() {
         if (null == this.mailgunMessagesApi) {
             log.info("Creating singleton MailgunMessagesApi object.");
-            this.mailgunMessagesApi = MailgunClient.config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunMessagesApi.class);
+            this.mailgunMessagesApi = MailgunClient
+                    .config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
+                    .logLevel(feign.Logger.Level.NONE)
+                    .createApi(MailgunMessagesApi.class);
         }
     }
 
-    // TODO currently just a proof of concept, this function is not used anywhere.
-    // Will throw a FeignException object if the request fails, WHICH IT WILL if a template with the given name
-    // already exists
-    public TemplateWithMessageResponse createTemplate(final String template, final IsaacMailGunTemplate templateType,
-                                                      final String description)
-            throws FeignException {
-
-        MailgunTemplatesApi mailgunTemplatesApi = MailgunClient.config(globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunTemplatesApi.class);
-
-        // Get the existing template - might be useful to check if we need to create or update the template afterwards
-        // TemplateResponse response = mailgunTemplatesApi.getTemplate(globalProperties.getProperty(MAILGUN_SANDBOX_URL), templateType.name());
-
-        TemplateRequest request = TemplateRequest.builder()
-                .template(template)
-                .name(templateType.name())
-                .description(description)
-                .build();
-
-        return mailgunTemplatesApi.storeNewTemplate(globalProperties.getProperty(MAILGUN_DOMAIN), request);
-    }
-
-    public MessageResponse sendBatchEmails(final Collection<RegisteredUserDTO> userDTOs, final EmailTemplateDTO emailContentTemplate,
-                                           final EmailType emailType, final IsaacMailGunTemplate templateType,
-                                           @Nullable final Map<String, Object> templateVariablesOrNull,
-                                           @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull)
-            throws FeignException {
+    public Future<Optional<MessageResponse>> sendBatchEmails(final Collection<RegisteredUserDTO> userDTOs, final EmailTemplateDTO emailContentTemplate,
+                                                             final EmailType emailType,
+                                                             @Nullable final Map<String, Object> templateVariablesOrNull,
+                                                             @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull) {
 
         // Lazily construct the MailGun messages API
         this.createMessagesApiIfNeeded();
@@ -178,13 +167,22 @@ public class MailGunEmailManager {
                 .from(from)
                 .replyTo(replyTo)
                 .to(new ArrayList<>(recipientVariables.keySet()))
-                .template(templateType.name())
+                .template(emailContentTemplate.getId())  // We use the same template IDs in MailGun!
                 .subject(emailContentTemplate.getSubject())
                 .mailgunVariables(templateVariables)
                 .recipientVariables(recipientVariables)
                 .build();
 
-        return mailgunMessagesApi.sendMessage(globalProperties.getProperty(MAILGUN_DOMAIN), message);
+        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc();
+
+        return executor.submit(() -> {
+            try {
+                return Optional.of(mailgunMessagesApi.sendMessage(globalProperties.getProperty(MAILGUN_DOMAIN), message));
+            } catch (FeignException e) {
+                log.error("Failed to send email to {} users via the MailGun API:", userDTOs.size(), e);
+                return Optional.empty();
+            }
+        });
     }
 
 }

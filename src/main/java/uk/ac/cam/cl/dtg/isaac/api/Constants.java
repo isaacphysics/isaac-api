@@ -19,6 +19,8 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,6 +51,8 @@ public final class Constants {
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
+    public static final String REGRESSION_TEST_TAG = "regression_test";
+
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
@@ -130,6 +134,9 @@ public final class Constants {
 
     public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
 
+    public static final Integer MAILGUN_BATCH_SIZE = 500;
+
+
     /**
      * Class to represent Isaac log types.
      */
@@ -201,9 +208,10 @@ public final class Constants {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
     }
 
-    public enum IsaacMailGunTemplate {
-        ASSIGNMENT
-    }
+    /**
+     * Quiz constants
+     */
+    public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, Calendar.JUNE, 12, 0, 0, 0); // 12/06/2023
 
     /**
      * Private constructor to prevent this class being created.

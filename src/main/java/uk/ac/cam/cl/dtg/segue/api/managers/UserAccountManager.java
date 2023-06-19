@@ -61,7 +61,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -103,7 +103,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final UserAuthenticationManager userAuthenticationManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     private final ISecondFactorAuthenticator secondFactorManager;
 
@@ -137,7 +137,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - Allows user preferences to be managed.
      */
     @Inject
-    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final PropertiesLoader properties,
+    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final AbstractConfigLoader properties,
                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                               final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
@@ -178,20 +178,23 @@ public class UserAccountManager implements IUserAccountManager {
      * user to. This url will be for a 3rd party authenticator who will use the callback method provided after they have
      * authenticated.
      * 
-     * Users who are already logged already will be returned their UserDTO without going through the authentication
+     * Users who are already logged in will be returned their UserDTO without going through the authentication
      * process.
      * 
      * @param request
      *            - http request that we can attach the session to and save redirect url in.
      * @param provider
      *            - the provider the user wishes to authenticate with.
+     * @param isSignUp
+     *            - whether this is an initial sign-up, which may be used to direct the client to a sign-up flow on the IdP.
+     *
      * @return a URI for redirection
      * @throws IOException - 
      * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    public URI authenticate(final HttpServletRequest request, final String provider) 
+    public URI authenticate(final HttpServletRequest request, final String provider, final boolean isSignUp)
             throws IOException, AuthenticationProviderMappingException {
-        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider, isSignUp);
     }
 
     /**
@@ -215,7 +218,7 @@ public class UserAccountManager implements IUserAccountManager {
         // record our intention to link an account.
         request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
 
-        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider, false);
     }
 
     /**
@@ -291,8 +294,8 @@ public class UserAccountManager implements IUserAccountManager {
             if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty() && this.findUserByEmail(providerUserDO.getEmail()) != null) {
                 log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
                         + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
-                throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log in."
-                + " You may have registered using a different provider, or a username and password.");
+                throw new DuplicateAccountException("You do not use " + authenticator.getFriendlyName() + " to log in."
+                + " You may have registered using a different provider, or your email address and password.");
             }
             // this must be a registration request
             RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
@@ -301,8 +304,7 @@ public class UserAccountManager implements IUserAccountManager {
             segueUserDTO.setFirstLogin(true);
             
             try {
-                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider",
-                        capitalizeFully(provider));
+                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider", authenticator.getFriendlyName());
 
                 emailManager.sendTemplatedEmailToUser(segueUserDTO,
                         emailManager.getEmailTemplateDTO("email-template-registration-confirmation-federated"),

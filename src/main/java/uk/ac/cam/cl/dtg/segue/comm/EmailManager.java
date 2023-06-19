@@ -40,7 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import java.text.DateFormat;
@@ -66,7 +66,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
     private final AbstractUserPreferenceManager userPreferenceManager;
-    private final PropertiesLoader globalProperties;
+    private final AbstractConfigLoader globalProperties;
     private final GitContentManager contentManager;
 
     private final ILogManager logManager;
@@ -93,7 +93,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractUserPreferenceManager userPreferenceManager,
-                        final PropertiesLoader globalProperties, final GitContentManager contentManager,
+                        final AbstractConfigLoader globalProperties, final GitContentManager contentManager,
                         final ILogManager logManager, final Map<String, String> globalStringTokens) {
         super(communicator);
         this.userPreferenceManager = userPreferenceManager;

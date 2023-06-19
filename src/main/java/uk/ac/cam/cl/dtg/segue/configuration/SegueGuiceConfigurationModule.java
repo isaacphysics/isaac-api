@@ -141,7 +141,8 @@ import uk.ac.cam.cl.dtg.segue.scheduler.jobs.ScheduledAssignmentsEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
@@ -171,7 +172,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     private static Injector injector = null;
 
-    private static PropertiesLoader globalProperties = null;
+    private static AbstractConfigLoader globalProperties = null;
 
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
@@ -205,7 +206,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * previously been set.
      * @param globalProperties PropertiesLoader object to be used for loading properties (if it has not previously been set).
      */
-    public static void setGlobalPropertiesIfNotSet(final PropertiesLoader globalProperties) {
+    public static void setGlobalPropertiesIfNotSet(final AbstractConfigLoader globalProperties) {
         if (SegueGuiceConfigurationModule.globalProperties == null) {
             SegueGuiceConfigurationModule.globalProperties = globalProperties;
         }
@@ -231,7 +232,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     throw new FileNotFoundException("Segue configuration location not specified, please provide it as either a java system property (config.location) or environment variable SEGUE_CONFIG_LOCATION");
                 }
 
-                globalProperties = new PropertiesLoader(configLocation);
+                globalProperties = new YamlLoader(configLocation);
 
                 log.info(String.format("Segue using configuration file: %s", configLocation));
 
@@ -261,7 +262,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     private void configureProperties() {
         // Properties loader
-        bind(PropertiesLoader.class).toInstance(globalProperties);
+        bind(AbstractConfigLoader.class).toInstance(globalProperties);
 
         this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
         this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
@@ -514,7 +515,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
-                                                       final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
+                                                       final ContentMapper contentMapper, final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
             contentManager = new GitContentManager(database, searchProvider, contentMapper, globalProperties);
             log.info("Creating singleton of ContentManager");
@@ -593,7 +594,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
-                                                                      final PropertiesLoader properties) {
+                                                                      final AbstractConfigLoader properties) {
         ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
         ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
         ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
@@ -629,7 +630,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static EmailManager getMessageCommunicationQueue(final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
+    private static EmailManager getMessageCommunicationQueue(final AbstractConfigLoader properties, final EmailCommunicator emailCommunicator,
                                                              final AbstractUserPreferenceManager userPreferenceManager,
                                                              final GitContentManager contentManager,
                                                              final ILogManager logManager) {
@@ -672,7 +673,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static MailGunEmailManager getMailGunEmailManager(final PropertiesLoader properties,
+    private static MailGunEmailManager getMailGunEmailManager(final AbstractConfigLoader properties,
                                                               final AbstractUserPreferenceManager userPreferenceManager) {
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", properties.getProperty(EMAIL_SIGNATURE));
@@ -716,7 +717,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final PropertiesLoader properties,
+    private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final AbstractConfigLoader properties,
                                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                               final EmailManager emailQueue) {
         if (null == userAuthenticationManager) {
@@ -760,7 +761,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private IUserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
-                                               final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                               final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                                final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                                                final ILogManager logManager, final MapperFacade mapperFacade,
                                                final UserAuthenticationManager userAuthenticationManager,
@@ -852,7 +853,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private IMisuseMonitor getMisuseMonitor(final EmailManager emailManager, final PropertiesLoader properties) {
+    private IMisuseMonitor getMisuseMonitor(final EmailManager emailManager, final AbstractConfigLoader properties) {
         if (null == misuseMonitor) {
             misuseMonitor = new InMemoryMisuseMonitor();
             log.info("Creating singleton of MisuseMonitor");
@@ -1025,7 +1026,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database) throws SchedulerException {
+    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) throws SchedulerException {
         if (null == segueJobService) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
@@ -1139,7 +1140,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IExternalAccountManager getExternalAccountManager(final PropertiesLoader properties, final PostgresSqlDb database) {
+    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database) {
 
         if (null == externalAccountManager) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
@@ -1231,7 +1232,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static AssignmentManager getAssignmentManager(
             final IAssignmentPersistenceManager assignmentPersistenceManager, final GroupManager groupManager,
-            final EmailService emailService, final GameManager gameManager, final PropertiesLoader properties) {
+            final EmailService emailService, final GameManager gameManager, final AbstractConfigLoader properties) {
         if (null == assignmentManager) {
             assignmentManager =  new AssignmentManager(assignmentPersistenceManager, groupManager, emailService, gameManager, properties);
             log.info("Creating Singleton AssignmentManager");
@@ -1247,7 +1248,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IsaacSymbolicValidator getSymbolicValidator(PropertiesLoader properties) {
+    private static IsaacSymbolicValidator getSymbolicValidator(AbstractConfigLoader properties) {
 
         return new IsaacSymbolicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
@@ -1261,7 +1262,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(PropertiesLoader properties) {
+    private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(AbstractConfigLoader properties) {
 
         return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
                 properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
@@ -1275,7 +1276,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IsaacSymbolicLogicValidator getSymbolicLogicValidator(PropertiesLoader properties) {
+    private static IsaacSymbolicLogicValidator getSymbolicLogicValidator(AbstractConfigLoader properties) {
 
         return new IsaacSymbolicLogicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
@@ -1309,7 +1310,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param propertyLoader
      *            - property loader to use
      */
-    private void bindConstantToProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
+    private void bindConstantToProperty(final String propertyLabel, final AbstractConfigLoader propertyLoader) {
         bindConstant().annotatedWith(Names.named(propertyLabel)).to(propertyLoader.getProperty(propertyLabel));
     }
 
@@ -1321,7 +1322,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param propertyLoader
      *            - property loader to use
      */
-    private void bindConstantToNullableProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
+    private void bindConstantToNullableProperty(final String propertyLabel, final AbstractConfigLoader propertyLoader) {
         if (null == propertyLoader.getProperty(propertyLabel)) {
             bind(String.class).annotatedWith(Names.named(propertyLabel)).toProvider(Providers.of(null));
         } else {

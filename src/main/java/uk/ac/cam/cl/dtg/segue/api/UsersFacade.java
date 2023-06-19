@@ -58,7 +58,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -124,7 +124,7 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can augment school info
      */
     @Inject
-    public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
+    public UsersFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                        final ILogManager logManager, final UserAssociationManager userAssociationManager,
                        final IMisuseMonitor misuseMonitor, final AbstractUserPreferenceManager userPreferenceManager,
                        final SchoolListReader schoolListReader) {

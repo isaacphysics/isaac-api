@@ -51,7 +51,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -64,6 +63,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -106,7 +107,7 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - misuse monitor.
      */
     @Inject
-    public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
+    public EmailFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                        final EmailManager emailManager, final UserAccountManager userManager,
                        final GitContentManager contentManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);

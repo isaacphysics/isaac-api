@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -50,7 +51,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -65,6 +65,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
@@ -100,7 +102,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *            - so that we can prevent overuse of protected resources.
      */
     @Inject
-    public AuthenticationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
+    public AuthenticationFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                                 final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
@@ -173,6 +175,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *            - the http request of the user wishing to authenticate
      * @param signinProvider
      *            - string representing the supported auth provider so that we know who to redirect the user to.
+     * @param isSignUp
+     *            - whether this is an initial sign-up, which may be used to direct the client to a sign-up flow on the IdP.
+     *
      * @return Redirect response to the auth providers site.
      */
     @GET
@@ -180,7 +185,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the SSO login redirect URL for an authentication provider.")
     public final Response authenticate(@Context final HttpServletRequest request,
-            @PathParam("provider") final String signinProvider) {
+                                       @PathParam("provider") final String signinProvider,
+                                       @QueryParam("signup") final boolean isSignUp) {
         
         if (userManager.isRegisteredUserLoggedIn(request)) {
             // if they are already logged in then we do not want to proceed with
@@ -191,7 +197,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         
         try {
             Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
-                    .put(REDIRECT_URL, userManager.authenticate(request, signinProvider)).build();
+                    .put(REDIRECT_URL, userManager.authenticate(request, signinProvider, isSignUp)).build();
             
             return Response.ok(redirectResponse).build();
         }  catch (IOException e) {

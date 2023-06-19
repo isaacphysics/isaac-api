@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.util.PropertiesManager;
+import uk.ac.cam.cl.dtg.util.WriteablePropertiesLoader;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -19,11 +19,11 @@ class ETLManager {
     private final ContentIndexer indexer;
 
     private final ArrayBlockingQueue<String> newVersionQueue;
-    private final PropertiesManager contentIndicesStore;
+    private final WriteablePropertiesLoader contentIndicesStore;
 
 
     @Inject
-    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database, final PropertiesManager contentIndicesStore) {
+    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database, final WriteablePropertiesLoader contentIndicesStore) {
         this.indexer = indexer;
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
         this.contentIndicesStore = contentIndicesStore;
@@ -31,7 +31,7 @@ class ETLManager {
         // ON STARTUP
 
         // Load the current version aliases from file and set them.
-        for (String k: contentIndicesStore.stringPropertyNames()) {
+        for (String k: contentIndicesStore.getKeys()) {
             try {
                 this.setNamedVersion(k, contentIndicesStore.getProperty(k));
             } catch (Exception e) {

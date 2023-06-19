@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -30,7 +30,7 @@ public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
     private static final int BAD_REQUEST = 400;
     private static final int FORBIDDEN = 403;
     private static final Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-    private final String hostName = injector.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
+    private final String hostName = injector.getInstance(AbstractConfigLoader.class).getProperty(HOST_NAME);
 
     @Override
     public void configure(JettyWebSocketServletFactory factory) {
