@@ -95,6 +95,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -130,6 +132,8 @@ public class UserAccountManager implements IUserAccountManager {
     private static final Pattern USER_NAME_PERMITTED_CHARS_REGEX = Pattern.compile("^[\\p{L}\\d_\\-' ]+$", Pattern.CANON_EQ);
     private static final Pattern EMAIL_PERMITTED_CHARS_REGEX = Pattern.compile("^[a-zA-Z0-9!#$%&'+\\-=?^_`.{|}~@]+$");
     private static final Pattern EMAIL_CONSECUTIVE_FULL_STOP_REGEX = Pattern.compile("\\.\\.");
+
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /**
      * Create an instance of the user manager class.
@@ -355,8 +359,6 @@ public class UserAccountManager implements IUserAccountManager {
      *             - if we cannot find an authenticator
      * @throws IncorrectCredentialsProvidedException
      *             - if the password is incorrect
-     * @throws NoUserException
-     *             - if the user does not exist
      * @throws NoCredentialsAvailableException
      *             - If the account exists but does not have a local password
      * @throws AdditionalAuthenticationRequiredException
@@ -368,7 +370,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
             final HttpServletResponse response, final String provider, final String email, final String password, final boolean rememberMe)
-            throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
+            throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
             NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
         Validate.notBlank(password);
@@ -1346,27 +1348,29 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * @param userObject
      *            - A user object containing the email address of the user to reset the password for.
-     * @throws NoSuchAlgorithmException
-     *             - if the configured algorithm is not valid.
-     * @throws InvalidKeySpecException
-     *             - if the preconfigured key spec is invalid.
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
-     * @throws NoUserException
-     *             - If no user found with provided email.
      */
-    public final void resetPasswordRequest(final RegisteredUserDTO userObject) throws InvalidKeySpecException,
-            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException, NoUserException {
+    public final boolean resetPasswordRequest(final RegisteredUserDTO userObject)
+            throws SegueDatabaseException {
         RegisteredUser user = this.findUserByEmail(userObject.getEmail());
 
         if (null == user) {
-            throw new NoUserException("No user found with this email!");
+            return false;
         }
 
-        RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
-        this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
+        executor.submit(() -> {
+            RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
+            try {
+                this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
+                log.info("Password reset sent");
+            } catch (CommunicationException e) {
+                log.error("Error sending reset message.", e);
+            } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
+                log.error("Error generating password reset token.", e);
+            }
+        });
+        return true;
     }
 
     /**

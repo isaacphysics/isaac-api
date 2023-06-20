@@ -23,6 +23,22 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +59,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginByEmailMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -52,7 +68,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
@@ -61,22 +76,6 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.EntityTag;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -88,6 +87,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 
 /**
  * User facade.
@@ -344,22 +344,18 @@ public class UsersFacade extends AbstractSegueFacade {
                                     LOCAL_AUTH_EMAIL_FIELDNAME, userOfInterest.getEmail(),
                                     LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME, currentUser.getEmail(),
                                     LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME, true));
-            return Response.ok().build();
 
+            log.info("Password reset requested for account: " + userIdOfInterest);
+            return Response.ok().build();
         } catch (NoUserException e) {
-            log.warn("Password reset requested for account that does not exist: " + e.getMessage());
+            log.warn("Password reset requested for account that does not exist: " + userIdOfInterest);
             // Return OK so we don't leak account existence.
             return Response.ok().build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (CommunicationException e) {
+        } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error sending reset message.", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error generating password reset token.", e);
+                    "Error accessing database.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
@@ -399,31 +395,26 @@ public class UsersFacade extends AbstractSegueFacade {
             String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
             misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetByEmailMisuseHandler.class.getSimpleName());
             misuseMonitor.notifyEvent(requestingIPAddress, PasswordResetByIPMisuseHandler.class.getSimpleName());
-            userManager.resetPasswordRequest(userObject);
+            boolean userExists = userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
                     .logEvent(userManager.getCurrentUser(request), request, SegueServerLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
 
+            if (userExists)
+                log.info("Password reset requested for email: (" + sanitiseLogValue(userObject.getEmail()) + ")");
+            else
+                log.warn("Password reset requested for account that does not exist: (" + sanitiseLogValue(userObject.getEmail()) + ")");
             return Response.ok().build();
-        } catch (NoUserException e) {
-            log.warn("Password reset requested for account that does not exist: (" + userObject.getEmail() + ")");
-            // Return OK so we don't leak account existence.
-            return Response.ok().build();
-        } catch (CommunicationException e) {
+        } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error sending reset message.", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error generating password reset token.", e);
+                    "Error accessing database.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error("Password reset request blocked for email: (" + userObject.getEmail() + ")", e.toString());
+            log.error("Password reset request blocked for email: (" + sanitiseLogValue(userObject.getEmail()) + ")", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
@@ -487,7 +478,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
 
             // we can reset the misuse monitor for incorrect logins now.
-            misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName());
+            misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginByEmailMisuseHandler.class.getSimpleName());
 
         } catch (InvalidTokenException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");

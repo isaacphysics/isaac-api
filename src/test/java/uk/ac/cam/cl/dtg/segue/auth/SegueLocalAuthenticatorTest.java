@@ -38,7 +38,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_REQUIREMENTS_ERROR_MESSAGE;
 
 /**
@@ -220,7 +222,7 @@ public class SegueLocalAuthenticatorTest {
 			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(someBadEmail, someIncorrectPassword);
 			fail("This should fail as a bad email and password has been provided.");
 
-		} catch (NoUserException e) {
+		} catch (IncorrectCredentialsProvidedException e) {
 			// success. This is what we expect.
 		}
 	}
@@ -268,7 +270,7 @@ public class SegueLocalAuthenticatorTest {
 			// now try and authenticate using the password we just created.
 			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someCorrectPasswordPlainText);
 
-		} catch (NoUserException e) {
+		} catch (IncorrectCredentialsProvidedException e) {
 			fail("We expect a user to be returned");
 		}
 	}

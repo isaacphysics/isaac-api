@@ -15,45 +15,47 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
 /**
  * Handler to deal with email verification requests.
- *
+ * <p>
  * Preventing an IP address scanning many email addresses for account existence
  * by limiting reset requests on a per-IP basis.
- *
  */
 public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
 
     private static final Logger log = LoggerFactory.getLogger(PasswordResetByIPMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 50;
-    private static final Integer HARD_THRESHOLD = 300;
-    private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_HOUR;
+    private final Integer SOFT_THRESHOLD;
+    private final Integer HARD_THRESHOLD;
+    private final Integer ACCOUNTING_INTERVAL;
 
     private final PropertiesLoader properties;
     private final EmailManager emailManager;
 
-    /**
-     *  Constructor for Guice injection.
-     */
     @Inject
     public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this.properties = properties;
-        this.emailManager = emailManager;
+        this(emailManager, properties, 50, 300, NUMBER_SECONDS_IN_ONE_HOUR);
     }
 
+    @Inject
+    public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties, Integer softThreshold, Integer hardThreshold, Integer interval) {
+        this.properties = properties;
+        this.emailManager = emailManager;
+        this.SOFT_THRESHOLD = softThreshold;
+        this.HARD_THRESHOLD = hardThreshold;
+        this.ACCOUNTING_INTERVAL = interval;
+    }
 
     @Override
     public Integer getSoftThreshold() {
@@ -78,8 +80,8 @@ public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
     @Override
     public void executeSoftThresholdAction(final String message) {
         final String subject = "Soft Threshold limit reached for IP Password Reset endpoint";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                subject, message, message, EmailType.ADMIN);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
         log.warn("Soft threshold limit: " + message);
     }
@@ -87,8 +89,8 @@ public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
     @Override
     public void executeHardThresholdAction(final String message) {
         final String subject = "HARD Threshold limit reached for IP Password Reset endpoint";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                subject, message, message, EmailType.ADMIN);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
         log.error("Hard threshold limit: " + message);
     }

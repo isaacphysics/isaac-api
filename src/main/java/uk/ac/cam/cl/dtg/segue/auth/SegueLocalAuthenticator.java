@@ -15,32 +15,32 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_REQUIREMENTS_ERROR_MESSAGE;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.*;
-
+import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.inject.Inject;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_REQUIREMENTS_ERROR_MESSAGE;
 
 /**
  * Segue Local Authenticator. This provides a mechanism for users to create an account on the Segue CMS without the need
@@ -98,7 +98,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public RegisteredUser authenticate(final String usersEmailAddress, final String plainTextPassword)
-            throws IncorrectCredentialsProvidedException, NoUserException, NoCredentialsAvailableException,
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException,
             SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         if (null == usersEmailAddress || null == plainTextPassword) {
@@ -106,14 +106,17 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         }
 
         RegisteredUser localUserAccount = userDataManager.getByEmail(usersEmailAddress);
-        if (null == localUserAccount) {
-            throw new NoUserException("No user found with this email!");
-        }
-
-        LocalUserCredential luc = passwordDataManager.getLocalUserCredential(localUserAccount.getId());
-        if (null == luc || null == luc.getPassword() || null == luc.getSecureSalt()) {
-            log.debug(String.format("No credentials available for this account id (%s)", localUserAccount.getId()));
-            throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
+        // For security reasons, this method should return in approximately the same amount of time regardless of
+        // whether the account actually exists. As the hashing & comparison process takes up a significant fraction
+        // of the execution time, a default credentials object is provided here to allow it to be performed when a
+        // user is not found. This default object should never result in a successful match.
+        LocalUserCredential luc = new LocalUserCredential(-1L, "password", "salt", "SegueSCryptv1");
+        if (null != localUserAccount) {
+            luc = passwordDataManager.getLocalUserCredential(localUserAccount.getId());
+            if (null == luc || null == luc.getPassword() || null == luc.getSecureSalt()) {
+                log.debug(String.format("No credentials available for this account id (%s)", localUserAccount.getId()));
+                throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
+            }
         }
 
         // work out what algorithm is being used.
@@ -245,7 +248,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         if (null == password || password.isEmpty()) {
             throw new InvalidPasswordException("Invalid password. You cannot have an empty password.");
         }
-        
+
         if (!password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\\p{P}).{" + MINIMUM_PASSWORD_LENGTH + ",}$")) {
             throw new InvalidPasswordException(PASSWORD_REQUIREMENTS_ERROR_MESSAGE);
         }

@@ -291,14 +291,16 @@ public class UserAuthenticationManager {
      *             - if there is a problem with the database.
      * @throws IncorrectCredentialsProvidedException
      *             - if the password is incorrect
-     * @throws NoUserException
-     *             - if the user does not exist
      * @throws NoCredentialsAvailableException
      *             - If the account exists but does not have a local password
+     * @throws NoSuchAlgorithmException
+     *             - if the configured algorithm is not valid.
+     * @throws InvalidKeySpecException
+     *             - if the preconfigured key spec is invalid.
      */
     public final RegisteredUser getSegueUserFromCredentials(final String provider, final String email, 
                         final String plainTextPassword) throws AuthenticationProviderMappingException,
-            SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException,
+            SegueDatabaseException, IncorrectCredentialsProvidedException,
             NoCredentialsAvailableException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
         Validate.notNull(plainTextPassword);
