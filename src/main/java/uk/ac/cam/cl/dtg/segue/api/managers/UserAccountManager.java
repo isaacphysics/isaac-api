@@ -1033,10 +1033,6 @@ public class UserAccountManager implements IUserAccountManager {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
-        if (this.findUserByEmail(user.getEmail()) != null) {
-            throw new DuplicateAccountException("An account with that e-mail address already exists.");
-        }
-
         // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
         if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
             log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
@@ -1080,6 +1076,10 @@ public class UserAccountManager implements IUserAccountManager {
 
         // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
         authenticator.ensureValidPassword(newPassword);
+
+        if (this.findUserByEmail(user.getEmail()) != null) {
+            throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
 
         // save the user to get the userId
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);

@@ -20,20 +20,20 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.io.FileInputStream;
@@ -42,43 +42,36 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
 
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.easymock.EasyMock.reset;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Date.class, AssignmentFacade.class})
-@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*"})
 public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;
+    private String instantExpected = "2049-07-01T12:05:30Z";
+    private Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        // mock the current date/time
-        Calendar mockCurrentDateTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        mockCurrentDateTime.set(Calendar.DAY_OF_MONTH, 1);
-        mockCurrentDateTime.set(Calendar.MONTH, 6);
-        mockCurrentDateTime.set(Calendar.YEAR, 2049);
-        mockCurrentDateTime.set(Calendar.HOUR_OF_DAY, 12);
-        mockCurrentDateTime.set(Calendar.MINUTE, 5);
-        mockCurrentDateTime.set(Calendar.SECOND, 30);
-        PowerMock.expectNew(Date.class).andReturn(mockCurrentDateTime.getTime()).anyTimes();
-        PowerMock.replay(Date.class);
-
         // get an instance of the facade to test
         this.assignmentFacade = new AssignmentFacade(assignmentManager, questionManager, userAccountManager,
                 groupManager, properties, gameManager, logManager, userAssociationManager, userBadgeManager,
-                new AssignmentService(userAccountManager));
+                new AssignmentService(userAccountManager), clock);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws SQLException {
         // reset the mocks
-        PowerMock.reset(Date.class);
-        PowerMock.reset(userBadgeManager);
+        reset(userBadgeManager);
 
         // reset assignments in DB, so the same assignment can be re-used across tests
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
@@ -88,7 +81,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         pst.executeUpdate();
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanUp() throws SegueDatabaseException {
         // reset additional manager privileges setting for Daves group
         UserGroupDTO davesGroup = groupManager.getGroupById(ITConstants.DAVE_TEACHERS_BC_GROUP_ID);

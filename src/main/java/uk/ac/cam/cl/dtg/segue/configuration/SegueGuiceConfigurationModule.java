@@ -159,6 +159,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,7 +169,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.DEV;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -1315,5 +1316,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             injector = Guice.createInjector(new SegueGuiceConfigurationModule());
         }
         return injector;
+    }
+
+    @Provides
+    @Singleton
+    public static Clock getDefaultClock() {
+        return Clock.systemUTC();
     }
 }
