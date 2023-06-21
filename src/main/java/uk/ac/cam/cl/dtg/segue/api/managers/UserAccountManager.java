@@ -1058,10 +1058,6 @@ public class UserAccountManager implements IUserAccountManager {
         userToSave.setLastUpdated(new Date());
 
         // Before save we should validate the user for mandatory fields.
-        if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The email address provided is invalid.");
-        }
-
         // validate names
         if (!this.isUserNameValid(user.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
@@ -1074,14 +1070,19 @@ public class UserAccountManager implements IUserAccountManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
-
         // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
         authenticator.ensureValidPassword(newPassword);
 
-        if (this.findUserByEmail(user.getEmail()) != null) {
-            throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        // Validate email address and check for existing accounts last to help mitigate enumeration attacks
+        if (!this.isUserValid(userToSave)) {
+            throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
+
+        if (this.findUserByEmail(user.getEmail()) != null) {
+            throw new DuplicateAccountException("The email address provided is invalid.");
+        }
+
+        authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
 
         // save the user to get the userId
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);

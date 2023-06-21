@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -298,27 +299,22 @@ public class SegueLocalAuthenticatorTest {
 	}
 
 	@ParameterizedTest
+	@NullAndEmptySource
 	@MethodSource("ensureValidPassword_invalidStrings")
-	public void ensureValidPassword_invalidStrings(String password, String expectedMessage) {
+	public void ensureValidPassword_invalidStrings(String password) {
 		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.passwordDataManager,
 				this.propertiesLoader, possibleAlgorithms, preferredAlgorithm);
 		Exception exception = assertThrows(InvalidPasswordException.class, () -> segueAuthenticator.ensureValidPassword(password));
-		assertEquals(expectedMessage, exception.getMessage());
+		assertEquals(PASSWORD_REQUIREMENTS_ERROR_MESSAGE, exception.getMessage());
 	}
 
 	private static Stream<Arguments> ensureValidPassword_invalidStrings() {
 		return Stream.of(
-				Arguments.of(null, "Invalid password. You cannot have an empty password."), // Null is invalid
-				Arguments.of("", "Invalid password. You cannot have an empty password."), // Empty string is invalid
-				Arguments.of("password123", PASSWORD_REQUIREMENTS_ERROR_MESSAGE), // Password must equal or exceed the minimum length
-				// Password must contain an upper case letter
-				Arguments.of("password123!", PASSWORD_REQUIREMENTS_ERROR_MESSAGE),
-				// Password must contain a lower case letter
-				Arguments.of("PASSWORD123!", PASSWORD_REQUIREMENTS_ERROR_MESSAGE),
-				// Password must contain a number
-				Arguments.of("Passwordabc!", PASSWORD_REQUIREMENTS_ERROR_MESSAGE),
-				// Password must contain a special character
-				Arguments.of("Password1234", PASSWORD_REQUIREMENTS_ERROR_MESSAGE)
+				Arguments.of("password123"), // Password must equal or exceed the minimum length
+				Arguments.of("password123!"), // Password must contain an upper case letter
+				Arguments.of("PASSWORD123!"), // Password must contain a lower case letter
+				Arguments.of("Passwordabc!"), // Password must contain a number
+				Arguments.of("Password1234") // Password must contain a special character
 		);
 	}
 }

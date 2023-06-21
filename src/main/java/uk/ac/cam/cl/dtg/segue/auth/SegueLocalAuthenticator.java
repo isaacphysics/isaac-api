@@ -246,7 +246,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     @Override
     public void ensureValidPassword(final String password) throws InvalidPasswordException {
         if (null == password || password.isEmpty()) {
-            throw new InvalidPasswordException("Invalid password. You cannot have an empty password.");
+            throw new InvalidPasswordException(PASSWORD_REQUIREMENTS_ERROR_MESSAGE);
         }
 
         if (!password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\\p{P}).{" + MINIMUM_PASSWORD_LENGTH + ",}$")) {
