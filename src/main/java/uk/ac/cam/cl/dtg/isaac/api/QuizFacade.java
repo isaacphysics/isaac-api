@@ -1579,7 +1579,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             || clientQuizAssignment.getQuizId() != null
             || clientQuizAssignment.getGroupId() != null
             || clientQuizAssignment.getOwnerUserId() != null
-            || clientQuizAssignment.getCreationDate() != null)
+            || clientQuizAssignment.getCreationDate() != null
+            || clientQuizAssignment.getScheduledStartDate() != null)
         {
             log.warn("Attempt to change fields for test assignment id {} that aren't feedbackMode or dueDate: {}", quizAssignmentId, clientQuizAssignment);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();
