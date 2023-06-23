@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.time.DateUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,15 +36,26 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -55,17 +67,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
@@ -91,6 +92,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -251,7 +253,10 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-            List<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignedQuizzes(user);
+            // TODO (scheduled-assignments): push this logic down into the manager.
+            List<QuizAssignmentDTO> assignments = this.quizAssignmentManager.getAssignedQuizzes(user).stream()
+                    .filter(qa -> qa.scheduledStartDateIsBefore(new Date()))
+                    .collect(Collectors.toList());
 
             this.assignmentService.augmentAssignerSummaries(assignments);
 
@@ -399,6 +404,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not a member of a group to which this test is assigned.").toResponse();
             }
 
+            // Check the scheduled start date has passed
+            if (quizAssignment.getScheduledStartDate() != null && !quizAssignment.scheduledStartDateIsBefore(new Date())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This test has not yet started.").toResponse();
+            }
             // Check the due date hasn't passed
             if (quizAssignment.getDueDate() != null && !quizAssignment.dueDateIsAfter(new Date())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "The due date for this test has passed.").toResponse();
@@ -928,9 +937,10 @@ public class QuizFacade extends AbstractIsaacFacade {
      */
     @POST
     @Path("/assignment")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Set a test to a group, with an optional due date.")
+    @Operation(summary = "Set a test to a group, with an optional due date and optional start date.")
     public final Response createQuizAssignment(@Context final HttpServletRequest request,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
@@ -947,14 +957,33 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser))
+            if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                     "You can only set assignments to groups you own or manage.").toResponse();
+            }
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(clientQuizAssignment.getQuizId());
             if (null == quiz) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The test id specified does not exist.")
                     .toResponse();
+            }
+
+            if (null != clientQuizAssignment.getScheduledStartDate()) {
+                Date oneYearInFuture = DateUtils.addYears(new Date(), 1);
+                if (clientQuizAssignment.getScheduledStartDate().after(oneYearInFuture)) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "The test cannot be scheduled to begin more than one year in the future.").toResponse();
+                }
+                if (null != clientQuizAssignment.getDueDate() && !clientQuizAssignment.dueDateIsAfter(clientQuizAssignment.getScheduledStartDate())) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "The assignment cannot be scheduled to begin after it is due.").toResponse();
+                }
+                // If the assignment will have started in the next hour (meaning it might miss the related emails
+                // being scheduled), then remove it so that the assignment is set immediately.
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(new Date());
+                cal.add(Calendar.HOUR_OF_DAY, 1);
+                if (clientQuizAssignment.getScheduledStartDate().before(cal.getTime())) {
+                    clientQuizAssignment.setScheduledStartDate(null);
+                }
             }
 
             clientQuizAssignment.setOwnerUserId(currentlyLoggedInUser.getId());
@@ -964,12 +993,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             // modifies assignment passed in to include an id.
             QuizAssignmentDTO assignmentWithID = this.quizAssignmentManager.createAssignment(clientQuizAssignment);
 
-            Map<String, Object> eventDetails = ImmutableMap.of(
-                QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
-                GROUP_FK, assignmentWithID.getGroupId(),
-                QUIZ_ASSIGNMENT_FK, assignmentWithID.getId(),
-                ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
-            );
+            Map<String, Object> eventDetails = new HashMap<>();
+            eventDetails.put(QUIZ_ID_FKEY, assignmentWithID.getQuizId());
+            eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
+            eventDetails.put(QUIZ_ASSIGNMENT_FK, assignmentWithID.getId());
+            eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate());
+            eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
 
@@ -979,7 +1008,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(assignmentWithID).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (DuplicateAssignmentException|DueBeforeNowException e) {
+        } catch (DuplicateAssignmentException | DueBeforeNowException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String message = "Database error whilst setting quiz";
@@ -1535,6 +1564,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @return Confirmation or error.
      */
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/assignment/{quizAssignmentId}")
     @Operation(summary = "Update a test assignment (only feedbackMode and dueDate may be updated).")
     public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
@@ -1549,7 +1579,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             || clientQuizAssignment.getQuizId() != null
             || clientQuizAssignment.getGroupId() != null
             || clientQuizAssignment.getOwnerUserId() != null
-            || clientQuizAssignment.getCreationDate() != null)
+            || clientQuizAssignment.getCreationDate() != null
+            || clientQuizAssignment.getScheduledStartDate() != null)
         {
             log.warn("Attempt to change fields for test assignment id {} that aren't feedbackMode or dueDate: {}", quizAssignmentId, clientQuizAssignment);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();

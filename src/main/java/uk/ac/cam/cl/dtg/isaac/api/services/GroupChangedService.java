@@ -160,10 +160,7 @@ public class GroupChangedService implements IGroupObserver {
 
             for (int i = 0; i < existingAssignments.size(); i++) {
                 A existingAssignment = existingAssignments.get(i);
-                Date assignmentStartDate = null;
-                if (existingAssignment instanceof AssignmentDTO) {
-                    assignmentStartDate = ((AssignmentDTO) existingAssignment).getScheduledStartDate();
-                }
+                Date assignmentStartDate = existingAssignment.getScheduledStartDate();
                 if (assignmentStartDate == null) {
                     assignmentStartDate = existingAssignment.getCreationDate();
                 }

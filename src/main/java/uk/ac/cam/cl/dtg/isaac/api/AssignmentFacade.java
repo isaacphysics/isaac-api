@@ -172,8 +172,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                                    @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            // TODO (scheduled-assignments): push this logic into the manager!
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser)
-                    .stream().filter(a -> null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date()))
+                    .stream().filter(a -> a.scheduledStartDateIsBefore(new Date()))
                     .collect(Collectors.toList());
 
             // Gather all gameboards we need to augment for the assignments in a single query

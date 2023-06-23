@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
+import java.util.Date;
 import java.util.List;
 
 public interface IQuizAssignmentPersistenceManager {
@@ -84,4 +85,15 @@ public interface IQuizAssignmentPersistenceManager {
      * @param updates The values to update (only feedbackMode and dueDate are considered)
      */
     void updateAssignment(Long quizAssignmentId, QuizAssignmentDTO updates) throws SegueDatabaseException;
+
+    /**
+     * Gets all assignments that are scheduled to start in the hour specified by the timestamp parameter.
+     *
+     * @param timestamp
+     *            - the hour in which to look for scheduled assignments.
+     * @return list of assignments
+     * @throws SegueDatabaseException
+     *             - if there is an error when accessing the database.
+     */
+    List<QuizAssignmentDTO> getAssignmentsScheduledForHour(Date timestamp) throws SegueDatabaseException;
 }
