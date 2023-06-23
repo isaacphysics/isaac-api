@@ -17,25 +17,11 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jboss.resteasy.annotations.GZIP;
@@ -66,7 +52,21 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.NameFormatter;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -89,7 +89,6 @@ import java.util.stream.Collectors;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
-import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 
 /**
  * AssignmentFacade
@@ -184,11 +183,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // we want to populate gameboard details for the assignment DTO.
             List<Long> groupIds = assignments.stream().map(AssignmentDTO::getGroupId).distinct().collect(Collectors.toList());
-            Map<Long, String> groupNameMap = new HashMap<>();
-            for (Long groupId: groupIds) {
-                UserGroupDTO group = groupManager.getGroupById(groupId);
-                groupNameMap.put(groupId, getFilteredGroupNameFromGroup(group));
-            }
+            List<UserGroupDTO> groups = groupManager.getGroupsByIds(groupIds, false);
+            Map<Long, String> groupNameMap = groups.stream().collect(Collectors.toMap(UserGroupDTO::getId, NameFormatter::getFilteredGroupNameFromGroup));
 
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(gameboardsMap.get(assignment.getGameboardId()));
