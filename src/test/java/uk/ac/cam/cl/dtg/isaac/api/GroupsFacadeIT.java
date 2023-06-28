@@ -19,9 +19,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -52,14 +51,14 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
     private GroupsFacade groupsFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // get an instance of the facade to test
         this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager, gameManager,
              groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws SQLException {
         // reset group managers in DB, so the same groups can be re-used across test cases
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
@@ -90,11 +89,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
 
         // check the group was created successfully
         UserGroupDTO responseBody = (UserGroupDTO) createGroupResponse.getEntity();
-        assertEquals("Test Teacher's New Group", responseBody.getGroupName());
+        Assertions.assertEquals("Test Teacher's New Group", responseBody.getGroupName());
     }
 
     @Test
@@ -118,11 +117,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
 
         // check the group was created successfully
         UserGroupDTO responseBody = (UserGroupDTO) createGroupResponse.getEntity();
-        assertEquals("Test Tutor's New Group", responseBody.getGroupName());
+        Assertions.assertEquals("Test Tutor's New Group", responseBody.getGroupName());
     }
 
     @Test
@@ -148,11 +147,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        assertEquals(Response.Status.OK.getStatusCode(), addManagerResponse.getStatus());
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), addManagerResponse.getStatus());
 
         // check the additional teacher was added successfully
         UserGroupDTO responseBody = (UserGroupDTO) addManagerResponse.getEntity();
-        assertEquals(DAVE_TEACHER_EMAIL, responseBody.getAdditionalManagers().stream().findFirst().get().getEmail());
+        Assertions.assertEquals(DAVE_TEACHER_EMAIL, responseBody.getAdditionalManagers().stream().findFirst().get().getEmail());
     }
 
     @Test
@@ -178,11 +177,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addManagerResponse.getStatus());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addManagerResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) addManagerResponse.getEntity();
-        assertEquals("There was a problem adding the user specified. Please make sure their email address is "
+        Assertions.assertEquals("There was a problem adding the user specified. Please make sure their email address is "
                 + "correct and they have a teacher account.", responseBody.getErrorMessage());
     }
 
@@ -209,11 +208,10 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), addManagerResponse.getStatus());
+        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), addManagerResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) addManagerResponse.getEntity();
-        assertEquals("You must have a teacher account to add additional group managers to your groups.",
-                responseBody.getErrorMessage());
+        Assertions.assertEquals("You must have a teacher account to add additional group managers to your groups.", responseBody.getErrorMessage());
     }
 }
