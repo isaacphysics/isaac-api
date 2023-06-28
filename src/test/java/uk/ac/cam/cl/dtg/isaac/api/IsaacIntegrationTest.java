@@ -7,8 +7,8 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +99,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
@@ -165,6 +166,8 @@ public abstract class IsaacIntegrationTest {
 
     protected static AbstractUserPreferenceManager userPreferenceManager;
 
+    protected static ITUsers integrationTestUsers;
+
     protected class LoginResult {
         public RegisteredUserDTO user;
         public Cookie cookie;
@@ -211,8 +214,8 @@ public abstract class IsaacIntegrationTest {
         }
     }
 
-    @BeforeClass
-    public static void setUpClass() {
+    @BeforeAll
+    public static void setUpClass() throws Exception {
         // Initialise Postgres - we will create a new, clean instance for each test class.
         postgres = new PostgreSQLContainer<>("postgres:12")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
@@ -350,9 +353,10 @@ public abstract class IsaacIntegrationTest {
         Injector injector = Guice.createInjector(testModule);
          */
 
+        integrationTestUsers = new ITUsers(userAccountManager);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() {
         // Stop Postgres - we will create a new, clean instance for each test class.
         postgres.stop();
@@ -385,5 +389,9 @@ public abstract class IsaacIntegrationTest {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
         expect(request.getSession()).andReturn(httpSession).anyTimes();
         return request;
+    }
+
+    static Set<RegisteredUserDTO> allTestUsersProvider() {
+        return integrationTestUsers.ALL;
     }
 }

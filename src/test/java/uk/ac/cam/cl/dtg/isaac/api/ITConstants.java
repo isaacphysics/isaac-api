@@ -46,13 +46,20 @@ public final class ITConstants {
     public static final String TEST_STUDENT_PASSWORD = "test1234";
     public static final long TEST_STUDENT_ID = 6L;
 
+    public static final String ALICE_STUDENT_EMAIL = "alice-student@test.com";
+    public static final String ALICE_STUDENT_PASSWORD = "test1234";
+    public static final long ALICE_STUDENT_ID = 7L;
+
+    public static final String ERIKA_STUDENT_EMAIL = "erika-student@test.com";
+    public static final String ERIKA_STUDENT_PASSWORD = "test1234";
+    public static final long ERIKA_STUDENT_ID = 11L;
+
+    public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
+    public static final String TEST_SIGNUP_PASSWORD = "test1234";
+
     public static final String TEST_TUTOR_EMAIL = "test-tutor@test.com";
     public static final String TEST_TUTOR_PASSWORD = "test1234";
     public static final long TEST_TUTOR_ID = 12L;
-
-    public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
-    public static final String TEST_SIGNUP_PASSWORD = "aVeryGoodPassword";
-
 
     // Groups
     public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
