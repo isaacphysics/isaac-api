@@ -219,16 +219,14 @@ public class QuestionManager {
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
      * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
-    public SeguePageDTO augmentQuestionObjects(final SeguePageDTO page, final String userId,
+    public void augmentQuestionObjects(final SeguePageDTO page, final String userId,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
-        this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
+        augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
-
-        return page;
     }
 
     /**
@@ -241,14 +239,13 @@ public class QuestionManager {
      *            - The flattened list of questions which should be augmented.
      * @param usersQuestionAttempts
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
-     * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
-    private SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
+    private void augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
             final List<QuestionDTO> questionsToAugment,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         if (null == usersQuestionAttempts) {
-            return page;
+            return;
         }
 
         for (QuestionDTO question : questionsToAugment) {
@@ -280,7 +277,6 @@ public class QuestionManager {
             question.setBestAttempt(this.convertQuestionValidationResponseToDTO(bestAnswer));
 
         }
-        return page;
     }
 
 

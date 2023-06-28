@@ -460,8 +460,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     userIdForRandomisation = ((RegisteredUserDTO) user).getId().toString();
                 }
 
-                content = this.questionManager.augmentQuestionObjects(content, userIdForRandomisation,
-                        userQuestionAttempts);
+                this.questionManager.augmentQuestionObjects(content, userIdForRandomisation, userQuestionAttempts);
 
                 // the request log
                 getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_QUESTION, logEntry);
