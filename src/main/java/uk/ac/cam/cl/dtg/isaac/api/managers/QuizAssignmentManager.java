@@ -91,6 +91,12 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
         Validate.notNull(newAssignment.getGroupId());
 
         Date now = new Date();
+        Date newAssignmentStartDate;
+        if (newAssignment.getScheduledStartDate() != null) {
+            newAssignmentStartDate = newAssignment.getScheduledStartDate();
+        } else {
+            newAssignmentStartDate = now;
+        }
 
         if (newAssignment.getDueDate() != null && !newAssignment.dueDateIsAfter(now)) {
             throw new DueBeforeNowException();
@@ -100,7 +106,8 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
             newAssignment.getGroupId());
 
         if (existingQuizAssignments.size() != 0) {
-            if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(now))) {
+            // TODO (scheduled-assignments): is this check truly necessary? There are now many ways tests can overlap and this misses some.
+            if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(newAssignmentStartDate))) {
                 log.error(String.format("Duplicated Test Assignment Exception - cannot assign the same work %s to a group %s when due date not passed",
                     newAssignment.getQuizId(), newAssignment.getGroupId()));
                 throw new DuplicateAssignmentException("You cannot reassign a test until the due date has passed.");
@@ -114,8 +121,13 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
         String quizURL = getAssignmentLikeUrl(newAssignment);
 
-        emailService.sendAssignmentEmailToGroup(newAssignment, quiz, ImmutableMap.of("quizURL", quizURL) ,
-            "email-template-group-quiz-assignment");
+        // If there is no date to schedule the test for, or the start date is in the past...
+        if (null == newAssignment.getScheduledStartDate()) {
+            // Send the notification email immediately
+            emailService.sendAssignmentEmailToGroup(newAssignment, quiz, ImmutableMap.of("quizURL", quizURL),
+                    "email-template-group-quiz-assignment");
+        }
+        // Otherwise, the assignment email will be scheduled by a Quartz job on the hour of the scheduledStartDate
 
         return newAssignment;
     }
@@ -167,7 +179,9 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     private List<QuizAssignmentDTO> filterActiveAssignments(List<QuizAssignmentDTO> assignments) {
         Date now = new Date();
-        return assignments.stream().filter(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(now)).collect(Collectors.toList());
+        return assignments.stream().filter(
+                qa -> (qa.getDueDate() == null || qa.dueDateIsAfter(now)) && qa.scheduledStartDateIsBefore(now)
+        ).collect(Collectors.toList());
     }
 
     public void updateAssignment(QuizAssignmentDTO assignment, QuizAssignmentDTO updates) throws SegueDatabaseException {
@@ -190,7 +204,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     @Override
     public String getAssignmentLikeUrl(QuizAssignmentDTO assignment) {
-        return String.format("https://%s/quiz/assignment/%s",
+        return String.format("https://%s/test/assignment/%s",
             properties.getProperty(HOST_NAME),
             assignment.getId());
     }

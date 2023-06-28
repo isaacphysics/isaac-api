@@ -1,0 +1,1 @@
+ALTER TABLE quiz_assignments ADD COLUMN scheduled_start_date TIMESTAMP WITH TIME ZONE DEFAULT NULL;

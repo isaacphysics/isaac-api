@@ -138,6 +138,7 @@ import uk.ac.cam.cl.dtg.segue.scheduler.jobs.DeleteEventAdditionalBookingInforma
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventFeedbackEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.EventReminderEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.ScheduledAssignmentsEmailJob;
+import uk.ac.cam.cl.dtg.segue.scheduler.jobs.ScheduledQuizAssignmentsEmailJob;
 import uk.ac.cam.cl.dtg.segue.scheduler.jobs.SegueScheduledSyncMailjetUsersJob;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -1096,6 +1097,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     new ScheduledAssignmentsEmailJob()
             );
 
+            SegueScheduledJob scheduledQuizAssignmentsEmail = SegueScheduledJob.createCustomJob(
+                    "scheduledQuizAssignmentsEmail",
+                    "JavaJob",
+                    "Send scheduled quiz assignment notification emails to groups",
+                    "0 0 * ? * * *",
+                    Maps.newHashMap(),
+                    new ScheduledQuizAssignmentsEmailJob()
+            );
+
             SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
                     "syncMailjetUsersJob",
                     "JavaJob",
@@ -1108,7 +1118,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     cleanUpExpiredReservations,
                     deleteEventAdditionalBookingInformation,
                     deleteEventAdditionalBookingInformationOneYearJob,
-                    scheduledAssignmentsEmail
+                    scheduledAssignmentsEmail,
+                    scheduledQuizAssignmentsEmail
             ));
 
             // Simply removing jobs from configuredScheduledJobs won't de-register them if they

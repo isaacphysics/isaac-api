@@ -86,6 +86,15 @@ public interface IUserGroupPersistenceManager {
     UserGroup findGroupById(Long groupId) throws SegueDatabaseException;
 
     /**
+     * Get a list of groups by IDs.
+     *
+     * @param groupIds the IDs of the groups in question.
+     * @return a list of the group objects
+     * @throws SegueDatabaseException on error
+     */
+    List<UserGroup> findGroupsByIds(List<Long> groupIds) throws SegueDatabaseException;
+
+    /**
      * Create a group that users can be assigned to.
      * 
      * This is only to support organisation of accounts that can access data about other users.
@@ -181,6 +190,14 @@ public interface IUserGroupPersistenceManager {
      * @throws SegueDatabaseException
      */
     Map<Long, GroupMembership> getGroupMembershipMap(Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Create a map of group id to membership status for a specified user.
+     * @param userId of interest
+     * @return Map of group ID to the user's group membership status
+     * @throws SegueDatabaseException on error
+     */
+    Map<Long, GroupMembership> getGroupMembershipMapForUser(Long userId) throws SegueDatabaseException;
 
     /**
      * getGroupMembershipList.

@@ -398,6 +398,14 @@ public class GroupManager {
         return convertGroupToDTO(group);
     }
 
+    public List<UserGroupDTO> getGroupsByIds(final List<Long> groupIds, final Boolean augmentGroups) throws SegueDatabaseException {
+
+        List<UserGroup> groups = groupDatabase.findGroupsByIds(groupIds);
+
+        return convertGroupsToDTOs(groups, augmentGroups);
+
+    }
+
     /**
      * Add a user to the list of additional managers who are allowed to manage the group.
      *
@@ -758,21 +766,17 @@ public class GroupManager {
         return groupProgressSummary;
     }
 
-    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(List<T> assignments, Long userId) throws SegueDatabaseException {
-        Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
+    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(final List<T> assignments, final Long userId) throws SegueDatabaseException {
         List<T> results = Lists.newArrayList();
 
-        for (T assignment : assignments) {
-            if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
-                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.getUserMembershipMapForGroup(assignment.getGroupId()));
-            }
+        Map<Long, GroupMembership> groupMembershipMap = groupDatabase.getGroupMembershipMapForUser(userId);
 
-            GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+        for (T assignment : assignments) {
+
+            GroupMembership membershipRecord = groupMembershipMap.get(assignment.getGroupId());
             // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
-            Date assignmentStartDate = null;
-            if (assignment instanceof AssignmentDTO) {
-                assignmentStartDate = ((AssignmentDTO) assignment).getScheduledStartDate();
-            }
+
+            Date assignmentStartDate = assignment.getScheduledStartDate();
             if (assignmentStartDate == null) {
                 assignmentStartDate = assignment.getCreationDate();
             }

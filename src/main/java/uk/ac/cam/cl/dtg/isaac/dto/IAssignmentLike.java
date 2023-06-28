@@ -22,6 +22,9 @@ public interface IAssignmentLike {
     @Nullable
     Date getDueDate();
 
+    @Nullable
+    Date getScheduledStartDate();
+
     default boolean dueDateIsAfter(Date date) {
         Date dueDate = this.getDueDate();
         if (null == dueDate) {
@@ -37,6 +40,16 @@ public interface IAssignmentLike {
         cal.set(Calendar.MILLISECOND, 0);
         cal.add(Calendar.DATE, 1);
         return cal.getTime().after(date);
+    }
+
+    default boolean scheduledStartDateIsBefore(Date date) {
+        Date scheduledStartDate = this.getScheduledStartDate();
+        if (null == scheduledStartDate) {
+            // This interprets null scheduled start dates as "always already started"
+            return true;
+        }
+
+        return scheduledStartDate.before(date);
     }
 
     interface Details<T extends IAssignmentLike> {

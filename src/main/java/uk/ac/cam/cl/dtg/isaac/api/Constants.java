@@ -61,8 +61,6 @@ public final class Constants {
     public static final Set<String> SEARCHABLE_DOC_TYPES = ImmutableSet.of(
             QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
 
-    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
-
     /*
      * Game specific variables.
      */
@@ -134,7 +132,10 @@ public final class Constants {
 
     public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
 
+    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
+
     public static final Integer MAILGUN_BATCH_SIZE = 500;
+
 
     /**
      * Class to represent Isaac log types.
@@ -205,10 +206,6 @@ public final class Constants {
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
-    }
-
-    public enum IsaacMailGunTemplate {
-        ASSIGNMENT
     }
 
     /**

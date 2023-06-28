@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 
@@ -65,6 +66,8 @@ public class ItemDeserializer extends JsonDeserializer<Item> {
         switch (contentType) {
             case "parsonsItem":
                 return getSingletonItemMapper().readValue(root.toString(), ParsonsItem.class);
+            case "coordinateItem":
+                return getSingletonItemMapper().readValue(root.toString(), CoordinateItem.class);
             default:
                 return getSingletonItemMapper().readValue(root.toString(), Item.class);
         }

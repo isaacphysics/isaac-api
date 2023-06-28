@@ -88,29 +88,8 @@ public class MailGunEmailManager {
         }
     }
 
-    // TODO currently just a proof of concept, this function is not used anywhere.
-    // Will throw a FeignException object if the request fails, WHICH IT WILL if a template with the given name
-    // already exists
-    public TemplateWithMessageResponse createTemplate(final String template, final IsaacMailGunTemplate templateType,
-                                                      final String description)
-            throws FeignException {
-
-        MailgunTemplatesApi mailgunTemplatesApi = MailgunClient.config(globalProperties.getProperty(MAILGUN_SECRET_KEY)).createApi(MailgunTemplatesApi.class);
-
-        // Get the existing template - might be useful to check if we need to create or update the template afterwards
-        // TemplateResponse response = mailgunTemplatesApi.getTemplate(globalProperties.getProperty(MAILGUN_SANDBOX_URL), templateType.name());
-
-        TemplateRequest request = TemplateRequest.builder()
-                .template(template)
-                .name(templateType.name())
-                .description(description)
-                .build();
-
-        return mailgunTemplatesApi.storeNewTemplate(globalProperties.getProperty(MAILGUN_DOMAIN), request);
-    }
-
     public Future<Optional<MessageResponse>> sendBatchEmails(final Collection<RegisteredUserDTO> userDTOs, final EmailTemplateDTO emailContentTemplate,
-                                                             final EmailType emailType, final IsaacMailGunTemplate templateType,
+                                                             final EmailType emailType,
                                                              @Nullable final Map<String, Object> templateVariablesOrNull,
                                                              @Nullable final Map<Long, Map<String, Object>> userVariablesOrNull) {
 
@@ -188,7 +167,7 @@ public class MailGunEmailManager {
                 .from(from)
                 .replyTo(replyTo)
                 .to(new ArrayList<>(recipientVariables.keySet()))
-                .template(templateType.name())
+                .template(emailContentTemplate.getId())  // We use the same template IDs in MailGun!
                 .subject(emailContentTemplate.getSubject())
                 .mailgunVariables(templateVariables)
                 .recipientVariables(recipientVariables)

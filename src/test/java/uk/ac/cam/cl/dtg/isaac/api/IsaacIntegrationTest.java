@@ -58,6 +58,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
@@ -269,8 +270,16 @@ public abstract class IsaacIntegrationTest {
 
         mapperFacade = contentMapper.getAutoMapper();
 
-        // The following may need some actual authentication providers...
         Map<AuthenticationProvider, IAuthenticator> providersToRegister = new HashMap<>();
+        providersToRegister.put(AuthenticationProvider.RASPBERRYPI, new RaspberryPiOidcAuthenticator(
+                    "id",
+                    "secret",
+                    "http://localhost:8003/auth/raspberrypi/callback",
+                    "email;profile;openid;force-consent",
+                    "src/test/resources/test-rpf-idp-metadata.json"
+                )
+        );
+
         Map<String, ISegueHashingAlgorithm> algorithms = new HashMap<>(Map.of("SeguePBKDF2v3", new SeguePBKDF2v3(), "SegueSCryptv1", new SegueSCryptv1()));
         providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
