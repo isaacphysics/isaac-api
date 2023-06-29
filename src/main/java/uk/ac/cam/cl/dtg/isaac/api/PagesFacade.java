@@ -543,12 +543,17 @@ public class PagesFacade extends AbstractIsaacFacade {
             IsaacTopicSummaryPageDTO topicSummaryDTO = (IsaacTopicSummaryPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
 
-            // Augment related questions with attempt information:
-            // FIXME: this remains a terrible performance penalty:
-            userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
-            this.augmentContentWithRelatedContent(topicSummaryDTO, userQuestionAttempts);
+            Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
+            // We have to cope with both anonymous and registered users:
+            if (user instanceof AnonymousUserDTO) {
+                relatedQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+            } else {
+                List<String> relatedQuestionIds = getRelatedContentIds(topicSummaryDTO);
+                relatedQuestionAttempts = questionManager.getMatchingQuestionAttempts((RegisteredUserDTO) user, relatedQuestionIds);
+            }
+
+            this.augmentContentWithRelatedContent(topicSummaryDTO, relatedQuestionAttempts);
 
             // Augment linked gameboards using the list in the DO:
             // FIXME: this requires loading both the DO and DTO separately, since augmenting things is hard right now.
