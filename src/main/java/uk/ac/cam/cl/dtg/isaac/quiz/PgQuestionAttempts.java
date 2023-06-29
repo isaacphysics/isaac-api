@@ -198,24 +198,27 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setLong(1, userId);
 
             try (ResultSet results = pst.executeQuery()) {
-                // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
-                Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
+                return resultsToMapOfValidationResponseByPageId(results);
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (IOException e) {
+            throw new SegueDatabaseException("Exception while parsing json", e);
+        }
+    }
 
-                while (results.next()) {
-                    QuestionValidationResponse questionAttempt = objectMapper.readValue(
-                            results.getString("question_attempt"), QuestionValidationResponse.class);
-                    String questionPageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
-                    String questionId = questionAttempt.getQuestionId();
+    @Override
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId, final String questionPageId)
+            throws SegueDatabaseException {
+        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id LIKE ? ORDER BY \"timestamp\" ASC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setLong(1, userId);
+            pst.setString(2, questionPageId.replace("_", "\\_") + "%");
 
-                    Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage
-                            = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newLinkedHashMap());
-
-                    List<QuestionValidationResponse> listOfResponses
-                            = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
-
-                    listOfResponses.add(questionAttempt);
-                }
-                return mapOfQuestionAttemptsByPage;
+            try (ResultSet results = pst.executeQuery()) {
+                return resultsToMapOfValidationResponseByPageId(results);
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -469,5 +472,26 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
 
         return partialQuestionAttempt;
+    }
+
+    private Map<String, Map<String, List<QuestionValidationResponse>>> resultsToMapOfValidationResponseByPageId(final ResultSet results) throws SQLException, JsonProcessingException {
+        // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
+        Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
+
+        while (results.next()) {
+            QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                    results.getString("question_attempt"), QuestionValidationResponse.class);
+            String pageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
+            String questionId = questionAttempt.getQuestionId();
+
+            Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage
+                    = mapOfQuestionAttemptsByPage.computeIfAbsent(pageId, k -> Maps.newLinkedHashMap());
+
+            List<QuestionValidationResponse> listOfResponses
+                    = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
+
+            listOfResponses.add(questionAttempt);
+        }
+        return mapOfQuestionAttemptsByPage;
     }
 }

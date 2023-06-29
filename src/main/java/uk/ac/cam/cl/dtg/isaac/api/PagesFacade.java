@@ -28,19 +28,13 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
@@ -50,6 +44,14 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,14 +67,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -419,53 +420,65 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get a question page object by ID.")
-    public final Response getQuestion(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest, 
+    public final Response getQuestion(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("question_page_id") final String questionId) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
         if (null == questionId || questionId.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid question id.").toResponse();
         }
 
-        // options
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-
         try {
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
-            userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
 
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
+            ContentDTO contentDTO = contentManager.getContentById(questionId);
 
-            Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            Response response = this.findSingleResult(fieldsToMatch, userQuestionAttempts);
-
-            if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
-                SeguePageDTO content = (SeguePageDTO) response.getEntity();
-
-                Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
-                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
+            if (contentDTO instanceof IsaacQuestionPageDTO) {
+                SeguePageDTO content = (SeguePageDTO) contentDTO;
 
                 String userIdForRandomisation;
+                Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
+                Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
+                // We have to cope with both anonymous and registered users:
                 if (user instanceof AnonymousUserDTO) {
+                    // For anonymous users, we just load all their question attempts.
                     userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
+
+                    Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+                    relatedQuestionAttempts = userQuestionAttempts;
+                    questionAttempts = userQuestionAttempts;
+
                 } else {
-                    userIdForRandomisation = ((RegisteredUserDTO) user).getId().toString();
+                    // For registered users, we can restrict our search to question attempts at this question (for which we
+                    // need full validation responses), and attempts at related questions (for which we only need lightweight
+                    // validation responses).
+                    RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+                    userIdForRandomisation = registeredUser.getId().toString();
+
+                    List<String> relatedQuestionIds = new ArrayList<>(getRelatedContentIds(content));
+                    relatedQuestionAttempts = questionManager.getMatchingQuestionAttempts(registeredUser, relatedQuestionIds);
+
+                    questionAttempts = questionManager.getQuestionAttemptsByUserForQuestion(registeredUser, questionId);
                 }
 
-                this.questionManager.augmentQuestionObjects(content, userIdForRandomisation, userQuestionAttempts);
+                // Check the cache status:
+                EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode()
+                        + questionId.hashCode() + questionAttempts.toString().hashCode() + relatedQuestionAttempts.toString().hashCode()));
+                Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+                if (cachedResponse != null) {
+                    return cachedResponse;
+                }
 
-                // the request log
+                // Then augment the page with attempt and related content information:
+                augmentContentWithRelatedContent(content, relatedQuestionAttempts);
+                questionManager.augmentQuestionObjects(content, userIdForRandomisation, questionAttempts);
+
+                // Log the request:
+                Map<String, String> logEntry = ImmutableMap.of(
+                        QUESTION_ID_LOG_FIELDNAME, content.getId(),
+                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
                 getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_QUESTION, logEntry);
 
-                // return augmented content.
+                // Return augmented content:
                 return Response.ok(content)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                         .tag(etag)
@@ -477,6 +490,10 @@ public class PagesFacade extends AbstractIsaacFacade {
             }
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst trying to retrieve user data";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Error whilst trying to load question content!";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
@@ -529,6 +546,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
 
             // Augment related questions with attempt information:
+            // FIXME: this remains a terrible performance penalty:
             userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
             this.augmentContentWithRelatedContent(topicSummaryDTO, userQuestionAttempts);
 
@@ -726,8 +744,36 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Return the IDs of all related content for a content object, including those of nested children.
+     *
+     * Note that some IDs returned may not be question page IDs, but may be concept pages etc.
+     *
+     * @param content
+     * @return
+     */
+    private List<String> getRelatedContentIds(final ContentDTO content) {
+        List<String> relatedContent = new ArrayList<>();
+
+        if (null != content.getRelatedContent()) {
+            // This might include concept page IDs too.
+            relatedContent.addAll(content.getRelatedContent().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList()));
+        }
+
+        List<ContentBaseDTO> children = content.getChildren();
+        if (children != null) {
+            for (ContentBaseDTO child : children) {
+                if (child instanceof ContentDTO) {
+                    ContentDTO childContent = (ContentDTO) child;
+                    relatedContent.addAll(getRelatedContentIds(childContent));
+                }
+            }
+        }
+        return relatedContent;
+    }
+
+    /**
      * Utility method to allow related content to be populated as summary objects.
-     * 
+     *
      * By default content summary objects may just have ids.
      *
      * @param contentToAugment
@@ -739,7 +785,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      *             - an exception when the content is not found
      */
     private ContentDTO augmentContentWithRelatedContent(final ContentDTO contentToAugment,
-                                                        @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
+                                                        @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
 
         ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
@@ -761,21 +807,20 @@ public class PagesFacade extends AbstractIsaacFacade {
      */
     private void augmentRelatedQuestionsWithAttemptInformation(
             final ContentDTO content,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
         // Check if all question parts have been answered
         List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
         if (relatedContentSummaries != null) {
             for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
                 String questionId = relatedContentSummary.getId();
-                Map<String, List<QuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
+                Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
                 boolean questionAnsweredCorrectly = false;
                 if (questionAttempts != null) {
                     for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
                         questionAnsweredCorrectly = false;
-                        List<QuestionValidationResponse> questionPartAttempts =
-                                questionAttempts.get(relatedQuestionPartId);
+                        List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
                         if (questionPartAttempts != null) {
-                            for (QuestionValidationResponse partAttempt : questionPartAttempts) {
+                            for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
                                 questionAnsweredCorrectly = partAttempt.isCorrect();
                                 if (questionAnsweredCorrectly) {
                                     break; // exit on first correct attempt
@@ -846,26 +891,13 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * As per the {@link #findSingleResult(Map, Map) findSingleResult} method.
-     */
-    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-        return this.findSingleResult(fieldsToMatch, null);
-    }
-
-    /**
      * For use when we expect to only find a single result.
-     * 
-     * By default related content ContentSummary objects will be fully augmented.
      * 
      * @param fieldsToMatch
      *            - expects a map of the form fieldname -> list of queries to match
-     * @param usersQuestionAttempts
-     *            - optional question attempt information to support augmentation of content.
-     *
      * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
      */
-    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch,
-                                      @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
         try {
             ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
@@ -883,7 +915,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 c = resultList.getResults().get(0);
             }
 
-            return Response.ok(this.augmentContentWithRelatedContent(c, usersQuestionAttempts)).build();
+            return Response.ok(this.augmentContentWithRelatedContent(c, Maps.newHashMap())).build();
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested",
                     e1);

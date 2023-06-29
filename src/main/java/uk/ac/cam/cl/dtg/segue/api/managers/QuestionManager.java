@@ -27,24 +27,17 @@ import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
-import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
-import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
+import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -63,6 +56,12 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
@@ -330,7 +329,7 @@ public class QuestionManager {
             log.error("Unexpected user type. Unable to record question response");
         }
     }
-
+    
     /** Test a question of a particular type against a series of test cases **/
     public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
@@ -389,6 +388,22 @@ public class QuestionManager {
             // since no user is logged in assume that we want to use any anonymous attempts
             return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
         }
+    }
+
+    /**
+     * Return all the attempts of a user at a specified page ID prefix.
+     *
+     * The map returned by this method is in the same format as {@link #getQuestionAttemptsByUser(AbstractSegueUserDTO)}
+     * for compatibility.
+     *
+     * @param user the user of interest
+     * @param questionPageId the page ID prefix of interest
+     * @return a map QuestionPageID -> (QuestionID -> List[QuestionValidationResponse]).
+     * @throws SegueDatabaseException on database error
+     */
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUserForQuestion(
+            final RegisteredUserDTO user, final String questionPageId) throws SegueDatabaseException {
+        return questionAttemptPersistenceManager.getQuestionAttempts(user.getId(), questionPageId);
     }
     
     /**
