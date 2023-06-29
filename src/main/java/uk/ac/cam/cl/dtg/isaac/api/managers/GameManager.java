@@ -374,7 +374,7 @@ public class GameManager {
      *             - if there is an error retrieving the content requested.
      */
     public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
+            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
 
@@ -750,7 +750,7 @@ public class GameManager {
      *             - if there is an error retrieving the content requested.
      */
     private GameboardDTO augmentGameboardWithQuestionAttemptInformationAndUserInformation(final GameboardDTO gameboardDTO,
-                                                                                          final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser,
+                                                                                          final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser,
                                                                                           final AbstractSegueUserDTO user)
             throws SegueDatabaseException, ContentManagerException {
         if (user instanceof RegisteredUserDTO) {
