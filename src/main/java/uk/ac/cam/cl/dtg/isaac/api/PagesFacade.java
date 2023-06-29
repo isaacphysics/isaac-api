@@ -521,6 +521,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
+        // Should this include the question attempts?
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + topicId.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -582,8 +583,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
             getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_TOPIC_SUMMARY_PAGE, logEntry);
 
+            // If there are no question attempts, this is safe to cache.
+            boolean isPublicData = relatedQuestionAttempts.isEmpty();
+
             return Response.status(Status.OK).entity(topicSummaryDTO)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, isPublicData)).tag(etag).build();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.", e);
