@@ -77,6 +77,7 @@ import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_FALLBACK;
 
 /**
  * Test class for the user manager class.
@@ -138,8 +139,8 @@ public class UserManagerTest {
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60")
                 .anyTimes();
-        expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
-                .anyTimes();
+        expect(this.dummyPropertiesLoader.getIntegerPropertyOrFallback(Constants.SESSION_EXPIRY_SECONDS_DEFAULT,
+                SESSION_EXPIRY_SECONDS_FALLBACK)).andReturn(Integer.valueOf("60")).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andReturn("DEV").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.RESTRICTED_SIGNUP_EMAIL_REGEX)).andReturn(".*@isaacphysics\\.org").anyTimes();
         replay(this.dummyPropertiesLoader);
@@ -428,7 +429,7 @@ public class UserManagerTest {
         replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase, dummyLocalAuth, dummyQueue, dummyUserCache);
 
         // Act
-        RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider, false);
+        RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider);
 
         // Assert
         verify(dummySession, request, dummyAuth, dummyQuestionDatabase);
@@ -467,7 +468,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticateCallback(request, response, validOAuthProvider, false);
+            userManager.authenticateCallback(request, response, validOAuthProvider);
             fail("Exception should have been thrown");
         } catch (CrossSiteRequestForgeryException e) {
             // success
@@ -510,7 +511,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticateCallback(request, response, validOAuthProvider, false);
+            userManager.authenticateCallback(request, response, validOAuthProvider);
             fail("Exception should have been thrown");
         } catch (CrossSiteRequestForgeryException e) {
             // pass

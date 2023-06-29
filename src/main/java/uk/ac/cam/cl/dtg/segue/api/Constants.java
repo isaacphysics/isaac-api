@@ -165,14 +165,14 @@ public final class Constants {
     public static final String HMAC = "HMAC";
 
     /**
-     * Constant representing the property name for the session expiry in seconds when remember me is not set - used in HMAC calculations.
+     * Constant representing the property name for the session expiry in seconds is not set - used in HMAC calculations.
      */
     public static final String SESSION_EXPIRY_SECONDS_DEFAULT = "SESSION_EXPIRY_SECONDS_DEFAULT";
 
     /**
-     * Constant representing the property name for the session expiry in seconds when remember me is set - used in HMAC calculations.
+     * Constant representing the value to be used for the session expiry in seconds in the event that parsing the config value throws an exception.
      */
-    public static final String SESSION_EXPIRY_SECONDS_REMEMBERED = "SESSION_EXPIRY_SECONDS_REMEMBERED";
+    public static final Integer SESSION_EXPIRY_SECONDS_FALLBACK = 1800;
 
     /**
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
@@ -321,8 +321,15 @@ public final class Constants {
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
     public static final String LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME = "groupManagerEmail";
-    public static final String PASSWORD_REQUIREMENTS_ERROR_MESSAGE = "Passwords must be at least 12 characters in length and contain at least one of each of: uppercase character, lowercase character, number and ascii punctuation character.";
 
+    // Local authentication response messages
+    public static final String PASSWORD_REQUIREMENTS_ERROR_MESSAGE = "Passwords must be at least 12 characters in length and contain at least one of each of: uppercase character, lowercase character, number and ascii punctuation character.";
+    public static final String LOGIN_MISSING_CREDENTIALS_MESSAGE = "You must specify an email and password when logging in.";
+    public static final String LOGIN_RATE_THROTTLE_MESSAGE = "There have been too many attempts to login to this account. Please try again later.";
+    public static final String LOGIN_DATABASE_ERROR_MESSAGE = "Internal database error has occurred during authentication.";
+    public static final String LOGIN_UNKNOWN_PROVIDER_MESSAGE = "Unable to locate the provider specified.";
+    public static final String LOGIN_INCORRECT_CREDENTIALS_MESSAGE = "Incorrect credentials provided.";
+    public static final String LOGIN_2FA_REQUIRED_MESSAGE = "Your account type requires 2FA, but none has been configured! Please ask an admin to demote your account to regain access.";
 
     // Database properties
     public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";

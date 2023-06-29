@@ -39,8 +39,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_REQUIREMENTS_ERROR_MESSAGE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue Local Authenticator. This provides a mechanism for users to create an account on the Segue CMS without the need
@@ -102,7 +101,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         if (null == usersEmailAddress || null == plainTextPassword) {
-            throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
+            throw new IncorrectCredentialsProvidedException(LOGIN_INCORRECT_CREDENTIALS_MESSAGE);
         }
 
         RegisteredUser localUserAccount = userDataManager.getByEmail(usersEmailAddress);
@@ -135,7 +134,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
             return localUserAccount;
         } else {
-            throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
+            throw new IncorrectCredentialsProvidedException(LOGIN_INCORRECT_CREDENTIALS_MESSAGE);
         }
     }
 

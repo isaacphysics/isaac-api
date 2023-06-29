@@ -111,6 +111,7 @@ public class IsaacApplicationRegister extends Application {
             // initialise filters
             this.singletons.add(injector.getInstance(PerformanceMonitor.class));
             this.singletons.add(injector.getInstance(AuditMonitor.class));
+            this.singletons.add(injector.getInstance(SessionValidator.class));
 
             // initialise observers
             this.singletons.add(injector.getInstance(IGroupObserver.class));

@@ -254,8 +254,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
                 }
 
-                // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
-                return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");

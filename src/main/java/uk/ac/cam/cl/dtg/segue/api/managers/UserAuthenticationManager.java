@@ -25,6 +25,7 @@ import jakarta.annotation.Nullable;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.NewCookie;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
@@ -116,7 +117,6 @@ public class UserAuthenticationManager {
                                      final EmailManager emailQueue) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
         Validate.notNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
@@ -474,12 +474,11 @@ public class UserAuthenticationManager {
      * @param request - for creating the session
      * @param response - for creating the session
      * @param user - the user who should be logged in.
-     * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
     public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, final boolean rememberMe) {
-        this.createSession(request, response, user, false, rememberMe);
+            final RegisteredUser user) {
+        this.createSession(request, response, user, false);
         return user;
     }
 
@@ -489,12 +488,11 @@ public class UserAuthenticationManager {
      * @param request - for creating the session
      * @param response - for creating the session
      * @param user - the user who should be logged in.
-     * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
     public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                            final RegisteredUser user, final boolean rememberMe) {
-        this.createSession(request, response, user, true, rememberMe);
+                                            final RegisteredUser user) {
+        this.createSession(request, response, user, true);
         return user;
     }
 
@@ -510,12 +508,7 @@ public class UserAuthenticationManager {
         Validate.notNull(request);
         try {
             request.getSession().invalidate();
-            Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
-            logoutCookie.setPath("/");
-            logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
-            logoutCookie.setHttpOnly(true);
-            logoutCookie.setSecure(setSecureCookies);
-            logoutCookie.setComment(SAME_SITE_LAX_COMMENT);
+            Cookie logoutCookie = createAuthLogoutCookie();
 
             response.addCookie(logoutCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
         } catch (IllegalStateException e) {
@@ -866,13 +859,11 @@ public class UserAuthenticationManager {
      *            account to associate the session with.
      * @param partialLoginFlag
      *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
-     * @param rememberMe
-     *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-                               final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
-        int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
-        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag, rememberMe);
+                               final RegisteredUser user, final boolean partialLoginFlag) {
+        int sessionExpiryTimeInSeconds = properties.getIntegerPropertyOrFallback(SESSION_EXPIRY_SECONDS_DEFAULT, SESSION_EXPIRY_SECONDS_FALLBACK);
+        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag);
     }
 
     /**
@@ -888,11 +879,9 @@ public class UserAuthenticationManager {
      *            max age of the cookie if not a partial login.
      * @param partialLoginFlag
      *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
-     * @param rememberMe
-     *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag, final boolean rememberMe) {
+            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag) {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
@@ -929,13 +918,7 @@ public class UserAuthenticationManager {
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
 
-            Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
-                    Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes()));
-            authCookie.setMaxAge(sessionExpiryTimeInSeconds);
-            authCookie.setPath("/");
-            authCookie.setHttpOnly(true);
-            authCookie.setSecure(setSecureCookies);
-            authCookie.setComment(SAME_SITE_LAX_COMMENT);
+            Cookie authCookie = createAuthCookie(sessionInformation, sessionExpiryTimeInSeconds);
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
@@ -1166,5 +1149,74 @@ public class UserAuthenticationManager {
             log.warn("Unexpected error while creating hash: " + e.getMessage(), e);
             throw new IllegalArgumentException();
         }
+    }
+
+    public boolean isSessionValid(HttpServletRequest request) {
+        try {
+            Map<String, String> currentSessionInformation = this.getSegueSessionFromRequest(request);
+            long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
+            RegisteredUser userToReturn = database.getById(currentUserId);
+            if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
+                log.warn("User session has failed validation. Validation checks did not pass.");
+                return false;
+            }
+            return true;
+        } catch (InvalidSessionException | IOException | NumberFormatException e) {
+            log.warn("User session has failed validation. Could not parse session information.");
+            return false;
+        } catch (SegueDatabaseException e) {
+            log.warn("User session has failed validation. Error accessing database.");
+            return false;
+        }
+    }
+
+    public Map<String, String> decodeCookie(jakarta.ws.rs.core.Cookie segueAuthCookie) throws IOException {
+        return this.serializationMapper.readValue(Base64.decodeBase64(segueAuthCookie.getValue()),
+                HashMap.class);
+    }
+
+    public String calculateUpdatedHMAC(Map<String, String> sessionInformation) {
+        String hmacKey = properties.getProperty(HMAC_SALT);
+        String userId = sessionInformation.get(SESSION_USER_ID);
+        String sessionExpiryDate = sessionInformation.get(DATE_EXPIRES);
+        String userSessionToken = sessionInformation.get(SESSION_TOKEN);
+        String partialLoginFlagString = sessionInformation.get(PARTIAL_LOGIN_FLAG);
+
+        String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
+        return sessionHMAC;
+    }
+
+    public Cookie createAuthCookie(Map<String, String> sessionInformation, int sessionExpiryTimeInSeconds) throws JsonProcessingException {
+        Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
+                Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes()));
+        authCookie.setMaxAge(sessionExpiryTimeInSeconds);
+        authCookie.setPath("/");
+        authCookie.setHttpOnly(true);
+        authCookie.setSecure(setSecureCookies);
+        authCookie.setComment(SAME_SITE_LAX_COMMENT);
+        return authCookie;
+    }
+
+    // The logout cookies should have matching properties despite the difference in type
+    public Cookie createAuthLogoutCookie() {
+        Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
+        logoutCookie.setPath("/");
+        logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
+        logoutCookie.setHttpOnly(true);
+        logoutCookie.setSecure(setSecureCookies);
+        logoutCookie.setComment(SAME_SITE_LAX_COMMENT);
+        return logoutCookie;
+    }
+
+    public NewCookie createAuthLogoutNewCookie() {
+        NewCookie logoutCookie = new NewCookie.Builder(SEGUE_AUTH_COOKIE)
+                .value("")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(setSecureCookies)
+                .comment(SAME_SITE_LAX_COMMENT)
+                .build();
+        return logoutCookie;
     }
 }

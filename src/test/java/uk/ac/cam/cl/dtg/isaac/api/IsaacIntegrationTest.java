@@ -114,12 +114,14 @@ public abstract class IsaacIntegrationTest {
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
+    protected static Map<AuthenticationProvider, IAuthenticator> providersToRegister;
     protected static IMisuseMonitor misuseMonitor;
 
     // Managers
     protected static EmailManager emailManager;
     protected static AbstractUserPreferenceManager userPreferenceManager;
     protected static UserAuthenticationManager userAuthenticationManager;
+    protected static ISecondFactorAuthenticator secondFactorManager;
     protected static UserAccountManager userAccountManager;
     protected static GameManager gameManager;
     protected static GroupManager groupManager;
@@ -236,7 +238,7 @@ public abstract class IsaacIntegrationTest {
         mapperFacade = contentMapper.getAutoMapper();
 
         // The following may need some actual authentication providers...
-        Map<AuthenticationProvider, IAuthenticator> providersToRegister = new HashMap<>();
+        providersToRegister = new HashMap<>();
         Map<String, ISegueHashingAlgorithm> algorithms = new HashMap<>(Map.of("SeguePBKDF2v3", new SeguePBKDF2v3(), "SegueSCryptv1", new SegueSCryptv1()));
         providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
@@ -251,7 +253,7 @@ public abstract class IsaacIntegrationTest {
         emailManager = new EmailManager(communicator, userPreferenceManager, properties, contentManager, logManager, globalTokens);
 
         userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties, providersToRegister, emailManager);
-        ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
+        secondFactorManager = createMock(SegueTOTPAuthenticator.class);
         // We don't care for MFA here so we can safely disable it
         try {
             expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
@@ -328,7 +330,7 @@ public abstract class IsaacIntegrationTest {
         expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
         replay(userLoginResponse);
 
-        RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
+        RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password);
 
         return new LoginResult(user, capturedUserCookie.getValue());
     }

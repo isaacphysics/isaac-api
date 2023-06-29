@@ -28,6 +28,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_DEFAULT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_FALLBACK;
+
 /**
  * A simple helper class for loading properties files and retrieving values from them.
  * 
@@ -138,5 +141,23 @@ public class PropertiesLoader {
         }
         lastRefreshed = new Date();
         log.debug("Properties file read successfully " + propertiesFile);
+    }
+
+    /**
+     * Numerical properties must be parsed from Strings. While it should not be an issue with properly configured
+     * properties, this could cause a NumberFormatException. This method will try to load the property and return the
+     * provided fallback value if it fails.
+     *
+     * @param key - the identifier for the property to load
+     * @param fallbackValue - an alternative value in the event of failure to parse
+     * @return the loaded value or the fallback value
+     */
+    public Integer getIntegerPropertyOrFallback(final String key, final Integer fallbackValue) {
+        try {
+            return Integer.parseInt(this.getProperty(key));
+        } catch (NumberFormatException e) {
+            log.error(String.format("Could not read %1$s from property configuration. Defaulting to %2$d.", key, fallbackValue), e);
+            return fallbackValue;
+        }
     }
 }

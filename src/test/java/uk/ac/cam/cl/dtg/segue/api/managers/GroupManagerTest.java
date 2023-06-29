@@ -79,8 +79,6 @@ public class GroupManagerTest {
 		
 		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60")
 				.anyTimes();
-		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
-				.anyTimes();
 		replay(this.dummyPropertiesLoader);
 	}
 
