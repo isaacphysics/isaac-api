@@ -254,8 +254,8 @@ public class GitContentManager {
      * @return a ResultsWrapper of the matching content.
      * @throws ContentManagerException on failure to return the objects.
      */
-    public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final int startIndex,
-                                                    final int limit) throws ContentManagerException {
+    public ResultsWrapper<ContentDTO> getUnsafeCachedDTOsByIdPrefix(final String idPrefix, final int startIndex,
+                                                                    final int limit) throws ContentManagerException {
 
         String k = "getByIdPrefix~" + getCurrentContentSHA() + "~" + idPrefix + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
@@ -285,8 +285,8 @@ public class GitContentManager {
      * @return a ResultsWrapper of the matching content.
      * @throws ContentManagerException on failure to return the objects.
      */
-    public ResultsWrapper<ContentDTO> getContentMatchingIds(final Collection<String> ids,
-                                                            final int startIndex, final int limit)
+    public ResultsWrapper<ContentDTO> getUnsafeCachedContentDTOsMatchingIds(final Collection<String> ids,
+                                                                            final int startIndex, final int limit)
             throws ContentManagerException {
 
         String k = "getContentMatchingIds~" + getCurrentContentSHA() + "~" + ids.toString() + "~" + startIndex + "~" + limit;
