@@ -30,16 +30,15 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
@@ -158,10 +157,9 @@ public class GitContentManager {
     /**
      *  Get a DTO object by its ID or return null.
      *
-     *  This may return a cached object, and will temporarily cache the object.
-     *  Do not modify the returned DTO object.
-     *  The object will be retrieved in DO form, and mapped to a DTO. Both versions will be
-     *  locally cached to avoid re-querying the data store and the deserialization costs.
+     *  The object will be retrieved in DO form, and mapped to a DTO.
+     *  The DO version will be cached to avoid re-querying the data store, but the DTO
+     *  will not be cached to avoid mutations poisoning the cache.
      *
      * @param id the content object ID.
      * @return the content DTO object.
@@ -174,10 +172,9 @@ public class GitContentManager {
     /**
      *  Get a DTO object by its ID or return null.
      *
-     *  This may return a cached object, and will temporarily cache the object.
-     *  Do not modify the returned DTO object.
-     *  The object will be retrieved in DO form, and mapped to a DTO. Both versions will be
-     *  locally cached to avoid re-querying the data store and the deserialization costs.
+     *  The object will be retrieved in DO form, and mapped to a DTO.
+     *  The DO version will be cached to avoid re-querying the data store, but the DTO
+     *  will not be cached to avoid mutations poisoning the cache.
      *
      * @param id the content object ID.
      * @param failQuietly whether to log a warning if the content cannot be found.
@@ -185,15 +182,7 @@ public class GitContentManager {
      * @throws ContentManagerException on failure to return the object or null.
      */
     public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
-        String k = "getContentById~" + getCurrentContentSHA() + "~" + id;
-        if (!cache.asMap().containsKey(k)) {
-            ContentDTO c = this.mapper.getDTOByDO(this.getContentDOById(id, failQuietly));
-            if (c != null) {
-                cache.put(k, c);
-            }
-        }
-
-        return (ContentDTO) cache.getIfPresent(k);
+        return this.mapper.getDTOByDO(this.getContentDOById(id, failQuietly));
     }
 
     /**
