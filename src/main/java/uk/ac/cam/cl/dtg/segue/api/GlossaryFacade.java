@@ -143,7 +143,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
 
         ResultsWrapper<ContentDTO> c;
         try {
-            c = this.contentManager.getByIdPrefix(term_id, 0, 10000);
+            c = this.contentManager.getUnsafeCachedDTOsByIdPrefix(term_id, 0, 10000);
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
                 log.debug(error.getErrorMessage());

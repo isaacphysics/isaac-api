@@ -779,7 +779,7 @@ public class StatisticsManager implements IStatisticsManager {
 
         // Search for questions that match the ids.
         ResultsWrapper<ContentDTO> allMatchingIds =
-                this.contentManager.getContentMatchingIds(ids,
+                this.contentManager.getUnsafeCachedContentDTOsMatchingIds(ids,
                         0, ids.size());
 
         List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();

@@ -737,7 +737,7 @@ public class GameboardPersistenceManager {
             // Search for questions that match the ids.
             ResultsWrapper<ContentDTO> results;
             try {
-                results = this.contentManager.getContentMatchingIds(
+                results = this.contentManager.getUnsafeCachedContentDTOsMatchingIds(
                         questionsIds, 0, contentDescriptorBatch.size());
             } catch (ContentManagerException e) {
                 results = new ResultsWrapper<ContentDTO>();
