@@ -3,12 +3,16 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import org.easymock.Capture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -26,6 +30,8 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.util.ServletTestUtils.createMockServletRequest;
+import static uk.ac.cam.cl.dtg.util.ServletTestUtils.createMockSession;
 
 public class UserAuthenticationManagerTest {
     private UserAuthenticationManager userAuthenticationManager;
@@ -140,5 +146,39 @@ public class UserAuthenticationManagerTest {
         );
 
         assertEquals(expectedHMAC, userAuthenticationManager.calculateUpdatedHMAC(sessionInformation));
+    }
+
+    @Test
+    public void destroyUserSession() throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
+        RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
+        expect(mockUser.getSessionToken()).andReturn(1);
+        replay(mockUser);
+
+        expect(dummyDatabase.getById(1L)).andReturn(mockUser);
+        expect(dummyDatabase.regenerateSessionToken(mockUser)).andReturn(2);
+        replay(dummyDatabase);
+
+        Map<String, String> sessionInformation = new HashMap(Map.of(
+                SESSION_USER_ID, "1",
+                SESSION_TOKEN, "1",
+                DATE_EXPIRES, new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(Date.from(Instant.now().plus(3600, SECONDS)))
+        ));
+        sessionInformation.put(HMAC, userAuthenticationManager.calculateUpdatedHMAC(sessionInformation));
+
+        Cookie authCookie = userAuthenticationManager.createAuthCookie(sessionInformation, 3600);
+        HttpSession logoutSession = createMockSession();
+        replay(logoutSession);
+        HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
+        expect(logoutRequest.getCookies()).andReturn(new Cookie[]{authCookie}).anyTimes();
+        replay(logoutRequest);
+
+        Capture<Cookie> logoutResponseCookie = newCapture();
+        HttpServletResponse logoutResponse = createMock(HttpServletResponse.class);
+        logoutResponse.addCookie(capture(logoutResponseCookie));
+        replay(logoutResponse);
+
+        userAuthenticationManager.destroyUserSession(logoutRequest, logoutResponse);
+        assertEquals("", logoutResponseCookie.getValue().getValue());
+        verify(dummyDatabase);
     }
 }

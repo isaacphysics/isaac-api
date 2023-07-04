@@ -410,6 +410,8 @@ public class UserManagerTest {
 
         expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
+        expect(dummyDatabase.regenerateSessionToken(mappedUser)).andReturn(1234);
+
         Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, someSegueUserId.toString(),
                 validDateString, mappedUser.getSessionToken());
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);

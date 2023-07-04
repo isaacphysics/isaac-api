@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_USER;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
+import static uk.ac.cam.cl.dtg.util.ServletTestUtils.createMockServletRequest;
+import static uk.ac.cam.cl.dtg.util.ServletTestUtils.replayMockServletRequest;
 
 public class UsersFacadeIT extends IsaacIntegrationTest {
     private UsersFacade usersFacade;
@@ -48,37 +50,23 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         misuseMonitor.resetMisuseCount("0.0.0.0", PasswordResetByIPMisuseHandler.class.getSimpleName());
         misuseMonitor.resetMisuseCount("0.0.0.0", RegistrationMisuseHandler.class.getSimpleName());
         this.usersFacade = new UsersFacade(properties, userAccountManager, logManager, userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
-        mockRequest = createMockRequestObject();
+        mockRequest = replayMockServletRequest();
         mockResponse = niceMock(HttpServletResponse.class);
     }
 
-    private static HttpServletRequest createMockRequestObject() {
-        HttpSession mockSession = createNiceMock(HttpSession.class);
-        expect(mockSession.getAttribute(ANONYMOUS_USER)).andReturn(null).anyTimes();
-        expect(mockSession.getId()).andReturn("sessionId").anyTimes();
-        replay(mockSession);
-        HttpServletRequest mockRequest = createNiceMock(HttpServletRequest.class);
-        expect(mockRequest.getHeader("X-Forwarded-For")).andReturn("0.0.0.0").anyTimes();
-        expect(mockRequest.getSession()).andReturn(mockSession).anyTimes();
-        replay(mockRequest);
-        return mockRequest;
-    }
-
-    private static HttpServletRequest createMockRequestObject(List<String> sessionIds) {
+    private static HttpServletRequest replayMultiSessionServletRequest(List<String> sessionIds) {
         HttpSession mockSession = createNiceMock(HttpSession.class);
         expect(mockSession.getAttribute(ANONYMOUS_USER)).andReturn(null).anyTimes();
         sessionIds.forEach(id -> expect(mockSession.getId()).andReturn(id));
         replay(mockSession);
-        HttpServletRequest mockRequest = createNiceMock(HttpServletRequest.class);
-        expect(mockRequest.getHeader("X-Forwarded-For")).andReturn("0.0.0.0").anyTimes();
-        expect(mockRequest.getSession()).andReturn(mockSession).anyTimes();
+        HttpServletRequest mockRequest = createMockServletRequest(mockSession);
         replay(mockRequest);
         return mockRequest;
     }
 
     @Test
     public void resetPassword_emailRateLimits() {
-        HttpServletRequest mockResetRequest = createMockRequestObject(List.of("sessionIdEmail1", "sessionIdEmail2", "sessionIdEmail3"));
+        HttpServletRequest mockResetRequest = replayMultiSessionServletRequest(List.of("sessionIdEmail1", "sessionIdEmail2", "sessionIdEmail3"));
 
         RegisteredUserDTO targetUser = new RegisteredUserDTO();
         targetUser.setEmail("test-student@test.com");
@@ -95,7 +83,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
     @Test
     public void resetPassword_ipRateLimits() {
-        HttpServletRequest mockResetRequest = createMockRequestObject(List.of("sessionIdIp1", "sessionIdIp2", "sessionIdIp3"));
+        HttpServletRequest mockResetRequest = replayMultiSessionServletRequest(List.of("sessionIdIp1", "sessionIdIp2", "sessionIdIp3"));
 
         RegisteredUserDTO targetUser = new RegisteredUserDTO();
 

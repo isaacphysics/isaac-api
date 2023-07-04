@@ -15,14 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.Date;
 import java.util.List;
@@ -276,14 +276,30 @@ public interface IUserDataManager {
     void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException;
 
     /**
-     * Increment the session token of a user object in the data store.
+     * Update the session token of a user object in the data store to a randomly generated value.
      *
-     * @param user
-     *            - the user object to update the session token of.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
+     * @param user - the user object to update the session token of.
+     * @return the value of the newly generated session token
+     * @throws SegueDatabaseException - If there is an internal database error.
      */
-    void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException;
+    Integer regenerateSessionToken(RegisteredUser user) throws SegueDatabaseException;
+
+    /**
+     * Update the session token of a user object in the data store to null.
+     *
+     * @param user - the user object to update the session token of.
+     * @throws SegueDatabaseException - If there is an internal database error.
+     */
+    void invalidateSessionToken(RegisteredUser user) throws SegueDatabaseException;
+
+    /**
+     * Update the session token of a user object in the data store to a specified value.
+     *
+     * @param user - the user object to update the session token of.
+     * @param newTokenValue - the new value to set as the session token
+     * @throws SegueDatabaseException - If there is an internal database error.
+     */
+    void updateSessionToken(RegisteredUser user, Integer newTokenValue) throws SegueDatabaseException;
 
     /**
      * Count all the users by role and return a map

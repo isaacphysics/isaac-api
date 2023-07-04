@@ -21,17 +21,18 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
+import java.security.SecureRandom;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,12 +48,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 
 /**
  * @author Stephen Cummins
@@ -666,14 +669,36 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     }
 
     @Override
-    public void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException {
+    public Integer regenerateSessionToken(RegisteredUser user) throws SegueDatabaseException {
+        Integer newSessionToken = generateRandomTokenInteger();
+        this.updateSessionToken(user, newSessionToken);
+        return newSessionToken;
+    }
+
+    private static Integer generateRandomTokenInteger() {
+        Random random = new SecureRandom();
+        int newValue = random.nextInt();
+        // -1 is reserved for 'no assigned token', used for when a user is logged out for example
+        if (newValue != -1) return newValue;
+        else return generateRandomTokenInteger();
+    }
+
+    @Override
+    public void invalidateSessionToken(RegisteredUser user) throws SegueDatabaseException {
+        // -1 is reserved for 'no assigned token', used for when a user is logged out for example
+        this.updateSessionToken(user, -1);
+    }
+
+    @Override
+    public void updateSessionToken(RegisteredUser user, Integer newTokenValue) throws SegueDatabaseException {
         Validate.notNull(user);
 
-        String query = "UPDATE users SET session_token = session_token + 1 WHERE id = ?";
+        String query = "UPDATE users SET session_token = ? WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setLong(1, user.getId());
+            pst.setInt(1, newTokenValue);
+            pst.setLong(2, user.getId());
             pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
@@ -697,10 +722,13 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         }
 
+        Integer newSessionToken = generateRandomTokenInteger();
+        userToCreate.setSessionToken(newSessionToken);
+
         String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender," +
                 " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen," +
-                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                " email_verification_token, email_to_verify, session_token, registered_contexts, registered_contexts_last_confirmed)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -727,8 +755,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, 14, userToCreate.getEmailToVerify());
-            pst.setArray(15, userContexts);
-            setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
+            setValueHelper(pst, 15, userToCreate.getSessionToken());
+            pst.setArray(16, userContexts);
+            setValueHelper(pst, 17, userToCreate.getRegisteredContextsLastConfirmed());
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");

@@ -985,7 +985,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param response
      *            to destroy the segue cookie.
      */
-    public void logUserOut(final HttpServletRequest request, final HttpServletResponse response) {
+    public void logUserOut(final HttpServletRequest request, final HttpServletResponse response) throws NoUserLoggedInException, SegueDatabaseException {
         Validate.notNull(request);
         this.userAuthenticationManager.destroyUserSession(request, response);
     }
@@ -1704,7 +1704,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param user - user of interest
      */
     private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
-                                                 final RegisteredUser user) {
+                                                 final RegisteredUser user) throws SegueDatabaseException {
         this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user);
     }
 
@@ -2019,29 +2019,6 @@ public class UserAccountManager implements IUserAccountManager {
                 this.database.updateUserLastSeen(user);
             }
         }
-    }
-
-    /**
-     * Logout user from all sessions.
-     * Increment the users' session token field to invalidate all other sessions.
-     *
-     * @param request
-     *            - request containing session information.
-     * @param response
-     *            to destroy the segue cookie.
-     * @throws NoUserLoggedInException
-     *            - when the request doesn't have an auth cookie.
-     * @throws SegueDatabaseException
-     *             - if an error occurs with the update.
-     */
-    public void logoutEverywhere(final HttpServletRequest request, final HttpServletResponse response)
-            throws SegueDatabaseException, NoUserLoggedInException {
-        RegisteredUser user = this.getCurrentRegisteredUserDO(request);
-        if (null == user) {
-            throw new NoUserLoggedInException();
-        }
-        this.database.incrementSessionToken(user);
-        logUserOut(request, response);
     }
 
     /**

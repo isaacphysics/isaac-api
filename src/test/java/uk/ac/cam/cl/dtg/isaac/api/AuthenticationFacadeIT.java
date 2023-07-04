@@ -1,9 +1,11 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.core.Response;
+import org.easymock.Capture;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,8 +24,11 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginByIPMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
@@ -32,9 +37,9 @@ import java.util.stream.Stream;
 
 import static org.easymock.EasyMock.*;
 import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_LAX_COMMENT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.util.ServletTestUtils.*;
 
 public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     private AuthenticationFacade authenticationFacade;
@@ -54,20 +59,8 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
         misuseMonitor.resetMisuseCount("test-student@test.com", SegueLoginByEmailMisuseHandler.class.getSimpleName());
         misuseMonitor.resetMisuseCount("0.0.0.0", SegueLoginByIPMisuseHandler.class.getSimpleName());
         this.authenticationFacade = new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);
-        mockRequest = createMockRequestObject();
+        mockRequest = replayMockServletRequest();
         mockResponse = niceMock(HttpServletResponse.class);
-    }
-
-    private static HttpServletRequest createMockRequestObject() {
-        HttpSession mockSession = createNiceMock(HttpSession.class);
-        expect(mockSession.getAttribute(ANONYMOUS_USER)).andReturn(null).anyTimes();
-        expect(mockSession.getId()).andReturn("sessionId").anyTimes();
-        replay(mockSession);
-        HttpServletRequest mockRequest = createNiceMock(HttpServletRequest.class);
-        expect(mockRequest.getHeader("X-Forwarded-For")).andReturn("0.0.0.0").anyTimes();
-        expect(mockRequest.getSession()).andReturn(mockSession).anyTimes();
-        replay(mockRequest);
-        return mockRequest;
     }
 
     @Test
@@ -256,5 +249,83 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
         Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
         assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
         assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
+    @Test
+    public void userLogout_sessionDeauthentication() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, SQLException {
+        LocalAuthDTO targetUser = new LocalAuthDTO();
+        targetUser.setEmail("test-student@test.com");
+        targetUser.setPassword("test1234");
+
+        Capture<Cookie> firstLoginResponseCookie = newCapture();
+        HttpServletResponse firstLoginResponse = createMock(HttpServletResponse.class);
+        firstLoginResponse.addCookie(capture(firstLoginResponseCookie));
+        replay(firstLoginResponse);
+
+        authenticationFacade.authenticateWithCredentials(mockRequest, firstLoginResponse, AuthenticationProvider.SEGUE.toString(), targetUser);
+        Cookie firstLoginAuthCookie = firstLoginResponseCookie.getValue();
+        Map<String, String> firstLoginSessionInformation = userAuthenticationManager.decodeCookie(firstLoginAuthCookie);
+        // Session should be valid
+        assertTrue(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
+
+        Capture<Cookie> logoutResponseCookie = newCapture();
+        HttpServletResponse logoutResponse = createMock(HttpServletResponse.class);
+        logoutResponse.addCookie(capture(logoutResponseCookie));
+        replay(logoutResponse);
+
+        HttpSession logoutSession = createMockSession();
+        replay(logoutSession);
+        HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
+        expect(logoutRequest.getCookies()).andReturn(new Cookie[]{firstLoginAuthCookie}).anyTimes();
+        replay(logoutRequest);
+
+        authenticationFacade.userLogout(logoutRequest, logoutResponse);
+        Cookie logoutCookie = logoutResponseCookie.getValue();
+        // Should be no session associated with logout
+        assertEquals("", logoutCookie.getValue());
+        // Session should have been invalidated
+        assertFalse(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
+
+        Capture<Cookie> secondLoginResponseCookie = newCapture();
+        HttpServletResponse secondLoginResponse = createMock(HttpServletResponse.class);
+        secondLoginResponse.addCookie(capture(secondLoginResponseCookie));
+        replay(secondLoginResponse);
+
+        authenticationFacade.authenticateWithCredentials(mockRequest, secondLoginResponse, AuthenticationProvider.SEGUE.toString(), targetUser);
+        Cookie secondLoginAuthCookie = secondLoginResponseCookie.getValue();
+        Map<String, String> secondLoginSessionInformation = userAuthenticationManager.decodeCookie(secondLoginAuthCookie);
+        // New session should be valid
+        assertTrue(userAuthenticationManager.isSessionValid(secondLoginSessionInformation));
+        // Previous session should still be invalid
+        assertFalse(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
+        // Sessions should have different tokens
+        assertNotEquals(firstLoginSessionInformation.get(SESSION_TOKEN), secondLoginSessionInformation.get(SESSION_TOKEN));
+    }
+
+    @Test
+    public void userLogout_noSession() throws SQLException {
+        HttpSession logoutSession = createMockSession();
+        replay(logoutSession);
+        HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
+        expect(logoutRequest.getCookies()).andReturn(new Cookie[]{}).anyTimes();
+        replay(logoutRequest);
+
+        Response response;
+        try {
+            response = authenticationFacade.userLogout(logoutRequest, mockResponse);
+        } finally {
+            removeAnonymousUser("sessionId");
+        }
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(LOGOUT_NO_ACTIVE_SESSION_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
+    private void removeAnonymousUser(String sessionId) throws SQLException {
+        try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection()
+                .prepareStatement("DELETE FROM temporary_user_store WHERE id = ?")
+        ) {
+            pst.setString(1, sessionId);
+            pst.executeUpdate();
+        }
     }
 }

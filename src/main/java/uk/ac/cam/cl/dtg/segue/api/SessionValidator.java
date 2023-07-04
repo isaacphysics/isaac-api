@@ -17,6 +17,8 @@ import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
@@ -54,13 +56,24 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
         Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
         if (authCookie != null && !userAuthenticationManager.isSessionValid(httpServletRequest)) {
             log.warn("Request made with invalid segue auth cookie - closing session");
-            httpServletRequest.getSession().invalidate();
+            invalidateSession();
             containerRequestContext.abortWith(Response
                     .status(Response.Status.BAD_REQUEST)
                     .entity("Authentication cookie is invalid")
                     .cookie(userAuthenticationManager.createAuthLogoutNewCookie())
                     .build()
             );
+        }
+    }
+
+    private void invalidateSession() {
+        httpServletRequest.getSession().invalidate();
+        try {
+            userAuthenticationManager.invalidateSessionToken(httpServletRequest);
+        } catch (NoUserLoggedInException e) {
+            log.error("Auth cookie is missing a user");
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while invalidating session token");
         }
     }
 

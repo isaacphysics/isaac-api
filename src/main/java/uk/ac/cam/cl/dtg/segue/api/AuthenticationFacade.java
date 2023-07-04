@@ -420,11 +420,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
     /**
      * End point that allows the user to logout - i.e. destroy our cookie.
-     * 
-     * @param request
-     *            so that we can destroy the associated session
-     * @param response
-     *            to tell the browser to delete the session for segue.
+     *
+     * @param request  so that we can destroy the associated session
+     * @param response to tell the browser to delete the session for segue.
      * @return successful response to indicate any cookies were destroyed.
      */
     @POST
@@ -433,7 +431,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/logout")
     @Operation(summary = "Initiate logout for the current user.")
     public final Response userLogout(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
+                                     @Context final HttpServletResponse response) {
         try {
             this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, SegueServerLogType.LOG_OUT,
                     Maps.newHashMap());
@@ -443,19 +441,19 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
             return Response.ok().build();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Internal Database error has occurred during logout.";
-            log.error(errorMsg, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+            log.error(LOGOUT_DATABASE_ERROR_MESSAGE, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, LOGOUT_DATABASE_ERROR_MESSAGE).toResponse();
+        } catch (NoUserLoggedInException e) {
+            log.warn(LOGOUT_NO_ACTIVE_SESSION_MESSAGE);
+            return new SegueErrorResponse(Status.BAD_REQUEST, LOGOUT_NO_ACTIVE_SESSION_MESSAGE).toResponse();
         }
     }
 
     /**
      * End point that allows the user to logout of all sessions.
      *
-     * @param request
-     *            so that we can obtain the associated session
-     * @param response
-     *            to tell the browser to remove the session for segue.
+     * @param request  so that we can obtain the associated session
+     * @param response to tell the browser to remove the session for segue.
      * @return successful response to indicate all sessions were invalidated.
      */
     @POST
@@ -467,18 +465,18 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                                                @Context final HttpServletResponse response) {
         try {
             AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
-            userManager.logoutEverywhere(request, response);
+            userManager.logUserOut(request, response);
 
             this.getLogManager().logEvent(user, request, SegueServerLogType.LOG_OUT_EVERYWHERE, Maps.newHashMap());
             SegueMetrics.LOG_OUT_EVERYWHERE.inc();
 
             return Response.ok().build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Internal Database error has occurred during logout everywhere.";
-            log.error(errorMsg, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+            log.error(LOGOUT_DATABASE_ERROR_MESSAGE, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, LOGOUT_DATABASE_ERROR_MESSAGE).toResponse();
+        } catch (NoUserLoggedInException e) {
+            log.warn(LOGOUT_NO_ACTIVE_SESSION_MESSAGE);
+            return new SegueErrorResponse(Status.BAD_REQUEST, LOGOUT_NO_ACTIVE_SESSION_MESSAGE).toResponse();
         }
     }
 
