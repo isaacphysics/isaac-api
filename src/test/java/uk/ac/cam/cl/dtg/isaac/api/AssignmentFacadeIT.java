@@ -85,11 +85,12 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         PowerMock.reset(userBadgeManager);
 
         // reset assignments in DB, so the same assignment can be re-used across tests
-        PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-                "DELETE FROM assignments WHERE gameboard_id in (?,?);");
-        pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-        pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
-        pst.executeUpdate();
+        try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
+                "DELETE FROM assignments WHERE gameboard_id in (?,?);")) {
+            pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+            pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
+            pst.executeUpdate();
+        }
     }
 
     @AfterAll

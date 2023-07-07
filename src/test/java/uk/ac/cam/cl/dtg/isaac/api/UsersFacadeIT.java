@@ -39,10 +39,11 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @AfterEach
     public void tearDown() throws SQLException {
         // reset created users in DB
-        PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-                "DELETE FROM users WHERE email in (?);");
-        pst.setString(1, ITConstants.TEST_SIGNUP_EMAIL);
-        pst.executeUpdate();
+        try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
+                "DELETE FROM users WHERE email in (?);")) {
+            pst.setString(1, ITConstants.TEST_SIGNUP_EMAIL);
+            pst.executeUpdate();
+        }
     }
 
     /**
