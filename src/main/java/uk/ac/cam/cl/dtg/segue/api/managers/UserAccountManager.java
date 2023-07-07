@@ -411,11 +411,12 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
                                               final RegisteredUser userObjectFromClient, final String newPassword,
-                                              final Map<String, Map<String, Boolean>> userPreferenceObject)
+                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                             final List<UserContext> registeredUserContexts)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             RegisteredUserDTO savedUser = this.createUserObjectAndSession(request, response,
-                    userObjectFromClient, newPassword);
+                    userObjectFromClient, newPassword, registeredUserContexts);
 
             if (userPreferenceObject != null) {
                 List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
@@ -1015,7 +1016,7 @@ public class UserAccountManager implements IUserAccountManager {
      *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
-                                                        final HttpServletResponse response, final RegisteredUser user, final String newPassword) throws InvalidPasswordException,
+                                                        final HttpServletResponse response, final RegisteredUser user, final String newPassword, final List<UserContext> registeredUserContexts) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
             EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
         Validate.isTrue(user.getId() == null,
@@ -1042,6 +1043,12 @@ public class UserAccountManager implements IUserAccountManager {
         userToSave.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
+
+        if (registeredUserContexts != null) {
+            // We always set the last confirmed date from code rather than trusting the client
+            userToSave.setRegisteredContexts(registeredUserContexts);
+            userToSave.setRegisteredContextsLastConfirmed(new Date());
+        }
 
         // Before save we should validate the user for mandatory fields.
         // validate names

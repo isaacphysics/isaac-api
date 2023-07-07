@@ -77,7 +77,7 @@ public class UserAuthenticationManagerTest {
         replay(mockRequest);
 
         RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
-        expect(mockUser.getSessionToken()).andReturn(1);
+        expect(mockUser.getSessionToken()).andReturn(1).times(2);
         replay(mockUser);
 
         expect(dummyDatabase.getById(1L)).andReturn(mockUser);
@@ -151,11 +151,12 @@ public class UserAuthenticationManagerTest {
     @Test
     public void destroyUserSession() throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
         RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
-        expect(mockUser.getSessionToken()).andReturn(1);
+        expect(mockUser.getSessionToken()).andReturn(1).times(2);
         replay(mockUser);
 
         expect(dummyDatabase.getById(1L)).andReturn(mockUser);
-        expect(dummyDatabase.regenerateSessionToken(mockUser)).andReturn(2);
+        dummyDatabase.invalidateSessionToken(mockUser);
+        expectLastCall();
         replay(dummyDatabase);
 
         Map<String, String> sessionInformation = new HashMap(Map.of(
