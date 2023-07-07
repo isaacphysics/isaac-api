@@ -119,6 +119,10 @@ public class SegueErrorResponse implements Serializable {
         return errorMessage;
     }
 
+    public final Exception getException() {
+        return exception;
+    }
+
     public final boolean getBypassGenericSiteErrorPage() {
         return bypassGenericSiteErrorPage;
     }
