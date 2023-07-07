@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -153,6 +154,7 @@ public abstract class IsaacIntegrationTest {
     protected static AssignmentManager assignmentManager;
     protected static QuestionManager questionManager;
     protected static QuizManager quizManager;
+    protected static PgPasswordDataManager passwordDataManager;
 
     // Manager dependencies
     protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -262,7 +264,7 @@ public abstract class IsaacIntegrationTest {
         JsonMapper jsonMapper = new JsonMapper();
         PgUsers pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
-        PgPasswordDataManager passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
+        passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
         ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
@@ -362,7 +364,7 @@ public abstract class IsaacIntegrationTest {
         Injector injector = Guice.createInjector(testModule);
          */
 
-        integrationTestUsers = new ITUsers(userAccountManager);
+        integrationTestUsers = new ITUsers(pgUsers);
     }
 
     @AfterAll
@@ -400,7 +402,7 @@ public abstract class IsaacIntegrationTest {
         return request;
     }
 
-    static Set<RegisteredUserDTO> allTestUsersProvider() {
+    static Set<RegisteredUser> allTestUsersProvider() {
         return integrationTestUsers.ALL;
     }
 }

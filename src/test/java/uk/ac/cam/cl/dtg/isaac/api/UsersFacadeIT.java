@@ -15,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import uk.ac.cam.cl.dtg.isaac.dos.ExamBoard;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
@@ -190,7 +191,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     public void createOrUpdateEndpoint_updateUserWhileLoggedIn_succeedsAndUpdatesExpectedPropertiesOnly() throws Exception {
         // Arrange
         // log in as student
-        RegisteredUserDTO targetUser = integrationTestUsers.TEST_STUDENT;
+        RegisteredUser targetUser = integrationTestUsers.TEST_STUDENT;
 
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
@@ -252,14 +253,14 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
      */
     @ParameterizedTest
     @MethodSource("allTestUsersProvider")
-    public void createOrUpdateEndpoint_updateUserWhileNotLoggedIn_failsWithUnauthorised(RegisteredUserDTO targetUser) throws Exception {
+    public void createOrUpdateEndpoint_updateUserWhileNotLoggedIn_failsWithUnauthorised(RegisteredUser targetUser) throws Exception {
         // Arrange
         JSONObject payload = new JSONObject()
                 .put("registeredUser", new JSONObject()
                         .put("email", targetUser.getEmail())
                         .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
                         .put("familyName", ">:)") // this is the update
-                        .put("firstLogin", targetUser.isFirstLogin())
+                        .put("firstLogin", false)
                         .put("gender", targetUser.getGender())
                         .put("givenName", targetUser.getGivenName())
                         .put("id", targetUser.getId())
@@ -295,8 +296,11 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @Test
     public void createOrUpdateEndpoint_updateUserPasswordWithCorrectCurrentPassword_succeedsAndUpdatesExpectedPropertiesOnly() throws Exception {
         // Arrange
+        // check initial password hash
+        String initialPasswordHash = passwordDataManager.getLocalUserCredential(ITConstants.ERIKA_STUDENT_ID).getPassword();
+
         // log in as student
-        RegisteredUserDTO targetUser = integrationTestUsers.ERIKA_STUDENT;
+        RegisteredUser targetUser = integrationTestUsers.ERIKA_STUDENT;
 
         LoginResult studentLogin = loginAs(httpSession, ITConstants.ERIKA_STUDENT_EMAIL, ITConstants.ERIKA_STUDENT_PASSWORD);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
@@ -333,6 +337,9 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         // check status code was 'OK'
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
+        // check that password was changed in DB
+        assertNotEquals(passwordDataManager.getLocalUserCredential(ITConstants.ERIKA_STUDENT_ID).getPassword(), initialPasswordHash);
+
         // check nothing else was modified unexpectedly
         assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
         assertEquals(targetUser.getEmailVerificationStatus(), ((RegisteredUserDTO) createResponse.getEntity()).getEmailVerificationStatus());
@@ -351,8 +358,11 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @Test
     public void createOrUpdateEndpoint_updateUserPasswordWithIncorrectCurrentPassword_failsWithBadRequest() throws Exception {
         // Arrange
+        // check initial password hash
+        String initialPasswordHash = passwordDataManager.getLocalUserCredential(ITConstants.ERIKA_STUDENT_ID).getPassword();
+
         // log in as student
-        RegisteredUserDTO targetUser = integrationTestUsers.ERIKA_STUDENT;
+        RegisteredUser targetUser = integrationTestUsers.ERIKA_STUDENT;
 
         LoginResult studentLogin = loginAs(httpSession, ITConstants.ERIKA_STUDENT_EMAIL, ITConstants.ERIKA_STUDENT_PASSWORD);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
@@ -387,6 +397,9 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
+
+        // check that password was not changed in DB
+        assertEquals(passwordDataManager.getLocalUserCredential(ITConstants.ERIKA_STUDENT_ID).getPassword(), initialPasswordHash);
     }
 
     /**
@@ -396,7 +409,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
      */
     @ParameterizedTest
     @MethodSource("allTestUsersProvider")
-    public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsStudent_failsWithForbidden(RegisteredUserDTO targetUser) throws Exception {
+    public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsStudent_failsWithForbidden(RegisteredUser targetUser) throws Exception {
         // Arrange
         // log in as an existing student
         LoginResult studentLogin = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
@@ -409,7 +422,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                         .put("email", targetUser.getEmail())
                         .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
                         .put("familyName", ">:)") // this is the update
-                        .put("firstLogin", targetUser.isFirstLogin())
+                        .put("firstLogin", false)
                         .put("gender", targetUser.getGender())
                         .put("givenName", targetUser.getGivenName())
                         .put("id", targetUser.getId())
@@ -441,7 +454,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
      */
     @ParameterizedTest
     @MethodSource("allTestUsersProvider")
-    public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsTeacher_failsWithForbidden(RegisteredUserDTO targetUser) throws Exception {
+    public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsTeacher_failsWithForbidden(RegisteredUser targetUser) throws Exception {
         // Arrange
         // log in as teacher
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.DAVE_TEACHER_EMAIL, ITConstants.DAVE_TEACHER_PASSWORD);
@@ -454,7 +467,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                         .put("email", targetUser.getEmail())
                         .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
                         .put("familyName", ">:)") // this is the update
-                        .put("firstLogin", targetUser.isFirstLogin())
+                        .put("firstLogin", false)
                         .put("gender", targetUser.getGender())
                         .put("givenName", targetUser.getGivenName())
                         .put("id", targetUser.getId())
