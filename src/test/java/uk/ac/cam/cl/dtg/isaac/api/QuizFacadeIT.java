@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.time.DateUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
@@ -45,6 +44,8 @@ import java.util.Date;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class QuizFacadeIT extends IsaacIntegrationTest {
 
@@ -79,11 +80,11 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
 
         // check the quiz was assigned successfully
         QuizAssignmentDTO responseBody = (QuizAssignmentDTO) createQuizResponse.getEntity();
-        Assertions.assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) responseBody.getGroupId());
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) responseBody.getGroupId());
     }
 
     @Test
@@ -107,11 +108,11 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is FORBIDDEN
-        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createQuizResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createQuizResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) createQuizResponse.getEntity();
-        Assertions.assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
     }
 
     @Test
@@ -131,14 +132,14 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
 
         // check all quizzes are returned as available
         @SuppressWarnings("unchecked") ResultsWrapper<QuizSummaryDTO> responseBody =
                 (ResultsWrapper<QuizSummaryDTO>) getQuizzesResponse.getEntity();
-        Assertions.assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_QUIZ_ID)));
-        Assertions.assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
-        Assertions.assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_QUIZ_ID)));
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
     }
 
     /**
@@ -161,14 +162,14 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
 
         // check invisible-to-student and hidden-from-tutor-role quizzes are not returned as available
         @SuppressWarnings("unchecked") ResultsWrapper<QuizSummaryDTO> responseBody =
                 (ResultsWrapper<QuizSummaryDTO>) getQuizzesResponse.getEntity();
-        Assertions.assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_QUIZ_ID)));
-        Assertions.assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
-        Assertions.assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_QUIZ_ID)));
+        assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
+        assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
     }
 
     @Test
@@ -189,11 +190,11 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), previewQuizResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), previewQuizResponse.getStatus());
 
         // check the quiz is returned for preview
         IsaacQuizDTO responseBody = (IsaacQuizDTO) previewQuizResponse.getEntity();
-        Assertions.assertEquals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID, responseBody.getId());
+        assertEquals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID, responseBody.getId());
     }
 
     @Test
@@ -214,11 +215,11 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is FORBIDDEN
-        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), previewQuizResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), previewQuizResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
-        Assertions.assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
     }
 
     @Test
@@ -239,10 +240,10 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is FORBIDDEN
-        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), previewQuizResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), previewQuizResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
-        Assertions.assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
     }
 }

@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import static org.easymock.EasyMock.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class UsersFacadeIT extends IsaacIntegrationTest {
 
@@ -73,15 +75,15 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is 'OK'
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check the relevant returned fields match what we provided
-        Assertions.assertEquals(ITConstants.TEST_SIGNUP_EMAIL, ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
-        Assertions.assertEquals("test", ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
-        Assertions.assertEquals("signup", ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
+        assertEquals(ITConstants.TEST_SIGNUP_EMAIL, ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
+        assertEquals("test", ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
+        assertEquals("signup", ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
 
         // check the other returned fields match the expected defaults
-        Assertions.assertEquals(Role.STUDENT, ((RegisteredUserDTO) createResponse.getEntity()).getRole());
+        assertEquals(Role.STUDENT, ((RegisteredUserDTO) createResponse.getEntity()).getRole());
     }
 
     /**
@@ -117,10 +119,10 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is 'OK'
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check we were given a session cookie
-        Assertions.assertEquals("SEGUE_AUTH_COOKIE", setCookie.getValue().getName());
+        assertEquals("SEGUE_AUTH_COOKIE", setCookie.getValue().getName());
     }
 
     /**
@@ -151,7 +153,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
 
         // Assert
-        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
     }
 
     /**
@@ -174,7 +176,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload);
 
         // Assert
-        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
     }
 
     /**
@@ -226,20 +228,20 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code was 'OK'
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check exam board was updated
-        Assertions.assertEquals(ExamBoard.aqa, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getExamBoard());
+        assertEquals(ExamBoard.aqa, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getExamBoard());
 
         // check nothing else was modified unexpectedly
-        Assertions.assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
-        Assertions.assertEquals(targetUser.getEmailVerificationStatus(), ((RegisteredUserDTO) createResponse.getEntity()).getEmailVerificationStatus());
-        Assertions.assertEquals(targetUser.getFamilyName(), ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
-        Assertions.assertEquals(targetUser.getGender(), ((RegisteredUserDTO) createResponse.getEntity()).getGender());
-        Assertions.assertEquals(targetUser.getGivenName(), ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
-        Assertions.assertEquals(Stage.all, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getStage());
-        Assertions.assertEquals(targetUser.getRole(), ((RegisteredUserDTO) createResponse.getEntity()).getRole());
-        Assertions.assertEquals(targetUser.getSchoolId(), ((RegisteredUserDTO) createResponse.getEntity()).getSchoolId());
+        assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
+        assertEquals(targetUser.getEmailVerificationStatus(), ((RegisteredUserDTO) createResponse.getEntity()).getEmailVerificationStatus());
+        assertEquals(targetUser.getFamilyName(), ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
+        assertEquals(targetUser.getGender(), ((RegisteredUserDTO) createResponse.getEntity()).getGender());
+        assertEquals(targetUser.getGivenName(), ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
+        assertEquals(Stage.all, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getStage());
+        assertEquals(targetUser.getRole(), ((RegisteredUserDTO) createResponse.getEntity()).getRole());
+        assertEquals(targetUser.getSchoolId(), ((RegisteredUserDTO) createResponse.getEntity()).getSchoolId());
     }
 
     /**
@@ -281,7 +283,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
 
         // Assert
-        Assertions.assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), createResponse.getStatus());
     }
 
     /**
@@ -328,16 +330,16 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code was 'OK'
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check nothing else was modified unexpectedly
-        Assertions.assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
-        Assertions.assertEquals(targetUser.getEmailVerificationStatus(), ((RegisteredUserDTO) createResponse.getEntity()).getEmailVerificationStatus());
-        Assertions.assertEquals(targetUser.getFamilyName(), ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
-        Assertions.assertEquals(targetUser.getGender(), ((RegisteredUserDTO) createResponse.getEntity()).getGender());
-        Assertions.assertEquals(targetUser.getGivenName(), ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
-        Assertions.assertEquals(targetUser.getRole(), ((RegisteredUserDTO) createResponse.getEntity()).getRole());
-        Assertions.assertEquals(targetUser.getSchoolId(), ((RegisteredUserDTO) createResponse.getEntity()).getSchoolId());
+        assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
+        assertEquals(targetUser.getEmailVerificationStatus(), ((RegisteredUserDTO) createResponse.getEntity()).getEmailVerificationStatus());
+        assertEquals(targetUser.getFamilyName(), ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
+        assertEquals(targetUser.getGender(), ((RegisteredUserDTO) createResponse.getEntity()).getGender());
+        assertEquals(targetUser.getGivenName(), ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
+        assertEquals(targetUser.getRole(), ((RegisteredUserDTO) createResponse.getEntity()).getRole());
+        assertEquals(targetUser.getSchoolId(), ((RegisteredUserDTO) createResponse.getEntity()).getSchoolId());
     }
 
     /**
@@ -383,7 +385,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
 
         // Assert
-        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
     }
 
     /**
@@ -428,7 +430,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
 
         // Assert
-        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createResponse.getStatus());
     }
 
     /**
@@ -473,6 +475,6 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
 
         // Assert
-        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createResponse.getStatus());
     }
 }

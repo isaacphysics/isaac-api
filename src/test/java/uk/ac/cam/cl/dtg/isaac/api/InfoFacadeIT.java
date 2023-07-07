@@ -11,9 +11,9 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
 import static org.easymock.EasyMock.createNiceMock;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
 public class InfoFacadeIT extends IsaacIntegrationTest {
@@ -30,7 +30,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
     public void getSegueAppVersion_respondsOK() {
         // /info/segue_version
         Response response = infoFacade.getSegueAppVersion();
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -38,7 +38,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
         // /info/segue_environment
         Request request = createNiceMock(Request.class);
         Response response = infoFacade.getSegueEnvironment(request);
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -48,9 +48,9 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
         Response response = infoFacade.getSegueEnvironment(request);
         if (response.getEntity() instanceof ImmutableMap) {
             ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
-            Assertions.assertNotNull(entity);
-            Assertions.assertNotNull(entity.get("segueEnvironment"));
-            Assertions.assertEquals("DEV", entity.get("segueEnvironment"));
+            assertNotNull(entity);
+            assertNotNull(entity.get("segueEnvironment"));
+            assertEquals("DEV", entity.get("segueEnvironment"));
         }
     }
 
@@ -58,7 +58,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
     public void getLiveVersion_respondsOK() {
         // /info/content_version/live_version
         Response response = infoFacade.getLiveVersionInfo();
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -67,8 +67,8 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
         Response response = infoFacade.getLiveVersionInfo();
         if (response.getEntity() instanceof ImmutableMap) {
             ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
-            Assertions.assertNotNull(entity);
-            Assertions.assertNotNull(entity.get("liveVersion"));
+            assertNotNull(entity);
+            assertNotNull(entity.get("liveVersion"));
         }
     }
 
@@ -76,14 +76,14 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
     public void etlPing_respondsOK() {
         // /info/etl/ping
         Response response = infoFacade.pingETLServer();
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     @Test
     public void elasticsearchPing_respondsOK() {
         // /info/elasticsearch/ping
         Response response = infoFacade.pingElasticSearch();
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     // NOTE: The other methods are probably less useful to test unless we also bring up the checkers

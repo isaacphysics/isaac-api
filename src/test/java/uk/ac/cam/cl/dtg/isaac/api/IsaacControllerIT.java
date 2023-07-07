@@ -20,7 +20,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TYPE_FILTER;
 
@@ -83,14 +82,14 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(ITConstants.SEARCH_TEST_CONCEPT_ID), questionIDs);
+        assertEquals(Set.of(ITConstants.SEARCH_TEST_CONCEPT_ID), questionIDs);
     }
 
     /**
@@ -119,14 +118,14 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(ITConstants.SEARCH_TEST_TOPIC_SUMMARY_ID), questionIDs);
+        assertEquals(Set.of(ITConstants.SEARCH_TEST_TOPIC_SUMMARY_ID), questionIDs);
     }
 
     /**
@@ -155,13 +154,13 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(ITConstants.SEARCH_TEST_EVENT_ID), questionIDs);
+        assertEquals(Set.of(ITConstants.SEARCH_TEST_EVENT_ID), questionIDs);
     }
 }

@@ -43,7 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
 
@@ -89,11 +89,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
 
         // check the group was created successfully
         UserGroupDTO responseBody = (UserGroupDTO) createGroupResponse.getEntity();
-        Assertions.assertEquals("Test Teacher's New Group", responseBody.getGroupName());
+        assertEquals("Test Teacher's New Group", responseBody.getGroupName());
     }
 
     @Test
@@ -117,11 +117,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), createGroupResponse.getStatus());
 
         // check the group was created successfully
         UserGroupDTO responseBody = (UserGroupDTO) createGroupResponse.getEntity();
-        Assertions.assertEquals("Test Tutor's New Group", responseBody.getGroupName());
+        assertEquals("Test Tutor's New Group", responseBody.getGroupName());
     }
 
     @Test
@@ -147,11 +147,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), addManagerResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), addManagerResponse.getStatus());
 
         // check the additional teacher was added successfully
         UserGroupDTO responseBody = (UserGroupDTO) addManagerResponse.getEntity();
-        Assertions.assertEquals(DAVE_TEACHER_EMAIL, responseBody.getAdditionalManagers().stream().findFirst().get().getEmail());
+        assertEquals(DAVE_TEACHER_EMAIL, responseBody.getAdditionalManagers().stream().findFirst().get().getEmail());
     }
 
     @Test
@@ -177,11 +177,11 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code
-        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addManagerResponse.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addManagerResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) addManagerResponse.getEntity();
-        Assertions.assertEquals("There was a problem adding the user specified. Please make sure their email address is "
+        assertEquals("There was a problem adding the user specified. Please make sure their email address is "
                 + "correct and they have a teacher account.", responseBody.getErrorMessage());
     }
 
@@ -208,10 +208,10 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code
-        Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), addManagerResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), addManagerResponse.getStatus());
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) addManagerResponse.getEntity();
-        Assertions.assertEquals("You must have a teacher account to add additional group managers to your groups.", responseBody.getErrorMessage());
+        assertEquals("You must have a teacher account to add additional group managers to your groups.", responseBody.getErrorMessage());
     }
 }

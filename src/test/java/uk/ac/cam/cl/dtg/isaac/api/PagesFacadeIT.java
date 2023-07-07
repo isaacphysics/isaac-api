@@ -43,7 +43,8 @@ import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class PagesFacadeIT extends IsaacIntegrationTest{
 
@@ -75,14 +76,14 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
+        assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
     }
 
     @Test
@@ -104,14 +105,14 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(), questionIDs);
+        assertEquals(Set.of(), questionIDs);
     }
 
     @Test
@@ -133,14 +134,14 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(), questionIDs);
+        assertEquals(Set.of(), questionIDs);
     }
 
     @Test
@@ -163,14 +164,14 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
+        assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
     }
 
     @Test
@@ -192,14 +193,14 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
-        Assertions.assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
+        assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
     }
 
     @Test
@@ -221,13 +222,13 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Assert
         // check status code is OK
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
         // check the search returned the expected content summary
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
-        Assertions.assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
+        assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
     }
 }
