@@ -19,11 +19,11 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ import java.util.Date;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
-@Ignore("PowerMock causes all sorts of problems here, disabling for now")
+@Disabled("PowerMock causes all sorts of problems here, disabling for now")
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Date.class, AssignmentFacade.class})
 @PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*", "ma.glasnost.orika.*"})
@@ -62,7 +63,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // mock the current date/time
         Calendar mockCurrentDateTime = Calendar.getInstance();
@@ -78,21 +79,22 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
                 new AssignmentService(userAccountManager));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws SQLException {
         // reset the mocks
         PowerMock.reset(Date.class);
         PowerMock.reset(userBadgeManager);
 
         // reset assignments in DB, so the same assignment can be re-used across tests
-        PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-                "DELETE FROM assignments WHERE gameboard_id in (?,?);");
-        pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-        pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
-        pst.executeUpdate();
+        try (Connection conn = postgresSqlDb.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM assignments WHERE gameboard_id in (?,?);")) {
+            pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+            pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
+            pst.executeUpdate();
+        }
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanUp() throws SegueDatabaseException {
         // reset additional manager privileges setting for Daves group
         UserGroupDTO davesGroup = groupManager.getGroupById(ITConstants.DAVE_TEACHERS_BC_GROUP_ID);
@@ -378,7 +380,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
 
     @Test
-    @Ignore("Flaky test, requires review")
+    @Disabled("Flaky test, requires review")
     public void deleteAssignmentEndpoint_attemptToDeleteOwnersAssignmentAsAdditionalManagerWithAdditionManagerPrivilegesOff_failsToDelete()
             throws Exception {
 

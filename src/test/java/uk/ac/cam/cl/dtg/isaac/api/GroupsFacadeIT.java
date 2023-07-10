@@ -19,9 +19,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -44,7 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
 
@@ -52,14 +51,14 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
     private GroupsFacade groupsFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // get an instance of the facade to test
         this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager, gameManager,
              groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws SQLException {
         // reset group managers in DB, so the same groups can be re-used across test cases
         PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
@@ -213,7 +212,6 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) addManagerResponse.getEntity();
-        assertEquals("You must have a teacher account to add additional group managers to your groups.",
-                responseBody.getErrorMessage());
+        assertEquals("You must have a teacher account to add additional group managers to your groups.", responseBody.getErrorMessage());
     }
 }

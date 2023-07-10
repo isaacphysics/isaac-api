@@ -18,6 +18,8 @@
         <jackson.version>2.15.0-rc3</jackson.version>
         <jackson-databind.version>2.14.1</jackson-databind.version>
         <powermock.version>2.0.9</powermock.version>
+        <junit-4.version>4.13.2</junit-4.version>
+        <junit-5.version>5.9.3</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.8.0</prometheus.version>
         <jetty-version>11.0.12</jetty-version>
@@ -30,6 +32,8 @@
         <netty.version>4.1.77.Final</netty.version>
         <dependency-check.version>7.1.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
+        <surefire.jacoco.args />
+        <failsafe.jacoco.args />
     </properties>
 
     <repositories>
@@ -196,11 +200,22 @@
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>2.2.2</version>
         </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <version>${junit-4.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-5.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit-5.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -510,7 +525,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>3.1.2</version>
+                <dependencies>
+                    <dependency>
+                        <!-- This forces surefire (i.e. all unit tests) to use JUnit 4, as PowerMock is used in unit
+                        tests and is not compatible with JUnit 5.
+                        See https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit.html#manually-specifying-a-provider -->
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit47</artifactId>
+                        <version>3.1.2</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <forkCount>3</forkCount>
                     <reuseForks>true</reuseForks>

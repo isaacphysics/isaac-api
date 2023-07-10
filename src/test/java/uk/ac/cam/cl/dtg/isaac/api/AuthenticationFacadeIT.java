@@ -3,21 +3,21 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.core.Response;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 
 import java.net.URI;
 import java.util.Map;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
     private AuthenticationFacade authenticationFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // get an instance of the facade to test
         this.authenticationFacade = new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);

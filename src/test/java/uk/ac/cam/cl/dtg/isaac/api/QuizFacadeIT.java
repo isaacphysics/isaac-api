@@ -21,8 +21,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.time.DateUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -43,14 +43,15 @@ import java.util.Date;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.*;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class QuizFacadeIT extends IsaacIntegrationTest {
 
     private QuizFacade quizFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // get an instance of the facade to test
         this.quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userAccountManager,

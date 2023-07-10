@@ -30,9 +30,17 @@ public final class ITConstants {
     public static final String TEST_EDITOR_PASSWORD = "test1234";
     public static final long TEST_EDITOR_ID = 4L;
 
+    public static final String FREDDIE_EDITOR_EMAIL = "freddie-editor@test.com";
+    public static final String FREDDIE_EDITOR_PASSWORD = "test1234";
+    public static final long FREDDIE_EDITOR_ID = 13L;
+
     public static final String TEST_EVENTMANAGER_EMAIL = "test-event@test.com";
     public static final String TEST_EVENTMANAGER_PASSWORD = "test1234";
     public static final long TEST_EVENTMANAGER_ID = 3L;
+
+    public static final String GARY_EVENTMANAGER_EMAIL = "gary-event@test.com";
+    public static final String GARY_EVENTMANAGER_PASSWORD = "test1234";
+    public static final long GARY_EVENTMANAGER_ID = 14L;
 
     public static final String TEST_TEACHER_EMAIL = "test-teacher@test.com";
     public static final String TEST_TEACHER_PASSWORD = "test1234";
@@ -45,6 +53,17 @@ public final class ITConstants {
     public static final String TEST_STUDENT_EMAIL = "test-student@test.com";
     public static final String TEST_STUDENT_PASSWORD = "test1234";
     public static final long TEST_STUDENT_ID = 6L;
+
+    public static final String ALICE_STUDENT_EMAIL = "alice-student@test.com";
+    public static final String ALICE_STUDENT_PASSWORD = "test1234";
+    public static final long ALICE_STUDENT_ID = 7L;
+
+    public static final String ERIKA_STUDENT_EMAIL = "erika-student@test.com";
+    public static final String ERIKA_STUDENT_PASSWORD = "test1234";
+    public static final long ERIKA_STUDENT_ID = 11L;
+
+    public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
+    public static final String TEST_SIGNUP_PASSWORD = "test1234";
 
     public static final String TEST_TUTOR_EMAIL = "test-tutor@test.com";
     public static final String TEST_TUTOR_PASSWORD = "test1234";

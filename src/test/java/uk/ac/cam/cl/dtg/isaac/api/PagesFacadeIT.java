@@ -20,8 +20,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -42,13 +43,14 @@ import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class PagesFacadeIT extends IsaacIntegrationTest{
 
     private PagesFacade pagesFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.pagesFacade = new PagesFacade(new ContentService(contentManager, "latest"), properties, logManager,
                 mapperFacade, contentManager, userAccountManager, new URIManager(properties), questionManager, gameManager,

@@ -7,8 +7,8 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -52,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -64,7 +66,6 @@ import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -100,6 +101,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
@@ -152,6 +154,7 @@ public abstract class IsaacIntegrationTest {
     protected static AssignmentManager assignmentManager;
     protected static QuestionManager questionManager;
     protected static QuizManager quizManager;
+    protected static PgPasswordDataManager passwordDataManager;
 
     // Manager dependencies
     protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -163,6 +166,10 @@ public abstract class IsaacIntegrationTest {
 
     // Services
     protected static AssignmentService assignmentService;
+
+    protected static AbstractUserPreferenceManager userPreferenceManager;
+
+    protected static ITUsers integrationTestUsers;
 
     protected class LoginResult {
         public RegisteredUserDTO user;
@@ -210,7 +217,7 @@ public abstract class IsaacIntegrationTest {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         // Initialise Postgres - we will create a new, clean instance for each test class.
         postgres = new PostgreSQLContainer<>("postgres:12")
@@ -257,7 +264,7 @@ public abstract class IsaacIntegrationTest {
         JsonMapper jsonMapper = new JsonMapper();
         PgUsers pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
-        PgPasswordDataManager passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
+        passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
         ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
@@ -279,7 +286,7 @@ public abstract class IsaacIntegrationTest {
         providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
         EmailCommunicator communicator = new EmailCommunicator("localhost", "default@localhost", "Howdy!");
-        AbstractUserPreferenceManager userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
+        userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
 
         Git git = createNiceMock(Git.class);
         GitDb gitDb = new GitDb(git);
@@ -329,6 +336,7 @@ public abstract class IsaacIntegrationTest {
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(), new RegistrationMisuseHandler(emailManager, properties));
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
@@ -356,9 +364,10 @@ public abstract class IsaacIntegrationTest {
         Injector injector = Guice.createInjector(testModule);
          */
 
+        integrationTestUsers = new ITUsers(pgUsers);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() {
         // Stop Postgres - we will create a new, clean instance for each test class.
         postgres.stop();
@@ -385,5 +394,15 @@ public abstract class IsaacIntegrationTest {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
         expect(request.getCookies()).andReturn(cookies).anyTimes();
         return request;
+    }
+
+    protected HttpServletRequest createRequestWithSession() {
+        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
+        expect(request.getSession()).andReturn(httpSession).anyTimes();
+        return request;
+    }
+
+    static Set<RegisteredUser> allTestUsersProvider() {
+        return integrationTestUsers.ALL;
     }
 }

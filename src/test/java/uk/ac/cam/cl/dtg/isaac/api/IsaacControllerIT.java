@@ -20,8 +20,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TYPE_FILTER;
 
@@ -49,7 +49,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
 
     private IsaacController isaacControllerFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.isaacControllerFacade = new IsaacController(properties, logManager, createNiceMock(StatisticsManager.class),
                 userAccountManager, contentManager, userAssociationManager, "latest",

@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
@@ -28,19 +28,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.createNiceMock;
-import static org.junit.Assert.assertEquals;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class EventsFacadeIT extends IsaacIntegrationTest {
 
     private EventsFacade eventsFacade;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // Get an instance of the facade to test
         eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, "latest", userBadgeManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
