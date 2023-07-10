@@ -30,9 +30,17 @@ public final class ITConstants {
     public static final String TEST_EDITOR_PASSWORD = "test1234";
     public static final long TEST_EDITOR_ID = 4L;
 
+    public static final String FREDDIE_EDITOR_EMAIL = "freddie-editor@test.com";
+    public static final String FREDDIE_EDITOR_PASSWORD = "test1234";
+    public static final long FREDDIE_EDITOR_ID = 13L;
+
     public static final String TEST_EVENTMANAGER_EMAIL = "test-event@test.com";
     public static final String TEST_EVENTMANAGER_PASSWORD = "test1234";
     public static final long TEST_EVENTMANAGER_ID = 3L;
+
+    public static final String GARY_EVENTMANAGER_EMAIL = "gary-event@test.com";
+    public static final String GARY_EVENTMANAGER_PASSWORD = "test1234";
+    public static final long GARY_EVENTMANAGER_ID = 14L;
 
     public static final String TEST_TEACHER_EMAIL = "test-teacher@test.com";
     public static final String TEST_TEACHER_PASSWORD = "test1234";

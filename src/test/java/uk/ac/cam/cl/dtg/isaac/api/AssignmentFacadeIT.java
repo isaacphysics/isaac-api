@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -85,8 +86,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         PowerMock.reset(userBadgeManager);
 
         // reset assignments in DB, so the same assignment can be re-used across tests
-        try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-                "DELETE FROM assignments WHERE gameboard_id in (?,?);")) {
+        try (Connection conn = postgresSqlDb.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM assignments WHERE gameboard_id in (?,?);")) {
             pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
             pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
             pst.executeUpdate();

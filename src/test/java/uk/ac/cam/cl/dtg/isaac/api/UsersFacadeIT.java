@@ -7,7 +7,6 @@ import jakarta.ws.rs.core.Response;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +18,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Set;
@@ -40,8 +41,8 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @AfterEach
     public void tearDown() throws SQLException {
         // reset created users in DB
-        try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-                "DELETE FROM users WHERE email in (?);")) {
+        try (Connection conn = postgresSqlDb.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM users WHERE email in (?);")) {
             pst.setString(1, ITConstants.TEST_SIGNUP_EMAIL);
             pst.executeUpdate();
         }
@@ -259,7 +260,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                 .put("registeredUser", new JSONObject()
                         .put("email", targetUser.getEmail())
                         .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
-                        .put("familyName", ">:)") // this is the update
+                        .put("familyName", "Person") // this is the update
                         .put("firstLogin", false)
                         .put("gender", targetUser.getGender())
                         .put("givenName", targetUser.getGivenName())
@@ -361,7 +362,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         // check initial password hash
         String initialPasswordHash = passwordDataManager.getLocalUserCredential(ITConstants.ERIKA_STUDENT_ID).getPassword();
 
-        // log in as student
+        // log in as Student
         RegisteredUser targetUser = integrationTestUsers.ERIKA_STUDENT;
 
         LoginResult studentLogin = loginAs(httpSession, ITConstants.ERIKA_STUDENT_EMAIL, ITConstants.ERIKA_STUDENT_PASSWORD);
@@ -411,7 +412,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @MethodSource("allTestUsersProvider")
     public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsStudent_failsWithForbidden(RegisteredUser targetUser) throws Exception {
         // Arrange
-        // log in as an existing student
+        // log in as Student
         LoginResult studentLogin = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
         replay(request);
@@ -421,7 +422,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                 .put("registeredUser", new JSONObject()
                         .put("email", targetUser.getEmail())
                         .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
-                        .put("familyName", ">:)") // this is the update
+                        .put("familyName", "Person") // this is the update
                         .put("firstLogin", false)
                         .put("gender", targetUser.getGender())
                         .put("givenName", targetUser.getGivenName())
@@ -456,7 +457,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @MethodSource("allTestUsersProvider")
     public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsTeacher_failsWithForbidden(RegisteredUser targetUser) throws Exception {
         // Arrange
-        // log in as teacher
+        // log in as Teacher
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.DAVE_TEACHER_EMAIL, ITConstants.DAVE_TEACHER_PASSWORD);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(request);
@@ -466,7 +467,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                 .put("registeredUser", new JSONObject()
                         .put("email", targetUser.getEmail())
                         .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
-                        .put("familyName", ">:)") // this is the update
+                        .put("familyName", "Person") // this is the update
                         .put("firstLogin", false)
                         .put("gender", targetUser.getGender())
                         .put("givenName", targetUser.getGivenName())
@@ -490,5 +491,96 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createResponse.getStatus());
+    }
+
+    /**
+     * Checks that authenticated requests to update other users of each role by a user with the Content Editor role are rejected.
+     *
+     * @throws Exception - not expected.
+     */
+    @ParameterizedTest
+    @MethodSource("allTestUsersProvider")
+    public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsEditor_failsWithForbidden(RegisteredUser targetUser) throws Exception {
+        // Arrange
+        // log in as Content Editor
+        LoginResult editorLogin = loginAs(httpSession, ITConstants.FREDDIE_EDITOR_EMAIL, ITConstants.FREDDIE_EDITOR_PASSWORD);
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{editorLogin.cookie});
+        replay(request);
+
+        // create request
+        JSONObject payload = new JSONObject()
+                .put("registeredUser", new JSONObject()
+                        .put("email", targetUser.getEmail())
+                        .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
+                        .put("familyName", "Person") // this is the update
+                        .put("firstLogin", false)
+                        .put("gender", targetUser.getGender())
+                        .put("givenName", targetUser.getGivenName())
+                        .put("id", targetUser.getId())
+                        .put("lastSeen", "1686558490205")
+                        .put("lastUpdated", "1686558490205")
+                        .put("loggedIn", true)
+                        .put("password", JSONObject.NULL)
+                        .put("registeredContext", Set.of())
+                        .put("registrationDate", "1564660299981")
+                        .put("role", targetUser.getRole())
+                        .put("schoolId", targetUser.getSchoolId())
+                )
+                .put("passwordCurrent", JSONObject.NULL);
+
+        HttpServletResponse response = createNiceMock(HttpServletResponse.class);
+        replay(response);
+
+        // Act
+        Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
+
+        // Assert
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), createResponse.getStatus());
+    }
+
+    /**
+     * Checks that authenticated requests to update other users of each role by a user with the Event Manager role are
+     * successful.
+     *
+     * @throws Exception - not expected.
+     */
+    @ParameterizedTest
+    @MethodSource("allTestUsersProvider")
+    public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsEventManager_succeeds(RegisteredUser targetUser) throws Exception {
+        // Arrange
+        // log in as Event Manager
+        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.GARY_EVENTMANAGER_EMAIL, ITConstants.GARY_EVENTMANAGER_PASSWORD);
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{eventManagerLogin.cookie});
+        replay(request);
+
+        // create request
+        JSONObject payload = new JSONObject()
+                .put("registeredUser", new JSONObject()
+                        .put("email", targetUser.getEmail())
+                        .put("emailVerificationStatus", targetUser.getEmailVerificationStatus())
+                        .put("familyName", "Person") // this is the update
+                        .put("firstLogin", false)
+                        .put("gender", targetUser.getGender())
+                        .put("givenName", targetUser.getGivenName())
+                        .put("id", targetUser.getId())
+                        .put("lastSeen", "1686558490205")
+                        .put("lastUpdated", "1686558490205")
+                        .put("loggedIn", true)
+                        .put("password", JSONObject.NULL)
+                        .put("registeredContext", Set.of())
+                        .put("registrationDate", "1564660299981")
+                        .put("role", targetUser.getRole())
+                        .put("schoolId", targetUser.getSchoolId())
+                )
+                .put("passwordCurrent", JSONObject.NULL);
+
+        HttpServletResponse response = createNiceMock(HttpServletResponse.class);
+        replay(response);
+
+        // Act
+        Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
+
+        // Assert
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
     }
 }

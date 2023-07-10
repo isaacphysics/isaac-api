@@ -5,6 +5,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -18,7 +19,9 @@ public class ITUsers {
     public final RegisteredUser TEST_ADMIN;
     public final RegisteredUser TEST_TUTOR;
     public final RegisteredUser TEST_EVENTMANAGER;
+    public final RegisteredUser GARY_EVENTMANAGER;
     public final RegisteredUser TEST_EDITOR;
+    public final RegisteredUser FREDDIE_EDITOR;
 
     public final Set<RegisteredUser> ALL;
     public final Set<RegisteredUser> TUTOR_AND_BELOW;
@@ -41,7 +44,9 @@ public class ITUsers {
         TEST_TEACHER = userDataManager.getById(ITConstants.TEST_TEACHER_ID);
         DAVE_TEACHER = userDataManager.getById(ITConstants.DAVE_TEACHER_ID);
         TEST_EVENTMANAGER = userDataManager.getById(ITConstants.TEST_EVENTMANAGER_ID);
+        GARY_EVENTMANAGER = userDataManager.getById(ITConstants.GARY_EVENTMANAGER_ID);
         TEST_EDITOR = userDataManager.getById(ITConstants.TEST_EDITOR_ID);
+        FREDDIE_EDITOR = userDataManager.getById(ITConstants.FREDDIE_EDITOR_ID);
         TEST_ADMIN = userDataManager.getById(ITConstants.TEST_ADMIN_ID);
 
         TUTOR_AND_BELOW = Set.of(TEST_STUDENT, TEST_TUTOR);
