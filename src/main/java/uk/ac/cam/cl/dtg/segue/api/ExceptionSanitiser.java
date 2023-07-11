@@ -20,11 +20,19 @@ public class ExceptionSanitiser implements ContainerResponseFilter {
         if (containerResponseContext.getEntityType() == SegueErrorResponse.class && ((SegueErrorResponse) containerResponseContext.getEntity()).getAdditionalErrorInformation() != null) {
             SegueErrorResponse error = (SegueErrorResponse) containerResponseContext.getEntity();
             UUID generatedUUID = UUID.randomUUID();
-            log.error("Unsanitised exception captured. Assigned ID: " + generatedUUID + ". Exception: " + error.toString());
+            String logMessage = String.format(
+                    "Unsanitised error response captured. Assigned ID: %1$s. Error content: %2$s",
+                    generatedUUID, error.toString()
+            );
+            String responseMessage = String.format(
+                    "%1$s\nPlease report this ID if you contact support: %2$s.",
+                    error.getErrorMessage(), generatedUUID
+            );
+            log.error(logMessage, error.getException());
             containerResponseContext.setEntity(new SegueErrorResponse(
                     error.getResponseCode(),
                     error.getResponseCodeType(),
-                    error.getErrorMessage() + "\nPlease report this ID if you contact support: " + generatedUUID + ".",
+                    responseMessage,
                     null
             ));
         }
