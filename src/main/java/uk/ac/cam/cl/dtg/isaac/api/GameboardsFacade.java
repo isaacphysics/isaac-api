@@ -30,9 +30,11 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -67,6 +69,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -239,13 +242,20 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             GameboardDTO gameboard;
 
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
-                    .getQuestionAttemptsByUser(randomUser);
 
             GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
             if (null == unAugmentedGameboard) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
                         .toResponse();
+            }
+
+            Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> userQuestionAttempts;
+
+            if (randomUser instanceof AnonymousUserDTO) {
+                userQuestionAttempts = this.questionManager.getQuestionAttemptsByUser(randomUser);
+            } else {
+                List<String> gameboardPageIds = unAugmentedGameboard.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
+                userQuestionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) randomUser, gameboardPageIds);
             }
 
             // Calculate the ETag

@@ -47,6 +47,18 @@ public interface IQuestionAttemptManager {
             throws SegueDatabaseException;
 
     /**
+     * Get a users question attempts on a specific question page.
+     *
+     * @param userId - the id of the user to search for.
+     * @param questionPageId - the id of the question.
+     * @return the questionAttempts map or an empty map if the user has not yet registered any attempts.
+     * @throws SegueDatabaseException
+     *             - If there is a database error.
+     */
+    Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(Long userId, String questionPageId)
+            throws SegueDatabaseException;
+
+    /**
      * A method that makes a single database request for a group of users and questions to get all of their attempt
      * information back.
      * 
@@ -62,7 +74,7 @@ public interface IQuestionAttemptManager {
      *             - if a database error occurrs
      */
     Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
-            getQuestionAttemptsByUsersAndQuestionPrefix(List<Long> userIds, List<String> questionPage)
+        getMatchingLightweightQuestionAttempts(List<Long> userIds, List<String> questionPage)
             throws SegueDatabaseException;
     
     /**
