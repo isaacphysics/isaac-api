@@ -412,31 +412,30 @@ public class QuestionManager {
      * @return a map of user id to question page id to question_id to list of attempts.
      * @throws SegueDatabaseException if there is a database error.
      */
-    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingQuestionAttempts(
+    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingLightweightQuestionAttempts(
             final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException {
         List<Long> userIds = Lists.newArrayList();
         for (RegisteredUserDTO user : users) {
             userIds.add(user.getId());
         }
 
-        return this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
-                questionPageIds);
+        return this.questionAttemptPersistenceManager.getMatchingLightweightQuestionAttempts(userIds, questionPageIds);
     }
 
     /**
      *  Helper method for attempts from a single user.
      *
-     * @see #getMatchingQuestionAttempts(List, List)
+     * @see #getMatchingLightweightQuestionAttempts(List, List)
      *
      * @param user who we are interested in.
      * @param questionPageIds we want to look up.
      * @return a map of user id to question page id to question_id to list of attempts.
      * @throws SegueDatabaseException if there is a database error.
      */
-    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getMatchingQuestionAttempts(
+    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getMatchingLightweightQuestionAttempts(
             final RegisteredUserDTO user, final List<String> questionPageIds) throws SegueDatabaseException {
 
-        return this.getMatchingQuestionAttempts(Collections.singletonList(user), questionPageIds).get(user.getId());
+        return this.getMatchingLightweightQuestionAttempts(Collections.singletonList(user), questionPageIds).get(user.getId());
     }
     
     /**

@@ -255,7 +255,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 userQuestionAttempts = this.questionManager.getQuestionAttemptsByUser(randomUser);
             } else {
                 List<String> gameboardPageIds = unAugmentedGameboard.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
-                userQuestionAttempts = this.questionManager.getMatchingQuestionAttempts((RegisteredUserDTO) randomUser, gameboardPageIds);
+                userQuestionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) randomUser, gameboardPageIds);
             }
 
             // Calculate the ETag

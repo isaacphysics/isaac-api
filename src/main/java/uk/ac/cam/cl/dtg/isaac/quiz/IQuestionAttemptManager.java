@@ -74,7 +74,7 @@ public interface IQuestionAttemptManager {
      *             - if a database error occurrs
      */
     Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
-            getQuestionAttemptsByUsersAndQuestionPrefix(List<Long> userIds, List<String> questionPage)
+        getMatchingLightweightQuestionAttempts(List<Long> userIds, List<String> questionPage)
             throws SegueDatabaseException;
     
     /**

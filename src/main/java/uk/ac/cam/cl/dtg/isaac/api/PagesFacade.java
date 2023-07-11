@@ -455,7 +455,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     userIdForRandomisation = registeredUser.getId().toString();
 
                     List<String> relatedQuestionIds = new ArrayList<>(getRelatedContentIds(content));
-                    relatedQuestionAttempts = questionManager.getMatchingQuestionAttempts(registeredUser, relatedQuestionIds);
+                    relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts(registeredUser, relatedQuestionIds);
 
                     questionAttempts = questionManager.getQuestionAttemptsByUserForQuestion(registeredUser, questionId);
                 }
@@ -551,7 +551,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 relatedQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
             } else {
                 List<String> relatedQuestionIds = getRelatedContentIds(topicSummaryDTO);
-                relatedQuestionAttempts = questionManager.getMatchingQuestionAttempts((RegisteredUserDTO) user, relatedQuestionIds);
+                relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) user, relatedQuestionIds);
             }
 
             this.augmentContentWithRelatedContent(topicSummaryDTO, relatedQuestionAttempts);

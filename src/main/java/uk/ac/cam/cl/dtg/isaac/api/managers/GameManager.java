@@ -323,7 +323,7 @@ public class GameManager {
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
         List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
-                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
+                questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
         for (GameboardDTO gb : gameboardsByIds) {
             augmentGameboardWithQuestionAttemptInformation(gb, userQuestionAttempts);
         }
@@ -415,7 +415,7 @@ public class GameManager {
 
         List<String> questionPageIds = usersGameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsFromUser =
-                questionManager.getMatchingQuestionAttempts(user, questionPageIds);
+                questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
 
         List<GameboardDTO> resultToReturn = Lists.newArrayList();
 
@@ -648,7 +648,7 @@ public class GameManager {
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                 questionAttemptsForAllUsersOfInterest =
-                questionManager.getMatchingQuestionAttempts(users, questionPageIds);
+                questionManager.getMatchingLightweightQuestionAttempts(users, questionPageIds);
 
         for (RegisteredUserDTO user : users) {
             List<GameboardItem> userGameItems = Lists.newArrayList();

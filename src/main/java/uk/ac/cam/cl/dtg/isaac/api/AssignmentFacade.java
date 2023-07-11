@@ -506,7 +506,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 questionPageIds.add(questionPage.getId());
             }
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
-            questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+            questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds);
 
             Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                     questionAttemptsForAllUsersOfInterest = new HashMap<>();
@@ -733,7 +733,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             try {
-                questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
+                questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds);
             } catch (IllegalArgumentException e) {
                 questionAttempts = new HashMap<>();
             }
