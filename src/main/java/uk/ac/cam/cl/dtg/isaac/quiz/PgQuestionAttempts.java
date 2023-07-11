@@ -39,6 +39,7 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -288,10 +289,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             throws SegueDatabaseException {
         if (allQuestionPageIds.isEmpty()) {
             log.error("Attempted to fetch group progress for an empty gameboard.");
-            return Maps.newHashMap();
+            return Collections.emptyMap();
         }
         if (userIds.isEmpty()) {
-            return Maps.newHashMap();
+            return Collections.emptyMap();
         }
 
         List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());

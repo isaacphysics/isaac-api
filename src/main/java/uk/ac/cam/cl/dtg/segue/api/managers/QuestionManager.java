@@ -435,7 +435,8 @@ public class QuestionManager {
     public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getMatchingLightweightQuestionAttempts(
             final RegisteredUserDTO user, final List<String> questionPageIds) throws SegueDatabaseException {
 
-        return this.getMatchingLightweightQuestionAttempts(Collections.singletonList(user), questionPageIds).get(user.getId());
+        return this.getMatchingLightweightQuestionAttempts(Collections.singletonList(user), questionPageIds)
+                .getOrDefault(user.getId(), Collections.emptyMap());
     }
     
     /**
