@@ -628,42 +628,46 @@ public class PagesFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid page id.").toResponse();
         }
 
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
+        // Calculate the ETag on current live version of the content:
+        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode()));
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
         }
 
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
-
-        // options
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
-
         try {
-            Response result = this.findSingleResult(fieldsToMatch);
-
-            if (result.getEntity() instanceof SeguePageDTO) {
-
-
-                ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                        .put(PAGE_ID_LOG_FIELDNAME, pageId)
-                        .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            ContentDTO contentDTO = contentManager.getContentById(pageId);
+            // We must not allow subclasses here, since general pages are the base class for all other page types!
+            if (SeguePageDTO.class.equals(contentDTO.getClass())) {
+                SeguePageDTO content = (SeguePageDTO) contentDTO;
+                // Unlikely we want to augment with a user's actual question attempts. Use an empty Map.
+                augmentContentWithRelatedContent(content, Collections.emptyMap());
 
                 // the request log
+                ImmutableMap<String, String> logEntry = ImmutableMap.of(
+                        PAGE_ID_LOG_FIELDNAME, pageId,
+                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                );
                 getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                         IsaacServerLogType.VIEW_PAGE, logEntry);
-            }
 
-            Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-            return cachableResult;
+                return Response.ok(content)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .tag(etag)
+                        .build();
+            } else {
+                String error = "Unable to locate a page with the id specified: " + pageId;
+                log.warn(error);
+                return SegueErrorResponse.getResourceNotFoundResponse(error);
+            }
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
