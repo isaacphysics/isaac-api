@@ -691,33 +691,42 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Operation(summary = "Get a content page fragment by ID.")
     public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @PathParam("fragment_id") final String fragmentId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode()));
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
         try {
-            // Calculate the ETag on current live version of the content
-            // NOTE: Assumes that the latest version of the content is being used.
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode() + "");
-            Response cachedResponse = generateCachedResponse(request, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
+            ContentDTO contentDTO = contentManager.getContentById(fragmentId);
+            if (contentDTO instanceof IsaacPageFragmentDTO) {
+                // Unlikely we want to augment with related content here!
 
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
-
-            Response result = this.findSingleResult(fieldsToMatch);
-
-            if (result.getEntity() instanceof IsaacPageFragmentDTO) {
+                // the request log
+                ImmutableMap<String, String> logEntry = ImmutableMap.of(
+                        FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
+                        CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                );
                 getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                        IsaacServerLogType.VIEW_PAGE_FRAGMENT, ImmutableMap.of(
-                                FRAGMENT_ID_LOG_FIELDNAME, fragmentId,
-                                CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
-                        ));
+                        IsaacServerLogType.VIEW_PAGE, logEntry);
+
+                return Response.ok(contentDTO)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .tag(etag)
+                        .build();
+            } else {
+                String error = "Unable to locate a page fragment with the id specified: " + fragmentId;
+                log.warn(error);
+                return SegueErrorResponse.getResourceNotFoundResponse(error);
             }
-            return Response.status(result.getStatus()).entity(result.getEntity())
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
