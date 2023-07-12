@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
@@ -69,6 +70,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -235,40 +237,45 @@ public class PagesFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
         }
 
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "byId".hashCode()
-                + conceptId.hashCode() + "");
+        // Calculate the ETag on current live version of the content:
+        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + conceptId.hashCode()));
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
         }
 
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
-
-        // options
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
-
-        Response result = this.findSingleResult(fieldsToMatch);
         try {
-            if (result.getEntity() instanceof SeguePageDTO) {
+            ContentDTO contentDTO = contentManager.getContentById(conceptId);
+            if (contentDTO instanceof IsaacConceptPageDTO) {
+                SeguePageDTO content = (SeguePageDTO) contentDTO;
+                // Do we want to use the user's actual question attempts here? We did not previously.
+                augmentContentWithRelatedContent(content, Collections.emptyMap());
+
                 ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                        .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
+                        .put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
+                        .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                         .build();
 
                 // the request log
                 getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
                         IsaacServerLogType.VIEW_CONCEPT, logEntry);
-            }
-            Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
 
-            return cachableResult;
+                return Response.ok(content)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .tag(etag)
+                        .build();
+            } else {
+                String error = "Unable to locate a concept with the id specified: " + conceptId;
+                log.warn(error);
+                return SegueErrorResponse.getResourceNotFoundResponse(error);
+            }
 
         } catch (SegueDatabaseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Database error while looking up user information.", e);
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
