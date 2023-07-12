@@ -920,40 +920,6 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * For use when we expect to only find a single result.
-     * 
-     * @param fieldsToMatch
-     *            - expects a map of the form fieldname -> list of queries to match
-     * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
-     */
-    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-        try {
-            ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
-            // type
-            // checking.
-            ContentDTO c = null;
-            if (resultList.getResults().size() > 1) {
-                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
-                        + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
-                        .toResponse();
-            } else if (resultList.getResults().isEmpty()) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: "
-                        + fieldsToMatch.values()).toResponse();
-            } else {
-                c = resultList.getResults().get(0);
-            }
-
-            return Response.ok(this.augmentContentWithRelatedContent(c, Maps.newHashMap())).build();
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
-        }
-    }
-
-    /**
      * Helper method to query segue for a list of content objects.
      * 
      * This method will only use the latest version of the content.
