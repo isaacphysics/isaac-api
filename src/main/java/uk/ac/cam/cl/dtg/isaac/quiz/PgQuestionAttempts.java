@@ -288,7 +288,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         getMatchingLightweightQuestionAttempts(final List<Long> userIds, final List<String> allQuestionPageIds)
             throws SegueDatabaseException {
         if (allQuestionPageIds.isEmpty()) {
-            log.error("Attempted to fetch group progress for an empty gameboard.");
             return Collections.emptyMap();
         }
         if (userIds.isEmpty()) {
