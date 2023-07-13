@@ -31,10 +31,14 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
@@ -710,13 +714,13 @@ public class GameManager {
      * @throws ContentManagerException
      *             if there is a problem with the content requested.
      */
-    public Collection<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(final String questionPageId)
+    public Collection<Question> getAllMarkableDOQuestionPartsDFSOrder(final String questionPageId)
             throws ContentManagerException {
         Validate.notBlank(questionPageId);
 
         // do a depth first traversal of the question page to get the correct order of questions
-        ContentDTO questionPage = this.contentManager.getContentById(questionPageId);
-        return getAllMarkableQuestionPartsDFSOrder(questionPage);
+        Content questionPage = this.contentManager.getContentDOById(questionPageId);
+        return getAllMarkableDOQuestionPartsDFSOrder(questionPage);
     }
 
     /**
@@ -727,11 +731,21 @@ public class GameManager {
      *            - results depend on each question having an id prefixed with the question page id.
      * @return collection of markable question parts (questions).
      */
-    public static List<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(ContentDTO content) {
+    public static List<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(final ContentDTO content) {
         List<ContentDTO> dfs = Lists.newArrayList();
         dfs = depthFirstQuestionSearch(content, dfs);
 
         return filterQuestionParts(dfs);
+    }
+
+    /**
+     * Copy of {@link #getAllMarkableQuestionPartsDFSOrder(ContentDTO)} for DOs not DTOs.
+     */
+    public static List<Question> getAllMarkableDOQuestionPartsDFSOrder(final Content content) {
+        List<Content> dfs = Lists.newArrayList();
+        dfs = depthFirstDOQuestionSearch(content, dfs);
+
+        return filterDOQuestionParts(dfs);
     }
 
     /**
@@ -861,6 +875,24 @@ public class GameManager {
 
         return results;
     }
+
+    /**
+     * Copy of {@link #filterQuestionParts} for DOs not DTOs.
+     */
+    private static List<Question> filterDOQuestionParts(final Collection<Content> contentToFilter) {
+        List<Question> results = Lists.newArrayList();
+        for (Content possibleQuestion : contentToFilter) {
+
+            if (!(possibleQuestion instanceof Question) || possibleQuestion instanceof IsaacQuickQuestion) {
+                // we are not interested if this is not a question or if it is a quick question.
+                continue;
+            }
+            Question question = (Question) possibleQuestion;
+            results.add(question);
+        }
+
+        return results;
+    }
     
     /**
      * We want to list the questions in the order they are seen.
@@ -879,6 +911,25 @@ public class GameManager {
                 // assume that we can't have nested questions
             } else {
                 depthFirstQuestionSearch((ContentDTO) child, result);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Copy of {@link #depthFirstQuestionSearch(ContentDTO, List)} for DOs not DTOs.
+     */
+    private static List<Content> depthFirstDOQuestionSearch(final Content c, final List<Content> result) {
+        if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
+            return result;
+        }
+
+        for (ContentBase child : c.getChildren()) {
+            if (child instanceof Question) {
+                result.add((Question) child);
+                // assume that we can't have nested questions
+            } else {
+                depthFirstDOQuestionSearch((Content) child, result);
             }
         }
         return result;
@@ -1074,14 +1125,14 @@ public class GameManager {
         int questionPartsNotAttempted = 0;
         String questionPageId = gameItem.getId();
 
-        IsaacQuestionPageDTO questionPage = (IsaacQuestionPageDTO) this.contentManager.getContentById(questionPageId);
+        IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(questionPageId);
         // get all question parts in the question page: depends on each question
         // having an id that starts with the question page id.
-        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionPartsDFSOrder(questionPage);
+        Collection<Question> listOfQuestionParts = getAllMarkableDOQuestionPartsDFSOrder(questionPage);
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts =
                 questionAttemptsFromUser.get(questionPageId);
         if (questionAttempts != null) {
-            for (ContentDTO questionPart : listOfQuestionParts) {
+            for (Content questionPart : listOfQuestionParts) {
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts =
                         questionAttempts.get(questionPart.getId());
                 if (questionPartAttempts != null) {
