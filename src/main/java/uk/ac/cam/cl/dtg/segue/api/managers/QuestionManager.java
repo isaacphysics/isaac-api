@@ -505,7 +505,10 @@ public class QuestionManager {
 
     /**
      * Extract all of the questionObjectsRecursively.
-     * 
+     *
+     * See also {@link uk.ac.cam.cl.dtg.isaac.api.managers.GameManager#getAllMarkableQuestionPartsDFSOrder(ContentDTO)}
+     * which does basically the same thing.
+     *
      * @param toExtract
      *            - The contentDTO which may have question objects as children.
      * @param result

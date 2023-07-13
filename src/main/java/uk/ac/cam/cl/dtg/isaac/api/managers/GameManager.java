@@ -727,6 +727,9 @@ public class GameManager {
      * Get all questions in a piece of content. This method will conduct a DFS traversal and
      * ensure the collection is ordered as per the DFS. Quick questions will be filtered out.
      *
+     * See also {@link QuestionManager#extractQuestionObjectsRecursively(ContentDTO, List)}
+     * which does basically the same thing.
+     *
      * @param content
      *            - results depend on each question having an id prefixed with the question page id.
      * @return collection of markable question parts (questions).
