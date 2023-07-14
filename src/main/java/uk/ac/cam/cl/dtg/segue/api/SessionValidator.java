@@ -80,7 +80,7 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     @Override
     public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
         Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
-        if (authCookie != null && !isLogoutCookiePresent(httpServletResponse) && wasRequestValid(containerResponseContext)) {
+        if (authCookie != null && !isPartialLoginCookie(authCookie) && !isLogoutCookiePresent(httpServletResponse) && wasRequestValid(containerResponseContext)) {
             try {
                 jakarta.servlet.http.Cookie newAuthCookie = generateRefreshedSegueAuthCookie(authCookie);
                 httpServletResponse.addCookie(newAuthCookie);
@@ -93,6 +93,12 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     private static boolean isLogoutCookiePresent(HttpServletResponse response) {
         Collection<String> cookies = response.getHeaders("Set-Cookie");
         return cookies.stream().anyMatch(cookie -> cookie.contains(SEGUE_AUTH_COOKIE) && cookie.contains("Max-Age=0"));
+    }
+
+    private boolean isPartialLoginCookie(Cookie authCookie) throws IOException {
+        Map<String, String> sessionInformation = userAuthenticationManager.decodeCookie(authCookie);
+        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
+        return partialLoginFlag != null && partialLoginFlag.equals(String.valueOf(true));
     }
 
     private static boolean wasRequestValid(ContainerResponseContext containerResponseContext) {
