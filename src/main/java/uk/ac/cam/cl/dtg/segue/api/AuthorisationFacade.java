@@ -465,10 +465,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
                     TokenOwnerLookupMisuseHandler.class.getSimpleName());
 
-            // add owner
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
-            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId()), UserSummaryWithEmailAddressDTO.class));
-
+            // add owner
+            usersLinkedToToken.add(group.getOwnerSummary());
             // add additional managers
             usersLinkedToToken.addAll(group.getAdditionalManagers());
 
@@ -485,8 +484,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get association token. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";

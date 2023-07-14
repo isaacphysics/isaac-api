@@ -238,25 +238,24 @@ public class UserAssociationManager {
             throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
         }
 
-        // add owner association
-        if (!associationDatabase
-                .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getId())) {
-            associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getId());
-        }
-
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
 
-        if (lookedupToken.getGroupId() != null) {
-            userGroupManager.addUserToGroup(group, userGrantingPermission);
-            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
-                    lookedupToken.getGroupId()));
+        if (lookedupToken.getGroupId() == null) {
+            throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
+        }
 
-            // add additional manager associations
-            for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
-                if (!associationDatabase
-                        .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
-                    associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
-                }
+        userGroupManager.addUserToGroup(group, userGrantingPermission);
+        log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
+                lookedupToken.getGroupId()));
+
+        // add owner association
+        if (!associationDatabase.hasValidAssociation(group.getOwnerId(), userGrantingPermission.getId())) {
+            associationDatabase.createAssociation(group.getOwnerId(), userGrantingPermission.getId());
+        }
+        // add additional manager associations
+        for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
+            if (!associationDatabase.hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
+                associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
             }
         }
         return lookedupToken;
