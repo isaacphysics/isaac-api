@@ -33,13 +33,13 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -536,7 +536,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (GameboardItem questionPage : gameboard.getContents()) {
                 int index = 0;
 
-                for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
+                for (Question question : gameManager.getAllMarkableDOQuestionPartsDFSOrder(questionPage.getId())) {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
                     if (question.getTitle() != null) {
@@ -816,7 +816,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
                 for (GameboardItem questionPage : gameboard.getContents()) {
                     int b = 1;
-                    for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
+                    for (Question question : gameManager.getAllMarkableDOQuestionPartsDFSOrder(questionPage.getId())) {
                         List<String> questionIds = gameboardQuestionIds.get(gameboard);
                         if (null == questionIds) {
                             questionIds = Lists.newArrayList();
