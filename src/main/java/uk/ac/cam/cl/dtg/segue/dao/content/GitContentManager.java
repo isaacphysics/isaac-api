@@ -353,7 +353,7 @@ public class GitContentManager {
 
                 // Boost topic summary pages as they are more important than concepts and questions for CS.
                 // They do not exist for Physics and so do not affect their results.
-                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.HIGH)
+                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.NORMAL)
 
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
