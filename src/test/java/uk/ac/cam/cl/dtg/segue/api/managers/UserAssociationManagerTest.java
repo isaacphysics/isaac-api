@@ -117,14 +117,13 @@ public class UserAssociationManagerTest {
 		
 		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
 		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(false);
+		expect(dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId, someUserIdGrantingAccess)).andReturn(false);
 		
-		dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
+		dummyAssociationDataManager.createAssociation(someGroupOwnerUserId, someUserIdGrantingAccess);
 		expectLastCall().once();
 		
 		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+        expect(groupToAddUserTo.getOwnerId()).andReturn(someGroupOwnerUserId).atLeastOnce();
 		expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
 
 		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
@@ -166,11 +165,10 @@ public class UserAssociationManagerTest {
 		
 		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
 		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(true);
+		expect(dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId, someUserIdGrantingAccess)).andReturn(true);
 		
 		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+        expect(groupToAddUserTo.getOwnerId()).andReturn(someGroupOwnerUserId).atLeastOnce();
 		expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
 		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
 		
@@ -187,48 +185,7 @@ public class UserAssociationManagerTest {
 		}
 
 		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
-	}	
-	
-	@Test
-	public final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
-
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
-
-		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
-		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		Long someAssociatedGroupId = null; // no group
-
-		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		replay(someRegisteredUserGrantingAccess);
-
-		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
-		
-		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
-		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(false);
-		
-		dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
-		expectLastCall().once();
-		
-		replay(dummyAssociationDataManager);
-
-		try {
-			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (InvalidUserAssociationTokenException e) {
-			e.printStackTrace();
-			fail("InvalidUserAssociationTokenException is unexpected");
-		}
-
-		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
-	}	
+	}
 	
 	@Test
 	public final void userAssociationManager_createAssociationWithBadToken_exceptionShouldBeThrown()

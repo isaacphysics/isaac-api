@@ -72,6 +72,7 @@ public class AssociationToken {
      * 
      * @return the ownerUserId
      */
+    @Deprecated
     public Long getOwnerUserId() {
         return ownerUserId;
     }
@@ -82,6 +83,7 @@ public class AssociationToken {
      * @param ownerUserId
      *            the ownerUserId to set
      */
+    @Deprecated
     public void setOwnerUserId(final Long ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
