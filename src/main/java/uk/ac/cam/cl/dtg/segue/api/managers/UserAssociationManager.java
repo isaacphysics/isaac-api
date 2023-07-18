@@ -234,15 +234,11 @@ public class UserAssociationManager {
 
         AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 
-        if (null == lookedupToken) {
+        if (null == lookedupToken || lookedupToken.getGroupId() == null) {
             throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
         }
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
-
-        if (lookedupToken.getGroupId() == null) {
-            throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
-        }
 
         userGroupManager.addUserToGroup(group, userGrantingPermission);
         log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
