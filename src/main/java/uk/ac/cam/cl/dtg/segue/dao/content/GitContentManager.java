@@ -351,10 +351,6 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
 
-                // Boost topic summary pages as they are more important than concepts and questions for CS.
-                // They do not exist for Physics and so do not affect their results.
-                .includeContentTypes(Set.of(TOPIC_SUMMARY_PAGE_TYPE), Priority.NORMAL)
-
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
                 .includePastEvents(false);
