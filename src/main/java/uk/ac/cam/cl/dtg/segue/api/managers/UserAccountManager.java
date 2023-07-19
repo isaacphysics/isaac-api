@@ -626,6 +626,9 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Response.Status.NOT_FOUND,
                     "The user specified does not exist.").toResponse();
+        } catch (DuplicateAccountException e) {
+            log.warn(String.format("Account email change failed due to existing email (%s)", userObjectFromClient.getEmail()));
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
