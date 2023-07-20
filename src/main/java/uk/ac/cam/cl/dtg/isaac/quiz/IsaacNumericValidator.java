@@ -26,15 +26,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+
 
 /**
  * Validator that only provides functionality to validate Numeric questions.
@@ -46,39 +44,7 @@ public class IsaacNumericValidator implements IValidator {
     protected static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
     protected static final String DEFAULT_NO_ANSWER_VALIDATION_RESPONSE = "You did not provide an answer.";
     protected static final String DEFAULT_NO_UNIT_VALIDATION_RESPONSE = "You did not choose any units. To give an answer with no units, select \"None\".";
-    /* Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
-       Allow spaces either side of the times and allow * x X × and \times as multiplication!
-       Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
-       Extract exponent as either group <exp1> or <exp2> (the other will become '').
-
-       Inputs of style "1x10^3" and of style "10^3" must be dealt with separately, since for the latter we need
-       to add a "1" to the start so both can become "1e3" when replacing the 10 part.
-     */
-    private static final String PREFIXED_POWER_OF_TEN_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
-    private static final String BARE_POWER_OF_TEN_REGEX = "^(10(\\^|\\*\\*))([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))$";
     private static final String INVALID_NEGATIVE_STANDARD_FORM = ".*?10-([0-9]+).*?";
-
-    /**
-     * A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.
-     */
-    private class SigFigResult {
-        boolean isAmbiguous;
-        int sigFigsMin;
-        int sigFigsMax;
-
-        /**
-         * Default constructor.
-         *
-         * @param isAmbiguous - whether the significant figures are ambiguous or not.
-         * @param sigFigsMin  - the minimum number of sig figs the number could have
-         * @param sigFigsMax  - the maximum number of sig fig the number could have, equal to min if not ambiguous.
-         */
-        SigFigResult(final boolean isAmbiguous, final int sigFigsMin, final int sigFigsMax) {
-            this.isAmbiguous = isAmbiguous;
-            this.sigFigsMin = sigFigsMin;
-            this.sigFigsMax = sigFigsMax;
-        }
-    }
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(
@@ -98,6 +64,10 @@ public class IsaacNumericValidator implements IValidator {
         IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
         Quantity answerFromUser = (Quantity) answer;
 
+        // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
+        int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int significantFiguresMin = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+
         log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
                 + isaacNumericQuestion.getId() + "'");
 
@@ -111,14 +81,17 @@ public class IsaacNumericValidator implements IValidator {
                             false, false, new Date());
         }
 
-        if (isaacNumericQuestion.getSignificantFiguresMin() < 1 || isaacNumericQuestion.getSignificantFiguresMax() < 1
-                || isaacNumericQuestion.getSignificantFiguresMax() < isaacNumericQuestion.getSignificantFiguresMin()) {
-            log.error("Question has broken significant figure rules! " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+        // Only worry about broken significant figure rules if we are going to use them (i.e. if "exact match" is false)
+        if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+            if (significantFiguresMin < 1 || significantFiguresMax < 1
+                    || significantFiguresMax < significantFiguresMin) {
+                log.error("Question has broken significant figure rules! " + question.getId() + " src: "
+                        + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), answerFromUser, false,
-                            new Content("This question cannot be answered correctly."),
-                            false, false, new Date());
+                return new QuantityValidationResponse(question.getId(), answerFromUser, false,
+                        new Content("This question cannot be answered correctly."),
+                        false, false, new Date());
+            }
         }
 
         try {
@@ -140,17 +113,7 @@ public class IsaacNumericValidator implements IValidator {
 
             QuantityValidationResponse bestResponse;
 
-            // Step 1 - exact (string based) matching first - handles case where editors enter two mathematically
-            // equivalent known answers - won't check for sig figs.
-            bestResponse = this.exactStringMatch(isaacNumericQuestion, answerFromUser);
-
-            // Only return this if the answer is incorrect - as we don't know if the correct answers have always been
-            // specified in the correct # of sig figs.
-            if (bestResponse != null && !bestResponse.isCorrect()) {
-                return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
-            }
-
-            // Step 2 - then do correct answer numeric equivalence checking.
+            // Step 1 - Do correct answer numeric equivalence checking.
             if (shouldValidateWithUnits) {
                 bestResponse = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
             } else {
@@ -166,9 +129,9 @@ public class IsaacNumericValidator implements IValidator {
                 return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
             }
 
-            // Step 3 - do sig fig checking (unless specified otherwise by question):
+            // Step 2 - do sig fig checking (unless specified otherwise by question):
             if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-                if (tooFewSignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMin())) {
+                if (tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin)) {
                     // If too few sig figs then give feedback about this.
 
                     // If we have unit information available put it in our response.
@@ -183,7 +146,7 @@ public class IsaacNumericValidator implements IValidator {
                     bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                             false, validUnits, new Date());
                 }
-                if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
+                if (tooManySignificantFigures(answerFromUser.getValue(), significantFiguresMax)
                         && bestResponse.isCorrect()) {
                     // If (and only if) _correct_, but to too many sig figs, give feedback about this.
 
@@ -233,8 +196,12 @@ public class IsaacNumericValidator implements IValidator {
         Integer sigFigsToValidateWith = null;
 
         if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+            sigFigsToValidateWith = ValidationUtils.numberOfSignificantFiguresToValidateWith(
+                    answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(),
+                    isaacNumericQuestion.getSignificantFiguresMax(),
+                    log
+            );
         }
 
         String unitsFromUser = answerFromUser.getUnits().trim();
@@ -252,8 +219,12 @@ public class IsaacNumericValidator implements IValidator {
                 String unitsFromChoice = quantityFromQuestion.getUnits().trim();
                 String quantityFromChoice = quantityFromQuestion.getValue().trim();
 
-                boolean numericValuesMatched = numericValuesMatch(quantityFromChoice, answerFromUser.getValue(),
-                        sigFigsToValidateWith);
+                boolean numericValuesMatched = ValidationUtils.numericValuesMatch(
+                        quantityFromChoice,
+                        answerFromUser.getValue(),
+                        sigFigsToValidateWith,
+                        log
+                );
 
                 // What sort of match do we have:
                 if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
@@ -301,8 +272,12 @@ public class IsaacNumericValidator implements IValidator {
         Integer sigFigsToValidateWith = null;
 
         if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-            sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
-                    isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
+            sigFigsToValidateWith = ValidationUtils.numberOfSignificantFiguresToValidateWith(
+                    answerFromUser.getValue(),
+                    isaacNumericQuestion.getSignificantFiguresMin(),
+                    isaacNumericQuestion.getSignificantFiguresMax(),
+                    log
+            );
         }
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
@@ -312,7 +287,12 @@ public class IsaacNumericValidator implements IValidator {
                 Quantity quantityFromQuestion = (Quantity) c;
 
                 // Do we have a match? Since only comparing values, either an exact match or not a match at all.
-                if (numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(), sigFigsToValidateWith)) {
+                if (ValidationUtils.numericValuesMatch(
+                        quantityFromQuestion.getValue(),
+                        answerFromUser.getValue(),
+                        sigFigsToValidateWith,
+                        log
+                )) {
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), null, new Date());
@@ -334,144 +314,6 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Test whether two quantity values match. Parse the strings as doubles, supporting notation of 3x10^12 to mean
-     * 3e12, then test that they match to given number of s.f.
-     *
-     * @param trustedValue               - first number
-     * @param untrustedValue             - second number
-     * @param significantFiguresRequired - the number of significant figures to perform comparisons to (can be null, in
-     *                                   which case exact comparison is performed)
-     * @return true when the numbers match
-     * @throws NumberFormatException - when one of the values cannot be parsed
-     */
-    private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
-                                       final Integer significantFiguresRequired) throws NumberFormatException {
-        log.debug("\t[numericValuesMatch]");
-        double trustedDouble, untrustedDouble;
-
-        String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
-        String trustedParsedValue = reformatNumberForParsing(trustedValue);
-
-        if (null == significantFiguresRequired) {
-            trustedDouble = stringValueToDouble(trustedParsedValue);
-            untrustedDouble = stringValueToDouble(untrustedParsedValue);
-        } else {
-            // Round to N s.f.
-            trustedDouble = roundStringValueToSigFigs(trustedParsedValue, significantFiguresRequired);
-            untrustedDouble = roundStringValueToSigFigs(untrustedParsedValue, significantFiguresRequired);
-        }
-
-        final double epsilon = 1e-50;
-
-        return Math.abs(trustedDouble - untrustedDouble) < max(epsilon * max(trustedDouble, untrustedDouble), epsilon);
-    }
-
-    /**
-     * Round a double to a given number of significant figures.
-     *
-     * @param value   - number to round
-     * @param sigFigs - number of significant figures required
-     * @return the rounded number.
-     */
-    private double roundStringValueToSigFigs(final String value, final int sigFigs) {
-        log.debug("\t[roundStringValueToSigFigs]");
-
-        // To prevent floating point arithmetic errors when rounding the value, use a BigDecimal and pass the string
-        // value of the number:
-        BigDecimal bigDecimalValue = new BigDecimal(value);
-        BigDecimal rounded = bigDecimalValue.round(new MathContext(sigFigs, RoundingMode.HALF_UP));
-
-        return rounded.doubleValue();
-
-    }
-
-    /**
-     * Return a double equivalent to value.
-     *
-     * @param value - number, as String, to convert to double
-     * @return the converted number.
-     */
-    private double stringValueToDouble(final String value) {
-        log.debug("\t[stringValueToDouble]");
-
-        return new BigDecimal(value).doubleValue();
-    }
-
-    /**
-     * Extract from a number in string form how many significant figures it is given to, noting the range if it is
-     * ambiguous (as in the case of 1000, for example).
-     *
-     * @param valueToCheck - the user provided value in string form
-     * @return a SigFigResult containing info on the sig figs of the number
-     */
-    private SigFigResult extractSignificantFigures(final String valueToCheck) {
-        log.debug("\t[extractSignificantFigures]");
-        String untrustedParsedValue = reformatNumberForParsing(valueToCheck);
-
-        // Parse exactly into a BigDecimal:
-        BigDecimal bd = new BigDecimal(untrustedParsedValue);
-
-        if (untrustedParsedValue.contains(".")) {
-            // If it contains a decimal point then there is no ambiguity in how many sig figs it has.
-            return new SigFigResult(false, bd.precision(), bd.precision());
-        } else {
-            // If not, we have to be flexible because integer values have undefined significant figure rules.
-            char[] unscaledValueToCheck = bd.unscaledValue().toString().toCharArray();
-
-            // Counting trailing zeroes is useful to give bounds on the number of sig figs it could be to:
-            int trailingZeroes = 0;
-            for (int i = unscaledValueToCheck.length - 1; i >= 0; i--) {
-                if (unscaledValueToCheck[i] == '0') {
-                    trailingZeroes++;
-                } else {
-                    break;
-                }
-            }
-
-            if (trailingZeroes == 0) {
-                // This is an integer with no trailing zeroes; there is no ambiguity in how many sig figs it has.
-                return new SigFigResult(false, bd.precision(), bd.precision());
-            } else {
-                // This is an integer with one or more trailing zeroes; it is unclear how many sig figs it may be to.
-                int untrustedValueMinSigFigs = bd.precision() - trailingZeroes;
-                int untrustedValueMaxSigFigs = bd.precision();
-                return new SigFigResult(true, untrustedValueMinSigFigs, untrustedValueMaxSigFigs);
-            }
-        }
-    }
-
-    /**
-     * Deduce from the user answer and question data how many sig figs we should use when checking a question. We must
-     * pick a value in the allowed range, but it may be informed by the user's answer.
-     *
-     * @param valueToCheck      - the user provided value in string form
-     * @param minAllowedSigFigs - the minimum number of significant figures the question allows
-     * @param maxAllowedSigFigs - the maximum number of significant figures the question allows
-     * @return the number of significant figures that should be used when checking the question
-     */
-    private int numberOfSignificantFiguresToValidateWith(final String valueToCheck, final int minAllowedSigFigs,
-                                                         final int maxAllowedSigFigs) {
-        log.debug("\t[numberOfSignificantFiguresToValidateWith]");
-        int untrustedValueSigFigs;
-        SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
-
-        if (!sigFigsFromUser.isAmbiguous) {
-            untrustedValueSigFigs = sigFigsFromUser.sigFigsMin;
-        } else {
-            // Since choosing the least possible number of sig figs gives the loosest comparison, use that.
-            // This is kindest to the user, but may need to be revised.
-            untrustedValueSigFigs = sigFigsFromUser.sigFigsMin;
-        }
-
-        /* The number of significant figures to validate to must be less than or equal to the max allowed, and greater
-           than or equal to the minimum allowed. If the ranges intersect, or the untrusted value is unambiguous in the
-           acceptable range, choose the least number of sig figs the user answer allows; this is kindest to the user
-           in terms of matching known wrong answers.
-         */
-        return max(min(untrustedValueSigFigs, maxAllowedSigFigs), minAllowedSigFigs);
-    }
-
-    /**
      * Helper method to verify if the answer given is to too few significant figures.
      *
      * @param valueToCheck      - the value as a string from the user to check.
@@ -481,7 +323,7 @@ public class IsaacNumericValidator implements IValidator {
     private boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs) {
         log.debug("\t[tooFewSignificantFigures]");
 
-        SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
+        ValidationUtils.SigFigResult sigFigsFromUser = ValidationUtils.extractSignificantFigures(valueToCheck, log);
 
         return sigFigsFromUser.sigFigsMax < minAllowedSigFigs;
     }
@@ -496,69 +338,9 @@ public class IsaacNumericValidator implements IValidator {
     private boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs) {
         log.debug("\t[tooManySignificantFigures]");
 
-        SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
+        ValidationUtils.SigFigResult sigFigsFromUser = ValidationUtils.extractSignificantFigures(valueToCheck, log);
 
         return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
-    }
-
-    /**
-     * To save validation effort, if we have string equality between the submitted value and an answer then we
-     * can be sure this match is the best possible.
-     *
-     * @param isaacNumericQuestion - question content object
-     * @param answerFromUser       - response form the user
-     * @return either a QuestionValidationResponse if there is an exact String match or null if no string match.
-     */
-    private QuantityValidationResponse exactStringMatch(final IsaacNumericQuestion isaacNumericQuestion,
-                                                        final Quantity answerFromUser) {
-
-        log.debug("\t[exactStringMatch]");
-
-        for (Choice c : isaacNumericQuestion.getChoices()) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
-
-                StringBuilder userStringForComparison = new StringBuilder();
-                userStringForComparison.append(answerFromUser.getValue().trim());
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    userStringForComparison.append(answerFromUser.getUnits());
-                }
-
-                StringBuilder questionAnswerString = new StringBuilder();
-                questionAnswerString.append(quantityFromQuestion.getValue().trim());
-                if (isaacNumericQuestion.getRequireUnits()) {
-                    questionAnswerString.append(quantityFromQuestion.getUnits());
-                }
-
-                if (questionAnswerString.toString().trim().equals(userStringForComparison.toString().trim())) {
-                    Boolean unitFeedback = null;
-                    if (isaacNumericQuestion.getRequireUnits()) {
-                        unitFeedback = quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
-                    }
-
-                    return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-                            quantityFromQuestion.isCorrect(), unitFeedback, new Date());
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Format a number in string form such that Java BigDecimal can parse it.
-     *
-     * Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases, and fix uses of Unicode minus signs,
-     * and allow bare powers of ten.
-     *
-     * @param numberToFormat - number in some unambiguous standard form.
-     * @return - number in engineering standard form e.g. "3.4e3"
-     */
-    private String reformatNumberForParsing(final String numberToFormat) {
-        String reformattedNumber = numberToFormat.replace("−", "-");
-        reformattedNumber = reformattedNumber.replaceFirst(PREFIXED_POWER_OF_TEN_REGEX, "e${exp1}${exp2}");
-        reformattedNumber = reformattedNumber.replaceFirst(BARE_POWER_OF_TEN_REGEX, "1e${exp1}${exp2}");
-        return reformattedNumber;
     }
 
     /**

@@ -17,14 +17,37 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -40,33 +63,10 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -81,12 +81,12 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  * 
  */
 @Path("/questions")
-@Api(value = "/questions")
+@Tag(name = "/questions")
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
     private final ContentMapper mapper;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
@@ -113,8 +113,8 @@ public class QuestionFacade extends AbstractSegueFacade {
 
      */
     @Inject
-    public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
-                          final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
+    public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
+                          final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final UserBadgeManager userBadgeManager,
@@ -142,7 +142,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @GET
     @Path("{question_id}/answer")
-    @ApiOperation(value = "Provide users who try to cheat with a guide to the location of our help page.")
+    @Operation(summary = "Provide users who try to cheat with a guide to the location of our help page.")
     public Response getQuestionAnswer(@Context final HttpServletRequest request, @PathParam("question_id") final String questionId) {
         String errorMessage = String.format("We do not provide answers to questions. See https://%s/solving_problems for more help!",
                                             getProperties().getProperty(HOST_NAME));
@@ -176,7 +176,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @GET
     @Path("answered_questions/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Return a count of question attempts per month.")
+    @Operation(summary = "Return a count of question attempts per month.")
     public Response getQuestionsAnswered(@Context final HttpServletRequest request,
                                       @PathParam("user_id") final Long userIdOfInterest,
                                       @QueryParam("from_date") final Long fromDate,
@@ -199,9 +199,10 @@ public class QuestionFacade extends AbstractSegueFacade {
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userIdOfInterest);
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
-            // decide if the user is allowed to view this data.
+            // decide if the user is allowed to view this data. If user isn't viewing their own data, user viewing
+            // must have a valid connection with the user of interest and be at least a teacher.
             if (!currentUser.getId().equals(userIdOfInterest)
-                    && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
+                    && !userAssociationManager.hasTeacherPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -242,8 +243,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Submit an answer to a question.",
-                  notes = "The answer must be the correct Choice subclass for the question with the provided ID.")
+    @Operation(summary = "Submit an answer to a question.",
+                  description = "The answer must be the correct Choice subclass for the question with the provided ID.")
     public Response answerQuestion(@Context final HttpServletRequest request,
             @PathParam("question_id") final String questionId, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {
@@ -253,7 +254,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         Content contentBasedOnId;
         try {
             contentBasedOnId = this.contentManager.getContentDOById(
-                    this.contentManager.getCurrentContentSHA(), questionId);
+                    questionId);
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);
@@ -271,22 +272,18 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.DEV.name())) {
-            // FIXME: Currently this is in development only to as to not accidentally break live.
-            // Once quizzes roll out this needs to run in PROD too.
-
-            String questionPageId = extractPageIdFromQuestionId(questionId);
-            Content pageContent;
-            try {
-                pageContent = this.contentManager.getContentDOById(contentIndex, questionPageId);
-                if (pageContent instanceof IsaacQuiz) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
-                }
-            } catch (ContentManagerException e) {
-                // This doesn't make sense, so we'll log and continue.
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
-                log.error(error.getErrorMessage(), e);
+        // Prevent attempting a question through this endpoint if this question is part of a quiz.
+        String questionPageId = extractPageIdFromQuestionId(questionId);
+        Content pageContent;
+        try {
+            pageContent = this.contentManager.getContentDOById(questionPageId);
+            if (pageContent instanceof IsaacQuiz) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
             }
+        } catch (ContentManagerException e) {
+            // This doesn't make sense, so we'll log and continue.
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
+            log.error(error.getErrorMessage(), e);
         }
 
         try {
@@ -375,7 +372,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Test a list of choices with some expected answer values")
+    @Operation(summary = "Test a list of choices with some expected answer values")
     public Response testQuestion(@Context final HttpServletRequest request,
                                  @QueryParam("type") final String questionType, final String testJson) {
         try {
@@ -408,7 +405,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Path("generateSpecification")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Turn an answer into a question specification.")
+    @Operation(summary = "Turn an answer into a question specification.")
     public Response generateSpecification(@Context final HttpServletRequest request, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();

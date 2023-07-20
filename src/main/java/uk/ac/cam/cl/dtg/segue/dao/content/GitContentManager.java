@@ -15,68 +15,65 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import com.google.api.client.util.Sets;
 import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
-import org.eclipse.jgit.revwalk.RevCommit;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.BooleanMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.MustMatchInstruction;
-import uk.ac.cam.cl.dtg.segue.search.RangeMatchInstruction;
-import uk.ac.cam.cl.dtg.segue.search.ShouldMatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+import uk.ac.cam.cl.dtg.segue.search.SearchInField;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.annotation.Nullable;
-import javax.ws.rs.NotFoundException;
+import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COLLECTOR;
 
 /**
  * Implementation that specifically works with Content objects.
  * 
  */
-public class GitContentManager implements IContentManager {
+public class GitContentManager {
     private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
 
     private static final String CONTENT_TYPE = "content";
@@ -84,12 +81,14 @@ public class GitContentManager implements IContentManager {
     private final GitDb database;
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
-    private final PropertiesLoader globalProperties;
-    private final boolean allowOnlyPublishedContent;
+    private final AbstractConfigLoader globalProperties;
+    private final boolean showOnlyPublishedContent;
     private final boolean hideRegressionTestContent;
 
     private final Cache<Object, Object> cache;
     private final Cache<String, GetResponse> contentShaCache;
+
+    private final String contentIndex;
 
 
     /**
@@ -106,15 +105,15 @@ public class GitContentManager implements IContentManager {
      */
     @Inject
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-                             final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
+                             final ContentMapper contentMapper, final AbstractConfigLoader globalProperties) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
 
-        this.allowOnlyPublishedContent = Boolean.parseBoolean(
+        this.showOnlyPublishedContent = Boolean.parseBoolean(
                 globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
-        if (this.allowOnlyPublishedContent) {
+        if (this.showOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
 
@@ -128,6 +127,8 @@ public class GitContentManager implements IContentManager {
         CACHE_METRICS_COLLECTOR.addCache("git_content_manager_cache", cache);
 
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(5, TimeUnit.SECONDS).build();
+
+        this.contentIndex = globalProperties.getProperty(Constants.CONTENT_INDEX);
     }
 
     /**
@@ -146,52 +147,89 @@ public class GitContentManager implements IContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = null;
-        this.allowOnlyPublishedContent = false;
+        this.showOnlyPublishedContent = false;
         this.hideRegressionTestContent = false;
         this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
+        this.contentIndex = null;
     }
 
-    @Override
-    public final ContentDTO getContentById(final String version, final String id) throws ContentManagerException {
-        return getContentById(version, id, false);
+    /**
+     *  Get a DTO object by its ID or return null.
+     *
+     *  The object will be retrieved in DO form, and mapped to a DTO.
+     *  The DO version will be cached to avoid re-querying the data store, but the DTO
+     *  will not be cached to avoid mutations poisoning the cache.
+     *
+     * @param id the content object ID.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
+    public final ContentDTO getContentById(final String id) throws ContentManagerException {
+        return getContentById(id, false);
     }
 
-    @Override
-    public final ContentDTO getContentById(final String version, final String id, boolean failQuietly) throws ContentManagerException {
-        String k = "getContentById~" + version + "~" + id;
-        if (!cache.asMap().containsKey(k)) {
-            ContentDTO c = this.mapper.getDTOByDO(this.getContentDOById(version, id, failQuietly));
-            if (c != null) {
-                cache.put(k, c);
-            }
-        }
-
-        return (ContentDTO) cache.getIfPresent(k);
+    /**
+     *  Get a DTO object by its ID or return null.
+     *
+     *  The object will be retrieved in DO form, and mapped to a DTO.
+     *  The DO version will be cached to avoid re-querying the data store, but the DTO
+     *  will not be cached to avoid mutations poisoning the cache.
+     *
+     * @param id the content object ID.
+     * @param failQuietly whether to log a warning if the content cannot be found.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
+    public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
+        return this.mapper.getDTOByDO(this.getContentDOById(id, failQuietly));
     }
 
-    @Override
-    public final Content getContentDOById(final String version, final String id) throws ContentManagerException {
-        return getContentDOById(version, id, false);
+    /**
+     *  Get a DO object by its ID or return null.
+     *
+     *  This may return a cached object, and will temporarily cache the object
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DO object.
+     *
+     * @param id the content object ID.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
+    public final Content getContentDOById(final String id) throws ContentManagerException {
+        return getContentDOById(id, false);
     }
 
-    @Override
-    public final Content getContentDOById(final String version, final String id, boolean failQuietly) throws ContentManagerException {
+    /**
+     *  Get a DO object by its ID or return null.
+     *
+     *  This may return a cached object, and will temporarily cache the object
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DO object.
+     *
+     * @param id the content object ID.
+     * @param failQuietly whether to log a warning if the content cannot be found.
+     * @return the content DTO object.
+     * @throws ContentManagerException on failure to return the object or null.
+     */
+    public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
         if (null == id || id.equals("")) {
             return null;
         }
 
-        String k = "getContentDOById~" + version + "~" + id;
+        String k = "getContentDOById~" + getCurrentContentSHA() + "~" + id;
         if (!cache.asMap().containsKey(k)) {
 
-            List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
+            List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(
+                    contentIndex,
                     CONTENT_TYPE, id,
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                    this.getBaseFilters()).getResults());
+                    this.getBaseFilters()).getResults()
+            );
 
             if (null == searchResults || searchResults.isEmpty()) {
                 if (!failQuietly) {
-                    log.error(String.format("Failed to locate content with ID '%s' in the cache for version (%s)", id, getCurrentContentSHA()));
+                    log.error(String.format("Failed to locate content with ID '%s' in the cache for content SHA (%s)", id, getCurrentContentSHA()));
                 }
                 return null;
             }
@@ -203,14 +241,26 @@ public class GitContentManager implements IContentManager {
 
     }
 
-    @Override
-    public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix, final int startIndex,
-            final int limit) throws ContentManagerException {
+    /**
+     *  Retrieve all DTO content matching an ID prefix.
+     *
+     *  This may return cached objects, and will temporarily cache the objects
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DTO objects.
+     *
+     * @param idPrefix the content object ID prefix.
+     * @param startIndex the integer start index for pagination.
+     * @param limit the limit for pagination.
+     * @return a ResultsWrapper of the matching content.
+     * @throws ContentManagerException on failure to return the objects.
+     */
+    public ResultsWrapper<ContentDTO> getUnsafeCachedDTOsByIdPrefix(final String idPrefix, final int startIndex,
+                                                                    final int limit) throws ContentManagerException {
 
-        String k = "getByIdPrefix~" + version + "~" + idPrefix + "~" + startIndex + "~" + limit;
+        String k = "getByIdPrefix~" + getCurrentContentSHA() + "~" + idPrefix + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
 
-            ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
+            ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(contentIndex, CONTENT_TYPE,
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     idPrefix, startIndex, limit, this.getBaseFilters());
 
@@ -222,12 +272,24 @@ public class GitContentManager implements IContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
-    @Override
-    public ResultsWrapper<ContentDTO> getContentMatchingIds(final String version, final Collection<String> ids,
-                                                            final int startIndex, final int limit)
+    /**
+     *  Get a list of DTO objects by their IDs.
+     *
+     *  This may return cached objects, and will temporarily cache the objects
+     *  to avoid re-querying the data store and the deserialization costs.
+     *  Do not modify the returned DTO objects.
+     *
+     * @param ids the list of content object IDs.
+     * @param startIndex the integer start index for pagination.
+     * @param limit the limit for pagination.
+     * @return a ResultsWrapper of the matching content.
+     * @throws ContentManagerException on failure to return the objects.
+     */
+    public ResultsWrapper<ContentDTO> getUnsafeCachedContentDTOsMatchingIds(final Collection<String> ids,
+                                                                            final int startIndex, final int limit)
             throws ContentManagerException {
 
-        String k = "getContentMatchingIds~" + version + "~" + ids.toString() + "~" + startIndex + "~" + limit;
+        String k = "getContentMatchingIds~" + getCurrentContentSHA() + "~" + ids.toString() + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
 
             Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
@@ -240,9 +302,15 @@ public class GitContentManager implements IContentManager {
                 finalFilter.putAll(getBaseFilters());
             }
 
-            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(version, CONTENT_TYPE, null,
+            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
+                    contentIndex,
+                    CONTENT_TYPE,
                     null,
-                    startIndex, limit, finalFilter);
+                    null,
+                    startIndex,
+                    limit,
+                    finalFilter
+            );
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
             cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
@@ -251,143 +319,99 @@ public class GitContentManager implements IContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
-    @Override
-    public ResultsWrapper<ContentDTO> getAllByTypeRegEx(final String version, final String regex, final int startIndex,
-            final int limit) throws ContentManagerException {
-
-        String k = "getAllByTypeRegEx~" + version + "~" + regex + "~" + startIndex + "~" + limit;
-
-        if (!cache.asMap().containsKey(k)) {
-
-            ResultsWrapper<String> searchHits = this.searchProvider.findByRegEx(version, CONTENT_TYPE,
-                    Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    regex, startIndex, limit, this.getBaseFilters());
-
-            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
-        }
-
-        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
-    }
-
-    @Override
     public final ResultsWrapper<ContentDTO> searchForContent(
-            final String version, final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-            final Integer startIndex, final Integer limit) throws ContentManagerException {
-        ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
-                version, CONTENT_TYPE, searchString, startIndex, limit, fieldsThatMustMatch, this.getBaseFilters(),
-                Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
-                Constants.CHILDREN_FIELDNAME);
+            @Nullable final String searchString,
+            @Nullable final Set<String> ids, @Nullable final Set<String> tags, @Nullable Set<String> levels,
+            @Nullable Set<String> stages, @Nullable Set<String> difficulties, @Nullable Set<String> examBoards,
+            final Set<String> contentTypes, final Integer startIndex, final Integer limit, final boolean showNoFilterContent
+    ) throws ContentManagerException {
 
-        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
-    }
-
-    @Override
-    public final ResultsWrapper<ContentDTO> siteWideSearch(
-            final String version, final String searchString, final List<String> documentTypes,
-            final boolean includeHiddenContent, final Integer startIndex, final Integer limit
-    ) throws  ContentManagerException {
-        String nestedFieldConnector = searchProvider.getNestedFieldConnector();
-
-        List<String> importantDocumentTypes = ImmutableList.of(TOPIC_SUMMARY_PAGE_TYPE);
-
-        List<String> importantFields = ImmutableList.of(
-                Constants.TITLE_FIELDNAME, Constants.ID_FIELDNAME, Constants.SUMMARY_FIELDNAME, Constants.TAGS_FIELDNAME
-        );
-        List<String> otherFields = ImmutableList.of(Constants.SEARCHABLE_CONTENT_FIELDNAME);
-
-        BooleanMatchInstruction matchQuery = new BooleanMatchInstruction();
-        int numberOfExpectedShouldMatches = 1;
-
-        List<String> validDocumentTypes = Optional.ofNullable(documentTypes).orElse(Collections.emptyList()).stream()
-                .filter(SITE_WIDE_SEARCH_VALID_DOC_TYPES::contains).collect(Collectors.toList());
-        if (validDocumentTypes.isEmpty()) {
-            validDocumentTypes = Lists.newArrayList(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
+        // Create a set of search terms from the initial search string
+        Set<String> searchTerms = new HashSet<>();
+        if (searchString != null && !searchString.isBlank()) {
+            searchTerms.add(searchString);
+            // If it is a search phrase, also try to match each word individually
+            if (searchString.contains(" ")) {
+                searchTerms.addAll(Arrays.asList(searchString.split(" ")));
+            }
+            searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
         }
 
-        for (String documentType : validDocumentTypes) {
-            BooleanMatchInstruction contentQuery = new BooleanMatchInstruction();
+        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
+                searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
 
-            // Match document type
-            contentQuery.must(new MustMatchInstruction(Constants.TYPE_FIELDNAME, documentType));
+                // Restrict content types
+                .includeContentTypes(contentTypes)
 
-            // Generic pages must be explicitly tagged to appear in search results
-            if (documentType.equals(PAGE_TYPE)) {
-                contentQuery.must(new MustMatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
+                // Fuzzy search term matches
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+
+                // Event specific queries
+                .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
+                .includePastEvents(false);
+
+
+        // Additional per-field filters if specified
+        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {{
+            this.put(ID_FIELDNAME, ids);
+            this.put(TAGS_FIELDNAME, tags);
+            this.put(LEVEL_FIELDNAME, levels);
+            this.put(STAGE_FIELDNAME, stages);
+            this.put(DIFFICULTY_FIELDNAME, difficulties);
+            this.put(EXAM_BOARD_FIELDNAME, examBoards);
+        }};
+        // Add a required filtering rule for each field that has a value
+        for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                boolean applyOrFilterBetweenValues = Constants.ID_FIELDNAME.equals(entry.getKey());
+                searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
+                        .strategy(Strategy.SIMPLE)
+                        .required(!applyOrFilterBetweenValues));
             }
-
-            // Try to match fields
-            for (String field : importantFields) {
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 10L, false));
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, true));
-            }
-            for (String field : otherFields) {
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 5L, false));
-                contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
-            }
-
-            // Check location.address fields on event pages
-            if (documentType.equals(EVENT_TYPE)) {
-                String addressPath = String.join(nestedFieldConnector, Constants.ADDRESS_PATH_FIELDNAME);
-                for (String addressField : Constants.ADDRESS_FIELDNAMES) {
-                    String field = addressPath + nestedFieldConnector + addressField;
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 3L, false));
-                    contentQuery.should(new ShouldMatchInstruction(field, searchString, 1L, true));
-                }
-            }
-
-            // Only show future events
-            if (documentType.equals(EVENT_TYPE)){
-                LocalDate today = LocalDate.now();
-                long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
-                contentQuery.must(new RangeMatchInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
-            }
-
-            contentQuery.setMinimumShouldMatch(numberOfExpectedShouldMatches);
-
-            if (importantDocumentTypes.contains(documentType)) {
-                contentQuery.setBoost(5f);
-            }
-
-            matchQuery.should(contentQuery);
         }
 
-        if (!includeHiddenContent) {
-            // Do not include any content with a nofilter tag
-            matchQuery.mustNot(new MustMatchInstruction(Constants.TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
+        // If no search terms were provided, sort by ascending alphabetical order of title.
+        Map<String, Constants.SortOrder> sortOrder = null;
+        if (searchTerms.isEmpty()) {
+            sortOrder = new HashMap<>();
+            sortOrder.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
         }
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
-                version, CONTENT_TYPE, startIndex, limit, searchString,matchQuery, this.getBaseFilters());
+                contentIndex,
+                CONTENT_TYPE,
+                startIndex,
+                limit,
+                searchInstructionBuilder.build(),
+                sortOrder
+        );
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
         return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
-    @Override
     public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit
+            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit
     ) throws ContentManagerException {
-        return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, null);
+        return this.findByFieldNames(fieldsToMatch, startIndex, limit, null);
     }
 
-    @Override
     public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
     ) throws ContentManagerException {
-        return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, sortInstructions, null);
+        return this.findByFieldNames(fieldsToMatch, startIndex, limit, sortInstructions, null);
     }
 
-    @Override
     public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions,
+            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
+            @Nullable final Map<String, Constants.SortOrder> sortInstructions,
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
     ) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
@@ -410,7 +434,7 @@ public class GitContentManager implements IContentManager {
             newFilterInstructions.putAll(this.getBaseFilters());
         }
 
-        ResultsWrapper<String> searchHits = searchProvider.matchSearch(version, CONTENT_TYPE, fieldsToMatch,
+        ResultsWrapper<String> searchHits = searchProvider.matchSearch(contentIndex, CONTENT_TYPE, fieldsToMatch,
                 startIndex, limit, newSortInstructions, newFilterInstructions);
 
         // setup object mapper to use pre-configured deserializer module.
@@ -424,23 +448,21 @@ public class GitContentManager implements IContentManager {
         return finalResults;
     }
 
-    @Override
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit
     ) throws ContentManagerException {
-        return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
+        return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
     }
 
-    @Override
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            final String version, final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit, final Long randomSeed
+            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
+            final Integer limit, @Nullable final Long randomSeed
     ) throws ContentManagerException {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
-        searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed,
+        searchHits = searchProvider.randomisedMatchSearch(contentIndex, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed,
                 this.getBaseFilters());
 
         // setup object mapper to use pre-configured deserializer module.
@@ -454,56 +476,15 @@ public class GitContentManager implements IContentManager {
         return finalResults;
     }
 
-    @Override
-    public final ByteArrayOutputStream getFileBytes(final String version, final String filename) throws IOException {
-        return database.getFileByCommitSHA(version, filename);
+    public final ByteArrayOutputStream getFileBytes(final String filename) throws IOException {
+        return database.getFileByCommitSHA(getCurrentContentSHA(), filename);
     }
 
-    @Override
-    public final List<String> listAvailableVersions() {
-
-        List<String> result = new ArrayList<>();
-        for (RevCommit rc : database.listCommits()) {
-            result.add(rc.getName());
-        }
-
-        return result;
-    }
-    
-    @Override
-    public final boolean isValidVersion(final String version) {
-        return !(null == version || version.isEmpty()) && this.database.verifyCommitExists(version);
-    }
-
-    @Override
-    public final int compareTo(final String version1, final String version2) {
-        Validate.notBlank(version1);
-        Validate.notBlank(version2);
-
-        int version1Epoch;
-        try {
-            version1Epoch = this.database.getCommitTime(version1);
-        } catch (NotFoundException e) {
-            version1Epoch = 0; // We didn't find it in the repo, so this commit is VERY old for all useful purposes.
-        }
-
-        int version2Epoch;
-        try {
-            version2Epoch = this.database.getCommitTime(version2);
-        } catch (NotFoundException e) {
-            version2Epoch = 0; // We didn't find it in the repo, so this commit is VERY old for all useful purposes.
-        }
-
-        return version1Epoch - version2Epoch;
-    }
-
-    @Override
-    public final String getLatestVersionId() {
+    public final String getLatestContentSHA() {
         return database.fetchLatestFromRemote();
     }
 
-    @Override
-    public final Set<String> getCachedVersionList() {
+    public final Set<String> getCachedContentSHAList() {
         ImmutableSet.Builder<String> builder = ImmutableSet.builder();
         for (String index : this.searchProvider.getAllIndices()) {
             // check to see if index looks like a content sha otherwise we will get loads of other search indexes come
@@ -516,69 +497,77 @@ public class GitContentManager implements IContentManager {
         return builder.build();
     }
 
-    @Override
-    public final Set<String> getTagsList(final String version) {
-        Validate.notBlank(version);
-
-        List<Object> tagObjects = (List<Object>) searchProvider.getById(
-                version, Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "tags").getSource().get("tags");
-
-        return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+    public final Set<String> getTagsList() {
+        try {
+            List<Object> tagObjects = (List<Object>) searchProvider.getById(
+                    contentIndex,
+                    Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
+                    "tags"
+            ).getSource().get("tags");
+            return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve tags from search provider", e);
+            return Sets.newHashSet();
+        }
     }
 
-    @Override
-    public final Collection<String> getAllUnits(final String version) {
-        Validate.notBlank(version);
-
+    public final Collection<String> getAllUnits() {
         String unitType = Constants.CONTENT_INDEX_TYPE.UNIT.toString();
         if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.PROD.name())) {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
-        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
-        SearchHits hits = r.getHits();
-        ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
-        for (SearchHit hit : hits) {
-            units.add((String) hit.getSourceAsMap().get("unit"));
-        }
-
-        return units;
-    }
-
-    @Override
-    public final Map<Content, List<String>> getProblemMap(final String version) {
-        SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX),
-                Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
-
-        SearchHits hits = r.getHits();
-        Map<Content, List<String>> map = new HashMap<>();
-        for (SearchHit hit : hits) {
-
-            Content partialContentWithErrors = new Content();
-            Map src = hit.getSourceAsMap();
-            partialContentWithErrors.setId((String) src.get("id"));
-            partialContentWithErrors.setTitle((String) src.get("title"));
-            //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
-            partialContentWithErrors.setPublished((Boolean) src.get("published"));
-            partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
-
-            ArrayList<String> errors = new ArrayList<>();
-            for (Object v : (List) hit.getSourceAsMap().get("errors")) {
-                errors.add((String) v);
+        try {
+            SearchResponse r = searchProvider.getAllFromIndex(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
+            SearchHits hits = r.getHits();
+            ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
+            for (SearchHit hit : hits) {
+                units.add((String) hit.getSourceAsMap().get("unit"));
             }
 
-            map.put(partialContentWithErrors, errors);
+            return units;
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve all units from search provider", e);
+            return Collections.emptyList();
         }
-
-        return map;
     }
 
-    @Override
-    public ContentDTO populateRelatedContent(final String version, final ContentDTO contentDTO)
+    public final Map<Content, List<String>> getProblemMap() {
+        try {
+            SearchResponse r = searchProvider.getAllFromIndex(contentIndex,
+                    Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
+            SearchHits hits = r.getHits();
+            Map<Content, List<String>> map = new HashMap<>();
+
+            for (SearchHit hit : hits) {
+                Content partialContentWithErrors = new Content();
+                Map src = hit.getSourceAsMap();
+                partialContentWithErrors.setId((String) src.get("id"));
+                partialContentWithErrors.setTitle((String) src.get("title"));
+                //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
+                partialContentWithErrors.setPublished((Boolean) src.get("published"));
+                partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
+
+                ArrayList<String> errors = new ArrayList<>();
+                for (Object v : (List) hit.getSourceAsMap().get("errors")) {
+                    errors.add((String) v);
+                }
+
+                map.put(partialContentWithErrors, errors);
+            }
+            return map;
+
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve problem map from search provider", e);
+            return Maps.newHashMap();
+        }
+    }
+
+    public ContentDTO populateRelatedContent(final ContentDTO contentDTO)
             throws ContentManagerException {
         if (contentDTO.getChildren() != null) {
             for (ContentBaseDTO childBaseContentDTO : contentDTO.getChildren()) {
                 if (childBaseContentDTO instanceof ContentDTO) {
-                    this.populateRelatedContent(version, (ContentDTO) childBaseContentDTO);
+                    this.populateRelatedContent((ContentDTO) childBaseContentDTO);
                 }
             }
         }
@@ -598,7 +587,7 @@ public class GitContentManager implements IContentManager {
                 Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                 Constants.BooleanOperator.OR, relatedContentIds));
 
-        ResultsWrapper<ContentDTO> results = this.findByFieldNames(version, fieldsToMap, 0, relatedContentIds.size());
+        ResultsWrapper<ContentDTO> results = this.findByFieldNames(fieldsToMap, 0, relatedContentIds.size());
 
         List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
@@ -623,16 +612,23 @@ public class GitContentManager implements IContentManager {
         return contentDTO;
     }
 
-    @Override
     public String getCurrentContentSHA() {
-        String contentIndex = globalProperties.getProperty(Constants.CONTENT_INDEX);
-        GetResponse versionResponse = contentShaCache.getIfPresent(contentIndex);
-        if (null == versionResponse) {
-            versionResponse =
-                    searchProvider.getById(contentIndex, Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "general");
-            contentShaCache.put(contentIndex, versionResponse);
+        GetResponse shaResponse = contentShaCache.getIfPresent(contentIndex);
+        try {
+            if (null == shaResponse) {
+                shaResponse =
+                        searchProvider.getById(
+                                contentIndex,
+                                Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
+                                "general"
+                        );
+                contentShaCache.put(contentIndex, shaResponse);
+            }
+            return (String) shaResponse.getSource().get("version");
+        } catch (SegueSearchException e) {
+            log.error("Failed to retrieve current content SHA from search provider", e);
+            return "unknown";
         }
-        return (String) versionResponse.getSource().get("version");
     }
 
     /**
@@ -641,16 +637,16 @@ public class GitContentManager implements IContentManager {
      * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
      */
     private Map<String, AbstractFilterInstruction> getBaseFilters() {
-        if (!this.hideRegressionTestContent && !this.allowOnlyPublishedContent) {
+        if (!this.hideRegressionTestContent && !this.showOnlyPublishedContent) {
             return null;
         }
 
         HashMap<String, AbstractFilterInstruction> filters = new HashMap<>();
 
         if (this.hideRegressionTestContent) {
-            filters.put("tags", new SimpleExclusionInstruction("regression_test"));
+            filters.put("tags", new SimpleExclusionInstruction(REGRESSION_TEST_TAG));
         }
-        if (this.allowOnlyPublishedContent) {
+        if (this.showOnlyPublishedContent) {
             filters.put("published", new SimpleFilterInstruction("true"));
         }
         return ImmutableMap.copyOf(filters);
@@ -687,6 +683,32 @@ public class GitContentManager implements IContentManager {
                     collateQuestionPartIds(childContent, questionPartIds);
                 }
             }
+        }
+    }
+
+    /**
+     * An abstract representation of a search clause that can be interpreted as desired by different search providers.
+     *
+     * @deprecated in favour of {@code BooleanMatchInstruction}, as an attempt to unify approaches to searching.
+     */
+    @Deprecated
+    public static class BooleanSearchClause {
+        private final String field;
+        private final Constants.BooleanOperator operator;
+        private final List<String> values;
+        public BooleanSearchClause(final String field, final Constants.BooleanOperator operator, final List<String> values) {
+            this.field = field;
+            this.operator = operator;
+            this.values = values;
+        }
+        public String getField() {
+            return this.field;
+        }
+        public Constants.BooleanOperator getOperator() {
+            return this.operator;
+        }
+        public List<String> getValues() {
+            return this.values;
         }
     }
 }

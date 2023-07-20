@@ -95,15 +95,6 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     }
 
     @Override
-    public void createAssociation(final AssociationToken token, final Long userIdGrantingAccess)
-            throws SegueDatabaseException {
-        Validate.notNull(token);
-        Long userIdReceivingAccess = token.getOwnerUserId();
-
-        createAssociation(userIdReceivingAccess, userIdGrantingAccess);
-    }
-
-    @Override
     public void createAssociation(final Long userIdReceivingAccess, final Long userIdGrantingAccess)
             throws SegueDatabaseException {
         Validate.notNull(userIdReceivingAccess);

@@ -11,15 +11,14 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,15 +34,14 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 
 public class DeleteEventAdditionalBookingInformationJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(DeleteEventAdditionalBookingInformationJob.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final PostgresSqlDb database;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
 
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
@@ -51,8 +49,8 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
      */
     public DeleteEventAdditionalBookingInformationJob() {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-        properties = injector.getInstance(PropertiesLoader.class);
-        contentManager = injector.getInstance(IContentManager.class);
+        properties = injector.getInstance(AbstractConfigLoader.class);
+        contentManager = injector.getInstance(GitContentManager.class);
         database = injector.getInstance(PostgresSqlDb.class);
 
     }
@@ -73,7 +71,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
         ZonedDateTime thirtyDaysAgo = now.plusDays(-30);
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     startIndex, limit, sortInstructions, filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {

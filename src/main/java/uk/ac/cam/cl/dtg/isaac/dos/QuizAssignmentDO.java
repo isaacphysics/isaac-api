@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 
 /**
@@ -28,6 +28,7 @@ public class QuizAssignmentDO {
     private Long ownerUserId;
     private Date creationDate;
     private Date dueDate;
+    private Date scheduledStartDate;
     private QuizFeedbackMode quizFeedbackMode;
 
     /**
@@ -49,13 +50,15 @@ public class QuizAssignmentDO {
      *            - what level of feedback to give to students.
      */
     public QuizAssignmentDO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
-                            final Date creationDate, @Nullable final Date dueDate, final QuizFeedbackMode quizFeedbackMode) {
+                            final Date creationDate, @Nullable final Date dueDate, @Nullable Date scheduledStartDate,
+                            final QuizFeedbackMode quizFeedbackMode) {
         this.id = id;
         this.quizId = quizId;
         this.ownerUserId = ownerUserId;
         this.groupId = groupId;
         this.creationDate = creationDate;
         this.dueDate = dueDate;
+        this.scheduledStartDate = scheduledStartDate;
         this.quizFeedbackMode = quizFeedbackMode;
     }
 
@@ -185,6 +188,15 @@ public class QuizAssignmentDO {
      */
     public void setDueDate(@Nullable Date dueDate) {
         this.dueDate = dueDate;
+    }
+
+    @Nullable
+    public Date getScheduledStartDate() {
+        return scheduledStartDate;
+    }
+
+    public void setScheduledStartDate(@Nullable Date scheduledStartDate) {
+        this.scheduledStartDate = scheduledStartDate;
     }
 
     /**

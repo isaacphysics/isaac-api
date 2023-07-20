@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import com.google.inject.Inject;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with token ownership requests.
@@ -42,8 +40,8 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     public static final Integer HARD_THRESHOLD = 50;
     public static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
-    private PropertiesLoader properties;
-    private EmailManager emailManager;
+    private final AbstractConfigLoader properties;
+    private final EmailManager emailManager;
 
     /**
      * @param emailManager
@@ -52,7 +50,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public TokenOwnerLookupMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public TokenOwnerLookupMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }
@@ -79,10 +77,6 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        final String subject = "Soft Threshold limit reached for TokenOwnershipRequest endpoint";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                subject, message, message, EmailType.ADMIN);
-        emailManager.addSystemEmailToQueue(e);
         log.warn("Soft threshold limit: " + message);
 
     }

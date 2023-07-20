@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -143,12 +144,13 @@ class SchoolIndexer {
                             + Arrays.toString(schoolArray));
                 }
             }
-            reader.close();
         } catch (FileNotFoundException e) {
             log.error("Unable to locate the file requested", e);
             throw new UnableToIndexSchoolsException("Unable to locate the file requested", e);
         } catch (IOException e) {
             throw new UnableToIndexSchoolsException("Unable to load the file requested", e);
+        } catch (CsvValidationException e) {
+            throw new UnableToIndexSchoolsException("Unable to parse the file requested", e);
         }
 
         return schools;

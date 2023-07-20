@@ -28,6 +28,7 @@ public class AssignmentDO {
 	private String notes;
 	private Date creationDate;
 	private Date dueDate;
+	private Date scheduledStartDate;
 
 	/**
 	 * Complete AssignmentDO constructor with all dependencies.
@@ -36,16 +37,18 @@ public class AssignmentDO {
 	 * @param gameboardId
 	 *            - The gameboard to assign as homework.
 	 * @param ownerUserId
- *            - User id of the owner of the gameboard.
+     *            - User id of the owner of the gameboard.
 	 * @param groupId
-*            - Group id who should be assigned the game board.
+     *            - Group id who should be assigned the game board.
 	 * @param notes
 	 * @param creationDate
 	 *            - the date the assignment was created.
 	 * @param dueDate
+	 * @param scheduledStartDate
+	 *        - the date and time the assignment should have notification emails sent to its group (using Quartz)
 	 */
     public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-						String notes, final Date creationDate, final Date dueDate) {
+						String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
@@ -53,6 +56,7 @@ public class AssignmentDO {
 		this.notes = notes;
 		this.creationDate = creationDate;
 		this.dueDate = dueDate;
+		this.scheduledStartDate = scheduledStartDate;
 	}
 	
 	/**
@@ -202,5 +206,22 @@ public class AssignmentDO {
 	 */
 	public void setDueDate(Date dueDate) {
 		this.dueDate = dueDate;
+	}
+
+
+	/**
+	 * get the date of when the assignment should be displayed to users.
+	 * @return scheduledStartDate
+	 */
+	public Date getScheduledStartDate() {
+		return scheduledStartDate;
+	}
+
+	/**
+	 * set the date of when the assignment should be displayed to users.
+	 * @param scheduledStartDate - the scheduled start date
+	 */
+	public void setScheduledStartDate(Date scheduledStartDate) {
+		this.scheduledStartDate = scheduledStartDate;
 	}
 }

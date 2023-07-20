@@ -30,16 +30,16 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -57,9 +57,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class QuizManager {
     private static final Logger log = LoggerFactory.getLogger(QuizManager.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final ContentService contentService;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
     private final ContentMapper mapper;
 
@@ -78,8 +78,8 @@ public class QuizManager {
      *            - so we can convert cached content DOs to DTOs.
      */
     @Inject
-    public QuizManager(final PropertiesLoader properties, final ContentService contentService,
-                       final IContentManager contentManager,
+    public QuizManager(final AbstractConfigLoader properties, final ContentService contentService,
+                       final GitContentManager contentManager,
                        final ContentSummarizerService contentSummarizerService,
                        final ContentMapper mapper) {
         this.properties = properties;
@@ -91,17 +91,17 @@ public class QuizManager {
 
     public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
 
-        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
 
         // TODO: remove deprecated onlyVisibleToStudents check and argument!
         if (onlyVisibleToStudents) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                     VISIBLE_TO_STUDENTS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(Boolean.toString(true))));
         }
         if (null != visibleToRole) {
-            fieldsToMatch.add(new IContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,
                     BooleanOperator.NOT, Collections.singletonList(visibleToRole)));
         }
 
@@ -118,7 +118,7 @@ public class QuizManager {
      * @return The quiz.
      */
     public IsaacQuizDTO findQuiz(final String quizId) throws ContentManagerException {
-        Content cachedContent = contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), quizId);
+        Content cachedContent = contentManager.getContentDOById(quizId);
 
         if (cachedContent == null) {
             throw new ContentManagerException("Couldn't find test with id " + quizId);

@@ -19,6 +19,8 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,19 +44,21 @@ public final class Constants {
     public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
     public static final String POD_FRAGMENT_TYPE = "isaacPod";
     public static final String PAGE_TYPE = "page";
-    public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
     public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
     public static final String QUIZ_TYPE = "isaacQuiz";
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
+    public static final String REGRESSION_TEST_TAG = "regression_test";
+
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
             QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
 
-    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
+    public static final Set<String> SEARCHABLE_DOC_TYPES = ImmutableSet.of(
+            QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     /*
      * Game specific variables.
@@ -125,6 +129,13 @@ public final class Constants {
     public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
     public static final String DOCUMENT_PATH_LOG_FIELDNAME = "path";
 
+    public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
+
+    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
+
+    public static final Integer MAILGUN_BATCH_SIZE = 500;
+
+
     /**
      * Class to represent Isaac log types.
      */
@@ -144,7 +155,6 @@ public final class Constants {
         UPDATE_QUIZ_FEEDBACK_MODE,
         VIEW_ASSIGNMENT_PROGRESS,
         VIEW_CONCEPT,
-        VIEW_GROUPS_ASSIGNMENTS,
         VIEW_MY_BOARDS_PAGE,
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
@@ -165,19 +175,25 @@ public final class Constants {
         VIEW_SUPERSEDED_BY_QUESTION,
         CLONE_GAMEBOARD,
         VIEW_HINT,
-        QUICK_QUESTION_CONFIDENCE,
-        QUICK_QUESTION_CORRECT,
+        QUESTION_CONFIDENCE_BEFORE,
+        QUESTION_CONFIDENCE_AFTER,
+        QUESTION_CONFIDENCE_HINT,
         QUICK_QUESTION_SHOW_ANSWER,
         VIEW_RELATED_CONCEPT,
         VIEW_RELATED_QUESTION,
         VIEW_RELATED_PAGE,
         VIEW_MY_ASSIGNMENTS,
         VIEW_GAMEBOARD_BY_ID,
+        VIEW_GITHUB_CODE,
         ACCEPT_COOKIES,
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
         CLIENT_SIDE_ERROR,
         LOGIN_MODAL_SHOWN,
+        USER_CONSISTENCY_WARNING_SHOWN,
+        REVIEW_TEACHER_CONNECTIONS,
+        REPORT_CONTENT_ACCORDION_SECTION,
+        REPORT_CONTENT_PAGE
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
@@ -190,6 +206,11 @@ public final class Constants {
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
     }
+
+    /**
+     * Quiz constants
+     */
+    public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, Calendar.JUNE, 12, 0, 0, 0); // 12/06/2023
 
     /**
      * Private constructor to prevent this class being created.

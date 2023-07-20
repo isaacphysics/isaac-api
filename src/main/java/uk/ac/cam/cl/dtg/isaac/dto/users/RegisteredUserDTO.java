@@ -39,6 +39,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Date dateOfBirth;
     private Gender gender;
     private Date registrationDate;
+    private String countryCode;
 
     private String schoolId;
     private String schoolOther;
@@ -72,12 +73,16 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     @JsonCreator
     public RegisteredUserDTO(
-            @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
+            @JsonProperty("givenName") final String givenName,
+            @JsonProperty("familyName") final String familyName,
             @JsonProperty("email") final String email, 
             @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
             @JsonProperty("dateOfBirth") final Date dateOfBirth,
-            @JsonProperty("gender") final Gender gender, @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("schoolId") final String schoolId) {
+            @JsonProperty("gender") final Gender gender,
+            @JsonProperty("registrationDate") final Date registrationDate,
+            @JsonProperty("schoolId") final String schoolId,
+            @JsonProperty("countryCode") final String countryCode
+    ) {
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
@@ -85,6 +90,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.gender = gender;
         this.registrationDate = registrationDate;
         this.schoolId = schoolId;
+        this.countryCode = countryCode;
         this.emailVerificationStatus = emailVerificationStatus;
     }
 
@@ -321,6 +327,24 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     public void setSchoolOther(final String schoolOther) {
         this.schoolOther = schoolOther;
+    }
+
+    /**
+     * Gets the country code.
+     *
+     * @return The country code.
+     */
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    /**
+     * Sets the country code.
+     *
+     * @param countryCode The country code.
+     */
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
 
     /**

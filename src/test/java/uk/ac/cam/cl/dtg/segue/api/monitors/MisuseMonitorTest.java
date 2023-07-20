@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.fail;
@@ -34,9 +34,9 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
-    private PropertiesLoader dummyPropertiesLoader;
+    private AbstractConfigLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;
 
     /**
@@ -48,7 +48,7 @@ public class MisuseMonitorTest {
     @Before
     public final void setUp() throws Exception {
         this.dummyCommunicator = createMock(EmailManager.class);
-        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 
 
         expect(dummyPropertiesLoader.getProperty(Constants.SERVER_ADMIN_ADDRESS)).andReturn("FROM ADDRESS").anyTimes();
@@ -73,7 +73,7 @@ public class MisuseMonitorTest {
         expectLastCall();
         replay(this.dummyCommunicator);
 
-        for (int i = 1; i < tokenOwnerLookupMisuseHandler.getSoftThreshold(); i++) {
+        for (int i = 0; i < tokenOwnerLookupMisuseHandler.getSoftThreshold(); i++) {
             try {
                 misuseMonitor.notifyEvent(userId, event);
 
@@ -83,15 +83,16 @@ public class MisuseMonitorTest {
             }
         }
 
-        for (int i = TokenOwnerLookupMisuseHandler.SOFT_THRESHOLD; i < TokenOwnerLookupMisuseHandler.HARD_THRESHOLD; i++) {
+        for (int i = TokenOwnerLookupMisuseHandler.SOFT_THRESHOLD; i <= TokenOwnerLookupMisuseHandler.HARD_THRESHOLD + 1; i++) {
             try {
                 misuseMonitor.notifyEvent(userId, event);
-                if (i > TokenOwnerLookupMisuseHandler.HARD_THRESHOLD) {
-                    fail("Exception have been thrown after " + TokenOwnerLookupMisuseHandler.HARD_THRESHOLD
-                            + " attempts");
+                if (i >= TokenOwnerLookupMisuseHandler.HARD_THRESHOLD) {
+                    fail(String.format("Exception not thrown after %s attempts, over limit of %s!", i, TokenOwnerLookupMisuseHandler.HARD_THRESHOLD));
                 }
             } catch (SegueResourceMisuseException e) {
-
+                if (i < TokenOwnerLookupMisuseHandler.HARD_THRESHOLD) {
+                    fail(String.format("Exception thrown before %s attempts, under limit of %s!", i, TokenOwnerLookupMisuseHandler.HARD_THRESHOLD));
+                }
             }
         }
 

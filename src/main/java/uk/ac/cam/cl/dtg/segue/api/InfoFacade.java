@@ -18,9 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -30,22 +29,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 
 /**
  * Info Facade
@@ -54,11 +55,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/info")
-@Api(value = "/info")
+@Tag(name = "/info")
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final SegueJobService segueJobService;
 
     /**
@@ -70,7 +71,7 @@ public class InfoFacade extends AbstractSegueFacade {
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final PropertiesLoader properties, final IContentManager contentManager,
+    public InfoFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
                       final SegueJobService segueJobService,
                       final ILogManager logManager) {
         super(properties, logManager);
@@ -86,10 +87,10 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("segue_version")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the currently running API build version.")
+    @Operation(summary = "Get the currently running API build version.")
     public final Response getSegueAppVersion() {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueVersion",
-                SegueGuiceConfigurationModule.getSegueVersion()).build();
+                Objects.requireNonNullElse(SegueGuiceConfigurationModule.getSegueVersion(), "unknown")).build();
 
         return Response.ok(result).build();
     }
@@ -105,7 +106,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @Path("segue_environment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Get the mode that the API is currently running in: DEV or PROD.")
+    @Operation(summary = "Get the mode that the API is currently running in: DEV or PROD.")
     public final Response getSegueEnvironment(@Context final Request request) {
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_THIRTY_DAYS);
@@ -128,7 +129,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("content_versions/live_version")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the current content version commit SHA.")
+    @Operation(summary = "Get the current content version commit SHA.")
     public final Response getLiveVersionInfo() {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("liveVersion",
                 this.contentManager.getCurrentContentSHA()).build();
@@ -144,11 +145,11 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("content_versions/cached")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get all currently indexed content commit SHAs.")
+    @Operation(summary = "Get all currently indexed content commit SHAs.")
     public final Response getCachedVersions() {
 
         ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "cachedVersions", this.contentManager.getCachedVersionList()).build();
+                "cachedVersions", this.contentManager.getCachedContentSHAList()).build();
 
         return Response.ok(result).build();
     }
@@ -161,7 +162,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("symbolic_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether the symbolic question checker is running.")
+    @Operation(summary = "Check whether the symbolic question checker is running.")
     public Response pingEqualityChecker() {
 
         HttpClient httpClient = new DefaultHttpClient();
@@ -191,7 +192,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("chemistry_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether the chemistry question checker is running.")
+    @Operation(summary = "Check whether the chemistry question checker is running.")
     public Response pingChemistryChecker() {
 
         HttpClient httpClient = new DefaultHttpClient();
@@ -221,7 +222,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("etl/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether the content indexer is running.")
+    @Operation(summary = "Check whether the content indexer is running.")
     public Response pingETLServer() {
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
@@ -250,7 +251,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("elasticsearch/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether elasticsearch is running.")
+    @Operation(summary = "Check whether elasticsearch is running.")
     public Response pingElasticSearch() {
 
         HttpClient httpClient = new DefaultHttpClient();
@@ -282,9 +283,9 @@ public class InfoFacade extends AbstractSegueFacade {
     @GET
     @Path("quartz/ping")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Check whether Quartz job scheduler is running.")
+    @Operation(summary = "Check whether Quartz job scheduler is currently running.")
     public Response pingQuartzScheduler() {
-        if (segueJobService.isStarted()) {
+        if (segueJobService.wasStarted() && !segueJobService.isShutdown()) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();

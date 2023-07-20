@@ -19,7 +19,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
@@ -35,6 +35,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
     private Date dueDate;
+    private Date scheduledStartDate;
     private QuizFeedbackMode quizFeedbackMode;
 
     private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
@@ -56,17 +57,21 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *            - the date the assignment was created.
      * @param dueDate
      *            - the optional date the assignment should be completed by.
+     * @param scheduledStartDate
+     *            - the optional date the quiz should be shown to students.
      * @param quizFeedbackMode
      *            - what level of feedback to give to students.
      */
     public QuizAssignmentDTO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
-                             final Date creationDate, final Date dueDate, final QuizFeedbackMode quizFeedbackMode) {
+                             final Date creationDate, final Date dueDate, final Date scheduledStartDate,
+                             final QuizFeedbackMode quizFeedbackMode) {
         this.id = id;
         this.quizId = quizId;
         this.ownerUserId = ownerUserId;
         this.groupId = groupId;
         this.creationDate = creationDate;
         this.dueDate = dueDate;
+        this.scheduledStartDate = scheduledStartDate;
         this.quizFeedbackMode = quizFeedbackMode;
     }
 
@@ -212,6 +217,14 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.dueDate = dueDate;
     }
 
+    @Nullable public Date getScheduledStartDate() {
+        return scheduledStartDate;
+    }
+
+    public void setScheduledStartDate(@Nullable Date scheduledStartDate) {
+        this.scheduledStartDate = scheduledStartDate;
+    }
+
     /**
      * Gets the QuizFeedbackMode.
      * @return the quizFeedbackMode
@@ -257,14 +270,15 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
 
     @Override
     public String toString() {
-        return "QuizAssignmentDTO [" +
-            "id=" + id +
-            ", quizId='" + quizId + '\'' +
-            ", groupId=" + groupId +
-            ", ownerUserId=" + ownerUserId +
-            ", creationDate=" + creationDate +
-            ", dueDate=" + dueDate +
-            ", quizFeedbackMode=" + quizFeedbackMode +
-            ']';
+        return "QuizAssignmentDTO ["
+            + "id=" + id
+            + ", quizId='" + quizId + '\''
+            + ", groupId=" + groupId
+            + ", ownerUserId=" + ownerUserId
+            + ", creationDate=" + creationDate
+            + ", dueDate=" + dueDate
+            + ", scheduledStartDate=" + scheduledStartDate
+            + ", quizFeedbackMode=" + quizFeedbackMode
+            + ']';
     }
 }

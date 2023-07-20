@@ -61,11 +61,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
@@ -103,15 +103,15 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final UserAuthenticationManager userAuthenticationManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     private final ISecondFactorAuthenticator secondFactorManager;
 
     private final AbstractUserPreferenceManager userPreferenceManager;
 
-    private final int USER_NAME_MAX_LENGTH = 255;
+    private final Pattern restrictedSignupEmailRegex;
+    private static final int USER_NAME_MAX_LENGTH = 255;
     private static final Pattern USER_NAME_FORBIDDEN_CHARS_REGEX = Pattern.compile("[*<>]");
-
 
     /**
      * Create an instance of the user manager class.
@@ -137,7 +137,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - Allows user preferences to be managed.
      */
     @Inject
-    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final PropertiesLoader properties,
+    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final AbstractConfigLoader properties,
                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                               final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
@@ -164,6 +164,13 @@ public class UserAccountManager implements IUserAccountManager {
         this.userAuthenticationManager = userAuthenticationManager;
         this.secondFactorManager = secondFactorManager;
         this.userPreferenceManager = userPreferenceManager;
+
+        String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
+        if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
+            this.restrictedSignupEmailRegex = null;
+        } else {
+            this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex);
+        }
     }
 
     /**
@@ -171,20 +178,23 @@ public class UserAccountManager implements IUserAccountManager {
      * user to. This url will be for a 3rd party authenticator who will use the callback method provided after they have
      * authenticated.
      * 
-     * Users who are already logged already will be returned their UserDTO without going through the authentication
+     * Users who are already logged in will be returned their UserDTO without going through the authentication
      * process.
      * 
      * @param request
      *            - http request that we can attach the session to and save redirect url in.
      * @param provider
      *            - the provider the user wishes to authenticate with.
+     * @param isSignUp
+     *            - whether this is an initial sign-up, which may be used to direct the client to a sign-up flow on the IdP.
+     *
      * @return a URI for redirection
      * @throws IOException - 
      * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    public URI authenticate(final HttpServletRequest request, final String provider) 
+    public URI authenticate(final HttpServletRequest request, final String provider, final boolean isSignUp)
             throws IOException, AuthenticationProviderMappingException {
-        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider, isSignUp);
     }
 
     /**
@@ -208,7 +218,7 @@ public class UserAccountManager implements IUserAccountManager {
         // record our intention to link an account.
         request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
 
-        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider, false);
     }
 
     /**
@@ -284,8 +294,8 @@ public class UserAccountManager implements IUserAccountManager {
             if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty() && this.findUserByEmail(providerUserDO.getEmail()) != null) {
                 log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
                         + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
-                throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
-                + " You may have registered using a different provider, or a username and password.");
+                throw new DuplicateAccountException("You do not use " + authenticator.getFriendlyName() + " to log in."
+                + " You may have registered using a different provider, or your email address and password.");
             }
             // this must be a registration request
             RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
@@ -294,8 +304,7 @@ public class UserAccountManager implements IUserAccountManager {
             segueUserDTO.setFirstLogin(true);
             
             try {
-                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider",
-                        capitalizeFully(provider));
+                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider", authenticator.getFriendlyName());
 
                 emailManager.sendTemplatedEmailToUser(segueUserDTO,
                         emailManager.getEmailTemplateDTO("email-template-registration-confirmation-federated"),
@@ -414,7 +423,7 @@ public class UserAccountManager implements IUserAccountManager {
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
                     "Unable to set a password.").toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn("Missing field during update operation. ", e);
+            log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (DuplicateAccountException e) {
@@ -430,6 +439,9 @@ public class UserAccountManager implements IUserAccountManager {
                     "You cannot register with an Isaac email address.").toResponse();
         } catch (InvalidNameException e) {
             log.warn("Invalid name provided during registration.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (UnknownCountryCodeException e) {
+            log.warn("Unknown country code provided during registration.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
@@ -559,24 +571,13 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
             // check that any changes to protected fields being made are allowed.
-            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient
-                    .getId());
+            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient.getId());
 
-            if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
-                if (Role.ADMIN.equals(existingUserFromDb.getRole())
-                        || Role.ADMIN.equals(userObjectFromClient.getRole())) {
-                    return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                            "You cannot modify admin roles.").toResponse();
-                }
-            }
-
-            // check that the user is allowed to change the role of another user
-            // if that is what they are doing.
-            if (!checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))
-                    && userObjectFromClient.getRole() != null
-                    && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
+            // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
+            // role modification)
+            if (null == userObjectFromClient.getRole() || !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
                 return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                        "You do not have permission to change a users role.").toResponse();
+                        "You cannot change a users role.").toResponse();
             }
 
             if (registeredUserContexts != null) {
@@ -592,17 +593,6 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
             RegisteredUserDTO updatedUser = updateUserObject(userObjectFromClient, newPassword);
-
-            // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
-            if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
-                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
-                        + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
-                        + updatedUser.getRole());
-                this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.CHANGE_USER_ROLE,
-                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
-                                "oldRole", existingUserFromDb.getRole(),
-                                "newRole", updatedUser.getRole()));
-            }
 
             // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
             if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
@@ -636,6 +626,9 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Response.Status.NOT_FOUND,
                     "The user specified does not exist.").toResponse();
+        } catch (DuplicateAccountException e) {
+            log.warn(String.format("Account email change failed due to existing email (%s)", userObjectFromClient.getEmail()));
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
@@ -643,13 +636,16 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (InvalidPasswordException e) {
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn("Missing field during update operation. ", e);
+            log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (AuthenticationProviderMappingException e) {
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (InvalidNameException e) {
             log.warn("Invalid name provided during user update.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (UnknownCountryCodeException e) {
+            log.warn("Unknown country code provided during user update.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
@@ -1026,7 +1022,7 @@ public class UserAccountManager implements IUserAccountManager {
             final HttpServletResponse response, final RegisteredUser user, final String newPassword,
                                                         final boolean rememberMe) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
@@ -1034,9 +1030,8 @@ public class UserAccountManager implements IUserAccountManager {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
         }
 
-        // FIXME: This is a hard-coded reference to the URL of the platform!
-        // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
-        if (user.getEmail().matches(".*@isaac(physics|chemistry|maths|biology|computerscience|science)\\.org")) {
+        // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
+        if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
             log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
@@ -1063,12 +1058,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(user.getGivenName())) {
+        if (!isUserNameValid(user.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(user.getFamilyName())) {
+        if (!isUserNameValid(user.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+        }
+
+        // Validate country code
+        if (null != userToSave.getCountryCode() && !CountryLookupManager.isKnownCountryCode(userToSave.getCountryCode())) {
+            throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1129,7 +1129,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
             throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.notNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -1150,12 +1150,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(updatedUser.getGivenName())) {
+        if (!isUserNameValid(updatedUser.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(updatedUser.getFamilyName())) {
+        if (!isUserNameValid(updatedUser.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+        }
+
+        // Validate country code
+        if (null != updatedUser.getCountryCode() && !CountryLookupManager.isKnownCountryCode(updatedUser.getCountryCode())) {
+            throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -1166,36 +1171,15 @@ public class UserAccountManager implements IUserAccountManager {
             authenticator.ensureValidPassword(newPassword);
         }
 
-        // Send a welcome email if the user has become a teacher
-        try {
-            RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
-            if (updatedUser.getRole() != existingUser.getRole()) {
-                //TODO: refactor and just use updateUserRole method for the below
-                if (updatedUser.getRole() == Role.TEACHER) {
-                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                            emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                    "newrole", updatedUser.getRole().toString()),
-                            EmailType.SYSTEM);
-                } else {
-                    emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                            emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                    "newrole", updatedUser.getRole().toString()),
-                            EmailType.SYSTEM);
-                }
-            }
-        } catch (ContentManagerException | NoUserException e) {
-            log.error("ContentManagerException during sendTeacherWelcome " + e.getMessage());
-        }
-
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
 
         RegisteredUser userToSave = new RegisteredUser();
         mergeMapper.map(existingUser, userToSave);
         mergeMapper.map(userDTOContainingUpdates, userToSave);
+        // Don't modify email verification status, registration date, or role
         userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
+        userToSave.setRole(existingUser.getRole());
         userToSave.setLastUpdated(new Date());
 
         if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
@@ -1204,6 +1188,12 @@ public class UserAccountManager implements IUserAccountManager {
         // Correctly remove school_other when it is set to be the empty string:
         if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
             userToSave.setSchoolOther(null);
+        }
+
+        // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
+        // null values are explicitly not mapped by `mergeMapper`.
+        if (updatedUser.getDateOfBirth() == null) {
+            userToSave.setDateOfBirth(null);
         }
 
         // Before save we should validate the user for mandatory fields.
@@ -1253,26 +1243,26 @@ public class UserAccountManager implements IUserAccountManager {
         Validate.notNull(requestedRole);
         RegisteredUser userToSave = this.findUserById(id);
 
-        // Send welcome email if user has become teacher, otherwise, role change notification
+        // Send welcome email if user has become teacher or tutor, otherwise, role change notification
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
             if (userToSave.getRole() != requestedRole) {
+                String emailTemplate;
                 switch (requestedRole) {
+                    case TUTOR:
+                        emailTemplate = "email-template-tutor-welcome";
+                        break;
                     case TEACHER:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", requestedRole.toString()),
-                                EmailType.SYSTEM);
+                        emailTemplate = "email-template-teacher-welcome";
                         break;
                     default:
-                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                                emailManager.getEmailTemplateDTO("email-template-default-role-change"),
-                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                        "newrole", requestedRole.toString()),
-                                EmailType.SYSTEM);
-                        break;
+                        emailTemplate = "email-template-default-role-change";
                 }
+                emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                        emailManager.getEmailTemplateDTO(emailTemplate),
+                        ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                "newrole", requestedRole.toString()),
+                        EmailType.SYSTEM);
             }
         } catch (ContentManagerException | NoUserException e) {
             log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
@@ -1899,7 +1889,7 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public final boolean isUserNameValid(final String name) {
+    public static final boolean isUserNameValid(final String name) {
         if (null == name || name.length() > USER_NAME_MAX_LENGTH || USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
                 || name.isEmpty()) {
             return false;

@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,20 +42,21 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -69,7 +70,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/authorisations")
-@Api(value = "/authorisations")
+@Tag(name = "/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
@@ -93,9 +94,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      *            - so that we can prevent overuse of protected resources.
      */
     @Inject
-    public AuthorisationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ILogManager logManager, final UserAssociationManager associationManager, final GroupManager groupManager,
-            final IMisuseMonitor misuseMonitor) {
+    public AuthorisationFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
+                               final ILogManager logManager, final UserAssociationManager associationManager, final GroupManager groupManager,
+                               final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.associationManager = associationManager;
@@ -115,8 +116,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all users granted access to the current user's data.")
+    @Operation(summary = "List all users granted access to the current user's data.")
     public Response getUsersWithAccess(@Context final HttpServletRequest request) throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
@@ -140,8 +140,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all users granted access to the specified user's data.")
+    @Operation(summary = "List all users granted access to the specified user's data.")
     public Response getUsersWithAccessSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
@@ -184,8 +183,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Revoke a specific user's access to the current user's data.")
+    @Operation(summary = "Revoke a specific user's access to the current user's data.")
     public Response revokeOwnerAssociation(@Context final HttpServletRequest request,
             @PathParam("userId") final Long userIdToRevoke) {
         if (null == userIdToRevoke) {
@@ -223,8 +221,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Revoke all users granted access to the current user's data.")
+    @Operation(summary = "Revoke all users granted access to the current user's data.")
     public Response revokeAllOwnerAssociations(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -261,8 +258,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("release/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Release the current user's access to another user's data.")
+    @Operation(summary = "Release the current user's access to another user's data.")
     public Response releaseAssociation(@Context final HttpServletRequest request,
                                        @PathParam("userId") final Long associationOwner) {
         if (null == associationOwner) {
@@ -302,8 +298,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @DELETE
     @Path("release")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Release the current user's access to all other users's data.")
+    @Operation(summary = "Release the current user's access to all other users's data.")
     public Response releaseAllAssociations(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -337,8 +332,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/other_users")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all users the current user has been granted access by.")
+    @Operation(summary = "List all users the current user has been granted access by.")
     public Response getCurrentAccessRights(@Context final HttpServletRequest request) throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
@@ -362,8 +356,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/other_users/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List all users the specified user has been granted access by.")
+    @Operation(summary = "List all users the specified user has been granted access by.")
     public Response getCurrentAccessRightsForSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException{
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
@@ -407,8 +400,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @GET
     @Path("/token/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get the group join token for the specified group.")
+    @Operation(summary = "Get the group join token for the specified group.")
     public Response getAssociationToken(@Context final HttpServletRequest request,
             @PathParam("groupId") final Long groupId) {
         if (null == groupId) {
@@ -455,8 +447,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/token/{token}/owner")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "List the users a group join token will grant access to.")
+    @Operation(summary = "List the users a group join token will grant access to.")
     public Response getTokenOwnerUserSummary(@Context final HttpServletRequest request,
             @PathParam("token") final String token) {
         if (null == token || token.isEmpty()) {
@@ -474,10 +465,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
                     TokenOwnerLookupMisuseHandler.class.getSimpleName());
 
-            // add owner
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
-            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId()), UserSummaryWithEmailAddressDTO.class));
-
+            // add owner
+            usersLinkedToToken.add(group.getOwnerSummary());
             // add additional managers
             usersLinkedToToken.addAll(group.getAdditionalManagers());
 
@@ -494,8 +484,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get association token. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
@@ -516,9 +504,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Path("/use_token/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Use a group join token to authorise users and join a group.",
-                  notes = "This should be used after listing the group owners and managers and asking the user's permission to share data.")
+    @Operation(summary = "Use a group join token to authorise users and join a group.",
+                  description = "This should be used after listing the group owners and managers and asking the user's permission to share data.")
     public Response useToken(@Context final HttpServletRequest request, @PathParam("token") final String token) {
         if (null == token || token.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();

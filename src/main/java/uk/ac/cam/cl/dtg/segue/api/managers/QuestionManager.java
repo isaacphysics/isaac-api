@@ -27,23 +27,17 @@ import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
-import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
-import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
+import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -62,9 +56,15 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -156,7 +156,7 @@ public class QuestionManager {
 
             log.debug("Validator for question validation found. Using : "
                     + questionType.getAnnotation(ValidatesWith.class).value());
-            Injector injector = IsaacApplicationRegister.injector;
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
 
         } else if (questionType.equals(Question.class)) {
@@ -188,7 +188,7 @@ public class QuestionManager {
 
             log.debug("Specifier for specifiation creation found. Using : "
                 + choiceClass.getAnnotation(SpecifiesWith.class).value());
-            Injector injector = IsaacApplicationRegister.injector;
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
 
         } else if (choiceClass.equals(ChoiceDTO.class)) {
@@ -218,16 +218,14 @@ public class QuestionManager {
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
      * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
-    public SeguePageDTO augmentQuestionObjects(final SeguePageDTO page, final String userId,
+    public void augmentQuestionObjects(final SeguePageDTO page, final String userId,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
-        this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
+        augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
-
-        return page;
     }
 
     /**
@@ -240,14 +238,13 @@ public class QuestionManager {
      *            - The flattened list of questions which should be augmented.
      * @param usersQuestionAttempts
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
-     * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
-    private SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
+    private void augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
             final List<QuestionDTO> questionsToAugment,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         if (null == usersQuestionAttempts) {
-            return page;
+            return;
         }
 
         for (QuestionDTO question : questionsToAugment) {
@@ -279,7 +276,6 @@ public class QuestionManager {
             question.setBestAttempt(this.convertQuestionValidationResponseToDTO(bestAnswer));
 
         }
-        return page;
     }
 
 
@@ -333,7 +329,7 @@ public class QuestionManager {
             log.error("Unexpected user type. Unable to record question response");
         }
     }
-
+    
     /** Test a question of a particular type against a series of test cases **/
     public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
@@ -393,6 +389,22 @@ public class QuestionManager {
             return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
         }
     }
+
+    /**
+     * Return all the attempts of a user at a specified page ID prefix.
+     *
+     * The map returned by this method is in the same format as {@link #getQuestionAttemptsByUser(AbstractSegueUserDTO)}
+     * for compatibility.
+     *
+     * @param user the user of interest
+     * @param questionPageId the page ID prefix of interest
+     * @return a map QuestionPageID -> (QuestionID -> List[QuestionValidationResponse]).
+     * @throws SegueDatabaseException on database error
+     */
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUserForQuestion(
+            final RegisteredUserDTO user, final String questionPageId) throws SegueDatabaseException {
+        return questionAttemptPersistenceManager.getQuestionAttempts(user.getId(), questionPageId);
+    }
     
     /**
      * @param users who we are interested in.
@@ -400,15 +412,31 @@ public class QuestionManager {
      * @return a map of user id to question page id to question_id to list of attempts.
      * @throws SegueDatabaseException if there is a database error.
      */
-    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingQuestionAttempts(
+    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingLightweightQuestionAttempts(
             final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException {
         List<Long> userIds = Lists.newArrayList();
         for (RegisteredUserDTO user : users) {
             userIds.add(user.getId());
         }
 
-        return this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
-                questionPageIds);
+        return this.questionAttemptPersistenceManager.getMatchingLightweightQuestionAttempts(userIds, questionPageIds);
+    }
+
+    /**
+     *  Helper method for attempts from a single user.
+     *
+     * @see #getMatchingLightweightQuestionAttempts(List, List)
+     *
+     * @param user who we are interested in.
+     * @param questionPageIds we want to look up.
+     * @return a map of user id to question page id to question_id to list of attempts.
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getMatchingLightweightQuestionAttempts(
+            final RegisteredUserDTO user, final List<String> questionPageIds) throws SegueDatabaseException {
+
+        return this.getMatchingLightweightQuestionAttempts(Collections.singletonList(user), questionPageIds)
+                .getOrDefault(user.getId(), Collections.emptyMap());
     }
     
     /**
@@ -477,7 +505,10 @@ public class QuestionManager {
 
     /**
      * Extract all of the questionObjectsRecursively.
-     * 
+     *
+     * See also {@link uk.ac.cam.cl.dtg.isaac.api.managers.GameManager#getAllMarkableQuestionPartsDFSOrder(ContentDTO)}
+     * which does basically the same thing.
+     *
      * @param toExtract
      *            - The contentDTO which may have question objects as children.
      * @param result

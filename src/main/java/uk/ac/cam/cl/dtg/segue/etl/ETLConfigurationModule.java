@@ -9,15 +9,16 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.apache.commons.lang3.SystemUtils;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.PropertiesManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.WriteablePropertiesLoader;
+import uk.ac.cam.cl.dtg.util.YamlLoader;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,9 +32,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 class ETLConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(ETLConfigurationModule.class);
     private static Injector injector = null;
-    private static PropertiesLoader globalProperties = null;
+    private static AbstractConfigLoader globalProperties = null;
     private static ContentMapper mapper = null;
-    private static Client elasticSearchClient = null;
+    private static RestHighLevelClient elasticSearchClient = null;
     private static SchoolIndexer schoolIndexer = null;
     private static ETLManager etlManager = null;
 
@@ -55,7 +56,7 @@ class ETLConfigurationModule extends AbstractModule {
                     throw new FileNotFoundException("Segue configuration location not specified, please provide it as either a java system property (config.location) or environment variable SEGUE_CONFIG_LOCATION");
                 }
 
-                globalProperties = new PropertiesLoader(configLocation);
+                globalProperties = new YamlLoader(configLocation);
 
                 log.info(String.format("Segue using configuration file: %s", configLocation));
 
@@ -73,7 +74,7 @@ class ETLConfigurationModule extends AbstractModule {
      * @param propertyLoader
      *            - property loader to use
      */
-    private void bindConstantToProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
+    private void bindConstantToProperty(final String propertyLabel, final AbstractConfigLoader propertyLoader) {
         bindConstant().annotatedWith(Names.named(propertyLabel)).to(propertyLoader.getProperty(propertyLabel));
     }
 
@@ -81,11 +82,13 @@ class ETLConfigurationModule extends AbstractModule {
     protected void configure() {
         try {
 
-            bind(PropertiesLoader.class).toInstance(globalProperties);
+            bind(AbstractConfigLoader.class).toInstance(globalProperties);
 
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
-            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT, globalProperties);
+            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_INFO_PORT, globalProperties);
+            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_USERNAME, globalProperties);
+            this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PASSWORD, globalProperties);
             this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
             // GitDb
@@ -119,8 +122,8 @@ class ETLConfigurationModule extends AbstractModule {
         return mapper;
     }
 
-    private static PropertiesManager getContentIndicesStore() throws IOException {
-        return new PropertiesManager(globalProperties.getProperty(Constants.CONTENT_INDICES_LOCATION));
+    private static WriteablePropertiesLoader getContentIndicesStore() throws IOException {
+        return new WriteablePropertiesLoader(globalProperties.getProperty(Constants.CONTENT_INDICES_LOCATION));
     }
 
     @Inject
@@ -128,7 +131,7 @@ class ETLConfigurationModule extends AbstractModule {
     @Singleton
     private static ETLManager getETLManager(ContentIndexer contentIndexer, SchoolIndexer schoolIndexer, GitDb db) throws IOException {
         if (null == etlManager) {
-            PropertiesManager contentIndicesStore = getContentIndicesStore();
+            WriteablePropertiesLoader contentIndicesStore = getContentIndicesStore();
             etlManager = new ETLManager(contentIndexer, schoolIndexer, db, contentIndicesStore);
         }
         return etlManager;
@@ -138,26 +141,28 @@ class ETLConfigurationModule extends AbstractModule {
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
      * The client is threadsafe so we don't need to keep creating new ones.
-     *
-     * @param clusterName
-     *            - The name of the cluster to create.
      * @param address
      *            - address of the cluster to create.
      * @param port
      *            - port of the custer to create.
+     * @param username
+     *            - username for cluster user.
+     * @param password
+     *            - password for cluster user.
      * @return Client to be injected into ElasticSearch Provider.
      */
     @Inject
     @Provides
     @Singleton
-    private static Client getSearchConnectionInformation(
-            @Named(Constants.SEARCH_CLUSTER_NAME) final String clusterName,
+    private static RestHighLevelClient getSearchConnectionInformation(
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
-            @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
+            @Named(Constants.SEARCH_CLUSTER_INFO_PORT) final int port,
+            @Named(Constants.SEARCH_CLUSTER_USERNAME) final String username,
+            @Named(Constants.SEARCH_CLUSTER_PASSWORD) final String password) {
 
         if (null == elasticSearchClient) {
             try {
-                elasticSearchClient = ElasticSearchIndexer.getTransportClient(clusterName, address, port);
+                elasticSearchClient = ElasticSearchIndexer.getClient(address, port, username, password);
                 log.info("Creating singleton of ElasticSearchIndexer");
             } catch (UnknownHostException e) {
                 log.error("Could not create ElasticSearchIndexer");

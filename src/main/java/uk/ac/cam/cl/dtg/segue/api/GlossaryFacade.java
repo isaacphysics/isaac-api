@@ -19,27 +19,29 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -52,11 +54,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  *
  */
 @Path("/glossary")
-@Api(value = "/glossary")
+@Tag(name = "/glossary")
 public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     /**
@@ -66,7 +68,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
      * @param logManager     - for logging events using the logging api.
      */
     @Inject
-    public GlossaryFacade(final PropertiesLoader properties, final IContentManager contentManager,
+    public GlossaryFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
                           @Named(CONTENT_INDEX) final String contentIndex,
                           final ILogManager logManager) {
         super(properties, logManager);
@@ -85,12 +87,13 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @GET
     @Path("terms")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get all the glossary terms that are indexed.")
+    @GZIP
+    @Operation(summary = "Get all the glossary terms that are indexed.")
     public final Response getTerms(@QueryParam("start_index") final String startIndex,
                                    @QueryParam("limit") final String limit) {
 
-        List<IContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new IContentManager.BooleanSearchClause(
+        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("glossaryTerm")));
 
         ResultsWrapper<ContentDTO> c;
@@ -110,7 +113,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
                 startIndexOfResults = 0;
             }
 
-            c = this.contentManager.findByFieldNames(this.contentIndex, fieldsToMatch, startIndexOfResults, resultsLimit);
+            c = this.contentManager.findByFieldNames(fieldsToMatch, startIndexOfResults, resultsLimit);
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content acquisition error.", e).toResponse();
@@ -131,7 +134,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @GET
     @Path("terms/{term_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the term with the given id.")
+    @Operation(summary = "Get the term with the given id.")
     public final Response getTermById(@PathParam("term_id") final String term_id) {
 
         if (null == term_id) {
@@ -140,7 +143,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
 
         ResultsWrapper<ContentDTO> c;
         try {
-            c = this.contentManager.getByIdPrefix(this.contentIndex, term_id, 0, 10000);
+            c = this.contentManager.getUnsafeCachedDTOsByIdPrefix(term_id, 0, 10000);
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
                 log.debug(error.getErrorMessage());

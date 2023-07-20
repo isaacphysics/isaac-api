@@ -18,6 +18,9 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
@@ -32,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
@@ -42,7 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -160,10 +164,6 @@ public class ContentIndexer {
         es.addOrMoveIndexAlias(alias, version, allContentTypes);
     }
 
-    void setLatestVersion(String version) {
-        this.setNamedVersion("latest", version);
-    }
-
     /**
      * This method will populate the internal gitCache based on the content object files found for a given SHA.
      *
@@ -224,9 +224,11 @@ public class ContentIndexer {
 
                     if (null != content) {
                         // Walk the content for site-wide searchable fields
-                        StringBuilder searchableContentBuilder = new StringBuilder();
-                        this.collateSearchableContent(content, searchableContentBuilder);
-                        content.setSearchableContent(searchableContentBuilder.toString());
+                        StringBuilder prioritisedContentCollector = new StringBuilder();
+                        StringBuilder contentCollector = new StringBuilder();
+                        this.collateSearchableContent(content, prioritisedContentCollector, contentCollector);
+                        content.setPrioritisedSearchableContent(prioritisedContentCollector.toString());
+                        content.setSearchableContent(contentCollector.toString());
 
                         // add children (and parent) from flattened Set to
                         // cache if they have ids
@@ -304,10 +306,10 @@ public class ContentIndexer {
                             // therefore log an error
                             log.debug("Resource with duplicate ID (" + content.getId()
                                     + ") detected in cache. Skipping " + treeWalk.getPathString());
-                            this.registerContentProblem(flattenedContent,
-                                    "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and "
-                                            + contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()
-                                            + " only one will be available", indexProblemCache);
+                            this.registerContentProblem(flattenedContent, String.format(
+                                    "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
+                                    content.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
+                                indexProblemCache);
                         }
                     }
                 } catch (JsonMappingException e) {
@@ -396,6 +398,13 @@ public class ContentIndexer {
                     newParentId, parentPublished);
         }
 
+        // hack to get cards to count as children:
+        if (content instanceof IsaacCardDeck) {
+            for (IsaacCard card : ((IsaacCardDeck) content).getCards()) {
+                this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
+            }
+        }
+
         // TODO: hack to get hints to apply as children
         if (content instanceof Question) {
             Question question = (Question) content;
@@ -475,14 +484,16 @@ public class ContentIndexer {
         return content;
     }
 
-    private void collateSearchableContent(final Content content, final StringBuilder searchableContentBuilder) {
+    private void collateSearchableContent(
+            final Content content, final StringBuilder prioritisedContentCollector, final StringBuilder contentCollector
+    ) {
         if (null != content) {
             // Add the fields of interest to the string builder
             if (null != content.getTitle()) {
-                searchableContentBuilder.append(content.getTitle() + "\n");
+                prioritisedContentCollector.append(content.getTitle()).append("\n");
             }
             if (null != content.getValue()) {
-                searchableContentBuilder.append(content.getValue() + "\n");
+                contentCollector.append(content.getValue()).append("\n");
             }
 
             // Repeat the process for each child
@@ -490,7 +501,7 @@ public class ContentIndexer {
                 for (ContentBase childContentBase : content.getChildren()) {
                     if (childContentBase instanceof Content) {
                         Content child = (Content) childContentBase;
-                        this.collateSearchableContent(child, searchableContentBuilder);
+                        this.collateSearchableContent(child, prioritisedContentCollector, contentCollector);
                     }
                 }
             }
@@ -761,7 +772,11 @@ public class ContentIndexer {
             }
 
             // content type specific checks
-            this.recordContentTypeSpecificError(sha, c, indexProblemCache);
+            try {
+                this.recordContentTypeSpecificError(sha, c, indexProblemCache);
+            } catch (NullPointerException e) {
+                log.warn("Failed processing content errors in file: " + c.getCanonicalSourceFile());
+            }
         }
 
         // Find all references to missing content.
@@ -930,8 +945,9 @@ public class ContentIndexer {
 
             // check that there is some alt text.
             if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                if (!(f instanceof Video)) {
-                    // Videos probably don't need alt text unless there is a good reason.
+                if (!(f instanceof Video) && !f.getId().equals("eventThumbnail")) {
+                    // Videos probably don't need alt text unless there is a good reason. It's not important that event
+                    // thumbnails have alt text, so we don't record errors for those either.
                     this.registerContentProblem(content, "No altText attribute set for media element: " + f.getSrc()
                             + " in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
                 }
@@ -975,14 +991,16 @@ public class ContentIndexer {
 
         if (content instanceof IsaacEventPage) {
             IsaacEventPage e = (IsaacEventPage) content;
-            if (e.getEndDate() != null && e.getEndDate().before(e.getDate())) {
+            if (e.getEndDate() == null) {
+                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
+            } else if (e.getEndDate().before(e.getDate())) {
                 this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
             }
         }
 
-        // Find quantities with values that cannot be parsed as numbers.
         if (content instanceof IsaacNumericQuestion) {
             IsaacNumericQuestion q = (IsaacNumericQuestion) content;
+            // Find quantities with values that cannot be parsed as numbers.
             for (Choice choice : q.getChoices()) {
                 if (choice instanceof Quantity) {
                     Quantity quantity = (Quantity) choice;
@@ -1008,9 +1026,29 @@ public class ContentIndexer {
                             + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
                 }
             }
+            // Give warning if we have both required and display unit set
             if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
                 this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
                         + " Units will be ignored for this question!", indexProblemCache);
+            }
+            // Verify that significant figure bounds are correct
+            if (!q.getDisregardSignificantFigures()) {
+                if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present, or both not present
+                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has only one "
+                            + "significant figure bound, and may be unanswerable as a result. Please add both upper "
+                            + "and lower significant figure bounds, or omit both.", indexProblemCache);
+                } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
+                    // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
+                    // (0 significant figures makes no sense for example)
+                    if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
+                            || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
+                        this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has broken "
+                                + "significant figure rules! The upper bound may be below the lower bound, or "
+                                + "either bound might be less than 1 - the question will be unanswerable unless "
+                                + "this is fixed.", indexProblemCache);
+                    }
+                }
             }
         }
 
@@ -1052,6 +1090,27 @@ public class ContentIndexer {
                         this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
                                 + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
                     }
+                }
+            }
+        }
+
+        if (content instanceof IsaacClozeQuestion) {
+            IsaacClozeQuestion q = (IsaacClozeQuestion) content;
+            Integer numberItems = null;
+            for (Choice choice : q.getChoices()) {
+                if (choice instanceof ItemChoice) {
+                    ItemChoice c = (ItemChoice) choice;
+                    if (null == c.getItems() || c.getItems().isEmpty()) {
+                        this.registerContentProblem(content, "Cloze Question: " + q.getId() + " has choice with missing items!", indexProblemCache);
+                        continue;
+                    }
+                    int items = c.getItems().size();
+                    if (numberItems != null && items != numberItems) {
+                        this.registerContentProblem(content, "Cloze Question: " + q.getId() + " has choice with incorrect number of items!"
+                                + " (Expected " + numberItems + ", got " + items + "!)", indexProblemCache);
+                        continue;
+                    }
+                    numberItems = items;
                 }
             }
         }

@@ -165,6 +165,11 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
+    public String getFriendlyName() {
+        return "Google";
+    }
+
+    @Override
     public String getAuthorizationUrl(final String antiForgeryStateToken) {
         GoogleAuthorizationCodeRequestUrl urlBuilder;
         urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets.getDetails().getClientId(), callbackUri,
@@ -248,7 +253,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
             }
 
             return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),
-                    email, emailStatus, null, null, null);
+                    email, emailStatus, null, null, null, null);
 
         } else {
             throw new NoUserException("No user could be created from provider details!");
@@ -269,7 +274,11 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
      * 
      * This check is intended to mitigate against the confused deputy problem; although I suspect the google client
      * might already do this.
-     * 
+     *
+     * Todo from the future: this necessary because OAuth 2 is for authorization not authentication, and doesn't share
+     *  information about the original authentication event by default. We should consider replacing this with OpenID,
+     *  however the Google library doesn't appear to support that well.
+     *
      * @param credentials
      *            - the credential object for the token verification.
      * @return true if the token passes our validation false if not.

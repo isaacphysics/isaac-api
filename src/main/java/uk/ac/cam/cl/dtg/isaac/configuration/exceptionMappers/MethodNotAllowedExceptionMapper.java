@@ -19,21 +19,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
-public class MethodNotAllowedExceptionMapper implements ExceptionMapper<javax.ws.rs.NotAllowedException> {
+public class MethodNotAllowedExceptionMapper implements ExceptionMapper<jakarta.ws.rs.NotAllowedException> {
     private static final Logger log = LoggerFactory.getLogger(MethodNotAllowedExceptionMapper.class);
 
     @Context
     private HttpServletRequest request;
 
     @Override
-    public Response toResponse(javax.ws.rs.NotAllowedException e) {
+    public Response toResponse(jakarta.ws.rs.NotAllowedException e) {
         String message = String.format("Request %s %s is not allowed", request.getMethod(), request.getRequestURI());
         log.error(message);
         return SegueErrorResponse.getMethodNotAllowedReponse(message);

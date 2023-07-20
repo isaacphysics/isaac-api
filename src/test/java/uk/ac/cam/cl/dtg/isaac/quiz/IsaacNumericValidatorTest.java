@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
+import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * Test class for the user manager class.
  *
  */
-@PowerMockIgnore({"javax.ws.*"})
+@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacNumericValidatorTest {
     private IsaacNumericValidator validator;
     private IsaacNumericQuestion numericQuestionNoUnits;
@@ -681,14 +682,14 @@ public class IsaacNumericValidatorTest {
         List<String> numbersToTest = Arrays.asList("42", "4.2e1", "4.2E1", "4.2x10^1", "4.2*10**1", "4.2×10^(1)", "4.2 \\times 10^{1}");
 
         for (String numberToTest : numbersToTest) {
-            boolean result = Whitebox.<Boolean>invokeMethod(validator, "numericValuesMatch", numberToMatch, numberToTest, 2);
+            boolean result = ValidationUtils.numericValuesMatch(numberToMatch, numberToTest, 2, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
             assertTrue(result);
         }
 
         String powerOfTenToMatch = "10000";
         List<String> powersOfTenToTest = Arrays.asList("10000", "1x10^4", "1e4", "1E4", "1 x 10**4", "10^4", "10**(4)", "10^{4}", "100x10^2");
         for (String powerOfTenToTest : powersOfTenToTest) {
-            boolean result = Whitebox.<Boolean>invokeMethod(validator, "numericValuesMatch", powerOfTenToMatch, powerOfTenToTest, 1);
+            boolean result = ValidationUtils.numericValuesMatch(powerOfTenToMatch, powerOfTenToTest, 1, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
             assertTrue(result);
         }
     }
@@ -838,7 +839,7 @@ public class IsaacNumericValidatorTest {
     //  ---------- Helper methods to test internal functionality of the validator class ----------
 
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
-        double result = Whitebox.<Double>invokeMethod(validator, "roundStringValueToSigFigs", inputValue, sigFigToRoundTo);
+        double result = ValidationUtils.roundStringValueToSigFigs(inputValue, sigFigToRoundTo, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
 
         assertEquals("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
                 + "sf: expected '" + expectedResult + "', got '" + result + "'", result, expectedResult, 0.0);
@@ -846,8 +847,7 @@ public class IsaacNumericValidatorTest {
 
     private void testSigFigExtractionWorks(String inputValue, int minAllowedSigFigs, int maxAllowedSigFigs,
                                            int expectedResult) throws Exception {
-        int result = Whitebox.<Integer>invokeMethod(validator, "numberOfSignificantFiguresToValidateWith",
-                inputValue, minAllowedSigFigs, maxAllowedSigFigs);
+        int result = ValidationUtils.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
 
         assertTrue("sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
                 + ", max allowed: " + maxAllowedSigFigs + ") got " + result, result <= maxAllowedSigFigs && result >= minAllowedSigFigs);

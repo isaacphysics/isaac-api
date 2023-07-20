@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,18 +27,18 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -48,7 +48,7 @@ import java.util.List;
  * 
  */
 @Path("/schools")
-@Api(value = "/schools")
+@Tag(name = "/schools")
 public class SchoolLookupServiceFacade {
     private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
 
@@ -74,15 +74,17 @@ public class SchoolLookupServiceFacade {
      *            - find by urn.
      * @param searchQuery
      *            - query to search fields against.
+     * @param limit
+     *            - limit the number of results returned.
      * @return A response containing a list of school objects or a SegueErrorResponse.
      */
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "List all schools matching provided criteria.")
+    @Operation(summary = "List all schools matching provided criteria.")
     public Response schoolSearch(@Context final Request request, @QueryParam("query") final String searchQuery,
-            @QueryParam("urn") final String schoolURN) {
+            @QueryParam("urn") final String schoolURN, @QueryParam("limit") final Integer limit) {
 
         if ((null == searchQuery || searchQuery.isEmpty()) && (null == schoolURN || schoolURN.isEmpty())) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query or school URN")
@@ -110,7 +112,7 @@ public class SchoolLookupServiceFacade {
             if (schoolURN != null && !schoolURN.isEmpty()) {
                 list = Arrays.asList(schoolListReader.findSchoolById(schoolURN));
             } else {
-                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);    
+                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery, limit);
             }
             
         } catch (UnableToIndexSchoolsException | SegueSearchException | IOException e) {

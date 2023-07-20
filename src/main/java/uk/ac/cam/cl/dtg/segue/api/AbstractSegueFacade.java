@@ -22,16 +22,17 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import jakarta.annotation.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * An abstract representation of a Segue CMS facade.
@@ -44,7 +45,7 @@ import java.util.Collections;
 public abstract class AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AbstractSegueFacade.class);
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final ILogManager logManager;
 
     /**
@@ -55,7 +56,7 @@ public abstract class AbstractSegueFacade {
      * @param logManager
      *            - For logging interesting user events.
      */
-    public AbstractSegueFacade(final PropertiesLoader properties, final ILogManager logManager) {
+    public AbstractSegueFacade(final AbstractConfigLoader properties, final ILogManager logManager) {
         this.properties = properties;
         this.logManager = logManager;
     }
@@ -65,7 +66,7 @@ public abstract class AbstractSegueFacade {
      * 
      * @return the properties
      */
-    public PropertiesLoader getProperties() {
+    public AbstractConfigLoader getProperties() {
         return properties;
     }
 
@@ -315,7 +316,7 @@ public abstract class AbstractSegueFacade {
     }
 
     /**
-     * Is the current user anything other than a student (i.e. a teacher or staff account).
+     * Is the current user anything other than a tutor or a student.
      *
      * @param userManager
      *            - Instance of User Manager
@@ -326,6 +327,22 @@ public abstract class AbstractSegueFacade {
      *             - if we are unable to tell because they are not logged in.
      */
     public static boolean isUserTeacherOrAbove(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
+            throws NoUserLoggedInException {
+        return !userManager.checkUserRole(userDTO, List.of(Role.STUDENT, Role.TUTOR));
+    }
+
+    /**
+     * Is the current user anything other than a student (i.e. a tutor, teacher or staff account).
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param userDTO
+     *            - for the user of interest
+     * @return true if user is logged in as a teacher or above, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserTutorOrAbove(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
             throws NoUserLoggedInException {
         return !userManager.checkUserRole(userDTO, Collections.singletonList(Role.STUDENT));
     }

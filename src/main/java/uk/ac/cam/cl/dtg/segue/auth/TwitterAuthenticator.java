@@ -111,6 +111,11 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
     }
 
     @Override
+    public String getFriendlyName() {
+        return "Twitter";
+    }
+
+    @Override
     public OAuth1Token getRequestToken() throws IOException {
         RequestToken requestToken;
         try {
@@ -203,7 +208,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                 }
 
                 return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,
-                        emailStatus, null, null, null);
+                        emailStatus, null, null, null, null);
             } else {
                 throw new NoUserException("No user could be created from provider details!");
             }

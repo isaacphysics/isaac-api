@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface for data manager classes that deal with group data.
@@ -84,6 +84,15 @@ public interface IUserGroupPersistenceManager {
      *             - if we cannot contact the database.
      */
     UserGroup findGroupById(Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Get a list of groups by IDs.
+     *
+     * @param groupIds the IDs of the groups in question.
+     * @return a list of the group objects
+     * @throws SegueDatabaseException on error
+     */
+    List<UserGroup> findGroupsByIds(List<Long> groupIds) throws SegueDatabaseException;
 
     /**
      * Create a group that users can be assigned to.
@@ -181,6 +190,14 @@ public interface IUserGroupPersistenceManager {
      * @throws SegueDatabaseException
      */
     Map<Long, GroupMembership> getGroupMembershipMap(Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Create a map of group id to membership status for a specified user.
+     * @param userId of interest
+     * @return Map of group ID to the user's group membership status
+     * @throws SegueDatabaseException on error
+     */
+    Map<Long, GroupMembership> getGroupMembershipMapForUser(Long userId) throws SegueDatabaseException;
 
     /**
      * getGroupMembershipList.

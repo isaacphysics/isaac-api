@@ -126,6 +126,11 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
+	public String getFriendlyName() {
+		return "Facebook";
+	}
+
+	@Override
 	public String getAuthorizationUrl(final String antiForgeryStateToken) {
         AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(AUTH_URL, clientId);
 
@@ -250,7 +255,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			}
 
 			return new UserFromAuthProvider(userInfo.getId(), userInfo.getFirstName(),
-					userInfo.getLastName(), email, emailStatus, null, null, null);
+					userInfo.getLastName(), email, emailStatus, null, null, null, null);
 		} else {
 			throw new NoUserException("No user could be created from provider details!");
 		}

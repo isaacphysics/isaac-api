@@ -17,9 +17,9 @@ package uk.ac.cam.cl.dtg.isaac.app;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
@@ -44,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 /**
  * Test class for the user manager class.
@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 public class GameboardsFacadeTest {
 
-	private PropertiesLoader dummyPropertiesLoader = null;
+	private AbstractConfigLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
 	private UserAccountManager userManager;
@@ -69,7 +69,7 @@ public class GameboardsFacadeTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+		this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
 		this.userManager = createMock(UserAccountManager.class);
@@ -89,7 +89,7 @@ public class GameboardsFacadeTest {
 	 * @throws ContentManagerException
 	 */
 	@Test
-	@PowerMockIgnore({ "javax.ws.*" })
+	@PowerMockIgnore({ "jakarta.ws.*" })
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {

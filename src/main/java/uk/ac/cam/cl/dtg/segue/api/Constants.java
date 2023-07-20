@@ -174,6 +174,11 @@ public final class Constants {
     public static final String SESSION_TOKEN = "token";
 
     /**
+     *  Constant representing the validation on email addresses of users attempting to register.
+     */
+    public static final String RESTRICTED_SIGNUP_EMAIL_REGEX = "RESTRICTED_SIGNUP_EMAIL_REGEX";
+
+    /**
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
@@ -185,6 +190,8 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
     public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
+    public static final String SEARCH_CLUSTER_USERNAME = "SEARCH_CLUSTER_USERNAME";
+    public static final String SEARCH_CLUSTER_PASSWORD = "SEARCH_CLUSTER_PASSWORD";
 
     // Event management stuff:
     public static final String EVENT_ADMIN_EMAIL = "EVENT_ADMIN_EMAIL";
@@ -196,11 +203,15 @@ public final class Constants {
     public static final String MAILJET_API_SECRET = "MAILJET_API_SECRET";
     public static final String MAILJET_NEWS_LIST_ID = "MAILJET_NEWS_LIST_ID";
     public static final String MAILJET_EVENTS_LIST_ID = "MAILJET_EVENTS_LIST_ID";
+    public static final String MAILJET_LEGAL_LIST_ID = "MAILJET_LEGAL_LIST_ID";
 
     public static final String EVENT_PRE_POST_EMAILS = "EVENT_PRE_POST_EMAILS";
 
-    // MailGun Key
+    // MailGun Stuff:
+    public static final String MAILGUN_FROM_ADDRESS = "MAILGUN_FROM_ADDRESS";
+    public static final String MAILGUN_DOMAIN = "MAILGUN_DOMAIN";
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
+    public static final String MAILGUN_EMAILS_BETA_OPT_IN = "MAILGUN_EMAILS_BETA_OPT_IN";
 
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
@@ -266,14 +277,11 @@ public final class Constants {
      */
     public static final String LINK_ACCOUNT_PARAM_NAME = "LINK_ACCOUNT_PARAM_NAME";
 
-    /**
-     * This constant is used for matching against url params to prevent CSRF.
-     */
     public static final String STATE_PARAM_NAME = "state";
+    public static final String CLIENT_ID_PARAM_NAME = "client_id";
+    public static final String CALLBACK_URI_PARAM_NAME = "redirect_uri";
+    public static final String SCOPE_PARAM_NAME = "scope";
 
-    /**
-     * This constant is used for matching against url params to prevent CSRF.
-     */
     public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
 
     // Google properties
@@ -292,6 +300,13 @@ public final class Constants {
     public static final String TWITTER_SECRET = "TWITTER_SECRET";
     public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
     public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
+
+    // Raspberry Pi properties
+    public static final String RASPBERRYPI_CLIENT_ID = "RASPBERRYPI_CLIENT_ID";
+    public static final String RASPBERRYPI_CLIENT_SECRET = "RASPBERRYPI_CLIENT_SECRET";
+    public static final String RASPBERRYPI_CALLBACK_URI = "RASPBERRYPI_CALLBACK_URI";
+    public static final String RASPBERRYPI_OAUTH_SCOPES = "RASPBERRYPI_OAUTH_SCOPES";
+    public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
@@ -369,6 +384,7 @@ public final class Constants {
         MERGE_USER,
         PASSWORD_RESET_REQUEST_RECEIVED,
         PASSWORD_RESET_REQUEST_SUCCESSFUL,
+        PROMOTE_GROUP_MANAGER_TO_OWNER,
         QUESTION_ATTEMPT_RATE_LIMITED,
         RELEASE_USER_ASSOCIATION,
         REMOVE_USER_FROM_GROUP,
@@ -414,21 +430,23 @@ public final class Constants {
     public static final String TITLE_FIELDNAME = "title";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
-    public static final String VALUE_FIELDNAME = "value";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
-    public static final String CHILDREN_FIELDNAME = "children";
     public static final String DATE_FIELDNAME = "date";
+    public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
+    public static final String PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME = "prioritisedSearchableContent";
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
+    public static final String DEPRECATED_FIELDNAME = "deprecated";
+    public static final String PUBLISHED_FIELDNAME = "published";
 
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
     public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
-    public static final Set<String> NESTED_FIELDS =
+    public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
@@ -525,7 +543,8 @@ public final class Constants {
 
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
-    public static final String ASSIGNMENT_DUEDATE_FK = "dueDate";
+    public static final String ASSIGNMENT_DUEDATE = "dueDate";
+    public static final String ASSIGNMENT_SCHEDULED_START_DATE = "scheduledStartDate";
 
     public static final String QUIZ_ATTEMPT_FK = "quizAttemptId";
     public static final String QUIZ_ASSIGNMENT_FK = "quizAssignmentId";
@@ -545,6 +564,9 @@ public final class Constants {
     public enum SegueUserPreferences {
         EMAIL_PREFERENCE
     }
+
+    public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
+    public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
 
     /**
      * Private constructor to prevent this class being created.

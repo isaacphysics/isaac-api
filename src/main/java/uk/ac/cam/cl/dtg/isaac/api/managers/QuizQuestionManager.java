@@ -42,9 +42,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
-import javax.annotation.Nullable;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -285,15 +285,15 @@ public class QuizQuestionManager {
                     // Include full validation details.
                     lastAttempt = questionManager.convertQuestionValidationResponseToDTO(lastResponse);
                 } else {
-                    // Manual extract only the safe details (questionId, answer, date attempted).
+                    // Manual extract only the safe details (questionId, answer).
                     Choice answer = lastResponse.getAnswer();
                     lastAttempt = new QuestionValidationResponseDTO();
                     DTOMapping dtoMapping = answer.getClass().getAnnotation(DTOMapping.class);
                     lastAttempt.setAnswer(mapper.getAutoMapper().map(lastResponse.getAnswer(),
                         (Class<? extends ChoiceDTO>) dtoMapping.value()));
                     lastAttempt.setQuestionId(lastResponse.getQuestionId());
-                    lastAttempt.setDateAttempted(lastResponse.getDateAttempted());
                 }
+                lastAttempt.setDateAttempted(null);  // Strip timestamps, since quiz responses may be seen by other users.
                 question.setBestAttempt(lastAttempt);
             }
         });

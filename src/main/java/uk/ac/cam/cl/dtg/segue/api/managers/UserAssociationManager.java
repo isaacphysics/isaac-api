@@ -234,29 +234,24 @@ public class UserAssociationManager {
 
         AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 
-        if (null == lookedupToken) {
+        if (null == lookedupToken || lookedupToken.getGroupId() == null) {
             throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
-        }
-
-        // add owner association
-        if (!associationDatabase
-                .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getId())) {
-            associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getId());
         }
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
 
-        if (lookedupToken.getGroupId() != null) {
-            userGroupManager.addUserToGroup(group, userGrantingPermission);
-            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
-                    lookedupToken.getGroupId()));
+        userGroupManager.addUserToGroup(group, userGrantingPermission);
+        log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
+                lookedupToken.getGroupId()));
 
-            // add additional manager associations
-            for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
-                if (!associationDatabase
-                        .hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
-                    associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
-                }
+        // add owner association
+        if (!associationDatabase.hasValidAssociation(group.getOwnerId(), userGrantingPermission.getId())) {
+            associationDatabase.createAssociation(group.getOwnerId(), userGrantingPermission.getId());
+        }
+        // add additional manager associations
+        for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
+            if (!associationDatabase.hasValidAssociation(additionalManagerId, userGrantingPermission.getId())) {
+                associationDatabase.createAssociation(additionalManagerId, userGrantingPermission.getId());
             }
         }
         return lookedupToken;
@@ -354,7 +349,7 @@ public class UserAssociationManager {
     /**
      * Check if one user has permission to view another user's data.
      * 
-     * Users always have permission to view their own data.
+     * Users always have permission to view their own data. Students never have permission to view another users data.
      * 
      * @param currentUser
      *            - requesting permission
@@ -366,7 +361,7 @@ public class UserAssociationManager {
         try {
             return currentUser.getId().equals(userRequested.getId())
                     || Role.ADMIN.equals(currentUser.getRole())
-                    || this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId());
+                    || (!Role.STUDENT.equals(currentUser.getRole()) && this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId()));
         } catch (SegueDatabaseException e) {
             log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
                     e);
@@ -384,6 +379,42 @@ public class UserAssociationManager {
      */
     public boolean hasPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
         return this.hasPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
+    }
+
+    /**
+     * Check if one user has teacher-level permission to view another user's data.
+     *
+     * Users always have permission to view their own data. Students never have permission to view another users data,
+     * and tutors do not have teacher-level permissions.
+     *
+     * @param currentUser
+     *            - requesting permission
+     * @param userRequested
+     *            - the owner of the data to view.
+     * @return true if yes false if no.
+     */
+    public boolean hasTeacherPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
+        try {
+            return currentUser.getId().equals(userRequested.getId())
+                    || Role.ADMIN.equals(currentUser.getRole())
+                    || (!Role.STUDENT.equals(currentUser.getRole()) && !Role.TUTOR.equals(currentUser.getRole()) && this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId()));
+        } catch (SegueDatabaseException e) {
+            log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
+                    e);
+            return false;
+        }
+    }
+
+    /**
+     * Overloaded method to handle different user representation object
+     * @param currentUser
+     *            - requesting permission
+     * @param userRequested
+     *            - the owner of the data to view.
+     * @return true if yes false if no.
+     */
+    public boolean hasTeacherPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
+        return this.hasTeacherPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
     }
 
     /**

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ImageDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import com.google.inject.Inject;
 
@@ -45,7 +45,7 @@ public class URIManager {
      *            - so we can lookup any proxy path information to use for augmenting URIs.
      */
     @Inject
-    public URIManager(final PropertiesLoader propertiesLoader) {
+    public URIManager(final AbstractConfigLoader propertiesLoader) {
         this.proxyPath = propertiesLoader.getProperty(PROXY_PATH);
     }
 

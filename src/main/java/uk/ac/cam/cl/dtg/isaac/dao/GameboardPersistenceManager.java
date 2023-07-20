@@ -41,13 +41,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Array;
 import java.sql.Connection;
@@ -58,6 +58,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class GameboardPersistenceManager {
     private final MapperFacade mapper; // used for content object mapping.
     private final ObjectMapper objectMapper; // used for json serialisation
 
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
 
     private final URIManager uriManager;
@@ -106,7 +107,7 @@ public class GameboardPersistenceManager {
      *            - so we can generate appropriate content URIs.
      */
     @Inject
-    public GameboardPersistenceManager(final PostgresSqlDb database, final IContentManager contentManager,
+    public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
                                        final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.database = database;
         this.mapper = mapper;
@@ -127,7 +128,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException  - if there is a problem accessing the database.
      */
     public GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
-        return getGameboardById(gameboardId, true);
+        return this.getGameboardById(gameboardId, true);
     }
 
     /**
@@ -139,7 +140,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException  - if there is a problem accessing the database.
      */
     public List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds) throws SegueDatabaseException {
-        return getGameboardsByIds(gameboardIds, true);
+        return this.getGameboardsByIds(gameboardIds, true);
     }
     
     /**
@@ -154,7 +155,22 @@ public class GameboardPersistenceManager {
      *             - if there are problems with the database.
      */
     public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
-        return getGameboardById(gameboardId, false);
+        return this.getGameboardById(gameboardId, false);
+    }
+
+    /**
+     * getLiteGameboardsByIds. This method will get a list of gameboards by their ids but not
+     * resolve any fine grain details about the boards. E.g. no question details
+     * will be retrieved.
+     *
+     * @param gameboardIds
+     *            - to retrieve.
+     * @return a list of lightly populated gameboards.
+     * @throws SegueDatabaseException
+     *             - if there are problems with the database.
+     */
+    public List<GameboardDTO> getLiteGameboardsByIds(final Collection<String> gameboardIds) throws SegueDatabaseException {
+        return this.getGameboardsByIds(gameboardIds, false);
     }
 
     /**
@@ -408,19 +424,19 @@ public class GameboardPersistenceManager {
         GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
 
         // build query the db to get full question information
-        List<IContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
             Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.OR,
                 gameboardDO.getContents().stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList())));
 
-        fieldsToMap.add(new IContentManager.BooleanSearchClause(
+        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
 
         // Search for questions that match the ids.       
         ResultsWrapper<ContentDTO> results;
         try {
-            results = this.contentManager.findByFieldNames(this.contentIndex,
+            results = this.contentManager.findByFieldNames(
                     fieldsToMap, 0, gameboardDO.getContents().size());
         } catch (ContentManagerException e) {
             results = new ResultsWrapper<ContentDTO>();
@@ -721,7 +737,7 @@ public class GameboardPersistenceManager {
             // Search for questions that match the ids.
             ResultsWrapper<ContentDTO> results;
             try {
-                results = this.contentManager.getContentMatchingIds(this.contentManager.getCurrentContentSHA(),
+                results = this.contentManager.getUnsafeCachedContentDTOsMatchingIds(
                         questionsIds, 0, contentDescriptorBatch.size());
             } catch (ContentManagerException e) {
                 results = new ResultsWrapper<ContentDTO>();
@@ -800,10 +816,10 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException
      *             - if there is a problem with the database
      */
-    private List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds, final boolean fullyPopulate)
+    private List<GameboardDTO> getGameboardsByIds(final Collection<String> gameboardIds, final boolean fullyPopulate)
             throws SegueDatabaseException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
 
         // First, try temporary storage

@@ -30,12 +30,13 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
@@ -50,7 +51,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     private final GroupManager groupManager;
     private final EmailService emailService;
     private final GameManager gameManager;
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
 
     /**
      * AssignmentManager.
@@ -61,12 +62,12 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * @param emailService
      *            - service for sending specific emails.
      * @param gameManager
- *            - the game manager object
+     *            - the game manager object
      */
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
                              final GroupManager groupManager, final EmailService emailService,
-                             final GameManager gameManager, final PropertiesLoader properties) {
+                             final GameManager gameManager, final AbstractConfigLoader properties) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
         this.emailService = emailService;
@@ -146,13 +147,18 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         newAssignment.setCreationDate(new Date());
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
+        // Get assignment gameboard in order to generate URL which will be added to the notification email
         GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
-
         final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
-            gameboard.getId());
+                gameboard.getId());
 
-        emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL) ,
-            "email-template-group-assignment");
+        // If there is no date to schedule the assignment for, or the start date is in the past...
+        if (null == newAssignment.getScheduledStartDate()) {
+            // Send the notification email immediately
+            emailService.sendAssignmentEmailToGroup(newAssignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL),
+                    "email-template-group-assignment");
+        }
+        // Otherwise, the assignment email will be scheduled by a Quartz job on the hour of the scheduledStartDate
 
         return newAssignment;
     }
@@ -175,18 +181,25 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * Get all assignments for a list of groups.
      *
      * @param groups to include in the search
+     * @param includeAssignmentsScheduledInFuture
      * @return a list of assignments set to the group ids provided.
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
-    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups) throws SegueDatabaseException {
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture) throws SegueDatabaseException {
         Validate.notNull(groups);
         // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
         if (groups.isEmpty()) {
             return new ArrayList<>();
         }
-        List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
-        return this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
+        // Filter out assignments that haven't started yet, and augment AssignmentDTOs with group names (useful for
+        // displaying group related stuff in the front-end)
+        Map<Long, String> groupIdToName = groups.stream().collect(Collectors.toMap(UserGroupDTO::getId, UserGroupDTO::getGroupName));
+        List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet())
+                .stream().filter(a -> includeAssignmentsScheduledInFuture || a.scheduledStartDateIsBefore(new Date()))
+                .collect(Collectors.toList());
+        assignments.forEach(assignment -> assignment.setGroupName(groupIdToName.get(assignment.getGroupId())));
+        return assignments;
     }
 
     /**
@@ -227,36 +240,6 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
 
         throw new SegueDatabaseException(String.format(
                 "Duplicate Assignment (group: %s) (gameboard: %s) Exception: %s", groupId, gameboardId, assignments));
-    }
-
-    /**
-     * findGroupsByGameboard.
-     * 
-     * @param user
-     *            - owner of assignments (teacher)
-     * @param gameboardId
-     *            - the gameboard id to query
-     * @return Empty List if none or a List or groups.
-     * @throws SegueDatabaseException
-     *             - If something goes wrong with database access.
-     */
-    public List<UserGroupDTO> findGroupsByGameboard(final RegisteredUserDTO user, final String gameboardId)
-            throws SegueDatabaseException {
-        Validate.notNull(user);
-        Validate.notBlank(gameboardId);
-
-        List<UserGroupDTO> allGroupsForUser = this.groupManager.getAllGroupsOwnedAndManagedByUser(user, false);
-        List<AssignmentDTO> allAssignmentsForMyGroups = this.getAllAssignmentsForSpecificGroups(allGroupsForUser);
-
-        List<UserGroupDTO> groups = Lists.newArrayList();
-
-        for (AssignmentDTO assignment : allAssignmentsForMyGroups) {
-            if (assignment.getGameboardId().equals(gameboardId)) {
-                groups.add(groupManager.getGroupById(assignment.getGroupId()));
-            }
-        }
-
-        return groups;
     }
 
     @Override

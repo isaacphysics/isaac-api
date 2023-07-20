@@ -15,8 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
-import io.swagger.jaxrs.config.BeanConfig;
+import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
+import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.OpenApiConfigurationException;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import jakarta.servlet.ServletConfig;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
@@ -30,13 +43,11 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -49,16 +60,16 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class IsaacApplicationRegister extends Application {
     private final Set<Object> singletons;
     
-    public static Injector injector;
+    private static Injector injector;
     
     /**
      * Default constructor.
      */
-    public IsaacApplicationRegister() {
+    public IsaacApplicationRegister(@Context ServletConfig servletConfig) {
         singletons = new HashSet<>();
         injector = SegueGuiceConfigurationModule.getGuiceInjector();
         
-        setupSwaggerApiAdvertiser();
+        setupSwaggerApiAdvertiser(servletConfig);
 
         // create instance to get it up and running - it is not a rest facade though
         injector.getInstance(SegueJobService.class);
@@ -71,6 +82,7 @@ public class IsaacApplicationRegister extends Application {
             // Registers segue singleton endpoints as /isaac/segue/api
             // invoke optional service initialisation
             this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
+            this.singletons.add(injector.getInstance(CountryLookupFacade.class));
 
             // initialise segue framework.
             this.singletons.add(injector.getInstance(SegueContentFacade.class));
@@ -113,38 +125,52 @@ public class IsaacApplicationRegister extends Application {
         Set<Class<?>> result = new HashSet<>();
         
         result.add(RestEasyJacksonConfiguration.class);
+        result.add(OpenApiResource.class);
+        result.add(AcceptHeaderOpenApiResource.class);
 
-        result.add(io.swagger.jaxrs.listing.ApiListingResource.class);
-        result.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
-        
         return result;
     }
     
     /**
      * Configure and setup Swagger (advertises api endpoints via app_root/swagger.json).
      */
-    private void setupSwaggerApiAdvertiser() {
-        PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
-        String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-        
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setVersion(propertiesLoader.getProperty(SEGUE_APP_VERSION));
-
+    private void setupSwaggerApiAdvertiser(final ServletConfig servletConfig) {
+        AbstractConfigLoader propertiesLoader = injector.getInstance(AbstractConfigLoader.class);
         String hostName = propertiesLoader.getProperty(HOST_NAME);
-        if (!proxyPath.equals("")) {
-            beanConfig.setBasePath(proxyPath + "/api");
-            beanConfig.setHost(hostName.substring(0, hostName.indexOf('/')));
+        String httpScheme;
+        if (hostName.contains("localhost")) {
+            httpScheme = "http://";
         } else {
-            beanConfig.setBasePath("/api");    
-            beanConfig.setHost(hostName);
+            httpScheme = "https://";
         }
-        
-        beanConfig.setResourcePackage("uk.ac.cam.cl.dtg");
-        beanConfig.setTitle("Isaac API");
-        beanConfig.setDescription("API for the Isaac platform. Automated use may violate our Terms of Service.");
-        beanConfig.setTermsOfServiceUrl("https://" + hostName + "/terms");
-        beanConfig.setContact(propertiesLoader.getProperty(SERVER_ADMIN_ADDRESS));
-        beanConfig.setPrettyPrint(true);
-        beanConfig.setScan(true);        
+        String serverUrl = httpScheme + hostName;
+
+        Info apiInfo = new Info()
+                .title("Isaac API")
+                .version(propertiesLoader.getProperty(SEGUE_APP_VERSION))
+                .description("API for the Isaac platform. Automated use may violate our Terms of Service.")
+                .contact(new Contact()
+                        .name(propertiesLoader.getProperty(MAIL_NAME))
+                        .url(String.format("%s/contact", serverUrl))
+                        .email(propertiesLoader.getProperty(SERVER_ADMIN_ADDRESS)))
+                .termsOfService(String.format("%s/terms", serverUrl));
+        OpenAPI openApi = new OpenAPI()
+                .info(apiInfo)
+                .servers(ImmutableList.of(new Server().description("Isaac API").url("./")));
+        SwaggerConfiguration swaggerConfig = new SwaggerConfiguration()
+                .openAPI(openApi)
+                .sortOutput(true)
+                .resourcePackages(ImmutableSet.of("uk.ac.cam.cl.dtg"))
+                .prettyPrint(true);
+
+        try {
+            new JaxrsOpenApiContextBuilder<>()
+                    .servletConfig(servletConfig)
+                    .application(this)
+                    .openApiConfiguration(swaggerConfig)
+                    .buildContext(true);
+        } catch (OpenApiConfigurationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

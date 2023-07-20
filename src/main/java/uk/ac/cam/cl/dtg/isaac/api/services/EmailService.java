@@ -15,30 +15,41 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import feign.FeignException;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
+import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
+import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_EMAILS_BETA_OPT_IN;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
@@ -51,19 +62,34 @@ public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
+    private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
+    private final MailGunEmailManager mailGunEmailManager;
     private final GroupManager groupManager;
     private final UserAccountManager userManager;
 
     @Inject
-    public EmailService(final EmailManager emailManager, final GroupManager groupManager, final UserAccountManager userManager) {
+    public EmailService(final AbstractConfigLoader properties, final EmailManager emailManager,
+                        final GroupManager groupManager, final UserAccountManager userManager,
+                        final MailGunEmailManager mailGunEmailManager) {
+        this.properties = properties;
         this.emailManager = emailManager;
         this.groupManager = groupManager;
         this.userManager = userManager;
+        this.mailGunEmailManager = mailGunEmailManager;
     }
 
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-    public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, Object> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
+
+    private boolean userInMailGunBetaList(final RegisteredUserDTO user) {
+        String optInIds = properties.getProperty(MAILGUN_EMAILS_BETA_OPT_IN);
+        if (Strings.isNullOrEmpty(optInIds)) {
+            return false;
+        }
+        return Arrays.stream(optInIds.split(",")).anyMatch(id -> id.equals(user.getId().toString()));
+    }
+
+    public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, String> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
         UserGroupDTO userGroupDTO = groupManager.getGroupById(assignment.getGroupId());
 
         String dueDate = "";
@@ -76,13 +102,13 @@ public class EmailService {
             name = on.getTitle();
         }
 
-        RegisteredUserDTO assignmentOwnerDTO = null;
         try {
-            assignmentOwnerDTO = this.userManager.getUserDTOById(assignment.getOwnerUserId());
+            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(assignment.getOwnerUserId());
+
             String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
             String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
 
-            final Map<String, Object> map = ImmutableMap.<String, Object>builder()
+            final Map<String, Object> variables = ImmutableMap.<String, Object>builder()
                 .put("gameboardName", name) // Legacy name
                 .put("assignmentName", name)
                 .put("assignmentDueDate", dueDate)
@@ -91,29 +117,38 @@ public class EmailService {
                 .putAll(tokenToValueMapping)
                 .build();
 
-            sendTemplatedEmailToActiveGroupMembers(userGroupDTO, templateName, map, EmailType.ASSIGNMENTS);
+            // Get email template
+            EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
+
+            if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
+                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE).forEach(userBatch -> {
+                    mailGunEmailManager.sendBatchEmails(
+                            userBatch,
+                            emailTemplate,
+                            EmailType.ASSIGNMENTS,
+                            variables,
+                            null
+                    );
+                });
+            } else {
+                // If user is not in the MailGun assignment emails beta list, use our standard email method
+                Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
+                groupManager.getUsersInGroup(userGroupDTO).stream()
+                        // filter users so those who are inactive in the group aren't emailed
+                        .filter(user -> GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus()))
+                        // send an assignment email to each active user
+                        .forEach(user -> {
+                            try {
+                                emailManager.sendTemplatedEmailToUser(user, emailTemplate, variables, EmailType.ASSIGNMENTS);
+                            } catch (ContentManagerException | SegueDatabaseException e) {
+                                log.error(String.format("Problem sending assignment email for user %s.", user.getId()), e);
+                            }
+                        });
+            }
         } catch (NoUserException e) {
             log.error("Could not send assignment email because owner did not exist.", e);
-        }
-    }
-
-    public void sendTemplatedEmailToActiveGroupMembers(final UserGroupDTO userGroupDTO, final String templateName, final Map<String, Object> tokenToValueMapping, final EmailType emailType) throws SegueDatabaseException {
-        List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
-        Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
-
-        // filter users so those who are inactive in the group aren't emailed
-        for (RegisteredUserDTO user : groupManager.getUsersInGroup(userGroupDTO)) {
-            if (GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus())) {
-                usersToEmail.add(user);
-            }
-        }
-
-        try {
-            for (RegisteredUserDTO userDTO : usersToEmail) {
-                emailManager.sendTemplatedEmailToUser(userDTO, emailManager.getEmailTemplateDTO(templateName), tokenToValueMapping, emailType);
-            }
-        } catch (ContentManagerException e) {
-            log.error("Could not send " + templateName + " emails due to content issue", e);
+        } catch (ContentManagerException | ResourceNotFoundException e) {
+            log.error("Could not send assignment email because of content error.", e);
         }
     }
 }

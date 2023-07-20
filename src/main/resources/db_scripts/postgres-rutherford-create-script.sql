@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13rc1 (Debian 13~rc1-1.pgdg100+1)
--- Dumped by pg_dump version 13rc1 (Debian 13~rc1-1.pgdg100+1)
+-- Dumped from database version 12.9 (Debian 12.9-1.pgdg110+1)
+-- Dumped by pg_dump version 12.9 (Debian 12.9-1.pgdg110+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,14 +17,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -44,7 +44,8 @@ CREATE TABLE public.assignments (
     owner_user_id integer,
     notes text,
     creation_date timestamp without time zone,
-    due_date timestamp with time zone
+    due_date timestamp with time zone,
+    scheduled_start_date timestamp with time zone
 );
 
 
@@ -70,18 +71,6 @@ ALTER TABLE public.assignments_id_seq OWNER TO rutherford;
 
 ALTER SEQUENCE public.assignments_id_seq OWNED BY public.assignments.id;
 
---
--- Name: scheduled_emails; Type: TABLE; Schema: public; Owner: rutherford
---
-
-CREATE TABLE public.scheduled_emails (
-    email_id TEXT NOT NULL,
-    sent TIMESTAMP WITHOUT TIME ZONE,
-    CONSTRAINT scheduled_emails_pk PRIMARY KEY (email_id)
-);
-
-
-ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 --
 -- Name: event_bookings; Type: TABLE; Schema: public; Owner: rutherford
@@ -196,7 +185,8 @@ CREATE TABLE public.groups (
     created timestamp without time zone,
     archived boolean DEFAULT false NOT NULL,
     group_status text DEFAULT 'ACTIVE'::text,
-    last_updated timestamp without time zone
+    last_updated timestamp without time zone,
+    additional_manager_privileges boolean DEFAULT false
 );
 
 
@@ -374,6 +364,7 @@ CREATE TABLE public.quiz_assignments (
     owner_user_id integer,
     creation_date timestamp without time zone,
     due_date timestamp with time zone,
+    scheduled_start_date timestamp with time zone,
     quiz_feedback_mode text NOT NULL,
     deleted boolean DEFAULT false NOT NULL
 );
@@ -474,6 +465,19 @@ ALTER TABLE public.quiz_question_attempts_id_seq OWNER TO rutherford;
 --
 
 ALTER SEQUENCE public.quiz_question_attempts_id_seq OWNED BY public.quiz_question_attempts.id;
+
+
+--
+-- Name: scheduled_emails; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.scheduled_emails (
+    email_id text NOT NULL,
+    sent timestamp without time zone
+);
+
+
+ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 
 --
@@ -715,7 +719,8 @@ CREATE TABLE public.users (
     email_to_verify text,
     email_verification_token text,
     session_token integer DEFAULT 0 NOT NULL,
-    deleted boolean DEFAULT false NOT NULL
+    deleted boolean DEFAULT false NOT NULL,
+    country_code character varying(255) DEFAULT NULL
 );
 
 
@@ -957,6 +962,14 @@ ALTER TABLE ONLY public.quiz_question_attempts
 
 
 --
+-- Name: scheduled_emails scheduled_emails_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.scheduled_emails
+    ADD CONSTRAINT scheduled_emails_pk PRIMARY KEY (email_id);
+
+
+--
 -- Name: temporary_user_store temporary_user_store_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1061,6 +1074,13 @@ ALTER TABLE ONLY public.user_streak_targets
 
 
 --
+-- Name: assignments_by_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX assignments_by_id ON public.assignments USING btree (id);
+
+
+--
 -- Name: assignments_group_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1093,6 +1113,13 @@ CREATE INDEX gameboards_tags_gin_index ON public.gameboards USING gin (tags);
 --
 
 CREATE INDEX group_additional_managers_group_id ON public.group_additional_managers USING btree (group_id);
+
+
+--
+-- Name: group_memberships_user_status; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX group_memberships_user_status ON public.group_memberships USING btree (user_id, status);
 
 
 --
@@ -1196,6 +1223,7 @@ CREATE UNIQUE INDEX user_alerts_id_uindex ON public.user_alerts USING btree (id)
 --
 -- Name: user_associations_by_receiving; Type: INDEX; Schema: public; Owner: rutherford
 --
+
 CREATE INDEX user_associations_by_receiving ON public.user_associations USING btree (user_id_receiving_permission);
 
 
@@ -1211,6 +1239,13 @@ CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens 
 --
 
 CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING btree (user_id, badge);
+
+
+--
+-- Name: user_credentials_reset_tokens; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_credentials_reset_tokens ON public.user_credentials USING btree (reset_token);
 
 
 --

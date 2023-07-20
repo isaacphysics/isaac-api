@@ -218,7 +218,7 @@ CREATE TABLE anonymous.logged_events AS
         'VIDEO_ENDED', 'VIDEO_PAUSE', 'VIDEO_PLAY',
         'VIEW_SUPERSEDED_BY_QUESTION',
         -- Concept usage:
-        'VIEW_CONCEPT', 'CONCEPT_SECTION_OPEN', 'QUICK_QUESTION_TAB_VIEW',
+        'VIEW_CONCEPT', 'CONCEPT_SECTION_OPEN', 'QUICK_QUESTION_TAB_VIEW', 'VIEW_GITHUB_CODE',
         -- Page usage:
         'VIEW_PAGE', 'VIEW_PAGE_FRAGMENT',
         -- Assignment usage:

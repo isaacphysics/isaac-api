@@ -21,12 +21,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -36,7 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -44,24 +45,27 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -80,15 +84,16 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/")
-@Api(value = "/")
+@Tag(name = "/")
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
+    private static final String ETAG_SEPARATOR = "/";
 
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final String contentIndex;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
     private final ContentSummarizerService contentSummarizerService;
@@ -135,9 +140,9 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can summarize search results
      */
     @Inject
-    public IsaacController(final PropertiesLoader propertiesLoader,
+    public IsaacController(final AbstractConfigLoader propertiesLoader,
                            final ILogManager logManager, final IStatisticsManager statsManager,
-                           final UserAccountManager userManager, final IContentManager contentManager,
+                           final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
                            @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
@@ -175,7 +180,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/search")
     @GZIP
-    @ApiOperation(value = "Search for content objects matching the provided criteria.")
+    @Operation(summary = "Search for content objects matching the provided criteria.")
     public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
             @QueryParam("query") final String searchString,
             @DefaultValue(DEFAULT_TYPE_FILTER) @QueryParam("types") final String types,
@@ -192,8 +197,14 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
-                + types.hashCode() + "");
+        EntityTag etag = new EntityTag(
+                this.contentIndex.hashCode()
+                        + searchString.hashCode()
+                        + types.hashCode()
+                        + startIndex.hashCode()
+                        + limit.hashCode()
+                        + ""
+        );
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -202,18 +213,19 @@ public class IsaacController extends AbstractIsaacFacade {
 
         try {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
-            boolean showHiddenContent = false;
+            boolean showNoFilterContent = false;
             if (currentUser instanceof RegisteredUserDTO) {
-                showHiddenContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : null;
+            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
             // Return an error if any of the proposed document types are invalid
-            if (documentTypes != null && !SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
+            if (!SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
-            ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
-                    this.contentIndex, searchString, documentTypes, showHiddenContent, startIndex, limit);
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
+                    searchString, null, null, null, null, null, null,
+                    new HashSet<>(documentTypes), startIndex, limit, showNoFilterContent);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
@@ -256,9 +268,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("images/{path:.*}")
-    @GZIP
-    @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get images from the content database.")
+    @Operation(summary = "Get a binary object from the current content version.",
+                  description = "This can only be used to get images from the content database.")
     public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -266,24 +277,38 @@ public class IsaacController extends AbstractIsaacFacade {
             return error.toResponse();
         }
 
-        // determine if we can use the cache if so return cached response.
+        // Determine if we can use the cache; this has two parts: a "quick and cheap" early check that does not need
+        // the file contents, and a more thorough check using the actual file contents.
+        // The ETag has two halves, separated by an ETAG_SEPARATOR.
         String sha = this.contentManager.getCurrentContentSHA();
-        EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
+        String earlyCacheCheckTag = String.valueOf(sha.hashCode() + path.hashCode());
 
-        if (cachedResponse != null) {
-            return cachedResponse;
+        String rawETagHeader = httpServletRequest.getHeader("If-None-Match");
+        String rawETag = null != rawETagHeader ? rawETagHeader.replaceAll("\"", "") : null;
+
+        // If the "early" cache check based on the path and content SHA matches, the file cannot have changed and
+        // we don't need to load it to return a 304 Not Modified:
+        if (null != rawETag && earlyCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[0])) {
+            return Response.notModified().cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).tag(rawETag).build();
         }
 
+        // If the content version has changed, we do need to load the file to see if it has been modified:
         ByteArrayOutputStream fileContent;
         String mimeType;
+        // We cannot use the @GZIP annotation here, since it would trigger the interceptor to GZIP binary file content,
+        // which is not sensible. However, so long as Content-Encoding is set to "gzip" for images we want to try and
+        // compress, the interceptor will work even without the annotation.
+        String contentEncoding = null;
 
         switch (Files.getFileExtension(path).toLowerCase()) {
             case "svg":
                 mimeType = "image/svg+xml";
+                // These files are text-based and could benefit from GZIP encoding.
+                contentEncoding = "gzip";
                 break;
 
             case "jpg":
+            case "jpeg":
                 mimeType = "image/jpeg";
                 break;
 
@@ -296,24 +321,20 @@ public class IsaacController extends AbstractIsaacFacade {
                 break;
 
             default:
-                // if it is an unknown type return an error as they shouldn't be
-                // using this endpoint.
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                        "Invalid file extension requested");
+                // Unsupported filetype, don't allow this.
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file extension requested");
                 log.debug(error.getErrorMessage());
-                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+                return error.toResponse();
         }
 
         try {
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
         } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error reading from file repository", e);
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading from file repository", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (UnsupportedOperationException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Multiple files match the search path provided.", e);
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the search path provided.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
@@ -322,10 +343,22 @@ public class IsaacController extends AbstractIsaacFacade {
             String refererHeader = httpServletRequest.getHeader("Referer");
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
             log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
-            return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
+            return error.toResponse();
         }
 
-        return Response.ok(fileContent.toByteArray()).type(mimeType)
+        byte[] fileContentBytes = fileContent.toByteArray();
+
+        // If the "late" cache check based on the file contents matches, the file still has not changed:
+        String lateCacheCheckTag = String.valueOf(Arrays.hashCode(fileContentBytes));
+        if (null != rawETag && rawETag.contains(ETAG_SEPARATOR) && lateCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[1])) {
+            return Response.notModified().cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).tag(rawETag).build();
+        }
+
+        // Otherwise, just return the full image to the client:
+        EntityTag etag = new EntityTag(earlyCacheCheckTag + ETAG_SEPARATOR + lateCacheCheckTag);
+        return Response.ok(fileContentBytes)
+                .type(mimeType)
+                .header("Content-Encoding", contentEncoding)
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
@@ -343,9 +376,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("documents/{path:.*}")
-    @GZIP
-    @ApiOperation(value = "Get a binary object from the current content version.",
-                  notes = "This can only be used to get PDF documents from the content database.")
+    @Operation(summary = "Get a binary object from the current content version.",
+                  description = "This can only be used to get PDF documents from the content database.")
     public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
@@ -354,12 +386,8 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         try {
-
+            // All users with an Isaac account are allowed to access these resources
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must have a teacher account to access these resources.").toResponse();
-            }
 
             // determine if we can use the cache if so return cached response.
             String sha = this.contentManager.getCurrentContentSHA();
@@ -382,7 +410,7 @@ public class IsaacController extends AbstractIsaacFacade {
                     return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
             }
 
-            fileContent = this.contentManager.getFileBytes(sha, path);
+            fileContent = this.contentManager.getFileBytes(path);
             if (null == fileContent) {
                 String refererHeader = httpServletRequest.getHeader("Referer");
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
@@ -423,8 +451,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/current_user/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get progress information for the current user.")
+    @Operation(summary = "Get progress information for the current user.")
     public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -446,8 +473,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/current_user/snapshot")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get snapshot for the current user.")
+    @Operation(summary = "Get snapshot for the current user.")
     public final Response getCurrentUserSnapshot(@Context final HttpServletRequest request) {
         RegisteredUserDTO user;
         try {
@@ -485,8 +511,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Path("users/{user_id}/progress")
     @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @ApiOperation(value = "Get progress information for a specified user.")
+    @Operation(summary = "Get progress information for a specified user.")
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
             @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;
@@ -500,7 +525,9 @@ public class IsaacController extends AbstractIsaacFacade {
             }
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
-            if (associationManager.hasPermission(user, userOfInterestSummary)) {
+            // If user is fetching their own progress, or the user is at least a teacher (tutors cannot see their
+            // students progress) and has a valid connection with this user...
+            if (associationManager.hasTeacherPermission(user, userOfInterestSummary)) {
                 Map<String, Object> userProgressInformation = statsManager.getUserQuestionInformation(userOfInterestFull);
 
                 // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)

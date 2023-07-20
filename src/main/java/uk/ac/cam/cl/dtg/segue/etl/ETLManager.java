@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.util.PropertiesManager;
+import uk.ac.cam.cl.dtg.util.WriteablePropertiesLoader;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -14,13 +14,16 @@ import java.util.concurrent.ArrayBlockingQueue;
  */
 class ETLManager {
     private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
+    private static final String LATEST_INDEX_ALIAS = "latest";
+
     private final ContentIndexer indexer;
 
     private final ArrayBlockingQueue<String> newVersionQueue;
-    private final PropertiesManager contentIndicesStore;
+    private final WriteablePropertiesLoader contentIndicesStore;
+
 
     @Inject
-    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database, final PropertiesManager contentIndicesStore) {
+    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database, final WriteablePropertiesLoader contentIndicesStore) {
         this.indexer = indexer;
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
         this.contentIndicesStore = contentIndicesStore;
@@ -28,7 +31,7 @@ class ETLManager {
         // ON STARTUP
 
         // Load the current version aliases from file and set them.
-        for(String k: contentIndicesStore.stringPropertyNames()) {
+        for (String k: contentIndicesStore.getKeys()) {
             try {
                 this.setNamedVersion(k, contentIndicesStore.getProperty(k));
             } catch (Exception e) {
@@ -55,7 +58,7 @@ class ETLManager {
         log.info("ETL startup complete.");
     }
 
-    void notifyNewVersion(String version) {
+    void notifyNewVersion(final String version) {
         log.info("Notified of new version: " + version);
 
         // This is the only place we write to newVersionQueue, so the offer should always succeed.
@@ -63,7 +66,7 @@ class ETLManager {
         this.newVersionQueue.offer(version);
     }
 
-    void setNamedVersion(String alias, String version) throws Exception {
+    void setNamedVersion(final String alias, final String version) throws Exception {
         log.info("Requested new aliased version: " + alias + " - " + version);
 
         indexer.loadAndIndexContent(version);
@@ -81,15 +84,14 @@ class ETLManager {
             log.info("Starting new version indexer thread.");
 
             try {
-                while(true) {
+                while (true) {
                     // Block here until there is something to index.
                     log.info("Indexer going to sleep, waiting for new version alert.");
                     String newVersion = newVersionQueue.take();
                     log.info("Indexer got new version: " + newVersion + ". Attempting to index.");
 
                     try {
-                        indexer.loadAndIndexContent(newVersion);
-                        indexer.setLatestVersion(newVersion);
+                        setNamedVersion(LATEST_INDEX_ALIAS, newVersion);
                     } catch (VersionLockedException e) {
                         log.warn("Could not index new version, someone is already indexing it. Ignoring.");
                     } catch (Exception e) {

@@ -34,7 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
@@ -86,7 +86,7 @@ public class StatisticsManager implements IStatisticsManager {
     private UserAccountManager userManager;
     private ILogManager logManager;
     private SchoolListReader schoolManager;
-    private final IContentManager contentManager;
+    private final GitContentManager contentManager;
     private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
@@ -127,7 +127,7 @@ public class StatisticsManager implements IStatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-                             final SchoolListReader schoolManager, final IContentManager contentManager,
+                             final SchoolListReader schoolManager, final GitContentManager contentManager,
                              @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
                              final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
@@ -168,6 +168,7 @@ public class StatisticsManager implements IStatisticsManager {
 
         result.put("viewQuestionEvents", logManager.getLogCountByType(IsaacServerLogType.VIEW_QUESTION.name()));
         result.put("answeredQuestionEvents", logManager.getLogCountByType(SegueServerLogType.ANSWER_QUESTION.name()));
+        result.put("viewConceptEvents", logManager.getLogCountByType(IsaacServerLogType.VIEW_CONCEPT.name()));
 
         Map<String, Map<Role, Long>> rangedActiveUserStats = Maps.newHashMap();
         rangedActiveUserStats.put("sevenDays", userManager.getActiveRolesOverPrevious(SEVEN_DAYS));
@@ -778,7 +779,7 @@ public class StatisticsManager implements IStatisticsManager {
 
         // Search for questions that match the ids.
         ResultsWrapper<ContentDTO> allMatchingIds =
-                this.contentManager.getContentMatchingIds(this.contentManager.getCurrentContentSHA(), ids,
+                this.contentManager.getUnsafeCachedContentDTOsMatchingIds(ids,
                         0, ids.size());
 
         List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();

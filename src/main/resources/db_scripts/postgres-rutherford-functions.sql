@@ -62,6 +62,14 @@ BEGIN
   SET user_id = targetUserIdToKeep
   WHERE user_id = targetUserIdToDelete;
 
+  UPDATE quiz_assignments
+  SET owner_user_id = targetUserIdToKeep
+  WHERE owner_user_id = targetUserIdToDelete;
+
+  UPDATE quiz_attempts
+  SET user_id = targetUserIdToKeep
+  WHERE user_id = targetUserIdToDelete;
+
   UPDATE user_alerts
   SET user_id = targetUserIdToKeep
   WHERE user_id = targetUserIdToDelete;
@@ -84,6 +92,22 @@ BEGIN
   UPDATE user_associations_tokens
   SET owner_user_id = targetUserIdToKeep
   WHERE owner_user_id = targetUserIdToDelete;
+
+  BEGIN
+      UPDATE user_badges
+      SET user_id = targetUserIdToKeep
+      WHERE user_id = targetUserIdToDelete;
+  EXCEPTION WHEN unique_violation THEN
+  -- Ignore duplicate inserts. This may lose some badge state.
+  END;
+
+  BEGIN
+      UPDATE user_credentials
+      SET user_id = targetUserIdToKeep
+      WHERE user_id = targetUserIdToDelete;
+  EXCEPTION WHEN unique_violation THEN
+  -- Ignore duplicate inserts. This may lose some info.
+  END;
 
   BEGIN
     UPDATE user_gameboards
@@ -123,6 +147,14 @@ BEGIN
     WHERE user_id = targetUserIdToDelete;
     EXCEPTION WHEN unique_violation THEN
     -- Ignore duplicate inserts.
+  END;
+
+  BEGIN
+      UPDATE user_totp
+      SET user_id = targetUserIdToKeep
+      WHERE user_id = targetUserIdToDelete;
+  EXCEPTION WHEN unique_violation THEN
+  -- Ignore duplicate inserts. This will prefer the "to keep" account 2FA.
   END;
 
   DELETE FROM users

@@ -42,6 +42,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -134,7 +135,7 @@ public class GroupChangedService implements IGroupObserver {
     }
 
     private void formatGroupAssignmentsInfo(UserGroupDTO userGroup, StringBuilder htmlSB, StringBuilder plainTextSB) throws SegueDatabaseException, ContentManagerException {
-        final List<AssignmentDTO> existingAssignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(userGroup));
+        final List<AssignmentDTO> existingAssignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(userGroup), false);
 
         formatAssignmentLikeList(htmlSB, plainTextSB, existingAssignments, "assignments", assignmentManager);
 
@@ -143,7 +144,7 @@ public class GroupChangedService implements IGroupObserver {
         if (existingQuizzes != null && !existingQuizzes.isEmpty()) {
             htmlSB.append("<br>");
             plainTextSB.append("\n");
-            formatAssignmentLikeList(htmlSB, plainTextSB, existingQuizzes, "quizzes", quizAssignmentManager);
+            formatAssignmentLikeList(htmlSB, plainTextSB, existingQuizzes, "tests", quizAssignmentManager);
         }
     }
 
@@ -159,6 +160,10 @@ public class GroupChangedService implements IGroupObserver {
 
             for (int i = 0; i < existingAssignments.size(); i++) {
                 A existingAssignment = existingAssignments.get(i);
+                Date assignmentStartDate = existingAssignment.getScheduledStartDate();
+                if (assignmentStartDate == null) {
+                    assignmentStartDate = existingAssignment.getCreationDate();
+                }
                 String name = assignmentDetailsService.getAssignmentLikeName(existingAssignment);
                 String url = assignmentDetailsService.getAssignmentLikeUrl(existingAssignment);
 
@@ -168,10 +173,10 @@ public class GroupChangedService implements IGroupObserver {
                 }
 
                 htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s%s)<br>", i + 1, url,
-                    name, DATE_FORMAT.format(existingAssignment.getCreationDate()), dueDate));
+                    name, DATE_FORMAT.format(assignmentStartDate), dueDate));
 
                 plainTextSB.append(String.format("%d. %s (set on %s%s)\n", i + 1, name,
-                    DATE_FORMAT.format(existingAssignment.getCreationDate()), dueDate));
+                    DATE_FORMAT.format(assignmentStartDate), dueDate));
             }
         } else if (existingAssignments != null) {
             htmlSB.append("No " + typeOfAssignment + " have been set yet.<br>");
@@ -215,6 +220,77 @@ public class GroupChangedService implements IGroupObserver {
             log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
+        }
+    }
+
+    @Override
+    public void onAdditionalManagerPromotedToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner) {
+        Validate.notNull(group);
+        Validate.notNull(newOwner);
+
+        String groupName = "Unknown";
+        if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
+            groupName = group.getGroupName();
+        }
+
+        Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+                .put("groupName", groupName)
+                .build();
+
+        try {
+            emailManager.sendTemplatedEmailToUser(newOwner,
+                    emailManager.getEmailTemplateDTO("email-template-group-manager-promoted"),
+                    emailProperties,
+                    EmailType.SYSTEM);
+        } catch (ContentManagerException e) {
+            log.info("Could not send group additional manager promotion to owner email ", e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to send group additional manager promotion to owner e-mail due to a database error. Failing silently.", e);
+        }
+    }
+
+    @Override
+    public void onAdditionalManagerPrivilegesChanged(final UserGroupDTO group) {
+        Validate.notNull(group);
+
+        try {
+            RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
+
+            String groupOwnerName = getTeacherNameFromUser(groupOwner);
+            String groupOwnerEmail = "Unknown";
+            if (groupOwner != null && groupOwner.getEmail() != null && !groupOwner.getEmail().isEmpty()) {
+                groupOwnerEmail = groupOwner.getEmail();
+            }
+            String groupName = "Unknown";
+            if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
+                groupName = group.getGroupName();
+            }
+            String nowOrNoLonger;
+            if (group.isAdditionalManagerPrivileges()) {
+                nowOrNoLonger = "now";
+            } else {
+                nowOrNoLonger = "no longer";
+            }
+
+            Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+                    .put("ownerName", groupOwnerName)
+                    .put("ownerEmail", groupOwnerEmail)
+                    .put("groupName", groupName)
+                    .put("nowOrNoLonger", nowOrNoLonger)
+                    .build();
+            for (Long additionalManagerId : group.getAdditionalManagersUserIds()) {
+                RegisteredUserDTO additionalManagerUser = userManager.getUserDTOById(additionalManagerId);
+                emailManager.sendTemplatedEmailToUser(additionalManagerUser,
+                        emailManager.getEmailTemplateDTO("email-template-group-manager-privileges"),
+                        emailProperties,
+                        EmailType.SYSTEM);
+            }
+        } catch (ContentManagerException e) {
+            log.info("Could not send group additional manager privileges modified email ", e);
+        } catch (NoUserException e) {
+            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to send group additional manager privileges modified e-mail due to a database error. Failing silently.", e);
         }
     }
 }

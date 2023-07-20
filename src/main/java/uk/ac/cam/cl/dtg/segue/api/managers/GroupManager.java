@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
@@ -116,14 +115,14 @@ public class GroupManager {
         Validate.notNull(groupOwner);
 
         Date now = new Date();
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, now);
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, false, now);
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
 
     /**
      * createAssociationGroup.
-     * 
+     *
      * @param groupToEdit
      *            - group to edit.
      * @return modified group.
@@ -134,7 +133,18 @@ public class GroupManager {
         Validate.notNull(groupToEdit);
         UserGroup userGroup = dtoMapper.map(groupToEdit, UserGroup.class);
         userGroup.setLastUpdated(new Date());
-        return this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
+
+        UserGroup existingGroup = groupDatabase.findGroupById(groupToEdit.getId());
+        UserGroupDTO group = this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
+
+        if (existingGroup.isAdditionalManagerPrivileges() != group.isAdditionalManagerPrivileges()) {
+            // Notify observers of change in additional manager privileges
+            for (IGroupObserver interestedParty : this.groupsObservers) {
+                interestedParty.onAdditionalManagerPrivilegesChanged(group);
+            }
+        }
+
+        return group;
     }
 
     /**
@@ -203,9 +213,13 @@ public class GroupManager {
      *            - list of users.
      */
     private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
+        // Replaces apostrophes with tildes so that string containing them are ordered in the same way as in
+        // Excel. i.e. we want that "O'Sully" > "Ogbobby"
+        Comparator<String> excelStringOrder = Comparator.nullsLast((String a, String b) ->
+                String.CASE_INSENSITIVE_ORDER.compare(a.replaceAll("'", "~"), b.replaceAll("'", "~")));
         return users.stream()
-                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, excelStringOrder))
+                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, excelStringOrder))
                 .collect(Collectors.toList());
     }
 
@@ -384,6 +398,14 @@ public class GroupManager {
         return convertGroupToDTO(group);
     }
 
+    public List<UserGroupDTO> getGroupsByIds(final List<Long> groupIds, final Boolean augmentGroups) throws SegueDatabaseException {
+
+        List<UserGroup> groups = groupDatabase.findGroupsByIds(groupIds);
+
+        return convertGroupsToDTOs(groups, augmentGroups);
+
+    }
+
     /**
      * Add a user to the list of additional managers who are allowed to manage the group.
      *
@@ -408,6 +430,50 @@ public class GroupManager {
         }
 
         return this.getGroupById(group.getId());
+    }
+
+    /**
+     * Transfer group ownership from the group owner to another user.
+     *
+     * @param group - group to affect
+     * @param newOwner - user to promote to owner of the group
+     * @param oldOwner - user (must be previous group owner) to demote to additional manager status
+     * @return The group DTO
+     * @throws SegueDatabaseException if there is a db error
+     * @throws IllegalAccessException if oldOwner is not the current owner of the group
+     */
+    public UserGroupDTO promoteUserToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner, final RegisteredUserDTO oldOwner) throws SegueDatabaseException, IllegalAccessException {
+        Validate.notNull(group);
+        Validate.notNull(newOwner);
+        Validate.notNull(oldOwner);
+
+        // Old owner must actually be the old (current) owner of the group
+        if (!oldOwner.getId().equals(group.getOwnerId())) {
+            throw new IllegalAccessException("The user with id: " + oldOwner.getId() + " is not the current owner of the group with id: " + group.getId() + "!");
+        }
+
+        if (newOwner.getId().equals(oldOwner.getId())) {
+            // No ownership change
+            return group;
+        }
+
+        // Change old and new owners additional manager status if appropriate
+        if (!group.getAdditionalManagersUserIds().contains(oldOwner.getId())) {
+            this.groupDatabase.addUserAdditionalManagerList(oldOwner.getId(), group.getId());
+        }
+        if (group.getAdditionalManagersUserIds().contains(newOwner.getId())) {
+            this.groupDatabase.removeUserFromAdditionalManagerList(newOwner.getId(), group.getId());
+        }
+
+        // ! We are mutating this group object, but this particular mutation should be safe !
+        group.setOwnerId(newOwner.getId());
+
+        // Notify observers of ownership change
+        for (IGroupObserver interestedParty : this.groupsObservers) {
+            interestedParty.onAdditionalManagerPromotedToOwner(group, newOwner);
+        }
+
+        return this.editUserGroup(group);
     }
 
     /**
@@ -497,6 +563,16 @@ public class GroupManager {
      */
     public static boolean isOwnerOrAdditionalManager(final UserGroupDTO group, final Long userIdToCheck) {
         return group.getOwnerId().equals(userIdToCheck) || isInAdditionalManagerList(group, userIdToCheck);
+    }
+
+    /**
+     * Helper function to check if a user has additional permissions to modify and manage a group.
+     * @param group - dto
+     * @param userIdToCheck - user id to verify
+     * @return whether the user is an owner or an additional manager with privileges.
+     */
+    public static boolean hasAdditionalManagerPrivileges(final UserGroupDTO group, final Long userIdToCheck) {
+        return group.getOwnerId().equals(userIdToCheck) || (isInAdditionalManagerList(group, userIdToCheck) && group.isAdditionalManagerPrivileges());
     }
 
     /**
@@ -690,19 +766,22 @@ public class GroupManager {
         return groupProgressSummary;
     }
 
-    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(List<T> assignments, Long userId) throws SegueDatabaseException {
-        Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
+    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(final List<T> assignments, final Long userId) throws SegueDatabaseException {
         List<T> results = Lists.newArrayList();
 
-        for (T assignment : assignments) {
-            if (!groupIdToUserMembershipInfoMap.containsKey(assignment.getGroupId())) {
-                groupIdToUserMembershipInfoMap.put(assignment.getGroupId(), this.getUserMembershipMapForGroup(assignment.getGroupId()));
-            }
+        Map<Long, GroupMembership> groupMembershipMap = groupDatabase.getGroupMembershipMapForUser(userId);
 
-            GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
+        for (T assignment : assignments) {
+
+            GroupMembership membershipRecord = groupMembershipMap.get(assignment.getGroupId());
             // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
+
+            Date assignmentStartDate = assignment.getScheduledStartDate();
+            if (assignmentStartDate == null) {
+                assignmentStartDate = assignment.getCreationDate();
+            }
             if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
-                && membershipRecord.getUpdated().before(assignment.getCreationDate()) ) {
+                && membershipRecord.getUpdated().before(assignmentStartDate)) {
                 continue;
             }
 

@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Map;
 import java.util.Objects;
 

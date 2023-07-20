@@ -18,11 +18,11 @@ package uk.ac.cam.cl.dtg.segue.search;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +71,7 @@ public interface ISearchProvider {
      */
     ResultsWrapper<String> matchSearch(
             final String indexBase, final String indexType,
-            final List<IContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
+            final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
             final Map<String, Constants.SortOrder> sortInstructions,
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
@@ -98,7 +98,9 @@ public interface ISearchProvider {
      * @param fields
      *            - array (var args) of fields to search using the searchString
      * @return results
+     * @deprecated in favour of {@code BooleanMatchInstruction}-based searches.
      */
+    @Deprecated
     ResultsWrapper<String> fuzzySearch(
             final String indexBase, final String indexType, final String searchString,
             final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
@@ -108,8 +110,7 @@ public interface ISearchProvider {
 
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException;
 
     /**
@@ -159,7 +160,7 @@ public interface ISearchProvider {
      * @return results in a random order for a given match search.
      */
     ResultsWrapper<String> randomisedMatchSearch(
-            String indexBase, String indexType, List<IContentManager.BooleanSearchClause> fieldsToMatch,
+            String indexBase, String indexType, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
@@ -240,7 +241,7 @@ public interface ISearchProvider {
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things
      */
-    GetResponse getById(String indexBase, String indexType, String id);
+    GetResponse getById(String indexBase, String indexType, String id) throws SegueSearchException;
 
-    SearchResponse getAllByType(String indexBase, String indexType);
+    SearchResponse getAllFromIndex(String indexBase, String indexType) throws SegueSearchException;
 }

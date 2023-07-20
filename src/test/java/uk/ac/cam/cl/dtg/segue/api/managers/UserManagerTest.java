@@ -52,12 +52,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -68,12 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -82,14 +77,14 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({ "javax.ws.*" })
+@PowerMockIgnore({"jakarta.ws.*"})
 public class UserManagerTest {
     private QuestionManager dummyQuestionDatabase;
     private IUserDataManager dummyDatabase;
     private String dummyHMACSalt;
     private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
     private String dummyHostName;
-    private PropertiesLoader dummyPropertiesLoader;
+    private AbstractConfigLoader dummyPropertiesLoader;
     private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
     private MapperFacade dummyMapper;
@@ -123,7 +118,7 @@ public class UserManagerTest {
         this.dummyHostName = "bob";
         this.dummyMapper = createMock(MapperFacade.class);
         this.dummyQueue = createMock(EmailManager.class);
-        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
         this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 
         this.dummyUserCache = createMock(IAnonymousUserDataManager.class);
@@ -141,6 +136,7 @@ public class UserManagerTest {
         expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_REMEMBERED)).andReturn("360")
                 .anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andReturn("DEV").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(Constants.RESTRICTED_SIGNUP_EMAIL_REGEX)).andReturn(".*@isaacphysics\\.org").anyTimes();
         replay(this.dummyPropertiesLoader);
     }
 
@@ -191,7 +187,7 @@ public class UserManagerTest {
         String validDateString = sdf.format(calendar.getTime());
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null,null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null,null);
         returnUser.setId(validUserId);
         returnUser.setSessionToken(0);
 
@@ -241,7 +237,7 @@ public class UserManagerTest {
 
         // Act
         try {
-            userManager.authenticate(request, someInvalidProvider);
+            userManager.authenticate(request, someInvalidProvider, false);
             fail("Exception expected");
         } catch (AuthenticationProviderMappingException e) {
             // pass
@@ -288,7 +284,7 @@ public class UserManagerTest {
         replay(dummyAuth);
 
         // Act
-        URI redirectURI = userManager.authenticate(request, someValidProviderString);
+        URI redirectURI = userManager.authenticate(request, someValidProviderString, false);
 
         // Assert
         verify(dummyQuestionDatabase, request);
@@ -366,9 +362,11 @@ public class UserManagerTest {
         expect(((IFederatedAuthenticator) dummyAuth).getAuthenticationProvider())
                 .andReturn(AuthenticationProvider.TEST).atLeastOnce();
 
+        expect(dummyAuth.getFriendlyName()).andReturn("Test").atLeastOnce();
+
         // User object back from provider
         UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
-                "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE);
+                "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE, null);
 
         // Mock get User Information from provider call
         expect(((IFederatedAuthenticator) dummyAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(
@@ -380,7 +378,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
@@ -538,7 +536,7 @@ public class UserManagerTest {
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         String validUserId = "123";
@@ -579,7 +577,7 @@ public class UserManagerTest {
         String validDateString = sdf.format(calendar.getTime());
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
@@ -619,7 +617,7 @@ public class UserManagerTest {
 
         String validUserId = "123";
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
         Calendar calendar = Calendar.getInstance();
@@ -656,7 +654,7 @@ public class UserManagerTest {
 
         String validUserId = "123";
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null,null, null);
+                new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(1);
         Integer incorrectSessionToken = 0;
 

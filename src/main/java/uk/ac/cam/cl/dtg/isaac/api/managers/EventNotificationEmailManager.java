@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -21,10 +22,10 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -41,8 +42,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class EventNotificationEmailManager {
     private static final Logger log = LoggerFactory.getLogger(EventNotificationEmailManager.class);
 
-    private final PropertiesLoader properties;
-    private final IContentManager contentManager;
+    private final AbstractConfigLoader properties;
+    private final GitContentManager contentManager;
     private final EventBookingManager bookingManager;
     private final UserAccountManager userAccountManager;
     private final EmailManager emailManager;
@@ -54,8 +55,8 @@ public class EventNotificationEmailManager {
      * jobdata context provided.
      */
     @Inject
-    public EventNotificationEmailManager(final PropertiesLoader properties,
-                                         final IContentManager contentManager,
+    public EventNotificationEmailManager(final AbstractConfigLoader properties,
+                                         final GitContentManager contentManager,
                                          final EventBookingManager bookingManager,
                                          final UserAccountManager userAccountManager,
                                          final EmailManager emailManager,
@@ -111,11 +112,15 @@ public class EventNotificationEmailManager {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                startIndex, limit, sortInstructions, filterInstructions);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                    // Skip sending emails for cancelled events
+                    if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+                        continue;
+                    }
                     String emailKey = String.format("%s@pre", event.getId());
                     // Includes the attended status in case the events team have pre-emptively marked someone as attended.
                     List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
@@ -144,17 +149,21 @@ public class EventNotificationEmailManager {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
 
-        DateRangeFilterInstruction
-            eventsInLastSixtyDays = new DateRangeFilterInstruction(Date.from(sixtyDaysAgo.toInstant()), new Date());
+        DateRangeFilterInstruction eventsInLastSixtyDays = new DateRangeFilterInstruction(
+                Date.from(sixtyDaysAgo.toInstant()), new Date());
         filterInstructions.put(DATE_FIELDNAME, eventsInLastSixtyDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                properties.getProperty(CONTENT_INDEX), ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                startIndex, limit, sortInstructions, filterInstructions);
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                    // Skip sending emails for cancelled events
+                    if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
+                        continue;
+                    }
                     // Event end date (if present) is today or before, else event date is today or before
                     boolean endDateToday = event.getEndDate() != null && event.getEndDate().toInstant().isBefore(new Date().toInstant());
                     boolean noEndDateAndStartDateToday = event.getEndDate() == null && event.getDate().toInstant().isBefore(new Date().toInstant());

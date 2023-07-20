@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Chris Purdy
+ * Copyright 2021 Chris Purdy, 2022 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import com.google.common.collect.Sets;
+import com.google.api.client.util.Lists;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -27,18 +28,19 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Validator that only provides functionality to validate Cloze questions.
  */
 public class IsaacClozeValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacClozeValidator.class);
+    protected static final String NULL_CLOZE_ITEM_ID = "NULL_CLOZE_ITEM";
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -58,9 +60,15 @@ public class IsaacClozeValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
+        List<Boolean> itemsCorrect = null;              // Individual item feedback.
 
         IsaacClozeQuestion clozeQuestion = (IsaacClozeQuestion) question;
         ItemChoice submittedChoice = (ItemChoice) answer;
+        boolean detailedItemFeedback = clozeQuestion.getDetailedItemFeedback() != null && clozeQuestion.getDetailedItemFeedback();
+
+
+        List<String> submittedItemIds = Collections.emptyList();
+        Set<String> allowedItemIds = Collections.emptySet();
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -68,9 +76,7 @@ public class IsaacClozeValidator implements IValidator {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
             feedback = new Content("This question does not have any correct answers!");
-        }
-
-        if (null == clozeQuestion.getItems() || clozeQuestion.getItems().isEmpty()) {
+        } else if (null == clozeQuestion.getItems() || clozeQuestion.getItems().isEmpty()) {
             log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
             feedback = new Content("This question does not have any items to choose from!");
@@ -78,79 +84,100 @@ public class IsaacClozeValidator implements IValidator {
 
         // STEP 1: Did they provide a valid answer?
 
-        if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer.");
-        }
-
-        Set<String> submittedItemIdSet = null;
-        Set<String> allowedItemIds;
-        if (null != submittedChoice.getItems() && null != clozeQuestion.getItems()) {
-            submittedItemIdSet = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
-            allowedItemIds = clozeQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
-            if (!allowedItemIds.containsAll(submittedItemIdSet)) {
-                feedback = new Content("You did not provide a valid answer; it contained unrecognised items");
+        if (null == feedback) {
+            if (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty()) {
+                feedback = new Content("You did not provide an answer.");
+            } else if (submittedChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
+                feedback = new Content("Your answer is not in a recognised format!");
+            } else {
+                allowedItemIds = Stream.concat(Stream.of(NULL_CLOZE_ITEM_ID), clozeQuestion.getItems().stream().map(Item::getId)).collect(Collectors.toSet());
+                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
+                if (!allowedItemIds.containsAll(submittedItemIds)) {
+                    feedback = new Content("Your answer contained unrecognised items.");
+                } else if (submittedItemIds.stream().allMatch(NULL_CLOZE_ITEM_ID::equals)) {
+                    // At least one item in the list must be non-null, else this is a blank submission!
+                    feedback = new Content("You did not provide an answer!");
+                }
             }
         }
 
         // STEP 2: If they did, does their answer match a known answer?
 
-        if (null == feedback && null != submittedItemIdSet) {
+        if (null == feedback) {
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = getOrderedChoices(clozeQuestion.getChoices());
 
             // For all the choices on this question...
             for (Choice c : orderedChoices) {
 
-                // ... that are ItemChoices ...
-                if (!(c instanceof ItemChoice)) {
-                    log.error(String.format(
-                            "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
-                            clozeQuestion.getId(), c.getClass().toString()));
+                // ... that are ItemChoices (and not subclasses) ...
+                if (!ItemChoice.class.equals(c.getClass())) {
+                    log.error(String.format("Expected ItemChoice in question (%s), instead found %s!", clozeQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
 
                 ItemChoice itemChoice = (ItemChoice) c;
 
-                // ... and that have items ...
+                // ... and that have valid items ...
                 if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {
-                    log.error("Expected list of Items, but none found in choice for question id: "
-                            + clozeQuestion.getId());
+                    log.error(String.format("Expected list of Items, but none found in choice for question id (%s)!", clozeQuestion.getId()));
                     continue;
                 }
+                if (itemChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
+                    log.error(String.format("Expected list of Items, but something else found in choice for question id (%s)!", clozeQuestion.getId()));
+                    continue;
+                }
+                List<String> trustedChoiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
 
                 // ... look for a match to the submitted answer.
-                if (itemChoice.getItems().size() != submittedChoice.getItems().size()) {
+                if (trustedChoiceItemIds.size() != submittedItemIds.size()) {
+                    if (itemChoice.isCorrect()) {
+                        // Assume a correct choice has correct number of gaps. (Legacy incorrect options may be missing items!).
+                        // It should not be possible to cause this size mismatch from a compliant frontend; it should submit null placeholders.
+                        if (trustedChoiceItemIds.size() > submittedItemIds.size()) {
+                            feedback = new Content("You did not provide a valid answer; it does not contain an item for each gap.");
+                        } else {
+                            feedback = new Content("You did not provide a valid answer; it contains more items than gaps.");
+                        }
+                    }
+                    // If the lengths aren't equal, we can't compare to this choice:
                     continue;
                 }
 
-                List<String> submittedItemIds = new ArrayList<>();
-                List<String> choiceItemIds = new ArrayList<>();
+                boolean allowSubsetMatch = null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch();
 
-                // Run through the submitted items:
-                for (Item item : submittedChoice.getItems()) {
-                    submittedItemIds.add(item.getId());
+                boolean submissionMatches = true;
+                List<Boolean> itemMatches = Lists.newArrayListWithCapacity(trustedChoiceItemIds.size());
+                for (int i = 0; i < trustedChoiceItemIds.size(); i++) {
+                    boolean itemMatch = true;
+                    String trustedItemId = trustedChoiceItemIds.get(i);
+                    String submittedItemId = submittedItemIds.get(i);
+
+                    if (NULL_CLOZE_ITEM_ID.equals(trustedItemId)) {
+                        // It doesn't matter what the submission has here, but only if we are allowed subset matching:
+                        if (!allowSubsetMatch) {
+                            log.error(String.format("ItemChoice does not allow subset match but contains NULL item in question (%s)!", clozeQuestion.getId()));
+                            itemMatch = false;
+                        }
+                    } else {
+                        if (!trustedItemId.equals(submittedItemId)) {
+                            itemMatch = false;
+                        }
+                    }
+                    submissionMatches = submissionMatches && itemMatch;
+                    itemMatches.add(itemMatch);
                 }
-                // Run through the items in the question:
-                for (Item item : itemChoice.getItems()) {
-                    choiceItemIds.add(item.getId());
+
+                // If this is the first correct choice, the status of each item might be useful feedback:
+                if (null == itemsCorrect && itemChoice.isCorrect() && detailedItemFeedback) {
+                    itemsCorrect = itemMatches;
                 }
 
-                // Do not allow subset matching by default, and only allow if the cloze question does not have replacement/item duplication enabled
-                boolean allowSubsetMatch = (null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch()) && (null != clozeQuestion.getWithReplacement() && !clozeQuestion.getWithReplacement());
-
-                Set<String> choiceItemIdSet = new HashSet<>(choiceItemIds);
-                /* If the intersection of the submitted and choice ids is equal to the choice ones, then
-                   this means that:
-                    - choiceItemIdSet.size() <= submittedItemIds.size()
-                    - All choice ids are within the set of submitted ids
-                 */
-                if (allowSubsetMatch && Sets.intersection(submittedItemIdSet, choiceItemIdSet).equals(choiceItemIdSet)) {
+                // Did we match this choice?
+                if (submissionMatches) {
                     responseCorrect = itemChoice.isCorrect();
                     feedback = (Content) itemChoice.getExplanation();
-                    break;
-                } else if (choiceItemIds.equals(submittedItemIds)) {
-                    responseCorrect = itemChoice.isCorrect();
-                    feedback = (Content) itemChoice.getExplanation();
+                    // Since choices are ordered, this is the best we can do, so stop looking:
                     break;
                 }
             }
@@ -161,7 +188,7 @@ public class IsaacClozeValidator implements IValidator {
             feedback = clozeQuestion.getDefaultFeedback();
         }
 
-        return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+        return new ItemValidationResponse(question.getId(), answer, responseCorrect, itemsCorrect, feedback, new Date());
     }
 
     @Override

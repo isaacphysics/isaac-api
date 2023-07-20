@@ -76,6 +76,4 @@ public interface EventBooking {
     Date getCreationDate();
 
     Map<String, String> getAdditionalInformation();
-
-    void setAdditionalInformation(Map<String, String> additionalInformation);
 }

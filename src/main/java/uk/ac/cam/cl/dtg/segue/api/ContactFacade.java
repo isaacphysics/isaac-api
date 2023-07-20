@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
@@ -32,17 +32,18 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -51,7 +52,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Contact Facade.
  */
 @Path("/contact")
-@Api(value = "/contact")
+@Tag(name = "/contact")
 public class ContactFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(ContactFacade.class);
 
@@ -72,8 +73,8 @@ public class ContactFacade extends AbstractSegueFacade {
      *            - An instance of the log manager used for recording usage of the CMS.
      */
     @Inject
-    public ContactFacade(final PropertiesLoader properties, final ContentMapper mapper,
-            final UserAccountManager userManager, final EmailManager emailManager, final ILogManager logManager) {
+    public ContactFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
+                         final UserAccountManager userManager, final EmailManager emailManager, final ILogManager logManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.emailManager = emailManager;
@@ -92,7 +93,7 @@ public class ContactFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Submit a contact form request.")
+    @Operation(summary = "Submit a contact form request.")
     public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
         if (StringUtils.isEmpty(form.get("firstName")) || StringUtils.isEmpty(form.get("lastName")) || StringUtils.isEmpty(form.get("emailAddress"))
                 || StringUtils.isEmpty(form.get("subject")) || StringUtils.isEmpty(form.get("message"))) {

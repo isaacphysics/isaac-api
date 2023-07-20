@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Joiner;
+import jakarta.ws.rs.core.Request;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -29,10 +30,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.annotation.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +47,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.junit.Assert.assertEquals;
@@ -78,12 +80,16 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  *         );
  *     }
  * }</pre>
+ *
+ * @deprecated in favour of IsaacIntegrationTest
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "javax.ws.*", "javax.management.*", "javax.script.*" })
+@PowerMockIgnore({ "jakarta.ws.*", "jakarta.management.*", "jakarta.script.*" })
+@Deprecated
 abstract public class AbstractFacadeTest extends IsaacTest {
-    protected HttpServletRequest request;
+    protected Request request;
+    protected HttpServletRequest httpServletRequest;
     protected UserAccountManager userManager;
 
     private RegisteredUserDTO specialEveryoneElse = new RegisteredUserDTO();
@@ -94,7 +100,9 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     @Before
     public void abstractFacadeTestSetup() {
-        request = createMock(HttpServletRequest.class);
+        httpServletRequest = createMock(HttpServletRequest.class);
+        replay(httpServletRequest);
+        request = createNiceMock(Request.class);  // We don't particularly care about what gets called on this.
         replay(request);
 
         userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser", "convertToUserSummaryObject", "getUserDTOById");
@@ -420,9 +428,9 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         private void runStepsAs(@Nullable RegisteredUserDTO user, Endpoint endpoint) {
             withMock(userManager, m -> {
                 if (user == null) {
-                    expect(m.getCurrentRegisteredUser(request)).andThrow(new NoUserLoggedInException());
+                    expect(m.getCurrentRegisteredUser(httpServletRequest)).andThrow(new NoUserLoggedInException());
                 } else {
-                    expect(m.getCurrentRegisteredUser(request)).andReturn(user);
+                    expect(m.getCurrentRegisteredUser(httpServletRequest)).andReturn(user);
                 }
             });
             currentUser = user;

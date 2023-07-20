@@ -72,19 +72,6 @@ public interface IAssociationDataManager {
 
     /**
      * Creates an association based on a token.
-     * 
-     * @param token
-     *            - containing information about the user to grant access to and the group the userIdGrantingAccess
-     *            should go into.
-     * @param userIdGrantingAccess
-     *            - This user is the user granting access to their data.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    void createAssociation(AssociationToken token, Long userIdGrantingAccess) throws SegueDatabaseException;
-
-    /**
-     * Creates an association based on a token.
      *
      * @param userIdReceivingAccess
      *            - the user to grant access to.

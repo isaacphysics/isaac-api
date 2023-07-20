@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth2AuthenticatorWithSignupFlow;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
@@ -56,15 +57,15 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.net.URI;
@@ -80,6 +81,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_STRICT_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -90,12 +92,11 @@ public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
-    private final PropertiesLoader properties;
+    private final AbstractConfigLoader properties;
     private final IUserDataManager database;
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
     private final boolean checkOriginHeader;
-    private final boolean setSecureCookies;
     
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 
@@ -111,7 +112,7 @@ public class UserAuthenticationManager {
      */
     @Inject
     public UserAuthenticationManager(final IUserDataManager database,
-                                     final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                                     final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final EmailManager emailQueue) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
@@ -126,9 +127,7 @@ public class UserAuthenticationManager {
 
         this.emailManager = emailQueue;
         this.serializationMapper = new ObjectMapper();
-        boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
-        this.checkOriginHeader = isProduction;
-        this.setSecureCookies = isProduction;
+        this.checkOriginHeader = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
     }
 
     /**
@@ -166,12 +165,15 @@ public class UserAuthenticationManager {
      *            - http request that we can attach the session to and that already has a redirect url attached.
      * @param provider
      *            - the provider the user wishes to authenticate with.
+     * @param isSignUp
+     *            - whether this is an initial sign-up, which may be used to direct the client to a sign-up flow on the IdP.
+     *
      * @return A json response containing a URI to the authentication provider if authorization / login is required.
      *         Alternatively a SegueErrorResponse could be returned.
      * @throws IOException - 
      * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    public URI getThirdPartyAuthURI(final HttpServletRequest request, final String provider) 
+    public URI getThirdPartyAuthURI(final HttpServletRequest request, final String provider, final boolean isSignUp)
             throws IOException, AuthenticationProviderMappingException {
         IAuthenticator federatedAuthenticator = mapToProvider(provider);
 
@@ -185,7 +187,12 @@ public class UserAuthenticationManager {
             // Store antiForgeryToken in the users session.
             request.getSession().setAttribute(STATE_PARAM_NAME, antiForgeryTokenFromProvider);
 
-            redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
+            if (federatedAuthenticator instanceof IOAuth2AuthenticatorWithSignupFlow) {
+                redirectLink = URI.create(((IOAuth2AuthenticatorWithSignupFlow) oauth2Provider).getAuthorizationUrl(
+                        antiForgeryTokenFromProvider, isSignUp));
+            } else {
+                redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
+            }
         } else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
             IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
             OAuth1Token token = oauth1Provider.getRequestToken();
@@ -511,10 +518,11 @@ public class UserAuthenticationManager {
             logoutCookie.setPath("/");
             logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
             logoutCookie.setHttpOnly(true);
-            logoutCookie.setSecure(setSecureCookies);
-            // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
+            logoutCookie.setSecure(true);
+            // TODO - set sameSite without the setComment hack when setAttribute is available.
+            logoutCookie.setComment(SAME_SITE_STRICT_COMMENT);
 
-            response.addCookie(logoutCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
+            response.addCookie(logoutCookie);
         } catch (IllegalStateException e) {
             log.info("The session has already been invalidated. " + "Unable to logout again...", e);
         }
@@ -731,9 +739,7 @@ public class UserAuthenticationManager {
                 continue;
             }
 
-            String providerName = provider.name().toLowerCase();
-            providerName = providerName.substring(0, 1).toUpperCase() + providerName.substring(1);
-            providerNames.add(providerName);
+            providerNames.add(authenticator.getFriendlyName());
         }
 
         String providersString;
@@ -931,12 +937,13 @@ public class UserAuthenticationManager {
             authCookie.setMaxAge(sessionExpiryTimeInSeconds);
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
-            authCookie.setSecure(setSecureCookies);
-            // TODO - set sameSite=Lax at minimum when Jetty supports this (9.4.x)
+            authCookie.setSecure(true);
+            // TODO - set sameSite without the setComment hack when setAttribute is available.
+            authCookie.setComment(SAME_SITE_STRICT_COMMENT);
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
-            response.addCookie(authCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
+            response.addCookie(authCookie);
             
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
