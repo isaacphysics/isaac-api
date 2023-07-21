@@ -245,7 +245,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            ContentDTO contentDTO = contentManager.getContentById(conceptId);
+            ContentDTO contentDTO = contentManager.getContentById(conceptId, true);
             if (contentDTO instanceof IsaacConceptPageDTO) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
                 // Do we want to use the user's actual question attempts here? We did not previously.
@@ -437,7 +437,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
-            ContentDTO contentDTO = contentManager.getContentById(questionId);
+            ContentDTO contentDTO = contentManager.getContentById(questionId, true);
 
             if (contentDTO instanceof IsaacQuestionPageDTO) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
@@ -540,8 +540,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             // Load the summary page:
-            Content contentDOById = this.contentManager.getContentDOById(summaryPageId);
-            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId);
+            Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId, true);
 
             if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
@@ -637,7 +637,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            ContentDTO contentDTO = contentManager.getContentById(pageId);
+            ContentDTO contentDTO = contentManager.getContentById(pageId, true);
             // We must not allow subclasses here, since general pages are the base class for all other page types!
             if (SeguePageDTO.class.equals(contentDTO.getClass())) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
@@ -699,7 +699,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
         try {
-            ContentDTO contentDTO = contentManager.getContentById(fragmentId);
+            ContentDTO contentDTO = contentManager.getContentById(fragmentId, true);
             if (contentDTO instanceof IsaacPageFragmentDTO) {
                 // Unlikely we want to augment with related content here!
 
