@@ -64,7 +64,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -235,30 +237,34 @@ public class GitContentManager {
         }
 
         String k = "getContentDOById~" + getCurrentContentSHA() + "~" + id;
-        if (!cache.asMap().containsKey(k)) {
 
-            List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(
-                    contentIndex,
-                    CONTENT_TYPE, id,
-                    Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                    this.getBaseFilters()).getResults()
-            );
+        try {
+            @SuppressWarnings("unchecked")
+            Optional<Content> result = (Optional<Content>) cache.get(k, () -> {
 
-            if (null == searchResults || searchResults.isEmpty()) {
-                if (!failQuietly) {
-                    log.error(String.format(
-                            "Failed to locate content with ID '%s' in the cache for content SHA (%s)",
-                            id, getCurrentContentSHA()
-                    ));
+                List<Content> searchResults = mapper.mapFromStringListToContentList(searchProvider.termSearch(
+                        contentIndex,
+                        CONTENT_TYPE, id,
+                        Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
+                        getBaseFilters()).getResults()
+                );
+
+                if (null == searchResults || searchResults.isEmpty()) {
+                    if (!failQuietly) {
+                        log.error("Failed to locate content with ID '{}' in the cache for content SHA ({})", id, getCurrentContentSHA());
+                    }
+                    // Cache this 'not found' result.
+                    return Optional.empty();
+                } else {
+                    return Optional.of(searchResults.get(0));
                 }
-                return null;
-            }
+            });
+            // Return null in the case of an empty Optional value.
+            return result.orElse(null);
 
-            cache.put(k, searchResults.get(0));
+        } catch (ExecutionException e) {
+            throw new ContentManagerException(e.getCause().getMessage());
         }
-
-        return (Content) cache.getIfPresent(k);
-
     }
 
     /**
