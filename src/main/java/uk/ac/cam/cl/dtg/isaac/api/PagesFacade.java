@@ -639,7 +639,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             ContentDTO contentDTO = contentManager.getContentById(pageId, true);
             // We must not allow subclasses here, since general pages are the base class for all other page types!
-            if (SeguePageDTO.class.equals(contentDTO.getClass())) {
+            if (null != contentDTO && SeguePageDTO.class.equals(contentDTO.getClass())) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
                 // Unlikely we want to augment with a user's actual question attempts. Use an empty Map.
                 augmentContentWithRelatedContent(content, Collections.emptyMap());
