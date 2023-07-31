@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
 import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LlmPrompt;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LogicFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -96,6 +97,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), RegexPattern.class);
             case "freeTextRule":
                 return getSingletonChoiceMapper().readValue(root.toString(), FreeTextRule.class);
+            case "llmPrompt":
+                return getSingletonChoiceMapper().readValue(root.toString(), LlmPrompt.class);
             case "parsonsChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), ParsonsChoice.class);
             case "coordinateChoice":

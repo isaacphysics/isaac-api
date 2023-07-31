@@ -407,6 +407,9 @@ public final class Constants {
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
+    // LLM service properties
+    public static final String LLM_SERVICE_API_KEY = "LLM_SERVICE_API_KEY";
+
     /*
      * Default values.
      */

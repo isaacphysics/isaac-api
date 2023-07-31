@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.configuration;
 
+import com.azure.ai.openai.OpenAIClient;
+import com.azure.ai.openai.OpenAIClientBuilder;
+import com.azure.ai.openai.models.NonAzureOpenAIKeyCredential;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
@@ -66,6 +69,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLlmValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
@@ -189,6 +193,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static EmailManager emailCommunicationQueue = null;
     private static MailGunEmailManager mailGunEmailManager = null;
     private static IMisuseMonitor misuseMonitor = null;
+    private static OpenAIClient openAIClient = null;
     private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
     private static GroupManager groupManager = null;
@@ -291,6 +296,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Additional countries
         this.bindConstantToNullableProperty(Constants.CUSTOM_COUNTRY_CODES, globalProperties);
         this.bindConstantToNullableProperty(Constants.PRIORITY_COUNTRY_CODES, globalProperties);
+
+        // LLM Service
+        this.bindConstantToNullableProperty(LLM_SERVICE_API_KEY, globalProperties);
 
         this.bind(String.class).toProvider(() -> {
             // Any binding to String without a matching @Named annotation will always get the empty string
@@ -437,8 +445,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static IMetricsExporter getMetricsExporter(
-            @Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
+    private static IMetricsExporter getMetricsExporter(@Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
         if (null == metricsExporter) {
             try {
                 log.info("Creating MetricsExporter on port (" + port + ")");
@@ -451,6 +458,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             }
         }
         return metricsExporter;
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    private static OpenAIClient getOpenAIClient(@Named(LLM_SERVICE_API_KEY) final String apiKey) {
+        if (null == openAIClient) {
+            log.info("Creating OpenAIClient");
+            openAIClient = new OpenAIClientBuilder()
+                    .credential(new NonAzureOpenAIKeyCredential(apiKey))
+                    .buildClient();
+        }
+        return openAIClient;
     }
 
     /**
@@ -1291,6 +1311,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return new IsaacSymbolicLogicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacLlmValidator getLlmValidator(final AbstractConfigLoader configLoader, final OpenAIClient openAIClient) {
+        return new IsaacLlmValidator(configLoader, openAIClient);
     }
 
     /**

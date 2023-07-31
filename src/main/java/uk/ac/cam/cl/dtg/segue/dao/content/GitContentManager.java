@@ -334,7 +334,6 @@ public class GitContentManager {
             if (searchString.contains(" ")) {
                 searchTerms.addAll(Arrays.asList(searchString.split(" ")));
             }
-            searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
         }
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(

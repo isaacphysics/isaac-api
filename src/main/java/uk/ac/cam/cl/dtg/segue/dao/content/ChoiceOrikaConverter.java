@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
 import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LlmPrompt;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LogicFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -36,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.GraphChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ItemChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.LlmPromptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.LogicFormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuantityDTO;
@@ -81,6 +83,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, RegexPatternDTO.class);
         } else if (source instanceof FreeTextRule) {
             return super.mapperFacade.map(source, FreeTextRuleDTO.class);
+        } else if (source instanceof LlmPrompt) {
+            return super.mapperFacade.map(source, LlmPromptDTO.class);
         } else if (source instanceof ParsonsChoice) {
             return super.mapperFacade.map(source, ParsonsChoiceDTO.class);
         } else if (source instanceof CoordinateChoice) {
@@ -119,6 +123,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, RegexPattern.class);
         } else if (source instanceof FreeTextRuleDTO) {
             return super.mapperFacade.map(source, FreeTextRule.class);
+        } else if (source instanceof LlmPromptDTO) {
+            return super.mapperFacade.map(source, LlmPrompt.class);
         } else if (source instanceof ParsonsChoiceDTO) {
             return super.mapperFacade.map(source, ParsonsChoice.class);
         } else if (source instanceof CoordinateChoiceDTO) {
