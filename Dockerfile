@@ -18,6 +18,9 @@ COPY --from=base /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-ap
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
 
+COPY resources/jetty.xml /usr/local/jetty/etc/
+COPY resources/start.ini /var/lib/jetty/
+
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty
 WORKDIR $JETTY_BASE
