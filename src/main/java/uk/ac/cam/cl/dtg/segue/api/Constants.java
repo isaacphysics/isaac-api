@@ -90,6 +90,8 @@ public final class Constants {
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
+    public static final String MAXMIND_CITY_DB_LOCATION = "MAXMIND_CITY_DB_LOCATION";
+
     // GIT stuff
     public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
     public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
@@ -403,9 +405,6 @@ public final class Constants {
 
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
-
-    // IP Geocoding stuff
-    public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
     /*
      * Default values.

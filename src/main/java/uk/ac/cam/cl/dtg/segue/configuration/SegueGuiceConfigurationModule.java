@@ -145,8 +145,8 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
-import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
@@ -278,9 +278,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.SERVER_ADMIN_ADDRESS, globalProperties);
 
         this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
-
-        // IP address geocoding
-        this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
 
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
@@ -1178,14 +1175,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a new instance of the location resolver.
      *
-     * @param apiKey
-     *            - for using the third party service.
+     * @param properties
+     *            - properties loader for the IP database filename
      * @return The singleton instance of EmailCommunicator
      */
     @Inject
     @Provides
-    private IPLocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-        return new IPInfoDBLocationResolver(apiKey);
+    private IPLocationResolver getIPLocator(final AbstractConfigLoader properties) throws IOException {
+        return new MaxMindIPLocationResolver(properties);
     }
 
     /**
