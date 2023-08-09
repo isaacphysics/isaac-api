@@ -450,37 +450,6 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * End point that allows the user to logout of all sessions.
-     *
-     * @param request  so that we can obtain the associated session
-     * @param response to tell the browser to remove the session for segue.
-     * @return successful response to indicate all sessions were invalidated.
-     */
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.WILDCARD)
-    @Path("/logout/everywhere")
-    @Operation(summary = "Invalidate all sessions for the current user.")
-    public final Response userLogoutEverywhere(@Context final HttpServletRequest request,
-                                               @Context final HttpServletResponse response) {
-        try {
-            AbstractSegueUserDTO user = this.userManager.getCurrentUser(request);
-            userManager.logUserOut(request, response);
-
-            this.getLogManager().logEvent(user, request, SegueServerLogType.LOG_OUT_EVERYWHERE, Maps.newHashMap());
-            SegueMetrics.LOG_OUT_EVERYWHERE.inc();
-
-            return Response.ok().build();
-        } catch (SegueDatabaseException e) {
-            log.error(LOGOUT_DATABASE_ERROR_MESSAGE, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, LOGOUT_DATABASE_ERROR_MESSAGE).toResponse();
-        } catch (NoUserLoggedInException e) {
-            log.warn(LOGOUT_NO_ACTIVE_SESSION_MESSAGE);
-            return new SegueErrorResponse(Status.BAD_REQUEST, LOGOUT_NO_ACTIVE_SESSION_MESSAGE).toResponse();
-        }
-    }
-
-    /**
      * 2nd step of authentication process for local user/passwords to check TOTP token.
      *
      * @param request - http request
