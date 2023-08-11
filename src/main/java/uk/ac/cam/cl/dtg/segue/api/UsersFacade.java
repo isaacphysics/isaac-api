@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserSettings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -293,6 +294,38 @@ public class UsersFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Can't load user preferences!", e);
             log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
+
+    @POST
+    @Path("users/current_user/upgrade_to_teacher")
+    @Operation(summary = "Upgrade the current user's role from student to teacher")
+    public Response upgradeToTeacherAccount(@Context final HttpServletRequest request) {
+        if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES))) {
+            try {
+                RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+                if (user.getRole() != Role.STUDENT) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "You already have an upgraded account.").toResponse();
+                }
+
+                if (user.getEmailVerificationStatus() != EmailVerificationStatus.VERIFIED) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "You need to have a verified email address to upgrade to a teacher account.").toResponse();
+                }
+
+                userManager.updateUserRole(user.getId(), Role.TEACHER);
+
+                return Response.ok().build();
+
+            } catch (NoUserLoggedInException e) {
+                return SegueErrorResponse.getNotLoggedInResponse();
+            } catch (SegueDatabaseException e) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Could not save new role to the database.").toResponse();
+            }
+        } else {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_IMPLEMENTED, "You must contact us to request a teacher account.");
+            log.error(error.getErrorMessage());
             return error.toResponse();
         }
     }
