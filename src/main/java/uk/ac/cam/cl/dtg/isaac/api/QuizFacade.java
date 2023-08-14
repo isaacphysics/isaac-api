@@ -328,8 +328,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // Tutors are able to preview student tests (but not set them)
-            if (!(isUserTutorOrAbove(userManager, user))) {
+            // Tutors are not able to preview student tests as they cannot set them
+            if (!(isUserTeacherOrAbove(userManager, user))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

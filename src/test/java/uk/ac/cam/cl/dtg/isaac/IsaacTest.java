@@ -82,6 +82,7 @@ public class IsaacTest {
     protected QuizSummaryDTO studentQuizSummary;
     protected QuizSummaryDTO teacherQuizSummary;
     protected RegisteredUserDTO student;
+    protected RegisteredUserDTO tutor;
     protected RegisteredUserDTO teacher;
     protected RegisteredUserDTO secondTeacher;
     protected RegisteredUserDTO otherTeacher;
@@ -176,6 +177,10 @@ public class IsaacTest {
         student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null);
         student.setRole(Role.STUDENT);
         student.setId(++id);
+
+        tutor = new RegisteredUserDTO("Some", "Tutor", "test-tutor@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null);
+        tutor.setRole(Role.TUTOR);
+        tutor.setId(++id);
 
         teacher = new RegisteredUserDTO("Some", "Teacher", "test-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null);
         teacher.setRole(Role.TEACHER);
