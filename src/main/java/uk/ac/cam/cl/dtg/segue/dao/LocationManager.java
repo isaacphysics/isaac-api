@@ -118,7 +118,7 @@ public class LocationManager implements IPLocationResolver {
 
                 if (new Date().after(locationExpiry.getTime())) {
                     // lookup to see if ip location data is different. If so update it.
-                    log.info("Sending IP Location request to external provider.");
+                    log.debug("Performing IP Location lookup.");
                     Location locationInformation = ipLocationResolver
                             .resolveAllLocationInformation(ipAddress);
 

@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.lang3.Validate;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ import com.google.inject.Inject;
  */
 public class PgLocationHistory implements LocationHistory {
     private final PostgresSqlDb database;
+    private final ObjectMapper locationSerializer;
 
     private static final Logger log = LoggerFactory.getLogger(PgLocationHistory.class);
     
@@ -60,6 +62,8 @@ public class PgLocationHistory implements LocationHistory {
     @Inject
     public PgLocationHistory(final PostgresSqlDb database) {
         this.database = database;
+        locationSerializer = new ObjectMapper();
+        locationSerializer.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
     /*
@@ -237,7 +241,7 @@ public class PgLocationHistory implements LocationHistory {
 
             PGobject jsonObject = new PGobject();
             jsonObject.setType("jsonb");
-            jsonObject.setValue(new ObjectMapper().writeValueAsString(location));
+            jsonObject.setValue(locationSerializer.writeValueAsString(location));
 
             pst.setString(1, ipAddress);
             pst.setObject(2, jsonObject);
@@ -277,7 +281,7 @@ public class PgLocationHistory implements LocationHistory {
     private PgLocationEvent buildPgLocationEntry(final ResultSet results) throws SQLException {
         Location location;
         try {
-            location = new ObjectMapper().readValue(results.getString("location_information"), Location.class);
+            location = locationSerializer.readValue(results.getString("location_information"), Location.class);
         } catch (IOException e) {
             log.error("IOException while trying to convert location entry.", e);
             return null;
