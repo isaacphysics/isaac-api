@@ -312,12 +312,12 @@ public class UsersFacade extends AbstractSegueFacade {
 
                 RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
-                if (user.getRole() != Role.STUDENT) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "You already have an upgraded account.").toResponse();
+                if (!Role.STUDENT.equals(user.getRole())) {
+                    return SegueErrorResponse.getBadRequestResponse("You already have an upgraded account.");
                 }
 
                 if (user.getEmailVerificationStatus() != EmailVerificationStatus.VERIFIED) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "You need to have a verified email address to upgrade to a teacher account.").toResponse();
+                    return SegueErrorResponse.getBadRequestResponse("You need to have a verified email address to upgrade to a teacher account.");
                 }
 
                 userManager.updateUserRole(user.getId(), Role.TEACHER);
@@ -330,9 +330,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Could not save new role to the database.").toResponse();
             }
         } else {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_IMPLEMENTED, "You must contact us to request a teacher account.");
-            log.error(error.getErrorMessage());
-            return error.toResponse();
+            return SegueErrorResponse.getNotImplementedResponse();
         }
     }
 
