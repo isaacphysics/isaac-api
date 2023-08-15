@@ -48,6 +48,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -309,6 +310,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "List all question page objects matching the provided criteria.")
     public final Response getQuestionList(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest,
             @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
@@ -378,6 +380,14 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
+        // Show content tagged as "nofilter" if the user is staff
+        boolean showNoFilterContent;
+        try {
+            showNoFilterContent = isUserStaff(userManager, httpServletRequest);
+        } catch (NoUserLoggedInException e) {
+            showNoFilterContent = false;
+        }
+
         try {
             ResultsWrapper<ContentDTO> c;
             c = contentManager.searchForContent(
@@ -391,7 +401,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
                     newStartIndex,
                     newLimit,
-                    false
+                    showNoFilterContent
             );
 
             ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
