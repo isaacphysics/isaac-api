@@ -395,6 +395,7 @@ public final class Constants {
         SEND_MASS_EMAIL,
         SENT_EMAIL,
         USER_REGISTRATION,
+        USER_UPGRADE_ROLE,
         USER_SCHOOL_CHANGE
     }
 
@@ -566,6 +567,8 @@ public final class Constants {
 
     public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
     public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
+
+    public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
 
     /**
      * Private constructor to prevent this class being created.

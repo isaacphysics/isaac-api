@@ -11,13 +11,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.ac.cam.cl.dtg.isaac.dos.ExamBoard;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.YamlLoader;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -582,5 +586,130 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+    }
+
+    @Test
+    public void upgradeToTeacherAccountEndpoint_upgradeWhileLoggedInAsStudentAndAllowUpgradeFlagEnabled_succeeds() throws Exception {
+        // Arrange
+        // inject config with feature flag enabled
+        AbstractConfigLoader propertiesForTest = new YamlLoader(
+                "src/test/resources/segue-integration-test-config.yaml," +
+                        "src/test/resources/segue-integration-test-teacher-override.yaml"
+        );
+        UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManager, logManager, userAssociationManager,
+                misuseMonitor, userPreferenceManager, schoolListReader);
+
+        // log in as Student
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(request);
+
+        // Act
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
+
+        // Assert
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+
+        // check role was changed in DB
+        assertEquals(Role.TEACHER, pgUsers.getById(ITConstants.ALICE_STUDENT_ID).getRole());
+    }
+
+    @Test
+    public void upgradeToTeacherAccountEndpoint_upgradeWhileLoggedInAsStudentAndAllowUpgradeFlagDisabled_failsWithNotImplemented() throws Exception {
+        // Arrange
+        // log in as Student
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.ERIKA_STUDENT_EMAIL, ITConstants.ERIKA_STUDENT_PASSWORD);
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(request);
+
+        // Act
+        Response createResponse = usersFacade.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
+
+        // Assert
+        assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), createResponse.getStatus());
+
+        // check role was not changed in DB
+        assertEquals(Role.STUDENT, pgUsers.getById(ITConstants.ERIKA_STUDENT_ID).getRole());
+    }
+
+    @Test
+    public void upgradeToTeacherAccountEndpoint_upgradeWhileLoggedInAsStudentWithUnverifiedEmail_failsWithBadRequest() throws Exception {
+        // Arrange
+        // inject config with feature flag enabled
+        AbstractConfigLoader propertiesForTest = new YamlLoader(
+                "src/test/resources/segue-integration-test-config.yaml," +
+                        "src/test/resources/segue-integration-test-teacher-override.yaml"
+        );
+        UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManager, logManager, userAssociationManager,
+                misuseMonitor, userPreferenceManager, schoolListReader);
+
+        // log in as Student
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.CHARLIE_STUDENT_EMAIL, ITConstants.CHARLIE_STUDENT_PASSWORD);
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(request);
+
+        // Act
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
+
+        // Assert
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
+
+        // check role was not changed in DB
+        assertEquals(Role.STUDENT, pgUsers.getById(ITConstants.CHARLIE_STUDENT_ID).getRole());
+    }
+
+    @Test
+    public void upgradeToTeacherAccountEndpoint_upgradeWhileNotLoggedInAndAllowUpgradeFlagEnabled_failsWithUnauthorized() throws Exception {
+        // Arrange
+        // inject config with feature flag enabled
+        AbstractConfigLoader propertiesForTest = new YamlLoader(
+                "src/test/resources/segue-integration-test-config.yaml," +
+                        "src/test/resources/segue-integration-test-teacher-override.yaml"
+        );
+        UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManager, logManager, userAssociationManager,
+                misuseMonitor, userPreferenceManager, schoolListReader);
+
+        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
+        replay(request);
+
+        // Act
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
+
+        // Assert
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), createResponse.getStatus());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ITConstants.TEST_TUTOR_EMAIL,
+            ITConstants.TEST_TEACHER_EMAIL,
+            ITConstants.TEST_EVENTMANAGER_EMAIL,
+            ITConstants.TEST_EDITOR_EMAIL,
+        }
+    )
+    public void upgradeToTeacherAccountEndpoint_upgradeWhileLoggedInAsNonStudentAndAllowUpgradeFlagEnabled_failsWithBadRequest(
+            @ConvertWith(ITUsers.EmailToRegisteredUserArgumentConverter.class) RegisteredUser user) throws Exception {
+        // Arrange
+        // inject config with feature flag enabled
+        AbstractConfigLoader propertiesForTest = new YamlLoader(
+                "src/test/resources/segue-integration-test-config.yaml," +
+                        "src/test/resources/segue-integration-test-teacher-override.yaml"
+        );
+        UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManager, logManager, userAssociationManager,
+                misuseMonitor, userPreferenceManager, schoolListReader);
+
+        // log in as user
+        LoginResult login = loginAs(httpSession, user.getEmail(), "test1234");
+        HttpServletRequest request = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(request);
+
+        // Act
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
+
+        // Assert
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
+
+        // check role was not changed in DB
+        assertEquals(user.getRole(), pgUsers.getById(user.getId()).getRole());
     }
 }

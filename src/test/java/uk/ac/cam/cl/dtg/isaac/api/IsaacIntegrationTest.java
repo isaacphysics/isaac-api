@@ -163,6 +163,7 @@ public abstract class IsaacIntegrationTest {
     protected static IQuizAttemptPersistenceManager quizAttemptPersistenceManager;
     protected static IQuizQuestionAttemptPersistenceManager quizQuestionAttemptPersistenceManager;
     protected static QuizQuestionManager quizQuestionManager;
+    protected static PgUsers pgUsers;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -262,7 +263,7 @@ public abstract class IsaacIntegrationTest {
         globalTokens.put("siteBaseURL", String.format("https://%s", properties.getProperty(HOST_NAME)));
 
         JsonMapper jsonMapper = new JsonMapper();
-        PgUsers pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
+        pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
         PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
