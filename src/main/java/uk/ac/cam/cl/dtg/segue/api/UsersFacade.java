@@ -299,11 +299,17 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     @POST
-    @Path("users/current_user/upgrade_to_teacher")
-    @Operation(summary = "Upgrade the current user's role from student to teacher")
-    public Response upgradeToTeacherAccount(@Context final HttpServletRequest request) {
+    @Path("users/current_user/upgrade/{role}")
+    @Operation(summary = "Upgrade the current user's role in a self-service manner.",
+               description = "Currently only upgrading from student to teacher is supported and only on some sites.")
+    public Response upgradeCurrentAccountRole(@Context final HttpServletRequest request, @PathParam("role") final String role) {
         if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES))) {
             try {
+                Role requestedRole = Role.valueOf(role);
+                if (!requestedRole.equals(Role.TEACHER)) {
+                    return SegueErrorResponse.getBadRequestResponse("You can only upgrade your account to a teacher account.");
+                }
+
                 RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
 
                 if (user.getRole() != Role.STUDENT) {

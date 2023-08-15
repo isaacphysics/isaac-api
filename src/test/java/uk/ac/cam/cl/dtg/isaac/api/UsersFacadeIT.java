@@ -605,7 +605,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         replay(request);
 
         // Act
-        Response createResponse = usersFacadeForTest.upgradeToTeacherAccount(request);
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
 
         // Assert
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
@@ -623,7 +623,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         replay(request);
 
         // Act
-        Response createResponse = usersFacade.upgradeToTeacherAccount(request);
+        Response createResponse = usersFacade.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
 
         // Assert
         assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), createResponse.getStatus());
@@ -649,7 +649,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         replay(request);
 
         // Act
-        Response createResponse = usersFacadeForTest.upgradeToTeacherAccount(request);
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
 
         // Assert
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
@@ -673,7 +673,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         replay(request);
 
         // Act
-        Response createResponse = usersFacadeForTest.upgradeToTeacherAccount(request);
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
 
         // Assert
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), createResponse.getStatus());
@@ -704,7 +704,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         replay(request);
 
         // Act
-        Response createResponse = usersFacadeForTest.upgradeToTeacherAccount(request);
+        Response createResponse = usersFacadeForTest.upgradeCurrentAccountRole(request, Role.TEACHER.toString());
 
         // Assert
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), createResponse.getStatus());
