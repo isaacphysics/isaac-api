@@ -320,7 +320,13 @@ public class UsersFacade extends AbstractSegueFacade {
                     return SegueErrorResponse.getBadRequestResponse("You need to have a verified email address to upgrade to a teacher account.");
                 }
 
+                // We'll leave TEACHER hard-coded here for security until we support a wider range of requestedRoles:
                 userManager.updateUserRole(user.getId(), Role.TEACHER);
+                log.info(String.format("User (%s) has upgraded their account from %s to %s", user.getId(), user.getRole(), Role.TEACHER));
+                this.getLogManager().logEvent(user, request, SegueServerLogType.USER_UPGRADE_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
+                                    "oldRole", user.getRole(),
+                                    "newRole", Role.TEACHER));
 
                 return Response.ok().build();
 

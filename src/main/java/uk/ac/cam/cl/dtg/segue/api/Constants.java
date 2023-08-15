@@ -393,6 +393,7 @@ public final class Constants {
         SEND_MASS_EMAIL,
         SENT_EMAIL,
         USER_REGISTRATION,
+        USER_UPGRADE_ROLE,
         USER_SCHOOL_CHANGE
     }
 
