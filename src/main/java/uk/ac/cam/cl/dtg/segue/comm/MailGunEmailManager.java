@@ -15,14 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.mailgun.api.v3.MailgunMessagesApi;
-import com.mailgun.api.v3.MailgunTemplatesApi;
 import com.mailgun.client.MailgunClient;
 import com.mailgun.model.message.Message;
 import com.mailgun.model.message.MessageResponse;
-import com.mailgun.model.templates.TemplateRequest;
-import com.mailgun.model.templates.TemplateWithMessageResponse;
 import feign.FeignException;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.inject.Inject;
@@ -36,28 +34,23 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import javax.annotation.Nullable;
-
-import static com.mailgun.util.Constants.EU_BASE_URL;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_DOMAIN;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_SECRET_KEY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static com.mailgun.util.Constants.EU_BASE_URL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 public class MailGunEmailManager {
@@ -163,10 +156,18 @@ public class MailGunEmailManager {
         String replyTo = replyToName + " <" + replyToAddress + "> ";
         String from = fromName + " <" + fromAddress + "> ";
 
+        List<String> usersToSendTo = Lists.newArrayList(recipientVariables.keySet());
+        if (usersToSendTo.isEmpty()) {
+            if (!userDTOs.isEmpty()) {
+                log.warn(String.format("No eligible recipients from batch of %s %s emails.", userDTOs.size(), emailType.name()));
+            }
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+
         Message message = Message.builder()
                 .from(from)
                 .replyTo(replyTo)
-                .to(new ArrayList<>(recipientVariables.keySet()))
+                .to(usersToSendTo)
                 .template(emailContentTemplate.getId())  // We use the same template IDs in MailGun!
                 .subject(emailContentTemplate.getSubject())
                 .mailgunVariables(templateVariables)
