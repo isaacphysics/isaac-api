@@ -77,7 +77,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Pages Facade
- * 
+ * <p>
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
@@ -137,7 +137,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to provide a list of concepts.
-     * 
+     * <p>
      * Uses ETag caching to attempt to reduce load on the server.
      *
      * @param request
@@ -285,6 +285,12 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @param level
      *            - a string value to be converted into an integer which represents the levels that must match the
      *            questions returned.
+     * @param stages
+     *            - a comma separated list of stages
+     * @param difficulties
+     *            - a comma separated list of difficulties
+     * @param examBoards
+     *            - a comma separated list of examBoards
      * @param fasttrack
      *            - a flag to indicate whether to search isaacFasttrackQuestions or not.
      * @param startIndex
@@ -293,6 +299,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - a string value to be converted into an integer that represents the number of results to return.
      * @return A response object which contains a list of questions or an empty list.
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @GET
     @Path("/questions")
     @Produces(MediaType.APPLICATION_JSON)
@@ -337,13 +344,15 @@ public class PagesFacade extends AbstractIsaacFacade {
             etagCodeBuilder.append(ids);
         }
 
-        Map<String, String> fieldNameToValues = new HashMap<String, String>() {{
-            this.put(TAGS_FIELDNAME, tags);
-            this.put(LEVEL_FIELDNAME, level);
-            this.put(STAGE_FIELDNAME, stages);
-            this.put(DIFFICULTY_FIELDNAME, difficulties);
-            this.put(EXAM_BOARD_FIELDNAME, examBoards);
-        }};
+        Map<String, String> fieldNameToValues = new HashMap<String, String>() {
+            {
+                this.put(TAGS_FIELDNAME, tags);
+                this.put(LEVEL_FIELDNAME, level);
+                this.put(STAGE_FIELDNAME, stages);
+                this.put(DIFFICULTY_FIELDNAME, difficulties);
+                this.put(EXAM_BOARD_FIELDNAME, examBoards);
+            }
+        };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
             String fieldName = entry.getKey();
             String queryStringValue = entry.getValue();
@@ -676,10 +685,12 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Rest end point that gets a all of the content marked as being type "pods".
+     * Rest end point that gets all of the content marked as being type "pods".
      * 
      * @param request
      *            - so that we can deal with caching.
+     * @param subject
+     *            - the subject to filter for in the search terms
      * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
      */
     @GET
@@ -717,7 +728,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * Utility method to allow related content to be populated as summary objects.
-     * 
+     * <p>
      * By default content summary objects may just have ids.
      * 
      * @param version
@@ -745,7 +756,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * A method which augments related questions with attempt information.
-     *
+     * <p>
      * i.e. sets whether the related content summary has been completed.
      *
      * @param content the content to be augmented.
@@ -839,6 +850,10 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * As per the {@link #findSingleResult(Map, Map) findSingleResult} method.
+     *
+     * @param fieldsToMatch
+     *            - a Map of field names to Lists of queries to match
+     * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
      */
     private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
         return this.findSingleResult(fieldsToMatch, null);
@@ -846,7 +861,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * For use when we expect to only find a single result.
-     * 
+     * <p>
      * By default related content ContentSummary objects will be fully augmented.
      * 
      * @param fieldsToMatch
@@ -886,7 +901,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * Helper method to query segue for a list of content objects.
-     * 
+     * <p>
      * This method will only use the latest version of the content.
      * 
      * @param fieldsToMatch

@@ -132,7 +132,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      * Set the unit to be displayed to the user instead of the available units dropdown.
      * @param displayUnit - the unit to be displayed.
      */
-    public void setDisplayUnit(String displayUnit) {
+    public void setDisplayUnit(final String displayUnit) {
         this.displayUnit = displayUnit;
     }
 

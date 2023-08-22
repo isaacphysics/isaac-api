@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ELASTICSEARCH_INDEXER_REQUEST_TIMEOUT;
+
 /**
  * Created by Ian on 17/10/2016.
  */
@@ -53,7 +55,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      * @param searchClient - the client that the provider should be using.
      */
     @Inject
-    public ElasticSearchIndexer(RestHighLevelClient searchClient) {
+    ElasticSearchIndexer(final RestHighLevelClient searchClient) {
         super(searchClient);
         rawFieldsListByType.put("content", Lists.newArrayList("id", "title"));
         rawFieldsListByType.put("school", Lists.newArrayList("urn"));
@@ -68,8 +70,10 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
     /**
      *
+     * @param indexBase the index name
+     * @param indexType type of index as registered with search provider
      * @param buildBulkRequest a function that takes an elasticsearch typed index name, and produces a (populated) BulkRequestBuilder
-     * @throws SegueSearchException
+     * @throws SegueSearchException if an error occurs during the index operation
      */
     private void executeBulkIndexRequest(final String indexBase, final String indexType, final Function<String, BulkRequest> buildBulkRequest)
             throws SegueSearchException {
@@ -88,15 +92,15 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         try {
             // increase default timeouts
             RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout(180000)
-                    .setSocketTimeout(180000)
+                    .setConnectTimeout(ELASTICSEARCH_INDEXER_REQUEST_TIMEOUT)
+                    .setSocketTimeout(ELASTICSEARCH_INDEXER_REQUEST_TIMEOUT)
                     .build();
             RequestOptions options = RequestOptions.DEFAULT.toBuilder()
                     .setRequestConfig(requestConfig)
                     .build();
 
             // execute bulk request
-            BulkResponse bulkResponse = client.bulk(bulkRequest.timeout("180s").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE), options);
+            BulkResponse bulkResponse = getClient().bulk(bulkRequest.timeout("180s").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE), options);
             if (bulkResponse.hasFailures()) {
                 // process failures by iterating through each bulk response item
                 for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
@@ -147,7 +151,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
         try {
             IndexRequest request = new IndexRequest(typedIndex).id(uniqueId).source(content, XContentType.JSON);
-            IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+            IndexResponse indexResponse = getClient().index(request, RequestOptions.DEFAULT);
             log.debug("Document: " + indexResponse.getId() + " indexed.");
 
         } catch (ElasticsearchException | IOException e) {
@@ -162,7 +166,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     boolean expungeTypedIndexFromSearchCache(final String typedIndex) {
         try {
             log.info("Sending delete request to ElasticSearch for search index: " + typedIndex);
-            client.indices().delete(new DeleteIndexRequest(typedIndex), RequestOptions.DEFAULT);
+            getClient().indices().delete(new DeleteIndexRequest(typedIndex), RequestOptions.DEFAULT);
         } catch (ElasticsearchException | IOException e) {
             log.error("ElasticSearch exception while trying to delete index " + typedIndex + ", it might not have existed.",
                     e);
@@ -191,7 +195,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             ImmutableMap<String, Set<AliasMetadata>> returnedPreviousAliases = null;
             try {
                 returnedPreviousAliases = ImmutableMap.copyOf(
-                        client.indices().getAlias(new GetAliasesRequest().aliases(typedAlias + "_previous"), RequestOptions.DEFAULT)
+                        getClient().indices().getAlias(new GetAliasesRequest().aliases(typedAlias + "_previous"), RequestOptions.DEFAULT)
                         .getAliases());
             } catch (IOException e) {
                 log.error(String.format("Failed to retrieve existing previous alias %s, not moving alias!", typedAlias + "_previous"));
@@ -212,7 +216,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             ImmutableMap<String, Set<AliasMetadata>> returnedAliases = null;
             try {
                 returnedAliases = ImmutableMap.copyOf(
-                        client.indices().getAlias(new GetAliasesRequest().aliases(typedAlias), RequestOptions.DEFAULT)
+                        getClient().indices().getAlias(new GetAliasesRequest().aliases(typedAlias), RequestOptions.DEFAULT)
                         .getAliases());
             } catch (IOException e) {
                 log.error(String.format("Failed to retrieve existing alias %s, not moving alias!", typedAlias));
@@ -264,7 +268,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                                 .alias(typedAlias)
                 );
                 try {
-                    client.indices().updateAliases(request, RequestOptions.DEFAULT);
+                    getClient().indices().updateAliases(request, RequestOptions.DEFAULT);
                 } catch (IOException e) {
                     log.error(String.format("Failed to update alias %s", typedAlias), e);
                     continue;
@@ -280,7 +284,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         // This deletes any indices that don't have aliases pointing to them.
         // If you want an index kept, make sure it has an alias!
         try {
-            GetIndexResponse indices = client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT);
+            GetIndexResponse indices = getClient().indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT);
             ImmutableMap<String, List<AliasMetadata>> aliases = ImmutableMap.copyOf(indices.getAliases());
             for (String index : indices.getIndices()) {
                 if (!aliases.containsKey(index) || aliases.get(index).isEmpty()) {
@@ -298,13 +302,15 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     /**
      * This function will allow top level fields to have their contents cloned into an unanalysed field with the name
      * {FieldName}.{raw}
-     *
+     * <p>
      * This is useful if we want to query the original data without ElasticSearch having messed with it.
      *
      * @param typedIndex
      *            - type suffixed index to send the mapping corrections to.
+     * @param indexType
+     *            - type of index as registered with search provider
      */
-    private void sendMappingCorrections(final String typedIndex, String indexType) {
+    private void sendMappingCorrections(final String typedIndex, final String indexType) {
         try {
             // Specify index settings
             CreateIndexRequest indexRequest = new CreateIndexRequest(typedIndex).settings(
@@ -342,7 +348,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             mappingBuilder.endObject().endObject();
             indexRequest.mapping(mappingBuilder);
 
-            client.indices().create(indexRequest, RequestOptions.DEFAULT);
+            getClient().indices().create(indexRequest, RequestOptions.DEFAULT);
 
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);

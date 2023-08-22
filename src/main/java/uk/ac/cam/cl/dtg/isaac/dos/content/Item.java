@@ -40,8 +40,8 @@ public class Item extends Content {
      * @param value - the value of the Item
      */
     public Item(final String id, final String value) {
-        this.id = id;
-        this.value = value;
+        this.setId(id);
+        this.setValue(value);
     }
 
     public String getAltText() {

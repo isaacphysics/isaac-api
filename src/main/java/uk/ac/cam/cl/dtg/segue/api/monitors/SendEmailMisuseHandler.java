@@ -23,7 +23,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with sending email requests.
- *
+ * <p>
  * Preventing users from overusing this endpoint is important as only limited email sending capacity exists
  *
  * @author Connor Holloway
@@ -38,7 +38,7 @@ public class SendEmailMisuseHandler implements IMisuseHandler {
     private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
     @Inject
-    public SendEmailMisuseHandler() {}
+    public SendEmailMisuseHandler() { }
 
     @Override
     public Integer getSoftThreshold() {

@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,18 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Image;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * DO for isaac featured profiles.
@@ -36,30 +35,31 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 @JsonContentType("isaacFeaturedProfile")
 public class IsaacFeaturedProfile extends Content {
 
-	protected String emailAddress;
-	protected Image image;
-	protected String homepage;
+	private String emailAddress;
+	private Image image;
+	private String homepage;
 
 	@JsonCreator
 	public IsaacFeaturedProfile(
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBase> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<String> relatedContent,
-			@JsonProperty("version") boolean published,
-			@JsonProperty("deprecated") Boolean deprecated,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level,
-			@JsonProperty("emailAddress") String emailAddress,
-			@JsonProperty("image") Image image,
-			@JsonProperty("homepage") String homepage) {
+			@JsonProperty("id") final String id,
+			@JsonProperty("title") final String title,
+			@JsonProperty("subtitle") final String subtitle,
+			@JsonProperty("type") final String type,
+			@JsonProperty("author") final String author,
+			@JsonProperty("encoding") final String encoding,
+			@JsonProperty("canonicalSourceFile") final String canonicalSourceFile,
+			@JsonProperty("layout") final String layout,
+			@JsonProperty("children") final List<ContentBase> children,
+			@JsonProperty("value") final String value,
+			@JsonProperty("attribution") final String attribution,
+			@JsonProperty("relatedContent") final List<String> relatedContent,
+			@JsonProperty("version") final boolean published,
+			@JsonProperty("deprecated") final Boolean deprecated,
+			@JsonProperty("tags") final Set<String> tags,
+			@JsonProperty("level") final Integer level,
+			@JsonProperty("emailAddress") final String emailAddress,
+			@JsonProperty("image") final Image image,
+			@JsonProperty("homepage") final String homepage) {
 		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, deprecated, tags, level);
@@ -70,7 +70,7 @@ public class IsaacFeaturedProfile extends Content {
 	}
 
 	/**
-	 * Default constructor required for Jackson
+	 * Default constructor required for Jackson.
 	 */
 	public IsaacFeaturedProfile() {
 

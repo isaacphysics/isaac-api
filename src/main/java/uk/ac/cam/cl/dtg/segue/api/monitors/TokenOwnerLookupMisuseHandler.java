@@ -28,7 +28,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with token ownership requests.
- * 
+ * <p>
  * Preventing users from overusing this endpoint is important as some email address information is exposed for identity
  * verification purposes.
  *

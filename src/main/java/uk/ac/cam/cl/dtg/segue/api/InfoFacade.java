@@ -20,6 +20,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -33,25 +41,16 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.EntityTag;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 
 /**
  * Info Facade
- * 
+ * <p>
  * This facade is intended to provide access to meta data about the current running system.
  * 
  */
@@ -68,6 +67,8 @@ public class InfoFacade extends AbstractSegueFacade {
      *            - to allow access to system properties.
      * @param contentManager
      *            - So that metadata about content can be accessed.
+     * @param segueJobService
+     *            - for checking is the job scheduling service is running.
      * @param logManager
      *            - for logging events using the logging api.
      */
@@ -177,7 +178,7 @@ public class InfoFacade extends AbstractSegueFacade {
             e.printStackTrace();
         }
 
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();
@@ -207,7 +208,7 @@ public class InfoFacade extends AbstractSegueFacade {
             e.printStackTrace();
         }
 
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();
@@ -236,7 +237,7 @@ public class InfoFacade extends AbstractSegueFacade {
             log.warn("Error when checking status of ETL server: " + e.toString());
         }
 
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();
@@ -268,7 +269,7 @@ public class InfoFacade extends AbstractSegueFacade {
 
         // FIXME - this assumes a 200 means all is ok.
         // It's likely that a real problem with clustering would also lead to a 200!
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();

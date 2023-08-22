@@ -280,6 +280,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 				- the user object for the user sending the email
      * @param emailTemplate
      *              - the subject of the email
+     * @param allSelectedUsers
+     *              - a list of user objects for the users to send the email to
      * @param emailType
      * 				- the type of email to send (affects who receives it)
      * @throws SegueDatabaseException
@@ -332,7 +334,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * This method checks the database for the user's email preferences and either adds them to 
      * the queue, or filters them out.
-     *
+     * <p>
      * This method will also check to see if the email type is allowed to be filtered by preference first
      * e.g. SYSTEM emails cannot be filtered
      * 
@@ -401,7 +403,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * Method to take a random (potentially nested map) and flatten it into something where values can be easily extracted
      * for email templates.
-     *
+     * <p>
      * Nested fields are addressed as per json objects and separated with the dot operator.
      *
      * @param inputMap - A map of string to random object
@@ -409,8 +411,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param keyPrefix - the key prefix - used for recursively creating the map key.
      * @return a flattened map for containing strings that can be used in email template replacement.
      */
-     public Map<String, String> flattenTokenMap(final Map<String, Object> inputMap, final Map<String, String> outputMap,
-                                                String keyPrefix) {
+    public Map<String, String> flattenTokenMap(final Map<String, Object> inputMap, final Map<String, String> outputMap,
+                                               String keyPrefix) {
         if (null == keyPrefix) {
             keyPrefix = "";
         }
@@ -458,7 +460,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
-     * helper function to map a value to an email friendly string
+     * helper function to map a value to an email friendly string.
      *
      * @param o - object to map
      * @return more sensible string representation or null
@@ -503,8 +505,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
      *
+     * @param content
+     *            the content template
      * @param templateProperties
      *            list of properties from which we can fill in the template
+     * @param html
+     *            boolean for if html tags are required
      * @return template with completed fields
      */
     private String completeTemplateWithProperties(final String content, final Properties templateProperties, final boolean html) {
@@ -570,6 +576,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- (nullable) the id of the user the email should be sent to
      * @param userEmail
      * 		- the email of the user
+     * @param emailContent
+     *      - an EmailTemplateDTO with the content of the email
+     * @param contentProperties
+     *      - properties to apply to the template
      * @param emailType
      *      - the type of e-mail being created
      * @return
@@ -580,9 +590,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- if the resource has not been found
      *
      */
-    public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
-                                                             EmailTemplateDTO emailContent, Properties contentProperties,
-                                                             final EmailType emailType)
+    public EmailCommunicationMessage constructMultiPartEmail(
+            @Nullable final Long userId, final String userEmail,
+            final EmailTemplateDTO emailContent, final Properties contentProperties,
+            final EmailType emailType)
             throws ContentManagerException, ResourceNotFoundException {
         return this.constructMultiPartEmail(userId, userEmail, emailContent, contentProperties, emailType, null);
     }
@@ -593,7 +604,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param userId
      * 		- (nullable) the id of the user the email should be sent to
      * @param userEmail
-     * 		- the email of the user 
+     * 		- the email of the user
+     * @param emailContent
+     *      - an EmailTemplateDTO with the content of the email
+     * @param contentProperties
+     *      - properties to apply to the template
      * @param emailType
      *      - the type of e-mail being created
      * @param attachments
@@ -606,10 +621,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- if the resource has not been found
      * 	
      */
-    public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
-                                         EmailTemplateDTO emailContent, Properties contentProperties,
-                                         final EmailType emailType, @Nullable final List<EmailAttachment> attachments)
-                    throws ContentManagerException, ResourceNotFoundException {
+    public EmailCommunicationMessage constructMultiPartEmail(
+            @Nullable final Long userId, final String userEmail,
+            final EmailTemplateDTO emailContent, final Properties contentProperties,
+            final EmailType emailType, @Nullable final List<EmailAttachment> attachments)
+            throws ContentManagerException, ResourceNotFoundException {
         Validate.notNull(userEmail);
         Validate.notEmpty(userEmail);
 
@@ -619,7 +635,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         contentPropertiesToUse.putAll(contentProperties);
 
         String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentPropertiesToUse);
-        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentPropertiesToUse, true);
+        String htmlContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentPropertiesToUse, true);
 
         // Extract from address and reply to addresses:
         String overrideFromAddress = emailContent.getOverrideFromAddress();
@@ -637,7 +653,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         ContentDTO plainTextTemplate = getContentDTO("email-template-ascii");
 
         Properties htmlTemplateProperties = new Properties();
-        htmlTemplateProperties.put("content", HTMLContent);
+        htmlTemplateProperties.put("content", htmlContent);
         htmlTemplateProperties.put("email", userEmail);
         htmlTemplateProperties.putAll(this.globalStringTokens);
 

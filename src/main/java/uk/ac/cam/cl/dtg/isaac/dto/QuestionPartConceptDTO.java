@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Meurig Thomas
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.google.api.client.util.Lists;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.FASTTRACK_LEVEL;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.FastTrackLevel;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class QuestionPartConceptDTO {
     private String title;
-    private FASTTRACK_LEVEL bestLevel;
+    private FastTrackLevel bestLevel;
     private List<GameboardItem> upperQuestions;
     private List<GameboardItem> lowerQuestions;
 
@@ -43,14 +43,14 @@ public class QuestionPartConceptDTO {
      * @param title
      *            of the FastTrack concept.
      */
-    public QuestionPartConceptDTO(String title) {
+    public QuestionPartConceptDTO(final String title) {
         this.title = title;
     }
 
     /**
      * Get the title of the concept.
      *
-     * @return the the title of the concept.
+     * @return the title of the concept.
      */
     public final String getTitle() {
         return this.title;
@@ -71,7 +71,7 @@ public class QuestionPartConceptDTO {
      *
      * @return the best level.
      */
-    public final FASTTRACK_LEVEL getBestLevel() {
+    public final FastTrackLevel getBestLevel() {
         return this.bestLevel;
     }
 
@@ -81,7 +81,7 @@ public class QuestionPartConceptDTO {
      * @param bestLevel
      *            to set for this concept.
      */
-    public final void setBestLevel(FASTTRACK_LEVEL bestLevel) {
+    public final void setBestLevel(final FastTrackLevel bestLevel) {
         this.bestLevel = bestLevel;
     }
 

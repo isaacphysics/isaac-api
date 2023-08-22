@@ -48,8 +48,8 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    RegisteredUser registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
-            final String providerUserId) throws SegueDatabaseException;
+    RegisteredUser registerNewUserWithProvider(RegisteredUser user, AuthenticationProvider provider, String providerUserId)
+            throws SegueDatabaseException;
 
     /**
      * Determine whether the user has at least one linked account.
@@ -71,8 +71,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
-            throws SegueDatabaseException;
+    List<AuthenticationProvider> getAuthenticationProvidersByUser(RegisteredUser user) throws SegueDatabaseException;
 
     /**
      * Get all the linked accounts by users in a list.
@@ -83,11 +82,11 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users)
+    Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(List<RegisteredUser> users)
             throws SegueDatabaseException;
 
     /**
-     * Get UserAuthenticationSettings Object
+     * Get UserAuthenticationSettings Object.
      * This object provides information on how a user can login based on linked accounts and if they have a Segue account
      *
      * @param userId - user of interest
@@ -106,8 +105,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(final List<RegisteredUser> users)
-            throws SegueDatabaseException;
+    Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException;
 
     /**
      * Find a user by their linked account information.
@@ -120,8 +118,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    RegisteredUser getByLinkedAccount(final AuthenticationProvider provider, final String providerUserId)
-            throws SegueDatabaseException;
+    RegisteredUser getByLinkedAccount(AuthenticationProvider provider, String providerUserId) throws SegueDatabaseException;
 
     /**
      * Creates a link record, connecting a local user to an external provider for authentication purposes.
@@ -136,15 +133,15 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    boolean linkAuthProviderToAccount(final RegisteredUser user, final AuthenticationProvider provider,
-            final String providerUserId) throws SegueDatabaseException;
+    boolean linkAuthProviderToAccount(RegisteredUser user, AuthenticationProvider provider, String providerUserId)
+            throws SegueDatabaseException;
 
     /**
      * Unlink providerFromUser.
-     * 
+     * <p>
      * This will delete the entry in the linkedAccounts table and prevent a user from authenticating using that linked
      * account in the future.
-     * 
+     * <p>
      * Note: It is best practice to make sure the user can login with some other means before doing this.
      * 
      * @param user
@@ -154,8 +151,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - if we have a problem accessing the database.
      */
-    void unlinkAuthProviderFromUser(final RegisteredUser user, final AuthenticationProvider provider)
-            throws SegueDatabaseException;
+    void unlinkAuthProviderFromUser(RegisteredUser user, AuthenticationProvider provider) throws SegueDatabaseException;
 
     /**
      * @param id user id
@@ -184,7 +180,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    RegisteredUser getByEmail(final String email) throws SegueDatabaseException;
+    RegisteredUser getByEmail(String email) throws SegueDatabaseException;
 
     /**
      * Find users by a prototype.
@@ -217,7 +213,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException;
+    RegisteredUser getByEmailVerificationToken(String token) throws SegueDatabaseException;
 
     /**
      * Update user object in the data store.
@@ -239,7 +235,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void deleteUserAccount(final RegisteredUser userToDelete) throws SegueDatabaseException;
+    void deleteUserAccount(RegisteredUser userToDelete) throws SegueDatabaseException;
 
     /**
      * Merge two user accounts by id.
@@ -251,7 +247,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void mergeUserAccounts(final RegisteredUser target, final RegisteredUser source) throws SegueDatabaseException;
+    void mergeUserAccounts(RegisteredUser target, RegisteredUser source) throws SegueDatabaseException;
 
     /**
      * A method that will allow us to measure how active a user's account is.
@@ -261,7 +257,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException;
+    void updateUserLastSeen(RegisteredUser user) throws SegueDatabaseException;
 
     /**
      * A method that will allow us to measure how active a user's account is.
@@ -273,7 +269,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException;
+    void updateUserLastSeen(RegisteredUser user, Date date) throws SegueDatabaseException;
 
     /**
      * Update the session token of a user object in the data store to a randomly generated value.
@@ -302,7 +298,7 @@ public interface IUserDataManager {
     void updateSessionToken(RegisteredUser user, Integer newTokenValue) throws SegueDatabaseException;
 
     /**
-     * Count all the users by role and return a map
+     * Count all the users by role and return a map.
      * @return map of user role to integers
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
@@ -310,7 +306,7 @@ public interface IUserDataManager {
     Map<Role, Long> getRoleCount() throws SegueDatabaseException;
 
     /**
-     * Count the users by role seen over the previous time interval
+     * Count the users by role seen over the previous time interval.
      * @param timeInterval time interval over which to count
      * @return map of counts for each role
      * @throws SegueDatabaseException
@@ -319,7 +315,7 @@ public interface IUserDataManager {
     Map<Role, Long> getRolesLastSeenOver(TimeInterval timeInterval) throws SegueDatabaseException;
 
     /**
-     * Count users' reported genders
+     * Count users' reported genders.
      * @return map of counts for each gender.
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
@@ -327,7 +323,7 @@ public interface IUserDataManager {
     Map<Gender, Long> getGenderCount() throws SegueDatabaseException;
 
     /**
-     * Count users' reported school information
+     * Count users' reported school information.
      * @return map of counts for students who have provided or not provided school information
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.

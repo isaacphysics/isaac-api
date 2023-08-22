@@ -5,7 +5,7 @@ package uk.ac.cam.cl.dtg.segue.etl;
  */
 public class VersionLockedException extends Exception {
 
-    VersionLockedException(String version) {
+    VersionLockedException(final String version) {
         super("Failed to acquire lock for version " + version);
     }
 }

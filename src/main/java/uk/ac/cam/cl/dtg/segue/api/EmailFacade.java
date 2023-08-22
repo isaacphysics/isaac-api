@@ -118,9 +118,9 @@ public class EmailFacade extends AbstractSegueFacade {
     
     /**
      * GetEmailInBrowserById from the database.
-     * 
+     * <p>
      * This method will return serialised html that displays an email object
-     *
+     * <p>
      * FIXME - this cannot be used for more complicated templated emails, only those using account info!
      * (i.e. events emails or assignment emails cannot be previewed like this!)
      * 
@@ -304,17 +304,15 @@ public class EmailFacade extends AbstractSegueFacade {
             log.error(String.format("Invalid parameters sent to /users/verifyemail endpoint: (%s)", e.getMessage()));
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
             log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)",
                     payload.get("email")));
-            return SegueErrorResponse.getRateThrottledResponse(message);
+            return SegueErrorResponse.getRateThrottledResponse(TOO_MANY_REQUESTS);
         }
     }
 
     /**
      * SendEmails
-     *
+     * <p>
      * Send emails to all users of specified roles if their email preferences allow it.
      *
      * @param request
@@ -399,7 +397,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
     /**
      * sendemailwithuserids allows sending an email to a given list of userids.
-     * 
+     * <p>
      * This method will return serialised html that displays an email object
      * 
      * @param request
@@ -440,9 +438,9 @@ public class EmailFacade extends AbstractSegueFacade {
             if (isUserAnEventManager(userManager, sender)) {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
-                    return SegueErrorResponse
-                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
-                                    " No emails have been sent.");
+                    return SegueErrorResponse.getRateThrottledResponse(
+                            "You would have exceeded the number of emails you are allowed to send per day."
+                                    + " No emails have been sent.");
                 }
                 misuseMonitor.notifyEvent(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
@@ -496,7 +494,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
     /**
      * sendemailwithuserids allows sending an email to a given list of userids.
-     *
+     * <p>
      * This method will return 200 ok
      *
      * @param request
@@ -518,7 +516,10 @@ public class EmailFacade extends AbstractSegueFacade {
                                               final ContentEmailDTO providedTemplate) {
         final EmailTemplateDTO emailTemplate = providedTemplate.getEmailTemplate();
 
-        if (Strings.isNullOrEmpty(emailTemplate.getPlainTextContent()) || Strings.isNullOrEmpty(emailTemplate.getHtmlContent()) || Strings.isNullOrEmpty(emailTemplate.getSubject())) {
+        if (Strings.isNullOrEmpty(emailTemplate.getPlainTextContent())
+                || Strings.isNullOrEmpty(emailTemplate.getHtmlContent())
+                || Strings.isNullOrEmpty(emailTemplate.getSubject())
+        ) {
             return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate, htmlTemplate and emailSubject");
         }
 
@@ -544,8 +545,8 @@ public class EmailFacade extends AbstractSegueFacade {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
                     return SegueErrorResponse
-                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
-                                    " No emails have been sent.");
+                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day."
+                                    + " No emails have been sent.");
                 }
                 misuseMonitor.notifyEvent(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size());

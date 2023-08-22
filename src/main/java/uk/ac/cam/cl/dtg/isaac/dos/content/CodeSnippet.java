@@ -1,12 +1,12 @@
 /**
  * Copyright 2021 Ben Hanson
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,16 +18,16 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.CodeSnippetDTO;
 
 /**
- * Code snippet object
+ * Code snippet object.
  *
  */
 @DTOMapping(CodeSnippetDTO.class)
 @JsonContentType("codeSnippet")
 public class CodeSnippet extends Content {
-    protected String language;
-    protected String code;
-    protected boolean disableHighlighting;
-    protected String url;
+    private String language;
+    private String code;
+    private boolean disableHighlighting;
+    private String url;
 
     /**
      * Default constructor, required for mappers.

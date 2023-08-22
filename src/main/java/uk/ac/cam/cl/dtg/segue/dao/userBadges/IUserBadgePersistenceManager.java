@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 public interface IUserBadgePersistenceManager {
 
     /**
-     * Gets the current state of a user badge from the database
+     * Gets the current state of a user badge from the database.
      *
      * @param user owner of badge record
      * @param badgeName enum of badge to be updated
@@ -23,12 +23,12 @@ public interface IUserBadgePersistenceManager {
     UserBadge getBadge(RegisteredUserDTO user, UserBadgeManager.Badge badgeName, ITransaction transaction) throws SegueDatabaseException;
 
     /**
-     * Updates the state of a user badge to the database
+     * Updates the state of a user badge to the database.
      *
      * @param badge a user badge object
      * @param transaction object which carries database transaction across multiple functions
      * @throws SegueDatabaseException
      */
-    public void updateBadge(UserBadge badge, ITransaction transaction) throws SegueDatabaseException;
+    void updateBadge(UserBadge badge, ITransaction transaction) throws SegueDatabaseException;
 
 }

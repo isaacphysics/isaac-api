@@ -6,7 +6,7 @@ public class QuizAttemptFeedbackDTO {
     private UserSummaryDTO user;
     private QuizAttemptDTO attempt;
 
-    public QuizAttemptFeedbackDTO(UserSummaryDTO user, QuizAttemptDTO attempt) {
+    public QuizAttemptFeedbackDTO(final UserSummaryDTO user, final QuizAttemptDTO attempt) {
         this.user = user;
         this.attempt = attempt;
     }

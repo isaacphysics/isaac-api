@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * SegueContextListener
- * 
+ * <p>
  * A class alerts any registered segue listeners as to the servlet context.
  * 
  * @author Stephen Cummins
@@ -23,7 +23,7 @@ import java.util.List;
 public class SegueContextNotifier implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueContextNotifier.class);
 
-    public static Injector injector;
+    private static Injector injector;
 
     private final IMetricsExporter metricsExporter;
     private final List<ServletContextListener> listeners;
@@ -52,6 +52,14 @@ public class SegueContextNotifier implements ServletContextListener {
             log.debug("Registering context listener: " + segueListener.toString());
             listeners.add(injector.getInstance(segueListener));
         }
+    }
+
+    public static Injector getInjector() {
+        return injector;
+    }
+
+    public static void setInjector(final Injector injector) {
+        SegueContextNotifier.injector = injector;
     }
 
     @Override

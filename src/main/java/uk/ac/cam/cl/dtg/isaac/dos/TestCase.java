@@ -21,7 +21,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 public class TestCase extends QuestionValidationResponse {
     private Boolean expected;
 
-    public void setExpected(Boolean expected) {
+    public void setExpected(final Boolean expected) {
         this.expected = expected;
     }
     public Boolean getExpected() {

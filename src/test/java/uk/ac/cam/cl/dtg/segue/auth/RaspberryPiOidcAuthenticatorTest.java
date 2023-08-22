@@ -22,7 +22,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -51,10 +50,10 @@ public class RaspberryPiOidcAuthenticatorTest {
         // Arrange & Act - done in setUp()
 
         // Assert
-        assertEquals("https://notreal-auth-v1.raspberrypi.org/", authenticator.idpMetadata.getIssuer());
-        assertEquals("https://notreal-auth-v1.raspberrypi.org/oauth2/auth", authenticator.idpMetadata.getAuthorizationEndpoint());
-        assertEquals( "https://notreal-auth-v1.raspberrypi.org/oauth2/token", authenticator.idpMetadata.getTokenEndpoint());
-        assertEquals( "https://notreal-auth-v1.raspberrypi.org/.well-known/jwks.json", authenticator.idpMetadata.getJwksUri());
+        assertEquals("https://notreal-auth-v1.raspberrypi.org/", authenticator.getIdpMetadata().getIssuer());
+        assertEquals("https://notreal-auth-v1.raspberrypi.org/oauth2/auth", authenticator.getIdpMetadata().getAuthorizationEndpoint());
+        assertEquals( "https://notreal-auth-v1.raspberrypi.org/oauth2/token", authenticator.getIdpMetadata().getTokenEndpoint());
+        assertEquals( "https://notreal-auth-v1.raspberrypi.org/.well-known/jwks.json", authenticator.getIdpMetadata().getJwksUri());
     }
 
     /**

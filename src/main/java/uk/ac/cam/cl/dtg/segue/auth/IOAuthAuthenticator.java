@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Nick Rogers & Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,10 +37,10 @@ public interface IOAuthAuthenticator extends IFederatedAuthenticator {
 	/**
 	 * Step 3 of OAUTH - Exchange short term authorisation code for an access
 	 * token which can be used to authenticate the user.
-	 * 
+	 * <p>
 	 * This method will contact the oauth provider directly to exchange the
 	 * authorisation code for a token.
-	 * 
+	 * <p>
 	 * This method returns an internal reference which will allow it to look up
 	 * the 3rd party token. e.g. if you call an IFederatedAuthenticator method
 	 * getUserDetails - it will require this internal reference.

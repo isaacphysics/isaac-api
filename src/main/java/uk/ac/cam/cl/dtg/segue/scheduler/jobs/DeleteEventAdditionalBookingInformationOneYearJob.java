@@ -7,7 +7,6 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
@@ -48,7 +47,7 @@ public class DeleteEventAdditionalBookingInformationOneYearJob implements Job {
                 + " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']"
                 + " AND pii_removed IS NULL";
             try (Connection conn = database.getDatabaseConnection();
-                 PreparedStatement pst = conn.prepareStatement(query);
+                 PreparedStatement pst = conn.prepareStatement(query)
             ) {
                 pst.setTimestamp(1, Timestamp.valueOf(now.toLocalDateTime()));
                 pst.setTimestamp(2, Timestamp.valueOf(oneYearAgo.toLocalDateTime()));

@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 /**
- * This DTO records an error during attempting to set an assignment to a group
+ * This DTO records an error during attempting to set an assignment to a group.
  */
 public class AssignmentStatusDTO {
     private Long groupId;

@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,18 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import java.io.IOException;
-
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+
+import java.io.IOException;
 
 /**
  * Classes that implement this interface must provide some way (via another
  * interface) of allowing a user to be authenticated. The result of this
  * authentication should be some unique reference that when provided to this
  * class will allow us to extract user information from the external provider.
- * 
+ * <p>
  * The exact specification of the unique reference number is up to the
  * implementing class as long as it can be used to gain information about a
  * specific user.

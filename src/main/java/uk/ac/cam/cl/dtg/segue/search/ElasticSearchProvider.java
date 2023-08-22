@@ -76,6 +76,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_MAX_WINDOW_SIZE;
 
 
 /**
@@ -88,12 +89,12 @@ public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
     private static final String ES_FIELD_CONNECTOR = ".";
 
-    protected final RestHighLevelClient client;
+    private final RestHighLevelClient client;
 
     // to try and improve performance of searches with a -1 limit.
     private static final int LARGE_LIMIT = 100;
 
-    private static final int DEFAULT_MAX_WINDOW_SIZE = 10000;
+    private static final long CACHE_EXPIRY_MINUTES = 10;
 
     // used to optimise index setting retrieval as these probably don't change every request.
     private final Cache<String, String> settingsCache;
@@ -111,7 +112,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Inject
     public ElasticSearchProvider(final RestHighLevelClient searchClient) {
         this.client = searchClient;
-        this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(10, TimeUnit.MINUTES).build();
+        this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES).build();
     }
 
     @Override
@@ -238,24 +239,24 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> termSearch(final String indexBase, final String indexType,
-                                             final String searchTerm, final String field, final int startIndex, final int limit,
+                                             final String searchTerms, final String field, final int startIndex, final int limit,
                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
-        if (null == indexBase || null == indexType || (null == searchTerm && null != field)) {
+        if (null == indexBase || null == indexType || null == searchTerms && null != field) {
             log.error("A required field or field combination is missing. Unable to execute search.");
             return null;
         }
 
         BoolQueryBuilder query = QueryBuilders.boolQuery();
-        if (searchTerm != null) {
-            query.must(QueryBuilders.termQuery(field, searchTerm));
+        if (searchTerms != null) {
+            query.must(QueryBuilders.termQuery(field, searchTerms));
         }
 
         if (filterInstructions != null) {
             query.filter(generateFilterQuery(filterInstructions));
         }
 
-        if (null == searchTerm && null == filterInstructions) {
+        if (null == searchTerms && null == filterInstructions) {
             throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
         }
 
@@ -318,13 +319,13 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> findByExactMatch(final String indexBase, final String indexType,
-                                                   final String fieldname, final String needle, final int startIndex,
+                                                   final String fieldName, final String needle, final int startIndex,
                                                    final int limit,
                                                    final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         ResultsWrapper<String> resultList;
 
-        QueryBuilder query = QueryBuilders.matchQuery(fieldname, needle);
+        QueryBuilder query = QueryBuilders.matchQuery(fieldName, needle);
 
         if (filterInstructions != null) {
             query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
@@ -509,7 +510,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     /**
      * Provides default search execution using the fields specified.
-     *
+     * <p>
      * This method does not provide any way of controlling sort order or limiting information returned. It is most
      * useful for doing simple searches with fewer results e.g. by id.
      *
@@ -533,7 +534,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     /**
      * Provides default search execution using the fields specified.
-     *
+     * <p>
      * This method does not provide any way of controlling sort order or limiting information returned. It is most
      * useful for doing simple searches with fewer results e.g. by id.
      *
@@ -547,6 +548,8 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - start index for results
      * @param limit
      *            - the maximum number of results to return -1 will attempt to return all results.
+     * @param sortInstructions
+     *            - a map of fields to sorting orders (ASC/DESC)
      * @return list of the search results
      */
     private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
@@ -571,10 +574,10 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         // execute another query to get all results as this is an unlimited
         // query.
-        if (isUnlimitedSearch && (results.getResults().size() < results.getTotalResults())) {
+        if (isUnlimitedSearch && results.getResults().size() < results.getTotalResults()) {
             if (results.getTotalResults() > this.getMaxResultSize(indexBase, indexType)) {
-                throw new SegueSearchException(String.format("The search you have requested " +
-                        "exceeds the maximum number of results that can be returned at once (%s).",
+                throw new SegueSearchException(String.format("The search you have requested  exceeds the maximum "
+                                + "number of results that can be returned at once (%s).",
                         this.getMaxResultSize(indexBase, indexType)));
             }
 
@@ -643,7 +646,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         if (matchInstruction instanceof BooleanMatchInstruction) {
             BooleanMatchInstruction booleanMatch = (BooleanMatchInstruction) matchInstruction;
             BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for (AbstractMatchInstruction should : booleanMatch.getShoulds()){
+            for (AbstractMatchInstruction should : booleanMatch.getShoulds()) {
                 query.should(processMatchInstructions(should));
             }
             for (AbstractMatchInstruction must : booleanMatch.getMusts()) {
@@ -657,9 +660,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 query.boost(booleanMatch.getBoost());
             }
             return query;
-        }
-
-        else if (matchInstruction instanceof ShouldMatchInstruction) {
+        } else if (matchInstruction instanceof ShouldMatchInstruction) {
             ShouldMatchInstruction shouldMatch = (ShouldMatchInstruction) matchInstruction;
             MatchQueryBuilder matchQuery = QueryBuilders
                     .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
@@ -667,14 +668,10 @@ public class ElasticSearchProvider implements ISearchProvider {
                 matchQuery.fuzziness(Fuzziness.AUTO);
             }
             return matchQuery;
-        }
-
-        else if (matchInstruction instanceof MustMatchInstruction) {
+        } else if (matchInstruction instanceof MustMatchInstruction) {
             MustMatchInstruction mustMatch = (MustMatchInstruction) matchInstruction;
             return QueryBuilders.matchQuery(mustMatch.getField(), mustMatch.getValue());
-        }
-
-        else if (matchInstruction instanceof RangeMatchInstruction) {
+        } else if (matchInstruction instanceof RangeMatchInstruction) {
             RangeMatchInstruction rangeMatch = (RangeMatchInstruction) matchInstruction;
             RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
             if (rangeMatch.getGreaterThan() != null) {
@@ -690,9 +687,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 rangeQuery.gt(rangeMatch.getLessThan());
             }
             return rangeQuery;
-        }
-
-        else {
+        } else {
             throw new SegueSearchException(
                     "Processing match instruction which is not supported: " + matchInstruction.getClass());
         }
@@ -710,7 +705,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(10000).fetchSource(true);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(DEFAULT_MAX_WINDOW_SIZE).fetchSource(true);
         try {
             return client.search(new SearchRequest(typedIndex).source(sourceBuilder), RequestOptions.DEFAULT);
         } catch (IOException e) {
@@ -721,35 +716,40 @@ public class ElasticSearchProvider implements ISearchProvider {
     /**
      * This method returns the maximum window size. i.e. the number of results that can be returned in a single result
      * set without having to do a special scroll query.
-     *
+     * <p>
      * This is a configurable value but the default Elastic Search value is 10,000.
-     *
+     * <p>
      * TODO: we may want to selectively upgrade queries to scroll requests if exceeding this limit.
      *
      * @param indexBase - to look up
+     * @param indexType - type of index as registered with search provider
      * @return the configured index max window size or a default,
-     * if a request exceeds this an error will be thrown. (or we should use the scroll api.
+     * if a request exceeds this an error will be thrown. (or we should use the scroll api.)
      */
     private int getMaxResultSize(final String indexBase, final String indexType) {
         final String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
-            final String MAX_WINDOW_SIZE_KEY = typedIndex + "_" + "MAX_WINDOW_SIZE";
-            String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
-            if (null == max_window_size) {
+            final String maxWindowSizeKey = typedIndex + "_" + "MAX_WINDOW_SIZE";
+            String maxWindowSize = this.settingsCache.getIfPresent(maxWindowSizeKey);
+            if (null == maxWindowSize) {
                 Map<String, Settings> response = client.indices().get(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT).getSettings();
                 for (Settings settings : response.values()) {
                     if (null == settings) {
                         continue;
                     }
-                    this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(typedIndex + ".max_result_window",
+                    this.settingsCache.put(maxWindowSizeKey, settings.get(typedIndex + ".max_result_window",
                             Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
                 }
             }
-            return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));
+            return Integer.parseInt(this.settingsCache.getIfPresent(maxWindowSizeKey));
         } catch (IOException e) {
             log.error(String.format("Failed to retrieve max window size settings for index %s - defaulting to %d",
                     typedIndex, DEFAULT_MAX_WINDOW_SIZE), e);
             return DEFAULT_MAX_WINDOW_SIZE;
         }
+    }
+
+    public RestHighLevelClient getClient() {
+        return client;
     }
 }

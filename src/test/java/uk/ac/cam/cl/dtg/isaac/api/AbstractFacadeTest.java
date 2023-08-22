@@ -58,7 +58,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 /**
  * A test base for testing Facades, specifically targeted around testing facades as different users.
- *
+ * <p>
  * A typical test case using this class can look like:
  *
  * <pre>{@code
@@ -134,7 +134,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     /**
      * Run tests on an endpoint with different parameters.
-     *
+     * <p>
      * Only supports varying one parameter to the endpoint. Use multiple calls to vary multiple parameters.
      */
     @SafeVarargs
@@ -208,7 +208,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     /**
      * Run checks for all users that haven't be specifically "as"-ed in this block.
-     *
+     * <p>
      * Use `everyoneElse(...)` instead of `as(anyOf(thatOtherUser, andTheOtherOne, andTheLastOne), ...)`
      */
     protected Testcase everyoneElse(Step... steps) {
@@ -217,7 +217,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     /**
      * Add one or more expectations to a mock. The mock is passed in as an argument to the consumer.
-     *
+     * <p>
      * e.g. <code>prepare(someManager, m -> expect(m.someMethodCall(someArgs)).andReturn(someResult))</code>
      */
     protected <T> PrepareStep<T> prepare(T mock, MockConfigurer<T> preparation) {

@@ -30,9 +30,9 @@ public class UserExternalAccountChanges {
     private Boolean allowsNewsEmails;
     private Boolean allowsEventsEmails;
 
-    public UserExternalAccountChanges(Long userId, String providerUserId, String accountEmail, Role role,
-                                      String givenName, Boolean deleted, EmailVerificationStatus emailVerificationStatus,
-                                      Boolean allowsNewsEmails, Boolean allowsEventsEmails) {
+    public UserExternalAccountChanges(final Long userId, final String providerUserId, final String accountEmail, final Role role,
+                                      final String givenName, final Boolean deleted, final EmailVerificationStatus emailVerificationStatus,
+                                      final Boolean allowsNewsEmails, final Boolean allowsEventsEmails) {
         this.userId = userId;
         this.providerUserId = providerUserId;
         this.accountEmail = accountEmail;
@@ -48,7 +48,7 @@ public class UserExternalAccountChanges {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(final Long userId) {
         this.userId = userId;
     }
 
@@ -56,7 +56,7 @@ public class UserExternalAccountChanges {
         return providerUserId;
     }
 
-    public void setProviderUserId(String providerUserId) {
+    public void setProviderUserId(final String providerUserId) {
         this.providerUserId = providerUserId;
     }
 
@@ -64,7 +64,7 @@ public class UserExternalAccountChanges {
         return accountEmail;
     }
 
-    public void setAccountEmail(String accountEmail) {
+    public void setAccountEmail(final String accountEmail) {
         this.accountEmail = accountEmail;
     }
 
@@ -72,7 +72,7 @@ public class UserExternalAccountChanges {
         return role;
     }
 
-    public void setRole(Role role) {
+    public void setRole(final Role role) {
         this.role = role;
     }
 
@@ -80,7 +80,7 @@ public class UserExternalAccountChanges {
         return givenName;
     }
 
-    public void setGivenName(String givenName) {
+    public void setGivenName(final String givenName) {
         this.givenName = givenName;
     }
 
@@ -88,7 +88,7 @@ public class UserExternalAccountChanges {
         return deleted;
     }
 
-    public void setDeleted(Boolean deleted) {
+    public void setDeleted(final Boolean deleted) {
         this.deleted = deleted;
     }
 
@@ -96,7 +96,7 @@ public class UserExternalAccountChanges {
         return emailVerificationStatus;
     }
 
-    public void setEmailVerificationStatus(EmailVerificationStatus emailVerificationStatus) {
+    public void setEmailVerificationStatus(final EmailVerificationStatus emailVerificationStatus) {
         this.emailVerificationStatus = emailVerificationStatus;
     }
 
@@ -104,7 +104,7 @@ public class UserExternalAccountChanges {
         return allowsNewsEmails;
     }
 
-    public void setAllowsNewsEmails(Boolean allowsNewsEmails) {
+    public void setAllowsNewsEmails(final Boolean allowsNewsEmails) {
         this.allowsNewsEmails = allowsNewsEmails;
     }
 
@@ -112,7 +112,7 @@ public class UserExternalAccountChanges {
         return allowsEventsEmails;
     }
 
-    public void setAllowsEventsEmails(Boolean allowsEventsEmails) {
+    public void setAllowsEventsEmails(final Boolean allowsEventsEmails) {
         this.allowsEventsEmails = allowsEventsEmails;
     }
 

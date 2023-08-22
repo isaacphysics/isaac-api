@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Connor Holloway
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with teacher password reset requests.
- * 
+ * <p>
  * Separate from PasswordResetRequestMisuseHandler since teachers may need to reset the passwords of numerous
  * students within a short period of time.
  * 

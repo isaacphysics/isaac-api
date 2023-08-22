@@ -48,7 +48,7 @@ import java.util.List;
 
 /**
  * This facade is to support the sending of notifications to lots of users. 
- * 
+ * <p>
  * Currently we support sending something like a user study participation request to all users.
  */
 @Path("/notifications")

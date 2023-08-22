@@ -41,26 +41,26 @@ public class IsaacQuiz extends SeguePage {
 
     @JsonCreator
     public IsaacQuiz(
-            @JsonProperty("id") String id, @JsonProperty("title") String title,
-            @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type,
-            @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding,
-            @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout,
-            @JsonProperty("children") List<ContentBase> children,
-            @JsonProperty("value") String value,
-            @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<String> relatedContent,
-            @JsonProperty("version") boolean published,
-            @JsonProperty("deprecated") Boolean deprecated,
-            @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level,
-            @JsonProperty("visibleToStudents") boolean visibleToStudents,
-            @JsonProperty("hiddenFromRoles") List<String> hiddenFromRoles,
-            @JsonProperty("rubric") Content rubric){
-        super(id, title, subtitle, type, author, encoding,
-                canonicalSourceFile, layout, children, value, attribution,
+            @JsonProperty("id") final String id,
+            @JsonProperty("title") final String title,
+            @JsonProperty("subtitle") final String subtitle,
+            @JsonProperty("type") final String type,
+            @JsonProperty("author") final String author,
+            @JsonProperty("encoding") final String encoding,
+            @JsonProperty("canonicalSourceFile") final String canonicalSourceFile,
+            @JsonProperty("layout") final String layout,
+            @JsonProperty("children") final List<ContentBase> children,
+            @JsonProperty("value") final String value,
+            @JsonProperty("attribution") final String attribution,
+            @JsonProperty("relatedContent") final List<String> relatedContent,
+            @JsonProperty("version") final boolean published,
+            @JsonProperty("deprecated") final Boolean deprecated,
+            @JsonProperty("tags") final Set<String> tags,
+            @JsonProperty("level") final Integer level,
+            @JsonProperty("visibleToStudents") final boolean visibleToStudents,
+            @JsonProperty("hiddenFromRoles") final List<String> hiddenFromRoles,
+            @JsonProperty("rubric") final Content rubric) {
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, deprecated, tags, level);
 
         this.visibleToStudents = visibleToStudents;
@@ -81,7 +81,7 @@ public class IsaacQuiz extends SeguePage {
     }
 
     @Deprecated
-    public void setVisibleToStudents(boolean visibleToStudents) {
+    public void setVisibleToStudents(final boolean visibleToStudents) {
         this.visibleToStudents = visibleToStudents;
     }
 
@@ -89,7 +89,7 @@ public class IsaacQuiz extends SeguePage {
         return rubric;
     }
 
-    public void setRubric(Content rubric){
+    public void setRubric(final Content rubric) {
         this.rubric = rubric;
     }
 
@@ -97,7 +97,7 @@ public class IsaacQuiz extends SeguePage {
         return hiddenFromRoles;
     }
 
-    public void setHiddenFromRoles(List<String> hiddenFromRoles) {
+    public void setHiddenFromRoles(final List<String> hiddenFromRoles) {
         this.hiddenFromRoles = hiddenFromRoles;
     }
 }

@@ -21,9 +21,9 @@ import java.util.Objects;
 
 public class QuizFeedbackDTO {
     public static class Mark {
-        public Integer correct;
-        public Integer incorrect;
-        public Integer notAttempted;
+        private Integer correct;
+        private Integer incorrect;
+        private Integer notAttempted;
 
         public Mark() {
             this.correct = 0;
@@ -31,25 +31,53 @@ public class QuizFeedbackDTO {
             this.notAttempted = 0;
         }
 
-        public static Mark notAttempted(Integer notAttempted) {
+        public static Mark notAttempted(final Integer notAttempted) {
             Mark mark = new Mark();
             mark.notAttempted = notAttempted;
             return mark;
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Mark mark = (Mark) o;
-            return Objects.equals(correct, mark.correct) &&
-                Objects.equals(incorrect, mark.incorrect) &&
-                Objects.equals(notAttempted, mark.notAttempted);
+            return Objects.equals(getCorrect(), mark.getCorrect())
+                    && Objects.equals(incorrect, mark.incorrect)
+                    && Objects.equals(notAttempted, mark.notAttempted);
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(correct, incorrect, notAttempted);
+        }
+
+        public Integer getCorrect() {
+            return correct;
+        }
+
+        public void setCorrect(final Integer correct) {
+            this.correct = correct;
+        }
+
+        public Integer getIncorrect() {
+            return incorrect;
+        }
+
+        public void setIncorrect(final Integer incorrect) {
+            this.incorrect = incorrect;
+        }
+
+        public Integer getNotAttempted() {
+            return notAttempted;
+        }
+
+        public void setNotAttempted(final Integer notAttempted) {
+            this.notAttempted = notAttempted;
         }
     }
 
@@ -65,7 +93,7 @@ public class QuizFeedbackDTO {
     @Nullable
     private Map<String, Mark> questionMarks;
 
-    public QuizFeedbackDTO(Mark overallMark, Map<String, Mark> sectionMarks, Map<String, Mark> questionMarks) {
+    public QuizFeedbackDTO(final Mark overallMark, final Map<String, Mark> sectionMarks, final Map<String, Mark> questionMarks) {
         this.overallMark = overallMark;
         this.sectionMarks = sectionMarks;
         this.questionMarks = questionMarks;
@@ -87,25 +115,31 @@ public class QuizFeedbackDTO {
     }
 
     @Nullable
-    public Map<String, Mark> getQuestionMarks() { return questionMarks; }
+    public Map<String, Mark> getQuestionMarks() {
+        return questionMarks;
+    }
 
     @Nullable
     public Boolean isComplete() {
         return complete;
     }
 
-    public void setComplete(boolean complete) {
+    public void setComplete(final boolean complete) {
         this.complete = complete;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         QuizFeedbackDTO that = (QuizFeedbackDTO) o;
-        return Objects.equals(complete, that.complete) &&
-            Objects.equals(overallMark, that.overallMark) &&
-            Objects.equals(sectionMarks, that.sectionMarks);
+        return Objects.equals(complete, that.complete)
+                && Objects.equals(overallMark, that.overallMark)
+                && Objects.equals(sectionMarks, that.sectionMarks);
     }
 
     @Override

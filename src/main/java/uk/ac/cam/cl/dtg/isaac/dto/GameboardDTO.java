@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -79,6 +79,8 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      *            - User id of the owner of the gameboard.
      * @param creationMethod
      *            - Method used to construct this game board.
+     * @param tags
+     *            - Set of tags associated with the game board.
      */
     public GameboardDTO(final String id, final String title, final List<GameboardItem> contents,
                         final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
@@ -138,7 +140,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
         return contents;
     }
 
-    public void setContents(List<GameboardItem> contents) {
+    public void setContents(final List<GameboardItem> contents) {
         this.contents = contents;
     }
 
@@ -371,23 +373,23 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
 
     @Override
     public String toString() {
-        return "GameboardDTO [" +
-                "id='" + id + '\'' +
-                ", title='" + title + '\'' +
-                ", contents=" + contents +
-                ", wildCard=" + wildCard +
-                ", wildCardPosition=" + wildCardPosition +
-                ", creationDate=" + creationDate +
-                ", gameFilter=" + gameFilter +
-                ", ownerUserId=" + ownerUserId +
-                ", ownerUserInformation=" + ownerUserInformation +
-                ", tags=" + tags +
-                ", isSavedToCurrentUser=" + isSavedToCurrentUser +
-                ", creationMethod=" + creationMethod +
-                ", percentageCompleted=" + percentageCompleted +
-                ", lastVisited=" + lastVisited +
-                ", startedQuestion=" + startedQuestion +
-                ']';
+        return "GameboardDTO ["
+                + "id='" + id + '\''
+                + ", title='" + title + '\''
+                + ", contents=" + contents
+                + ", wildCard=" + wildCard
+                + ", wildCardPosition=" + wildCardPosition
+                + ", creationDate=" + creationDate
+                + ", gameFilter=" + gameFilter
+                + ", ownerUserId=" + ownerUserId
+                + ", ownerUserInformation=" + ownerUserInformation
+                + ", tags=" + tags
+                + ", isSavedToCurrentUser=" + isSavedToCurrentUser
+                + ", creationMethod=" + creationMethod
+                + ", percentageCompleted=" + percentageCompleted
+                + ", lastVisited=" + lastVisited
+                + ", startedQuestion=" + startedQuestion
+                + ']';
     }
 
     @Override

@@ -39,6 +39,9 @@ public class GroupMembership {
     /**
      * @param groupId - the group id
      * @param userId - the user id
+     * @param status - the group membership status
+     * @param created - the date the membership object was created
+     * @param updated - the date the membership object was last updated
      */
     public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created, final Date updated) {
         this.groupId = groupId;
@@ -87,7 +90,7 @@ public class GroupMembership {
     }
 
     /**
-     * Get the status of the group membership
+     * Get the status of the group membership.
      * @return the group status
      */
     public GroupMembershipStatus getStatus() {
@@ -95,10 +98,10 @@ public class GroupMembership {
     }
 
     /**
-     * set the status of the group membership
+     * set the status of the group membership.
      * @param status to set
      */
-    public void setStatus(GroupMembershipStatus status) {
+    public void setStatus(final GroupMembershipStatus status) {
         this.status = status;
     }
 

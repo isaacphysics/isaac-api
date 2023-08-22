@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -62,7 +62,7 @@ import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore;
 
 /**
  * This class is a representation of the Git Database and provides some helper methods to allow file access.
- * 
+ * <p>
  * It is responsible for providing basic functionality to search a specified Git Repository and find files based on a
  * given SHA.
  * 
@@ -77,7 +77,7 @@ public class GitDb {
 
     /**
      * Create a new instance of a GitDb object
-     * 
+     * <p>
      * This will immediately try and connect to the Git folder specified to check its validity.
      *
      * @param repoLocation
@@ -103,7 +103,7 @@ public class GitDb {
 
     /**
      * Create a new instance of a GitDb object.
-     * 
+     * <p>
      * This is meant to be used for unit testing, allowing injection of a mocked Git object.
      * 
      * @param gitHandle
@@ -120,7 +120,7 @@ public class GitDb {
 
     /**
      * getFileByCommitSHA
-     * 
+     * <p>
      * This method will access the git repository given a particular SHA and will attempt to locate a unique file and
      * return a bytearrayoutputstream of the files contents.
      * 
@@ -318,7 +318,7 @@ public class GitDb {
 
     /**
      * Gets a complete list of commits with the most recent commit first.
-     * 
+     * <p>
      * Will return null if there is a problem and will write a log to the configured logger with the stack trace.
      * 
      * @return List of the commit shas we have found in the git repository.

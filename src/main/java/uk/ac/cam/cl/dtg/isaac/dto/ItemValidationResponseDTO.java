@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  *  Class for providing correctness feedback about individual items in a submitted Choice.
- *
+ * <p>
  *  This is unlikely to be useful for {@link IsaacItemQuestion}'s, however, since to provide
  *  detailed correctness feedback on them would enable questions to be answered trivially.
  */

@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,10 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.eventbookings;
 
-import java.util.Date;
-
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+
+import java.util.Date;
 
 /**
  * @author sac92
@@ -55,6 +55,8 @@ public class EventBookingDTO {
      *            - id of the booking
      * @param userBooked
      *            - the user summary of the user booked on the event.
+     * @param reservedById
+     *            - the id of the user making the reservation
      * @param eventId
      *            - the event id
      * @param eventTitle
@@ -62,7 +64,11 @@ public class EventBookingDTO {
      * @param eventDate
      *            - date of the event
      * @param bookingDate
-     *            booking date.
+     *            - booking date.
+     * @param lastUpdated
+     *            - the date the booking was last updated
+     * @param status
+     *            - the booking status
      */
     public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final Long reservedById,
                            final String eventId, final String eventTitle, final Date eventDate, final Date bookingDate,
@@ -130,7 +136,7 @@ public class EventBookingDTO {
      *
      * @param reservedById - the user who created the reservation.
      */
-    public void setReservedById(Long reservedById) {
+    public void setReservedById(final Long reservedById) {
         this.reservedById = reservedById;
     }
 
@@ -212,7 +218,7 @@ public class EventBookingDTO {
 
 	/**
      * Get the lastUpdate date.
-     * @return
+     * @return the Date it was most recently updated
      */
     public Date getUpdated() {
         return lastUpdated;

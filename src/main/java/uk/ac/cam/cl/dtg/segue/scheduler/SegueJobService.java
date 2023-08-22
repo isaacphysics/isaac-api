@@ -58,7 +58,7 @@ public class SegueJobService implements ServletContextListener {
     public SegueJobService(final PostgresSqlDb database, final List<SegueScheduledJob> allKnownJobs,
                            @Nullable final List<SegueScheduledJob> jobsToRemove) {
         this.allKnownJobs = allKnownJobs;
-        this.jobsToRemove =jobsToRemove;
+        this.jobsToRemove = jobsToRemove;
         this.localRegisteredJobs = new ArrayList<>();
         StdSchedulerFactory stdSchedulerFactory = new StdSchedulerFactory();
 
@@ -88,7 +88,7 @@ public class SegueJobService implements ServletContextListener {
 
     /**
      * Remove an already-existing job from the Scheduler's list of scheduled jobs.
-     *
+     * <p>
      * If the job isn't already registered, this is safe and will have no effect.
      *
      * @param jobToRemove the job to remove
@@ -124,7 +124,7 @@ public class SegueJobService implements ServletContextListener {
 
     /**
      * Register a new job or update the trigger of an existing job.
-     *
+     * <p>
      * This currently does not alter the job details!
      *
      * @param jobToRegister the job to schedule

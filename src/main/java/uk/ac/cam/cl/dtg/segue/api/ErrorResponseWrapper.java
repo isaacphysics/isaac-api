@@ -23,7 +23,7 @@ public class ErrorResponseWrapper extends Exception {
     private static final long serialVersionUID = 776713551334466191L;
     private final SegueErrorResponse response;
 
-    public ErrorResponseWrapper(SegueErrorResponse response) {
+    public ErrorResponseWrapper(final SegueErrorResponse response) {
         this.response = response;
     }
 

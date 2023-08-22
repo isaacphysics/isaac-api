@@ -72,7 +72,8 @@ public interface IQuizAttemptPersistenceManager {
     /**
      * Mark a quiz complete (or incomplete) in the database.
      *
-     * @param quizAttemptId The id of the attempt to delete.
+     * @param quizAttemptId The id of the attempt to update.
+     * @param newCompletionStatus If true sets the completed_date on the quiz attempt to the current date, if false sets it to null
      * @return The new value for completedDate.
      */
     @Nullable
@@ -96,7 +97,7 @@ public interface IQuizAttemptPersistenceManager {
     Map<Long, QuizAttemptDTO> getByQuizAssignmentIdsAndUserId(List<Long> quizAssignmentIds, Long userId) throws SegueDatabaseException;
 
     /**
-     * Get the attempts for a user that are not associated with an assignment
+     * Get the attempts for a user that are not associated with an assignment.
      *
      * @param userId The ID of the user.
      * @return A list of attempts with a null quizAssignmentId.

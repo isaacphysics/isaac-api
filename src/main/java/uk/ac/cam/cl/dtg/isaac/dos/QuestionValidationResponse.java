@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,12 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
-
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+
+import java.util.Date;
 
 /**
  * Question Validation Response DO.
@@ -99,9 +99,12 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
 
     @Override
     public String toString() {
-        return "QuestionValidationResponse [questionId=" + super.getQuestionId() + ", answer=" + answer +
-                ", correct=" + super.isCorrect() + ", explanation=" + explanation +
-                ", dateAttempted=" + super.getDateAttempted() + "]";
+        return "QuestionValidationResponse [questionId=" + super.getQuestionId()
+                + ", answer=" + answer
+                + ", correct=" + super.isCorrect()
+                + ", explanation=" + explanation
+                + ", dateAttempted=" + super.getDateAttempted()
+                + "]";
     }
 
 }

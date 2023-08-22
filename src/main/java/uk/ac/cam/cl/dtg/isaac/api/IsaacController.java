@@ -72,10 +72,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Isaac Controller
- * 
+ * <p>
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Isaac site.
- * 
+ * <p>
  * TODO: This class should be refactored, as it is just a random collection of endpoints.
  * 
  */
@@ -132,18 +132,21 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can interrogate the user Manager.
      * @param associationManager
      *            - So we can check user permissions.
+     * @param contentIndex
+     *            - To get hash code for ETag calculation
+     * @param userStreaksManager
+     *            - To get and set user streaks
+     * @param userBadgeManager
+     *            - To get user badges
      * @param contentSummarizerService
      *            - So we can summarize search results
      */
     @Inject
-    public IsaacController(final PropertiesLoader propertiesLoader,
-                           final ILogManager logManager, final IStatisticsManager statsManager,
-                           final UserAccountManager userManager, final GitContentManager contentManager,
-                           final UserAssociationManager associationManager,
-                           @Named(CONTENT_INDEX) final String contentIndex,
-                           final IUserStreaksManager userStreaksManager,
-                           final UserBadgeManager userBadgeManager,
-                           final ContentSummarizerService contentSummarizerService) {
+    public IsaacController(final PropertiesLoader propertiesLoader, final ILogManager logManager,
+                           final IStatisticsManager statsManager, final UserAccountManager userManager,
+                           final GitContentManager contentManager, final UserAssociationManager associationManager,
+                           @Named(CONTENT_INDEX) final String contentIndex, final IUserStreaksManager userStreaksManager,
+                           final UserBadgeManager userBadgeManager, final ContentSummarizerService contentSummarizerService) {
         super(propertiesLoader, logManager);
         this.statsManager = statsManager;
         this.userManager = userManager;
@@ -484,7 +487,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
     /**
      * Get some statistics out of how many questions the user has completed.
-     * 
+     * <p>
      * Only users with permission can use this endpoint.
      * 
      * @param request

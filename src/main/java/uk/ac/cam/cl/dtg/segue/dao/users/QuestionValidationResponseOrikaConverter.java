@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 
 /**
  * QuestionValidationResponseOrikaConverter A specialist converter class to work with the Orika automapper library.
- * 
+ * <p>
  * Responsible for converting QuestionValidationResponse objects to their correct subtype.
  * 
  */
@@ -45,7 +45,7 @@ public class QuestionValidationResponseOrikaConverter extends
     @Override
     public QuestionValidationResponseDTO convertTo(final QuestionValidationResponse source,
                                                    final Type<QuestionValidationResponseDTO> destinationType,
-                                                   MappingContext _context) {
+                                                   final MappingContext context) {
         if (null == source) {
             return null;
         }
@@ -66,7 +66,7 @@ public class QuestionValidationResponseOrikaConverter extends
     @Override
     public QuestionValidationResponse convertFrom(final QuestionValidationResponseDTO source,
                                                   final Type<QuestionValidationResponse> destinationType,
-                                                  MappingContext _context) {
+                                                  final MappingContext context) {
         if (null == source) {
             return null;
         }

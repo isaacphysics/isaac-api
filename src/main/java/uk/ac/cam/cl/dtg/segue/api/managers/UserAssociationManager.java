@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,28 +15,26 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 
-import com.google.inject.Inject;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * UserAssociationManager Responsible for managing user associations, groups and permissions for one user to grant data
@@ -44,8 +42,11 @@ import com.google.inject.Inject;
  */
 public class UserAssociationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
-    private static final SecureRandom secureRandom = new SecureRandom();
-    private static final int tokenLength = 6;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int TOKEN_LENGTH = 6;
+    private static final int BITS_IN_INTEGER = 32;
+    private static final int RANDOM_BITS_TO_EXTRACT = 5;
+    private static final int BIT_SHIFT_MASK = 0x1f;
     
     private final IAssociationDataManager associationDatabase;
     private final GroupManager userGroupManager;
@@ -56,6 +57,8 @@ public class UserAssociationManager {
      * 
      * @param associationDatabase
      *            - IAssociationDataManager providing access to the database.
+     * @param userManager
+     *            - UserAccountManager for checking permissions to access other user objects
      * @param userGroupManager
      *            - IAssociationDataManager providing access to the database.
      */
@@ -109,7 +112,7 @@ public class UserAssociationManager {
 
     /**
      * Generate a new string value for a token.
-     *
+     * <p>
      * There are 30 non-ambiguous uppercase alphanumeric characters. We use a 5 bit encoding system to generate the
      * number for which character to choose, skipping in the 1/16 chance it is outside the allowed range. Loop until we
      * generate all tokenLength required characters.
@@ -121,19 +124,19 @@ public class UserAssociationManager {
         // Allow the following character to appear in tokens, removing ambiguous ones:
         String tokenCharMap = "ABCDEFGHJKLMNPQRTUVWXYZ2346789";
 
-        char[] authToken = new char[tokenLength];
+        char[] authToken = new char[TOKEN_LENGTH];
 
         int index = 0;  // Where we are in the token.
         int shift = 0;  // Where we are in the random 32 bit integer.
-        int randomBits = secureRandom.nextInt();
+        int randomBits = SECURE_RANDOM.nextInt();
 
         // Use 5 bit ints extracted from randomBits, to generate tokenLength random characters from sample space.
-        while (index < tokenLength) {
-            if (shift >= 32/5) {  // If we've expired the 32/5 values in this random int, get a new one, reset shift.
-                randomBits = secureRandom.nextInt();
+        while (index < TOKEN_LENGTH) {
+            if (shift >= BITS_IN_INTEGER / RANDOM_BITS_TO_EXTRACT) {  // If we've expired the 32/5 values in this random int, get a new one, reset shift.
+                randomBits = SECURE_RANDOM.nextInt();
                 shift = 0;
             }
-            int chr = (randomBits >> (5*shift)) & 0x1f;  // Extract next 5 bit int from randomBits.
+            int chr = (randomBits >> (RANDOM_BITS_TO_EXTRACT * shift)) & BIT_SHIFT_MASK;  // Extract next 5 bit int from randomBits.
             shift++;  // Ensure we don't reuse any of randomBits.
             if (chr < tokenCharMap.length()) {
                 // If we're in the valid range, use that character and advance in authToken, else try again.
@@ -190,7 +193,7 @@ public class UserAssociationManager {
 
     /**
      * get Associations.
-     *
+     * <p>
      * I.e. Who can currently view a given user's data.
      * 
      * @param user
@@ -353,7 +356,7 @@ public class UserAssociationManager {
 
     /**
      * Check if one user has permission to view another user's data.
-     * 
+     * <p>
      * Users always have permission to view their own data. Students never have permission to view another users data.
      * 
      * @param currentUser
@@ -366,7 +369,7 @@ public class UserAssociationManager {
         try {
             return currentUser.getId().equals(userRequested.getId())
                     || Role.ADMIN.equals(currentUser.getRole())
-                    || (!Role.STUDENT.equals(currentUser.getRole()) && this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId()));
+                    || !Role.STUDENT.equals(currentUser.getRole()) && this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId());
         } catch (SegueDatabaseException e) {
             log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
                     e);
@@ -375,7 +378,7 @@ public class UserAssociationManager {
     }
 
     /**
-     * Overloaded method to handle different user representation object
+     * Overloaded method to handle different user representation object.
      * @param currentUser
      *            - requesting permission
      * @param userRequested
@@ -388,7 +391,7 @@ public class UserAssociationManager {
 
     /**
      * Check if one user has teacher-level permission to view another user's data.
-     *
+     * <p>
      * Users always have permission to view their own data. Students never have permission to view another users data,
      * and tutors do not have teacher-level permissions.
      *
@@ -402,7 +405,8 @@ public class UserAssociationManager {
         try {
             return currentUser.getId().equals(userRequested.getId())
                     || Role.ADMIN.equals(currentUser.getRole())
-                    || (!Role.STUDENT.equals(currentUser.getRole()) && !Role.TUTOR.equals(currentUser.getRole()) && this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId()));
+                    || !Role.STUDENT.equals(currentUser.getRole()) && !Role.TUTOR.equals(currentUser.getRole())
+                    && this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId());
         } catch (SegueDatabaseException e) {
             log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
                     e);
@@ -411,24 +415,24 @@ public class UserAssociationManager {
     }
 
     /**
-     * Overloaded method to handle different user representation object
+     * Overloaded method to handle different user representation object.
      * @param currentUser
      *            - requesting permission
      * @param userRequested
      *            - the owner of the data to view.
-     * @return true if yes false if no.
+     * @return true if yes or false if no.
      */
     public boolean hasTeacherPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
         return this.hasTeacherPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
     }
 
-    /**
+    /**.
      * Filter a list of records on whether a user ID has an association with the current user
      * @param currentUser the user which might have been granted access.
      * @param records a list of objects containing an ID.
      * @param userIdKey a function which takes the record and returns the user ID.
      * @param <T> the type of the object containing an ID.
-     * @return a filtered list of type List<T>.
+     * @return a filtered list of type List{@literal <T>}.
      * @throws SegueDatabaseException if it was not able to get the user's associations form the database.
      */
     public <T> List<T> filterUnassociatedRecords(
@@ -449,7 +453,7 @@ public class UserAssociationManager {
     }
 
     /**
-     * A special case of the generic filterUnassociatedRecords for when the records are a list of user IDs
+     * A special case of the generic filterUnassociatedRecords for when the records are a list of user IDs.
      * @param currentUser the user which might have been granted access.
      * @param userIds a list of user IDs.
      * @return a list of user ID which has granted the current user to view their data.

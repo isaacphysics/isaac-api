@@ -44,10 +44,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 
 /**
  * Glossary Facade
- *
+ * <p> <p>
  * This facade is intended to provide access to glossary terms.
  *
  */
@@ -124,7 +125,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     /**
      * Gets the current version of the segue application.
      *
-     * @param term_id - The ID of the term to retrieve.
+     * @param termId - The ID of the term to retrieve.
      *
      * @return segue version as a string wrapped in a response.
      */
@@ -132,17 +133,17 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @Path("terms/{term_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the term with the given id.")
-    public final Response getTermById(@PathParam("term_id") final String term_id) {
+    public final Response getTermById(@PathParam("term_id") final String termId) {
 
-        if (null == term_id) {
+        if (null == termId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify a term_id.").toResponse();
         }
 
         ResultsWrapper<ContentDTO> c;
         try {
-            c = this.contentManager.getByIdPrefix(term_id, 0, 10000);
+            c = this.contentManager.getByIdPrefix(termId, 0, DEFAULT_MAX_WINDOW_SIZE);
             if (null == c) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + sanitiseLogValue(termId));
                 log.debug(error.getErrorMessage());
                 return error.toResponse();
             }

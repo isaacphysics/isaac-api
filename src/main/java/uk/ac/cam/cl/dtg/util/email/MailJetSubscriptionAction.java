@@ -21,7 +21,7 @@ public enum MailJetSubscriptionAction {
     UNSUBSCRIBE("unsub"),
     REMOVE("remove");
 
-    public final String value;
+    private final String value;
 
     /**
      *  Class to represent the different possible subscription actions supported by the MailJet API.
@@ -29,5 +29,9 @@ public enum MailJetSubscriptionAction {
      */
     MailJetSubscriptionAction(final String value) {
         this.value = value;
+    }
+
+    public String getValue() {
+        return value;
     }
 }

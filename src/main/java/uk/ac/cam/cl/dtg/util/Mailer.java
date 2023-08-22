@@ -53,7 +53,7 @@ public class Mailer {
 	private final String smtpPort;
 	private final String smtpUsername;
 	private final String smtpPassword;
-	private final static ConcurrentMap<Integer, Session> sessionCache = new ConcurrentHashMap<>();
+	private static final ConcurrentMap<Integer, Session> SESSION_CACHE = new ConcurrentHashMap<>();
 
 	/**
 	 * Mailer Class.
@@ -111,7 +111,7 @@ public class Mailer {
 
     /**
      * Utility method to allow us to send multipart messages using HTML and plain text.
-     *
+     * <p>
      * 
      * @param recipient
      *            - string array of recipients that the message should be sent to
@@ -189,55 +189,55 @@ public class Mailer {
     private Message setupMessage(final String[] recipient, final InternetAddress fromAddress,
                                  final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
                                  final String subject) throws MessagingException {
-      Validate.notEmpty(recipient);
-      Validate.notBlank(recipient[0]);
-      Validate.notNull(fromAddress);
+        Validate.notEmpty(recipient);
+        Validate.notBlank(recipient[0]);
+        Validate.notNull(fromAddress);
 
-      Properties p = new Properties();
+        Properties p = new Properties();
 
-      // Configure the SMTP server settings:
-      p.put("mail.smtp.host", smtpAddress);
-      p.put("mail.smtp.starttls.enable", "true");
+        // Configure the SMTP server settings:
+        p.put("mail.smtp.host", smtpAddress);
+        p.put("mail.smtp.starttls.enable", "true");
 
-      // Configure the email headers and routing:
-      String envelopeFrom = mailAddress;
-      if (null != overrideEnvelopeFrom) {
-        envelopeFrom = overrideEnvelopeFrom;
-      }
-      p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
-      p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
-      p.put("mail.smtp.port", smtpPort);
-      p.put("mail.smtp.auth", "true");
-      // Create the jakarta.mail.Session object needed to send the email.
-      // These are expensive to create so cache them based on the properties
-      // they are configured with (using fact that hashcodes are equal only if objects equal):
-      Integer propertiesHash = p.hashCode();
-      Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
-        log.info(String.format("Creating new mail Session with properties: %s", p));
-        return Session.getInstance(p, new Authenticator() {
-              @Override
-              protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(smtpUsername, smtpPassword);
-              }
+        // Configure the email headers and routing:
+        String envelopeFrom = mailAddress;
+        if (null != overrideEnvelopeFrom) {
+            envelopeFrom = overrideEnvelopeFrom;
+        }
+        p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
+        p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
+        p.put("mail.smtp.port", smtpPort);
+        p.put("mail.smtp.auth", "true");
+        // Create the jakarta.mail.Session object needed to send the email.
+        // These are expensive to create so cache them based on the properties
+        // they are configured with (using fact that hashcodes are equal only if objects equal):
+        Integer propertiesHash = p.hashCode();
+        Session s = SESSION_CACHE.computeIfAbsent(propertiesHash, k -> {
+            log.info(String.format("Creating new mail Session with properties: %s", p));
+            return Session.getInstance(p, new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(smtpUsername, smtpPassword);
+                }
             });
-      });
-      // Create the message and set the recipients:
-      Message msg = new MimeMessage(s);
+        });
+        // Create the message and set the recipients:
+        Message msg = new MimeMessage(s);
 
-      InternetAddress[] receivers = new InternetAddress[recipient.length];
+        InternetAddress[] receivers = new InternetAddress[recipient.length];
 
-      for (int i = 0; i < recipient.length; i++) {
-        receivers[i] = new InternetAddress(recipient[i]);
-      }
+        for (int i = 0; i < recipient.length; i++) {
+            receivers[i] = new InternetAddress(recipient[i]);
+        }
 
-      msg.setFrom(fromAddress);
-      msg.setRecipients(RecipientType.TO, receivers);
-      msg.setSubject(subject);
+        msg.setFrom(fromAddress);
+        msg.setRecipients(RecipientType.TO, receivers);
+        msg.setSubject(subject);
 
-      if (null != replyTo) {
-        msg.setReplyTo(new InternetAddress[]{replyTo});
-      }
+        if (null != replyTo) {
+            msg.setReplyTo(new InternetAddress[]{replyTo});
+        }
 
-      return msg;
+        return msg;
     }
 }

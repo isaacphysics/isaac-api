@@ -104,7 +104,7 @@ public class UserSettings {
 	}
 
 	@JsonProperty("registeredUserContexts")
-	public void setRegisteredUserContexts(List<UserContext> registeredUserContexts) {
+	public void setRegisteredUserContexts(final List<UserContext> registeredUserContexts) {
 		this.registeredUserContexts = registeredUserContexts;
 	}
 }

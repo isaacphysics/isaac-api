@@ -43,10 +43,10 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
 
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setLong(1, user.getId());
-            pst.setString(2, badgeName.name());
-            pst.setLong(3, user.getId());
-            pst.setString(4, badgeName.name());
+            pst.setLong(FIELD_GET_BADGE_USER_ID, user.getId());
+            pst.setString(FIELD_GET_BADGE_BADGE_NAME, badgeName.name());
+            pst.setLong(FIELD_GET_BADGE_USER_ID_REPEAT, user.getId());
+            pst.setString(FIELD_GET_BADGE_BADGE_NAME_REPEAT, badgeName.name());
 
             try (ResultSet results = pst.executeQuery()) {
                 results.next();
@@ -69,9 +69,9 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
 
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setString(1, mapper.writeValueAsString(badge.getState()));
-            pst.setLong(2, badge.getUserId());
-            pst.setString(3, badge.getBadgeName().name());
+            pst.setString(FIELD_UPDATE_BADGE_STATE, mapper.writeValueAsString(badge.getState()));
+            pst.setLong(FIELD_UPDATE_BADGE_USER_ID, badge.getUserId());
+            pst.setString(FIELD_UPDATE_BADGE_BADGE_NAME, badge.getBadgeName().name());
 
             pst.executeUpdate();
 
@@ -79,4 +79,16 @@ public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManag
             throw new SegueDatabaseException("Unable to update database badge.");
         }
     }
+
+    // Field Constants
+    // getBadge
+    private static final int FIELD_GET_BADGE_USER_ID = 1;
+    private static final int FIELD_GET_BADGE_BADGE_NAME = 2;
+    private static final int FIELD_GET_BADGE_USER_ID_REPEAT = 3;
+    private static final int FIELD_GET_BADGE_BADGE_NAME_REPEAT = 4;
+
+    // updateBadge
+    private static final int FIELD_UPDATE_BADGE_STATE = 1;
+    private static final int FIELD_UPDATE_BADGE_USER_ID = 2;
+    private static final int FIELD_UPDATE_BADGE_BADGE_NAME = 3;
 }

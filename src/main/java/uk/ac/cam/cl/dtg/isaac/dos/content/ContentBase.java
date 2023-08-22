@@ -25,25 +25,25 @@ import java.util.Set;
 
 /**
  * Represents any content related data that can be stored by the api
- * 
+ * <p>
  * This class is required mainly due to the relatively complex polymorphic type hierarchy that gets serialized and
  * deserialized using a custom serializer (ContentBaseDeserializer).
  */
 public abstract class ContentBase {
-    protected String id;
-    protected String type;
-    protected Set<String> tags;
-    protected String canonicalSourceFile;
-    protected String version;
-    protected List<AudienceContext> audience;
-    protected Map<String, List<String>> display;
+    private String id;
+    private String type;
+    private Set<String> tags;
+    private String canonicalSourceFile;
+    private String version;
+    private List<AudienceContext> audience;
+    private Map<String, List<String>> display;
 
     public String getId() {
         return id;
     }
 
     @JsonDeserialize(using = TrimWhitespaceDeserializer.class)
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -51,7 +51,7 @@ public abstract class ContentBase {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 
@@ -59,7 +59,7 @@ public abstract class ContentBase {
         return canonicalSourceFile;
     }
 
-    public void setCanonicalSourceFile(String canonicalSourceFile) {
+    public void setCanonicalSourceFile(final String canonicalSourceFile) {
         this.canonicalSourceFile = canonicalSourceFile;
     }
 
@@ -67,7 +67,7 @@ public abstract class ContentBase {
         return tags;
     }
 
-    public void setTags(Set<String> tags) {
+    public void setTags(final Set<String> tags) {
         this.tags = tags;
     }
 
@@ -75,7 +75,7 @@ public abstract class ContentBase {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(final String version) {
         this.version = version;
     }
 
@@ -83,7 +83,7 @@ public abstract class ContentBase {
         return audience;
     }
 
-    public void setAudience(List<AudienceContext> audience) {
+    public void setAudience(final List<AudienceContext> audience) {
         this.audience = audience;
     }
 
@@ -91,7 +91,7 @@ public abstract class ContentBase {
         return display;
     }
 
-    public void setDisplay(Map<String, List<String>> display) {
+    public void setDisplay(final Map<String, List<String>> display) {
         this.display = display;
     }
 

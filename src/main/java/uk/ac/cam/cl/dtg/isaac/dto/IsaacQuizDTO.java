@@ -50,28 +50,27 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
 
     @JsonCreator
     public IsaacQuizDTO(
-            @JsonProperty("id") String id,
-            @JsonProperty("title") String title,
-            @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type,
-            @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding,
-            @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout,
-            @JsonProperty("children") List<ContentBaseDTO> children,
-            @JsonProperty("value") String value,
-            @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("version") boolean published,
-            @JsonProperty("deprecated") Boolean deprecated,
-            @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level,
-            @JsonProperty("visibleToStudents") boolean visibleToStudents,
-            @JsonProperty("hiddenFromRoles") List<String> hiddenFromRoles,
-            @JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode,
-            @JsonProperty("rubric") ContentDTO rubric) {
-        super(id, title, subtitle, type, author, encoding,
-                canonicalSourceFile, layout, children, value, attribution,
+            @JsonProperty("id") final String id,
+            @JsonProperty("title") final String title,
+            @JsonProperty("subtitle") final String subtitle,
+            @JsonProperty("type") final String type,
+            @JsonProperty("author") final String author,
+            @JsonProperty("encoding") final String encoding,
+            @JsonProperty("canonicalSourceFile") final String canonicalSourceFile,
+            @JsonProperty("layout") final String layout,
+            @JsonProperty("children") final List<ContentBaseDTO> children,
+            @JsonProperty("value") final String value,
+            @JsonProperty("attribution") final String attribution,
+            @JsonProperty("relatedContent") final List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("version") final boolean published,
+            @JsonProperty("deprecated") final Boolean deprecated,
+            @JsonProperty("tags") final Set<String> tags,
+            @JsonProperty("level") final Integer level,
+            @JsonProperty("visibleToStudents") final boolean visibleToStudents,
+            @JsonProperty("hiddenFromRoles") final List<String> hiddenFromRoles,
+            @JsonProperty("defaultFeedbackMode") final QuizFeedbackMode defaultFeedbackMode,
+            @JsonProperty("rubric") final ContentDTO rubric) {
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, deprecated, tags, level);
 
         this.visibleToStudents = visibleToStudents;
@@ -93,7 +92,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
     }
 
     @Deprecated
-    public void setVisibleToStudents(boolean visibleToStudents) {
+    public void setVisibleToStudents(final boolean visibleToStudents) {
         this.visibleToStudents = visibleToStudents;
     }
 
@@ -101,7 +100,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         return hiddenFromRoles;
     }
 
-    public void setHiddenFromRoles(List<String> hiddenFromRoles) {
+    public void setHiddenFromRoles(final List<String> hiddenFromRoles) {
         this.hiddenFromRoles = hiddenFromRoles;
     }
 
@@ -111,7 +110,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
     }
 
     @Nullable
-    public void setRubric(ContentDTO rubric) {
+    public void setRubric(final ContentDTO rubric) {
         this.rubric = rubric;
     }
 
@@ -120,7 +119,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         return defaultFeedbackMode;
     }
 
-    public void setDefaultFeedbackMode(QuizFeedbackMode defaultFeedbackMode) {
+    public void setDefaultFeedbackMode(final QuizFeedbackMode defaultFeedbackMode) {
         this.defaultFeedbackMode = defaultFeedbackMode;
     }
 
@@ -129,7 +128,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         return total;
     }
 
-    public void setTotal(Integer total) {
+    public void setTotal(final Integer total) {
         this.total = total;
     }
 
@@ -138,7 +137,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         return sectionTotals;
     }
 
-    public void setSectionTotals(Map<String, Integer> sectionTotals) {
+    public void setSectionTotals(final Map<String, Integer> sectionTotals) {
         this.sectionTotals = sectionTotals;
     }
 
@@ -147,7 +146,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         return individualFeedback;
     }
 
-    public void setIndividualFeedback(QuizFeedbackDTO individualFeedback) {
+    public void setIndividualFeedback(final QuizFeedbackDTO individualFeedback) {
         this.individualFeedback = individualFeedback;
     }
 }

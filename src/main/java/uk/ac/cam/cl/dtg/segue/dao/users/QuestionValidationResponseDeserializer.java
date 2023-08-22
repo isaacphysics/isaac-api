@@ -34,9 +34,9 @@ import java.io.IOException;
 
 /**
  * QuestionValidationResponse deserializer
- * 
+ * <p>
  * This class requires the primary content base deserializer as a constructor argument.
- *
+ * <p>
  * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class QuestionValidationResponseDeserializer extends JsonDeserializer<QuestionValidationResponse> {

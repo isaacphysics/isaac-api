@@ -17,19 +17,19 @@ import java.util.Iterator;
  */
 public class TeacherGroupsBadgePolicy implements IUserBadgePolicy {
 
-    private GroupManager groupManager;
+    private final GroupManager groupManager;
 
-    public TeacherGroupsBadgePolicy(GroupManager groupManager) {
+    public TeacherGroupsBadgePolicy(final GroupManager groupManager) {
         this.groupManager = groupManager;
     }
 
     @Override
-    public int getLevel(JsonNode state) {
+    public int getLevel(final JsonNode state) {
         return state.get("groups").size();
     }
 
     @Override
-    public JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction) {
+    public JsonNode initialiseState(final RegisteredUserDTO user, final ITransaction transaction) {
 
         ArrayNode groups = JsonNodeFactory.instance.arrayNode();
 
@@ -45,7 +45,7 @@ public class TeacherGroupsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
+    public JsonNode updateState(final RegisteredUserDTO user, final JsonNode state, final String event) {
 
         Iterator<JsonNode> iter = ((ArrayNode) state.get("groups")).elements();
 

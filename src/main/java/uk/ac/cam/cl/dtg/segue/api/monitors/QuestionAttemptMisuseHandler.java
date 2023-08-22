@@ -63,7 +63,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     }
 
     @Override
-    public void executeSoftThresholdAction(final String message) {}
+    public void executeSoftThresholdAction(final String message) { }
 
     @Override
     public void executeHardThresholdAction(final String message) {

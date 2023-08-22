@@ -208,7 +208,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IGroupObserver groupObserver = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
-    private static final Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
+    private static final Map<String, Reflections> REFLECTIONS = com.google.common.collect.Maps.newHashMap();
 
     /**
      * A setter method that is mostly useful for testing. It populates the global properties static value if it has not
@@ -229,16 +229,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             // check the following places to determine where config file location may be.
             // 1) system env variable, 2) java param (system property), 3) use a default from the constant file.
             String configLocation = SystemUtils.IS_OS_LINUX ? DEFAULT_LINUX_CONFIG_LOCATION : null;
-            if (System.getProperty("config.location") != null) {
-                configLocation = System.getProperty("config.location");
+            if (System.getProperty(CONFIG_LOCATION_SYSTEM_PROPERTY) != null) {
+                configLocation = System.getProperty(CONFIG_LOCATION_SYSTEM_PROPERTY);
             }
-            if (System.getenv("SEGUE_CONFIG_LOCATION") != null){
-                configLocation = System.getenv("SEGUE_CONFIG_LOCATION");
+            if (System.getenv(SEGUE_CONFIG_LOCATION_ENVIRONMENT_PROPERTY) != null) {
+                configLocation = System.getenv(SEGUE_CONFIG_LOCATION_ENVIRONMENT_PROPERTY);
             }
 
             try {
                 if (null == configLocation) {
-                    throw new FileNotFoundException("Segue configuration location not specified, please provide it as either a java system property (config.location) or environment variable SEGUE_CONFIG_LOCATION");
+                    throw new FileNotFoundException(SEGUE_CONFIG_LOCATION_NOT_SPECIFIED_MESSAGE);
                 }
 
                 globalProperties = new PropertiesLoader(configLocation);
@@ -454,7 +454,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the elasticSearch client that can be used by Guice.
-     *
+     * <p>
      * The client is threadsafe, so we don't need to keep creating new ones.
      * @param address
      *            - address of the cluster to create.
@@ -499,7 +499,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the git content manager for the segue facade.
-     *
+     * <p>
      * TODO: This is a singleton as the units and tags are stored in memory. If we move these out it can be an instance.
      * This would be better as then we can give it a new search provider if the client has closed.
      *
@@ -509,6 +509,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - search provider to use
      * @param contentMapper
      *            - content mapper to use.
+     * @param globalProperties
+     *            - properties loader to use
      * @return a fully configured content Manager.
      */
     @Inject
@@ -526,7 +528,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the LogManager for the Segue facade.
-     *
+     * <p>
      * Note: This is a singleton as logs are created very often and we wanted to minimise the overhead in class
      * creation. Although we can convert this to instances if we want to tidy this up.
      *
@@ -534,8 +536,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - database reference
      * @param loggingEnabled
      *            - boolean to determine if we should persist log messages.
-     * @param lhm
-     *            - location history manager
      * @return A fully configured LogManager
      */
     @Inject
@@ -580,7 +580,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides an instance of the SegueLocalAuthenticator.
-     *
+     * <p>
      *
      * @param database
      * 			- the database to access userInformation
@@ -611,7 +611,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the e-mail manager class.
-     *
+     * <p>
      * Note: This has to be a singleton because it manages all emails sent using this JVM.
      *
      * @param properties
@@ -661,7 +661,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the UserManager for various facades.
-     *
+     * <p>
      * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
      *
      * @param database
@@ -690,7 +690,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the UserManager for various facades.
-     *
+     * <p>
      * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
      *
      * @param database
@@ -760,13 +760,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the GroupManager.
-     *
+     * <p>
      * Note: This needs to be a singleton as we register observers for groups.
      *
      * @param userGroupDataManager
      *            - user group data manager
      * @param userManager
      *            - user manager
+     * @param gameManager
+     *            - game manager
      * @param dtoMapper
      *            - dtoMapper
      * @return group manager
@@ -790,8 +792,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private IGroupObserver getGroupObserver(EmailManager emailManager, GroupManager groupManager, UserAccountManager userManager,
-                                            AssignmentManager assignmentManager, QuizAssignmentManager quizAssignmentManager) {
+    private IGroupObserver getGroupObserver(
+            final EmailManager emailManager, final GroupManager groupManager, final UserAccountManager userManager,
+            final AssignmentManager assignmentManager, final QuizAssignmentManager quizAssignmentManager) {
         if (null == groupObserver) {
             groupObserver = new GroupChangedService(emailManager, groupManager, userManager, assignmentManager, quizAssignmentManager);
             log.info("Creating singleton of GroupObserver");
@@ -801,7 +804,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Get singleton of misuseMonitor.
-     *
+     * <p>
      * Note: this has to be a singleton as it tracks (in memory) the number of misuses.
      *
      * @param emailManager
@@ -909,7 +912,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Gets the instance of the postgres connection wrapper.
-     *
+     * <p>
      * Note: This needs to be a singleton as it contains a connection pool.
      *
      * @param databaseUrl
@@ -940,17 +943,23 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * currently only a singleton as it keeps a cache.
      *
      * @param userManager
-     *            - dependency
+     *            - to query user information
      * @param logManager
-     *            - dependency
+     *            - to query Log information
      * @param schoolManager
-     *            - dependency
+     *            - to query School information
      * @param contentManager
-     *            - dependency
+     *            - to query live version information
+     * @param contentIndex
+     *            - index string for current content version
      * @param groupManager
-     *            - dependency
+     *            - so that we can see how many groups we have site wide.
      * @param questionManager
-     *            - dependency
+     *            - so that we can see how many questions were answered.
+     * @param contentSummarizerService
+     *            - to produce content summary objects
+     * @param userStreaksManager
+     *            - to notify users when their answer streak changes
      * @return stats manager
      */
     @Provides
@@ -982,7 +991,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             String eventPrePostEmails = properties.getProperty(EVENT_PRE_POST_EMAILS);
             boolean eventPrePostEmailsEnabled = null != eventPrePostEmails && !eventPrePostEmails.isEmpty() && Boolean.parseBoolean(eventPrePostEmails);
 
-            SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
+            SegueScheduledJob piiSqlJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
                     "SQLMaintenance",
                     "SQL scheduled job that deletes PII",
@@ -1052,7 +1061,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     "0 0 0/4 ? * * *");
 
             List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(
-                    PIISQLJob,
+                    piiSqlJob,
                     cleanUpOldAnonymousUsers,
                     cleanUpExpiredReservations,
                     deleteEventAdditionalBookingInformation,
@@ -1084,8 +1093,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return segueJobService;
     }
 
-    /**
-     */
     @Provides
     @Singleton
     @Inject
@@ -1115,7 +1122,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Gets a Game persistence manager.
-     *
+     * <p>
      * This needs to be a singleton as it maintains temporary boards in memory.
      *
      * @param database
@@ -1127,7 +1134,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param objectMapper
      *            - a mapper to allow content to be resolved.
      * @param uriManager
-     *            - so that the we can create content that is aware of its own location
+     *            - so that we can create content that is aware of its own location
+     * @param contentIndex
+     *            - index string for the target content version
      * @return Game persistence manager object.
      */
     @Inject
@@ -1147,7 +1156,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Gets an assignment manager.
-     *
+     * <p>
      * This needs to be a singleton because operations like emailing are run for each IGroupObserver, the
      * assignment manager should only be one observer.
      *
@@ -1179,12 +1188,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Gets an instance of the symbolic question validator.
      *
+     * @param properties
+     *            - properties loader to get the symbolic validator host
      * @return IsaacSymbolicValidator preconfigured to work with the specified checker.
      */
     @Provides
     @Singleton
     @Inject
-    private static IsaacSymbolicValidator getSymbolicValidator(PropertiesLoader properties) {
+    private static IsaacSymbolicValidator getSymbolicValidator(final PropertiesLoader properties) {
 
         return new IsaacSymbolicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
@@ -1193,12 +1204,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Gets an instance of the chemistry question validator.
      *
+     * @param properties
+     *            - properties loader to get the symbolic chemistry validator host
      * @return IsaacSymbolicChemistryValidator preconfigured to work with the specified checker.
      */
     @Provides
     @Singleton
     @Inject
-    private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(PropertiesLoader properties) {
+    private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(final PropertiesLoader properties) {
 
         return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
                 properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
@@ -1207,12 +1220,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Gets an instance of the symbolic logic question validator.
      *
+     * @param properties
+     *            - properties loader to get the symbolic logic validator host
      * @return IsaacSymbolicLogicValidator preconfigured to work with the specified checker.
      */
     @Provides
     @Singleton
     @Inject
-    private static IsaacSymbolicLogicValidator getSymbolicLogicValidator(PropertiesLoader properties) {
+    private static IsaacSymbolicLogicValidator getSymbolicLogicValidator(final PropertiesLoader properties) {
 
         return new IsaacSymbolicLogicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
@@ -1220,7 +1235,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the SchoolListReader for use by segue backed applications..
-     *
+     * <p>
      * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
      *
      * @param provider
@@ -1253,14 +1268,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Utility method to get a pre-generated reflections class for the uk.ac.cam.cl.dtg.segue package.
      *
+     * @param pkg
+     *            - class name to use as key
      * @return reflections.
      */
     public static Reflections getReflectionsClass(final String pkg) {
-        if (!reflections.containsKey(pkg)) {
+        if (!REFLECTIONS.containsKey(pkg)) {
             log.info(String.format("Caching reflections scan on '%s'", pkg));
-            reflections.put(pkg, new Reflections(pkg));
+            REFLECTIONS.put(pkg, new Reflections(pkg));
         }
-        return reflections.get(pkg);
+        return REFLECTIONS.get(pkg);
     }
 
     /**

@@ -15,11 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.Date;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
 
 /**
  * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
@@ -57,7 +56,7 @@ public class AssignmentDTO implements IAssignmentLike {
      *        - the date the assignment should be shown to users/groups that it is set to
      */
     public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-                         String groupName, String notes, final Date creationDate, final Date dueDate,
+                         final String groupName, final String notes, final Date creationDate, final Date dueDate,
                          final Date scheduledStartDate) {
         this.id = id;
         this.gameboardId = gameboardId;
@@ -190,7 +189,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * set the group's name.
      * @param groupName -- the group's name
      */
-    public void setGroupName(String groupName) {
+    public void setGroupName(final String groupName) {
         this.groupName = groupName;
     }
 
@@ -225,7 +224,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * set notes to an assignment.
      * @param notes - the notes
      */
-    public void setNotes(String notes) {
+    public void setNotes(final String notes) {
         this.notes = notes;
     }
 
@@ -276,7 +275,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * set the due date of an assignment.
      * @param dueDate - date due
      */
-    public void setDueDate(Date dueDate) {
+    public void setDueDate(final Date dueDate) {
         this.dueDate = dueDate;
     }
 
@@ -292,7 +291,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * set the date of when the assignment should be displayed to users.
      * @param scheduledStartDate - the scheduled start date
      */
-    public void setScheduledStartDate(Date scheduledStartDate) {
+    public void setScheduledStartDate(final Date scheduledStartDate) {
         this.scheduledStartDate = scheduledStartDate;
     }
 

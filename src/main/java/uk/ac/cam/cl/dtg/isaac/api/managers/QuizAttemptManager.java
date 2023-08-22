@@ -43,11 +43,12 @@ public class QuizAttemptManager {
      *            - to save quiz attempts
      */
     @Inject
-    public QuizAttemptManager(IQuizAttemptPersistenceManager quizAttemptPersistenceManager) {
+    public QuizAttemptManager(final IQuizAttemptPersistenceManager quizAttemptPersistenceManager) {
         this.quizAttemptPersistenceManager = quizAttemptPersistenceManager;
     }
 
-    public QuizAttemptDTO fetchOrCreate(QuizAssignmentDTO quizAssignment, RegisteredUserDTO user) throws AttemptCompletedException, SegueDatabaseException {
+    public QuizAttemptDTO fetchOrCreate(final QuizAssignmentDTO quizAssignment, final RegisteredUserDTO user)
+            throws AttemptCompletedException, SegueDatabaseException {
         // Check if an attempt exists
         QuizAttemptDTO existingAttempt = quizAttemptPersistenceManager.getByQuizAssignmentIdAndUserId(quizAssignment.getId(), user.getId());
 
@@ -71,7 +72,7 @@ public class QuizAttemptManager {
         return newQuizAttempt;
     }
 
-    public QuizAttemptDTO fetchOrCreateFreeQuiz(IsaacQuizDTO quiz, RegisteredUserDTO user) throws SegueDatabaseException {
+    public QuizAttemptDTO fetchOrCreateFreeQuiz(final IsaacQuizDTO quiz, final RegisteredUserDTO user) throws SegueDatabaseException {
         // Check if an attempt exists
         List<QuizAttemptDTO> existingAttempts = quizAttemptPersistenceManager.getByQuizIdAndUserId(quiz.getId(), user.getId());
 
@@ -97,34 +98,39 @@ public class QuizAttemptManager {
         return newQuizAttempt;
     }
 
-    public QuizAttemptDTO getById(Long quizAttemptId) throws SegueDatabaseException {
+    public QuizAttemptDTO getById(final Long quizAttemptId) throws SegueDatabaseException {
         return quizAttemptPersistenceManager.getById(quizAttemptId);
     }
 
-    public void deleteAttempt(QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
+    public void deleteAttempt(final QuizAttemptDTO quizAttempt) throws SegueDatabaseException {
         quizAttemptPersistenceManager.deleteAttempt(quizAttempt.getId());
     }
 
-    public QuizAttemptDTO updateAttemptCompletionStatus(QuizAttemptDTO quizAttempt, boolean newCompletionStatus) throws SegueDatabaseException {
+    public QuizAttemptDTO updateAttemptCompletionStatus(final QuizAttemptDTO quizAttempt, final boolean newCompletionStatus)
+            throws SegueDatabaseException {
         quizAttempt.setCompletedDate(quizAttemptPersistenceManager.updateAttemptCompletionStatus(quizAttempt.getId(), newCompletionStatus));
         return quizAttempt;
     }
 
-    public Set<Long> getCompletedUserIds(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+    public Set<Long> getCompletedUserIds(final QuizAssignmentDTO assignment) throws SegueDatabaseException {
         return quizAttemptPersistenceManager.getCompletedUserIds(assignment.getId());
     }
 
-    public void augmentAssignmentsFor(RegisteredUserDTO user, List<QuizAssignmentDTO> assignments) throws SegueDatabaseException {
-        Map<Long, QuizAttemptDTO> attempts = quizAttemptPersistenceManager.getByQuizAssignmentIdsAndUserId(assignments.stream().map(QuizAssignmentDTO::getId).collect(Collectors.toList()), user.getId());
+    public void augmentAssignmentsFor(final RegisteredUserDTO user, final List<QuizAssignmentDTO> assignments) throws SegueDatabaseException {
+        Map<Long, QuizAttemptDTO> attempts = quizAttemptPersistenceManager.getByQuizAssignmentIdsAndUserId(
+                assignments.stream().map(QuizAssignmentDTO::getId).collect(Collectors.toList()),
+                user.getId()
+        );
         assignments.forEach(quizAssignment -> quizAssignment.setAttempt(attempts.get(quizAssignment.getId())));
     }
 
     @Nullable
-    public QuizAttemptDTO getByQuizAssignmentAndUser(QuizAssignmentDTO assignment, RegisteredUserDTO user) throws SegueDatabaseException {
+    public QuizAttemptDTO getByQuizAssignmentAndUser(final QuizAssignmentDTO assignment, final RegisteredUserDTO user)
+            throws SegueDatabaseException {
         return quizAttemptPersistenceManager.getByQuizAssignmentIdAndUserId(assignment.getId(), user.getId());
     }
 
-    public List<QuizAttemptDTO> getFreeAttemptsFor(RegisteredUserDTO user) throws SegueDatabaseException {
+    public List<QuizAttemptDTO> getFreeAttemptsFor(final RegisteredUserDTO user) throws SegueDatabaseException {
         return quizAttemptPersistenceManager.getFreeAttemptsByUserId(user.getId());
     }
 }

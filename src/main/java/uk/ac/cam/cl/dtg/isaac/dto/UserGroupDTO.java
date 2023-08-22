@@ -15,22 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.api.client.util.Sets;
+import jakarta.annotation.Nullable;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
+
 import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.Nullable;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.api.client.util.Sets;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
- * 
+ * <p>
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class UserGroupDTO {
@@ -63,7 +61,11 @@ public class UserGroupDTO {
      * @param ownerId
      *            - owner of the group
      * @param created
-     *            - date created.
+     *            - date created
+     * @param lastUpdated
+     *            - the date the group was last updated
+     * @param archived
+     *            - if the group has been archived
      */
     public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created, final Date lastUpdated,
                         final boolean archived) {
@@ -280,7 +282,7 @@ public class UserGroupDTO {
      *
      * @param additionalManagers - those users who should have access to this group.
      */
-    public void setAdditionalManagers(Set<UserSummaryWithEmailAddressDTO> additionalManagers) {
+    public void setAdditionalManagers(final Set<UserSummaryWithEmailAddressDTO> additionalManagers) {
         this.additionalManagers = additionalManagers;
     }
 

@@ -181,7 +181,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * This method allows users to create a local account or update their settings.
-     *
+     * <p>
      * It will also allow administrators to change any user settings.
      *
      * @param request
@@ -210,8 +210,8 @@ public class UsersFacade extends AbstractSegueFacade {
 
             //TODO: We need to change the way the frontend sends passwords to reduce complexity
             Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
-            newPassword = (String) ((Map)mapRepresentation.get("registeredUser")).get("password");
-            ((Map)mapRepresentation.get("registeredUser")).remove("password");
+            newPassword = (String) ((Map) mapRepresentation.get("registeredUser")).get("password");
+            ((Map) mapRepresentation.get("registeredUser")).remove("password");
             userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
             
             if (null == userSettingsObjectFromClient) {
@@ -303,8 +303,8 @@ public class UsersFacade extends AbstractSegueFacade {
      * having to know the group members account email.
      *
      * @param request - request information used for caching
-     * @param httpServletRequest - the request, to work ou the current user
-     * @param userIdOfInterest - userId of interest - usually a the teacher's student
+     * @param httpServletRequest - the request, to work out the current user
+     * @param userIdOfInterest - userId of interest - usually the teacher's student
      * @return a successful response regardless of whether the email exists or an error code if there is a technical
      *         fault
      */
@@ -358,16 +358,14 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
-            return SegueErrorResponse.getRateThrottledResponse(message);
+            return SegueErrorResponse.getRateThrottledResponse(TOO_MANY_REQUESTS);
         }
     }
 
 
     /**
      * End point that allows a local user to generate a password reset request.
-     *
+     * <p>
      * Step 1 of password reset process - send user an e-mail
      *
      * @param userObject
@@ -400,10 +398,11 @@ public class UsersFacade extends AbstractSegueFacade {
                     .logEvent(userManager.getCurrentUser(request), request, SegueServerLogType.PASSWORD_RESET_REQUEST_RECEIVED,
                             ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
 
-            if (userExists)
+            if (userExists) {
                 log.info("Password reset requested for email: (" + sanitiseLogValue(userObject.getEmail()) + ")");
-            else
+            } else {
                 log.warn("Password reset requested for account that does not exist: (" + sanitiseLogValue(userObject.getEmail()) + ")");
+            }
             return Response.ok().build();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -411,16 +410,14 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
             log.error("Password reset request blocked for email: (" + sanitiseLogValue(userObject.getEmail()) + ")", e.toString());
-            return SegueErrorResponse.getRateThrottledResponse(message);
+            return SegueErrorResponse.getRateThrottledResponse(TOO_MANY_REQUESTS);
         }
     }
 
     /**
      * End point that verifies whether or not a password reset token is valid.
-     *
+     * <p>
      * Optional Step 2 - validate token is correct
      *
      * @param token
@@ -498,7 +495,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     /**
      * Endpoint to generate non-persistent new secret for the client.
-     *
+     * <p>
      * This can be used with an appropriate challenge to setup 2FA on the account.
      *
      * @param request - http request so we can determine the user.

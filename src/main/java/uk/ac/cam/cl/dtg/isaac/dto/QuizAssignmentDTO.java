@@ -208,7 +208,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      * set the due date of an assignment.
      * @param dueDate - date due
      */
-    public void setDueDate(@Nullable Date dueDate) {
+    public void setDueDate(@Nullable final Date dueDate) {
         this.dueDate = dueDate;
     }
 
@@ -233,7 +233,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         return attempt;
     }
 
-    public void setAttempt(@Nullable QuizAttemptDTO attempt) {
+    public void setAttempt(@Nullable final QuizAttemptDTO attempt) {
         this.attempt = attempt;
     }
 
@@ -242,7 +242,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         return userFeedback;
     }
 
-    public void setUserFeedback(List<QuizUserFeedbackDTO> userFeedback) {
+    public void setUserFeedback(final List<QuizUserFeedbackDTO> userFeedback) {
         this.userFeedback = userFeedback;
     }
 
@@ -251,20 +251,20 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         return quiz;
     }
 
-    public void setQuiz(IsaacQuizDTO quiz) {
+    public void setQuiz(final IsaacQuizDTO quiz) {
         this.quiz = quiz;
     }
 
     @Override
     public String toString() {
-        return "QuizAssignmentDTO [" +
-            "id=" + id +
-            ", quizId='" + quizId + '\'' +
-            ", groupId=" + groupId +
-            ", ownerUserId=" + ownerUserId +
-            ", creationDate=" + creationDate +
-            ", dueDate=" + dueDate +
-            ", quizFeedbackMode=" + quizFeedbackMode +
-            ']';
+        return "QuizAssignmentDTO ["
+                + "id=" + id
+                + ", quizId='" + quizId + '\''
+                + ", groupId=" + groupId
+                + ", ownerUserId=" + ownerUserId
+                + ", creationDate=" + creationDate
+                + ", dueDate=" + dueDate
+                + ", quizFeedbackMode=" + quizFeedbackMode
+                + ']';
     }
 }

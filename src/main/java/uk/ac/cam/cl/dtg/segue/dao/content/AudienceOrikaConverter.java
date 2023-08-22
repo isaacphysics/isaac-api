@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 /**
  * AudienceOrikaConverter A specialist converter class to work with the Orika automapper library.
- *
+ * <p> <p>
  * Responsible for converting the intended audience data structure from DO to DTO.
  * This converter will be adopted by Orika whenever it introspects a conversion between these specific types (not only
  * for the audience field). Its implementation is generic so that is fine.
@@ -21,9 +21,11 @@ public class AudienceOrikaConverter
 
     @Override
     public List<Map<String, List<String>>> convert(
-            List<Map<String, List<String>>> maps, Type<? extends List<Map<String, List<String>>>> type,
-            MappingContext _context) {
-        if (maps == null) {return null;}
+            final List<Map<String, List<String>>> maps, final Type<? extends List<Map<String, List<String>>>> type,
+            final MappingContext context) {
+        if (maps == null) {
+            return null;
+        }
 
         // This is horrible to read but it is a deep copy of the data structure - better safe than sorry.
         return maps.stream().map(m -> m.entrySet().stream()

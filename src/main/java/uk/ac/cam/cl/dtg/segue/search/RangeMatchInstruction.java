@@ -8,7 +8,7 @@ public class RangeMatchInstruction<T> extends AbstractMatchInstruction {
     private T greaterThan;
     private T greaterThanOrEqual;
 
-    public RangeMatchInstruction(String field) {
+    public RangeMatchInstruction(final String field) {
         this.field = field;
     }
 
@@ -19,7 +19,7 @@ public class RangeMatchInstruction<T> extends AbstractMatchInstruction {
     public long getBoost() {
         return this.boost;
     }
-    public RangeMatchInstruction boost(long boost) {
+    public RangeMatchInstruction boost(final long boost) {
         this.boost = boost;
         return this;
     }
@@ -27,7 +27,7 @@ public class RangeMatchInstruction<T> extends AbstractMatchInstruction {
     public T getLessThan() {
         return this.lessThan;
     }
-    public RangeMatchInstruction lessThan(T lessThan) {
+    public RangeMatchInstruction lessThan(final T lessThan) {
         this.lessThan = lessThan;
         return this;
     }
@@ -35,7 +35,7 @@ public class RangeMatchInstruction<T> extends AbstractMatchInstruction {
     public T getLessThanOrEqual() {
         return this.lessThanOrEqual;
     }
-    public RangeMatchInstruction lessThanOrEqual(T lessThanOrEqual) {
+    public RangeMatchInstruction lessThanOrEqual(final T lessThanOrEqual) {
         this.lessThanOrEqual = lessThanOrEqual;
         return this;
     }
@@ -43,7 +43,7 @@ public class RangeMatchInstruction<T> extends AbstractMatchInstruction {
     public T getGreaterThan() {
         return this.greaterThan;
     }
-    public RangeMatchInstruction greaterThan(T greaterThan) {
+    public RangeMatchInstruction greaterThan(final T greaterThan) {
         this.greaterThan = greaterThan;
         return this;
     }
@@ -51,7 +51,7 @@ public class RangeMatchInstruction<T> extends AbstractMatchInstruction {
     public T getGreaterThanOrEqual() {
         return this.greaterThanOrEqual;
     }
-    public RangeMatchInstruction greaterThanOrEqual(T greaterThanOrEqual) {
+    public RangeMatchInstruction greaterThanOrEqual(final T greaterThanOrEqual) {
         this.greaterThanOrEqual = greaterThanOrEqual;
         return this;
     }

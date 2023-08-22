@@ -40,7 +40,8 @@ public class UserAuthenticationSettingsDTO extends AbstractSegueUserDTO {
      * @param hasSegueAccount - boolean whether or not they have a segue account
      * @param mfaStatus - boolean whether or not they have MFA enabled on a segue account
      */
-    public UserAuthenticationSettingsDTO(Long id, List<AuthenticationProvider> linkedAccounts, boolean hasSegueAccount, boolean mfaStatus) {
+    public UserAuthenticationSettingsDTO(final Long id, final List<AuthenticationProvider> linkedAccounts,
+                                         final boolean hasSegueAccount, final boolean mfaStatus) {
         this.id = id;
         this.linkedAccounts = linkedAccounts;
         this.hasSegueAccount = hasSegueAccount;

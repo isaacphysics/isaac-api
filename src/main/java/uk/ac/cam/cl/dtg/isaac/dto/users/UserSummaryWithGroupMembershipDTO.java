@@ -16,10 +16,10 @@
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 /**
- * Used to augment user summary information with group membership details given a particular group context
+ * Used to augment user summary information with group membership details given a particular group context.
  */
 public class UserSummaryWithGroupMembershipDTO extends UserSummaryDTO {
-    GroupMembershipDTO groupMembershipInformation;
+    private GroupMembershipDTO groupMembershipInformation;
 
     public UserSummaryWithGroupMembershipDTO() {
 
@@ -29,7 +29,7 @@ public class UserSummaryWithGroupMembershipDTO extends UserSummaryDTO {
         return groupMembershipInformation;
     }
 
-    public void setGroupMembershipInformation(GroupMembershipDTO groupMembershipInformation) {
+    public void setGroupMembershipInformation(final GroupMembershipDTO groupMembershipInformation) {
         this.groupMembershipInformation = groupMembershipInformation;
     }
 

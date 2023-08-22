@@ -26,21 +26,21 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
     private final GitContentManager contentManager;
     private final String contentIndex;
 
-    public TeacherCpdBadgePolicy(EventBookingManager bookingManager,
-                                 GitContentManager contentManager,
-                                 String contentIndex) {
+    public TeacherCpdBadgePolicy(final EventBookingManager bookingManager,
+                                 final GitContentManager contentManager,
+                                 final String contentIndex) {
         this.bookingManager = bookingManager;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
     }
 
     @Override
-    public int getLevel(JsonNode state) {
+    public int getLevel(final JsonNode state) {
         return state.get("cpdEvents").size();
     }
 
     @Override
-    public JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction) {
+    public JsonNode initialiseState(final RegisteredUserDTO user, final ITransaction transaction) {
 
         ArrayNode events = JsonNodeFactory.instance.arrayNode();
 
@@ -53,7 +53,7 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
                     continue;
                 }
 
-                ContentDTO content = getcontentDetails(eventId);
+                ContentDTO content = getContentDetails(eventId);
                 if (content instanceof IsaacEventPageDTO) {
 
                     if (content.getTags().contains("teacher")) {
@@ -70,7 +70,7 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
+    public JsonNode updateState(final RegisteredUserDTO user, final JsonNode state, final String event) {
 
         Iterator<JsonNode> iter = ((ArrayNode) state.get("cpdEvents")).elements();
 
@@ -87,11 +87,11 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
 
     /**
      *
-     * @param eventId
-     * @return
-     * @throws ContentManagerException
+     * @param eventId - the event id to search for
+     * @return the ContentDTO associated with the id
+     * @throws ContentManagerException if the subsequent method(s) provide neither a search term nor filter instructions
      */
-    private ContentDTO getcontentDetails(String eventId) throws ContentManagerException {
+    private ContentDTO getContentDetails(final String eventId) throws ContentManagerException {
         return this.contentManager.getContentById(eventId);
     }
 }

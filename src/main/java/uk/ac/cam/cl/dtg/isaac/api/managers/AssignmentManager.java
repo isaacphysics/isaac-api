@@ -63,6 +63,8 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      *            - service for sending specific emails.
      * @param gameManager
      *            - the game manager object
+     * @param properties
+     *            - instance of properties loader
      */
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
@@ -100,7 +102,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     }
 
     /**
-     * Get all assignments for a given group id
+     * Get all assignments for a given group id.
      * @param groupId - to which the assignments have been assigned
      * @return all assignments
      * @throws SegueDatabaseException
@@ -186,7 +188,9 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
-    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture) throws SegueDatabaseException {
+    public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(
+            final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture)
+            throws SegueDatabaseException {
         Validate.notNull(groups);
         // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
         if (groups.isEmpty()) {
@@ -196,7 +200,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         // displaying group related stuff in the front-end)
         Map<Long, String> groupIdToName = groups.stream().collect(Collectors.toMap(UserGroupDTO::getId, UserGroupDTO::getGroupName));
         List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet())
-                .stream().filter(a -> includeAssignmentsScheduledInFuture || (null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date())))
+                .stream().filter(a -> includeAssignmentsScheduledInFuture || null == a.getScheduledStartDate() || a.getScheduledStartDate().before(new Date()))
                 .collect(Collectors.toList());
         assignments.forEach(assignment -> assignment.setGroupName(groupIdToName.get(assignment.getGroupId())));
         return assignments;
@@ -243,7 +247,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     }
 
     @Override
-    public String getAssignmentLikeName(AssignmentDTO existingAssignment) throws SegueDatabaseException {
+    public String getAssignmentLikeName(final AssignmentDTO existingAssignment) throws SegueDatabaseException {
         GameboardDTO gameboard = gameManager.getGameboard(existingAssignment.getGameboardId());
         String name = existingAssignment.getGameboardId();
         if (gameboard != null && gameboard.getTitle() != null && !gameboard.getTitle().isEmpty()) {
@@ -253,7 +257,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     }
 
     @Override
-    public String getAssignmentLikeUrl(AssignmentDTO existingAssignment) {
+    public String getAssignmentLikeUrl(final AssignmentDTO existingAssignment) {
         return String.format("https://%s/assignment/%s",
                         properties.getProperty(HOST_NAME),
                         existingAssignment.getGameboardId());

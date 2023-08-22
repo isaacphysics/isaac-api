@@ -71,7 +71,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     private final IdTokenVerifier idTokenVerifier;
 
     // Identity provider (AKA authorization server) metadata, including URIs of auth and token endpoints
-    public final OidcDiscoveryResponse idpMetadata;
+    private final OidcDiscoveryResponse idpMetadata;
 
     // Raspberry Pi login options
     public static final String LOGIN_OPTIONS_PARAM_NAME = "login_options";
@@ -104,8 +104,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
 
         try (InputStream inputStream = new FileInputStream(idpMetadataLocation);
              InputStreamReader reader = new InputStreamReader(inputStream)
-        )
-        {
+        ) {
             this.idpMetadata = OidcDiscoveryResponse.load(this.jsonFactory, reader);
         }
 
@@ -132,7 +131,8 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public synchronized UserFromAuthProvider getUserInfo(String internalProviderReference) throws NoUserException, IOException, AuthenticatorSecurityException {
+    public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
+            throws NoUserException, IOException, AuthenticatorSecurityException {
         IdTokenResponse response = credentialStore.getIfPresent(internalProviderReference);
 
         // Make sure we have an ID token
@@ -160,8 +160,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
 
         if (null == nickname || null == fullName || null == email || null == sub) {
             throw new NoUserException("Required field missing from identity provider's response.");
-        }
-        else {
+        } else {
             // Build a given name/family name based on the nickname and full name fields available. This makes
             // unreasonable assumptions about the structure of names, but it's the best we can do.
             List<String> givenNameFamilyName = getGivenNameFamilyName(nickname, fullName);
@@ -183,7 +182,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String getAuthorizationUrl(String antiForgeryStateToken) {
+    public String getAuthorizationUrl(final String antiForgeryStateToken) {
         return new AuthorizationCodeRequestUrl(this.idpMetadata.getAuthorizationEndpoint(), this.clientId)
                 .setScopes(requestedScopes)
                 .setRedirectUri(callbackUri)
@@ -199,7 +198,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String extractAuthCode(String url) {
+    public String extractAuthCode(final String url) {
         AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url);
 
         if (authResponse.getError() == null) {
@@ -212,7 +211,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String exchangeCode(String authorizationCode) throws CodeExchangeException {
+    public String exchangeCode(final String authorizationCode) throws CodeExchangeException {
         try {
             // Exchange the authorization code for the ID token (and access token) from the IdP's token endpoint
             IdTokenResponse response = (IdTokenResponse) new AuthorizationCodeTokenRequest(
@@ -238,7 +237,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         }
     }
 
-    private boolean verifyIdToken(IdToken token) {
+    private boolean verifyIdToken(final IdToken token) {
         if (null == token) {
             return false;
         }
@@ -257,7 +256,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
      * @return A list with two elements: the derived given name and family name.
      * @throws NoUserException when the derived names are not valid.
      */
-    public List<String> getGivenNameFamilyName(String nickname, String fullName) throws NoUserException {
+    public List<String> getGivenNameFamilyName(final String nickname, final String fullName) throws NoUserException {
         String givenName = nickname;
         String familyName;
 
@@ -272,9 +271,13 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
         }
 
         // Finally, check that the name meets validation.
-        if (!UserAccountManager.isUserNameValid(givenName) || !UserAccountManager.isUserNameValid(familyName)){
+        if (!UserAccountManager.isUserNameValid(givenName) || !UserAccountManager.isUserNameValid(familyName)) {
             throw new NoUserException("The name provided by the identity provider does not meet validation.");
         }
         return List.of(givenName, familyName);
+    }
+
+    public OidcDiscoveryResponse getIdpMetadata() {
+        return idpMetadata;
     }
 }

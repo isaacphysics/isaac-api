@@ -26,11 +26,18 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
@@ -44,17 +51,10 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -71,12 +71,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ADMIN_EMAIL;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ICAL_UID_DOMAIN;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_RESERVATION_CLOSE_INTERVAL_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAIL_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 /**
@@ -100,6 +95,10 @@ public class EventBookingManager {
      * @param bookingPersistenceManager - to allow bookings to be persisted in the database
      * @param emailManager              - email manager
      * @param userAssociationManager    - the userAssociationManager manager object
+     * @param propertiesLoader          - Instance of properties Loader
+     * @param groupManager              - Instance of Group Manager
+     * @param userAccountManager        - Instance of User Account Manager, for retrieving users
+     * @param transactionManager        - Instance of Transaction Manager, used for locking database while managing bookings
      */
     @Inject
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
@@ -224,7 +223,7 @@ public class EventBookingManager {
      * @return either true or false if the user is able to manage the event.
      * @throws SegueDatabaseException if there is a problem with the database while retrieving associations or groups.
      */
-    public boolean isUserAbleToManageEvent(RegisteredUserDTO user, IsaacEventPageDTO event) throws SegueDatabaseException {
+    public boolean isUserAbleToManageEvent(final RegisteredUserDTO user, final IsaacEventPageDTO event) throws SegueDatabaseException {
         if (Arrays.asList(Role.EVENT_MANAGER, Role.ADMIN).contains(user.getRole())) {
             return true;
         }
@@ -257,9 +256,9 @@ public class EventBookingManager {
      * @return either true or false whether the requesting user made the reservation
      * @throws SegueDatabaseException if there is a problem retrieving the event and booking info
      */
-    public boolean isReservationMadeByRequestingUser(RegisteredUserDTO user,
-                                                     RegisteredUserDTO userOwningReservation,
-                                                     IsaacEventPageDTO event)
+    public boolean isReservationMadeByRequestingUser(final RegisteredUserDTO user,
+                                                     final RegisteredUserDTO userOwningReservation,
+                                                     final IsaacEventPageDTO event)
             throws SegueDatabaseException {
 
         EventBookingDTO booking = this.getBookingByEventIdAndUserId(event.getId(), userOwningReservation.getId());
@@ -294,8 +293,8 @@ public class EventBookingManager {
             try {
                 booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
             } catch (EventIsFullException e1) {
-                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
-                        "- something went terribly wrong for this to have happened", e1);
+                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception "
+                        + "- something went terribly wrong for this to have happened", e1);
             }
             return booking;
         }
@@ -309,8 +308,8 @@ public class EventBookingManager {
             try {
                 booking =  this.createBooking(event, user, additionalEventInformation, BookingStatus.WAITING_LIST);
             } catch (EventIsFullException e1) {
-                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception " +
-                        "- something went terribly wrong for this to have happened", e1);
+                throw new RuntimeException("Creating a waiting list booking should never throw an event is full exception "
+                        + "- something went terribly wrong for this to have happened", e1);
             }
         }
 
@@ -321,7 +320,7 @@ public class EventBookingManager {
      * Create booking on behalf of a user.
      * This method will allow users to be booked onto an event providing there is space. No other rules are applied.
      * This is likely to be only for admin users.
-     *
+     * <p>
      * This method will not enforce some of the restrictions such as event deadlines and email verification
      *
      * @param event - of interest
@@ -489,16 +488,20 @@ public class EventBookingManager {
      *
      * @param event - to reserve the user on
      * @param users - to reserve on the event
+     * @param reservingUser - the user making the reservation
      * @return confirmation of reservation
      */
     public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                                                      final RegisteredUserDTO reservingUser)
-    throws EventDeadlineException, DuplicateBookingException, EventIsFullException, EventGroupReservationLimitException,
-           SegueDatabaseException, EventIsCancelledException {
+            throws EventDeadlineException, DuplicateBookingException, EventIsFullException, EventGroupReservationLimitException,
+            SegueDatabaseException, EventIsCancelledException {
 
         // Cannot reserve spots onto a cancelled event
         if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
-            throw new EventIsCancelledException(String.format("User (%s) was unable to reserve places for event (%s); the event is cancelled.", reservingUser.getId(), event.getId()));
+            throw new EventIsCancelledException(String.format(
+                    "User (%s) was unable to reserve places for event (%s); the event is cancelled.",
+                    reservingUser.getId(), event.getId()
+            ));
         }
 
         List<RegisteredUserDTO> unreservableUsers = new ArrayList<>();
@@ -628,7 +631,10 @@ public class EventBookingManager {
         // If the frontend prevents selection of unreservable users, then this email should never go out.
         if (unreservableUsers.size() > 0) {
             // Log that the reserving user tried to reserve invalid users.
-            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId(), event.getId(), unreservableUsers));
+            log.error(String.format(
+                    "User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s",
+                    reservingUser.getId(), event.getId(), unreservableUsers
+            ));
         }
 
         return reservations;
@@ -1303,14 +1309,14 @@ public class EventBookingManager {
 
     /**
      * Helper method to generate an ics file for emailing to users who have booked on to an event.
-     *
+     * <p>
      * Note: This method may return null in the event we cannot communicate with a third party service.
      *
      * @param event - the event booked on
      * @param bookingDetails - the booking details.
      * @return email attachment containing an ics file.
      */
-    private EmailAttachment generateEventICSFile(IsaacEventPageDTO event, EventBookingDTO bookingDetails) {
+    private EmailAttachment generateEventICSFile(final IsaacEventPageDTO event, final EventBookingDTO bookingDetails) {
 
         try {
             // note this library will go out to a third part to get a sensible timezone value.
@@ -1346,34 +1352,29 @@ public class EventBookingManager {
     }
 
     /**
-     * Helper to generate a url with a pre-generated subject field for the contact page
+     * Helper to generate a url with a pre-generated subject field for the contact page.
      * @param event - the event of interest
      * @return customised contactUs url for the event.
      */
-    private String generateEventContactUsURL(IsaacEventPageDTO event){
+    private String generateEventContactUsURL(final IsaacEventPageDTO event) {
         String defaultURL = String.format("https://%s/contact", propertiesLoader.getProperty(HOST_NAME));
         if (event.getDate() == null) {
             return defaultURL;
         }
 
-        try {
-            DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
-            String location = event.getLocation() != null &&
-                    event.getLocation().getAddress() != null &&
-                    event.getLocation().getAddress().getAddressLine1() != null
-                    ? event.getLocation().getAddress().getAddressLine1()
-                    : "";
+        DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
+        String location = event.getLocation() != null
+                && event.getLocation().getAddress() != null
+                && event.getLocation().getAddress().getAddressLine1() != null
+                ? event.getLocation().getAddress().getAddressLine1()
+                : "";
 
-            String contactUsSubject = "Event - " + location + " - " + shortDateFormatter.format(event.getDate());
+        String contactUsSubject = "Event - " + location + " - " + shortDateFormatter.format(event.getDate());
 
-            return String.format("https://%s/contact?subject=%s",
-                    propertiesLoader.getProperty(HOST_NAME),
-                    URLEncoder.encode(contactUsSubject, java.nio.charset.StandardCharsets.UTF_8.toString()));
+        return String.format("https://%s/contact?subject=%s",
+                propertiesLoader.getProperty(HOST_NAME),
+                URLEncoder.encode(contactUsSubject, StandardCharsets.UTF_8));
 
-        } catch (UnsupportedEncodingException e) {
-            log.error("Unable to encode url for contact us link, using default url instead", e);
-            return defaultURL;
-        }
     }
 
     /**

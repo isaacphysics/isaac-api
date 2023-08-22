@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,17 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
 
 /**
  * A wrapper object used to indicate an error has occurred to the client using the API. 
@@ -127,7 +126,7 @@ public class SegueErrorResponse implements Serializable {
         return bypassGenericSiteErrorPage;
     }
 
-    public void setBypassGenericSiteErrorPage(boolean bypassGenericSiteErrorPage) {
+    public void setBypassGenericSiteErrorPage(final boolean bypassGenericSiteErrorPage) {
         this.bypassGenericSiteErrorPage = bypassGenericSiteErrorPage;
     }
 
@@ -157,7 +156,7 @@ public class SegueErrorResponse implements Serializable {
 
     /**
      * Returns the response builder preconfigured with this SegueErrorMessage.
-     * 
+     * <p>
      * This allows you to attach cache control headers or anything else that you may want to do.
      * 
      * @return preconfigured reponse builder.

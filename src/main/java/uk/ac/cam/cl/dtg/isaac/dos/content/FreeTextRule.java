@@ -1,12 +1,12 @@
 /**
  * Copyright 2018 Meurig Thomas
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,7 @@ public class FreeTextRule extends Choice {
     private boolean allowsMisspelling;
     private Integer proximityDistance;
 
-    public FreeTextRule() {}
+    public FreeTextRule() { }
 
     public void setCaseInsensitive(final boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
@@ -52,7 +52,7 @@ public class FreeTextRule extends Choice {
     public boolean getAllowsMisspelling() {
         return this.allowsMisspelling;
     }
-    public void setWordProximity(Integer proximityDistance) {
+    public void setWordProximity(final Integer proximityDistance) {
         this.proximityDistance = proximityDistance;
     }
     public Integer getWordProximity() {

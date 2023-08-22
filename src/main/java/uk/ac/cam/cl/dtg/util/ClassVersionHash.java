@@ -6,9 +6,11 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ClassVersionHash {
+public final class ClassVersionHash {
 
-    public static String hashClass(Class c) {
+    private ClassVersionHash() { }
+
+    public static String hashClass(final Class c) {
         try {
             InputStream s = c.getResourceAsStream(c.getSimpleName() + ".class");
             return DigestUtils.sha256Hex(s);
@@ -18,7 +20,7 @@ public class ClassVersionHash {
         }
     }
 
-    public static void logHash(Logger logger, Class c) {
+    public static void logHash(final Logger logger, final Class c) {
         String hash = hashClass(c);
         logger.warn("Hash of " + c.getSimpleName() + ": " + hash);
     }

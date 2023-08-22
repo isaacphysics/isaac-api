@@ -34,7 +34,7 @@ public interface ISecondFactorAuthenticator {
 
     /**
      * Generate a new shared secret and return it so the user can capture it.
-     *
+     * <p>
      * At this stage the secret is not confirmed against the user.
      *
      * @param user - so the DO can be populated with the userid
@@ -45,9 +45,9 @@ public interface ISecondFactorAuthenticator {
 
     /**
      * Activation and Verification step.
-     *
+     * <p>
      * Make sure the user can generate a correct code.
-     *
+     * <p>
      * After this step 2FA becomes active and required for the user.
      *
      * @param user - user account to turn on 2FA
@@ -67,11 +67,12 @@ public interface ISecondFactorAuthenticator {
      * @throws IncorrectCredentialsProvidedException - incorrect code provided
      * @throws NoCredentialsAvailableException - user has not configured 2FA
      */
-    boolean authenticate2ndFactor(RegisteredUserDTO user, Integer codeSubmitted) throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException;
+    boolean authenticate2ndFactor(RegisteredUserDTO user, Integer codeSubmitted)
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException;
 
     /**
      * Remove 2FA settings for a given user's account.
-     *
+     * <p>
      * This will deactivate 2FA protection
      *
      * @param user - user account to turn on 2FA

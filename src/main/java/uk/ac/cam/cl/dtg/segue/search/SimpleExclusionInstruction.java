@@ -17,13 +17,13 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 /**
  * SimpleExclusionInstruction
- *
+ * <p>
  * SimpleExclusionInstruction expect a single value which must not appear in the results.
  */
 public class SimpleExclusionInstruction extends AbstractFilterInstruction {
     private final String mustNotMatchValue;
 
-    public SimpleExclusionInstruction(String mustNotMatchValue) {
+    public SimpleExclusionInstruction(final String mustNotMatchValue) {
 
         this.mustNotMatchValue = mustNotMatchValue;
     }

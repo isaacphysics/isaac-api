@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.RegexPatternDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
- * 
+ * <p> <p>
  * Responsible for converting Choice objects to their correct subtype.
  * 
  */
@@ -57,8 +57,7 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
     }
 
     @Override
-    public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType,
-                               MappingContext _context) {
+    public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType, final MappingContext context) {
         if (null == source) {
             return null;
         }
@@ -93,8 +92,7 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
     }
 
     @Override
-    public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType,
-                              MappingContext _context) {
+    public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType, final MappingContext context) {
         if (null == source) {
             return null;
         }

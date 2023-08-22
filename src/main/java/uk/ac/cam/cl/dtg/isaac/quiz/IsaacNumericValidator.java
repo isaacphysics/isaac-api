@@ -62,9 +62,9 @@ public class IsaacNumericValidator implements IValidator {
      * A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.
      */
     private class SigFigResult {
-        boolean isAmbiguous;
-        int sigFigsMin;
-        int sigFigsMax;
+        private boolean isAmbiguous;
+        private int sigFigsMin;
+        private int sigFigsMax;
 
         /**
          * Default constructor.
@@ -258,7 +258,7 @@ public class IsaacNumericValidator implements IValidator {
                 // What sort of match do we have:
                 if (numericValuesMatched && unitsFromUser.equals(unitsFromChoice)) {
                     // Exact match: nothing else can do better, but previous match may tell us if units are also correct:
-                    Boolean unitsCorrect = (null != bestResponse && bestResponse.getCorrectUnits()) || quantityFromQuestion.isCorrect();
+                    Boolean unitsCorrect = null != bestResponse && bestResponse.getCorrectUnits() || quantityFromQuestion.isCorrect();
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
                             quantityFromQuestion.isCorrect(), unitsCorrect, new Date());
@@ -547,7 +547,7 @@ public class IsaacNumericValidator implements IValidator {
 
     /**
      * Format a number in string form such that Java BigDecimal can parse it. Trims leading and trailing spaces.
-     *
+     * <p>
      * Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases, and fix uses of Unicode minus signs,
      * and allow bare powers of ten.
      *
@@ -563,7 +563,7 @@ public class IsaacNumericValidator implements IValidator {
 
     /**
      *  Replace explanation of validation response if question has default feedback and existing feedback blank or generic.
-     *
+     * <p>
      *  This method could be void, since it modifies the object passed in by reference, but it makes for shorter and
      *  simpler code when it is used if it just returns the same object it is passed.
      *

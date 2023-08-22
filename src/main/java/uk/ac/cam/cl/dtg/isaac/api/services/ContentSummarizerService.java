@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import java.util.ArrayList;
 
 public class ContentSummarizerService {
-    protected final MapperFacade mapper;
+    private final MapperFacade mapper;
     private final URIManager uriManager;
 
     @Inject
@@ -35,7 +35,7 @@ public class ContentSummarizerService {
     }
 
     /**
-     * Simplify a ContentDTO object to a smaller summary class to reduce the size of the response
+     * Simplify a ContentDTO object to a smaller summary class to reduce the size of the response.
      *
      * @param content
      *            - the content object to summarise
@@ -56,9 +56,14 @@ public class ContentSummarizerService {
     }
 
     /**
-     * Helper method to simplify a ContentDTO object directly to ContentSummaryDTO
+     * Helper method to simplify a ContentDTO object directly to ContentSummaryDTO.
      *  
-     * @see ContentSummarizerService#extractContentSummary(ContentDTO, Class)  
+     * @see ContentSummarizerService#extractContentSummary(ContentDTO, Class)
+     *
+     * @param content
+     *            - the content data transfer object
+     *
+     * @return the ContentSummaryDTO generated from the provided ContentDTO
      */
     public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
         return extractContentSummary(content, ContentSummaryDTO.class);
@@ -69,6 +74,8 @@ public class ContentSummarizerService {
      *
      * @param contentList
      *            - the list of content to summarise.
+     * @param summaryClass
+     *            - the subclass of ContentSummaryDTO to convert the content into
      * @return list of shorter ContentSummaryDTO objects.
      */
     public ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
@@ -89,9 +96,13 @@ public class ContentSummarizerService {
     }
 
     /**
-     * Helper method to simplify a ResultsWrapper of ContentDTO objects directly to ContentSummaryDTOs
+     * Helper method to simplify a ResultsWrapper of ContentDTO objects directly to ContentSummaryDTOs.
      *
-     * @see ContentSummarizerService#extractContentSummaryFromResultsWrapper(ResultsWrapper, Class) 
+     * @see ContentSummarizerService#extractContentSummaryFromResultsWrapper(ResultsWrapper, Class)
+     *
+     * @param contentList
+     *            - the list of content to summarise.
+     * @return list of shorter ContentSummaryDTO objects.
      */
     public ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(final ResultsWrapper<ContentDTO> contentList) {
         return extractContentSummaryFromResultsWrapper(contentList, ContentSummaryDTO.class);

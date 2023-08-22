@@ -33,7 +33,7 @@ public class MethodNotAllowedExceptionMapper implements ExceptionMapper<jakarta.
     private HttpServletRequest request;
 
     @Override
-    public Response toResponse(jakarta.ws.rs.NotAllowedException e) {
+    public Response toResponse(final jakarta.ws.rs.NotAllowedException e) {
         String message = String.format("Request %s %s is not allowed", request.getMethod(), request.getRequestURI());
         log.error(message);
         return SegueErrorResponse.getMethodNotAllowedReponse(message);

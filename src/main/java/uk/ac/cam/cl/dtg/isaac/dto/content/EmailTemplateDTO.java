@@ -56,17 +56,18 @@ public class EmailTemplateDTO extends ContentDTO {
      * @param tags
      * @param level
      */
+    @SuppressWarnings("checkstyle:ParameterName")
     public EmailTemplateDTO(final String _id, final String id, final String title, final String subtitle,
-            final String type, final String author, final String encoding, final String canonicalSourceFile,
-            final String layout, final List<ContentBaseDTO> children, final String value, final String attribution,
-            final List<ContentSummaryDTO> relatedContent, final Boolean published, final Boolean deprecated,
-            final Set<String> tags, final Integer level) {
+                            final String type, final String author, final String encoding, final String canonicalSourceFile,
+                            final String layout, final List<ContentBaseDTO> children, final String value, final String attribution,
+                            final List<ContentSummaryDTO> relatedContent, final Boolean published, final Boolean deprecated,
+                            final Set<String> tags, final Integer level) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, deprecated, tags, level);
     }
 
     /**
-     * @param value
+     * @param value a string to set as the value
      */
     public EmailTemplateDTO(final String value) {
         super(value);

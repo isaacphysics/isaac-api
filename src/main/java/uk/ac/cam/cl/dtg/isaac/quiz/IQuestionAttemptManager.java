@@ -1,14 +1,14 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * IQuestionAttemptManager. Objects implementing this interface are responsible for recording question attempts
@@ -31,8 +31,8 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - if there is an error during the database operation.
      */
-    void registerQuestionAttempt(final Long userId, final String questionPageId, final String fullQuestionId,
-            final QuestionValidationResponse questionAttempt) throws SegueDatabaseException;
+    void registerQuestionAttempt(Long userId,  String questionPageId, String fullQuestionId,
+             QuestionValidationResponse questionAttempt) throws SegueDatabaseException;
 
     /**
      * Get a users question attempts.
@@ -43,7 +43,7 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - If there is a database error.
      */
-    Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId)
+    Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(Long userId)
             throws SegueDatabaseException;
 
     /**
@@ -101,7 +101,7 @@ public interface IQuestionAttemptManager {
             throws SegueDatabaseException;
 
     /**
-     * Count the users by role which have answered questions over the previous time interval
+     * Count the users by role which have answered questions over the previous time interval.
      * @param timeInterval time interval over which to count
      * @return map of counts for each role
      * @throws SegueDatabaseException
@@ -112,9 +112,9 @@ public interface IQuestionAttemptManager {
 
     /**
      * getQuestionAttemptCountForUserByDateRange.
-     *
+     * <p>
      * An optimised method for getting question attempt counts data by month for a given date range.
-     *
+     * <p>
      * This relies on the database doing the binning for us.
      *
      * @param fromDate
@@ -123,6 +123,8 @@ public interface IQuestionAttemptManager {
      *            - the latest date the log event can have occurred
      * @param userId
      *            - the list of users ids we are interested in.
+     * @param perDay
+     *            - group attempts by day if True or by month if False or Null
      * @return a collection of log events that match the above criteria or an empty collection.
      * @throws SegueDatabaseException
      *             - if we cannot retrieve the data from the database.

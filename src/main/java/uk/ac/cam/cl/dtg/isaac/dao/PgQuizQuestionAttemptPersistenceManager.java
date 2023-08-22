@@ -57,23 +57,23 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     }
 
     @Override
-    public void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponse) throws SegueDatabaseException {
+    public void registerQuestionAttempt(final Long quizAttemptId, final QuestionValidationResponse questionResponse) throws SegueDatabaseException {
 
-        String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, \"timestamp\")" +
-                " VALUES (?, ?, ?::text::jsonb, ?, ?);";
+        String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, \"timestamp\")"
+                + " VALUES (?, ?, ?::text::jsonb, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
-            PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
         ) {
-            pst.setLong(1, quizAttemptId);
-            pst.setString(2, questionResponse.getQuestionId());
-            pst.setString(3, objectMapper.writeValueAsString(questionResponse));
+            pst.setLong(FIELD_REGISTER_ATTEMPT_ATTEMPT_ID, quizAttemptId);
+            pst.setString(FIELD_REGISTER_ATTEMPT_QUESTION_ID, questionResponse.getQuestionId());
+            pst.setString(FIELD_REGISTER_ATTEMPT_ATTEMPT_STRING, objectMapper.writeValueAsString(questionResponse));
 
             if (questionResponse.isCorrect() != null) {
-                pst.setBoolean(4, questionResponse.isCorrect());
+                pst.setBoolean(FIELD_REGISTER_ATTEMPT_IS_CORRECT, questionResponse.isCorrect());
             } else {
-                pst.setNull(4, Types.BOOLEAN);
+                pst.setNull(FIELD_REGISTER_ATTEMPT_IS_CORRECT, Types.BOOLEAN);
             }
-            pst.setTimestamp(5, new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
+            pst.setTimestamp(FIELD_REGISTER_ATTEMPT_TIMESTAMP, new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save quiz question attempt.");
@@ -86,19 +86,19 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     }
 
     @Override
-    public Map<String, List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(Long quizAttemptId) throws SegueDatabaseException {
+    public Map<String, List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(final Long quizAttemptId) throws SegueDatabaseException {
         String query = "SELECT question_id, question_attempt FROM quiz_question_attempts WHERE quiz_attempt_id = ? ORDER BY timestamp";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, quizAttemptId);
+            pst.setLong(FIELD_GET_ATTEMPT_ANSWERS_ATTEMPT_ID, quizAttemptId);
 
             try (ResultSet results = pst.executeQuery()) {
                 Map<String, List<QuestionValidationResponse>> resultsMap = Maps.newHashMap();
                 while (results.next()) {
                     String questionId = results.getString("question_id");
 
-                    List<QuestionValidationResponse> questionAttempts = resultsMap.computeIfAbsent(questionId, (ignore) -> Lists.newArrayList());
+                    List<QuestionValidationResponse> questionAttempts = resultsMap.computeIfAbsent(questionId, ignore -> Lists.newArrayList());
 
                     QuestionValidationResponse questionAttempt = objectMapper.readValue(
                             results.getString("question_attempt"), QuestionValidationResponse.class);
@@ -115,14 +115,14 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     }
 
     @Override
-    public Map<Long, Map<String, List<QuestionValidationResponse>>> getAllAnswersForQuizAssignment(Long quizAssignmentId) throws SegueDatabaseException {
-        String query = "SELECT user_id, question_id, question_attempt FROM quiz_question_attempts" +
-                    " INNER JOIN quiz_attempts ON (quiz_attempts.id = quiz_question_attempts.quiz_attempt_id)" +
-                    " WHERE quiz_assignment_id = ? ORDER BY quiz_attempt_id, timestamp";
+    public Map<Long, Map<String, List<QuestionValidationResponse>>> getAllAnswersForQuizAssignment(final Long quizAssignmentId) throws SegueDatabaseException {
+        String query = "SELECT user_id, question_id, question_attempt FROM quiz_question_attempts"
+                + " INNER JOIN quiz_attempts ON (quiz_attempts.id = quiz_question_attempts.quiz_attempt_id)"
+                + " WHERE quiz_assignment_id = ? ORDER BY quiz_attempt_id, timestamp";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, quizAssignmentId);
+            pst.setLong(FIELD_GET_ASSIGNMENT_ANSWERS_ASSIGNMENT_ID, quizAssignmentId);
 
             try (ResultSet results = pst.executeQuery()) {
                 Map<Long, Map<String, List<QuestionValidationResponse>>> resultsMap = Maps.newHashMap();
@@ -130,9 +130,9 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
                     Long userId = results.getLong("user_id");
                     String questionId = results.getString("question_id");
 
-                    Map<String, List<QuestionValidationResponse>> userAttemptsMap = resultsMap.computeIfAbsent(userId, (ignoreKey) -> Maps.newHashMap());
+                    Map<String, List<QuestionValidationResponse>> userAttemptsMap = resultsMap.computeIfAbsent(userId, ignoreKey -> Maps.newHashMap());
 
-                    List<QuestionValidationResponse> questionAttempts = userAttemptsMap.computeIfAbsent(questionId, (ignoreKey) -> Lists.newArrayList());
+                    List<QuestionValidationResponse> questionAttempts = userAttemptsMap.computeIfAbsent(questionId, ignoreKey -> Lists.newArrayList());
 
                     QuestionValidationResponse questionAttempt = objectMapper.readValue(
                             results.getString("question_attempt"), QuestionValidationResponse.class);
@@ -147,4 +147,19 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
             throw new SegueDatabaseException("Unable to process json exception", e);
         }
     }
+
+    // Field Constants
+    // registerQuestionAttempt
+    private static final int FIELD_REGISTER_ATTEMPT_ATTEMPT_ID = 1;
+    private static final int FIELD_REGISTER_ATTEMPT_QUESTION_ID = 2;
+    private static final int FIELD_REGISTER_ATTEMPT_ATTEMPT_STRING = 3;
+    private static final int FIELD_REGISTER_ATTEMPT_IS_CORRECT = 4;
+    private static final int FIELD_REGISTER_ATTEMPT_TIMESTAMP = 5;
+
+    // getAllAnswersForQuizAttempt
+    private static final int FIELD_GET_ATTEMPT_ANSWERS_ATTEMPT_ID = 1;
+
+    // getAllAnswersForQuizAssignment
+    private static final int FIELD_GET_ASSIGNMENT_ANSWERS_ASSIGNMENT_ID = 1;
+
 }

@@ -39,15 +39,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.WEBSOCKET_LATENCY_HISTOGRAM;
 
 /**
- * Websocket class for 2-way communication channel between front-end client and API
- * for delivering real-time data
+ * Websocket class for 2-way communication channel between front-end client and API for delivering real-time data.
  *
  * @author Dan Underwood
  */
-@WebSocket(idleTimeout=65000)
+@WebSocket(idleTimeout = USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS)
 public class UserAlertsWebSocket implements IAlertListener {
     private static class Protocol {
         static final String HEARTBEAT = "heartbeat";
@@ -97,14 +97,20 @@ public class UserAlertsWebSocket implements IAlertListener {
     }
 
     /**
-     * Injectable constructor
+     * Injectable constructor.
      *
      * @param userManager
-     *              - to get user information for the conencteds socket
+     *              - to get user information for the connected socket
+     * @param userAuthenticationManager
+     *              - to get the user from the session
      * @param userAlerts
      *              - to get/update persisted user alerts
      * @param logManager
-     *              - so that we can log events for users.
+     *              - so that we can log events for users
+     * @param statisticsManager
+     *              - to get user statistics
+     * @param properties
+     *              - instance of properties loader
      */
     @Inject
     public UserAlertsWebSocket(final UserAccountManager userManager,
@@ -160,7 +166,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
 
     /**
-     * Handles a new client websocket connection
+     * Handles a new client websocket connection.
      *
      * @param session
      *          - contains information about the session to be started
@@ -245,7 +251,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
 
     /**
-     * Handles the closing of the websocket conenction
+     * Handles the closing of the websocket connection.
      *
      * @param session
      **          - contains information on the currently connected session
@@ -289,7 +295,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
     /**
      * Handles errors in WebSocket connections.
-     *
+     * <p>
      * TODO: should this also deal with the closing part?
      * This for now is just to remove an error that Jetty outputs if no handler is configured.
      *
@@ -307,10 +313,10 @@ public class UserAlertsWebSocket implements IAlertListener {
     }
 
     /**
-     * Sends a payload to the connected client notifying them of an important event
+     * Sends a payload to the connected client notifying them of an important event.
      *
      * @param alert
-     *          - user alert instance containg details about the event
+     *          - user alert instance containing details about the event
      */
     private void sendAlert(final IUserAlert alert) {
         try {
@@ -325,7 +331,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
 
     /**
-     * Method to send a payload to the connected user with details of their current stats snapshot
+     * Method to send a payload to the connected user with details of their current stats snapshot.
      * TODO: Currently only delivers user streak information but we can generalise it later to deliver more data
      *
      * @throws IOException
@@ -339,8 +345,8 @@ public class UserAlertsWebSocket implements IAlertListener {
     }
 
     /**
-     * Send any notifications or alerts registered in the database down this websocket
-     * @param userId the Id of the user's alerts which will be sent.
+     * Send any notifications or alerts registered in the database down this websocket.
+     * @param userId the id of the user's alerts which will be sent.
      * @throws SegueDatabaseException can be thrown while getting the user's alerts from the database.
      * @throws IOException can be thrown when sending the notifications down the connection.
      */

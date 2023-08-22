@@ -144,12 +144,14 @@ public class UserAuthenticationManager {
         String ipAddress = RequestIPExtractor.getClientIpAddr(request);
 
         String jSessionId = null;
-        try { jSessionId = this.getJSessionIdFromRequest(request); }
-        catch (InvalidSessionException e) { /* Do nothing - leave jSessionId as null */ }
+        try {
+            jSessionId = this.getJSessionIdFromRequest(request);
+        } catch (InvalidSessionException e) { /* Do nothing - leave jSessionId as null */ }
 
         Map<String, String> sessionInformation = Maps.newHashMap();
-        try { sessionInformation = getSegueSessionFromRequest(request); }
-        catch (InvalidSessionException | IOException e) { /* Do nothing - leave session map empty */ }
+        try {
+            sessionInformation = getSegueSessionFromRequest(request);
+        } catch (InvalidSessionException | IOException e) { /* Do nothing - leave session map empty */ }
 
         String segueUserId = sessionInformation.get(SESSION_USER_ID);
         String sessionToken = sessionInformation.get(SESSION_TOKEN);
@@ -160,7 +162,7 @@ public class UserAuthenticationManager {
 
     /**
      * This method will trigger the authentication flow for a 3rd party authenticator.
-     * 
+     * <p>
      * This method can be used for regular logins, new registrations or for linking 3rd party authenticators to an
      * existing Segue user account.
      * 
@@ -323,7 +325,7 @@ public class UserAuthenticationManager {
      * @param user - to check
      * @return true means the user should have a means of authenticating with their account as far as we are concerned
      */
-    public boolean hasLocalCredentials(RegisteredUser user) throws SegueDatabaseException {
+    public boolean hasLocalCredentials(final RegisteredUser user) throws SegueDatabaseException {
         IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
@@ -333,6 +335,8 @@ public class UserAuthenticationManager {
     /**
      * This method will look up a userDO based on the session information provided.
      * @param request containing session information
+     * @param allowIncompleteLoginsToReturnUser boolean if true will allow users that haven't completed MFA to be returned,
+     *                                          false will be stricter and return null if user hasn't completed MFA.
      * @return either a user or null if we couldn't find the user for whatever reason.
      */
     public RegisteredUser getUserFromSession(final HttpServletRequest request, final boolean allowIncompleteLoginsToReturnUser) {
@@ -377,6 +381,9 @@ public class UserAuthenticationManager {
     /**
      * @see #getUserFromSession(HttpServletRequest,boolean) - the two types of "request" have identical methods but are not
      *           related by interfaces or inheritance and so require duplicated methods!
+     *
+     * @param request - request to get the session and therefore user from
+     * @return the current User
      */
     public RegisteredUser getUserFromSession(final UpgradeRequest request) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
@@ -400,7 +407,7 @@ public class UserAuthenticationManager {
 
     /**
      * Extract the session expiry time from a request.
-     *
+     * <p>
      * Does not check session validity.
      *
      * @param request The request to extract the session information from
@@ -424,7 +431,7 @@ public class UserAuthenticationManager {
 
     /**
      * This method tries to address some of the duplication when extracting a user from a request.
-     *
+     * <p>
      * Note: This method has an important security enforcing function. Users who haven't completed MFA will have a cookie
      * as per normal users but will have an additional status flag that indicates they haven't completed MFA.
      * This method will act upon that by refusing to return the user if the boolean parameter is set to false.
@@ -514,12 +521,12 @@ public class UserAuthenticationManager {
 
             response.addCookie(logoutCookie);
         } catch (IllegalStateException e) {
-            log.info(LOGOUT_SESSION_ARLEADY_INVALIDATED_MESSAGE, e);
+            log.info(LOGOUT_SESSION_ALREADY_INVALIDATED_MESSAGE, e);
         }
     }
 
     /**
-     * Takes a request holding an authentication cookie and invalidates the associated session token stored in the database
+     * Takes a request holding an authentication cookie and invalidates the associated session token stored in the database.
      *
      * @param request - a servlet request holding an auth cookie for the user session to be invalidated
      * @throws NoUserLoggedInException - if a user cannot be retrieved from the session information
@@ -594,7 +601,7 @@ public class UserAuthenticationManager {
     
     /**
      * Unlink User From AuthenticationProvider
-     * 
+     * <p>
      * Removes the link between a user and a provider.
      * 
      * @param userDO
@@ -621,7 +628,7 @@ public class UserAuthenticationManager {
                     .mapToProvider(AuthenticationProvider.SEGUE.name());
 
         // make sure that the change doesn't prevent the user from logging in again.
-        if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1) || authenticator.hasPasswordRegistered(userDO)) {
+        if (this.database.getAuthenticationProvidersByUser(userDO).size() > 1 || authenticator.hasPasswordRegistered(userDO)) {
             this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
                     .getAuthenticationProvider());
         } else {
@@ -896,12 +903,13 @@ public class UserAuthenticationManager {
      *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag) throws SegueDatabaseException {
+            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag)
+            throws SegueDatabaseException {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
+        final int partialExpiryTimeInSeconds = 1200; // 20 mins
 
         String newUserSessionToken = this.database.regenerateSessionToken(user).toString();
         String userId = user.getId().toString();
@@ -911,7 +919,7 @@ public class UserAuthenticationManager {
         try {
             if (partialLoginFlag) {
                 // use shortened expiry time if partial login
-                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
+                sessionExpiryTimeInSeconds = partialExpiryTimeInSeconds;
             }
 
             Calendar calendar = Calendar.getInstance();
@@ -946,7 +954,7 @@ public class UserAuthenticationManager {
     
     /**
      * Executes checks on the users sessions to ensure it is valid.
-     * 
+     * <p>
      * Verifies the HMAC for userId, expiry date, session token and partial login status; but DOES NOT enforce
      * partial login as invalid! I.e. this method will return true for partial logins.
      * 
@@ -995,7 +1003,8 @@ public class UserAuthenticationManager {
         }
 
         // Check that the session token is still valid:
-        if (userFromDatabase.getSessionToken() == -1 || !userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
+        if (userFromDatabase.getSessionToken() == NO_SESSION_TOKEN_RESERVED_VALUE
+                || !userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
             log.debug("Invalid session token detected for user id " + userId);
             return false;
         }
@@ -1035,7 +1044,7 @@ public class UserAuthenticationManager {
     /**
      * This method is used to check whether a Segue Session's reported HMAC matches our recalculation. Assuming we've
      * kept our HMAC_SALT secret and non-guessable, that will mean the session information has not been tampered with.
-     *
+     * <p>
      * NOTE: Even if the HMAC is correct, it does not mean the session is valid, for that, use #isValidUsersSession(...).
      *
      * @param sessionInformation Map of keys and values representing the session.
@@ -1112,6 +1121,9 @@ public class UserAuthenticationManager {
      * @see #getSegueSessionFromRequest(HttpServletRequest) - except for some reason a WebSocket UpgradeRrequest is not
      *          an HttpServletRequest. Worse, the cookies from an HttpServletRequest are Cookie objects, but those
      *          from the WebSocket UpgradeRequest are HttpCookies!
+     *
+     * @param request - request to get the session cookie from
+     * @return a Map of session information
      */
     private Map<String, String> getSegueSessionFromRequest(final UpgradeRequest request) throws IOException,
             InvalidSessionException {
@@ -1166,7 +1178,7 @@ public class UserAuthenticationManager {
         }
     }
 
-    public boolean isSessionValid(HttpServletRequest request) {
+    public boolean isSessionValid(final HttpServletRequest request) {
         Map<String, String> currentSessionInformation;
         try {
             currentSessionInformation = this.getSegueSessionFromRequest(request);
@@ -1174,10 +1186,10 @@ public class UserAuthenticationManager {
             log.warn("User session has failed validation. Could not parse session information.");
             return false;
         }
-        return isSessionValid((currentSessionInformation));
+        return isSessionValid(currentSessionInformation);
     }
 
-    public boolean isSessionValid(Map<String, String> currentSessionInformation) {
+    public boolean isSessionValid(final Map<String, String> currentSessionInformation) {
         try {
             long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
             RegisteredUser userToReturn = database.getById(currentUserId);
@@ -1195,15 +1207,15 @@ public class UserAuthenticationManager {
         }
     }
 
-    public Map<String, String> decodeCookie(jakarta.ws.rs.core.Cookie segueAuthCookie) throws IOException {
+    public Map<String, String> decodeCookie(final jakarta.ws.rs.core.Cookie segueAuthCookie) throws IOException {
         return this.serializationMapper.readValue(Base64.decodeBase64(segueAuthCookie.getValue()), HashMap.class);
     }
 
-    public Map<String, String> decodeCookie(Cookie segueAuthCookie) throws IOException {
+    public Map<String, String> decodeCookie(final Cookie segueAuthCookie) throws IOException {
         return this.serializationMapper.readValue(Base64.decodeBase64(segueAuthCookie.getValue()), HashMap.class);
     }
 
-    public String calculateUpdatedHMAC(Map<String, String> sessionInformation) {
+    public String calculateUpdatedHMAC(final Map<String, String> sessionInformation) {
         String hmacKey = properties.getProperty(HMAC_SALT);
         String userId = sessionInformation.get(SESSION_USER_ID);
         String sessionExpiryDate = sessionInformation.get(DATE_EXPIRES);
@@ -1214,7 +1226,7 @@ public class UserAuthenticationManager {
         return sessionHMAC;
     }
 
-    public Cookie createAuthCookie(Map<String, String> sessionInformation, int sessionExpiryTimeInSeconds) throws JsonProcessingException {
+    public Cookie createAuthCookie(final Map<String, String> sessionInformation, final int sessionExpiryTimeInSeconds) throws JsonProcessingException {
         Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
                 Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes()));
         authCookie.setMaxAge(sessionExpiryTimeInSeconds);

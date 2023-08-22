@@ -84,14 +84,14 @@ public class ContentIndexer {
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
     @Inject
-    public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapper mapper) {
+    public ContentIndexer(final GitDb database, final ElasticSearchIndexer es, final ContentMapper mapper) {
         this.database = database;
         this.es = es;
         this.mapper = mapper;
     }
 
 
-    void loadAndIndexContent(String version) throws Exception, VersionLockedException {
+    void loadAndIndexContent(final String version) throws Exception, VersionLockedException {
 
         // Take version lock or fail
         Boolean alreadyLocked = versionLocks.putIfAbsent(version, true);
@@ -158,21 +158,32 @@ public class ContentIndexer {
 
     }
 
-    void setNamedVersion(String alias, String version) {
-        List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
-                .map((contentIndexType) -> contentIndexType.toString()).collect(Collectors.toList());
+    void setNamedVersion(final String alias, final String version) {
+        List<String> allContentTypes = Arrays.stream(ContentIndextype.values())
+                .map(ContentIndextype::toString).collect(Collectors.toList());
         es.addOrMoveIndexAlias(alias, version, allContentTypes);
     }
 
     /**
      * This method will populate the internal gitCache based on the content object files found for a given SHA.
-     *
-     * Currently it only looks for json files in the repository.
+     * <p>
+     * Currently, it only looks for json files in the repository.
      *
      * @param sha
      *            - the version to index.
-     * @return the map representing all indexed content.
-     * @throws ContentManagerException
+     * @param includeUnpublished
+     *            - boolean controlling if unpublished content should be indexed
+     * @param contentCache
+     *            - a map of keys to content objects
+     * @param tagsList
+     *            - a set of seen tags
+     * @param allUnits
+     *            - a map of units used in numeric questions
+     * @param publishedUnits
+     *            - a map of units used in published numeric questions
+     * @param indexProblemCache
+     *            - a map of problems found in the indexed content
+     * @throws ContentManagerException -  if the SHA is null or the associated resource cannot be accessed
      */
     private synchronized void buildGitContentIndex(final String sha,
                                                    final boolean includeUnpublished,
@@ -237,7 +248,7 @@ public class ContentIndexer {
 
                             // Prevents ETL indexing of quizzes that contain anything that is not an IsaacQuizSection
                             // in the top-level children array.
-                            // NOTE: I'm not sure this is the right place for this but I couldn't find a better one.
+                            // NOTE: I'm not sure if this is the right place for this but I couldn't find a better one.
                             // This also seems to be the only time we can prevent a file from being indexed entirely.
                             if (flattenedContent instanceof IsaacQuiz) {
                                 List<ContentBase> children = flattenedContent.getChildren();
@@ -251,7 +262,7 @@ public class ContentIndexer {
                                 }
                             }
 
-                            if (flattenedContent.getId().length() > 512) {
+                            if (flattenedContent.getId().length() > MAXIMUM_CONTENT_ID_LENGTH) {
                                 log.debug("Content ID too long: " + flattenedContent.getId());
                                 this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(), indexProblemCache);
                                 continue;
@@ -340,9 +351,9 @@ public class ContentIndexer {
 
     /**
      * Augments all child objects recursively to include additional information.
-     *
+     * <p>
      * This should be done before saving to the local gitCache in memory storage.
-     *
+     * <p>
      * This method will also attempt to reconstruct object id's of nested content such that they are unique to the page
      * by default.
      *
@@ -351,7 +362,9 @@ public class ContentIndexer {
      * @param canonicalSourceFile
      *            - source file to add to child content
      * @param parentId
-     *            - used to construct nested ids for child elements.
+     *            - used to construct nested ids for child elements
+     * @param parentPublished
+     *            - boolean to set published state based on parent state
      * @return Content object with new reference
      */
     private Content augmentChildContent(final Content content, final String canonicalSourceFile,
@@ -550,8 +563,10 @@ public class ContentIndexer {
      *            - Partial content object to represent the object that has problems.
      * @param message
      *            - Error message to associate with the problem file / content.
+     * @param indexProblemCache
+     *            - a map of problems found in the indexed content
      */
-    private synchronized void registerContentProblem(final Content c, final String message, Map<Content, List<String>> indexProblemCache) {
+    private synchronized void registerContentProblem(final Content c, final String message, final Map<Content, List<String>> indexProblemCache) {
         Validate.notNull(c);
 
         // try and make sure each dummy content object has a title
@@ -564,7 +579,7 @@ public class ContentIndexer {
         }
 
         log.debug(message);
-        indexProblemCache.get(c).add(message);//.replace("_", "\\_"));
+        indexProblemCache.get(c).add(message); //.replace("_", "\\_"));
     }
 
     /**
@@ -572,8 +587,10 @@ public class ContentIndexer {
      *
      * @param tags
      *            - set of tags to register.
+     * @param tagsList
+     *            - a set of seen tags
      */
-    private synchronized void registerTags(final Set<String> tags, Set<String> tagsList) {
+    private synchronized void registerTags(final Set<String> tags, final Set<String> tagsList) {
 
         if (null == tags || tags.isEmpty()) {
             // don't do anything.
@@ -595,8 +612,12 @@ public class ContentIndexer {
      *
      * @param q
      *            - numeric question from which to extract units.
+     * @param allUnits
+     *            - a map of units used in numeric questions
+     * @param publishedUnits
+     *            - a map of units used in published numeric questions
      */
-    private synchronized void registerUnits(final IsaacNumericQuestion q, Map<String, String> allUnits, Map<String, String> publishedUnits) {
+    private synchronized void registerUnits(final IsaacNumericQuestion q, final Map<String, String> allUnits, final Map<String, String> publishedUnits) {
 
         HashMap<String, String> newUnits = Maps.newHashMap();
 
@@ -632,7 +653,15 @@ public class ContentIndexer {
      * @param sha
      *            - the version in the git cache to send to the search provider.
      * @param gitCache
-     *            a map that represents indexed content for a given sha.
+     *            - a map that represents indexed content for a given sha.
+     * @param tagsList
+     *            - a set of seen tags
+     * @param allUnits
+     *            - a map of units used in numeric questions
+     * @param publishedUnits
+     *            - a map of units used in published numeric questions
+     * @param indexProblemCache
+     *            - a map of problems found in the indexed content
      */
     private synchronized void buildElasticSearchIndex(final String sha,
                                                       final Map<String, Content> gitCache,
@@ -664,13 +693,13 @@ public class ContentIndexer {
         long startTime, endTime;
 
         try {
-            es.indexObject(sha, CONTENT_INDEX_TYPE.METADATA.toString(),
+            es.indexObject(sha, ContentIndextype.METADATA.toString(),
                     objectMapper.writeValueAsString(ImmutableMap.of("version", sha, "created", new Date().toString())), "general");
-            es.indexObject(sha, CONTENT_INDEX_TYPE.METADATA.toString(),
+            es.indexObject(sha, ContentIndextype.METADATA.toString(),
                     objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
 
             startTime = System.nanoTime();
-            es.bulkIndex(sha, CONTENT_INDEX_TYPE.UNIT.toString(), allUnits.entrySet().stream().map(entry -> {
+            es.bulkIndex(sha, ContentIndextype.UNIT.toString(), allUnits.entrySet().stream().map(entry -> {
                 try {
                     return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
                 } catch (JsonProcessingException jsonProcessingException) {
@@ -678,7 +707,7 @@ public class ContentIndexer {
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
-            es.bulkIndex(sha, CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString(), publishedUnits.entrySet().stream().map(entry -> {
+            es.bulkIndex(sha, ContentIndextype.PUBLISHED_UNIT.toString(), publishedUnits.entrySet().stream().map(entry -> {
                 try {
                     return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
                 } catch (JsonProcessingException jsonProcessingException) {
@@ -690,7 +719,7 @@ public class ContentIndexer {
             log.info("Bulk unit indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             startTime = System.nanoTime();
-            es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
+            es.bulkIndex(sha, ContentIndextype.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
                 try {
                     return objectMapper.writeValueAsString(ImmutableMap.of(
                             "canonicalSourceFile", e.getKey().getCanonicalSourceFile(),
@@ -715,14 +744,14 @@ public class ContentIndexer {
 
         try {
             startTime = System.nanoTime();
-            es.bulkIndexWithIDs(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
+            es.bulkIndexWithIDs(sha, ContentIndextype.CONTENT.toString(), contentToIndex);
             endTime = System.nanoTime();
             log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
         } catch (ActionRequestValidationException e) {
-            log.error("Error validating content during index",e);
+            log.error("Error validating content during index", e);
         }
     }
 
@@ -734,9 +763,11 @@ public class ContentIndexer {
      *            version to validate integrity of.
      * @param gitCache
      *            Data structure containing all content for a given sha.
+     * @param indexProblemCache
+     *            a map of problems found in the indexed content
      */
     private void recordContentErrors(final String sha, final Map<String, Content> gitCache,
-                                          Map<Content, List<String>> indexProblemCache) {
+                                     final Map<Content, List<String>> indexProblemCache) {
 
         Set<Content> allObjectsSeen = new HashSet<>();
         Set<String> expectedIds = new HashSet<>();
@@ -809,7 +840,7 @@ public class ContentIndexer {
 
         if (indexProblemCache.size() == 0) {
             // Register a no-op style error to simplify application logic by ensuring there is always a content errors index
-            Content dummyContentRecord = new Content() {{setCanonicalSourceFile("\uD83D\uDE0E");}};
+            Content dummyContentRecord = new Content() {{ setCanonicalSourceFile("\uD83D\uDE0E"); }};
             this.registerContentProblem(dummyContentRecord, "No content errors!", indexProblemCache);
         }
     }
@@ -822,20 +853,20 @@ public class ContentIndexer {
      */
     private void expungeAnyContentTypeIndicesRelatedToVersion(final String version) {
         log.info("Deleting existing indexes for version " + version);
-        for (CONTENT_INDEX_TYPE contentIndexType : CONTENT_INDEX_TYPE.values()) {
+        for (ContentIndextype contentIndexType : ContentIndextype.values()) {
             es.expungeIndexFromSearchCache(version, contentIndexType.toString());
         }
     }
 
     /**
      * A successful indexing of a version means the creation of an index for each of the content types defined in
-     * CONTENT_INDEX_TYPE. This method checks that they all exist for a particular version.
+     * ContentIndextype. This method checks that they all exist for a particular version.
      *
      * @param version the content sha version to check.
      * @return True if indices exist for all expected content types at the provided version, else return false.
      */
     private boolean allContentTypesAreIndexedForVersion(final String version) {
-        return Arrays.stream(CONTENT_INDEX_TYPE.values())
+        return Arrays.stream(ContentIndextype.values())
                 .allMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
     }
 
@@ -846,7 +877,7 @@ public class ContentIndexer {
      * @return True if indices exist for any of the expected content types at the provided version, else return false.
      */
     private boolean anyContentTypesAreIndexedForVersion(final String version) {
-        return Arrays.stream(CONTENT_INDEX_TYPE.values())
+        return Arrays.stream(ContentIndextype.values())
                 .anyMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
     }
 
@@ -861,11 +892,11 @@ public class ContentIndexer {
 
     // GitContentManager ensureCache
 
-    private String collateExpandableChildren(Content content) {
+    private String collateExpandableChildren(final Content content) {
         StringBuilder ret = new StringBuilder();
         for (Content child : flattenContentObjects(content)) {
             if (child != content && null != child.getExpandable() && child.getExpandable()) {
-                ret.append((null != child.getType() ? child.getType() : "undefined")).append(",");
+                ret.append(null != child.getType() ? child.getType() : "undefined").append(",");
             }
         }
         if (ret.length() > 0) {
@@ -875,10 +906,11 @@ public class ContentIndexer {
     }
 
     /**
-     * This method will record content type specific errors for a single item of content
+     * This method will record content type specific errors for a single item of content.
      *
      * @param sha       version to validate integrity of.
      * @param content   a single item of content
+     * @param indexProblemCache a map of problems found in the indexed content
      */
     private void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
         // ensure content does not have children and a value
@@ -898,7 +930,7 @@ public class ContentIndexer {
         }
 
         // Make sure no children of potentially expandable content are expandable, if so record a content error
-        if (((null != content.getLayout() && content.getLayout().equals("tabs")) || content instanceof CodeSnippet) && null != content.getChildren()) {
+        if ((null != content.getLayout() && content.getLayout().equals("tabs") || content instanceof CodeSnippet) && null != content.getChildren()) {
             String expandableChildrenLog = collateExpandableChildren(content);
             if (!expandableChildrenLog.equals("")) {
                 this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
@@ -933,7 +965,7 @@ public class ContentIndexer {
                     this.registerContentProblem(content, "Unable to find Image: " + f.getSrc()
                             + " in Git. Could the reference be incorrect? SourceFile is " + content.getCanonicalSourceFile(), indexProblemCache);
                 } else if (fileData.size() > MEDIA_FILE_SIZE_LIMIT) {
-                    int sizeInKiloBytes = fileData.size() / 1024;
+                    int sizeInKiloBytes = fileData.size() / BYTES_IN_ONE_KILOBYTE;
                     this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
                             f.getSrc(), sizeInKiloBytes), indexProblemCache);
                 }
@@ -1011,7 +1043,7 @@ public class ContentIndexer {
                                         + "Users will never be able to match this answer.", indexProblemCache);
                     }
 
-                    if (!q.getRequireUnits() && (null != quantity.getUnits() && !quantity.getUnits().isEmpty())) {
+                    if (!q.getRequireUnits() && null != quantity.getUnits() && !quantity.getUnits().isEmpty()) {
                         this.registerContentProblem(content, "Numeric Question: " + q.getId()
                                 + " has a Quantity with units but does not require units!", indexProblemCache);
                     }
@@ -1022,7 +1054,7 @@ public class ContentIndexer {
                             + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
                 }
             }
-            if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
+            if (q.getRequireUnits() && null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty()) {
                 this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
                         + " Units will be ignored for this question!", indexProblemCache);
             }
@@ -1045,7 +1077,7 @@ public class ContentIndexer {
                             this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
                                     + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
                         } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
-                            this.registerContentProblem( content, "Symbolic Question: " + q.getId() + " has Formula ("
+                            this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
                                     + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
                         }
                     } else {

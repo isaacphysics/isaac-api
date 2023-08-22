@@ -20,11 +20,11 @@ package uk.ac.cam.cl.dtg.segue.comm;
  */
 public class EmailAttachment {
 
-    private String fileName;
-    private String mimeType;
-    private Object attachment;
+    private final String fileName;
+    private final String mimeType;
+    private final Object attachment;
 
-    public EmailAttachment(String fileName, String mimeType, Object attachment) {
+    public EmailAttachment(final String fileName, final String mimeType, final Object attachment) {
         this.fileName = fileName;
         this.mimeType = mimeType;
         this.attachment = attachment;
@@ -34,7 +34,6 @@ public class EmailAttachment {
         return fileName;
     }
 
-
     public String getMimeType() {
         return mimeType;
     }
@@ -42,5 +41,4 @@ public class EmailAttachment {
     public Object getAttachment() {
         return attachment;
     }
-
 }

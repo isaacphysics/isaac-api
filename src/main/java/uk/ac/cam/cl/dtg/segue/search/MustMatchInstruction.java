@@ -1,10 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 public class MustMatchInstruction extends AbstractMatchInstruction {
-    private String field;
-    private String value;
+    private final String field;
+    private final String value;
 
-    public MustMatchInstruction(String field, String value) {
+    public MustMatchInstruction(final String field, final String value) {
         this.field = field;
         this.value = value;
     }

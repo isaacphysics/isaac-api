@@ -48,7 +48,7 @@ public class AssignmentDO {
 	 *        - the date and time the assignment should have notification emails sent to its group (using Quartz)
 	 */
     public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-						String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate) {
+						final String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
@@ -142,7 +142,7 @@ public class AssignmentDO {
 	 * set notes to an assignment.
 	 * @param notes - the notes
 	 */
-	public void setNotes(String notes) {
+	public void setNotes(final String notes) {
 		this.notes = notes;
 	}
 
@@ -204,7 +204,7 @@ public class AssignmentDO {
 	 * set the due date of an assignment.
 	 * @param dueDate - date due
 	 */
-	public void setDueDate(Date dueDate) {
+	public void setDueDate(final Date dueDate) {
 		this.dueDate = dueDate;
 	}
 
@@ -221,7 +221,7 @@ public class AssignmentDO {
 	 * set the date of when the assignment should be displayed to users.
 	 * @param scheduledStartDate - the scheduled start date
 	 */
-	public void setScheduledStartDate(Date scheduledStartDate) {
+	public void setScheduledStartDate(final Date scheduledStartDate) {
 		this.scheduledStartDate = scheduledStartDate;
 	}
 }

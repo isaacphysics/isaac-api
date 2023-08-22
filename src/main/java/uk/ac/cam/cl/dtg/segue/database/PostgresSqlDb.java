@@ -24,6 +24,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 /**
  * PostgresSqlDb adapter.
  *
@@ -54,13 +56,13 @@ public class PostgresSqlDb implements Closeable {
         dataSource.setTestOnBorrow(true);
         dataSource.setValidationQuery("SELECT 1");
         dataSource.setTestOnReturn(false);
-        dataSource.setTimeBetweenEvictionRunsMillis(30000);
-        dataSource.setMaxTotal(30);
-        dataSource.setInitialSize(10);
-        dataSource.setMaxWaitMillis(10000);
-        dataSource.setRemoveAbandonedTimeout(60);
-        dataSource.setMinEvictableIdleTimeMillis(30000);
-        dataSource.setMinIdle(10);
+        dataSource.setTimeBetweenEvictionRunsMillis(CONNECTION_POOL_EVICTION_RUN_PERIOD_MILLISECONDS);
+        dataSource.setMaxTotal(CONNECTION_POOL_MAX_TOTAL);
+        dataSource.setInitialSize(CONNECTION_POOL_INITIAL_SIZE);
+        dataSource.setMaxWaitMillis(CONNECTION_POOL_MAX_WAIT_MILLISECONDS);
+        dataSource.setRemoveAbandonedTimeout(CONNECTION_POOL_REMOVE_ABANDONED_TIMEOUT);
+        dataSource.setMinEvictableIdleTimeMillis(CONNECTION_POOL_MIN_EVICTABLE_IDLE_TIMEOUT_MILLISECONDS);
+        dataSource.setMinIdle(CONNECTION_POOL_MIN_MIN_IDLE);
         dataSource.setLogAbandoned(true);
         dataSource.setRemoveAbandonedOnBorrow(true);
         dataSource.setEnableAutoCommitOnReturn(true);
@@ -94,7 +96,7 @@ public class PostgresSqlDb implements Closeable {
     public boolean isReadOnlyReplica() throws SQLException {
         try (Connection conn = getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement("SELECT pg_is_in_recovery()");
-             ResultSet results = pst.executeQuery();
+             ResultSet results = pst.executeQuery()
         ) {
             results.next();
             return results.getBoolean(1);

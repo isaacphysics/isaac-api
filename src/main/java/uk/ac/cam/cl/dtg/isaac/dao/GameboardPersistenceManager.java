@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -102,13 +102,15 @@ public class GameboardPersistenceManager {
      *            - An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
      * @param objectMapper
      *            - An instance of an automapper that can be used for converting objects to and from json.
-     * 
      * @param uriManager
      *            - so we can generate appropriate content URIs.
+     * @param contentIndex
+     *            - index string for current content version
      */
     @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                       final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                       final MapperFacade mapper, final ObjectMapper objectMapper,
+                                       final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;
@@ -175,7 +177,7 @@ public class GameboardPersistenceManager {
 
     /**
      * Keep generated gameboard in non-persistent storage.
-     * 
+     * <p>
      * This will be removed if the gameboard is saved to persistent storage.
      * 
      * @param gameboard
@@ -239,10 +241,10 @@ public class GameboardPersistenceManager {
         // create a new user to gameboard connection.
         String query = "UPDATE gameboards SET title = ? WHERE id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, gameboard.getTitle());
-            pst.setString(2, gameboard.getId());
+            pst.setString(FIELD_UPDATE_TITLE_TITLE, gameboard.getTitle());
+            pst.setString(FIELD_UPDATE_TITLE_ID, gameboard.getId());
 
             int affectedRows = pst.executeUpdate();
             if (affectedRows == 0) {
@@ -289,10 +291,10 @@ public class GameboardPersistenceManager {
 
         String query = "SELECT COUNT(*) AS TOTAL FROM user_gameboards WHERE user_id = ? AND gameboard_id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
-            pst.setObject(2, gameboardId);
+            pst.setLong(FIELD_IS_BOARD_LINKED_TO_USER_USER_ID, userId);
+            pst.setObject(FIELD_IS_BOARD_LINKED_TO_USER_GAMEBOARD_ID, gameboardId);
 
             try (ResultSet results = pst.executeQuery()) {
                 results.next();
@@ -321,12 +323,12 @@ public class GameboardPersistenceManager {
                  + " ON CONFLICT ON CONSTRAINT user_gameboard_composite_key"
                  + " DO UPDATE SET last_visited=EXCLUDED.last_visited;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
-            pst.setString(2, gameboardId);
-            pst.setTimestamp(3, new Timestamp(new Date().getTime()));
-            pst.setTimestamp(4, new Timestamp(new Date().getTime()));
+            pst.setLong(FIELD_LINK_USER_USER_ID, userId);
+            pst.setString(FIELD_LINK_USER_GAMEBOARD_ID, gameboardId);
+            pst.setTimestamp(FIELD_LINK_USER_CREATED, new Timestamp(new Date().getTime()));
+            pst.setTimestamp(FIELD_LINK_USER_LAST_VISITED, new Timestamp(new Date().getTime()));
 
             log.debug("Saving gameboard to user relationship...");
             int affectedRows = pst.executeUpdate();
@@ -354,11 +356,11 @@ public class GameboardPersistenceManager {
         String query = String.format("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id IN (%s)", params);
 
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
+            pst.setLong(FIELD_REMOVE_USER_LINK_USER_ID, userId);
 
-            int index = 2;
+            int index = FIELD_REMOVE_USER_LINK_GAMEBOARD_IDS_INITIAL_INDEX;
             for (String id : gameboardId) {
                 pst.setString(index, id);
                 index++;
@@ -387,12 +389,12 @@ public class GameboardPersistenceManager {
         List<GameboardDO> listOfResults = Lists.newArrayList();
         Map<String, Date> lastVisitedDate = Maps.newHashMap();
 
-        String query = "SELECT * FROM gameboards INNER JOIN user_gameboards" +
-                " ON gameboards.id = user_gameboards.gameboard_id WHERE user_gameboards.user_id = ?";
+        String query = "SELECT * FROM gameboards INNER JOIN user_gameboards"
+                + " ON gameboards.id = user_gameboards.gameboard_id WHERE user_gameboards.user_id = ?";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, user.getId());
+            pst.setLong(FIELD_GET_GAMEBOARDS_BY_USER_USER_ID, user.getId());
             
             try (ResultSet results = pst.executeQuery()) {
                 while (results.next()) {
@@ -470,7 +472,7 @@ public class GameboardPersistenceManager {
 
     /**
      * Attempt to improve performance of getting gameboard items in a batch.
-     *
+     * <p>
      * This method will attempt to ensure that all gameboards provided have their associated
      * gameboard items populated with meaningful titles.
      *
@@ -527,7 +529,7 @@ public class GameboardPersistenceManager {
         String query = "SELECT gameboard_id, user_id FROM user_gameboards;";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
-             ResultSet sqlResults = pst.executeQuery();
+             ResultSet sqlResults = pst.executeQuery()
         ) {
             while (sqlResults.next()) {
                 String gameboardId = sqlResults.getString("gameboard_id");
@@ -553,7 +555,9 @@ public class GameboardPersistenceManager {
      * Utility function to create a gameboard item from a content DTO (Should be a question page).
      * 
      * @param content
-     *            to convert
+     *            - to convert
+     * @param contentDescriptor
+     *            - a GameboardContentDescriptor with additional information to add to the returned item
      * @return the gameboard item with augmented URI.
      */
     public GameboardItem convertToGameboardItem(
@@ -570,7 +574,8 @@ public class GameboardPersistenceManager {
     /**
      * saveGameboard.
      * @param gameboardToSave
-     * @return the DO persisted.
+     *            - a Gameboard DO to save to the database
+     * @return the DO being persisted.
      * @throws JsonProcessingException
      * @throws SegueDatabaseException
      */
@@ -579,7 +584,7 @@ public class GameboardPersistenceManager {
                 + "game_filter, owner_user_id, creation_method, tags, creation_date)"
                 + " VALUES (?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
             List<String> contentsJsonb = Lists.newArrayList();
             for (GameboardContentDescriptor content: gameboardToSave.getContents()) {
@@ -587,19 +592,19 @@ public class GameboardPersistenceManager {
             }
             Array contents = conn.createArrayOf("jsonb", contentsJsonb.toArray());
 
-            pst.setObject(1, gameboardToSave.getId());
-            pst.setString(2, gameboardToSave.getTitle());
-            pst.setArray(3, contents);
-            pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
-            pst.setInt(5, gameboardToSave.getWildCardPosition());
-            pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
-            pst.setLong(7, gameboardToSave.getOwnerUserId());
-            pst.setString(8, gameboardToSave.getCreationMethod().toString());
-            pst.setString(9, objectMapper.writeValueAsString(gameboardToSave.getTags()));
+            pst.setObject(FIELD_SAVE_GAMEBOARD_GAMEBOARD_ID, gameboardToSave.getId());
+            pst.setString(FIELD_SAVE_GAMEBOARD_TITLE, gameboardToSave.getTitle());
+            pst.setArray(FIELD_SAVE_GAMEBOARD_CONTENTS, contents);
+            pst.setString(FIELD_SAVE_GAMEBOARD_WILDCARD, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
+            pst.setInt(FIELD_SAVE_GAMEBOARD_WILDCARD_POSITION, gameboardToSave.getWildCardPosition());
+            pst.setString(FIELD_SAVE_GAMEBOARD_GAME_FILTER, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
+            pst.setLong(FIELD_SAVE_GAMEBOARD_OWNER_USER_ID, gameboardToSave.getOwnerUserId());
+            pst.setString(FIELD_SAVE_GAMEBOARD_CREATION_METHOD, gameboardToSave.getCreationMethod().toString());
+            pst.setString(FIELD_SAVE_GAMEBOARD_TAGS, objectMapper.writeValueAsString(gameboardToSave.getTags()));
             if (gameboardToSave.getCreationDate() != null) {
-                pst.setTimestamp(10, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
+                pst.setTimestamp(FIELD_SAVE_GAMEBOARD_CREATION_DATE, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
             } else {
-                pst.setTimestamp(10, new java.sql.Timestamp(new Date().getTime()));
+                pst.setTimestamp(FIELD_SAVE_GAMEBOARD_CREATION_DATE, new java.sql.Timestamp(new Date().getTime()));
             }
 
             if (pst.executeUpdate() == 0) {
@@ -639,7 +644,7 @@ public class GameboardPersistenceManager {
 
     /**
      * Convert form a gameboard DO to a Gameboard DTO.
-     *
+     * <p>
      * This method relies on the api to fully resolve questions.
      *
      * @param gameboardDO
@@ -652,7 +657,7 @@ public class GameboardPersistenceManager {
 
     /**
      * Convert form a gameboard DO to a Gameboard DTO.
-     *
+     * <p>
      * This method relies on the api to fully resolve questions.
      *
      * @param gameboardDO
@@ -778,9 +783,9 @@ public class GameboardPersistenceManager {
 
         String query = "SELECT * FROM gameboards WHERE id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, gameboardId);
+            pst.setString(FIELD_GET_BY_ID_GAMEBOARD_ID, gameboardId);
             
             try (ResultSet results = pst.executeQuery()) {
 
@@ -837,10 +842,10 @@ public class GameboardPersistenceManager {
         // Then, go for the database
         String query = "SELECT * FROM gameboards WHERE id = ANY (?);";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
             Array gameboardIdsPreparedArray = conn.createArrayOf("varchar", gameboardIdsForQuery.toArray());
-            pst.setArray(1, gameboardIdsPreparedArray);
+            pst.setArray(FIELD_GET_BY_IDS_GAMEBOARD_ID_LIST, gameboardIdsPreparedArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 List<GameboardDO> listOfResults = new ArrayList<>();
@@ -918,4 +923,44 @@ public class GameboardPersistenceManager {
         }
         return listOfContentDescriptors;
     }
+
+    // Field Constants
+    // updateGameboardTitle
+    private static final int FIELD_UPDATE_TITLE_TITLE = 1;
+    private static final int FIELD_UPDATE_TITLE_ID = 2;
+
+    // isBoardLinkedToUser
+    private static final int FIELD_IS_BOARD_LINKED_TO_USER_USER_ID = 1;
+    private static final int FIELD_IS_BOARD_LINKED_TO_USER_GAMEBOARD_ID = 2;
+
+    // createOrUpdateUserLinkToGameboard
+    private static final int FIELD_LINK_USER_USER_ID = 1;
+    private static final int FIELD_LINK_USER_GAMEBOARD_ID = 2;
+    private static final int FIELD_LINK_USER_CREATED = 3;
+    private static final int FIELD_LINK_USER_LAST_VISITED = 4;
+
+    // removeUserLinkToGameboard
+    private static final int FIELD_REMOVE_USER_LINK_USER_ID = 1;
+    private static final int FIELD_REMOVE_USER_LINK_GAMEBOARD_IDS_INITIAL_INDEX = 2;
+
+    // getGameboardsByUserId
+    private static final int FIELD_GET_GAMEBOARDS_BY_USER_USER_ID = 1;
+
+    // saveGameboard
+    private static final int FIELD_SAVE_GAMEBOARD_GAMEBOARD_ID = 1;
+    private static final int FIELD_SAVE_GAMEBOARD_TITLE = 2;
+    private static final int FIELD_SAVE_GAMEBOARD_CONTENTS = 3;
+    private static final int FIELD_SAVE_GAMEBOARD_WILDCARD = 4;
+    private static final int FIELD_SAVE_GAMEBOARD_WILDCARD_POSITION = 5;
+    private static final int FIELD_SAVE_GAMEBOARD_GAME_FILTER = 6;
+    private static final int FIELD_SAVE_GAMEBOARD_OWNER_USER_ID = 7;
+    private static final int FIELD_SAVE_GAMEBOARD_CREATION_METHOD = 8;
+    private static final int FIELD_SAVE_GAMEBOARD_TAGS = 9;
+    private static final int FIELD_SAVE_GAMEBOARD_CREATION_DATE = 10;
+
+    // getGameboardById
+    private static final int FIELD_GET_BY_ID_GAMEBOARD_ID = 1;
+
+    // getGameboardsByIds
+    private static final int FIELD_GET_BY_IDS_GAMEBOARD_ID_LIST = 1;
 }

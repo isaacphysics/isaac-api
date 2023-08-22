@@ -28,7 +28,7 @@ import java.util.Map;
 
 /**
  * AnonymousQuestionAttemptsOrikaConverter A specialist converter class to work with the Orika automapper library.
- * 
+ * <p> <p>
  * Responsible for converting question attempt maps from their DO state to their DTO state. It seems ORIKA is not good
  * at converting between highly nested data structures.
  */
@@ -49,7 +49,7 @@ public class AnonymousUserQuestionAttemptsOrikaConverter
     public Map<String, Map<String, List<QuestionValidationResponseDTO>>> convert(
             final Map<String, Map<String, List<QuestionValidationResponse>>> source,
             final Type<? extends Map<String, Map<String, List<QuestionValidationResponseDTO>>>> destinationType,
-            MappingContext _context) {
+            final MappingContext context) {
         // convert in one direction
         if (null == source) {
             return null;

@@ -279,8 +279,8 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
     }
 
     private void assertMarks(int correct, int incorrect, int notAttempted, QuizFeedbackDTO.Mark mark) {
-        assertEquals(correct, mark.correct.intValue());
-        assertEquals(incorrect, mark.incorrect.intValue());
-        assertEquals(notAttempted, mark.notAttempted.intValue());
+        assertEquals(correct, mark.getCorrect().intValue());
+        assertEquals(incorrect, mark.getIncorrect().intValue());
+        assertEquals(notAttempted, mark.getNotAttempted().intValue());
     }
 }

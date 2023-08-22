@@ -66,7 +66,8 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
     }
 
     @Override
-    public boolean authenticate2ndFactor(final RegisteredUserDTO user, final Integer verificationCode) throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException {
+    public boolean authenticate2ndFactor(final RegisteredUserDTO user, final Integer verificationCode)
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException {
         TOTPSharedSecret storedSharedSecret = this.dataManager.get2FASharedSecret(user.getId());
 
         if (null == storedSharedSecret) {

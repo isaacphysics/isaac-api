@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
- *
+ * @deprecated
  */
 @Deprecated
 public class SeguePBKDF2v3 extends SeguePBKDF2 implements ISegueHashingAlgorithm {

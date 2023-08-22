@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
@@ -433,7 +432,7 @@ public class RegisteredUser extends AbstractSegueUser {
         return registeredContexts;
     }
 
-    public void setRegisteredContexts(List<UserContext> registeredContexts) {
+    public void setRegisteredContexts(final List<UserContext> registeredContexts) {
         this.registeredContexts = registeredContexts;
     }
 
@@ -441,7 +440,7 @@ public class RegisteredUser extends AbstractSegueUser {
         return registeredContextsLastConfirmed;
     }
 
-    public void setRegisteredContextsLastConfirmed(Date registeredContextsLastConfirmed) {
+    public void setRegisteredContextsLastConfirmed(final Date registeredContextsLastConfirmed) {
         this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
     }
 
@@ -477,22 +476,22 @@ public class RegisteredUser extends AbstractSegueUser {
 
     @Override
     public String toString() {
-        return "RegisteredUser{" +
-                "id=" + id +
-                ", givenName='" + givenName + '\'' +
-                ", familyName='" + familyName + '\'' +
-                ", email='" + email + '\'' +
-                ", role=" + role +
-                ", dateOfBirth=" + dateOfBirth +
-                ", gender=" + gender +
-                ", registrationDate=" + registrationDate +
-                ", schoolId='" + schoolId + '\'' +
-                ", schoolOther='" + schoolOther + '\'' +
-                ", emailVerificationToken='" + emailVerificationToken + '\'' +
-                ", emailToVerify='" + emailToVerify + '\'' +
-                ", emailVerificationStatus=" + emailVerificationStatus +
-                ", lastUpdated=" + lastUpdated +
-                ", lastSeen=" + lastSeen +
-                '}';
+        return "RegisteredUser{"
+                + "id=" + id
+                + ", givenName='" + givenName + '\''
+                + ", familyName='" + familyName + '\''
+                + ", email='" + email + '\''
+                + ", role=" + role
+                + ", dateOfBirth=" + dateOfBirth
+                + ", gender=" + gender
+                + ", registrationDate=" + registrationDate
+                + ", schoolId='" + schoolId + '\''
+                + ", schoolOther='" + schoolOther + '\''
+                + ", emailVerificationToken='" + emailVerificationToken + '\''
+                + ", emailToVerify='" + emailToVerify + '\''
+                + ", emailVerificationStatus=" + emailVerificationStatus
+                + ", lastUpdated=" + lastUpdated
+                + ", lastSeen=" + lastSeen
+                + '}';
     }
 }

@@ -13,7 +13,7 @@ public class GithubPushEventPayload {
 
     }
 
-    public void setRef(String ref) {
+    public void setRef(final String ref) {
         this.ref = ref;
     }
 
@@ -21,7 +21,7 @@ public class GithubPushEventPayload {
         return this.ref;
     }
 
-    public void setAfter(String after) {
+    public void setAfter(final String after) {
         this.after = after;
     }
 

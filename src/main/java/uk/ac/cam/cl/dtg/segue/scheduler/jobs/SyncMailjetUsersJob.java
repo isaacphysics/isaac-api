@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.scheduler.jobs;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -53,14 +52,14 @@ public class SyncMailjetUsersJob implements Job {
     }
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(final JobExecutionContext context) throws JobExecutionException {
         try {
             externalAccountManager.synchroniseChangedUsers();
             log.info("Success: synchronised users");
         } catch (ExternalAccountSynchronisationException e) {
             final String subject = "Failed to execute SyncMailjetUsersJob";
             StringWriter stringWriter = new StringWriter();
-            PrintWriter printWriter= new PrintWriter(stringWriter);
+            PrintWriter printWriter = new PrintWriter(stringWriter);
             e.printStackTrace(printWriter);
             String exception = stringWriter.toString();
             EmailCommunicationMessage email = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),

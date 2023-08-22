@@ -1,12 +1,12 @@
 /**
  * Copyright 2019 Andrea Franceschini
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,12 +25,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 public class GlossaryTermDTO extends ContentDTO {
-    protected ContentDTO explanation;
-    protected boolean autoId;
-    protected String examBoard;
+    private ContentDTO explanation;
+    private boolean autoId;
+    private String examBoard;
 
     @JsonCreator
-    public GlossaryTermDTO(@JsonProperty("explanation") ContentDTO explanation, @JsonProperty("examBoard") String examBoard) {
+    public GlossaryTermDTO(@JsonProperty("explanation") final ContentDTO explanation, @JsonProperty("examBoard") final String examBoard) {
         this.explanation = explanation;
         this.examBoard = examBoard != null ? examBoard : "";
     }
@@ -39,7 +39,7 @@ public class GlossaryTermDTO extends ContentDTO {
         return this.explanation;
     }
 
-    public void setExplanation(ContentDTO explanation) {
+    public void setExplanation(final ContentDTO explanation) {
         this.explanation = explanation;
     }
 
@@ -47,11 +47,16 @@ public class GlossaryTermDTO extends ContentDTO {
         return this.examBoard;
     }
 
-    public void setExamBoard(String examBoard) {
+    public void setExamBoard(final String examBoard) {
         this.examBoard = examBoard;
     }
 
     @JsonIgnore
-    public final boolean getAutoId() { return autoId; }
-    public final void setAutoId(final boolean autoId) { this.autoId = autoId; }
+    public final boolean getAutoId() {
+        return autoId;
+    }
+
+    public final void setAutoId(final boolean autoId) {
+        this.autoId = autoId;
+    }
 }

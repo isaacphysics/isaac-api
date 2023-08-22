@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,21 +22,20 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -147,10 +146,10 @@ public class PgLogManager implements ILogManager {
     public void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId) {
         String query = "UPDATE logged_events SET user_id = ?, anonymous_user = TRUE WHERE user_id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, newUserId);
-            pst.setString(2, oldUserId);
+            pst.setString(FIELD_TRANSFER_LOG_EVENTS_NEW_USER_ID, newUserId);
+            pst.setString(FIELD_TRANSFER_LOG_EVENTS_OLD_USER_ID, oldUserId);
 
             pst.executeUpdate();
 
@@ -169,9 +168,9 @@ public class PgLogManager implements ILogManager {
     public Long getLogCountByType(final String type) throws SegueDatabaseException {
         String query = "SELECT COUNT(*) AS TOTAL FROM logged_events WHERE event_type = ?";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, type);
+            pst.setString(FIELD_GET_LOG_COUNT_EVENT_TYPE, type);
 
             try (ResultSet results = pst.executeQuery()) {
                 results.next();
@@ -238,7 +237,7 @@ public class PgLogManager implements ILogManager {
         String query = "SELECT DISTINCT ip_address FROM logged_events";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
-             ResultSet results = pst.executeQuery();
+             ResultSet results = pst.executeQuery()
         ) {
             while (results.next()) {
                 ipAddresses.add(results.getString("ip_address"));
@@ -257,9 +256,9 @@ public class PgLogManager implements ILogManager {
             throws SegueDatabaseException {
         String query = "SELECT DISTINCT ON (user_id) user_id, \"timestamp\" FROM logged_events WHERE event_type = ? ORDER BY user_id, id DESC;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, qualifyingLogEventType);
+            pst.setString(FIELD_GET_LOG_DATE_EVENT_TYPE, qualifyingLogEventType);
 
             try (ResultSet results = pst.executeQuery()) {
                 Map<String, Date> resultToReturn = Maps.newHashMap();
@@ -280,7 +279,7 @@ public class PgLogManager implements ILogManager {
         String query = "SELECT event_type FROM logged_events GROUP BY event_type";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
-             ResultSet results = pst.executeQuery();
+             ResultSet results = pst.executeQuery()
         ) {
             Set<String> eventTypesRecorded = Sets.newHashSet();
 
@@ -311,7 +310,7 @@ public class PgLogManager implements ILogManager {
 
     /**
      * getLogsCountByMonthFilteredByUserAndType.
-     *
+     * <p>
      * An optimised method for getting log counts data by month.
      * This relies on the database doing the binning for us.
      *
@@ -354,11 +353,11 @@ public class PgLogManager implements ILogManager {
         queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
 
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(queryToBuild.toString());
+             PreparedStatement pst = conn.prepareStatement(queryToBuild.toString())
         ) {
-            pst.setString(1, type);
+            pst.setString(FIELD_GET_LOG_COUNT_BY_MONTH_FILTERED_EVENT_TYPE, type);
 
-            int index = 2;
+            int index = GET_LOG_COUNT_BY_MONTH_FILTERED_FIRST_USER_ID_OR_TIMESTAMP_INDEX;
             if (userIds != null) {
                 for (String userId : userIds) {
                     pst.setString(index++, userId);
@@ -386,7 +385,7 @@ public class PgLogManager implements ILogManager {
 
     /**
      * getLogsByUserAndType.
-     *
+     * <p>
      * WARNING: This should be used with care. Do not request too much
      * TODO: add pagination
      *
@@ -427,11 +426,11 @@ public class PgLogManager implements ILogManager {
         }
 
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, type);
+            pst.setString(FIELD_GET_LOGS_BY_USER_AND_TYPE_EVENT_TYPE, type);
 
-            int index = 2;
+            int index = GET_LOGS_BY_USER_AND_TYPE_FIRST_USER_ID_OR_TIMESTAMP_INDEX;
 
             if (fromDate != null) {
                 pst.setTimestamp(index++, new java.sql.Timestamp(fromDate.getTime()));
@@ -478,7 +477,7 @@ public class PgLogManager implements ILogManager {
      * @throws SegueDatabaseException - if we cannot persist the event in the database.
      */
     private void persistLogEvent(final String userId, final String anonymousUserId, final String eventType,
-            final Object eventDetails, final String ipAddress) throws JsonProcessingException, SegueDatabaseException {
+                                 final Object eventDetails, final String ipAddress) throws JsonProcessingException, SegueDatabaseException {
         // don't do anything if logging is not enabled.
         if (!this.loggingEnabled) {
             return;
@@ -491,18 +490,18 @@ public class PgLogManager implements ILogManager {
             LOG_EVENT.labels(eventType).inc();
         }
 
-        String query = "INSERT INTO logged_events(user_id, anonymous_user, event_type, event_details_type," +
-                " event_details, ip_address, timestamp) VALUES (?, ?, ?, ?, ?::text::jsonb, ?::inet, ?);";
+        String query = "INSERT INTO logged_events(user_id, anonymous_user, event_type, event_details_type,"
+                + " event_details, ip_address, timestamp) VALUES (?, ?, ?, ?, ?::text::jsonb, ?::inet, ?);";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
         ) {
-            pst.setString(1, logEvent.getUserId());
-            pst.setBoolean(2, logEvent.isAnonymousUser());
-            pst.setString(3, logEvent.getEventType());
-            pst.setString(4, logEvent.getEventDetailsType());
-            pst.setString(5, objectMapper.writeValueAsString(logEvent.getEventDetails()));
-            pst.setString(6, logEvent.getIpAddress());
-            pst.setTimestamp(7, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(FIELD_PERSIST_LOG_EVENT_USER_ID, logEvent.getUserId());
+            pst.setBoolean(FIELD_PERSIST_LOG_EVENT_IS_ANONYMOUS, logEvent.isAnonymousUser());
+            pst.setString(FIELD_PERSIST_LOG_EVENT_EVENT_TYPE, logEvent.getEventType());
+            pst.setString(FIELD_PERSIST_LOG_EVENT_EVENT_DETAILS_TYPE, logEvent.getEventDetailsType());
+            pst.setString(FIELD_PERSIST_LOG_EVENT_EVENT_DETAILS, objectMapper.writeValueAsString(logEvent.getEventDetails()));
+            pst.setString(FIELD_PERSIST_LOG_EVENT_IP_ADDRESS, logEvent.getIpAddress());
+            pst.setTimestamp(FIELD_PERSIST_LOG_EVENT_TIMESTAMP, new java.sql.Timestamp(new Date().getTime()));
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -567,4 +566,32 @@ public class PgLogManager implements ILogManager {
 
         return logEvent;
     }
+
+    // Field Constants
+    // transferLogEventsToRegisteredUser
+    private static final int FIELD_TRANSFER_LOG_EVENTS_NEW_USER_ID = 1;
+    private static final int FIELD_TRANSFER_LOG_EVENTS_OLD_USER_ID = 2;
+
+    // getLogCountByType
+    private static final int FIELD_GET_LOG_COUNT_EVENT_TYPE = 1;
+
+    // getLastLogDateForAllUsers
+    private static final int FIELD_GET_LOG_DATE_EVENT_TYPE = 1;
+
+    // getLogsCountByMonthFilteredByUserAndType
+    private static final int FIELD_GET_LOG_COUNT_BY_MONTH_FILTERED_EVENT_TYPE = 1;
+    private static final int GET_LOG_COUNT_BY_MONTH_FILTERED_FIRST_USER_ID_OR_TIMESTAMP_INDEX = 2;
+
+    // getLogsByUserAndType
+    private static final int FIELD_GET_LOGS_BY_USER_AND_TYPE_EVENT_TYPE = 1;
+    private static final int GET_LOGS_BY_USER_AND_TYPE_FIRST_USER_ID_OR_TIMESTAMP_INDEX = 2;
+
+    // persistLogEvent
+    private static final int FIELD_PERSIST_LOG_EVENT_USER_ID = 1;
+    private static final int FIELD_PERSIST_LOG_EVENT_IS_ANONYMOUS = 2;
+    private static final int FIELD_PERSIST_LOG_EVENT_EVENT_TYPE = 3;
+    private static final int FIELD_PERSIST_LOG_EVENT_EVENT_DETAILS_TYPE = 4;
+    private static final int FIELD_PERSIST_LOG_EVENT_EVENT_DETAILS = 5;
+    private static final int FIELD_PERSIST_LOG_EVENT_IP_ADDRESS = 6;
+    private static final int FIELD_PERSIST_LOG_EVENT_TIMESTAMP = 7;
 }

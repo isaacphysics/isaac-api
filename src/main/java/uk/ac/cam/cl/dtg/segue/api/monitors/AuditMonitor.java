@@ -32,7 +32,7 @@ public class AuditMonitor implements ContainerResponseFilter {
 
     /**
      * A filter to record an audit log of endpoint access by user.
-     *
+     * <p>
      * NOTE: User identifiers are taken from the request, we do not checked these against the database as that would add
      * too great an overhead.
      *
@@ -40,7 +40,7 @@ public class AuditMonitor implements ContainerResponseFilter {
      * @param containerResponseContext - http response to return to the user.
      */
     @Override
-    public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) {
+    public void filter(final ContainerRequestContext containerRequestContext, final ContainerResponseContext containerResponseContext) {
         // As of 16/02/2021 the CSV will be in the following machine-readable format (without the spaces):
         // date_and_time, ip_address, jsessionid, segue_user_id, session_token, is_valid_hmac, http_method, canonical_path, request_path, response_code
         log.trace(String.format("%s,%s,%s,%s,%d",

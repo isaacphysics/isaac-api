@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.MisuseStatisticDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -112,15 +111,15 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
                 
                 // deal with threshold violations
                 if (handler.getSoftThreshold() != null
-                        && (previousValue < handler.getSoftThreshold() && entry.getValue() >= handler
-                                .getSoftThreshold())) {
+                        && previousValue < handler.getSoftThreshold() && entry.getValue() >= handler
+                        .getSoftThreshold()) {
                     handler.executeSoftThresholdAction(String.format("(%s) has exceeded the soft limit!",
                             agentIdentifier));
                 }
 
                 if (handler.getHardThreshold() != null
-                        && (previousValue < handler.getHardThreshold() && entry.getValue() >= handler
-                                .getHardThreshold())) {
+                        && previousValue < handler.getHardThreshold() && entry.getValue() >= handler
+                        .getHardThreshold()) {
                     String errMessage = String.format("(%s) has exceeded the hard limit!", agentIdentifier);
 
                     handler.executeHardThresholdAction(errMessage);
@@ -139,7 +138,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
     }
 
     @Override
-    public boolean willHaveMisused(String agentIdentifier, String eventToCheck, Integer adjustmentValue) {
+    public boolean willHaveMisused(final String agentIdentifier, final String eventToCheck, final Integer adjustmentValue) {
         Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 
         if (null == existingHistory || existingHistory.get(eventToCheck) == null) {

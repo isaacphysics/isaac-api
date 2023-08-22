@@ -24,7 +24,7 @@ import java.sql.SQLException;
 
 
 /**
- * This class is a shim to reuse the existing datasource created by guice for quartz cluster management
+ * This class is a shim to reuse the existing datasource created by guice for quartz cluster management.
  */
 public class SchedulerClusterDataSource implements ConnectionProvider {
 

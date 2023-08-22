@@ -9,7 +9,7 @@ public class GameboardContentDescriptor {
     public GameboardContentDescriptor() {
     }
 
-    public GameboardContentDescriptor(String id, String contentType, AudienceContext context) {
+    public GameboardContentDescriptor(final String id, final String contentType, final AudienceContext context) {
         this.id = id;
         this.contentType = contentType;
         this.context = context;
@@ -19,7 +19,7 @@ public class GameboardContentDescriptor {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -27,7 +27,7 @@ public class GameboardContentDescriptor {
         return contentType;
     }
 
-    public void setContentType(String contentType) {
+    public void setContentType(final String contentType) {
         this.contentType = contentType;
     }
 
@@ -35,16 +35,16 @@ public class GameboardContentDescriptor {
         return context;
     }
 
-    public void setContext(AudienceContext context) {
+    public void setContext(final AudienceContext context) {
         this.context = context;
     }
 
     @Override
     public String toString() {
-        return "GameboardContentDescriptor[" +
-                "id='" + id + '\'' +
-                ", contentType='" + contentType + '\'' +
-                ", context=" + context +
-                ']';
+        return "GameboardContentDescriptor["
+                + "id='" + id + '\''
+                + ", contentType='" + contentType + '\''
+                + ", context=" + context
+                + ']';
     }
 }

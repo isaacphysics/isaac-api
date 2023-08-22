@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,7 +107,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
         // load up the client secrets from the file system.
         try (InputStream inputStream = new FileInputStream(clientSecretLocation);
-             InputStreamReader isr = new InputStreamReader(inputStream);
+             InputStreamReader isr = new InputStreamReader(inputStream)
         ) {
 
             clientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
@@ -266,10 +266,10 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
     /**
      * This method will contact the identity provider to verify that the token is valid for our application.
-     * 
+     * <p>
      * This check is intended to mitigate against the confused deputy problem; although I suspect the google client
      * might already do this.
-     *
+     * <p>
      * Todo from the future: this necessary because OAuth 2 is for authorization not authentication, and doesn't share
      *  information about the original authentication event by default. We should consider replacing this with OpenID,
      *  however the Google library doesn't appear to support that well.

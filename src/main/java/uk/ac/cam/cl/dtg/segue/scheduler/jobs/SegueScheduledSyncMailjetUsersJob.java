@@ -26,7 +26,8 @@ import java.util.Map;
  * */
 public class SegueScheduledSyncMailjetUsersJob extends SegueScheduledJob {
 
-    public SegueScheduledSyncMailjetUsersJob(String jobKey, String jobGroupName, String description, String cronString) {
+    public SegueScheduledSyncMailjetUsersJob(final String jobKey, final String jobGroupName, final String description,
+                                             final String cronString) {
         super(jobKey, jobGroupName, description, cronString);
     }
 

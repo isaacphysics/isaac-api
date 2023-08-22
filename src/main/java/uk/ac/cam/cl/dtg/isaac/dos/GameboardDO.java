@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -62,6 +62,8 @@ public class GameboardDO {
      *            - User id of the owner of the gameboard.
      * @param creationMethod
      *            - Method used to construct this game board.
+     * @param tags
+     *            - Set of tags associated with the game board.
      */
     public GameboardDO(final String id, final String title, final List<GameboardContentDescriptor> contents,
                        final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
@@ -262,23 +264,23 @@ public class GameboardDO {
         return contents;
     }
 
-    public void setContents(List<GameboardContentDescriptor> contents) {
+    public void setContents(final List<GameboardContentDescriptor> contents) {
         this.contents = contents;
     }
 
     @Override
     public String toString() {
-        return "GameboardDO [" +
-                "id='" + id + '\'' +
-                ", title='" + title + '\'' +
-                ", contents=" + contents +
-                ", wildCard=" + wildCard +
-                ", wildCardPosition=" + wildCardPosition +
-                ", creationDate=" + creationDate +
-                ", gameFilter=" + gameFilter +
-                ", ownerUserId=" + ownerUserId +
-                ", creationMethod=" + creationMethod +
-                ", tags=" + tags +
-                ']';
+        return "GameboardDO ["
+                + "id='" + id + '\''
+                + ", title='" + title + '\''
+                + ", contents=" + contents
+                + ", wildCard=" + wildCard
+                + ", wildCardPosition=" + wildCardPosition
+                + ", creationDate=" + creationDate
+                + ", gameFilter=" + gameFilter
+                + ", ownerUserId=" + ownerUserId
+                + ", creationMethod=" + creationMethod
+                + ", tags=" + tags
+                + ']';
     }
 }

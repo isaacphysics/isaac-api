@@ -25,7 +25,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
  * Management layer for updating and retrieving badge states
- *
+ * <p>
  * Created by du220 on 27/04/2018.
  */
 public class UserBadgeManager {
@@ -43,7 +43,7 @@ public class UserBadgeManager {
     private final ITransactionManager transactionManager;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param userBadgePersistenceManager badge persistence object for liasing with database
      * @param groupManager group manager object for badge policy dependencies
@@ -52,12 +52,13 @@ public class UserBadgeManager {
      * @param gameManager game manager object for badge policy dependencies
      * @param contentManager content manager object for badge policy dependencies
      * @param contentIndex specifies content version
+     * @param transactionManager manages transactions for atomicity of badge state updates
      */
     @Inject
-    public UserBadgeManager(IUserBadgePersistenceManager userBadgePersistenceManager, GroupManager groupManager,
-                            EventBookingManager bookingManager, AssignmentManager assignmentManager, GameManager gameManager,
-                            GitContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex,
-                            ITransactionManager transactionManager) {
+    public UserBadgeManager(final IUserBadgePersistenceManager userBadgePersistenceManager, final GroupManager groupManager,
+                            final EventBookingManager bookingManager, final AssignmentManager assignmentManager,
+                            final GameManager gameManager, final GitContentManager contentManager,
+                            @Named(CONTENT_INDEX) final String contentIndex, final ITransactionManager transactionManager) {
 
         this.userBadgePersistenceManager = userBadgePersistenceManager;
         this.transactionManager = transactionManager;
@@ -70,14 +71,14 @@ public class UserBadgeManager {
     }
 
     /**
-     * Gets an up-to-date badge by either retrieving from the database or initialising first-time on the fly
+     * Gets an up-to-date badge by either retrieving from the database or initialising first-time on the fly.
      *
      * @param user owner of badge record
      * @param badgeName enum of badge to be updated
      * @return user badge object
      * @throws SegueDatabaseException
      */
-    public UserBadge getOrCreateBadge(RegisteredUserDTO user, Badge badgeName)
+    public UserBadge getOrCreateBadge(final RegisteredUserDTO user, final Badge badgeName)
             throws SegueDatabaseException {
 
         // start database transaction to ensure atomicity of badge state update (if required)
@@ -95,7 +96,7 @@ public class UserBadgeManager {
     }
 
     /**
-     * Updates the badge state and delivers to the database
+     * Updates the badge state and delivers to the database.
      *
      * @param user owner of badge record
      * @param badgeName enum of badge to be updated
@@ -103,7 +104,7 @@ public class UserBadgeManager {
      * @return user badge object
      * @throws SegueDatabaseException
      */
-    public UserBadge updateBadge(RegisteredUserDTO user, Badge badgeName, String event)
+    public UserBadge updateBadge(final RegisteredUserDTO user, final Badge badgeName, final String event)
             throws SegueDatabaseException {
 
         // start a database transaction as an update occurs across two queries
@@ -139,12 +140,12 @@ public class UserBadgeManager {
     }
 
     /**
-     * Gets a map of all the users badges and their values
+     * Gets a map of all the users badges and their values.
      *
      * @param user the user of interest
      * @return a map of badge names to values
      */
-    public Map<String, Object> getAllUserBadges(RegisteredUserDTO user) {
+    public Map<String, Object> getAllUserBadges(final RegisteredUserDTO user) {
 
         Map<String, Object> badges = Maps.newHashMap();
 

@@ -89,6 +89,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      *            - so we can log interesting events.
      * @param associationManager
      *            - so that we can create associations.
+     * @param groupManager
+     *            - instance of group manager
      * @param misuseMonitor
      *            - so that we can prevent overuse of protected resources.
      */
@@ -142,7 +144,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all users granted access to the specified user's data.")
-    public Response getUsersWithAccessSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException {
+    public Response getUsersWithAccessSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") final Long userId) throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
@@ -172,7 +174,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
     /**
      * Revoke a user association.
-     *
+     * <p>
      * This endpoint enables a users to revoke access to their data for a specific user they had previously approved.
      *
      * @param request
@@ -213,7 +215,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
     /**
      * Revoke all user associations
-     *
+     * <p>
      * This endpoint enables a users to revoke access to their data for all users they had previously approved.
      *
      * @param request
@@ -248,7 +250,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
     /**
      * Release a user association.
-     *
+     * <p>
      * This endpoint is used when a user who had previously been granted access to another's data no longer needs it
      * and wants to end the sharing relationship from their side.
      *
@@ -291,7 +293,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
     /**
      * Release all user associations.
-     *
+     * <p>
      * This endpoint is used when a user who had previously been granted access to other users's data no longer needs
      * the access and wants to end all the sharing relationships from their side.
      *
@@ -364,7 +366,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all users the specified user has been granted access by.")
-    public Response getCurrentAccessRightsForSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") Long userId) throws NoUserException{
+    public Response getCurrentAccessRightsForSpecificUser(@Context final HttpServletRequest request, @PathParam("userId") final Long userId) throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
@@ -395,7 +397,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
     /**
      * Function to allow users to create or get an existing AssociationToken.
-     * 
+     * <p>
      * This token can be used by another user to grant view permissions to their user data.
      * 
      * @param request
@@ -421,8 +423,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             UserGroupDTO group = this.groupManager.getGroupById(groupId);
 
             if (!GroupManager.isOwnerOrAdditionalManager(group, user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to create or request a group token for this group. " +
-                        "Only owners or additional managers can.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to create or request a group token for this group. "
+                        + "Only owners or additional managers can.").toResponse();
             }
 
             AssociationToken token = associationManager.generateAssociationToken(user, groupId);
@@ -476,7 +478,10 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             // add owner
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
-            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(associationToken.getOwnerUserId()), UserSummaryWithEmailAddressDTO.class));
+            usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(
+                    userManager.getUserDTOById(associationToken.getOwnerUserId()),
+                    UserSummaryWithEmailAddressDTO.class
+            ));
 
             // add additional managers
             usersLinkedToToken.addAll(group.getAdditionalManagers());
@@ -497,9 +502,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
-            return SegueErrorResponse.getRateThrottledResponse(message);  
+            return SegueErrorResponse.getRateThrottledResponse(TOO_MANY_REQUESTS);
         }
     }
 

@@ -7,13 +7,13 @@ public class UserContext {
     private Stage stage;
     private ExamBoard examBoard;
 
-    public UserContext() {;}
+    public UserContext() { }
 
     public Stage getStage() {
         return stage;
     }
 
-    public void setStage(Stage stage) {
+    public void setStage(final Stage stage) {
         this.stage = stage;
     }
 
@@ -21,15 +21,15 @@ public class UserContext {
         return examBoard;
     }
 
-    public void setExamBoard(ExamBoard examBoard) {
+    public void setExamBoard(final ExamBoard examBoard) {
         this.examBoard = examBoard;
     }
 
     @Override
     public String toString() {
-        return "UserContext [" +
-                "stage=" + stage +
-                ", examBoard=" + examBoard +
-                ']';
+        return "UserContext ["
+                + "stage=" + stage
+                + ", examBoard=" + examBoard
+                + ']';
     }
 }

@@ -54,12 +54,12 @@ public interface IAnonymousUserDataManager {
      * @return anonymous user
      * @throws SegueDatabaseException - if we can't access the database
      */
-    AnonymousUser getById(final String id) throws SegueDatabaseException;
+    AnonymousUser getById(String id) throws SegueDatabaseException;
 
     /**
      * Find out how many live anonymous users we have currently in the database.
      *
      * @return count of anonymous users
      */
-    Long getCountOfAnonymousUsers() throws SegueDatabaseException;;
+    Long getCountOfAnonymousUsers() throws SegueDatabaseException;
 }

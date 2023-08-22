@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,10 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+
 import java.util.List;
 import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 
 /**
  * Interface that provides persistence functionality to external apps that sit on top of Segue.
@@ -45,8 +45,7 @@ public interface IAppDatabaseManager<T> extends IAppDataManager<T> {
      *            - a map of boolean operators mapped to lists of field names.
      * @return a list of results or an empty list.
      */
-    List<T> find(final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch)
-    ;
+    List<T> find(Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch);
 
     /**
      * findAll records.

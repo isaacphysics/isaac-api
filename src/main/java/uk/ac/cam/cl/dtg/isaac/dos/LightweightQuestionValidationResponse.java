@@ -94,7 +94,7 @@ public class LightweightQuestionValidationResponse {
 
     @Override
     public String toString() {
-        return "QuestionValidationResponse [questionId=" + questionId + ", correct=" + correct +
-                ", dateAttempted=" + dateAttempted + "]";
+        return "QuestionValidationResponse [questionId=" + questionId + ", correct=" + correct
+                + ", dateAttempted=" + dateAttempted + "]";
     }
 }

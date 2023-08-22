@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import jakarta.annotation.Nullable;
 import java.util.Date;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
+
 /**
  * This class is the Domain Object used to store Quiz assignments in the isaac CMS.
  */
@@ -148,7 +150,7 @@ public class QuizAssignmentDO {
 
     @Override
     public int hashCode() {
-        return 31 + ((id == null) ? 0 : id.hashCode());
+        return DO_HASHCODE_PRIME + ((id == null) ? 0 : id.hashCode());
     }
 
     @Override
@@ -183,7 +185,7 @@ public class QuizAssignmentDO {
      * set the due date of an assignment.
      * @param dueDate - date due
      */
-    public void setDueDate(@Nullable Date dueDate) {
+    public void setDueDate(@Nullable final Date dueDate) {
         this.dueDate = dueDate;
     }
 

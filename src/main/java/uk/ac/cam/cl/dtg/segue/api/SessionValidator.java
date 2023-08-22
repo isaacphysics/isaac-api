@@ -44,7 +44,7 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     private HttpServletResponse httpServletResponse;
 
     @Inject
-    public SessionValidator(final UserAuthenticationManager userAuthenticationManager, PropertiesLoader properties) {
+    public SessionValidator(final UserAuthenticationManager userAuthenticationManager, final PropertiesLoader properties) {
         this.userAuthenticationManager = userAuthenticationManager;
         this.properties = properties;
         this.sessionExpirySeconds = this.properties.getIntegerPropertyOrFallback(
@@ -52,7 +52,7 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     }
 
     @Override
-    public void filter(ContainerRequestContext containerRequestContext) throws IOException {
+    public void filter(final ContainerRequestContext containerRequestContext) throws IOException {
         Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
         if (authCookie != null && !userAuthenticationManager.isSessionValid(httpServletRequest)) {
             log.warn("Request made with invalid segue auth cookie - closing session");
@@ -78,7 +78,8 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     }
 
     @Override
-    public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
+    public void filter(final ContainerRequestContext containerRequestContext, final ContainerResponseContext containerResponseContext)
+            throws IOException {
         Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
         if (authCookie != null && !isPartialLoginCookie(authCookie) && !isLogoutCookiePresent(httpServletResponse) && wasRequestValid(containerResponseContext)) {
             try {
@@ -90,22 +91,22 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
         }
     }
 
-    private static boolean isLogoutCookiePresent(HttpServletResponse response) {
+    private static boolean isLogoutCookiePresent(final HttpServletResponse response) {
         Collection<String> cookies = response.getHeaders("Set-Cookie");
         return cookies.stream().anyMatch(cookie -> cookie.contains(SEGUE_AUTH_COOKIE) && cookie.contains("Max-Age=0"));
     }
 
-    private boolean isPartialLoginCookie(Cookie authCookie) throws IOException {
+    private boolean isPartialLoginCookie(final Cookie authCookie) throws IOException {
         Map<String, String> sessionInformation = userAuthenticationManager.decodeCookie(authCookie);
         String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
         return partialLoginFlag != null && partialLoginFlag.equals(String.valueOf(true));
     }
 
-    private static boolean wasRequestValid(ContainerResponseContext containerResponseContext) {
+    private static boolean wasRequestValid(final ContainerResponseContext containerResponseContext) {
         return ((ContainerResponseContextImpl) containerResponseContext).getJaxrsResponse().getStatus() == Response.Status.OK.getStatusCode();
     }
 
-    private jakarta.servlet.http.Cookie generateRefreshedSegueAuthCookie(Cookie authCookie) throws IOException {
+    private jakarta.servlet.http.Cookie generateRefreshedSegueAuthCookie(final Cookie authCookie) throws IOException {
         Map<String, String> sessionInformation = userAuthenticationManager.decodeCookie(authCookie);
         String sessionExpiryDate = getFutureDateString(sessionExpirySeconds);
         sessionInformation.put(DATE_EXPIRES, sessionExpiryDate);
@@ -116,10 +117,10 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
         return newAuthCookie;
     }
 
-    private static String getFutureDateString(Integer secondsinFuture) {
+    private static String getFutureDateString(final Integer secondsInFuture) {
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.SECOND, secondsinFuture);
+        calendar.add(Calendar.SECOND, secondsInFuture);
         return sessionDateFormat.format(calendar.getTime());
     }
 }

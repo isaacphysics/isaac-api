@@ -365,8 +365,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             final LocalAuthDTO localAuthDTO) throws InvalidKeySpecException, NoSuchAlgorithmException {
 
         // In this case we expect a username and password in the JSON request body:
-        if (areCredentialsMissing(localAuthDTO))
+        if (areCredentialsMissing(localAuthDTO)) {
             return new SegueErrorResponse(Status.BAD_REQUEST, LOGIN_MISSING_CREDENTIALS_MESSAGE).toResponse();
+        }
         
         String email = localAuthDTO.getEmail();
         String password = localAuthDTO.getPassword();
@@ -406,14 +407,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         }
     }
 
-    private void notifySegueLoginRateLimiters(HttpServletRequest request, String email) throws SegueResourceMisuseException {
+    private void notifySegueLoginRateLimiters(final HttpServletRequest request, final String email) throws SegueResourceMisuseException {
         String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
         // Stop users logging in who have already locked their account.
         misuseMonitor.notifyEvent(email.toLowerCase(), SegueLoginByEmailMisuseHandler.class.getSimpleName());
         misuseMonitor.notifyEvent(requestingIPAddress, SegueLoginByIPMisuseHandler.class.getSimpleName());
     }
 
-    private static boolean areCredentialsMissing(LocalAuthDTO localAuthDTO) {
+    private static boolean areCredentialsMissing(final LocalAuthDTO localAuthDTO) {
         return null == localAuthDTO || null == localAuthDTO.getEmail() || localAuthDTO.getEmail().isEmpty()
                 || null == localAuthDTO.getPassword() || localAuthDTO.getPassword().isEmpty();
     }

@@ -17,12 +17,16 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 /**
@@ -41,16 +45,16 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
     }
 
     @Override
-    public LocalUserCredential getLocalUserCredential(Long userId) throws SegueDatabaseException {
+    public LocalUserCredential getLocalUserCredential(final Long userId) throws SegueDatabaseException {
         if (null == userId) {
             return null;
         }
 
         String query = "SELECT * FROM user_credentials WHERE user_id = ?";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
+            pst.setLong(FIELD_GET_CREDENTIAL_USER_ID, userId);
 
             try (ResultSet results = pst.executeQuery()) {
                 return this.findOne(results);
@@ -64,9 +68,9 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
     public LocalUserCredential getLocalUserCredentialByResetToken(final String token) throws SegueDatabaseException {
         String query = "SELECT * FROM user_credentials WHERE reset_token = ?";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, token);
+            pst.setString(FIELD_GET_CREDENTIAL_BY_RESET_TOKEN_TOKEN, token);
 
             try (ResultSet results = pst.executeQuery()) {
                 return this.findOne(results);
@@ -77,7 +81,7 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
     }
 
     @Override
-    public LocalUserCredential createOrUpdateLocalUserCredential(LocalUserCredential credsToSave) throws SegueDatabaseException {
+    public LocalUserCredential createOrUpdateLocalUserCredential(final LocalUserCredential credsToSave) throws SegueDatabaseException {
         // determine if it is a create or update
         LocalUserCredential lc = this.getLocalUserCredential(credsToSave.getUserId());
 
@@ -92,19 +96,19 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
         return lc;
     }
 
-    private LocalUserCredential createCredentials(LocalUserCredential credsToSave) throws SegueDatabaseException {
-        String query = "INSERT INTO user_credentials(user_id, password, security_scheme, secure_salt, reset_token, reset_expiry, last_updated)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?);";
+    private LocalUserCredential createCredentials(final LocalUserCredential credsToSave) throws SegueDatabaseException {
+        String query = "INSERT INTO user_credentials(user_id, password, security_scheme, secure_salt, reset_token, reset_expiry, last_updated)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
         ) {
-            setValueHelper(pst, 1, credsToSave.getUserId());
-            setValueHelper(pst, 2, credsToSave.getPassword());
-            setValueHelper(pst, 3, credsToSave.getSecurityScheme());
-            setValueHelper(pst, 4, credsToSave.getSecureSalt());
-            setValueHelper(pst, 5, credsToSave.getResetToken());
-            setValueHelper(pst, 6, credsToSave.getResetExpiry());
-            setValueHelper(pst, 7, new java.util.Date());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_USER_ID, credsToSave.getUserId());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_PASSWORD, credsToSave.getPassword());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_SECURITY_SCHEME, credsToSave.getSecurityScheme());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_SECURE_SALT, credsToSave.getSecureSalt());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_RESET_TOKEN, credsToSave.getResetToken());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_RESET_EXPIRY, credsToSave.getResetExpiry());
+            setValueHelper(pst, FIELD_CREATE_CREDENTIALS_LAST_UPDATED, new java.util.Date());
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -116,24 +120,24 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
         }
     }
 
-    private LocalUserCredential updateCredentials(LocalUserCredential credsToSave) throws SegueDatabaseException {
+    private LocalUserCredential updateCredentials(final LocalUserCredential credsToSave) throws SegueDatabaseException {
         LocalUserCredential existingRecord = this.getLocalUserCredential(credsToSave.getUserId());
         if (null == existingRecord) {
             throw new SegueDatabaseException("The credentials you have tried to update do not exist.");
         }
 
-        String query = "UPDATE user_credentials SET password = ?, security_scheme = ?, secure_salt = ?," +
-                " reset_token = ?, reset_expiry = ?, last_updated = ? WHERE user_id = ?;";
+        String query = "UPDATE user_credentials SET password = ?, security_scheme = ?, secure_salt = ?,"
+                + " reset_token = ?, reset_expiry = ?, last_updated = ? WHERE user_id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            setValueHelper(pst, 1, credsToSave.getPassword());
-            setValueHelper(pst, 2, credsToSave.getSecurityScheme());
-            setValueHelper(pst, 3, credsToSave.getSecureSalt());
-            setValueHelper(pst, 4, credsToSave.getResetToken());
-            setValueHelper(pst, 5, credsToSave.getResetExpiry());
-            setValueHelper(pst, 6, new java.util.Date());
-            setValueHelper(pst, 7, credsToSave.getUserId());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_PASSWORD, credsToSave.getPassword());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_SECURITY_SCHEME, credsToSave.getSecurityScheme());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_SECURE_SALT, credsToSave.getSecureSalt());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_RESET_TOKEN, credsToSave.getResetToken());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_RESET_EXPIRY, credsToSave.getResetExpiry());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_LAST_UPDATED, new java.util.Date());
+            setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_USER_ID, credsToSave.getUserId());
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -183,7 +187,7 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
      * @return localUserCredential object
      * @throws SQLException if we can't get a value required.
      */
-    private LocalUserCredential buildCredential(ResultSet results) throws SQLException{
+    private LocalUserCredential buildCredential(final ResultSet results) throws SQLException {
         LocalUserCredential toReturn = new LocalUserCredential();
         toReturn.setUserId(results.getLong("user_id"));
         toReturn.setPassword(results.getString("password"));
@@ -195,4 +199,29 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
         toReturn.setLastUpdated(results.getTimestamp("last_updated"));
         return toReturn;
     }
+
+    // Field Constants
+    // getLocalUserCredential
+    private static final int FIELD_GET_CREDENTIAL_USER_ID = 1;
+
+    // getLocalUserCredentialByResetToken
+    private static final int FIELD_GET_CREDENTIAL_BY_RESET_TOKEN_TOKEN = 1;
+
+    // createCredentials
+    private static final int FIELD_CREATE_CREDENTIALS_USER_ID = 1;
+    private static final int FIELD_CREATE_CREDENTIALS_PASSWORD = 2;
+    private static final int FIELD_CREATE_CREDENTIALS_SECURITY_SCHEME = 3;
+    private static final int FIELD_CREATE_CREDENTIALS_SECURE_SALT = 4;
+    private static final int FIELD_CREATE_CREDENTIALS_RESET_TOKEN = 5;
+    private static final int FIELD_CREATE_CREDENTIALS_RESET_EXPIRY = 6;
+    private static final int FIELD_CREATE_CREDENTIALS_LAST_UPDATED = 7;
+
+    // updateCredentials
+    private static final int FIELD_UPDATE_CREDENTIALS_PASSWORD = 1;
+    private static final int FIELD_UPDATE_CREDENTIALS_SECURITY_SCHEME = 2;
+    private static final int FIELD_UPDATE_CREDENTIALS_SECURE_SALT = 3;
+    private static final int FIELD_UPDATE_CREDENTIALS_RESET_TOKEN = 4;
+    private static final int FIELD_UPDATE_CREDENTIALS_RESET_EXPIRY = 5;
+    private static final int FIELD_UPDATE_CREDENTIALS_LAST_UPDATED = 6;
+    private static final int FIELD_UPDATE_CREDENTIALS_USER_ID = 7;
 }

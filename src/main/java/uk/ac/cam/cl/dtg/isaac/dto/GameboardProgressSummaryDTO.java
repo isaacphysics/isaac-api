@@ -20,7 +20,7 @@ public class GameboardProgressSummaryDTO {
         return assignmentId;
     }
 
-    public void setAssignmentId(Long assignmentId) {
+    public void setAssignmentId(final Long assignmentId) {
         this.assignmentId = assignmentId;
     }
 
@@ -28,7 +28,7 @@ public class GameboardProgressSummaryDTO {
         return gameboardId;
     }
 
-    public void setGameboardId(String gameboardId) {
+    public void setGameboardId(final String gameboardId) {
         this.gameboardId = gameboardId;
     }
 
@@ -36,7 +36,7 @@ public class GameboardProgressSummaryDTO {
         return dueDate;
     }
 
-    public void setDueDate(Date dueDate) {
+    public void setDueDate(final Date dueDate) {
         this.dueDate = dueDate;
     }
 
@@ -44,7 +44,7 @@ public class GameboardProgressSummaryDTO {
         return creationDate;
     }
 
-    public void setCreationDate(Date creationDate) {
+    public void setCreationDate(final Date creationDate) {
         this.creationDate = creationDate;
     }
 
@@ -52,7 +52,7 @@ public class GameboardProgressSummaryDTO {
         return gameboardTitle;
     }
 
-    public void setGameboardTitle(String gameboardTitle) {
+    public void setGameboardTitle(final String gameboardTitle) {
         this.gameboardTitle = gameboardTitle;
     }
 
@@ -60,7 +60,7 @@ public class GameboardProgressSummaryDTO {
         return questionPartsCorrect;
     }
 
-    public void setQuestionPartsCorrect(Integer questionPartsCorrect) {
+    public void setQuestionPartsCorrect(final Integer questionPartsCorrect) {
         this.questionPartsCorrect = questionPartsCorrect;
     }
 
@@ -68,7 +68,7 @@ public class GameboardProgressSummaryDTO {
         return questionPartsIncorrect;
     }
 
-    public void setQuestionPartsIncorrect(Integer questionPartsIncorrect) {
+    public void setQuestionPartsIncorrect(final Integer questionPartsIncorrect) {
         this.questionPartsIncorrect = questionPartsIncorrect;
     }
 
@@ -76,7 +76,7 @@ public class GameboardProgressSummaryDTO {
         return questionPartsNotAttempted;
     }
 
-    public void setQuestionPartsNotAttempted(Integer questionPartsNotAttempted) {
+    public void setQuestionPartsNotAttempted(final Integer questionPartsNotAttempted) {
         this.questionPartsNotAttempted = questionPartsNotAttempted;
     }
 
@@ -84,7 +84,7 @@ public class GameboardProgressSummaryDTO {
         return questionPartsTotal;
     }
 
-    public void setQuestionPartsTotal(Integer questionPartsTotal) {
+    public void setQuestionPartsTotal(final Integer questionPartsTotal) {
         this.questionPartsTotal = questionPartsTotal;
     }
 
@@ -92,7 +92,7 @@ public class GameboardProgressSummaryDTO {
         return passMark;
     }
 
-    public void setPassMark(Float passMark) {
+    public void setPassMark(final Float passMark) {
         this.passMark = passMark;
     }
 
@@ -100,7 +100,7 @@ public class GameboardProgressSummaryDTO {
         return questionPagesPerfect;
     }
 
-    public void setQuestionPagesPerfect(Integer questionPagesPerfect) {
+    public void setQuestionPagesPerfect(final Integer questionPagesPerfect) {
         this.questionPagesPerfect = questionPagesPerfect;
     }
 
@@ -108,7 +108,7 @@ public class GameboardProgressSummaryDTO {
         return questionPagesTotal;
     }
 
-    public void setQuestionPagesTotal(Integer questionPagesTotal) {
+    public void setQuestionPagesTotal(final Integer questionPagesTotal) {
         this.questionPagesTotal = questionPagesTotal;
     }
 }

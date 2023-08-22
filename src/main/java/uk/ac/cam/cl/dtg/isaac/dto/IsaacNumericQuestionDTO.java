@@ -15,15 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.List;
-
 import com.google.api.client.util.Lists;
-
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuantityDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
+
+import java.util.List;
 
 /**
  * DTO for isaacNumericQuestions.
@@ -62,7 +61,7 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
 
     /**
      * Gets the knownUnits.
-     * 
+     * <p>
      * This is a hack so that the frontend can display all units available as a drop down list.
      * 
      * @return the knownUnits
@@ -70,7 +69,7 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
     public List<String> getKnownUnits() {
         List<String> unitsToReturn = Lists.newArrayList();
 
-        for (ChoiceDTO c : this.choices) {
+        for (ChoiceDTO c : this.getChoices()) {
             if (c instanceof QuantityDTO) {
                 QuantityDTO quantity = (QuantityDTO) c;
                 if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
@@ -90,7 +89,7 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
         return this.availableUnits;
     }
 
-    public void setAvailableUnits(List<String> availableUnits) {
+    public void setAvailableUnits(final List<String> availableUnits) {
         this.availableUnits = availableUnits;
     }
 
@@ -107,7 +106,7 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
      * Set the unit to be displayed to the user instead of the available units dropdown.
      * @param displayUnit - the unit to be displayed.
      */
-    public void setDisplayUnit(String displayUnit) {
+    public void setDisplayUnit(final String displayUnit) {
         this.displayUnit = displayUnit;
     }
 

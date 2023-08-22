@@ -15,8 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+
+import java.util.List;
 
 /**
  * Base class for all question types.
@@ -26,9 +27,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 @JsonContentType("question")
 public class Question extends Content {
 
-    protected ContentBase answer;
-    protected List<ContentBase> hints;
-    protected Content defaultFeedback;
+    private ContentBase answer;
+    private List<ContentBase> hints;
+    private Content defaultFeedback;
 
 
     public Question() {

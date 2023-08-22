@@ -24,7 +24,7 @@ public interface IExternalAccountDataManager {
 
     List<UserExternalAccountChanges> getRecentlyChangedRecords() throws SegueDatabaseException;
 
-    void updateProviderLastUpdated(final Long userId) throws SegueDatabaseException;
+    void updateProviderLastUpdated(Long userId) throws SegueDatabaseException;
 
-    void updateExternalAccount(final Long userId, final String providerUserIdentifier) throws SegueDatabaseException;
+    void updateExternalAccount(Long userId, String providerUserIdentifier) throws SegueDatabaseException;
 }

@@ -22,52 +22,6 @@ import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.AttemptCompletedException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
-import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
-import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
-import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -84,11 +38,56 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AttemptCompletedException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
+import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -103,7 +102,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
- * Quiz Facade
+ * Quiz Facade.
  */
 @Path("/quiz")
 @Tag(name = "/quiz")
@@ -167,9 +166,13 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Get quizzes visible to this user, starting from index 0.
-     *
+     * <p>
      * Anonymous users can't see quizzes.
      *
+     * @param request
+     *            - the Request needed for ETag checking
+     * @param httpServletRequest
+     *            - the Request needed for Cookies for the current user
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
     @GET
@@ -182,7 +185,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Get quizzes visible to this user, starting from the specified index.
-     *
+     * <p>
      * Anonymous users can't see quizzes.
      *
      * @param request the Request needed for ETag checking.
@@ -220,7 +223,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes, userRoleString, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes,
+                    userRoleString, startIndex, QUIZ_MAX_SEARCH_RESULTS);
 
             return ok(summary).tag(etag)
                 .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -237,9 +241,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Get quizzes assigned to this user.
-     *
+     * <p>
      * Shows a content summary, so we can track when a user actually attempts a quiz.
      *
+     * @param request
+     *            - the Request to get the current user
      * @return a Response containing a list of QuizAssignmentDTO for the assigned quizzes.
      */
     @GET
@@ -272,9 +278,11 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Get quizzes freely attempted by this user.
-     *
+     * <p>
      * Shows a content summary, so we can track when a user actually attempts a quiz.
      *
+     * @param request
+     *            - the Request to get the current user
      * @return a Response containing a list of QuizAttemptDTO for the freely attempted quizzes.
      */
     @GET
@@ -324,7 +332,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
             // Tutors are able to preview student tests (but not set them)
-            if (!(isUserTutorOrAbove(userManager, user))) {
+            if (!isUserTutorOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -344,8 +352,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Check this user is actually allowed to preview this quiz. A tutor counts as both a student and teacher
             // in this check
             if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
-                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR)
-                    || (quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR))
+                    || quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR
+                    || quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR)
             ) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
@@ -362,13 +370,15 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Start a quiz attempt for a particular quiz assignment.
-     *
+     * <p>
      * For a student, indicates the quiz is being attempted and creates a QuizAttemptDO in the DB
      * if they are a member of the group for the assignment.
      * If an attempt has already begun, return the already begun attempt.
      *
      * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
      *
+     * @param request
+     *            - the Request object
      * @param httpServletRequest
      *            - so that we can extract user information.
      * @param quizAssignmentId
@@ -430,11 +440,13 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Start a quiz attempt for a free quiz (one that is visibleToStudents).
-     *
+     * <p>
      * This checks that quiz has not already been assigned. (When a quiz has been set to a student,
      * they are locked out of all previous feedback for that quiz and prevented from starting the
      * quiz freely in order to prevent some ways of cheating.)
      *
+     * @param request
+     *            - the Request object
      * @param httpServletRequest
      *            - so that we can extract user information.
      * @param quizId
@@ -543,7 +555,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Get the feedback for a quiz attempt.
-     *
+     * <p>
      * The attempt must be completed.
      *
      * @param httpServletRequest
@@ -605,7 +617,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Mark a QuizAttempt as complete.
-     *
+     * <p>
      * Only the user taking the quiz can mark it complete.
      *
      * @param httpServletRequest
@@ -630,7 +642,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot complete someone else's test.").toResponse();
             }
 
-            if ((quizAttempt.getCompletedDate() != null)) {
+            if (quizAttempt.getCompletedDate() != null) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "That test is already complete.").toResponse();
             }
 
@@ -650,7 +662,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Mark a QuizAttempt as incomplete.
-     *
+     * <p>
      * Only owner and group managers for the quiz assignment can mark it incomplete.
      * If it is a self-taken quiz, you cannot mark it incomplete, as that would make it easier to tweak individual
      * questions to find the right answers (also there is no assignment so you can't construct the URL anyway).
@@ -746,7 +758,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Operation(summary = "Get the QuizDTO for a test attempt.")
     public Response logQuizSectionView(@Context final HttpServletRequest httpServletRequest,
                                        @PathParam("quizAttemptId") final Long quizAttemptId,
-                                       @FormParam("sectionNumber") Integer sectionNumber) {
+                                       @FormParam("sectionNumber") final Integer sectionNumber) {
         try {
             if (sectionNumber == null) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Missing sectionNumber.").toResponse();
@@ -786,8 +798,10 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * @param request
      *            - the servlet request so we can find out if it is a known user.
+     * @param quizAttemptId
+     *            - the id to retrieve the incomplete attempt to check quiz validity and record an answer
      * @param questionId
-     *            that you are attempting to answer.
+     *            - that you are attempting to answer.
      * @param jsonAnswer
      *            - answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
      * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
@@ -868,7 +882,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Abandon a started free quiz attempt.
-     *
+     * <p>
      * This can only be done on free quiz attempts, as we don't want any startDate shenanigans on assigned quizzes.
      *
      * @param httpServletRequest
@@ -917,7 +931,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a teacher to set a quiz to a group.
-     *
+     * <p>
      * Sends emails to the members of the group informing them of the quiz.
      * Takes a quiz id, a group id, an optional end datetime for completion, and the feedbackMode.
      *
@@ -934,7 +948,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     public final Response createQuizAssignment(@Context final HttpServletRequest request,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
-        if (   clientQuizAssignment.getQuizId() == null
+        if (clientQuizAssignment.getQuizId() == null
             || clientQuizAssignment.getGroupId() == null
             || clientQuizAssignment.getQuizFeedbackMode() == null) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and test ids and a test feedback mode.").toResponse();
@@ -943,13 +957,14 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!(isUserTeacherOrAbove(userManager, currentlyLoggedInUser))) {
+            if (!isUserTeacherOrAbove(userManager, currentlyLoggedInUser)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser))
+            if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only set assignments to groups you own or manage.").toResponse();
+                        "You can only set assignments to groups you own or manage.").toResponse();
+            }
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(clientQuizAssignment.getQuizId());
             if (null == quiz) {
@@ -979,7 +994,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(assignmentWithID).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (DuplicateAssignmentException|DueBeforeNowException e) {
+        } catch (DuplicateAssignmentException | DueBeforeNowException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String message = "Database error whilst setting quiz";
@@ -993,9 +1008,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Get quizzes assigned by this user.
-     *
+     * <p>
      * Optionally filtered by a particular group.
      *
+     * @param request so that we can extract user information.
      * @param groupIdOfInterest An optional ID of a group to look up.
      * @return a Response containing a list of QuizAssignmentDTO for the quizzes they have assigned.
      */
@@ -1004,12 +1020,12 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get tests assigned by this user.")
-    public Response getQuizAssignments(@Context HttpServletRequest request,
-                                       @QueryParam("groupId") Long groupIdOfInterest) {
+    public Response getQuizAssignments(@Context final HttpServletRequest request,
+                                       @QueryParam("groupId") final Long groupIdOfInterest) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1046,7 +1062,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a teacher to see results of an assignment
+     * Allows a teacher to see results of an assignment.
      *
      * @param httpServletRequest so that we can extract user information.
      * @param quizAssignmentId the id of the assignment to view.
@@ -1059,7 +1075,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "View a test assignment.")
     public final Response getQuizAssignment(@Context final HttpServletRequest httpServletRequest,
-                                            @PathParam("quizAssignmentId") Long quizAssignmentId) {
+                                            @PathParam("quizAssignmentId") final Long quizAssignmentId) {
 
         if (null == quizAssignmentId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
@@ -1068,7 +1084,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1120,7 +1136,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a teacher to download the results of an assignment as a CSV
+     * Allows a teacher to download the results of an assignment as a CSV.
      *
      * @param httpServletRequest so that we can extract user information.
      * @param quizAssignmentId the id of the assignment to view.
@@ -1134,7 +1150,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "Download a test assignment as a CSV.")
     public final Response getQuizAssignmentCSV(@Context final HttpServletRequest httpServletRequest,
-                                               @PathParam("quizAssignmentId") Long quizAssignmentId,
+                                               @PathParam("quizAssignmentId") final Long quizAssignmentId,
                                                @QueryParam("format") final String formatMode) {
 
         if (null == quizAssignmentId) {
@@ -1143,7 +1159,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1174,7 +1190,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                     List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                     for (int i = 0; i < quizQuestions.size(); ++i) {
-                        questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
+                        questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
                         questionIds.add(quizQuestions.get(i).getId());
                     }
                 }
@@ -1195,15 +1211,15 @@ public class QuizFacade extends AbstractIsaacFacade {
                     for (String questionId : questionIds) {
                         if (feedback.getQuestionMarks() != null) {
                             QuizFeedbackDTO.Mark questionMark = feedback.getQuestionMarks().get(questionId);
-                            if (questionMark.notAttempted == 1) {
+                            if (questionMark.getNotAttempted() == 1) {
                                 detailedMark.add("Not Attempted");
-                                summaryMark.notAttempted += 1;
-                            } else if (questionMark.incorrect == 1) {
+                                summaryMark.setNotAttempted(summaryMark.getNotAttempted() + 1);
+                            } else if (questionMark.getIncorrect() == 1) {
                                 detailedMark.add("Incorrect");
-                                summaryMark.incorrect += 1;
-                            } else if (questionMark.correct == 1) {
+                                summaryMark.setIncorrect(summaryMark.getIncorrect() + 1);
+                            } else if (questionMark.getCorrect() == 1) {
                                 detailedMark.add("Correct");
-                                summaryMark.correct += 1;
+                                summaryMark.setCorrect(summaryMark.getCorrect() + 1);
                             } else {
                                 row.add("ERROR"); // This should not happen at this level
                             }
@@ -1213,9 +1229,9 @@ public class QuizFacade extends AbstractIsaacFacade {
                             row.add("");
                         }
                     }
-                    row.add(String.format("%d", summaryMark.correct));
-                    row.add(String.format("%d", summaryMark.incorrect));
-                    row.add(String.format("%d", summaryMark.notAttempted));
+                    row.add(String.format("%d", summaryMark.getCorrect()));
+                    row.add(String.format("%d", summaryMark.getIncorrect()));
+                    row.add(String.format("%d", summaryMark.getNotAttempted()));
                     row.addAll(detailedMark);
                 }
                 rows.add(row.toArray(new String[0]));
@@ -1251,7 +1267,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "Download a CSV with all the quiz results of a given group")
     public final Response getQuizResultsForGroup(@Context final HttpServletRequest httpServletRequest,
-                                                 @PathParam("groupId") Long groupId,
+                                                 @PathParam("groupId") final Long groupId,
                                                  @QueryParam("format") final String formatMode) {
         if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid group id.").toResponse();
@@ -1259,7 +1275,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1327,7 +1343,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                             if (overallMark != null) {
                                 // Add an apostrophe to the beginning of the score, so that the fraction isn't
                                 // interpreted as a date in excel
-                                quizTotals.add(String.format("'%d/%d", overallMark.correct, overallMark.correct + overallMark.incorrect + overallMark.notAttempted));
+                                quizTotals.add(String.format("'%d/%d",
+                                        overallMark.getCorrect(),
+                                        overallMark.getCorrect() + overallMark.getIncorrect() + overallMark.getNotAttempted()
+                                ));
                             } else {
                                 quizTotals.add("");
                             }
@@ -1352,11 +1371,11 @@ public class QuizFacade extends AbstractIsaacFacade {
                                         questionResults.add(""); // We should probably write something here to make debugging easier...
                                         continue;
                                     }
-                                    if (m.notAttempted == 1) {
+                                    if (m.getNotAttempted() == 1) {
                                         questionResults.add("Not Attempted");
-                                    } else if (m.incorrect == 1) {
+                                    } else if (m.getIncorrect() == 1) {
                                         questionResults.add("Incorrect");
-                                    } else if (m.correct == 1) {
+                                    } else if (m.getCorrect() == 1) {
                                         questionResults.add("Correct");
                                     } else {
                                         questionResults.add(""); // We should probably write something here to make debugging easier...
@@ -1406,21 +1425,21 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
-    private List<String> getQuizQuestionTitles(IsaacQuizDTO quiz) {
+    private List<String> getQuizQuestionTitles(final IsaacQuizDTO quiz) {
         List<String> questionTitles = new ArrayList<>();
         for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
             if (section instanceof IsaacQuizSectionDTO) {
                 IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                 List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                 for (int i = 0; i < quizQuestions.size(); ++i) {
-                    questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
+                    questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
                 }
             }
         }
         return questionTitles;
     }
 
-    private List<String> getQuizQuestionIds(IsaacQuizDTO quiz) {
+    private List<String> getQuizQuestionIds(final IsaacQuizDTO quiz) {
         List<String> questionIds = new ArrayList<>();
         for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
             if (section instanceof IsaacQuizSectionDTO) {
@@ -1450,8 +1469,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "View a test assignment attempt.")
     public final Response getQuizAssignmentAttempt(@Context final HttpServletRequest httpServletRequest,
-                                                   @PathParam("quizAssignmentId") Long quizAssignmentId,
-                                                   @PathParam("userId") Long userId) {
+                                                   @PathParam("quizAssignmentId") final Long quizAssignmentId,
+                                                   @PathParam("userId") final Long userId) {
 
         if (null == quizAssignmentId || null == userId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment and user id id.").toResponse();
@@ -1460,7 +1479,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1519,7 +1538,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * Allows a teacher to update a quiz assignment.
-     *
+     * <p>
      * Only changes to the feedbackMode and dueDate fields are accepted. A bad request error will be thrown if any other fields are set.
      *
      * @param httpServletRequest so that we can extract user information.
@@ -1532,19 +1551,19 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}")
     @Operation(summary = "Update a test assignment (only feedbackMode and dueDate may be updated).")
     public final Response updateQuizAssignment(@Context final HttpServletRequest httpServletRequest,
-                                               @PathParam("quizAssignmentId") Long quizAssignmentId,
+                                               @PathParam("quizAssignmentId") final Long quizAssignmentId,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
         if (null == quizAssignmentId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
         }
 
-        if (   clientQuizAssignment.getId() != null
-            || clientQuizAssignment.getQuizId() != null
-            || clientQuizAssignment.getGroupId() != null
-            || clientQuizAssignment.getOwnerUserId() != null
-            || clientQuizAssignment.getCreationDate() != null)
-        {
+        if (clientQuizAssignment.getId() != null
+                || clientQuizAssignment.getQuizId() != null
+                || clientQuizAssignment.getGroupId() != null
+                || clientQuizAssignment.getOwnerUserId() != null
+                || clientQuizAssignment.getCreationDate() != null
+        ) {
             log.warn("Attempt to change fields for test assignment id {} that aren't feedbackMode or dueDate: {}", quizAssignmentId, clientQuizAssignment);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();
         }
@@ -1552,14 +1571,16 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
 
-            if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
-                "You can only updates assignments to groups you own or manage.").toResponse();
+            if (!canManageAssignment(assignment, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "You can only updates assignments to groups you own or manage.").toResponse();
+            }
 
             if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null && clientQuizAssignment.getDueDate().compareTo(assignment.getDueDate()) <= 0) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
@@ -1568,8 +1589,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
 
-            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null &&
-                assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
+            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null
+                    && assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
                 Map<String, Object> eventDetails = ImmutableMap.of(
                         QUIZ_ID_FKEY, assignment.getQuizId(),
                         GROUP_FK, assignment.getGroupId(),
@@ -1589,8 +1610,8 @@ public class QuizFacade extends AbstractIsaacFacade {
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             }
 
-            if (assignment.getQuizFeedbackMode() != null && clientQuizAssignment.getQuizFeedbackMode() != null &&
-                assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
+            if (assignment.getQuizFeedbackMode() != null && clientQuizAssignment.getQuizFeedbackMode() != null
+                    && assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
                 Map<String, Object> eventDetails = ImmutableMap.of(
                         QUIZ_ID_FKEY, assignment.getQuizId(),
                         GROUP_FK, assignment.getGroupId(),
@@ -1625,7 +1646,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/assignment/{quizAssignmentId}")
     @Operation(summary = "Cancel a test assignment.")
     public final Response cancelQuizAssignment(@Context final HttpServletRequest httpServletRequest,
-                                               @PathParam("quizAssignmentId") Long quizAssignmentId) {
+                                               @PathParam("quizAssignmentId") final Long quizAssignmentId) {
 
         if (null == quizAssignmentId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
@@ -1634,14 +1655,16 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            if (!isUserTeacherOrAbove(userManager, user)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
 
-            if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
-                "You can only cancel assignments to groups you own or manage.").toResponse();
+            if (!canManageAssignment(assignment, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                    "You can only cancel assignments to groups you own or manage.").toResponse();
+            }
 
             quizAssignmentManager.cancelAssignment(assignment);
 
@@ -1665,7 +1688,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     @Nullable
-    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(final QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
+    private QuizAssignmentDTO checkQuizAssignmentNotCancelledOrOverdue(final QuizAttemptDTO quizAttempt)
+            throws SegueDatabaseException, AssignmentCancelledException, ErrorResponseWrapper {
         // Relying on the side-effects of getting the assignment.
         QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
 
@@ -1677,15 +1701,16 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     @Nullable
-    private QuizAssignmentDTO getQuizAssignment(QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException {
+    private QuizAssignmentDTO getQuizAssignment(final QuizAttemptDTO quizAttempt) throws SegueDatabaseException, AssignmentCancelledException {
         if (quizAttempt.getQuizAssignmentId() != null) {
             return quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
         }
         return null;
     }
 
-    @SuppressWarnings( "deprecation" )
-    private QuizAttemptDTO getIncompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
+    @SuppressWarnings("deprecation")
+    private QuizAttemptDTO getIncompleteQuizAttemptForUser(final Long quizAttemptId, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
         if (quizAttempt.getCompletedDate() != null) {
@@ -1694,8 +1719,9 @@ public class QuizFacade extends AbstractIsaacFacade {
         return quizAttempt;
     }
 
-    @SuppressWarnings( "deprecation" )
-    private QuizAttemptDTO getCompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
+    @SuppressWarnings("deprecation")
+    private QuizAttemptDTO getCompleteQuizAttemptForUser(final Long quizAttemptId, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
         if (quizAttempt.getCompletedDate() == null) {
@@ -1706,7 +1732,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     @DoNotCall
     @Deprecated
-    private QuizAttemptDTO getQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws ErrorResponseWrapper, SegueDatabaseException {
+    private QuizAttemptDTO getQuizAttemptForUser(final Long quizAttemptId, final RegisteredUserDTO user)
+            throws ErrorResponseWrapper, SegueDatabaseException {
         QuizAttemptDTO quizAttempt = this.getQuizAttempt(quizAttemptId);
 
         if (!quizAttempt.getUserId().equals(user.getId())) {
@@ -1715,7 +1742,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         return quizAttempt;
     }
 
-    private QuizAttemptDTO getQuizAttempt(Long quizAttemptId) throws ErrorResponseWrapper, SegueDatabaseException {
+    private QuizAttemptDTO getQuizAttempt(final Long quizAttemptId) throws ErrorResponseWrapper, SegueDatabaseException {
         if (null == quizAttemptId) {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test attempt id."));
         }
@@ -1723,18 +1750,21 @@ public class QuizFacade extends AbstractIsaacFacade {
         return this.quizAttemptManager.getById(quizAttemptId);
     }
 
-    private boolean canManageAssignment(QuizAssignmentDTO clientQuizAssignment, RegisteredUserDTO currentlyLoggedInUser) throws SegueDatabaseException, NoUserLoggedInException {
+    private boolean canManageAssignment(final QuizAssignmentDTO clientQuizAssignment, final RegisteredUserDTO currentlyLoggedInUser)
+            throws SegueDatabaseException, NoUserLoggedInException {
         UserGroupDTO assigneeGroup = quizAssignmentManager.getGroupForAssignment(clientQuizAssignment);
 
         return canManageGroup(currentlyLoggedInUser, assigneeGroup);
     }
 
-    private boolean canManageGroup(RegisteredUserDTO currentlyLoggedInUser, UserGroupDTO assigneeGroup) throws NoUserLoggedInException {
+    private boolean canManageGroup(final RegisteredUserDTO currentlyLoggedInUser, final UserGroupDTO assigneeGroup)
+            throws NoUserLoggedInException {
         return GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
             || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
 
-    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment, boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {
+    private QuizAttemptDTO augmentAttempt(final QuizAttemptDTO quizAttempt, @Nullable final QuizAssignmentDTO quizAssignment,
+                                          final boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {
         IsaacQuizDTO quiz = quizManager.findQuiz(quizAttempt.getQuizId());
         quiz = quizQuestionManager.augmentQuestionsForUser(quiz, quizAttempt, includeCorrect);
         quizAttempt.setQuiz(quiz);
@@ -1742,7 +1772,9 @@ public class QuizFacade extends AbstractIsaacFacade {
         return augmentAttempt(quizAttempt, quizAssignment);
     }
 
-    private List<QuizUserFeedbackDTO> getUserFeedback(RegisteredUserDTO user, QuizAssignmentDTO assignment, IsaacQuizDTO quiz, List<RegisteredUserDTO> groupMembers) throws ContentManagerException, SegueDatabaseException {
+    private List<QuizUserFeedbackDTO> getUserFeedback(
+            final RegisteredUserDTO user, final QuizAssignmentDTO assignment, final IsaacQuizDTO quiz, final List<RegisteredUserDTO> groupMembers)
+            throws ContentManagerException, SegueDatabaseException {
         Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
         List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
         for (RegisteredUserDTO groupMember : groupMembers) {
@@ -1757,7 +1789,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
 
-    private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment) throws SegueDatabaseException {
+    private QuizAttemptDTO augmentAttempt(final QuizAttemptDTO quizAttempt, @Nullable final QuizAssignmentDTO quizAssignment)
+            throws SegueDatabaseException {
         if (quizAssignment != null) {
             this.assignmentService.augmentAssignerSummaries(Collections.singletonList(quizAssignment));
             quizAttempt.setQuizAssignment(quizAssignment);

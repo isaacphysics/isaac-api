@@ -41,7 +41,7 @@ import java.util.Map;
 
 /**
  * Interface that allows the quiz engine to validate questions and answers.
- * 
+ * <p>
  * Note: It is expected that the classes implementing this interface can be automatically instantiated using the default
  * constructor.
  * 
@@ -52,7 +52,7 @@ public interface IValidator {
     
     /**
      * validateQuestionResponse This method is specifically for single field questions.
-     * 
+     * <p>
      * i.e. when a question expects a single answer from the user.
      * 
      * @param question
@@ -70,7 +70,7 @@ public interface IValidator {
 
     /**
      * Create a new list of Choice objects, sorted into correct-first order for checking.
-     *
+     * <p>
      * This is usually desired by all validators, but could be overridden if necessary for a specific case.
      *
      * @param choices - the Choices from a Question

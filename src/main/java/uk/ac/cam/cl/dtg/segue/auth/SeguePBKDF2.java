@@ -26,9 +26,9 @@ import java.security.spec.InvalidKeySpecException;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
- *
+ * <p>
  * This is a parent class for PBKDF2 algorithms.
- *
+ * @deprecated
  */
 @Deprecated
 public class SeguePBKDF2 {
@@ -38,7 +38,8 @@ public class SeguePBKDF2 {
     private final String saltingAlgorithm;
     private final Integer saltSize;
 
-    public SeguePBKDF2(String algorithm, Integer keyLength, Integer iterations, String saltingAlgorithm, Integer saltSize) {
+    public SeguePBKDF2(final String algorithm, final Integer keyLength, final Integer iterations,
+                       final String saltingAlgorithm, final Integer saltSize) {
 
         this.algorithm = algorithm;
         this.keyLength = keyLength;

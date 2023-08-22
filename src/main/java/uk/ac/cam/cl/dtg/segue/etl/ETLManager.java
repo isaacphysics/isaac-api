@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
-import java.lang.Long;
-import java.lang.NumberFormatException;
-import java.util.concurrent.*;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Ian on 01/11/2016.
@@ -18,6 +20,7 @@ class ETLManager {
     private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
     private static final String LATEST_INDEX_ALIAS = "latest";
     private static final String TASK_PERIOD_SECONDS = "TASK_PERIOD_SECONDS";
+    private static final long TASK_PERIOD_SECONDS_FALLBACK = 300;
 
     private final ContentIndexer indexer;
     private final SchoolIndexer schoolIndexer;
@@ -34,14 +37,14 @@ class ETLManager {
         this.contentIndicesStore = contentIndicesStore;
         this.scheduler = Executors.newScheduledThreadPool(1);
 
-        long taskPeriodSeconds = 300;
+        long taskPeriodSeconds = TASK_PERIOD_SECONDS_FALLBACK;
         String configuredPeriod = contentIndicesStore.getProperty(TASK_PERIOD_SECONDS);
         if (configuredPeriod != null) {
-          try {
-            taskPeriodSeconds = Long.parseLong(configuredPeriod);
-          } catch (NumberFormatException e) {
-            log.warn("Failed to parse ETL task period seconds. Using default value.");
-          }
+            try {
+                taskPeriodSeconds = Long.parseLong(configuredPeriod);
+            } catch (NumberFormatException e) {
+                log.warn("Failed to parse ETL task period seconds. Using default value.");
+            }
         } else {
             log.info("ETL task period seconds not configured. Using default value.");
         }
@@ -64,10 +67,10 @@ class ETLManager {
         Map<String, String> aliasVersions = new HashMap<>();
         String latestSha = database.fetchLatestFromRemote();
         aliasVersions.put(LATEST_INDEX_ALIAS, latestSha);
-        for (String configKey: contentIndicesStore.stringPropertyNames()) {
-          if (!configKey.equals(TASK_PERIOD_SECONDS)) {
-            aliasVersions.put(configKey, contentIndicesStore.getProperty(configKey));
-          }
+        for (String configKey : contentIndicesStore.stringPropertyNames()) {
+            if (!configKey.equals(TASK_PERIOD_SECONDS)) {
+                aliasVersions.put(configKey, contentIndicesStore.getProperty(configKey));
+            }
         }
 
         for (var entry : aliasVersions.entrySet()) {
@@ -95,9 +98,9 @@ class ETLManager {
         public void run() {
             log.info("Starting content indexer thread.");
             try {
-              indexContent();
+                indexContent();
             } catch (Exception e) {
-              log.error("ContentIndexerTask failed.", e);
+                log.error("ContentIndexerTask failed.", e);
             }
             log.info("Content indexer thread complete, waiting for next scheduled run.");
         }

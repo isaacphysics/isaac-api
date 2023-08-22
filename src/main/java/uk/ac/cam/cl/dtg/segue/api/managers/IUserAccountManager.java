@@ -9,8 +9,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
  */
 public interface IUserAccountManager {
 
-    RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException;
+    RegisteredUserDTO getUserDTOById(Long id) throws NoUserException, SegueDatabaseException;
 
-    RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException, SegueDatabaseException;
+    RegisteredUserDTO getUserDTOById(Long id, boolean includeDeleted) throws NoUserException, SegueDatabaseException;
 
 }

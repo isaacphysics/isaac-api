@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,24 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.joda.time.LocalDate;
+import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.joda.time.LocalDate;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
-import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-
 /**
  * Interface for logging components.
- * 
+ * <p>
  * This is for logging user interaction events for the purpose of research and / or technology improvement not for
  * logging system errors / events.
  * 
@@ -87,7 +85,7 @@ public interface ILogManager {
     /**
      * This method will endeavour to find all log events for a given user and reassign ownership to a
      * registered user.
-     * 
+     * <p>
      * It assumes that the new userId is a registered user of the system and not anonymous.
      * 
      * @param oldUserId
@@ -95,7 +93,7 @@ public interface ILogManager {
      * @param newUserId
      *            - the user object of the newly registered user.
      */
-    void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId);
+    void transferLogEventsToRegisteredUser(String oldUserId, String newUserId);
 
     /**
      * Allows filtering by date range.
@@ -141,7 +139,7 @@ public interface ILogManager {
 
     /**
      * Utility method that will generate a map of type -- > localDate -- > number of events.
-     * 
+     * <p>
      * This is done at the database level to allow efficient use of memory.
      * 
      * @param eventTypes
@@ -174,7 +172,7 @@ public interface ILogManager {
      * @return where string is the user id and the logevent is the most recent
      * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
-    Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException;
+    Map<String, Date> getLastLogDateForAllUsers(String qualifyingLogEventType) throws SegueDatabaseException;
 
     /**
      * returns a set of event types known about from the db.

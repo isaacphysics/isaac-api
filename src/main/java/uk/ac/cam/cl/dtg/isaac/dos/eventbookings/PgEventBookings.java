@@ -43,7 +43,7 @@ import java.util.zip.CRC32;
 
 /**
  * PgEventBookings.
- * 
+ * <p>
  * Postgres aware EventBookings.
  *
  */
@@ -82,17 +82,17 @@ public class PgEventBookings implements EventBookings {
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             Date creationDate = new Date();
-            pst.setLong(1, userId);
+            pst.setLong(FIELD_ADD_BOOKING_USER_ID, userId);
             if (reserveById == null) {
-                pst.setNull(2, Types.INTEGER);
+                pst.setNull(FIELD_ADD_BOOKING_RESERVED_BY, Types.INTEGER);
             } else {
-                pst.setLong(2, reserveById);
+                pst.setLong(FIELD_ADD_BOOKING_RESERVED_BY, reserveById);
             }
-            pst.setString(3, eventId);
-            pst.setString(4, status.name());
-            pst.setTimestamp(5, new java.sql.Timestamp(creationDate.getTime()));
-            pst.setTimestamp(6, new java.sql.Timestamp(creationDate.getTime()));
-            pst.setString(7, objectMapper.writeValueAsString(additionalEventInformation));
+            pst.setString(FIELD_ADD_BOOKING_EVENT_ID, eventId);
+            pst.setString(FIELD_ADD_BOOKING_STATUS, status.name());
+            pst.setTimestamp(FIELD_ADD_BOOKING_CREATED, new java.sql.Timestamp(creationDate.getTime()));
+            pst.setTimestamp(FIELD_ADD_BOOKING_UPDATED, new java.sql.Timestamp(creationDate.getTime()));
+            pst.setString(FIELD_ADD_BOOKING_ADDITIONAL_INFORMATION, objectMapper.writeValueAsString(additionalEventInformation));
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save event booking.");
             }
@@ -120,7 +120,8 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void updateStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId, final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    public void updateStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId,
+                             final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         if (additionalEventInformation != null && reservingUserId != null) {
             updateBookingStatus(transaction, eventId, userId, reservingUserId, status, additionalEventInformation);
         } else if (additionalEventInformation != null) {
@@ -155,12 +156,12 @@ public class PgEventBookings implements EventBookings {
         String query = "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb, reserved_by = ? WHERE event_id = ? AND user_id = ?;";
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setString(1, status.name());
-            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-            pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
-            pst.setLong(4, reservingUserId);
-            pst.setString(5, eventId);
-            pst.setLong(6, userId);
+            pst.setString(FIELD_UPDATE_BOOKING_STATUS, status.name());
+            pst.setTimestamp(FIELD_UPDATE_BOOKING_UPDATED, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(FIELD_UPDATE_BOOKING_BOTH_ADDITIONAL_INFORMATION, objectMapper.writeValueAsString(additionalEventInformation));
+            pst.setLong(FIELD_UPDATE_BOOKING_BOTH_RESERVED_BY, reservingUserId);
+            pst.setString(FIELD_UPDATE_BOOKING_BOTH_EVENT_ID, eventId);
+            pst.setLong(FIELD_UPDATE_BOOKING_BOTH_USER_ID, userId);
 
             int executeUpdate = pst.executeUpdate();
 
@@ -194,11 +195,11 @@ public class PgEventBookings implements EventBookings {
         String query = "UPDATE event_bookings SET status = ?, updated = ?, reserved_by = ? WHERE event_id = ? AND user_id = ?;";
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setString(1, status.name());
-            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-            pst.setLong(3, reservingUserId);
-            pst.setString(4, eventId);
-            pst.setLong(5, userId);
+            pst.setString(FIELD_UPDATE_BOOKING_STATUS, status.name());
+            pst.setTimestamp(FIELD_UPDATE_BOOKING_UPDATED, new java.sql.Timestamp(new Date().getTime()));
+            pst.setLong(FIELD_UPDATE_BOOKING_SINGLE_RESERVED_BY, reservingUserId);
+            pst.setString(FIELD_UPDATE_BOOKING_SINGLE_EVENT_ID, eventId);
+            pst.setLong(FIELD_UPDATE_BOOKING_SINGLE_USER_ID, userId);
             int executeUpdate = pst.executeUpdate();
 
             if (executeUpdate == 0) {
@@ -231,11 +232,11 @@ public class PgEventBookings implements EventBookings {
         String query = "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb WHERE event_id = ? AND user_id = ?;";
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setString(1, status.name());
-            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-            pst.setString(3, objectMapper.writeValueAsString(additionalEventInformation));
-            pst.setString(4, eventId);
-            pst.setLong(5, userId);
+            pst.setString(FIELD_UPDATE_BOOKING_STATUS, status.name());
+            pst.setTimestamp(FIELD_UPDATE_BOOKING_UPDATED, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(FIELD_UPDATE_BOOKING_SINGLE_ADDITIONAL_INFORMATION, objectMapper.writeValueAsString(additionalEventInformation));
+            pst.setString(FIELD_UPDATE_BOOKING_SINGLE_EVENT_ID, eventId);
+            pst.setLong(FIELD_UPDATE_BOOKING_SINGLE_USER_ID, userId);
 
             int executeUpdate = pst.executeUpdate();
 
@@ -269,10 +270,10 @@ public class PgEventBookings implements EventBookings {
         String query = "UPDATE event_bookings SET status = ?, updated = ? WHERE event_id = ? AND user_id = ?;";
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setString(1, status.name());
-            pst.setTimestamp(2, new java.sql.Timestamp(new Date().getTime()));
-            pst.setString(3, eventId);
-            pst.setLong(4, userId);
+            pst.setString(FIELD_UPDATE_BOOKING_STATUS, status.name());
+            pst.setTimestamp(FIELD_UPDATE_BOOKING_UPDATED, new java.sql.Timestamp(new Date().getTime()));
+            pst.setString(FIELD_UPDATE_BOOKING_NONE_EVENT_ID, eventId);
+            pst.setLong(FIELD_UPDATE_BOOKING_NONE_USER_ID, userId);
 
             int executeUpdate = pst.executeUpdate();
 
@@ -293,8 +294,8 @@ public class PgEventBookings implements EventBookings {
         String query = "DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?";
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setString(1, eventId);
-            pst.setLong(2, userId);
+            pst.setString(FIELD_DELETE_EVENT_ID, eventId);
+            pst.setLong(FIELD_DELETE_USER_ID, userId);
             int executeUpdate = pst.executeUpdate();
 
             if (executeUpdate == 0) {
@@ -307,12 +308,12 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void deleteAdditionalInformation(Long userId) throws SegueDatabaseException {
+    public void deleteAdditionalInformation(final Long userId) throws SegueDatabaseException {
         String query = "UPDATE event_bookings SET additional_booking_information = null WHERE user_id = ?;";
         try (Connection conn = ds.getDatabaseConnection();
-            PreparedStatement pst = conn.prepareStatement(query);
+            PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
+            pst.setLong(FIELD_DELETE_ADDITIONAL_INFORMATION_USER_ID, userId);
             pst.executeUpdate();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to expunge additional event information", e);
@@ -331,13 +332,13 @@ public class PgEventBookings implements EventBookings {
             throw new SegueDatabaseException("Incorrect database transaction class type!");
         }
 
-        // Generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
+        // Generate 32-bit CRC based on table id and resource id so that it is more likely to be unique globally.
         CRC32 crc = new CRC32();
         crc.update((TABLE_NAME + resourceId).getBytes());
 
         Connection conn = ((PgTransaction) transaction).getConnection();
         try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
-            pst.setLong(1, crc.getValue());
+            pst.setLong(FIELD_TRANSACTION_LOCK_CRC, crc.getValue());
             log.debug(String.format("Attempting to acquire advisory transaction lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
             pst.executeQuery();
         } catch (SQLException e) {
@@ -354,9 +355,9 @@ public class PgEventBookings implements EventBookings {
 
         String query = "SELECT * FROM event_bookings WHERE id = ?";
         try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, bookingId);
+            pst.setLong(FIELD_GET_BY_ID_BOOKING_ID, bookingId);
 
             try (ResultSet results = pst.executeQuery()) {
                 EventBooking result = null;
@@ -393,10 +394,10 @@ public class PgEventBookings implements EventBookings {
 
         String query = "SELECT * FROM event_bookings WHERE event_id = ? AND user_id = ?";
         try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setString(1, eventId);
-            pst.setLong(2, userId);
+            pst.setString(FIELD_GET_BY_EVENT_AND_USER_EVENT_ID, eventId);
+            pst.setLong(FIELD_GET_BY_EVENT_AND_USER_USER_ID, userId);
 
             try (ResultSet results = pst.executeQuery()) {
                 EventBooking result = null;
@@ -438,7 +439,7 @@ public class PgEventBookings implements EventBookings {
         String query = "SELECT COUNT(1) AS TOTAL FROM event_bookings";
         try (Connection conn = ds.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
-             ResultSet results = pst.executeQuery();
+             ResultSet results = pst.executeQuery()
         ) {
             results.next();
             return results.getLong("TOTAL");
@@ -451,21 +452,21 @@ public class PgEventBookings implements EventBookings {
     public Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(final String eventId, final boolean includeDeletedUsersInCounts) throws SegueDatabaseException {
         // Note this method joins at the db table mainly to allow inclusion of deleted users in the counts.
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT event_bookings.status, users.role, COUNT(event_bookings.id) FROM event_bookings \n" +
-                "INNER JOIN users ON event_bookings.user_id = users.id\n" +
-                "WHERE event_bookings.event_id=?"
+        sb.append("SELECT event_bookings.status, users.role, COUNT(event_bookings.id) FROM event_bookings \n"
+                + "INNER JOIN users ON event_bookings.user_id = users.id\n"
+                + "WHERE event_bookings.event_id=?"
         );
 
         if (!includeDeletedUsersInCounts) {
-            sb.append(" AND users.deleted = 'f'\n" );
+            sb.append(" AND users.deleted = 'f'\n");
         }
 
         sb.append(" GROUP BY event_bookings.status, users.role;");
 
         try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(sb.toString())
         ) {
-            pst.setString(1, eventId);
+            pst.setString(FIELD_GET_STATUS_COUNTS_EVENT_ID, eventId);
 
             try (ResultSet results = pst.executeQuery()) {
                 Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
@@ -508,11 +509,11 @@ public class PgEventBookings implements EventBookings {
         }
 
         try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(sb.toString())
         ) {
-            pst.setString(1, eventId);
+            pst.setString(FIELD_SGET_BY_EVENT_AND_STATUS_EVENT_ID, eventId);
             if (status != null) {
-                pst.setString(2, status.name());
+                pst.setString(FIELD_SGET_BY_EVENT_AND_STATUS_STATUS, status.name());
             }
 
             try (ResultSet results = pst.executeQuery()) {
@@ -533,9 +534,9 @@ public class PgEventBookings implements EventBookings {
 
         String query = "SELECT * FROM event_bookings WHERE user_id = ?";
         try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
+            pst.setLong(FIELD_GET_BY_USER_ID_USER_ID, userId);
 
             try (ResultSet results = pst.executeQuery()) {
                 List<EventBooking> returnResult = Lists.newArrayList();
@@ -555,9 +556,9 @@ public class PgEventBookings implements EventBookings {
 
         String query = "SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ? AND status != 'CANCELLED'";
         try (Connection conn = ds.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
+             PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            pst.setLong(1, userId);
+            pst.setLong(FIELD_GET_RESERVATIONS_BY_USER_ID_RESERVED_BY, userId);
 
             try (ResultSet results = pst.executeQuery()) {
                 List<EventBooking> returnResult = Lists.newArrayList();
@@ -573,7 +574,7 @@ public class PgEventBookings implements EventBookings {
 
     /**
      * Create a pgEventBooking from a results set.
-     * 
+     * <p>
      * Assumes there is a result to read.
      * 
      * @param results
@@ -594,4 +595,64 @@ public class PgEventBookings implements EventBookings {
                 results.getObject("additional_booking_information")
         );
     }
+
+    // Field Constants
+    // add
+    private static final int FIELD_ADD_BOOKING_USER_ID = 1;
+    private static final int FIELD_ADD_BOOKING_RESERVED_BY = 2;
+    private static final int FIELD_ADD_BOOKING_EVENT_ID = 3;
+    private static final int FIELD_ADD_BOOKING_STATUS = 4;
+    private static final int FIELD_ADD_BOOKING_CREATED = 5;
+    private static final int FIELD_ADD_BOOKING_UPDATED = 6;
+    private static final int FIELD_ADD_BOOKING_ADDITIONAL_INFORMATION = 7;
+
+    // updateBookingStatus - common fields
+    private static final int FIELD_UPDATE_BOOKING_STATUS = 1;
+    private static final int FIELD_UPDATE_BOOKING_UPDATED = 2;
+
+    // updateBookingStatus - both additional information and reserving user
+    private static final int FIELD_UPDATE_BOOKING_BOTH_ADDITIONAL_INFORMATION = 3;
+    private static final int FIELD_UPDATE_BOOKING_BOTH_RESERVED_BY = 4;
+    private static final int FIELD_UPDATE_BOOKING_BOTH_EVENT_ID = 5;
+    private static final int FIELD_UPDATE_BOOKING_BOTH_USER_ID = 6;
+
+    // updateBookingStatus - one of additional information or reserving user
+    private static final int FIELD_UPDATE_BOOKING_SINGLE_ADDITIONAL_INFORMATION = 3;
+    private static final int FIELD_UPDATE_BOOKING_SINGLE_RESERVED_BY = 3;
+    private static final int FIELD_UPDATE_BOOKING_SINGLE_EVENT_ID = 4;
+    private static final int FIELD_UPDATE_BOOKING_SINGLE_USER_ID = 5;
+
+    // updateBookingStatus - neither additional information nor reserving user
+    private static final int FIELD_UPDATE_BOOKING_NONE_EVENT_ID = 3;
+    private static final int FIELD_UPDATE_BOOKING_NONE_USER_ID = 4;
+
+    // delete
+    private static final int FIELD_DELETE_EVENT_ID = 1;
+    private static final int FIELD_DELETE_USER_ID = 2;
+
+    // deleteAdditionalInformation
+    private static final int FIELD_DELETE_ADDITIONAL_INFORMATION_USER_ID = 1;
+
+    // lockEventUntilTransactionComplete
+    private static final int FIELD_TRANSACTION_LOCK_CRC = 1;
+
+    // findBookingById
+    private static final int FIELD_GET_BY_ID_BOOKING_ID = 1;
+
+    // findBookingByEventAndUser
+    private static final int FIELD_GET_BY_EVENT_AND_USER_EVENT_ID = 1;
+    private static final int FIELD_GET_BY_EVENT_AND_USER_USER_ID = 2;
+
+    // getEventBookingStatusCounts
+    private static final int FIELD_GET_STATUS_COUNTS_EVENT_ID = 1;
+
+    // findAllByEventIdAndStatus
+    private static final int FIELD_SGET_BY_EVENT_AND_STATUS_EVENT_ID = 1;
+    private static final int FIELD_SGET_BY_EVENT_AND_STATUS_STATUS = 2;
+
+    // findAllByUserId
+    private static final int FIELD_GET_BY_USER_ID_USER_ID = 1;
+
+    // findAllReservationsByUserId
+    private static final int FIELD_GET_RESERVATIONS_BY_USER_ID_RESERVED_BY = 1;
 }

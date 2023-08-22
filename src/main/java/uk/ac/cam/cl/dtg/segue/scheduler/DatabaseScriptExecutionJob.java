@@ -44,24 +44,24 @@ public class DatabaseScriptExecutionJob implements Job {
     }
 
     @Override
-    public void execute(JobExecutionContext context) {
+    public void execute(final JobExecutionContext context) {
         // extract information needed to run the job from context map
         JobDataMap dataMap = context.getJobDetail().getJobDataMap();
 
-        String SQLFile = dataMap.getString("SQLFile");
+        String sqlFile = dataMap.getString("SQLFile");
 
         try (Connection conn = ds.getDatabaseConnection()) {
-            String sqlFileContents = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(SQLFile));
+            String sqlFileContents = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(sqlFile));
 
-            log.info(String.format("Scheduled SQL job (%s) started", SQLFile));
+            log.info(String.format("Scheduled SQL job (%s) started", sqlFile));
             // JDBC cannot cope with the Postgres ? JSONB operator in PreparedStatements. Since we pass no parameters,
             // and run infrequently, a plain Statement is safe:
             try (Statement sss = conn.createStatement()) {
                 sss.execute(sqlFileContents);
-                log.info(String.format("Scheduled SQL job (%s) completed", SQLFile));
+                log.info(String.format("Scheduled SQL job (%s) completed", sqlFile));
             }
         } catch (IOException | SQLException e) {
-            log.error(String.format("Error while trying to execute scheduled job (%s)", SQLFile), e);
+            log.error(String.format("Error while trying to execute scheduled job (%s)", sqlFile), e);
         }
     }
 }

@@ -13,7 +13,7 @@ import ma.glasnost.orika.metadata.Type;
 public abstract class AbstractPolymorphicConverter<S, D> extends CustomConverter<S, D> {
 
     @Override
-    public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
+    public boolean canConvert(final Type<?> sourceType, final Type<?> destinationType) {
         /* The behaviour of canConvert changed in Orika v1.5.0 to only convert exact class matches,
            to fix an issue with converters acting too loosely on pairs of classes they were not
            meant to convert.

@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,16 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Content Class (Data Transfer Object) This class represents a majority of content types within the Content Management
@@ -33,35 +33,42 @@ import com.google.api.client.util.Sets;
  * 
  */
 public class ContentDTO extends ContentBaseDTO {
-    protected String title;
-    protected String subtitle;
-    protected String author;
-    protected String encoding;
-    protected String layout;
+    private String title;
+    private String subtitle;
+    private String author;
+    private String encoding;
+    private String layout;
     // this is the actual list of children content objects.
-    protected List<ContentBaseDTO> children;
-    protected String value;
-    protected String attribution;
-    protected List<ContentSummaryDTO> relatedContent;
-    protected Boolean published;
-    protected Boolean deprecated;
-    protected Integer level;
-    protected Boolean expandable;
+    private List<ContentBaseDTO> children;
+    private String value;
+    private String attribution;
+    private List<ContentSummaryDTO> relatedContent;
+    private Boolean published;
+    private Boolean deprecated;
+    private Integer level;
+    private Boolean expandable;
 
     @JsonCreator
-    public ContentDTO(@JsonProperty("id") String id,
-            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type, @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
-            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
-            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
-        this.id = id;
+    public ContentDTO(@JsonProperty("id") final String id,
+                      @JsonProperty("title") final String title,
+                      @JsonProperty("subtitle") final String subtitle,
+                      @JsonProperty("type") final String type,
+                      @JsonProperty("author") final String author,
+                      @JsonProperty("encoding") final String encoding,
+                      @JsonProperty("canonicalSourceFile") final String canonicalSourceFile,
+                      @JsonProperty("layout") final String layout,
+                      @JsonProperty("children") final List<ContentBaseDTO> children,
+                      @JsonProperty("value") final String value,
+                      @JsonProperty("attribution") final String attribution,
+                      @JsonProperty("relatedContent") final List<ContentSummaryDTO> relatedContent,
+                      @JsonProperty("published") final Boolean published,
+                      @JsonProperty("deprecated") final Boolean deprecated,
+                      @JsonProperty("tags") final Set<String> tags,
+                      @JsonProperty("level") final Integer level) {
+        this.setId(id);
         this.title = title;
         this.subtitle = subtitle;
-        this.type = type != null ? type : "string";
+        this.setType(type != null ? type : "string");
         this.author = author;
         this.encoding = encoding;
         this.setCanonicalSourceFile(canonicalSourceFile);
@@ -72,7 +79,7 @@ public class ContentDTO extends ContentBaseDTO {
         this.published = published;
         this.deprecated = deprecated;
         this.children = children;
-        this.tags = tags;
+        this.setTags(tags);
         this.level = level;
 
         // useful for when we want to augment this POJO
@@ -80,8 +87,8 @@ public class ContentDTO extends ContentBaseDTO {
             this.children = new ArrayList<ContentBaseDTO>();
         }
 
-        if (null == this.tags) {
-            this.tags = new HashSet<String>();
+        if (null == this.getTags()) {
+            this.setTags(new HashSet<String>());
         }
     }
 
@@ -93,7 +100,7 @@ public class ContentDTO extends ContentBaseDTO {
      */
     public ContentDTO(final String value) {
         this.value = value;
-        this.type = "content";
+        this.setType("content");
         this.encoding = "markdown";
 
         // useful for when we want to augment this POJO
@@ -101,25 +108,25 @@ public class ContentDTO extends ContentBaseDTO {
             this.children = Lists.newArrayList();
         }
 
-        if (null == this.tags) {
-            this.tags = Sets.newHashSet();
+        if (null == this.getTags()) {
+            this.setTags(Sets.newHashSet());
         }
     }
 
     /**
-     * Default constructor required for Jackson
+     * Default constructor required for Jackson.
      */
     public ContentDTO() {
         // useful for when we want to augment this POJO
         this.children = Lists.newArrayList();
-        this.tags = Sets.newHashSet();
+        this.setTags(Sets.newHashSet());
     }
 
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(final String title) {
         this.title = title;
     }
 
@@ -127,7 +134,7 @@ public class ContentDTO extends ContentBaseDTO {
         return subtitle;
     }
 
-    public void setSubtitle(String subtitle) {
+    public void setSubtitle(final String subtitle) {
         this.subtitle = subtitle;
     }
 
@@ -136,7 +143,7 @@ public class ContentDTO extends ContentBaseDTO {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(final String author) {
         this.author = author;
     }
 
@@ -144,7 +151,7 @@ public class ContentDTO extends ContentBaseDTO {
         return encoding;
     }
 
-    public void setEncoding(String encoding) {
+    public void setEncoding(final String encoding) {
         this.encoding = encoding;
     }
 
@@ -152,7 +159,7 @@ public class ContentDTO extends ContentBaseDTO {
         return layout;
     }
 
-    public void setLayout(String layout) {
+    public void setLayout(final String layout) {
         this.layout = layout;
     }
 
@@ -160,7 +167,7 @@ public class ContentDTO extends ContentBaseDTO {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(final String value) {
         this.value = value;
     }
 
@@ -168,7 +175,7 @@ public class ContentDTO extends ContentBaseDTO {
         return attribution;
     }
 
-    public void setAttribution(String attribution) {
+    public void setAttribution(final String attribution) {
         this.attribution = attribution;
     }
 
@@ -176,7 +183,7 @@ public class ContentDTO extends ContentBaseDTO {
         return relatedContent;
     }
 
-    public void setRelatedContent(List<ContentSummaryDTO> relatedContent) {
+    public void setRelatedContent(final List<ContentSummaryDTO> relatedContent) {
         this.relatedContent = relatedContent;
     }
 
@@ -184,7 +191,7 @@ public class ContentDTO extends ContentBaseDTO {
         return this.children;
     }
 
-    public void setChildren(List<ContentBaseDTO> children) {
+    public void setChildren(final List<ContentBaseDTO> children) {
         this.children = children;
     }
 
@@ -211,7 +218,7 @@ public class ContentDTO extends ContentBaseDTO {
         return deprecated;
     }
 
-    public void setDeprecated(Boolean deprecated) {
+    public void setDeprecated(final Boolean deprecated) {
         this.deprecated = deprecated;
     }
 
@@ -227,20 +234,21 @@ public class ContentDTO extends ContentBaseDTO {
         return this.expandable;
     }
 
-    public void setExpandable(Boolean expandable) {
+    public void setExpandable(final Boolean expandable) {
         this.expandable = expandable;
     }
 
     @Override
     public boolean equals(final Object o) {
-        if (!(o instanceof ContentDTO))
+        if (!(o instanceof ContentDTO)) {
             return false;
+        }
 
         ContentDTO c = (ContentDTO) o;
         boolean result = true;
 
-        if (this.id != null) {
-            result = result && this.id.equals(c.getId());
+        if (this.getId() != null) {
+            result = result && this.getId().equals(c.getId());
         }
         if (this.title != null) {
             result = result && this.title.equals(c.getTitle());
@@ -248,8 +256,8 @@ public class ContentDTO extends ContentBaseDTO {
         if (this.value != null) {
             result = result && this.value.equals(c.getValue());
         }
-        if (this.canonicalSourceFile != null) {
-            result = result && this.canonicalSourceFile.equals(c.getCanonicalSourceFile());
+        if (this.getCanonicalSourceFile() != null) {
+            result = result && this.getCanonicalSourceFile().equals(c.getCanonicalSourceFile());
         }
 
         return result;
@@ -259,8 +267,8 @@ public class ContentDTO extends ContentBaseDTO {
     public int hashCode() {
         int hashCode = 0;
 
-        if (this.id != null) {
-            hashCode = hashCode + this.id.hashCode();
+        if (this.getId() != null) {
+            hashCode = hashCode + this.getId().hashCode();
         }
         if (this.title != null) {
             hashCode = hashCode + this.title.hashCode();

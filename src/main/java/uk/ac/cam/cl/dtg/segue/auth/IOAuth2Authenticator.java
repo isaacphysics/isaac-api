@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +31,7 @@ public interface IOAuth2Authenticator extends IOAuthAuthenticator {
 	 *         user to login with - this should result in a callback to a
 	 *         prearranged api endpoint if successful.
 	 */
-	String getAuthorizationUrl(final String antiForgeryStateToken);
+	String getAuthorizationUrl(String antiForgeryStateToken);
 
 	/**
 	 * This method generates an anti CSRF token to be included in the

@@ -126,7 +126,7 @@ public class IsaacItemQuestionValidator implements IValidator {
                 Set<String> choiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
 
                 // Do not allow subset matching by default
-                boolean allowSubsetMatch = (null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch());
+                boolean allowSubsetMatch = null != itemChoice.isAllowSubsetMatch() && itemChoice.isAllowSubsetMatch();
 
                 /* If the intersection of the submitted and choice ids is equal to the choice ones, then
                    this means that:

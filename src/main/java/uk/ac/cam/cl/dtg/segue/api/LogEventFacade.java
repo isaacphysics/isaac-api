@@ -84,7 +84,7 @@ public class LogEventFacade extends AbstractSegueFacade {
      * @param httpRequest
      *            - to enable retrieval of session information.
      * @param eventJSON
-     *            - the event information to record as a json map <String, String>.
+     *            - the event information to record as a json map {@code <String, String>}.
      * @return 200 for success or 400 for failure.
      */
     @POST

@@ -29,18 +29,18 @@ public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
     private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocketServlet.class);
     private static final int BAD_REQUEST = 400;
     private static final int FORBIDDEN = 403;
-    private static final Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-    private final String hostName = injector.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
+    private static final Injector INJECTOR = SegueGuiceConfigurationModule.getGuiceInjector();
+    private final String hostName = INJECTOR.getInstance(PropertiesLoader.class).getProperty(HOST_NAME);
 
     @Override
-    public void configure(JettyWebSocketServletFactory factory) {
+    public void configure(final JettyWebSocketServletFactory factory) {
 
-        factory.setCreator((servletUpgradeRequest, servletUpgradeResponse) -> SegueContextNotifier.injector.getInstance(UserAlertsWebSocket.class));
+        factory.setCreator((servletUpgradeRequest, servletUpgradeResponse) -> SegueContextNotifier.getInjector().getInstance(UserAlertsWebSocket.class));
 
     }
 
     @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
         // We have been seeing malformed WebSocket requests. Add some debug logging to these:
         if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
             log.debug(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s, 'Via: %s'.",

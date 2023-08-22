@@ -69,7 +69,7 @@ public class ContentMapper {
 
     /**
      * Creates a new content mapper without type information.
-     * 
+     * <p>
      * Note: Type information must be provided by using the register type methods.
      * 
      */
@@ -267,7 +267,7 @@ public class ContentMapper {
     /**
      * Provides a pre-configured module that can be added to an object mapper so that contentBase objects can be
      * deseerialized using the custom deserializer.
-     * 
+     * <p>
      * This object Mapper is shared and should be treated as immutable.
      * 
      * @return a jackson object mapper.

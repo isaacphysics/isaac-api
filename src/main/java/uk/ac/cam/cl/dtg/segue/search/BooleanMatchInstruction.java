@@ -35,7 +35,7 @@ public class BooleanMatchInstruction extends AbstractMatchInstruction {
     public int getMinimumShouldMatch() {
         return minimumShouldMatch;
     }
-    public void setMinimumShouldMatch(int minimumShouldMatch) {
+    public void setMinimumShouldMatch(final int minimumShouldMatch) {
         this.minimumShouldMatch = minimumShouldMatch;
     }
 

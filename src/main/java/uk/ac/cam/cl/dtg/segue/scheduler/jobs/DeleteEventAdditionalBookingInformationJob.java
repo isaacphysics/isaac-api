@@ -33,8 +33,7 @@ import java.util.Map;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class DeleteEventAdditionalBookingInformationJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(DeleteEventAdditionalBookingInformationJob.class);
@@ -58,7 +57,6 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
     @Override
     public void execute(final JobExecutionContext context) throws JobExecutionException {
         // Magic number
-        Integer limit = 10000;
         Integer startIndex = 0;
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -68,11 +66,11 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
         DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
         filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
         ZonedDateTime now = ZonedDateTime.now();
-        ZonedDateTime thirtyDaysAgo = now.plusDays(-30);
+        ZonedDateTime thirtyDaysAgo = now.plusDays(ADDITIONAL_EVENT_INFORMATION_RETENTION_DAYS_AGO);
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    startIndex, limit, sortInstructions, filterInstructions);
+                    startIndex, DEFAULT_MAX_WINDOW_SIZE, sortInstructions, filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
                     IsaacEventPageDTO page = (IsaacEventPageDTO) contentResult;
@@ -90,7 +88,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                             + " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']"
                             + " AND pii_removed IS NULL";
                         try (Connection conn = database.getDatabaseConnection();
-                             PreparedStatement pst = conn.prepareStatement(query);
+                             PreparedStatement pst = conn.prepareStatement(query)
                         ) {
                             // Check for additional info that needs removing, check if pii has already been removed, if
                             // so, don't re-remove

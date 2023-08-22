@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,7 +28,7 @@ public class IsaacQuickQuestion extends IsaacQuestionBase {
     private Boolean showConfidence;
 
     /**
-     * Gets the showConfidence
+     * Gets the showConfidence.
      *
      * @return the showConfidence
      */
@@ -37,7 +37,7 @@ public class IsaacQuickQuestion extends IsaacQuestionBase {
     }
 
     /**
-     * Sets the showConfidence
+     * Sets the showConfidence.
      *
      * @param showConfidence
      *              the showConfidence to set

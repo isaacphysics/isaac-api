@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Connor Holloway
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +31,7 @@ public class IsaacCardDTO extends ContentDTO {
     /**
      * Default constructor required for mapping.
      */
-    public IsaacCardDTO() {}
+    public IsaacCardDTO() { }
 
     /**
      * Get the image.
@@ -45,7 +45,7 @@ public class IsaacCardDTO extends ContentDTO {
      * Set the image.
      * @param image the image to set.
      */
-    public void setImage(ImageDTO image) {
+    public void setImage(final ImageDTO image) {
         this.image = image;
     }
 
@@ -61,7 +61,7 @@ public class IsaacCardDTO extends ContentDTO {
      * Set the click url.
      * @param clickUrl the click url to set.
      */
-    public void setClickUrl(String clickUrl) {
+    public void setClickUrl(final String clickUrl) {
         this.clickUrl = clickUrl;
     }
 
@@ -93,7 +93,7 @@ public class IsaacCardDTO extends ContentDTO {
      * Set if the card is disabled.
      * @param disabled the disabled state to set to.
      */
-    public void setDisabled(boolean disabled) {
+    public void setDisabled(final boolean disabled) {
         this.disabled = disabled;
     }
 
@@ -109,7 +109,7 @@ public class IsaacCardDTO extends ContentDTO {
      * Set if the card is vertical content.
      * @param verticalContent vertical content state to set to.
      */
-    public void setVerticalContent(boolean verticalContent) {
+    public void setVerticalContent(final boolean verticalContent) {
         this.verticalContent = verticalContent;
     }
 }

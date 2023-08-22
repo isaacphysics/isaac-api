@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,16 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.List;
-import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.Set;
 
 /**
  * IsaacQuestion Page DTO.
@@ -32,22 +31,31 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPageDTO extends SeguePageDTO {
-    protected Float passMark;
-    protected String supersededBy;
-    protected Integer difficulty;
+    private Float passMark;
+    private String supersededBy;
+    private Integer difficulty;
 
     @JsonCreator
-    public IsaacQuestionPageDTO(@JsonProperty("id") String id,
-            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type, @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
-            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("deprecated") Boolean deprecated,
-            @JsonProperty("level") Integer level, @JsonProperty("difficulty") Integer difficulty,
-            @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy) {
+    public IsaacQuestionPageDTO(
+            @JsonProperty("id") final String id,
+            @JsonProperty("title") final String title,
+            @JsonProperty("subtitle") final String subtitle,
+            @JsonProperty("type") final String type,
+            @JsonProperty("author") final String author,
+            @JsonProperty("encoding") final String encoding,
+            @JsonProperty("canonicalSourceFile") final String canonicalSourceFile,
+            @JsonProperty("layout") final String layout,
+            @JsonProperty("children") final List<ContentBaseDTO> children,
+            @JsonProperty("value") final String value,
+            @JsonProperty("attribution") final String attribution,
+            @JsonProperty("relatedContent") final List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("published") final Boolean published,
+            @JsonProperty("tags") final Set<String> tags,
+            @JsonProperty("deprecated") final Boolean deprecated,
+            @JsonProperty("level") final Integer level,
+            @JsonProperty("difficulty") final Integer difficulty,
+            @JsonProperty("passMark") final Float passMark,
+            @JsonProperty("supersededBy") final String supersededBy) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, deprecated, tags, level);
@@ -58,7 +66,7 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     }
 
     /**
-     * Default constructor required for Jackson
+     * Default constructor required for Jackson.
      */
     public IsaacQuestionPageDTO() {
 
@@ -68,16 +76,24 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
         return passMark;
     }
 
-    public void setPassMark(Float passMark) {
+    public void setPassMark(final Float passMark) {
         this.passMark = passMark;
     }
 
-    public String getSupersededBy() { return supersededBy; }
+    public String getSupersededBy() {
+        return supersededBy;
+    }
 
-    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+    public void setSupersededBy(final String supersededBy) {
+        this.supersededBy = supersededBy;
+    }
 
-    public Integer getDifficulty() { return difficulty; }
+    public Integer getDifficulty() {
+        return difficulty;
+    }
 
-    public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
+    public void setDifficulty(final Integer difficulty) {
+        this.difficulty = difficulty;
+    }
 
 }

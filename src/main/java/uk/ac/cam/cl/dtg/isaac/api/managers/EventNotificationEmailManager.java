@@ -53,6 +53,12 @@ public class EventNotificationEmailManager {
     /**
      * This class is required by quartz and must be executable by any instance of the segue api relying only on the
      * jobdata context provided.
+     * @param properties                - Instance of properties Loader
+     * @param contentManager            - for retrieving content
+     * @param bookingManager            - Instance of Booking Manager
+     * @param userAccountManager        - Instance of User Account Manager, for retrieving users
+     * @param emailManager              - for constructing and sending emails
+     * @param pgScheduledEmailManager   - for scheduling the sending of emails
      */
     @Inject
     public EventNotificationEmailManager(final PropertiesLoader properties,
@@ -69,7 +75,8 @@ public class EventNotificationEmailManager {
         this.pgScheduledEmailManager = pgScheduledEmailManager;
     }
 
-    public void sendBookingStatusFilteredEmailForEvent(IsaacEventPageDTO event, String templateId, List<BookingStatus> bookingStatuses) throws SegueDatabaseException {
+    public void sendBookingStatusFilteredEmailForEvent(final IsaacEventPageDTO event, final String templateId,
+                                                       final List<BookingStatus> bookingStatuses) throws SegueDatabaseException {
         List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(event.getId());
         List<Long> ids = eventBookings.stream()
                             .filter(DetailedEventBookingDTO -> bookingStatuses == null || bookingStatuses.contains(DetailedEventBookingDTO.getBookingStatus()))
@@ -97,7 +104,6 @@ public class EventNotificationEmailManager {
 
     public void sendReminderEmails() {
         // Magic number
-        Integer limit = 10000;
         Integer startIndex = 0;
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -105,14 +111,14 @@ public class EventNotificationEmailManager {
         fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
-        ZonedDateTime threeDaysAhead = now.plusDays(3);
+        ZonedDateTime threeDaysAhead = now.plusDays(EMAIL_EVENT_REMINDER_DAYS_AHEAD);
         DateRangeFilterInstruction
             eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
         filterInstructions.put(DATE_FIELDNAME, eventsWithinThreeDays);
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, DEFAULT_MAX_WINDOW_SIZE, sortInstructions,
                     filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {
@@ -139,7 +145,6 @@ public class EventNotificationEmailManager {
 
     public void sendFeedbackEmails() {
         // Magic number
-        Integer limit = 10000;
         Integer startIndex = 0;
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -147,7 +152,7 @@ public class EventNotificationEmailManager {
         fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
-        ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
+        ZonedDateTime sixtyDaysAgo = now.plusDays(EMAIL_EVENT_FEEDBACK_DAYS_AGO);
 
         DateRangeFilterInstruction eventsInLastSixtyDays = new DateRangeFilterInstruction(
                 Date.from(sixtyDaysAgo.toInstant()), new Date());
@@ -155,7 +160,7 @@ public class EventNotificationEmailManager {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, DEFAULT_MAX_WINDOW_SIZE, sortInstructions,
                     filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO) {

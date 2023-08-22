@@ -1,12 +1,12 @@
 /**
  * Copyright 2021 Raspberry Pi Foundation
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -63,7 +63,8 @@ public class EmailService {
     }
 
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-    public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, Object> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
+    public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String,
+            Object> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
         UserGroupDTO userGroupDTO = groupManager.getGroupById(assignment.getGroupId());
 
         String dueDate = "";
@@ -97,7 +98,9 @@ public class EmailService {
         }
     }
 
-    public void sendTemplatedEmailToActiveGroupMembers(final UserGroupDTO userGroupDTO, final String templateName, final Map<String, Object> tokenToValueMapping, final EmailType emailType) throws SegueDatabaseException {
+    public void sendTemplatedEmailToActiveGroupMembers(final UserGroupDTO userGroupDTO, final String templateName,
+                                                       final Map<String, Object> tokenToValueMapping, final EmailType emailType)
+            throws SegueDatabaseException {
         List<RegisteredUserDTO> usersToEmail = Lists.newArrayList();
         Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
 

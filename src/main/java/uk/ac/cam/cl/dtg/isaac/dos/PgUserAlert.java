@@ -31,7 +31,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setId(Long id) {
+    public void setId(final Long id) {
         this.id = id;
     }
 
@@ -41,7 +41,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setUserId(Long userId) {
+    public void setUserId(final Long userId) {
         this.userId = userId;
     }
 
@@ -51,7 +51,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -61,7 +61,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setLink(String link) {
+    public void setLink(final String link) {
         this.link = link;
     }
 
@@ -71,7 +71,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setCreated(Date created) {
+    public void setCreated(final Date created) {
         this.created = created;
     }
 
@@ -81,7 +81,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setSeen(Date seen) {
+    public void setSeen(final Date seen) {
         this.seen = seen;
     }
 
@@ -91,7 +91,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setClicked(Date clicked) {
+    public void setClicked(final Date clicked) {
         this.clicked = clicked;
     }
 
@@ -101,7 +101,7 @@ public class PgUserAlert implements IUserAlert {
     }
 
     @Override
-    public void setDismissed(Date dismissed) {
+    public void setDismissed(final Date dismissed) {
         this.dismissed = dismissed;
     }
 }

@@ -15,11 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
 import java.util.List;
 import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 /**
  *  Abstract class for managing general user preferences.
@@ -36,7 +36,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return the UserPreference object
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract UserPreference getUserPreference(final String preferenceType, final String preferenceName, final long userId)
+    public abstract UserPreference getUserPreference(String preferenceType, String preferenceName, long userId)
             throws SegueDatabaseException;
 
     /**
@@ -47,9 +47,8 @@ public abstract class AbstractUserPreferenceManager {
      * @return a map of user IDs to the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract Map<Long, UserPreference> getUsersPreference(final String preferenceType, final String preferenceName,
-                                                                 final List<RegisteredUserDTO> users)
-            throws SegueDatabaseException;
+    public abstract Map<Long, UserPreference> getUsersPreference(
+            String preferenceType, String preferenceName, List<RegisteredUserDTO> users) throws SegueDatabaseException;
 
     /**
      * Get all preferences of one type for a specific user.
@@ -58,7 +57,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract List<UserPreference> getUserPreferences(final String preferenceType, final long userId)
+    public abstract List<UserPreference> getUserPreferences(String preferenceType, long userId)
             throws SegueDatabaseException;
 
     /**
@@ -67,8 +66,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract List<UserPreference> getAllUserPreferences(final long userId)
-            throws SegueDatabaseException;
+    public abstract List<UserPreference> getAllUserPreferences(long userId) throws SegueDatabaseException;
 
     /**
      * Get all preferences of one type for many users.
@@ -77,7 +75,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return a map of user IDs to a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract Map<Long, List<UserPreference>> getUserPreferences(final String preferenceType, final List<RegisteredUserDTO> users)
+    public abstract Map<Long, List<UserPreference>> getUserPreferences(String preferenceType, List<RegisteredUserDTO> users)
             throws SegueDatabaseException;
 
     /**
@@ -85,6 +83,6 @@ public abstract class AbstractUserPreferenceManager {
      * @param userPreferences - a list of the UserPreference objects to save
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract void saveUserPreferences(final List<UserPreference> userPreferences)
+    public abstract void saveUserPreferences(List<UserPreference> userPreferences)
             throws SegueDatabaseException;
 }

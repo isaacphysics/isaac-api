@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Describes a response from the OpenID Connect identity provider (AKA authorization server)'s discovery endpoint,
  * containing locations of important endpoints for the OAuth interaction.
- *
+ * <p>
  * This implementation names only the subset of the possible fields required by our use case.
  *
  * @see <a href="https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig>OpenID documentation.</a>
@@ -77,7 +77,7 @@ public class OidcDiscoveryResponse extends GenericJson {
      * @return A configured {@link OidcDiscoveryResponse}.
      * @throws IOException
      */
-    public static OidcDiscoveryResponse load(JsonFactory jsonFactory, Reader reader)
+    public static OidcDiscoveryResponse load(final JsonFactory jsonFactory, final Reader reader)
             throws IOException {
         return jsonFactory.fromReader(reader, OidcDiscoveryResponse.class);
     }

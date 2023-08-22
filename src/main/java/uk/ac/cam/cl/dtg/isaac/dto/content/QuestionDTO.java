@@ -25,11 +25,11 @@ import java.util.List;
  * 
  */
 public class QuestionDTO extends ContentDTO {
-    protected ContentBaseDTO answer;
-    protected List<ContentBaseDTO> hints;
+    private ContentBaseDTO answer;
+    private List<ContentBaseDTO> hints;
 
     // Set if the user is logged in and we have information.
-    protected QuestionValidationResponseDTO bestAttempt;
+    private QuestionValidationResponseDTO bestAttempt;
 
     /**
      * Default constructor for mappers.

@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,17 +16,17 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.google.common.collect.Lists;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
-import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
-
 import jakarta.annotation.Nullable;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
+import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
+
 import java.util.List;
 
 /**
  * DTO that provides high level information for Isaac Questions.
- * 
+ * <p>
  * Used for gameboards to represent cut down versions of questions
  */
 public class GameboardItem {
@@ -60,7 +60,7 @@ public class GameboardItem {
     /**
      * Generic constructor.
      */
-    public GameboardItem() {}
+    public GameboardItem() { }
 
     /**
      * Static factory method for constructing a minimal Gameboard Item from a GameboardContentDescriptor.
@@ -70,11 +70,13 @@ public class GameboardItem {
      * @return A Minimal gameboard item containing all of the information from the content descriptor.
      */
     public static GameboardItem buildLightweightItemFromContentDescriptor(final GameboardContentDescriptor contentDescriptor) {
-        return new GameboardItem() {{
-            this.setId(contentDescriptor.getId());
-            this.setContentType(contentDescriptor.getContentType());
-            this.setCreationContext(contentDescriptor.getContext());
-        }};
+        return new GameboardItem() {
+            {
+                this.setId(contentDescriptor.getId());
+                this.setContentType(contentDescriptor.getContentType());
+                this.setCreationContext(contentDescriptor.getContext());
+            }
+        };
     }
 
     /**
@@ -83,7 +85,7 @@ public class GameboardItem {
      * @param original
      *          the original gameboard item to copy
      */
-    public GameboardItem(GameboardItem original) {
+    public GameboardItem(final GameboardItem original) {
         this.setId(original.getId());
         this.setContentType(original.getContentType());
         this.setTitle(original.getTitle());
@@ -231,10 +233,10 @@ public class GameboardItem {
      *            the difficulty to set
      */
     public final void setDifficulty(final Integer difficulty) {
-        this.difficulty= difficulty;
+        this.difficulty = difficulty;
     }
 
-    public final List<Constants.QuestionPartState> getQuestionPartStates(){
+    public final List<Constants.QuestionPartState> getQuestionPartStates() {
         return this.questionPartStates;
     }
 
@@ -394,7 +396,7 @@ public class GameboardItem {
         return contentType;
     }
 
-    public void setContentType(String contentType) {
+    public void setContentType(final String contentType) {
         this.contentType = contentType;
     }
 
@@ -402,7 +404,7 @@ public class GameboardItem {
         return audience;
     }
 
-    public void setAudience(List<AudienceContext> audience) {
+    public void setAudience(final List<AudienceContext> audience) {
         this.audience = audience;
     }
 
@@ -410,7 +412,7 @@ public class GameboardItem {
         return creationContext;
     }
 
-    public void setCreationContext(AudienceContext creationContext) {
+    public void setCreationContext(final AudienceContext creationContext) {
         this.creationContext = creationContext;
     }
 

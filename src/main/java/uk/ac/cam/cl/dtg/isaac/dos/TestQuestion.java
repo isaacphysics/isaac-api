@@ -26,13 +26,13 @@ public class TestQuestion {
     private List<Choice> userDefinedChoices;
     private List<TestCase> testCases;
 
-    public void setUserDefinedChoices(List<Choice> userDefinedChoices) {
+    public void setUserDefinedChoices(final List<Choice> userDefinedChoices) {
         this.userDefinedChoices = userDefinedChoices;
     }
     public List<Choice> getUserDefinedChoices() {
         return this.userDefinedChoices;
     }
-    public void setTestCases(List<TestCase> tests) {
+    public void setTestCases(final List<TestCase> tests) {
         this.testCases = tests;
     }
     public List<TestCase> getTestCases() {

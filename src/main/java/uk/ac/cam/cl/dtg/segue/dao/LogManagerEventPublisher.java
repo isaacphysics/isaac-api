@@ -16,14 +16,19 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.joda.time.LocalDate;
 import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *  Abstract class for publishing logged events to interested listeners.
@@ -42,7 +47,7 @@ public abstract class LogManagerEventPublisher implements ILogManager {
 
 
     /**
-     * Add listener object to collection of listeners that wish to subscribe to events raised
+     * Add listener object to collection of listeners that wish to subscribe to events raised.
      *
      * @param listener
      *            - the listener who wants to subscribe to raised events
@@ -57,9 +62,9 @@ public abstract class LogManagerEventPublisher implements ILogManager {
     }
 
 
-
-
-    /**Method Overrides*/
+    /**
+     * Method Overrides.
+     */
 
     @Override
     public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType, final Object eventDetails) {
@@ -134,37 +139,38 @@ public abstract class LogManagerEventPublisher implements ILogManager {
     }
 
     @Override
-    public Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest)
-            throws SegueDatabaseException{
+    public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate, final List<RegisteredUserDTO> usersOfInterest)
+            throws SegueDatabaseException {
 
         return this.logManager.getLogsByType(type, fromDate, toDate, usersOfInterest);
 
     }
 
     @Override
-    public Map<String, Map<LocalDate, Long>> getLogCountByDate(Collection<String> eventTypes, Date fromDate, Date toDate,
-                                                               List<RegisteredUserDTO> usersOfInterest, boolean binDataByMonth) throws SegueDatabaseException{
+    public Map<String, Map<LocalDate, Long>> getLogCountByDate(
+            final Collection<String> eventTypes, final Date fromDate, final Date toDate,
+            final List<RegisteredUserDTO> usersOfInterest, final boolean binDataByMonth) throws SegueDatabaseException {
 
         return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, usersOfInterest, binDataByMonth);
 
     }
 
     @Override
-    public Set<String> getAllIpAddresses(){
+    public Set<String> getAllIpAddresses() {
 
         return this.logManager.getAllIpAddresses();
 
     }
 
     @Override
-    public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException{
+    public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException {
 
         return this.logManager.getLastLogDateForAllUsers(qualifyingLogEventType);
 
     }
 
     @Override
-    public Set<String> getAllEventTypes() throws SegueDatabaseException{
+    public Set<String> getAllEventTypes() throws SegueDatabaseException {
 
         return this.logManager.getAllEventTypes();
 

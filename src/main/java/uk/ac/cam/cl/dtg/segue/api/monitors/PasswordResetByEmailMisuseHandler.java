@@ -19,7 +19,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 
 /**
@@ -40,11 +40,11 @@ public class PasswordResetByEmailMisuseHandler implements IMisuseHandler {
 
     @Inject
     public PasswordResetByEmailMisuseHandler() {
-        this(2, 4, NUMBER_SECONDS_IN_MINUTE);
+        this(PASSWORD_RESET_BY_EMAIL_DEFAULT_SOFT_THRESHOLD, PASSWORD_RESET_BY_EMAIL_DEFAULT_HARD_THRESHOLD, NUMBER_SECONDS_IN_MINUTE);
     }
 
     @Inject
-    public PasswordResetByEmailMisuseHandler(Integer softThreshold, Integer hardThreshold, Integer interval) {
+    public PasswordResetByEmailMisuseHandler(final Integer softThreshold, final Integer hardThreshold, final Integer interval) {
         this.SOFT_THRESHOLD = softThreshold;
         this.HARD_THRESHOLD = hardThreshold;
         this.ACCOUNTING_INTERVAL = interval;

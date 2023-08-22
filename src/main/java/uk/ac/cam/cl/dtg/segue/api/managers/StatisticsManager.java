@@ -29,13 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
@@ -48,10 +41,16 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -113,12 +112,16 @@ public class StatisticsManager implements IStatisticsManager {
      *            - to query School information
      * @param contentManager
      *            - to query live version information
+     * @param contentIndex
+     *            - index string for current content version
      * @param groupManager
      *            - so that we can see how many groups we have site wide.
      * @param questionManager
      *            - so that we can see how many questions were answered.
      * @param contentSummarizerService
      *            - to produce content summary objects
+     * @param userStreaksManager
+     *            - to notify users when their answer streak changes
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
@@ -148,7 +151,7 @@ public class StatisticsManager implements IStatisticsManager {
      * Output general stats. This returns a Map of String to Object and is intended to be sent directly to a
      * serializable facade endpoint.
      *
-     * @return ImmutableMap<String, String> (stat name, stat value)
+     * @return an ImmutableMap{@literal <String, String>} (stat name, stat value)
      * @throws SegueDatabaseException - if there is a database error.
      */
     public synchronized Map<String, Object> getGeneralStatistics()
@@ -420,8 +423,8 @@ public class StatisticsManager implements IStatisticsManager {
         Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
-        LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
-        LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() -1, Month.AUGUST, 31);
+        LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, NUMBER_DAYS_IN_LONG_MONTH);
+        LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() - 1, Month.AUGUST, NUMBER_DAYS_IN_LONG_MONTH);
         LocalDate lastDayOfPreviousAcademicYear =
                 now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
 
@@ -535,7 +538,7 @@ public class StatisticsManager implements IStatisticsManager {
                         if (questionAttemptsByStageAndDifficultyStats.containsKey(currentStage)) {
                             if (questionAttemptsByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
                                 questionAttemptsByStageAndDifficultyStats.get(currentStage)
-                                .put(currentDifficulty, questionAttemptsByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
+                                        .put(currentDifficulty, questionAttemptsByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
                             } else {
                                 questionAttemptsByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                             }
@@ -550,7 +553,7 @@ public class StatisticsManager implements IStatisticsManager {
                             if (questionsCorrectByStageAndDifficultyStats.containsKey(currentStage)) {
                                 if (questionsCorrectByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
                                     questionsCorrectByStageAndDifficultyStats.get(currentStage)
-                                    .put(currentDifficulty, questionsCorrectByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
+                                            .put(currentDifficulty, questionsCorrectByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
                                 } else {
                                     questionsCorrectByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
                                 }
@@ -706,7 +709,7 @@ public class StatisticsManager implements IStatisticsManager {
     }
 
     @Override
-    public Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest) {
+    public Map<String, Object> getDetailedUserStatistics(final RegisteredUserDTO userOfInterest) {
 
         // user streak info
         Map<String, Object> userStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterest);

@@ -38,7 +38,7 @@ public class LocalUserCredential {
 
     }
 
-    public LocalUserCredential(Long userId, String password, String secureSalt, String securityScheme) {
+    public LocalUserCredential(final Long userId, final String password, final String secureSalt, final String securityScheme) {
         this.userId = userId;
         this.password = password;
         this.secureSalt = secureSalt;
@@ -50,7 +50,7 @@ public class LocalUserCredential {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(final Long userId) {
         this.userId = userId;
     }
 
@@ -58,7 +58,7 @@ public class LocalUserCredential {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         this.password = password;
     }
 
@@ -66,7 +66,7 @@ public class LocalUserCredential {
         return secureSalt;
     }
 
-    public void setSecureSalt(String secureSalt) {
+    public void setSecureSalt(final String secureSalt) {
         this.secureSalt = secureSalt;
     }
 
@@ -74,7 +74,7 @@ public class LocalUserCredential {
         return securityScheme;
     }
 
-    public void setSecurityScheme(String securityScheme) {
+    public void setSecurityScheme(final String securityScheme) {
         this.securityScheme = securityScheme;
     }
 
@@ -82,7 +82,7 @@ public class LocalUserCredential {
         return resetToken;
     }
 
-    public void setResetToken(String resetToken) {
+    public void setResetToken(final String resetToken) {
         this.resetToken = resetToken;
     }
 
@@ -90,7 +90,7 @@ public class LocalUserCredential {
         return resetExpiry;
     }
 
-    public void setResetExpiry(Date resetExpiry) {
+    public void setResetExpiry(final Date resetExpiry) {
         this.resetExpiry = resetExpiry;
     }
 
@@ -98,7 +98,7 @@ public class LocalUserCredential {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(final Date created) {
         this.created = created;
     }
 
@@ -106,7 +106,7 @@ public class LocalUserCredential {
         return lastUpdated;
     }
 
-    public void setLastUpdated(Date lastUpdated) {
+    public void setLastUpdated(final Date lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
 }

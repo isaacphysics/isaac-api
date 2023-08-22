@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public interface ISearchProvider {
 
-    public String getNestedFieldConnector();
+    String getNestedFieldConnector();
 
     /**
      * Verifies the existence of a given index.
@@ -43,7 +43,7 @@ public interface ISearchProvider {
      *            to verify
      * @return true if the index exists false if not.
      */
-    boolean hasIndex(final String indexBase, final String indexType);
+    boolean hasIndex(String indexBase, String indexType);
     
     /**
      * @return the list of all indices.
@@ -70,15 +70,14 @@ public interface ISearchProvider {
      * @return Results
      */
     ResultsWrapper<String> matchSearch(
-            final String indexBase, final String indexType,
-            final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
-            final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+            String indexBase, String indexType, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+            int startIndex, int limit, Map<String, Constants.SortOrder> sortInstructions,
+            @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
      * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
-     * 
+     * <p>
      * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
      * 
      * @param indexBase
@@ -100,30 +99,28 @@ public interface ISearchProvider {
      * @return results
      */
     ResultsWrapper<String> fuzzySearch(
-            final String indexBase, final String indexType, final String searchString,
-            final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
-            final String... fields
+            String indexBase, String indexType, String searchString, Integer startIndex, Integer limit, Map<String,
+            List<String>> fieldsThatMustMatch, @Nullable Map<String, AbstractFilterInstruction> filterInstructions,
+            String... fields
     ) throws SegueSearchException;
 
-    public ResultsWrapper<String> nestedMatchSearch(
-            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            final String searchString, @NotNull final BooleanMatchInstruction matchInstruction,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
+    ResultsWrapper<String> nestedMatchSearch(
+            String indexBase, String indexType, Integer startIndex, Integer limit, String searchString,
+            @NotNull BooleanMatchInstruction matchInstruction, @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
      * Executes a terms search using an array of terms on a single field.
-     *
+     * <p>
      * Useful for tag searches - Current setting is that results will only be returned if they match all search terms.
-     *
+     * <p>
      * note: null searches are allowed providing a filter is specified.
      *
      * @param indexBase
      *            - the base string for the name of the index
      * @param indexType
      *            - the name of the type of document being searched for
-     * @param searchterms
+     * @param searchTerms
      *            - e.g. tags can be null
      * @param field
      *            - to match against - cannot be null if searchterm is not null.
@@ -135,8 +132,8 @@ public interface ISearchProvider {
      * @return results
      */
     ResultsWrapper<String> termSearch(
-            final String indexBase, final String indexType, final String searchterms, final String field,
-            final int startIndex, final int limit, final Map<String, AbstractFilterInstruction> filterInstructions
+            String indexBase, String indexType, String searchTerms, String field, int startIndex, int limit,
+            Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
@@ -170,7 +167,7 @@ public interface ISearchProvider {
      *            base string for the index that the content is stored in
      * @param indexType
      *            - type of index as registered with search provider.
-     * @param fieldname
+     * @param fieldName
      *            - fieldName to search within.
      * @param needle
      *            - needle to search for.
@@ -183,13 +180,13 @@ public interface ISearchProvider {
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByExactMatch(
-            String indexBase, String indexType, String fieldname, String needle, int startIndex, int limit,
+            String indexBase, String indexType, String fieldName, String needle, int startIndex, int limit,
             @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
      * Query for a list of Results that match a given id prefix.
-     * 
+     * <p>
      * This is useful if you use un-analysed fields for ids and use the dot separator as a way of nesting fields.
      * 
      * @param indexBase

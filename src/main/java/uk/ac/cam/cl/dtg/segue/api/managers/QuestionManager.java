@@ -22,29 +22,24 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.prometheus.client.Histogram;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
-import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
-import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
+import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -63,9 +58,13 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.SpecifiesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,7 +78,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
  * Questions.
- * 
+ * <p>
  * It is also responsible for orchestrating question attempt persistence.
  * 
  */
@@ -178,7 +177,7 @@ public class QuestionManager {
      * @return a Validator
      */
     @SuppressWarnings("unchecked")
-    private ISpecifier locateSpecifier(Class<? extends ChoiceDTO> choiceClass) {
+    private ISpecifier locateSpecifier(final Class<? extends ChoiceDTO> choiceClass) {
         // check we haven't gone too high up the superclass tree
         if (!ChoiceDTO.class.isAssignableFrom(choiceClass)) {
             return null;
@@ -205,9 +204,9 @@ public class QuestionManager {
 
     /**
      * This method will ensure any user question attempt information available is used to augment this question object.
-     * 
+     * <p>
      * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
-     *
+     * <p>
      * Note: It will not do anything to related content
      * 
      * @param page
@@ -335,7 +334,15 @@ public class QuestionManager {
         }
     }
 
-    /** Test a question of a particular type against a series of test cases **/
+    /**
+     * Test a question of a particular type against a series of test cases.
+     *
+     * @param questionType
+     *            - the type of question as a string
+     * @param testDefinition
+     *            - a TestQuestion data structure containing the choices and test cases to use
+     * @return a List of TestCases describing the results of the tests
+     **/
     public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
         try {
@@ -445,26 +452,37 @@ public class QuestionManager {
     }
 
     /**
-     * Count the users by role which have answered questions over the previous time interval
+     * Count the users by role which have answered questions over the previous time interval.
      * @param timeInterval time interval over which to count
      * @return map of counts for each role
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
      */
-    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(TimeInterval timeInterval)
+    public Map<Role, Long> getAnsweredQuestionRolesOverPrevious(final TimeInterval timeInterval)
             throws SegueDatabaseException {
         return this.questionAttemptPersistenceManager.getAnsweredQuestionRolesOverPrevious(timeInterval);
     }
 
     /**
-     * getQuestionAttemptCountsByDate
-     *
+     * getQuestionAttemptCountsByDate.
+     * <p>
      * Retrieves a map of days and number of question attempts
+     *
+     * @param user
+     *            - a User DTO for the user to get question attempt count for
+     * @param fromDate
+     *            - the start of the date range to fetch
+     * @param toDate
+     *            - the end of the date range to fetch
+     * @param perDay
+     *            - if true, group count by day, otherwise group count by month
+     * @return a Map of LocalDates to attempt counts
      */
     public Map<LocalDate, Long> getUsersQuestionAttemptCountsByDate(final RegisteredUserDTO user,
                                                                     final Date fromDate, final Date toDate,
                                                                     final Boolean perDay) throws SegueDatabaseException {
-        Map<Date, Long> questionAttemptCountPerDateByUser = this.questionAttemptPersistenceManager.getQuestionAttemptCountForUserByDateRange(fromDate, toDate, user.getId(), perDay);
+        Map<Date, Long> questionAttemptCountPerDateByUser = this.questionAttemptPersistenceManager
+                .getQuestionAttemptCountForUserByDateRange(fromDate, toDate, user.getId(), perDay);
 
         // Convert the normal java dates into useful joda dates and create a new map.
         Map<LocalDate, Long> result = Maps.newHashMap();
@@ -487,7 +505,7 @@ public class QuestionManager {
      *            - The contentDTO which may have question objects as children.
      * @return A list of QuestionDTO found in the content.
      */
-    public static List<QuestionDTO> extractQuestionObjects(ContentDTO content) {
+    public static List<QuestionDTO> extractQuestionObjects(final ContentDTO content) {
         return QuestionManager.extractQuestionObjectsRecursively(content,
             new ArrayList<>());
     }
@@ -601,11 +619,11 @@ public class QuestionManager {
             mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
     }
 
-    public static String extractPageIdFromQuestionId(String questionId) {
+    public static String extractPageIdFromQuestionId(final String questionId) {
         return questionId.split(Constants.ESCAPED_ID_SEPARATOR)[0];
     }
 
-    public ChoiceDTO convertJsonAnswerToChoice(String jsonAnswer) throws ErrorResponseWrapper {
+    public ChoiceDTO convertJsonAnswerToChoice(final String jsonAnswer) throws ErrorResponseWrapper {
         ChoiceDTO answerFromClientDTO;
         try {
             // convert submitted JSON into a Choice:

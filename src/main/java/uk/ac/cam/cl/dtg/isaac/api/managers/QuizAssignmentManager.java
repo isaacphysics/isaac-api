@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
- * Manage quiz assignments
+ * Manage quiz assignments.
  */
 public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssignmentDTO> {
     private static final Logger log = LoggerFactory.getLogger(QuizAssignmentManager.class);
@@ -62,6 +62,8 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
      *            - for information about quizzes.
      * @param groupManager
      *            - for group membership info.
+     * @param properties
+     *            - instance of properties loader
      */
     @Inject
     public QuizAssignmentManager(final IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager,
@@ -114,68 +116,69 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
         String quizURL = getAssignmentLikeUrl(newAssignment);
 
-        emailService.sendAssignmentEmailToGroup(newAssignment, quiz, ImmutableMap.of("quizURL", quizURL) ,
+        emailService.sendAssignmentEmailToGroup(newAssignment, quiz, ImmutableMap.of("quizURL", quizURL),
             "email-template-group-quiz-assignment");
 
         return newAssignment;
     }
 
-    public List<QuizAssignmentDTO> getAssignedQuizzes(RegisteredUserDTO user) throws SegueDatabaseException {
+    public List<QuizAssignmentDTO> getAssignedQuizzes(final RegisteredUserDTO user) throws SegueDatabaseException {
         List<QuizAssignmentDTO> assignments = getAllAssignments(user);
 
         return this.groupManager.filterItemsBasedOnMembershipContext(assignments, user.getId());
     }
 
-    public QuizAssignmentDTO getById(Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
+    public QuizAssignmentDTO getById(final Long quizAssignmentId) throws SegueDatabaseException, AssignmentCancelledException {
         return this.quizAssignmentPersistenceManager.getAssignmentById(quizAssignmentId);
     }
 
-    public UserGroupDTO getGroupForAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+    public UserGroupDTO getGroupForAssignment(final QuizAssignmentDTO assignment) throws SegueDatabaseException {
         return groupManager.getGroupById(assignment.getGroupId());
     }
 
-    public List<QuizAssignmentDTO> getActiveQuizAssignments(IsaacQuizDTO quiz, RegisteredUserDTO user) throws SegueDatabaseException {
+    public List<QuizAssignmentDTO> getActiveQuizAssignments(final IsaacQuizDTO quiz, final RegisteredUserDTO user)
+            throws SegueDatabaseException {
         List<QuizAssignmentDTO> allAssignedAndDueQuizzes = getAllActiveAssignments(user);
         return allAssignedAndDueQuizzes.stream().filter(qa -> qa.getQuizId().equals(quiz.getId())).collect(Collectors.toList());
     }
 
-    public List<QuizAssignmentDTO> getAssignmentsForGroups(List<UserGroupDTO> groups) throws SegueDatabaseException {
+    public List<QuizAssignmentDTO> getAssignmentsForGroups(final List<UserGroupDTO> groups) throws SegueDatabaseException {
         List<Long> groupIds = groups.stream().map(UserGroupDTO::getId).collect(Collectors.toList());
         return this.quizAssignmentPersistenceManager.getAssignmentsByGroupList(groupIds);
     }
 
-    public List<QuizAssignmentDTO> getActiveAssignmentsForGroups(List<UserGroupDTO> groups) throws SegueDatabaseException {
+    public List<QuizAssignmentDTO> getActiveAssignmentsForGroups(final List<UserGroupDTO> groups) throws SegueDatabaseException {
         List<QuizAssignmentDTO> assignments = getAssignmentsForGroups(groups);
         return filterActiveAssignments(assignments);
     }
 
-    public void cancelAssignment(QuizAssignmentDTO assignment) throws SegueDatabaseException {
+    public void cancelAssignment(final QuizAssignmentDTO assignment) throws SegueDatabaseException {
         this.quizAssignmentPersistenceManager.cancelAssignment(assignment.getId());
     }
 
-    private List<QuizAssignmentDTO> getAllAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
+    private List<QuizAssignmentDTO> getAllAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
         // Find the groups the user is in
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
 
         return getAssignmentsForGroups(groups);
     }
 
-    private List<QuizAssignmentDTO> getAllActiveAssignments(RegisteredUserDTO user) throws SegueDatabaseException {
+    private List<QuizAssignmentDTO> getAllActiveAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
         List<QuizAssignmentDTO> allAssignedQuizzes = getAllAssignments(user);
         return filterActiveAssignments(allAssignedQuizzes);
     }
 
-    private List<QuizAssignmentDTO> filterActiveAssignments(List<QuizAssignmentDTO> assignments) {
+    private List<QuizAssignmentDTO> filterActiveAssignments(final List<QuizAssignmentDTO> assignments) {
         Date now = new Date();
         return assignments.stream().filter(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(now)).collect(Collectors.toList());
     }
 
-    public void updateAssignment(QuizAssignmentDTO assignment, QuizAssignmentDTO updates) throws SegueDatabaseException {
+    public void updateAssignment(final QuizAssignmentDTO assignment, final QuizAssignmentDTO updates) throws SegueDatabaseException {
         this.quizAssignmentPersistenceManager.updateAssignment(assignment.getId(), updates);
     }
 
     @Override
-    public String getAssignmentLikeName(QuizAssignmentDTO assignment) throws ContentManagerException {
+    public String getAssignmentLikeName(final QuizAssignmentDTO assignment) {
         if (assignment.getQuizSummary() == null) {
             quizManager.augmentWithQuizSummary(Collections.singletonList(assignment));
         }
@@ -189,7 +192,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
     }
 
     @Override
-    public String getAssignmentLikeUrl(QuizAssignmentDTO assignment) {
+    public String getAssignmentLikeUrl(final QuizAssignmentDTO assignment) {
         return String.format("https://%s/quiz/assignment/%s",
             properties.getProperty(HOST_NAME),
             assignment.getId());

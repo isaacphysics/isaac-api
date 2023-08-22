@@ -100,7 +100,7 @@ public class ContentIndexerTest {
         Map<Content, List<String>> someContentProblemsMap = Maps.newHashMap();
 
         // assume in this case that there are no pre-existing indexes for this version
-        for (Constants.CONTENT_INDEX_TYPE contentIndexType : Constants.CONTENT_INDEX_TYPE.values()) {
+        for (Constants.ContentIndextype contentIndexType : Constants.ContentIndextype.values()) {
             expect(searchProvider.hasIndex(INITIAL_VERSION, contentIndexType.toString())).andReturn(false).once();
         }
 
@@ -136,17 +136,17 @@ public class ContentIndexerTest {
         expectLastCall().atLeastOnce();
 
         // Ensure units are indexed
-        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.UNIT.toString()), anyObject());
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.ContentIndextype.UNIT.toString()), anyObject());
         expectLastCall().once();
-        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString()), anyObject());
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.ContentIndextype.PUBLISHED_UNIT.toString()), anyObject());
         expectLastCall().once();
 
         // Ensure content errors are indexed
-        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString()), anyObject());
+        searchProvider.bulkIndex(eq(INITIAL_VERSION), eq(Constants.ContentIndextype.CONTENT_ERROR.toString()), anyObject());
         expectLastCall().once();
 
         // Ensure at least one bulk index for general content is requested
-        searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
+        searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.ContentIndextype.CONTENT.toString()), anyObject());
 		expectLastCall().once();
 
 		replay(searchProvider, contentMapper, objectMapper);

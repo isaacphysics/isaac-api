@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 /**
  * Indicates the event is NOT full.
- *
+ * <p>
  * Created by sac92 on 30/04/2016.
  */
 public class EventIsNotFullException extends Exception {

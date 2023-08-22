@@ -26,7 +26,7 @@ public class IsaacPageFragmentDTO extends ContentDTO {
     @Override
     @JsonIgnore(false) // Override the parent class decorator!
     public String getCanonicalSourceFile() {
-        return this.canonicalSourceFile;
+        return super.getCanonicalSourceFile();
     }
 
     /**

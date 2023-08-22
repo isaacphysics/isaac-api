@@ -23,7 +23,7 @@ import java.security.SecureRandom;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
- *
+ * <p>
  * This is a parent class for Scrypt versions.
  *
  */

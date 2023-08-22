@@ -16,7 +16,7 @@ public class UserGameboardProgressSummaryDTO {
         return user;
     }
 
-    public void setUser(UserSummaryDTO user) {
+    public void setUser(final UserSummaryDTO user) {
         this.user = user;
     }
 
@@ -24,7 +24,7 @@ public class UserGameboardProgressSummaryDTO {
         return progress;
     }
 
-    public void setProgress(List<GameboardProgressSummaryDTO> progress) {
+    public void setProgress(final List<GameboardProgressSummaryDTO> progress) {
         this.progress = progress;
     }
 

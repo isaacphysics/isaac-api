@@ -22,7 +22,7 @@ public class QuizSummaryDTO extends ContentSummaryDTO {
         return hiddenFromRoles;
     }
 
-    public void setHiddenFromRoles(List<String> hiddenFromRoles) {
+    public void setHiddenFromRoles(final List<String> hiddenFromRoles) {
         this.hiddenFromRoles = hiddenFromRoles;
     }
 }

@@ -8,13 +8,17 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -22,10 +26,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Maps.*;
-
+import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_BASE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolsIndexType;
 
 /**
  * Created by Ian on 17/10/2016.
@@ -36,7 +39,7 @@ class SchoolIndexer {
     private ContentMapper mapper;
     private String schoolsListPath;
 
-    SchoolIndexer(ElasticSearchIndexer es, ContentMapper mapper, String schoolsListPath) {
+    SchoolIndexer(final ElasticSearchIndexer es, final ContentMapper mapper, final String schoolsListPath) {
         this.es = es;
         this.mapper = mapper;
         this.schoolsListPath = schoolsListPath;
@@ -49,7 +52,7 @@ class SchoolIndexer {
      *             - when there is a problem building the index of schools.
      */
     synchronized void indexSchoolsWithSearchProvider() throws UnableToIndexSchoolsException {
-        if (es.hasIndex(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString())) {
+        if (es.hasIndex(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString())) {
             log.info("Schools index already exists");
             return;
         }
@@ -69,7 +72,7 @@ class SchoolIndexer {
 
         File f = new File(schoolsListPath);
         try {
-            es.indexObject(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), objectMapper.writeValueAsString(
+            es.indexObject(SCHOOLS_INDEX_BASE, SchoolsIndexType.METADATA.toString(), objectMapper.writeValueAsString(
                     ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
         } catch (SegueSearchException e) {
             log.error("Unable to index school list metadata.", e);
@@ -78,15 +81,15 @@ class SchoolIndexer {
         }
 
         try {
-            es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
+            es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(), indexList);
             log.info("School list index request complete.");
         } catch (SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);
         }
 
         // Create an alias (could be anything) to prevent this schools index from being garbage-collected by ElasticSearchIndexer.expungeOldIndices
-        List<String> allSchoolTypes = Arrays.stream(SCHOOLS_INDEX_TYPE.values())
-                .map((schoolIndexType) -> schoolIndexType.toString()).collect(Collectors.toList());
+        List<String> allSchoolTypes = Arrays.stream(SchoolsIndexType.values())
+                .map(SchoolsIndexType::toString).collect(Collectors.toList());
         es.addOrMoveIndexAlias("schools-latest", SCHOOLS_INDEX_BASE, allSchoolTypes);
     }
 
@@ -103,7 +106,7 @@ class SchoolIndexer {
 
         try (FileInputStream fs = new FileInputStream(schoolsListPath);
              InputStreamReader is = new InputStreamReader(fs, StandardCharsets.UTF_8);
-             CSVReader reader = new CSVReader(is);
+             CSVReader reader = new CSVReader(is)
         ) {
 
 

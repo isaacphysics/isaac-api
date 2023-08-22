@@ -39,6 +39,8 @@ public class FastTrackManger {
     /**
      * Creates a game manager that operates using the provided api.
      *
+     * @param properties
+     *            - Instance of properties Loader
      * @param contentManager
      *            - so we can augment game objects with actual detailed content
      * @param gameboardManager
@@ -58,7 +60,7 @@ public class FastTrackManger {
     }
 
     /**
-     * Cheacks if a gameboard ID is a valid fasttrack gameboard ID
+     * Cheacks if a gameboard ID is a valid fasttrack gameboard ID.
      * @param gameboardId to check.
      * @return whether or not it is a valid fasttrack gameboard.
      */
@@ -67,7 +69,7 @@ public class FastTrackManger {
     }
 
     /**
-     * Returns the concept name for a given question ID
+     * Returns the concept name for a given question ID.
      * @param questionId the question ID for which you want to find its fasttrack concept.
      * @return the concept string.
      * @throws ContentManagerException if content cant be found which matches the question ID.
@@ -87,16 +89,17 @@ public class FastTrackManger {
     }
 
     /**
-     * Retrieve fasttrack concept progress
+     * Retrieve fasttrack concept progress.
      *
      * @param gameboard which holds the "top ten" questions and a filter for context.
+     * @param levelFilters a List of Fasttrack Levels for use in search filter.
      * @param conceptTitle concept title.
-     * @param userQuestionAttempts - the map of user's question attempts.
+     * @param userQuestionAttempts the map of user's question attempts.
      * @return list of gameboard items.
      * @throws ContentManagerException if there is a problem retrieving the content.
      */
     public final List<GameboardItem> getConceptProgress(
-            final GameboardDTO gameboard, final List<FASTTRACK_LEVEL> levelFilters,
+            final GameboardDTO gameboard, final List<FastTrackLevel> levelFilters,
             final String conceptTitle, final Map<String, Map<String,
             List<QuestionValidationResponse>>> userQuestionAttempts
     ) throws ContentManagerException {
@@ -111,14 +114,15 @@ public class FastTrackManger {
      * The result is returned sorted.
      *
      * @param boardTag the tag which marks question's association with a certain board - the board's ID.
+     * @param levelFilters a List of Fasttrack Levels for use in search filter.
      * @param conceptTitle the title of the concept which is being searched for.
      * @return ordered list of concept questions associated with the board.
      * @throws ContentManagerException if there is a problem with the content manager (i.e. Elasticsearch)
      */
     private List<ContentDTO> getFastTrackConceptQuestions(
-            final String boardTag, final List<FASTTRACK_LEVEL> levelFilters, final String conceptTitle
+            final String boardTag, final List<FastTrackLevel> levelFilters, final String conceptTitle
     ) throws ContentManagerException {
-        List<String> stringLevelFilters = levelFilters.stream().map(FASTTRACK_LEVEL::name).collect(Collectors.toList());
+        List<String> stringLevelFilters = levelFilters.stream().map(FastTrackLevel::name).collect(Collectors.toList());
 
         List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(

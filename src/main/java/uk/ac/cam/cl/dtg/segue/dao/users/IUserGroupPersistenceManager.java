@@ -15,17 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import jakarta.annotation.Nullable;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
-
-import jakarta.annotation.Nullable;
 
 /**
  * Interface for data manager classes that deal with group data.
@@ -61,7 +60,7 @@ public interface IUserGroupPersistenceManager {
 
     /**
      * Find User group by Id including deleted groups.
-     *
+     * <p>
      * Note this should only be used when trying to reconstruct assignment state, never when exposing group information directly to users.
      *
      * @param groupId
@@ -87,7 +86,7 @@ public interface IUserGroupPersistenceManager {
 
     /**
      * Create a group that users can be assigned to.
-     * 
+     * <p>
      * This is only to support organisation of accounts that can access data about other users.
      * 
      * @param group
@@ -111,7 +110,7 @@ public interface IUserGroupPersistenceManager {
     void addUserToGroup(Long userId, Long groupId) throws SegueDatabaseException;
 
     /**
-     * Update group membership status for a given user
+     * Update group membership status for a given user.
      * @param userId - the id of the user
      * @param groupId - the group they are a member of
      * @param newStatus - e.g. active, inactive or deleted.
@@ -176,9 +175,9 @@ public interface IUserGroupPersistenceManager {
 
     /**
      * Create a map of user id to membership status so that group membership information can be used to change behaviour.
-     * @param groupId of interest
-     * @return
-     * @throws SegueDatabaseException
+     * @param groupId - of interest
+     * @return a Map of user ids to GroupMembership objects
+     * @throws SegueDatabaseException - if there is a database error
      */
     Map<Long, GroupMembership> getGroupMembershipMap(Long groupId) throws SegueDatabaseException;
 
@@ -208,20 +207,21 @@ public interface IUserGroupPersistenceManager {
      * @return list of user ids.
      * @throws SegueDatabaseException
      */
-    Set<Long> getAdditionalManagerSetByGroupId(final Long groupId) throws SegueDatabaseException;
+    Set<Long> getAdditionalManagerSetByGroupId(Long groupId) throws SegueDatabaseException;
 
     /**
      * Get groups by additional manager id.
      *
      * @param additionalManagerId
-     *            the additional Manager Id to find all groups for.
+     *            the additional Manager id to find all groups for.
+     * @return a list of User Groups where the provided is an additional manager
      * @throws SegueDatabaseException
      *             - if we cannot contact the database.
      */
-    List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId) throws SegueDatabaseException;
+    List<UserGroup> getGroupsByAdditionalManager(Long additionalManagerId) throws SegueDatabaseException;
 
     /**
-     * Get groups by additional manager id
+     * Get groups by additional manager id.
      *
      * @param additionalManagerId
      *            the owner Id to find all groups for.
@@ -233,7 +233,8 @@ public interface IUserGroupPersistenceManager {
      * @throws SegueDatabaseException
      *             - if we cannot contact the database.
      */
-    List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException;
+    List<UserGroup> getGroupsByAdditionalManager(Long additionalManagerId, @Nullable Boolean archivedGroupsOnly)
+            throws SegueDatabaseException;
 
     /**
      * Add a user to the additional manager list for a group.
@@ -242,7 +243,7 @@ public interface IUserGroupPersistenceManager {
      * @param groupId - group id to be affected
      * @throws SegueDatabaseException - if we cannot contact the database.
      */
-    void addUserAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException;
+    void addUserAdditionalManagerList(Long userId, Long groupId) throws SegueDatabaseException;
 
     /**
      * Remove a user to the additional manager list for a group.
@@ -251,5 +252,5 @@ public interface IUserGroupPersistenceManager {
      * @param groupId - group id to be affected
      * @throws SegueDatabaseException - if we cannot contact the database.
      */
-    void removeUserFromAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException;
+    void removeUserFromAdditionalManagerList(Long userId, Long groupId) throws SegueDatabaseException;
 }

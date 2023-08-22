@@ -95,7 +95,7 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * Gets a specific event booking
+     * Gets a specific event booking.
      * @param eventId
      *            - of interest
      * @param userId
@@ -109,7 +109,7 @@ public class EventBookingPersistenceManager {
     }
 
 	/**
-     * Modify an existing event booking's status
+     * Modify an existing event booking's status.
      *
      * @param transaction - the database transaction to use
      * @param eventId - the id of the event
@@ -118,8 +118,7 @@ public class EventBookingPersistenceManager {
      * @param bookingStatus - the new booking status for this booking.
      * @param additionalEventInformation - additional information required for the event.
      * @return The newly updated event booking
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId, final Long reservingUserId,
                                                        final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
@@ -128,7 +127,7 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * Modify an existing event booking's status
+     * Modify an existing event booking's status.
      *
      * @param transaction - the database transaction to use
      * @param eventId - the id of the event
@@ -136,8 +135,7 @@ public class EventBookingPersistenceManager {
      * @param bookingStatus - the new booking status for this booking.
      * @param additionalEventInformation - additional information required for the event.
      * @return The newly updated event booking
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
                                                        final BookingStatus bookingStatus, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {

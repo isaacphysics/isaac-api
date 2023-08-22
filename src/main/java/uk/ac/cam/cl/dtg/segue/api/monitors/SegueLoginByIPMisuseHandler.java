@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 
 /**
@@ -15,17 +15,17 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 public class SegueLoginByIPMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(SegueLoginByIPMisuseHandler.class);
 
-    public final Integer SOFT_THRESHOLD;
-    public final Integer HARD_THRESHOLD;
-    public final Integer ACCOUNTING_INTERVAL;
+    private final Integer SOFT_THRESHOLD;
+    private final Integer HARD_THRESHOLD;
+    private final Integer ACCOUNTING_INTERVAL;
 
     @Inject
     public SegueLoginByIPMisuseHandler() {
-        this(50, 300, NUMBER_SECONDS_IN_ONE_HOUR);
+        this(SEGUE_LOGIN_BY_IP_DEFAULT_SOFT_THRESHOLD, SEGUE_LOGIN_BY_IP_DEFAULT_HARD_THRESHOLD, NUMBER_SECONDS_IN_ONE_HOUR);
     }
 
     @Inject
-    public SegueLoginByIPMisuseHandler(Integer softThreshold, Integer hardThreshold, Integer interval) {
+    public SegueLoginByIPMisuseHandler(final Integer softThreshold, final Integer hardThreshold, final Integer interval) {
         this.SOFT_THRESHOLD = softThreshold;
         this.HARD_THRESHOLD = hardThreshold;
         this.ACCOUNTING_INTERVAL = interval;

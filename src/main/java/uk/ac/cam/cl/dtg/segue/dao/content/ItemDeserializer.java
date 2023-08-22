@@ -30,9 +30,9 @@ import java.io.IOException;
 
 /**
  * Item deserializer
- *
+ * <p>
  * This class requires the primary content base deserializer as a constructor argument.
- *
+ * <p>
  * It is to allow subclasses of the Item object to be detected correctly.
  */
 public class ItemDeserializer extends JsonDeserializer<Item> {

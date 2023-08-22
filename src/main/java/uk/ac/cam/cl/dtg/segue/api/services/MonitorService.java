@@ -6,13 +6,13 @@ import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.Map;
 
-public class MonitorService {
+public final class MonitorService {
     private static final String NO_MATCHING_ENDPOINT = "NO_MATCHING_ENDPOINT";
 
     @Inject // We don't require anything to be injected yet, but we'll adopt this pattern for unit-testing's sake
-    private MonitorService() {}
+    private MonitorService() { }
 
-    public String getPathWithoutPathParamValues(UriInfo uri) {
+    public String getPathWithoutPathParamValues(final UriInfo uri) {
         List<String> matchingUris = uri.getMatchedURIs(); // Ordered so that current resource URI is first
 
         if (matchingUris.isEmpty()) {

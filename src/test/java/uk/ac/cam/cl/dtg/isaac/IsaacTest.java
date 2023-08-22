@@ -315,7 +315,7 @@ public class IsaacTest {
 
     /**
      * MockConfigurer
-     *
+     * <p>
      * Basically a Consumer that can throw.
      *
      * @param <M> What it configures.

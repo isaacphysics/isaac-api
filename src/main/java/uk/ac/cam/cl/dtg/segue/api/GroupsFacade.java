@@ -20,33 +20,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -62,6 +35,32 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -88,21 +87,27 @@ public class GroupsFacade extends AbstractSegueFacade {
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
     private final UserBadgeManager userBadgeManager;
-    private IMisuseMonitor misuseMonitor;
+    private final IMisuseMonitor misuseMonitor;
 
     /**
      * Create an instance of the authentication Facade.
-     *  @param properties          - properties loader for the application
+     * @param properties          - properties loader for the application
      * @param userManager         - user manager for the application
-     * @param logManager          - so we can log interesting events.
-     * @param assignmentManager
-     * @param groupManager        - so that we can manage groups.
-     * @param associationsManager - so we can decide what information is allowed to be exposed.
+     * @param logManager          - so we can log interesting events
+     * @param assignmentManager   - for retrieving a group's assignments
+     * @param gameManager         - the game manager object
+     * @param groupManager        - so that we can manage groups
+     * @param associationsManager - so we can decide what information is allowed to be exposed
+     * @param userBadgeManager    - for updating badges
+     * @param misuseMonitor       - for rate limiting the lookup of users via manager addition requests
      */
     @Inject
-    public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                        final ILogManager logManager, AssignmentManager assignmentManager,
-                        final GameManager gameManager, final GroupManager groupManager,
+    public GroupsFacade(final PropertiesLoader properties,
+                        final UserAccountManager userManager,
+                        final ILogManager logManager,
+                        final AssignmentManager assignmentManager,
+                        final GameManager gameManager,
+                        final GroupManager groupManager,
                         final UserAssociationManager associationsManager,
                         final UserBadgeManager userBadgeManager,
                         final IMisuseMonitor misuseMonitor) {
@@ -188,10 +193,10 @@ public class GroupsFacade extends AbstractSegueFacade {
     @GET
     @Path("/membership/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getGroupMembershipSpecificUser(@Context final HttpServletRequest request,
-                                                   @Context final Request cacheRequest,
-                                                   @PathParam("userId") Long userId,
-                                                   @QueryParam("archived_groups_only") final boolean archivedGroupsOnly) throws NoUserException {
+    public Response getGroupMembershipSpecificUser(
+            @Context final HttpServletRequest request, @Context final Request cacheRequest,
+            @PathParam("userId") final Long userId, @QueryParam("archived_groups_only") final boolean archivedGroupsOnly)
+            throws NoUserException {
         try {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
@@ -208,10 +213,12 @@ public class GroupsFacade extends AbstractSegueFacade {
             List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
             List<Map<String, Object>> results = Lists.newArrayList();
-            for(UserGroupDTO group : groups) {
-                ImmutableMap<String, Object> map = ImmutableMap.of("group", group, "membershipStatus", this.groupManager.getGroupMembershipStatus(user.getId(), group.getId()).name());
+            for (UserGroupDTO group : groups) {
+                ImmutableMap<String, Object> map = ImmutableMap.of("group", group, "membershipStatus",
+                        this.groupManager.getGroupMembershipStatus(user.getId(), group.getId()).name());
 
-                // check if the group doesn't have a last updated date if not it means that we shouldn't show students the group name as teachers may not have realised the names are public..
+                // check if the group doesn't have a last updated date if not it means that we shouldn't show students
+                // the group name as teachers may not have realised the names are public..
                 if (group.getLastUpdated() == null) {
                     group.setGroupName(null);
                 }
@@ -229,7 +236,7 @@ public class GroupsFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Change user's group membership status
+     * Change user's group membership status.
      *
      * @param request      - for authentication
      * @param cacheRequest - so that we can control caching of this endpoint
@@ -658,13 +665,13 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             // Tutors cannot add additional group managers
             if (!isUserTeacherOrAbove(userManager, user)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must have a teacher account to add additional group managers to your groups.").toResponse();
+                return new SegueErrorResponse(Status.FORBIDDEN, MUST_BE_TEACHER_TO_ADD_MANAGERS_MESSAGE).toResponse();
             }
 
             // Tutors cannot be added as additional managers of a group
             if (null == userToAdd || !isUserTeacherOrAbove(userManager, userToAdd)) {
                 // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account scanning.
-                return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
+                return new SegueErrorResponse(Status.BAD_REQUEST, PROBLEM_ADDING_GROUP_MANAGER_MESSAGE).toResponse();
             }
 
             if (group.getOwnerId().equals(userToAdd.getId())) {
@@ -685,11 +692,9 @@ public class GroupsFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "There was a problem adding the user specified. Please make sure their email address is correct and they have a teacher account.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, PROBLEM_ADDING_GROUP_MANAGER_MESSAGE).toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
-            return SegueErrorResponse.getRateThrottledResponse(message);
+            return SegueErrorResponse.getRateThrottledResponse(TOO_MANY_REQUESTS);
         }
 
     }
@@ -830,8 +835,8 @@ public class GroupsFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO group = groupManager.getGroupById(groupId);
-            if (!GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId()) &&
-                    !isUserAnAdmin(userManager, currentUser)) {
+            if (!GroupManager.isOwnerOrAdditionalManager(group, currentUser.getId())
+                    && !isUserAnAdmin(userManager, currentUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -840,8 +845,10 @@ public class GroupsFacade extends AbstractSegueFacade {
             if (assignments.size() == 0) {
                 return Response.ok(new ArrayList<>()).build();
             }
-            List<AssignmentDTO> withDueDate = assignments.stream().filter(a -> a.getDueDate() != null).sorted(Comparator.comparing(AssignmentDTO::getDueDate)).collect(Collectors.toList());
-            List<AssignmentDTO> withoutDueDate = assignments.stream().filter(a -> a.getDueDate() == null).sorted(Comparator.comparing(AssignmentDTO::getCreationDate)).collect(Collectors.toList());
+            List<AssignmentDTO> withDueDate = assignments.stream().filter(a -> a.getDueDate() != null)
+                    .sorted(Comparator.comparing(AssignmentDTO::getDueDate)).collect(Collectors.toList());
+            List<AssignmentDTO> withoutDueDate = assignments.stream().filter(a -> a.getDueDate() == null)
+                    .sorted(Comparator.comparing(AssignmentDTO::getCreationDate)).collect(Collectors.toList());
             List<AssignmentDTO> sortedAssignments = Stream.concat(withDueDate.stream(), withoutDueDate.stream()).collect(Collectors.toList());
 
             List<RegisteredUserDTO> groupMembers = groupManager.getUsersInGroup(group).stream()

@@ -73,12 +73,12 @@ public class GroupChangedService implements IGroupObserver {
     }
 
     @Override
-    public void onGroupMembershipRemoved(UserGroupDTO group, RegisteredUserDTO user) {
+    public void onGroupMembershipRemoved(final UserGroupDTO group, final RegisteredUserDTO user) {
         // Do nothing
     }
 
     @Override
-    public void onMemberAddedToGroup(UserGroupDTO group, RegisteredUserDTO user) {
+    public void onMemberAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO user) {
         Validate.notNull(group);
         Validate.notNull(user);
 
@@ -103,7 +103,8 @@ public class GroupChangedService implements IGroupObserver {
      * @return a map of string to string, with some values that may want to be shown in the email.
      * @throws SegueDatabaseException if we can't get the gameboard details.
      */
-    private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup) throws SegueDatabaseException, ContentManagerException {
+    private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup)
+            throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(userDTO);
 
         UserSummaryWithEmailAddressDTO groupOwner = userGroup.getOwnerSummary();
@@ -134,7 +135,8 @@ public class GroupChangedService implements IGroupObserver {
             .build();
     }
 
-    private void formatGroupAssignmentsInfo(UserGroupDTO userGroup, StringBuilder htmlSB, StringBuilder plainTextSB) throws SegueDatabaseException, ContentManagerException {
+    private void formatGroupAssignmentsInfo(final UserGroupDTO userGroup, final StringBuilder htmlSB, final StringBuilder plainTextSB)
+            throws SegueDatabaseException, ContentManagerException {
         final List<AssignmentDTO> existingAssignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(Collections.singletonList(userGroup), false);
 
         formatAssignmentLikeList(htmlSB, plainTextSB, existingAssignments, "assignments", assignmentManager);
@@ -148,12 +150,15 @@ public class GroupChangedService implements IGroupObserver {
         }
     }
 
-    private <A extends IAssignmentLike> void formatAssignmentLikeList(StringBuilder htmlSB, StringBuilder plainTextSB, List<A> existingAssignments, String typeOfAssignment, IAssignmentLike.Details<A> assignmentDetailsService) throws SegueDatabaseException, ContentManagerException {
+    private <A extends IAssignmentLike> void formatAssignmentLikeList(
+            final StringBuilder htmlSB, final StringBuilder plainTextSB, final List<A> existingAssignments,
+            final String typeOfAssignment, final IAssignmentLike.Details<A> assignmentDetailsService)
+            throws SegueDatabaseException, ContentManagerException {
         if (existingAssignments != null) {
             existingAssignments.sort(Comparator.comparing(IAssignmentLike::getCreationDate));
         }
 
-        final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
+        final DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         if (existingAssignments != null && existingAssignments.size() > 0) {
             htmlSB.append("Your teacher has assigned the following " + typeOfAssignment + ":<br>");
             plainTextSB.append("Your teacher has assigned the following " + typeOfAssignment + ":\n");
@@ -172,14 +177,14 @@ public class GroupChangedService implements IGroupObserver {
 
                 String dueDate = "";
                 if (existingAssignment.getDueDate() != null) {
-                    dueDate = String.format(", due on %s", DATE_FORMAT.format(existingAssignment.getDueDate()));
+                    dueDate = String.format(", due on %s", dateFormat.format(existingAssignment.getDueDate()));
                 }
 
                 htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s%s)<br>", i + 1, url,
-                    name, DATE_FORMAT.format(assignmentStartDate), dueDate));
+                    name, dateFormat.format(assignmentStartDate), dueDate));
 
                 plainTextSB.append(String.format("%d. %s (set on %s%s)\n", i + 1, name,
-                    DATE_FORMAT.format(assignmentStartDate), dueDate));
+                    dateFormat.format(assignmentStartDate), dueDate));
             }
         } else if (existingAssignments != null) {
             htmlSB.append("No " + typeOfAssignment + " have been set yet.<br>");

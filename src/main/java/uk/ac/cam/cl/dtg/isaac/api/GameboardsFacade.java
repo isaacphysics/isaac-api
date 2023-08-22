@@ -115,6 +115,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - to enforce privacy policies.
      * @param userBadgeManager
      *            - for updating badge information.
+     * @param fastTrackManger
+     *            - for game management of fasttrack questions and concepts
      */
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
@@ -144,6 +146,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - a comma separated list of fields
      * @param topics
      *            - a comma separated list of topics
+     * @param stages
+     *            - a comma separated list of stages
+     * @param difficulties
+     *            - a comma separated list of difficulties
+     * @param examBoards
+     *            - a comma separated list of examBoards
      * @param levels
      *            - a comma separated list of levels
      * @param concepts
@@ -152,6 +160,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - a comma separated list of question categories
      * @return a Response containing a gameboard object or containing a SegueErrorResponse.
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @GET
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
@@ -192,7 +201,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             GameboardDTO gameboard;
 
             gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
-                    conceptsList, questionCategoriesList, stagesList, difficultiesList, examBoardsList,boardOwner);
+                    conceptsList, questionCategoriesList, stagesList, difficultiesList, examBoardsList, boardOwner);
 
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.NO_CONTENT,
@@ -312,15 +321,15 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             List<GameboardItem> conceptQuestionsProgress = Lists.newArrayList();
             if (upperQuestionId.isEmpty()) {
-                List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
+                List<FastTrackLevel> upperAndLower = Arrays.asList(FastTrackLevel.FT_UPPER, FastTrackLevel.FT_LOWER);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
                         gameboard, upperAndLower, currentConceptTitle, userQuestionAttempts));
             } else {
                 String upperConceptTitle = fastTrackManger.getConceptFromQuestionId(upperQuestionId);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboard, Collections.singletonList(FASTTRACK_LEVEL.ft_upper), upperConceptTitle, userQuestionAttempts));
+                        gameboard, Collections.singletonList(FastTrackLevel.FT_UPPER), upperConceptTitle, userQuestionAttempts));
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
-                        gameboard, Collections.singletonList(FASTTRACK_LEVEL.ft_lower), currentConceptTitle, userQuestionAttempts));
+                        gameboard, Collections.singletonList(FastTrackLevel.FT_LOWER), currentConceptTitle, userQuestionAttempts));
             }
 
             return Response.ok(conceptQuestionsProgress).build();
@@ -415,10 +424,10 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     /**
      * REST end point to allow gameboards to be persisted into permanent storage and for the title to be updated by
      * users.
-     * 
+     * <p>
      * Currently we only support updating the title and saving the gameboard that exists in temporary storage into
      * permanent storage. No other fields can be updated at the moment.
-     * 
+     * <p>
      * TODO: This will need to change if we want to change more than the board title.
      * 
      * @param request
@@ -679,7 +688,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
     /**
      * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
-     * 
+     * <p>
      * This does not delete the gameboard from the system just removes it from the user's my boards page.
      * 
      * @param request

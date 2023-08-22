@@ -16,8 +16,9 @@ public class ExceptionSanitiser implements ContainerResponseFilter {
     private static final Logger log = LoggerFactory.getLogger(ExceptionSanitiser.class);
 
     @Override
-    public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
-        if (containerResponseContext.getEntityType() == SegueErrorResponse.class && ((SegueErrorResponse) containerResponseContext.getEntity()).getAdditionalErrorInformation() != null) {
+    public void filter(final ContainerRequestContext containerRequestContext, final ContainerResponseContext containerResponseContext) throws IOException {
+        if (containerResponseContext.getEntityType() == SegueErrorResponse.class
+                && ((SegueErrorResponse) containerResponseContext.getEntity()).getAdditionalErrorInformation() != null) {
             SegueErrorResponse error = (SegueErrorResponse) containerResponseContext.getEntity();
             UUID generatedUUID = UUID.randomUUID();
             String logMessage = String.format(

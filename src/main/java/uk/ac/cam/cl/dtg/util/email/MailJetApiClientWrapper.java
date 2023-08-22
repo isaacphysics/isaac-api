@@ -67,7 +67,7 @@ public class MailJetApiClientWrapper {
     }
 
     /**
-     *  Get user details for an existing MailJet account
+     *  Get user details for an existing MailJet account.
      *
      * @param mailjetIdOrEmail - email address or MailJet user ID
      * @return JSONObject of the MailJet user
@@ -100,7 +100,7 @@ public class MailJetApiClientWrapper {
 
     /**
      *  Add a new user to MailJet
-     *
+     * <p>
      *  If the user already exists, find by email as a fallback to ensure idempotence and better error recovery.
      *
      * @param email - email address
@@ -133,19 +133,22 @@ public class MailJetApiClientWrapper {
     }
 
     /**
-     *  Update user details for an existing MailJet account
+     *  Update user details for an existing MailJet account.
      *
      * @param mailjetId - MailJet user ID
+     * @param firstName - first name of user for contact details
+     * @param role - role of user for contact details
+     * @param emailVerificationStatus - verification status of user for contact details
      * @throws MailjetException  - if underlying MailjetClient throws an exception
      */
     public void updateUserProperties(final String mailjetId, final String firstName, final String role,
-                                      final String email_verification_status) throws MailjetException {
+                                      final String emailVerificationStatus) throws MailjetException {
         Validate.notNull(mailjetId);
         MailjetRequest request = new MailjetRequest(Contactdata.resource, mailjetId)
                 .property(Contactdata.DATA, new JSONArray()
                         .put(new JSONObject().put("Name", "firstname").put("value", firstName))
                         .put(new JSONObject().put("Name", "role").put("value", role))
-                        .put(new JSONObject().put("Name", "verification_status").put("value", email_verification_status))
+                        .put(new JSONObject().put("Name", "verification_status").put("value", emailVerificationStatus))
                 );
         MailjetResponse response = mailjetClient.put(request);
         if (response.getTotal() != 1) {
@@ -155,9 +158,11 @@ public class MailJetApiClientWrapper {
     }
 
     /**
-     *  Update user list subscriptions for an existing MailJet account
+     *  Update user list subscriptions for an existing MailJet account.
      *
      * @param mailjetId - MailJet user ID
+     * @param newsEmails - subscription action to take for news emails
+     * @param eventsEmails - subscription action to take for events emails
      * @throws MailjetException  - if underlying MailjetClient throws an exception
      */
     public void updateUserSubscriptions(final String mailjetId, final MailJetSubscriptionAction newsEmails,
@@ -167,13 +172,13 @@ public class MailJetApiClientWrapper {
                 .property(ContactManagecontactslists.CONTACTSLISTS, new JSONArray()
                         .put(new JSONObject()
                                 .put(ContactslistImportList.LISTID, legalListId)
-                                .put(ContactslistImportList.ACTION, MailJetSubscriptionAction.FORCE_SUBSCRIBE.value))
+                                .put(ContactslistImportList.ACTION, MailJetSubscriptionAction.FORCE_SUBSCRIBE.getValue()))
                         .put(new JSONObject()
                                 .put(ContactslistImportList.LISTID, newsListId)
-                                .put(ContactslistImportList.ACTION, newsEmails.value))
+                                .put(ContactslistImportList.ACTION, newsEmails.getValue()))
                         .put(new JSONObject()
                                 .put(ContactslistImportList.LISTID, eventsListId)
-                                .put(ContactslistImportList.ACTION, eventsEmails.value))
+                                .put(ContactslistImportList.ACTION, eventsEmails.getValue()))
                 );
         MailjetResponse response = mailjetClient.post(request);
         if (response.getTotal() != 1) {

@@ -15,12 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
 import jakarta.annotation.Nullable;
+
+import java.util.Date;
 
 /**
  * UserGroupDO - this object represents a group or collection of users
- * 
+ * <p>
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class UserGroup {
@@ -49,8 +50,16 @@ public class UserGroup {
      *            - name of the group
      * @param ownerId
      *            - owner of the group
+     * @param status
+     *            - status of the group (ACTIVE/DELETED)
      * @param created
      *            - date created.
+     * @param archived
+     *            - if the group has been archived
+     * @param additionalManagerPrivileges
+     *            - whether additional managers have additional permissions to modify the group
+     * @param lastUpdated
+     *            - the date the group was last updated
      */
     public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final GroupStatus status, final Date created,
                      final boolean archived, final boolean additionalManagerPrivileges, final Date lastUpdated) {

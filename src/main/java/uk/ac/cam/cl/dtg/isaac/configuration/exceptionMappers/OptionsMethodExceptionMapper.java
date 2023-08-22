@@ -21,10 +21,10 @@ import org.jboss.resteasy.spi.DefaultOptionsMethodException;
 
 /**
  *   Exception mapper for OPTIONS requests to bypass UnhandledExceptionMapper.
- *
+ * <p>
  *   For simple CORS OPTIONS requests, setting chainPreflight=false in web.xml is enough to
  *   prevent Jetty from passing the OPTIONS request down to RESTEasy and thus our application.
- *
+ * <p>
  *   However, for "non-simple" OPTIONS requests (those that do not match an allowed origin or
  *   have unexpected or missing headers) the chainPreflight setting is ignored, and they are
  *   passed down to our application. Since we have no @OPTIONS methods, RESTEasy throws its
@@ -32,12 +32,12 @@ import org.jboss.resteasy.spi.DefaultOptionsMethodException;
  *   The issue https://github.com/eclipse/jetty.project/issues/7894 provided some useful
  *   context to explain this processing, but the source code in
  *   {@link org.eclipse.jetty.servlets.CrossOriginFilter#handle} is also quite clear.
- *
+ * <p>
  *   We'd like to wrap all unhandled exceptions and log them nicely, hence the handler class
  *   UnhandledExceptionMapper. Unfortunately, the DefaultOptionsMethodException is just an
  *   unhandled exception and so would be treated as a 500 Internal Server Error if it reached
  *   that mapper. Returning 500 to a CORS request and missing the CORS headers breaks CORS.
- *
+ * <p>
  *   Since the DefaultOptionsMethodException contains the (complete and valid) CORS response
  *   required, we can instead catch that exception specifically and return the attached response.
  *   This is all this class does.

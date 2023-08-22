@@ -36,7 +36,23 @@ import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.isaac.api.QuizFacade;
-import uk.ac.cam.cl.dtg.segue.api.*;
+import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
+import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
+import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
+import uk.ac.cam.cl.dtg.segue.api.ContactFacade;
+import uk.ac.cam.cl.dtg.segue.api.EmailFacade;
+import uk.ac.cam.cl.dtg.segue.api.ExceptionSanitiser;
+import uk.ac.cam.cl.dtg.segue.api.GlossaryFacade;
+import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
+import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
+import uk.ac.cam.cl.dtg.segue.api.LogEventFacade;
+import uk.ac.cam.cl.dtg.segue.api.NotificationFacade;
+import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
+import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
+import uk.ac.cam.cl.dtg.segue.api.SessionValidator;
+import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
@@ -64,8 +80,10 @@ public class IsaacApplicationRegister extends Application {
     
     /**
      * Default constructor.
+     *
+     * @param servletConfig to be setup
      */
-    public IsaacApplicationRegister(@Context ServletConfig servletConfig) {
+    public IsaacApplicationRegister(@Context final ServletConfig servletConfig) {
         singletons = new HashSet<>();
         injector = SegueGuiceConfigurationModule.getGuiceInjector();
         
@@ -134,6 +152,8 @@ public class IsaacApplicationRegister extends Application {
     
     /**
      * Configure and setup Swagger (advertises api endpoints via app_root/swagger.json).
+     *
+     * @param servletConfig to be setup
      */
     private void setupSwaggerApiAdvertiser(final ServletConfig servletConfig) {
         PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);

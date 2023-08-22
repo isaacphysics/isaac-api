@@ -19,19 +19,19 @@ import java.util.Iterator;
  */
 public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
 
-    private GameManager gameManager;
+    private final GameManager gameManager;
 
-    public TeacherGameboardsBadgePolicy(GameManager gameManager) {
+    public TeacherGameboardsBadgePolicy(final GameManager gameManager) {
         this.gameManager = gameManager;
     }
 
     @Override
-    public int getLevel(JsonNode state) {
+    public int getLevel(final JsonNode state) {
         return state.get("gameboards").size();
     }
 
     @Override
-    public JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction) {
+    public JsonNode initialiseState(final RegisteredUserDTO user, final ITransaction transaction) {
 
         ArrayNode gameboards = JsonNodeFactory.instance.arrayNode();
 
@@ -53,7 +53,7 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
     }
 
     @Override
-    public JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event) {
+    public JsonNode updateState(final RegisteredUserDTO user, final JsonNode state, final String event) {
 
         Iterator<JsonNode> iter = ((ArrayNode) state.get("gameboards")).elements();
 

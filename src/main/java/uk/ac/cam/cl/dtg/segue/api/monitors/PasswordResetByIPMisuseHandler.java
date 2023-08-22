@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with email verification requests.
@@ -45,11 +45,12 @@ public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
 
     @Inject
     public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this(emailManager, properties, 50, 300, NUMBER_SECONDS_IN_ONE_HOUR);
+        this(emailManager, properties, PASSWORD_RESET_BY_IP_DEFAULT_SOFT_THRESHOLD, PASSWORD_RESET_BY_IP_DEFAULT_HARD_THRESHOLD, NUMBER_SECONDS_IN_ONE_HOUR);
     }
 
     @Inject
-    public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties, Integer softThreshold, Integer hardThreshold, Integer interval) {
+    public PasswordResetByIPMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties,
+                                          final Integer softThreshold, final Integer hardThreshold, final Integer interval) {
         this.properties = properties;
         this.emailManager = emailManager;
         this.SOFT_THRESHOLD = softThreshold;

@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,36 +37,43 @@ import java.util.Set;
 @JsonContentType("content")
 @JsonIgnoreProperties({ "_id" })
 public class Content extends ContentBase {
-    protected String title;
-    protected String subtitle;
-    protected String author;
-    protected String encoding;
-    protected String layout;
+    private String title;
+    private String subtitle;
+    private String author;
+    private String encoding;
+    private String layout;
     // this is the actual list of children content objects.
-    protected List<ContentBase> children;
-    protected String value;
-    protected String attribution;
-    protected List<String> relatedContent;
-    protected Boolean published;
-    protected Boolean deprecated;
-    protected Integer level;
-    protected String searchableContent;
-    protected Boolean expandable;
+    private List<ContentBase> children;
+    private String value;
+    private String attribution;
+    private List<String> relatedContent;
+    private Boolean published;
+    private Boolean deprecated;
+    private Integer level;
+    private String searchableContent;
+    private Boolean expandable;
 
     @JsonCreator
-    public Content(@JsonProperty("id") String id, @JsonProperty("title") String title,
-            @JsonProperty("subtitle") String subtitle, @JsonProperty("type") String type,
-            @JsonProperty("author") String author, @JsonProperty("encoding") String encoding,
-            @JsonProperty("canonicalSourceFile") String canonicalSourceFile, @JsonProperty("layout") String layout,
-            @JsonProperty("children") List<ContentBase> children, @JsonProperty("value") String value,
-            @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
-            @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level) {
-        this.id = id;
+    public Content(@JsonProperty("id") final String id,
+                   @JsonProperty("title") final String title,
+                   @JsonProperty("subtitle") final String subtitle,
+                   @JsonProperty("type") final String type,
+                   @JsonProperty("author") final String author,
+                   @JsonProperty("encoding") final String encoding,
+                   @JsonProperty("canonicalSourceFile") final String canonicalSourceFile,
+                   @JsonProperty("layout") final String layout,
+                   @JsonProperty("children") final List<ContentBase> children,
+                   @JsonProperty("value") final String value,
+                   @JsonProperty("attribution") final String attribution,
+                   @JsonProperty("relatedContent") final List<String> relatedContent,
+                   @JsonProperty("published") final Boolean published,
+                   @JsonProperty("deprecated") final Boolean deprecated,
+                   @JsonProperty("tags") final Set<String> tags,
+                   @JsonProperty("level") final Integer level) {
+        this.setId(id);
         this.title = title;
         this.subtitle = subtitle;
-        this.type = type != null ? type : "string";
+        this.setType(type != null ? type : "string");
         this.author = author;
         this.encoding = encoding;
         this.setCanonicalSourceFile(canonicalSourceFile);
@@ -77,15 +84,17 @@ public class Content extends ContentBase {
         this.published = published;
         this.deprecated = deprecated;
         this.children = children;
-        this.tags = tags;
+        this.setTags(tags);
         this.level = level;
 
         // useful for when we want to augment this POJO
-        if (null == this.children)
+        if (null == this.children) {
             this.children = new ArrayList<ContentBase>();
+        }
 
-        if (null == this.tags)
-            this.tags = new HashSet<String>();
+        if (null == this.getTags()) {
+            this.setTags(new HashSet<String>());
+        }
 
     }
 
@@ -94,21 +103,23 @@ public class Content extends ContentBase {
      * 
      * @param value
      */
-    public Content(String value) {
+    public Content(final String value) {
         this.value = value;
-        this.type = "content";
+        this.setType("content");
         this.encoding = "markdown";
 
         // useful for when we want to augment this POJO
-        if (null == this.children)
+        if (null == this.children) {
             this.children = new ArrayList<ContentBase>();
+        }
 
-        if (null == this.tags)
-            this.tags = new HashSet<String>();
+        if (null == this.getTags()) {
+            this.setTags(new HashSet<String>());
+        }
     }
 
     /**
-     * Default constructor required for Jackson
+     * Default constructor required for Jackson.
      */
     public Content() {
         // useful for when we want to augment this POJO
@@ -119,7 +130,7 @@ public class Content extends ContentBase {
         return title;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(final String title) {
         this.title = title;
     }
 
@@ -127,7 +138,7 @@ public class Content extends ContentBase {
         return subtitle;
     }
 
-    public void setSubtitle(String subtitle) {
+    public void setSubtitle(final String subtitle) {
         this.subtitle = subtitle;
     }
 
@@ -135,7 +146,7 @@ public class Content extends ContentBase {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(final String author) {
         this.author = author;
     }
 
@@ -143,7 +154,7 @@ public class Content extends ContentBase {
         return encoding;
     }
 
-    public void setEncoding(String encoding) {
+    public void setEncoding(final String encoding) {
         this.encoding = encoding;
     }
 
@@ -151,7 +162,7 @@ public class Content extends ContentBase {
         return layout;
     }
 
-    public void setLayout(String layout) {
+    public void setLayout(final String layout) {
         this.layout = layout;
     }
 
@@ -159,7 +170,7 @@ public class Content extends ContentBase {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(final String value) {
         this.value = value;
     }
 
@@ -167,7 +178,7 @@ public class Content extends ContentBase {
         return attribution;
     }
 
-    public void setAttribution(String attribution) {
+    public void setAttribution(final String attribution) {
         this.attribution = attribution;
     }
 
@@ -176,7 +187,7 @@ public class Content extends ContentBase {
     }
 
     @JsonDeserialize(using = TrimWhitespaceListDeserializer.class)
-    public void setRelatedContent(List<String> relatedContent) {
+    public void setRelatedContent(final List<String> relatedContent) {
         this.relatedContent = relatedContent;
     }
 
@@ -188,7 +199,7 @@ public class Content extends ContentBase {
         return published;
     }
 
-    public void setPublished(Boolean published) {
+    public void setPublished(final Boolean published) {
         this.published = published;
     }
 
@@ -202,7 +213,7 @@ public class Content extends ContentBase {
      * @param children
      *            the children to set
      */
-    public final void setChildren(List<ContentBase> children) {
+    public final void setChildren(final List<ContentBase> children) {
         this.children = children;
     }
 
@@ -210,7 +221,7 @@ public class Content extends ContentBase {
         return deprecated;
     }
 
-    public void setDeprecated(Boolean deprecated) {
+    public void setDeprecated(final Boolean deprecated) {
         this.deprecated = deprecated;
     }
 
@@ -218,7 +229,7 @@ public class Content extends ContentBase {
         return level;
     }
 
-    public void setLevel(Integer level) {
+    public void setLevel(final Integer level) {
         this.level = level;
     }
 
@@ -226,7 +237,7 @@ public class Content extends ContentBase {
         return this.searchableContent;
     }
 
-    public void setSearchableContent(String searchableContent) {
+    public void setSearchableContent(final String searchableContent) {
         this.searchableContent = searchableContent;
     }
 
@@ -234,20 +245,21 @@ public class Content extends ContentBase {
         return this.expandable;
     }
 
-    public void setExpandable(Boolean expandable) {
+    public void setExpandable(final Boolean expandable) {
         this.expandable = expandable;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Content))
+    public boolean equals(final Object o) {
+        if (!(o instanceof Content)) {
             return false;
+        }
 
         Content c = (Content) o;
         boolean result = true;
 
-        if (this.id != null) {
-            result = result && this.id.equals(c.getId());
+        if (this.getId() != null) {
+            result = result && this.getId().equals(c.getId());
         }
         if (this.title != null) {
             result = result && this.title.equals(c.getTitle());
@@ -255,8 +267,8 @@ public class Content extends ContentBase {
         if (this.value != null) {
             result = result && this.value.equals(c.getValue());
         }
-        if (this.canonicalSourceFile != null) {
-            result = result && this.canonicalSourceFile.equals(c.getCanonicalSourceFile());
+        if (this.getCanonicalSourceFile() != null) {
+            result = result && this.getCanonicalSourceFile().equals(c.getCanonicalSourceFile());
         }
 
         return result;
@@ -266,14 +278,17 @@ public class Content extends ContentBase {
     public int hashCode() {
         int hashCode = 0;
 
-        if (this.id != null)
-            hashCode = hashCode + this.id.hashCode();
+        if (this.getId() != null) {
+            hashCode = hashCode + this.getId().hashCode();
+        }
 
-        if (this.title != null)
+        if (this.title != null) {
             hashCode = hashCode + this.title.hashCode();
+        }
 
-        if (this.value != null)
+        if (this.value != null) {
             hashCode = hashCode + this.value.hashCode();
+        }
 
         return hashCode;
     }

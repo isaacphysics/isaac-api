@@ -80,6 +80,8 @@ public class GroupManager {
      *            - the IUserGroupManager implementation
      * @param userManager
      *            - the user manager so that the group manager can get user details.
+     * @param gameManager
+     *            - the game manager object
      * @param dtoMapper
      *            - Preconfigured dto mapper
      */
@@ -189,21 +191,21 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *              - If an error occurred while interacting with the database.
      */
-    public Map<Long, GroupMembershipDTO> getUserMembershipMapForGroup(Long groupId) throws SegueDatabaseException {
+    public Map<Long, GroupMembershipDTO> getUserMembershipMapForGroup(final Long groupId) throws SegueDatabaseException {
         Map<Long, GroupMembershipDTO> result = Maps.newHashMap();
-        for(Map.Entry<Long, GroupMembership> entry : this.groupDatabase.getGroupMembershipMap(groupId).entrySet()) {
+        for (Map.Entry<Long, GroupMembership> entry : this.groupDatabase.getGroupMembershipMap(groupId).entrySet()) {
             result.put(entry.getKey(), dtoMapper.map(entry.getValue(), GroupMembershipDTO.class));
         }
         return result;
     }
 
     /**
-     * Get an individual users groupMembershipStatus
+     * Get an individual users groupMembershipStatus.
      * @param userId - userId
      * @param groupId - groupId
      * @return the membership status
      */
-    public GroupMembershipStatus getGroupMembershipStatus(Long userId, Long groupId) throws SegueDatabaseException {
+    public GroupMembershipStatus getGroupMembershipStatus(final Long userId, final Long groupId) throws SegueDatabaseException {
         return this.getUserMembershipMapForGroup(groupId).get(userId).getStatus();
     }
 
@@ -211,6 +213,7 @@ public class GroupManager {
      * Helper method to consistently sort users by given name then family name in a case-insensitive order.
      * @param users
      *            - list of users.
+     * @return the List of RegisteredUserDTOs ordered by name
      */
     private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
         // Replaces apostrophes with tildes so that string containing them are ordered in the same way as in
@@ -238,7 +241,7 @@ public class GroupManager {
 
     /**
      * getAllGroupsOwnedAndManagedByUser.
-     *
+     * <p>
      * This method will get all groups that a user could have an interest in.
      * I.e. if the user is the owner or additional manager of the group the group should be included in the list.
      *
@@ -250,7 +253,8 @@ public class GroupManager {
      * @return List of groups or empty list.
      * @throws SegueDatabaseException - if there is a db error
      */
-    public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
+    public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, final boolean archivedGroupsOnly)
+            throws SegueDatabaseException {
         Validate.notNull(ownerUser);
         List<UserGroupDTO> combinedResults = Lists.newArrayList();
         combinedResults.addAll(convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly)));
@@ -269,7 +273,7 @@ public class GroupManager {
      * @return List of groups or empty list.
      * @throws SegueDatabaseException if there is a db error
      */
-    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
+    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, final boolean archivedGroupsOnly) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
         return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
     }
@@ -336,7 +340,7 @@ public class GroupManager {
     }
 
     /**
-     * Change users group membership status
+     * Change users group membership status.
      *
      * @param group
      *            - that should be affected
@@ -347,7 +351,7 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      */
-    public void setMembershipStatus(final UserGroupDTO group, final RegisteredUserDTO user, GroupMembershipStatus newStatus)
+    public void setMembershipStatus(final UserGroupDTO group, final RegisteredUserDTO user, final GroupMembershipStatus newStatus)
             throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(user);
@@ -434,7 +438,8 @@ public class GroupManager {
      * @throws SegueDatabaseException if there is a db error
      * @throws IllegalAccessException if oldOwner is not the current owner of the group
      */
-    public UserGroupDTO promoteUserToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner, final RegisteredUserDTO oldOwner) throws SegueDatabaseException, IllegalAccessException {
+    public UserGroupDTO promoteUserToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner, final RegisteredUserDTO oldOwner)
+            throws SegueDatabaseException, IllegalAccessException {
         Validate.notNull(group);
         Validate.notNull(newOwner);
         Validate.notNull(oldOwner);
@@ -564,7 +569,7 @@ public class GroupManager {
      * @return whether the user is an owner or an additional manager with privileges.
      */
     public static boolean hasAdditionalManagerPrivileges(final UserGroupDTO group, final Long userIdToCheck) {
-        return group.getOwnerId().equals(userIdToCheck) || (isInAdditionalManagerList(group, userIdToCheck) && group.isAdditionalManagerPrivileges());
+        return group.getOwnerId().equals(userIdToCheck) || isInAdditionalManagerList(group, userIdToCheck) && group.isAdditionalManagerPrivileges();
     }
 
     /**
@@ -660,17 +665,18 @@ public class GroupManager {
     }
 
     /**
-     * Mutates the list to include group membership information
+     * Mutates the list to include group membership information.
      *
      * @param group group to look up membership info
      * @param summarisedMemberInfo - the list containing summarised user objects - this will be replaced with summarised user objects that include membership information
      * @throws SegueDatabaseException - if there is an error.
      */
-    public void convertToUserSummaryGroupMembership(UserGroupDTO group, List<UserSummaryDTO> summarisedMemberInfo) throws SegueDatabaseException {
+    public void convertToUserSummaryGroupMembership(final UserGroupDTO group, final List<UserSummaryDTO> summarisedMemberInfo)
+            throws SegueDatabaseException {
         List<UserSummaryWithGroupMembershipDTO> result = Lists.newArrayList();
         Map<Long, GroupMembershipDTO> userMembershipMapforMap = this.getUserMembershipMapForGroup(group.getId());
 
-        for(UserSummaryDTO dto : summarisedMemberInfo) {
+        for (UserSummaryDTO dto : summarisedMemberInfo) {
             UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.map(dto, UserSummaryWithGroupMembershipDTO.class);
             GroupMembershipDTO groupMembershipDTO = userMembershipMapforMap.get(newDTO.getId());
             newDTO.setGroupMembershipInformation(dtoMapper.map(groupMembershipDTO, GroupMembershipDTO.class));
@@ -691,8 +697,8 @@ public class GroupManager {
      * @throws SegueDatabaseException
      * @throws ContentManagerException
      */
-    public List<UserGameboardProgressSummaryDTO> getGroupProgressSummary(List<RegisteredUserDTO> groupMembers,
-                                                                         Collection<AssignmentDTO> assignments)
+    public List<UserGameboardProgressSummaryDTO> getGroupProgressSummary(
+            final List<RegisteredUserDTO> groupMembers, final Collection<AssignmentDTO> assignments)
             throws SegueDatabaseException, ContentManagerException {
 
         List<UserGameboardProgressSummaryDTO> groupProgressSummary = new ArrayList<>();
@@ -758,7 +764,8 @@ public class GroupManager {
         return groupProgressSummary;
     }
 
-    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(List<T> assignments, Long userId) throws SegueDatabaseException {
+    public <T extends IAssignmentLike> List<T> filterItemsBasedOnMembershipContext(final List<T> assignments, final Long userId)
+            throws SegueDatabaseException {
         Map<Long, Map<Long, GroupMembershipDTO>> groupIdToUserMembershipInfoMap = Maps.newHashMap();
         List<T> results = Lists.newArrayList();
 

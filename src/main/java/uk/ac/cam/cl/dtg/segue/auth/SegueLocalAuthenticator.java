@@ -65,10 +65,14 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      * 
      * @param userDataManager
      *            - the user data manager which allows us to store and query user information.
+     * @param passwordDataManager
+     *            - data manager for retrieving and updating credentials information
      * @param properties
      *            - so we can look up system properties.
      * @param possibleAlgorithms
      *            - Map of possibleAlgorithms
+     * @param preferredAlgorithm
+     *            - preferred algorithm for use in hashing operations
      */
     @Inject
     public SegueLocalAuthenticator(final IUserDataManager userDataManager, final IPasswordDataManager passwordDataManager,
@@ -139,7 +143,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     }
 
     @Override
-    public boolean hasPasswordRegistered(RegisteredUser userToCheck) throws SegueDatabaseException {
+    public boolean hasPasswordRegistered(final RegisteredUser userToCheck) throws SegueDatabaseException {
         if (null == userToCheck) {
             return false;
         }
@@ -254,7 +258,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     }
 
     @Override
-    public RegisteredUser getRegisteredUserByToken(String token) throws SegueDatabaseException {
+    public RegisteredUser getRegisteredUserByToken(final String token) throws SegueDatabaseException {
         LocalUserCredential luc = passwordDataManager.getLocalUserCredentialByResetToken(token);
         if (!this.isValidResetToken(token)) {
             // if we cannot find it then it is not valid.

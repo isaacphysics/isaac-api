@@ -1,12 +1,12 @@
 /**
  * Copyright 2021 Raspberry Pi Foundation
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * An exception to show a quiz assignment has been set with a due date before now.
- *
+ * <p>
  * As this would give students no time to answer the quiz, it is considered illegal.
  */
 public class DueBeforeNowException extends SegueDatabaseException {

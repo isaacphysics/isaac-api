@@ -37,7 +37,7 @@ public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverte
     }
 
     @Override
-    public ItemDTO convertTo(final Item source, final Type<ItemDTO> destinationType, MappingContext _context) {
+    public ItemDTO convertTo(final Item source, final Type<ItemDTO> destinationType, final MappingContext context) {
         if (null == source) {
             return null;
         }
@@ -53,7 +53,7 @@ public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverte
     }
 
     @Override
-    public Item convertFrom(final ItemDTO source, final Type<Item> destinationType, MappingContext _context) {
+    public Item convertFrom(final ItemDTO source, final Type<Item> destinationType, final MappingContext context) {
         if (null == source) {
             return null;
         }

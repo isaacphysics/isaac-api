@@ -20,7 +20,7 @@ import org.quartz.Job;
 import java.util.Map;
 
 /**
- * Super class to support the capture of all variables needed to register a segue Scheduled Job
+ * Super class to support the capture of all variables needed to register a segue Scheduled Job.
  */
 public abstract class SegueScheduledJob {
     private String jobKey;
@@ -29,7 +29,7 @@ public abstract class SegueScheduledJob {
 
     private String cronString;
 
-    public SegueScheduledJob(String jobKey, String jobGroupName, String description, String cronString) {
+    public SegueScheduledJob(final String jobKey, final String jobGroupName, final String description, final String cronString) {
         this.jobKey = jobKey;
         this.jobGroupName = jobGroupName;
         this.description = description;
@@ -38,7 +38,7 @@ public abstract class SegueScheduledJob {
 
     /**
      * Key used to describe the job to the schedule cluster.
-     *
+     * <p>
      * Must be unique
      *
      * @return the id
@@ -48,8 +48,8 @@ public abstract class SegueScheduledJob {
     }
 
     /**
-     * Group name
-     *
+     * Group name.
+     * <p>
      * Describes the group of jobs
      *
      * @return the group name
@@ -62,7 +62,7 @@ public abstract class SegueScheduledJob {
     /**
      * CronString
      * This describes the cron trigger that will be used to periodically trigger this job.
-     *
+     * <p>
      * {@see http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html}
      *
      * @return the cron pattern
@@ -74,7 +74,7 @@ public abstract class SegueScheduledJob {
 
 
     /**
-     * Human readable description of the job
+     * Human-readable description of the job.
      *
      * @return string
      */
@@ -90,8 +90,8 @@ public abstract class SegueScheduledJob {
     public abstract Map<String, Object> getExecutionContext();
 
     /**
-     * Quartz job that will be instantiated by quartz during job execution
-     *
+     * Quartz job that will be instantiated by quartz during job execution.
+     * <p>
      * The execute method is used
      *
      * @return QuartzJob
@@ -99,12 +99,19 @@ public abstract class SegueScheduledJob {
     public abstract Job getExecutableTask();
 
     /**
-     * Create a custom segue scheduled job that overrides the
-     * execution context and executable task
+     * Create a custom segue scheduled job that overrides the execution context and executable task.
      *
+     * @param jobKey - job key string
+     * @param jobGroupName - name of the group for the job
+     * @param description - description for the job
+     * @param cronString - string describing the cron trigger for the job
+     * @param executionContext - Map of string to object describing the execution context
+     * @param executableTask - the Job to be executed
      * @return SegueScheduledJob
      */
-    public static SegueScheduledJob createCustomJob(String jobKey, String jobGroupName, String description, String cronString, Map<String, Object> executionContext, Job executableTask) {
+    public static SegueScheduledJob createCustomJob(
+            final String jobKey, final String jobGroupName, final String description, final String cronString,
+            final Map<String, Object> executionContext, final Job executableTask) {
 
         return new SegueScheduledJob(jobKey, jobGroupName, description, cronString) {
             @Override

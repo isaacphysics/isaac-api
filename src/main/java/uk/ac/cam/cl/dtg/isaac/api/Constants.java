@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
  * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -65,25 +65,25 @@ public final class Constants {
      * GameboardItemState Represents the potential states of a gameboard item.
      */
     public enum GameboardItemState {
-        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED;
+        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED
     }
 
     public enum QuestionPartState {
-        CORRECT, INCORRECT, NOT_ATTEMPTED;
+        CORRECT, INCORRECT, NOT_ATTEMPTED
     }
 
-    public enum FASTTRACK_LEVEL {
-        ft_top_ten,
-        ft_upper,
-        ft_lower;
-        public static FASTTRACK_LEVEL getStateFromTags(Set<String> tags) {
-            FASTTRACK_LEVEL state = null;
+    public enum FastTrackLevel {
+        FT_TOP_TEN,
+        FT_UPPER,
+        FT_LOWER;
+        public static FastTrackLevel getStateFromTags(final Set<String> tags) {
+            FastTrackLevel state = null;
             if (tags.contains("ft_top_ten")) {
-                state = ft_top_ten;
+                state = FT_TOP_TEN;
             } else if (tags.contains("ft_upper")) {
-                state = ft_upper;
+                state = FT_UPPER;
             } else if (tags.contains("ft_lower")) {
-                state = ft_lower;
+                state = FT_LOWER;
             }
             return state;
         }
@@ -117,6 +117,8 @@ public final class Constants {
     public static final Integer MAX_PODS_TO_RETURN = 10;
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
     public static final Integer GAMEBOARD_MAX_TITLE_LENGTH = 255;
+    public static final Integer RANDOM_WILDCARD_SEARCH_LIMIT = 999;
+    public static final Integer QUIZ_MAX_SEARCH_RESULTS = 9000;
 
     // Log events
     public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
@@ -188,15 +190,25 @@ public final class Constants {
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
-    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<String>() {{
-        addAll(SEGUE_SERVER_LOG_TYPES);
-        addAll(ISAAC_SERVER_LOG_TYPES);
-        addAll(ISAAC_CLIENT_LOG_TYPES);
-    }};
+    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<String>() {
+        {
+            addAll(SEGUE_SERVER_LOG_TYPES);
+            addAll(ISAAC_SERVER_LOG_TYPES);
+            addAll(ISAAC_CLIENT_LOG_TYPES);
+        }
+    };
 
     public enum IsaacUserPreferences {
         SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
     }
+
+    public static final Integer EMAIL_EVENT_REMINDER_DAYS_AHEAD = 3;
+    public static final Integer EMAIL_EVENT_FEEDBACK_DAYS_AGO = -60;
+
+    // Response messages
+    public static final String EMPTY_ASSIGNMENT_GAMEBOARD = "Assignment gameboard has no questions, or its questions no longer exist. Cannot fetch assignment progress.";
+
+    public static final Integer DO_HASHCODE_PRIME = 31;
 
     /**
      * Private constructor to prevent this class being created.

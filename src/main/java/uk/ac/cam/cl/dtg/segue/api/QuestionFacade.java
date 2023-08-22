@@ -76,7 +76,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 
 /**
  * Question Facade
- * 
+ * <p>
  * This facade is intended to support external interaction with segue supported questions.
  * 
  */
@@ -103,6 +103,8 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            - The Content mapper object used for polymorphic mapping of content objects.
      * @param contentManager
      *            - The content version controller used by the api.
+     * @param contentIndex
+     *            - The index string for current content version
      * @param userManager
      *            - The manager object responsible for users.
      * @param questionManager
@@ -110,15 +112,22 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            information.
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
+     * @param misuseMonitor
+     *            - An instance of the misuse monitor for rate limiting answer attempts
+     * @param userBadgeManager
+     *            - An instance of the badge manager
+     * @param userStreaksManager
+     *            - An instance of the streaks manager to notify users when their answer streak changes
+     * @param userAssociationManager
+     *            - An instance of the association manager to check for teacher permissions over other users
 
      */
     @Inject
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
-                          final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
-                          final QuestionManager questionManager,
+                          final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                          final UserAccountManager userManager, final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
-                          final UserBadgeManager userBadgeManager,
-                          final IUserStreaksManager userStreaksManager,
+                          final UserBadgeManager userBadgeManager, final IUserStreaksManager userStreaksManager,
                           final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
 
@@ -164,7 +173,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get questions answered by user per month for a given date range
+     * Get questions answered by user per month for a given date range.
      *
      * @param request - the incoming request
      * @param userIdOfInterest - The user id that the query is focused on
@@ -360,7 +369,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     }
 
     /**
-     * A generic question tester where a fake question is created form received choices and evaluated against a series
+     * A generic question tester where a fake question is created form received choices and evaluated against a series.
      * of example student answers
      * @param request - the incoming request
      * @param questionType - the type of question to construct from the available choices in testJson
