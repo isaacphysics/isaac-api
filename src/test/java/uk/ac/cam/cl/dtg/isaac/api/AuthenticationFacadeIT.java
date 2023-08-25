@@ -109,7 +109,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
     @Test
     public void authenticateWithCredentials_local_success() throws InvalidKeySpecException, NoSuchAlgorithmException {
-        RegisteredUserDTO expectedUser = new RegisteredUserDTO("Test Student", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, null, Gender.MALE, Date.from(LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC)), "110158");
+        RegisteredUserDTO expectedUser = new RegisteredUserDTO("Test Student", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, null, Gender.MALE, Date.from(LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC)), "110158", false);
         expectedUser.setId(6L);
         LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
         testLocalAuthDTO.setEmail("test-student@test.com");

@@ -43,6 +43,7 @@ public class RegisteredUser extends AbstractSegueUser {
     private String emailVerificationToken;
     private String emailToVerify;
     private EmailVerificationStatus emailVerificationStatus;
+    private Boolean teacherPending;
 
     private Date lastUpdated;
     private Date lastSeen;
@@ -76,9 +77,12 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - the most recent token generated to verify email addresses
      * @param emailVerificationStatus
      *            - whether the user has verified their email or not
+     * @param teacherPending
+     *            - the teacherPending flag value
      */
     @JsonCreator
-    public RegisteredUser(@JsonProperty("id") final Long id,
+    public RegisteredUser(
+            @JsonProperty("id") final Long id,
             @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
             @JsonProperty("email") final String email, @JsonProperty("role") final Role role,
             @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
@@ -86,7 +90,9 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailToVerify") final String emailToVerify,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
-            @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
+            @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus,
+            @JsonProperty("teacherPending") final Boolean teacherPending
+    ) {
         this.id = id;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -99,6 +105,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.emailToVerify = emailToVerify;
         this.emailVerificationToken = emailVerificationToken;
         this.emailVerificationStatus = emailVerificationStatus;
+        this.teacherPending = teacherPending;
     }
 
     /**
@@ -428,6 +435,22 @@ public class RegisteredUser extends AbstractSegueUser {
         this.sessionToken = sessionToken;
     }
 
+    /**
+     * Gets the teacherPending flag.
+     * @return the teacherPending flag
+     */
+    public Boolean getTeacherPending() {
+        return teacherPending;
+    }
+
+    /**
+     * Sets the teacherPending flag.
+     * @param teacherPending the teacherPending flag value to set
+     */
+    public void setTeacherPending(final Boolean teacherPending) {
+        this.teacherPending = teacherPending;
+    }
+
     public List<UserContext> getRegisteredContexts() {
         return registeredContexts;
     }
@@ -490,6 +513,7 @@ public class RegisteredUser extends AbstractSegueUser {
                 + ", emailVerificationToken='" + emailVerificationToken + '\''
                 + ", emailToVerify='" + emailToVerify + '\''
                 + ", emailVerificationStatus=" + emailVerificationStatus
+                + ", teacherPending=" + teacherPending
                 + ", lastUpdated=" + lastUpdated
                 + ", lastSeen=" + lastSeen
                 + '}';

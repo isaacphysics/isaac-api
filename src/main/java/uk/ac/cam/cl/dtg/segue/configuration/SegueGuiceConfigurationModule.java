@@ -355,6 +355,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 AuthenticationProvider.class, IAuthenticator.class);
 
         this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
+        //Google reCAPTCHA
+        this.bindConstantToProperty(Constants.GOOGLE_RECAPTCHA_SECRET, globalProperties);
 
         // Configure security providers
         // Google

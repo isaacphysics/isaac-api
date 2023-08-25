@@ -49,6 +49,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Date lastUpdated;
     private Date lastSeen;
     private EmailVerificationStatus emailVerificationStatus;
+    private Boolean teacherPending;
 
     /**
      * Full constructor for the User object.
@@ -69,15 +70,21 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      *            - date of registration
      * @param schoolId
      *            - the list of linked authentication provider accounts.
+     * @param teacherPending
+     *            - the teacherPending flag value to set
      */
     @JsonCreator
     public RegisteredUserDTO(
-            @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
+            @JsonProperty("givenName") final String givenName,
+            @JsonProperty("familyName") final String familyName,
             @JsonProperty("email") final String email, 
             @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
             @JsonProperty("dateOfBirth") final Date dateOfBirth,
-            @JsonProperty("gender") final Gender gender, @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("schoolId") final String schoolId) {
+            @JsonProperty("gender") final Gender gender,
+            @JsonProperty("registrationDate") final Date registrationDate,
+            @JsonProperty("schoolId") final String schoolId,
+            @JsonProperty("teacherPending") final Boolean teacherPending
+    ) {
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
@@ -86,6 +93,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.registrationDate = registrationDate;
         this.schoolId = schoolId;
         this.emailVerificationStatus = emailVerificationStatus;
+        this.teacherPending = teacherPending;
     }
 
 
@@ -380,6 +388,22 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.lastSeen = lastSeen;
     }
 
+    /**
+     * Gets the teacherPending flag.
+     * @return the teacherPending flag
+     */
+    public Boolean getTeacherPending() {
+        return teacherPending;
+    }
+
+    /**
+     * Sets the teacherPending flag.
+     * @param teacherPending the teacherPending flag value to set
+     */
+    public void setTeacherPending(final Boolean teacherPending) {
+        this.teacherPending = teacherPending;
+    }
+
     public List<UserContext> getRegisteredContexts() {
         return registeredContexts;
     }
@@ -524,15 +548,33 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!schoolOther.equals(other.schoolOther)) {
             return false;
         }
+        if (teacherPending == null) {
+            if (other.teacherPending != null) {
+                return false;
+            }
+        } else if (!teacherPending.equals(other.teacherPending)) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public String toString() {
-        return "RegisteredUserDTO [id=" + id + ", givenName=" + givenName + ", familyName="
-                + familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth + ", gender="
-                + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId + ", schoolOther="
-                + schoolOther +  ", emailVerificationStatus="
-                + emailVerificationStatus + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
+        return "RegisteredUserDTO ["
+                + "id=" + id
+                + ", givenName=" + givenName
+                + ", familyName=" + familyName
+                + ", email=" + email
+                + ", role=" + role
+                + ", dateOfBirth=" + dateOfBirth
+                + ", gender=" + gender
+                + ", registrationDate=" + registrationDate
+                + ", schoolId=" + schoolId
+                + ", schoolOther=" + schoolOther
+                + ", emailVerificationStatus=" + emailVerificationStatus
+                + ", teacherPending=" + teacherPending
+                + ", firstLogin=" + firstLogin
+                + ", lastUpdated=" + lastUpdated
+                + "]";
     }
 }

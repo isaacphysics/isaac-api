@@ -305,6 +305,7 @@ public final class Constants {
     public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
     public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
     public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
+    public static final String GOOGLE_RECAPTCHA_SECRET = "GOOGLE_RECAPTCHA_SECRET";
 
     // Facebook properties
     public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";

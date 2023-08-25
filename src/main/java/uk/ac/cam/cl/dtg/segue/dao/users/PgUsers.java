@@ -729,8 +729,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
         String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender,"
                 + " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen,"
-                + " email_verification_token, email_to_verify, session_token, registered_contexts, registered_contexts_last_confirmed)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                + " email_verification_token, email_to_verify, teacher_pending, session_token, registered_contexts,"
+                + " registered_contexts_last_confirmed)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
         ) {
@@ -757,6 +758,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_LAST_SEEN, userToCreate.getLastSeen());
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_VERIFICATION_TOKEN, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_TO_VERIFY, userToCreate.getEmailToVerify());
+            setValueHelper(pst, FIELD_CREATE_UPDATE_USER_TEACHER_PENDING, userToCreate.getTeacherPending());
             setValueHelper(pst, FIELD_CREATE_USER_SESSION_TOKEN, userToCreate.getSessionToken());
             pst.setArray(FIELD_CREATE_USER_REGISTERED_CONTEXTS, userContexts);
             setValueHelper(pst, FIELD_CREATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED, userToCreate.getRegisteredContextsLastConfirmed());
@@ -821,7 +823,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
                 + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
                 + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
-                + " registered_contexts = ?, registered_contexts_last_confirmed = ? WHERE id = ?;";
+                + " teacher_pending = ?, registered_contexts = ?, registered_contexts_last_confirmed = ? WHERE id = ?;";
         try (PreparedStatement pst = conn.prepareStatement(query)) {
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_FAMILY_NAME, userToCreate.getFamilyName());
@@ -838,6 +840,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_LAST_SEEN, userToCreate.getLastSeen());
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_VERIFICATION_TOKEN, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_TO_VERIFY, userToCreate.getEmailToVerify());
+            setValueHelper(pst, FIELD_CREATE_UPDATE_USER_TEACHER_PENDING, userToCreate.getTeacherPending());
             List<String> userContextsJsonb = Lists.newArrayList();
             if (userToCreate.getRegisteredContexts() != null) {
                 for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
@@ -916,6 +919,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);
+        u.setTeacherPending(results.getBoolean("teacher_pending"));
         u.setSessionToken(results.getInt("session_token"));
 
         return u;
@@ -1068,10 +1072,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     private static final int FIELD_CREATE_UPDATE_USER_LAST_SEEN = 12;
     private static final int FIELD_CREATE_UPDATE_USER_EMAIL_VERIFICATION_TOKEN = 13;
     private static final int FIELD_CREATE_UPDATE_USER_EMAIL_TO_VERIFY = 14;
-    private static final int FIELD_CREATE_USER_SESSION_TOKEN = 15;
-    private static final int FIELD_CREATE_USER_REGISTERED_CONTEXTS = 16;
-    private static final int FIELD_CREATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 17;
-    private static final int FIELD_UPDATE_USER_REGISTERED_CONTEXTS = 15;
-    private static final int FIELD_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 16;
-    private static final int FIELD_UPDATE_USER_USER_ID = 17;
+    private static final int FIELD_CREATE_UPDATE_USER_TEACHER_PENDING = 15;
+    private static final int FIELD_CREATE_USER_SESSION_TOKEN = 16;
+    private static final int FIELD_CREATE_USER_REGISTERED_CONTEXTS = 17;
+    private static final int FIELD_CREATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 18;
+    private static final int FIELD_UPDATE_USER_REGISTERED_CONTEXTS = 16;
+    private static final int FIELD_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 17;
+    private static final int FIELD_UPDATE_USER_USER_ID = 18;
 }

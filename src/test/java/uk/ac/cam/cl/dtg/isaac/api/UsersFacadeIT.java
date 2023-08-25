@@ -49,7 +49,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         misuseMonitor.resetMisuseCount("test-student@test.com", PasswordResetByEmailMisuseHandler.class.getSimpleName());
         misuseMonitor.resetMisuseCount("0.0.0.0", PasswordResetByIPMisuseHandler.class.getSimpleName());
         misuseMonitor.resetMisuseCount("0.0.0.0", RegistrationMisuseHandler.class.getSimpleName());
-        this.usersFacade = new UsersFacade(properties, userAccountManager, logManager, userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
+        this.usersFacade = new UsersFacade(properties, userAccountManager, recaptchaManager, logManager, userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
         mockRequest = replayMockServletRequest();
         mockResponse = niceMock(HttpServletResponse.class);
     }
@@ -103,7 +103,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @ParameterizedTest
     @MethodSource("validEmailProviders")
     public void createUser_validRegistrationParameters(String email) {
-        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"%1$s\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null}",
+        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"%1$s\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
                 email);
 
         Response response = null;
@@ -128,7 +128,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
     @Test
     public void createUser_existingAccount() {
-        String userObjectString = "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"test-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null}";
+        String userObjectString = "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"test-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}";
 
         Response response = null;
         try {
@@ -144,7 +144,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @ParameterizedTest
     @MethodSource("invalidEmails")
     public void createUser_invalidEmail(String email) {
-        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"%1$s\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null}",
+        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"%1$s\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
                 email);
 
         Response response = null;
@@ -161,7 +161,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @ParameterizedTest
     @MethodSource("invalidPasswords")
     public void createUser_invalidPassword(String password) {
-        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"%1$s\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null}",
+        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"%1$s\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
                 password);
 
         Response response = null;
@@ -178,7 +178,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @ParameterizedTest
     @MethodSource("invalidNames")
     public void createUser_invalidFamilyName(String familyName) {
-        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"%1$s\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null}",
+        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"%1$s\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
                 familyName);
 
         Response response = null;
@@ -195,7 +195,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     @ParameterizedTest
     @MethodSource("invalidNames")
     public void createUser_invalidGivenName(String givenName) {
-        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"%1$s\"},\"userPreferences\":{},\"passwordCurrent\":null}",
+        String userObjectString = String.format("{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"%1$s\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
                 givenName);
 
         Response response = null;

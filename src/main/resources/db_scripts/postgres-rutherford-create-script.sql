@@ -718,7 +718,8 @@ CREATE TABLE public.users (
     email_to_verify text,
     email_verification_token text,
     session_token integer DEFAULT 0 NOT NULL,
-    deleted boolean DEFAULT false NOT NULL
+    deleted boolean DEFAULT false NOT NULL,
+    teacher_pending boolean DEFAULT false
 );
 
 

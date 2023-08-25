@@ -77,11 +77,11 @@ public class IsaacApplicationRegister extends Application {
     private final Set<Object> singletons;
     
     private static Injector injector;
-    
+
     /**
-     * Default constructor.
+     * Constructor for IsaacApplicationRegister.
      *
-     * @param servletConfig to be setup
+     * @param servletConfig The servlet configuration object that contains initialization parameters
      */
     public IsaacApplicationRegister(@Context final ServletConfig servletConfig) {
         singletons = new HashSet<>();
@@ -149,11 +149,11 @@ public class IsaacApplicationRegister extends Application {
 
         return result;
     }
-    
+
     /**
      * Configure and setup Swagger (advertises api endpoints via app_root/swagger.json).
      *
-     * @param servletConfig to be setup
+     * @param servletConfig containing the initialization parameters to be setup
      */
     private void setupSwaggerApiAdvertiser(final ServletConfig servletConfig) {
         PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);

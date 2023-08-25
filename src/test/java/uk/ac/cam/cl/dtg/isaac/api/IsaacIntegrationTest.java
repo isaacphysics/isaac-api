@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.RECAPTCHAManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
@@ -123,6 +124,7 @@ public abstract class IsaacIntegrationTest {
     protected static UserAuthenticationManager userAuthenticationManager;
     protected static ISecondFactorAuthenticator secondFactorManager;
     protected static UserAccountManager userAccountManager;
+    protected static RECAPTCHAManager recaptchaManager;
     protected static GameManager gameManager;
     protected static GroupManager groupManager;
     protected static EventBookingManager eventBookingManager;
@@ -224,6 +226,8 @@ public abstract class IsaacIntegrationTest {
         globalTokens.put("contactUsURL", String.format("https://%s/contact", properties.getProperty(HOST_NAME)));
         globalTokens.put("accountURL", String.format("https://%s/account", properties.getProperty(HOST_NAME)));
         globalTokens.put("siteBaseURL", String.format("https://%s", properties.getProperty(HOST_NAME)));
+
+        recaptchaManager = new RECAPTCHAManager(properties);
 
         JsonMapper jsonMapper = new JsonMapper();
         PgUsers pgUsers = new PgUsers(postgresSqlDb, jsonMapper);

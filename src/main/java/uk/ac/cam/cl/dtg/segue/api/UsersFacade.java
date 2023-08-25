@@ -54,6 +54,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.RECAPTCHAManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
@@ -100,6 +101,7 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 public class UsersFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
     private final UserAccountManager userManager;
+    private final RECAPTCHAManager recaptchaManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractUserPreferenceManager userPreferenceManager;
@@ -112,6 +114,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - properties loader for the application
      * @param userManager
      *            - user manager for the application
+     * @param recaptchaManager
+     *            - so we can check recaptcha token is valid
      * @param logManager
      *            - so we can log interesting events.
      * @param userAssociationManager
@@ -125,11 +129,13 @@ public class UsersFacade extends AbstractSegueFacade {
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                       final ILogManager logManager, final UserAssociationManager userAssociationManager,
-                       final IMisuseMonitor misuseMonitor, final AbstractUserPreferenceManager userPreferenceManager,
+                       final RECAPTCHAManager recaptchaManager, final ILogManager logManager,
+                       final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
+                       final AbstractUserPreferenceManager userPreferenceManager,
                        final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;
+        this.recaptchaManager = recaptchaManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
         this.userPreferenceManager = userPreferenceManager;
@@ -204,6 +210,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
         UserSettings userSettingsObjectFromClient;
         String newPassword;
+        String reCAPTCHAToken;
         try {
             ObjectMapper tmpObjectMapper = new ObjectMapper();
             tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -211,6 +218,7 @@ public class UsersFacade extends AbstractSegueFacade {
             //TODO: We need to change the way the frontend sends passwords to reduce complexity
             Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
             newPassword = (String) ((Map) mapRepresentation.get("registeredUser")).get("password");
+            reCAPTCHAToken = (String) mapRepresentation.get("recaptchaToken");
             ((Map) mapRepresentation.get("registeredUser")).remove("password");
             userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
             
@@ -243,6 +251,11 @@ public class UsersFacade extends AbstractSegueFacade {
             }
         } else {
             try {
+                String recaptchaResponse = recaptchaManager.recaptchaResultString(reCAPTCHAToken);
+
+                if (!recaptchaResponse.equals("reCAPTCHA verification successful.")) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST,  "reCAPTCHA not validated correctly.").toResponse();
+                }
                 String ipAddress = RequestIPExtractor.getClientIpAddr(request);
                 misuseMonitor.notifyEvent(ipAddress, RegistrationMisuseHandler.class.getSimpleName());
                 SegueMetrics.USER_REGISTRATION.inc();
