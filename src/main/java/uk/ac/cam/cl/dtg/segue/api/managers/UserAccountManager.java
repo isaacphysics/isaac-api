@@ -602,6 +602,10 @@ public class UserAccountManager implements IUserAccountManager {
                 userObjectFromClient.setRegisteredContextsLastConfirmed(existingUserFromDb.getRegisteredContextsLastConfirmed());
             }
 
+            if (userObjectFromClient.getTeacherPending() == null) {
+                userObjectFromClient.setTeacherPending(existingUserFromDb.getTeacherPending());
+            }
+
             RegisteredUserDTO updatedUser = updateUserObject(userObjectFromClient, newPassword);
 
             // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
@@ -1055,6 +1059,10 @@ public class UserAccountManager implements IUserAccountManager {
             // We always set the last confirmed date from code rather than trusting the client
             userToSave.setRegisteredContexts(registeredUserContexts);
             userToSave.setRegisteredContextsLastConfirmed(new Date());
+        }
+
+        if (userToSave.getTeacherPending() == null) {
+            userToSave.setTeacherPending(false);
         }
 
         // Before save we should validate the user for mandatory fields.
