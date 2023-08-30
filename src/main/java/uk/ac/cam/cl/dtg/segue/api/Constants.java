@@ -485,6 +485,7 @@ public final class Constants {
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
     public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
+    public static final String SCHOOL_CLOSED_FIELDNAME_POJO = "closed";
 
     // User School Reporting
 
