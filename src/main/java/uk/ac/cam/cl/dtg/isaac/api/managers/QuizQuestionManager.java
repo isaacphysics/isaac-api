@@ -142,6 +142,20 @@ public class QuizQuestionManager {
     }
 
     /**
+     * This method will shuffle choices for questions in the quiz.
+     * @param quiz
+     *            - to augment - this object may be mutated as a result of this method. i.e choices may be shuffled.
+     * @return The quiz object augmented (generally a modified parameter).
+     */
+    public IsaacQuizDTO augmentQuestionsForPreview(IsaacQuizDTO quiz) {
+        List<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
+
+        questionManager.shuffleChoiceQuestionsChoices("PREVIEW", questionsToAugment);
+
+        return quiz;
+    }
+
+    /**
      * Modify the quiz to contain feedback for the specified mode, and possibly the users answers and the correct answers.
      *  @param quizAttempt
      *            - which attempt at the quiz to get attempts for.
