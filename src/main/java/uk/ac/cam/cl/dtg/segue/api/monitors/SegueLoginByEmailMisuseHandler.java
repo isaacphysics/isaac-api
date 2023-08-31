@@ -30,9 +30,9 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 public class SegueLoginByEmailMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(SegueLoginByEmailMisuseHandler.class);
 
-    private final Integer SOFT_THRESHOLD;
-    private final Integer HARD_THRESHOLD;
-    private final Integer ACCOUNTING_INTERVAL;
+    private final Integer softThreshold;
+    private final Integer hardThreshold;
+    private final Integer accountingInterval;
 
     @Inject
     public SegueLoginByEmailMisuseHandler() {
@@ -41,14 +41,14 @@ public class SegueLoginByEmailMisuseHandler implements IMisuseHandler {
 
     @Inject
     public SegueLoginByEmailMisuseHandler(final Integer softThreshold, final Integer hardThreshold, final Integer interval) {
-        this.SOFT_THRESHOLD = softThreshold;
-        this.HARD_THRESHOLD = hardThreshold;
-        this.ACCOUNTING_INTERVAL = interval;
+        this.softThreshold = softThreshold;
+        this.hardThreshold = hardThreshold;
+        this.accountingInterval = interval;
     }
 
     @Override
     public Integer getSoftThreshold() {
-        return SOFT_THRESHOLD;
+        return softThreshold;
     }
 
     /*
@@ -58,12 +58,12 @@ public class SegueLoginByEmailMisuseHandler implements IMisuseHandler {
      */
     @Override
     public Integer getHardThreshold() {
-        return HARD_THRESHOLD;
+        return hardThreshold;
     }
 
     @Override
     public Integer getAccountingIntervalInSeconds() {
-        return ACCOUNTING_INTERVAL;
+        return accountingInterval;
     }
 
     @Override

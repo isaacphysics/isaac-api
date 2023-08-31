@@ -52,17 +52,15 @@ public interface ISearchProvider {
 
     /**
      * Paginated Match search for one field.
-     * 
-     * @param indexBase
-     *            - ElasticSearch index base string
-     * @param indexType
-     *            - Index type
+     *
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - ElasticSearch index base string
+     *            <p>indexType - Index type
+     *            <p>startIndex - e.g. 0 for the first set of results
+     *            <p>limit - e.g. 10 for 10 results per page
      * @param fieldsToMatch
      *            - the field name to use - and the field name search term
-     * @param startIndex
-     *            - e.g. 0 for the first set of results
-     * @param limit
-     *            - e.g. 10 for 10 results per page
      * @param sortInstructions
      *            - the map of how to sort each field of interest.
      * @param filterInstructions
@@ -70,8 +68,8 @@ public interface ISearchProvider {
      * @return Results
      */
     ResultsWrapper<String> matchSearch(
-            String indexBase, String indexType, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            int startIndex, int limit, Map<String, Constants.SortOrder> sortInstructions,
+            BasicSearchParameters basicSearchParameters, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+            Map<String, Constants.SortOrder> sortInstructions,
             @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
@@ -79,17 +77,15 @@ public interface ISearchProvider {
      * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
      * <p>
      * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
-     * 
-     * @param indexBase
-     *            - the base string for the name of the index
-     * @param indexType
-     *            - the name of the type of document being searched for
+     *
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - the base string for the name of the index
+     *            <p>indexType - the name of the type of document being searched for
+     *            <p>startIndex - e.g. 0 for the first set of results
+     *            <p>limit - the maximum number of results to return -1 will attempt to return all results.
      * @param searchString
      *            - the string to use for fuzzy matching
-     * @param startIndex
-     *            - e.g. 0 for the first set of results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
      * @param fieldsThatMustMatch
      *            - Map of Must match field -> value
      * @param filterInstructions
@@ -99,14 +95,13 @@ public interface ISearchProvider {
      * @return results
      */
     ResultsWrapper<String> fuzzySearch(
-            String indexBase, String indexType, String searchString, Integer startIndex, Integer limit, Map<String,
-            List<String>> fieldsThatMustMatch, @Nullable Map<String, AbstractFilterInstruction> filterInstructions,
-            String... fields
+            BasicSearchParameters basicSearchParameters, String searchString, Map<String, List<String>> fieldsThatMustMatch,
+            @Nullable Map<String, AbstractFilterInstruction> filterInstructions, String... fields
     ) throws SegueSearchException;
 
     ResultsWrapper<String> nestedMatchSearch(
-            String indexBase, String indexType, Integer startIndex, Integer limit, String searchString,
-            @NotNull BooleanMatchInstruction matchInstruction, @Nullable Map<String, AbstractFilterInstruction> filterInstructions
+            BasicSearchParameters basicSearchParameters, String searchString, @NotNull BooleanMatchInstruction matchInstruction,
+            @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
@@ -116,39 +111,35 @@ public interface ISearchProvider {
      * <p>
      * note: null searches are allowed providing a filter is specified.
      *
-     * @param indexBase
-     *            - the base string for the name of the index
-     * @param indexType
-     *            - the name of the type of document being searched for
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - the base string for the name of the index
+     *            <p>indexType - the name of the type of document being searched for
+     *            <p>startIndex - start index for results
+     *            <p>limit - the maximum number of results to return -1 will attempt to return all results.
      * @param searchTerms
      *            - e.g. tags can be null
      * @param field
      *            - to match against - cannot be null if searchterm is not null.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
      * @param filterInstructions - instructions for filtering the results
      * @return results
      */
     ResultsWrapper<String> termSearch(
-            String indexBase, String indexType, String searchTerms, String field, int startIndex, int limit,
+            BasicSearchParameters basicSearchParameters, String searchTerms, String field,
             Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
      * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
      *
-     * @param indexBase
-     *            base string for the index that the content is stored in
-     * @param indexType
-     *            - type of index as registered with search provider.
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - base string for the index that the content is stored in
+     *            <p>indexType - type of index as registered with search provider
+     *            <p>startIndex - start index for results
+     *            <p>limit - the maximum number of results to return
      * @param fieldsToMatch
      *            - List of boolean clauses used for field matching.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return.
      * @param randomSeed
      *            - random seed.
      * @param filterInstructions
@@ -156,31 +147,29 @@ public interface ISearchProvider {
      * @return results in a random order for a given match search.
      */
     ResultsWrapper<String> randomisedMatchSearch(
-            String indexBase, String indexType, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions
+            BasicSearchParameters basicSearchParameters, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+            Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
     /**
      * Query for a list of Results that exactly match a given id.
      *
-     * @param indexBase
-     *            base string for the index that the content is stored in
-     * @param indexType
-     *            - type of index as registered with search provider.
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - base string for the index that the content is stored in
+     *            <p>indexType - type of index as registered with search provider
+     *            <p>startIndex - start index for results
+     *            <p>limit - the maximum number of results to return -1 will attempt to return all results
      * @param fieldName
      *            - fieldName to search within.
      * @param needle
      *            - needle to search for.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
      * @param filterInstructions
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByExactMatch(
-            String indexBase, String indexType, String fieldName, String needle, int startIndex, int limit,
+            BasicSearchParameters basicSearchParameters, String fieldName, String needle,
             @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
@@ -188,49 +177,45 @@ public interface ISearchProvider {
      * Query for a list of Results that match a given id prefix.
      * <p>
      * This is useful if you use un-analysed fields for ids and use the dot separator as a way of nesting fields.
-     * 
-     * @param indexBase
-     *            base string for the index that the content is stored in
-     * @param indexType
-     *            - type of index as registered with search provider.
+     *
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - base string for the index that the content is stored in
+     *            <p>indexType - type of index as registered with search provider
+     *            <p>startIndex - start index for results
+     *            <p>limit - the maximum number of results to return -1 will attempt to return all results
      * @param fieldname
      *            - fieldName to search within.
      * @param prefix
      *            - idPrefix to search for.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
      * @param filterInstructions
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByPrefix(
-            String indexBase, String indexType, String fieldname, String prefix, int startIndex, int limit,
+            BasicSearchParameters basicSearchParameters, String fieldname, String prefix,
             @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
     
     /**
      * Find content by a regex.
-     * 
-     * @param indexBase
-     *            base string for the index that the content is stored in
-     * @param indexType
-     *            - type of index as registered with search provider.
+     *
+     * @param basicSearchParameters
+     *            - a Data Object containing the following common search parameters:
+     *            <p>indexBase - base string for the index that the content is stored in
+     *            <p>indexType - type of index as registered with search provider
+     *            <p>startIndex - start index for results
+     *            <p>limit - the maximum number of results to return -1 will attempt to return all results
      * @param fieldname
      *            - fieldName to search within.
      * @param regex
      *            - regex to search for.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
      * @param filterInstructions
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByRegEx(
-            String indexBase, String indexType, String fieldname, String regex, int startIndex, int limit,
+            BasicSearchParameters basicSearchParameters, String fieldname, String regex,
             @Nullable Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 

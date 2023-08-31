@@ -104,6 +104,7 @@ public class UserBadgeManager {
      * @return user badge object
      * @throws SegueDatabaseException
      */
+    @SuppressWarnings("checkstyle:EmptyBlock") // Resolve when the to-do is implemented
     public UserBadge updateBadge(final RegisteredUserDTO user, final Badge badgeName, final String event)
             throws SegueDatabaseException {
 

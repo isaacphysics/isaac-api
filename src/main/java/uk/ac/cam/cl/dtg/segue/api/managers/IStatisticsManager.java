@@ -77,7 +77,7 @@ public interface IStatisticsManager {
             SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException;
 
     /**
-     * @return a list of userId's to last event timestamp
+     * @return a Map of userId's to last event timestamp
      */
     Map<String, Date> getLastSeenUserMap();
 
@@ -85,7 +85,7 @@ public interface IStatisticsManager {
      * @param qualifyingLogEvent
      *            the string event type that will be looked for.
      * @return a map of userId's to last event timestamp
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Map<String, Date> getLastSeenUserMap(String qualifyingLogEvent) throws SegueDatabaseException;
 
@@ -117,7 +117,7 @@ public interface IStatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Map<String, Map<LocalDate, Long>> getEventLogsByDate(
             Collection<String> eventTypes, Date fromDate, Date toDate, boolean binDataByMonth)
@@ -137,12 +137,11 @@ public interface IStatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(
             Collection<String> eventTypes, Date fromDate, Date toDate, List<RegisteredUserDTO> userList, boolean binDataByMonth)
             throws SegueDatabaseException;
-
 
     /**
      * Calculate the number of users from the list provided that meet the criteria.
@@ -166,7 +165,4 @@ public interface IStatisticsManager {
      * @return a map of teacher activities and the user's progress in each of them
      */
     Map<String, Object> getDetailedUserStatistics(RegisteredUserDTO userOfInterest);
-
-
-
 }

@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.search.BasicSearchParameters;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
@@ -92,10 +93,11 @@ public class SchoolListReader {
 
         // FIXME: for one release cycle, we need backwards compatibility and so cannot use the fieldsThatMustMatch property
         // It should be set to ImmutableMap.of("closed", ImmutableList.of("false"))
-        List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, SCHOOL_URN_FIELDNAME_POJO,
-                SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
-                .getResults();
+        List<String> schoolSearchResults = searchProvider.fuzzySearch(
+                new BasicSearchParameters(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(), 0, DEFAULT_RESULTS_LIMIT),
+                searchQuery, null, null, SCHOOL_URN_FIELDNAME_POJO, SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO,
+                SCHOOL_POSTCODE_FIELDNAME_POJO
+        ).getResults();
 
         List<School> resultList = Lists.newArrayList();
         for (String schoolString : schoolSearchResults) {
@@ -140,9 +142,9 @@ public class SchoolListReader {
 
         List<String> matchingSchoolList;
         
-        matchingSchoolList = searchProvider.findByExactMatch(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(),
-                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
+        matchingSchoolList = searchProvider.findByExactMatch(
+                new BasicSearchParameters(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(), 0, DEFAULT_RESULTS_LIMIT),
+                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, schoolURN, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;

@@ -39,6 +39,7 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.zip.CRC32;
 
 /**
@@ -68,18 +69,21 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public EventBooking add(final ITransaction transaction, final String eventId, final Long userId, final Long reserveById,
-                            final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+                            final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         if (!(transaction instanceof PgTransaction)) {
             throw new SegueDatabaseException("Incorrect database transaction class type!");
         }
 
-        if (null == additionalEventInformation) {
-            additionalEventInformation = Maps.newHashMap();
-        }
+        return addEventBooking((PgTransaction) transaction, eventId, userId, reserveById, status,
+                Objects.requireNonNullElseGet(additionalEventInformation, Maps::newHashMap));
+    }
 
+    private PgEventBooking addEventBooking(
+            final PgTransaction transaction, final String eventId, final Long userId, final Long reserveById,
+            final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
         String query = "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information)"
                 + " VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)";
-        Connection conn = ((PgTransaction) transaction).getConnection();
+        Connection conn = transaction.getConnection();
         try (PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             Date creationDate = new Date();
             pst.setLong(FIELD_ADD_BOOKING_USER_ID, userId);

@@ -50,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
@@ -412,11 +413,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @return a flattened map for containing strings that can be used in email template replacement.
      */
     public Map<String, String> flattenTokenMap(final Map<String, Object> inputMap, final Map<String, String> outputMap,
-                                               String keyPrefix) {
-        if (null == keyPrefix) {
-            keyPrefix = "";
-        }
+                                               final String keyPrefix) {
+        return getFlatTokenMap(inputMap, outputMap, Objects.requireNonNullElse(keyPrefix, ""));
+    }
 
+    private Map<String, String> getFlatTokenMap(final Map<String, Object> inputMap, final Map<String, String> outputMap, final String keyPrefix) {
         for (Map.Entry<String, Object> mapEntry : inputMap.entrySet()) {
             String valueToStore = "";
 

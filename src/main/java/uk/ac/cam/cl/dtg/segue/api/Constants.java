@@ -179,6 +179,11 @@ public final class Constants {
     public static final Integer SESSION_EXPIRY_SECONDS_FALLBACK = 1800;
 
     /**
+     * Constant representing the value to be used for the session expiry in seconds in the event that parsing the config value throws an exception.
+     */
+    public static final Integer PARTIAL_LOGIN_SESSION_EXPIRY_SECONDS = 1200;
+
+    /**
      * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
      */
     public static final String SESSION_USER_ID = "id";

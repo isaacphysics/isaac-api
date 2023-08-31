@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 public class IsaacStringMatchValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacStringMatchValidator.class);
     private static final Pattern LEADING_SPACES = Pattern.compile("^\\s+", Pattern.MULTILINE);
-    private static final Pattern TRAILING_SPACES = Pattern.compile("\\s+$", Pattern.MULTILINE);
+    private static final Pattern TRAILING_SPACES = Pattern.compile("(?<!\\s)\\s+$", Pattern.MULTILINE);
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -126,28 +126,31 @@ public class IsaacStringMatchValidator implements IValidator {
         return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, new Date());
     }
 
-    private boolean valuesMatch(String trustedValue, String userValue, final Boolean caseInsensitive,
+    private boolean valuesMatch(final String trustedValue, final String userValue, final Boolean caseInsensitive,
                                 final Boolean preserveLeadingWhitespace, final Boolean preserveTrailingWhitespace) {
 
         if (null == trustedValue || null == userValue) {
             return false;
         }
 
+        String formattedTrustedValue = trustedValue;
+        String formattedUserValue = userValue;
+
         if (null != caseInsensitive && caseInsensitive) {
-            trustedValue = trustedValue.toLowerCase();
-            userValue = userValue.toLowerCase();
+            formattedTrustedValue = formattedTrustedValue.toLowerCase();
+            formattedUserValue = formattedUserValue.toLowerCase();
         }
         if (null == preserveLeadingWhitespace || !preserveLeadingWhitespace) {
             // Strip leading whitespace by default:
-            trustedValue = LEADING_SPACES.matcher(trustedValue).replaceAll("");
-            userValue = LEADING_SPACES.matcher(userValue).replaceAll("");
+            formattedTrustedValue = LEADING_SPACES.matcher(formattedTrustedValue).replaceAll("");
+            formattedUserValue = LEADING_SPACES.matcher(formattedUserValue).replaceAll("");
         }
         if (null == preserveTrailingWhitespace || !preserveTrailingWhitespace) {
             // Strip trailing whitespace by default:
-            trustedValue = TRAILING_SPACES.matcher(trustedValue).replaceAll("");
-            userValue = TRAILING_SPACES.matcher(userValue).replaceAll("");
+            formattedTrustedValue = TRAILING_SPACES.matcher(formattedTrustedValue).replaceAll("");
+            formattedUserValue = TRAILING_SPACES.matcher(formattedUserValue).replaceAll("");
         }
 
-        return trustedValue.equals(userValue);
+        return formattedTrustedValue.equals(formattedUserValue);
     }
 }

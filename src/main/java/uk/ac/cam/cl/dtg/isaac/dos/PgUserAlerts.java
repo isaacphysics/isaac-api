@@ -91,6 +91,8 @@ public class PgUserAlerts implements IUserAlerts {
             case DISMISSED:
                 query += "dismissed";
                 break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + eventType);
         }
         query += "= ?  WHERE id = ?";
         try (Connection conn = db.getDatabaseConnection();

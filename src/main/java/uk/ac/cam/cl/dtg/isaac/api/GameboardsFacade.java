@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
@@ -200,8 +201,10 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 
-            gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
-                    conceptsList, questionCategoriesList, stagesList, difficultiesList, examBoardsList, boardOwner);
+            gameboard = gameManager.generateRandomGameboard(title, new GameFilter(
+                    subjectsList, fieldsList, topicsList, levelsList, conceptsList, questionCategoriesList, stagesList,
+                    difficultiesList, examBoardsList
+            ), boardOwner);
 
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.NO_CONTENT,

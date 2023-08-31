@@ -719,6 +719,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *      *     - For managing user preferences.
      * @return Content version controller with associated dependencies.
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @Inject
     @Provides
     @Singleton
@@ -964,6 +965,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - to notify users when their answer streak changes
      * @return stats manager
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @Provides
     @Singleton
     @Inject

@@ -123,42 +123,17 @@ public class GameManager {
      * This method expects only one of its 3 subject tag filter parameters to have more than one element due to
      * restrictions on the question filter interface.
      *
-     * @param title
-     *            title of the board
-     * @param subjects
-     *            list of subjects to include in filtered results
-     * @param fields
-     *            list of fields to include in filtered results
-     * @param topics
-     *            list of topics to include in filtered results
-     * @param levels
-     *            list of levels to include in filtered results
-     * @param concepts
-     *            list of concepts (relatedContent) to include in filtered results
-     * @param questionCategories
-     *            list of question categories (i.e. problem_solving, book) to include in filtered results
-     * @param stages
-     *            list of stages to include in filtered results
-     * @param difficulties
-     *            list of difficulties to include in filtered results
-     * @param examBoards
-     *            list of examBoards to include in filtered results
-     * @param boardOwner
-     *            The user that should be marked as the creator of the gameBoard.
+     * @param title       title of the board
+     * @param gameFilter  Object representing the group of filters to use
+     * @param boardOwner  The user that should be marked as the creator of the gameBoard.
      * @return a gameboard if possible that satisfies the conditions provided by the parameters. Will return null if no
-     *         questions can be provided.
-     * @throws NoWildcardException
-     *             - when we are unable to provide you with a wildcard object.
-     * @throws SegueDatabaseException
-     *             - if there is an error contacting the database.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
+     * questions can be provided.
+     * @throws NoWildcardException     - when we are unable to provide you with a wildcard object.
+     * @throws SegueDatabaseException  - if there is an error contacting the database.
+     * @throws ContentManagerException - if there is an error retrieving the content requested.
      */
     public GameboardDTO generateRandomGameboard(
-            final String title, final List<String> subjects, final List<String> fields, final List<String> topics,
-            final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
-            final List<String> stages, final List<String> difficulties, final List<String> examBoards,
-            final AbstractSegueUserDTO boardOwner)
+            final String title, final GameFilter gameFilter, final AbstractSegueUserDTO boardOwner)
             throws NoWildcardException, SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
@@ -172,9 +147,6 @@ public class GameManager {
         Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager
                 .getQuestionAttemptsByUser(boardOwner);
 
-        GameFilter gameFilter = new GameFilter(
-                subjects, fields, topics, levels, concepts, questionCategories, stages, difficulties, examBoards);
-
         List<GameboardItem> selectionOfGameboardQuestions =
                 this.getSelectedGameboardQuestions(gameFilter, usersQuestionAttempts);
 
@@ -185,8 +157,8 @@ public class GameManager {
             log.debug("Created gameboard " + uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
-                    getRandomWildcard(mapper, subjects), generateRandomWildCardPosition(), new Date(), gameFilter,
-                    boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
+                    getRandomWildcard(mapper, gameFilter.getSubjects()), generateRandomWildCardPosition(),
+                    new Date(), gameFilter, boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 

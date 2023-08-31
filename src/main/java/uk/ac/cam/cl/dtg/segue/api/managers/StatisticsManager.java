@@ -23,22 +23,18 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
-import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -49,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
+import uk.ac.cam.cl.dtg.util.UserQuestionInformation;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -65,10 +62,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -98,7 +93,6 @@ public class StatisticsManager implements IStatisticsManager {
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
     private static final long LONG_STATS_MAX_ITEMS = 20;
-    private static final int PROGRESS_MAX_RECENT_QUESTIONS = 5;
 
 
     /**
@@ -193,6 +187,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @throws SegueDatabaseException
      *             if there is a problem with the database.
      */
+    @Override
     public Long getLogCount(final String logTypeOfInterest) throws SegueDatabaseException {
         return this.logManager.getLogCountByType(logTypeOfInterest);
     }
@@ -323,6 +318,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @throws UnableToIndexSchoolsException
      *             - if the school list has not been indexed.
      */
+    @Override
     public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
             SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
         Validate.notNull(schoolId);
@@ -350,7 +346,7 @@ public class StatisticsManager implements IStatisticsManager {
     }
 
     /**
-     * @return a list of userId's to last event timestamp
+     * @return a Map of userId's to last event timestamp
      */
     public Map<String, Date> getLastSeenUserMap() {
         Map<String, Date> lastSeenMap = Maps.newHashMap();
@@ -377,7 +373,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @param qualifyingLogEvent
      *            the string event type that will be looked for.
      * @return a map of userId's to last event timestamp
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
         return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
@@ -396,6 +392,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @throws ContentManagerException
      *             - if we are unable to look up the content.
      */
+    @Override
     public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
             throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(userOfInterest);
@@ -403,24 +400,7 @@ public class StatisticsManager implements IStatisticsManager {
         // FIXME: there was a TODO here about tidying this up and moving it elsewhere.
         // It has been improved and tidied, but may still better belong elsewhere . . .
 
-        int correctQuestions = 0;
-        int attemptedQuestions = 0;
-        int correctQuestionParts = 0;
-        int attemptedQuestionParts = 0;
-        int correctQuestionsThisAcademicYear = 0;
-        int attemptedQuestionsThisAcademicYear = 0;
-        int correctQuestionPartsThisAcademicYear = 0;
-        int attemptedQuestionPartsThisAcademicYear = 0;
-        Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
-        Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
-        Map<Stage, Map<Difficulty, Integer>> questionAttemptsByStageAndDifficultyStats = Maps.newHashMap();
-        Map<Stage, Map<Difficulty, Integer>> questionsCorrectByStageAndDifficultyStats = Maps.newHashMap();
-        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
-        Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
-        Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
-        Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
-        List<ContentDTO> questionPagesNotComplete = Lists.newArrayList();
-        Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
+        UserQuestionInformation userQuestionInformation = new UserQuestionInformation();
 
         LocalDate now = LocalDate.now();
         LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, NUMBER_DAYS_IN_LONG_MONTH);
@@ -441,8 +421,8 @@ public class StatisticsManager implements IStatisticsManager {
                 continue;
             }
 
-            mostRecentlyAttemptedQuestionPages.add(questionContentDTO);  // Assumes questionAttemptsByUser is sorted!
-            attemptedQuestions++;
+            userQuestionInformation.addMostRecentlyAttemptedQuestionPage(questionContentDTO); // Assumes questionAttemptsByUser is sorted!
+            userQuestionInformation.incrementAttemptedQuestions();
             boolean questionIsCorrect = true;  // Are all Parts of the Question correct?
             LocalDate mostRecentCorrectQuestionPart = null;
             LocalDate mostRecentAttemptAtQuestion = null;
@@ -452,7 +432,7 @@ public class StatisticsManager implements IStatisticsManager {
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
-                    attemptedQuestionParts++;
+                    userQuestionInformation.incrementAttemptedQuestionParts();
 
                     LocalDate mostRecentAttemptAtThisQuestionPart = null;
 
@@ -464,9 +444,9 @@ public class StatisticsManager implements IStatisticsManager {
                             mostRecentAttemptAtThisQuestionPart = dateAttempted;
                         }
                         if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
-                            correctQuestionParts++;
+                            userQuestionInformation.incrementCorrectQuestionParts();
                             if (dateAttempted.isAfter(lastDayOfPreviousAcademicYear)) {
-                                correctQuestionPartsThisAcademicYear++;
+                                userQuestionInformation.incrementCorrectQuestionPartsThisAcademicYear();
                                 if (mostRecentCorrectQuestionPart == null || dateAttempted.isAfter(mostRecentCorrectQuestionPart)) {
                                     mostRecentCorrectQuestionPart = dateAttempted;
                                 }
@@ -478,15 +458,11 @@ public class StatisticsManager implements IStatisticsManager {
 
                     // Type Stats - Count the attempt at the Question Part:
                     String questionPartType = questionPart.getType();
-                    if (questionAttemptsByTypeStats.containsKey(questionPartType)) {
-                        questionAttemptsByTypeStats.put(questionPartType, questionAttemptsByTypeStats.get(questionPartType) + 1);
-                    } else {
-                        questionAttemptsByTypeStats.put(questionPartType, 1);
-                    }
+                    userQuestionInformation.incrementQuestionAttemptsByTypeStats(questionPartType);
 
                     if (mostRecentAttemptAtThisQuestionPart != null) {
                         if (mostRecentAttemptAtThisQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
-                            attemptedQuestionPartsThisAcademicYear++;
+                            userQuestionInformation.incrementAttemptedQuestionPartsThisAcademicYear();
                         }
 
                         if (mostRecentAttemptAtQuestion == null || mostRecentAttemptAtThisQuestionPart.isAfter(mostRecentAttemptAtQuestion)) {
@@ -496,11 +472,7 @@ public class StatisticsManager implements IStatisticsManager {
 
                     // If this Question Part is correct, count this too:
                     if (questionPartIsCorrect) {
-                        if (questionsCorrectByTypeStats.containsKey(questionPartType)) {
-                            questionsCorrectByTypeStats.put(questionPartType, questionsCorrectByTypeStats.get(questionPartType) + 1);
-                        } else {
-                            questionsCorrectByTypeStats.put(questionPartType, 1);
-                        }
+                        userQuestionInformation.incrementQuestionsCorrectByTypeStats(questionPartType);
                     }
                 }
 
@@ -510,60 +482,14 @@ public class StatisticsManager implements IStatisticsManager {
 
             // Tag Stats - Loop through the Question's tags:
             for (String tag : questionContentDTO.getTags()) {
-                // Count the attempt at the Question:
-                if (questionAttemptsByTagStats.containsKey(tag)) {
-                    questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
-                } else {
-                    questionAttemptsByTagStats.put(tag, 1);
-                }
-                // If it's correct, count this too:
-                if (questionIsCorrect) {
-                    if (questionsCorrectByTagStats.containsKey(tag)) {
-                        questionsCorrectByTagStats.put(tag, questionsCorrectByTagStats.get(tag) + 1);
-                    } else {
-                        questionsCorrectByTagStats.put(tag, 1);
-                    }
-                }
+                userQuestionInformation.incrementQuestionsByTagStats(tag, questionIsCorrect);
             }
 
             // Stage and difficulty Stats
             // This is hideous, sorry
             if (questionContentDTO.getAudience() != null) {
                 for (AudienceContext audience : questionContentDTO.getAudience()) {
-                    // Check the question has both a stage and a difficulty
-                    if (audience.getStage() != null && audience.getDifficulty() != null) {
-                        Stage currentStage = audience.getStage().get(0);
-                        Difficulty currentDifficulty = audience.getDifficulty().get(0);
-                        // Count the attempt at the question
-                        if (questionAttemptsByStageAndDifficultyStats.containsKey(currentStage)) {
-                            if (questionAttemptsByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
-                                questionAttemptsByStageAndDifficultyStats.get(currentStage)
-                                        .put(currentDifficulty, questionAttemptsByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
-                            } else {
-                                questionAttemptsByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
-                            }
-                        } else {
-                            Map<Difficulty, Integer> newDifficultyMap = Maps.newHashMap();
-                            newDifficultyMap.put(currentDifficulty, 1);
-                            questionAttemptsByStageAndDifficultyStats.put(currentStage, newDifficultyMap);
-                        }
-
-                        // If correct, count this too:
-                        if (questionIsCorrect) {
-                            if (questionsCorrectByStageAndDifficultyStats.containsKey(currentStage)) {
-                                if (questionsCorrectByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {
-                                    questionsCorrectByStageAndDifficultyStats.get(currentStage)
-                                            .put(currentDifficulty, questionsCorrectByStageAndDifficultyStats.get(currentStage).get(currentDifficulty) + 1);
-                                } else {
-                                    questionsCorrectByStageAndDifficultyStats.get(currentStage).put(currentDifficulty, 1);
-                                }
-                            } else {
-                                Map<Difficulty, Integer> newDifficultyMap = Maps.newHashMap();
-                                newDifficultyMap.put(currentDifficulty, 1);
-                                questionsCorrectByStageAndDifficultyStats.put(currentStage, newDifficultyMap);
-                            }
-                        }
-                    }
+                    userQuestionInformation.incrementQuestionsByStageAndDifficulty(audience, questionIsCorrect);
                 }
             }
 
@@ -576,62 +502,26 @@ public class StatisticsManager implements IStatisticsManager {
             } else {
                 questionLevel = questionLevelInteger.toString();
             }
-            if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
-                questionAttemptsByLevelStats.put(questionLevel, questionAttemptsByLevelStats.get(questionLevel) + 1);
-            } else {
-                questionAttemptsByLevelStats.put(questionLevel, 1);
-            }
+            userQuestionInformation.incrementQuestionAttemptsByLevelStats(questionLevel);
 
             if (mostRecentAttemptAtQuestion != null && mostRecentAttemptAtQuestion.isAfter(lastDayOfPreviousAcademicYear)) {
-                attemptedQuestionsThisAcademicYear++;
+                userQuestionInformation.incrementAttemptedQuestionsThisAcademicYear();
             }
 
             // If it's correct, count this globally and for the Question's level too:
             if (questionIsCorrect) {
-                correctQuestions++;
+                userQuestionInformation.incrementCorrectQuestions();
                 if (mostRecentCorrectQuestionPart != null && mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
-                    correctQuestionsThisAcademicYear++;
+                    userQuestionInformation.incrementCorrectQuestionsThisAcademicYear();
                 }
-                if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
-                    questionsCorrectByLevelStats.put(questionLevel, questionsCorrectByLevelStats.get(questionLevel) + 1);
-                } else {
-                    questionsCorrectByLevelStats.put(questionLevel, 1);
-                }
-            } else if (questionPagesNotComplete.size() < PROGRESS_MAX_RECENT_QUESTIONS) {
-                questionPagesNotComplete.add(questionContentDTO);
+                userQuestionInformation.incrementQuestionsCorrectByLevelStats(questionLevel);
+            } else if (userQuestionInformation.isQuestionPagesNotCompleteLessThanProgressMaxRecentQuestions()) {
+                userQuestionInformation.addQuestionPageNotComplete(questionContentDTO);
             }
         }
 
         // Collate all the information into the JSON response as a Map:
-        Map<String, Object> questionInfo = Maps.newHashMap();
-        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
-                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
-        Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
-        List<ContentSummaryDTO> questionsNotCompleteList = questionPagesNotComplete
-                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
-
-        questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
-        questionInfo.put("totalQuestionsCorrect", correctQuestions);
-        questionInfo.put("totalQuestionPartsAttempted", attemptedQuestionParts);
-        questionInfo.put("totalQuestionPartsCorrect", correctQuestionParts);
-        questionInfo.put("totalQuestionsCorrectThisAcademicYear", correctQuestionsThisAcademicYear);
-        questionInfo.put("totalQuestionsAttemptedThisAcademicYear", attemptedQuestionsThisAcademicYear);
-        questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionPartsThisAcademicYear);
-        questionInfo.put("totalQuestionPartsAttemptedThisAcademicYear", attemptedQuestionPartsThisAcademicYear);
-        questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
-        questionInfo.put("correctByTag", questionsCorrectByTagStats);
-        questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
-        questionInfo.put("correctByStageAndDifficulty", questionsCorrectByStageAndDifficultyStats);
-        questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
-        questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
-        questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
-        questionInfo.put("correctByType", questionsCorrectByTypeStats);
-        questionInfo.put("oldestIncompleteQuestions", questionsNotCompleteList);
-        questionInfo.put("mostRecentQuestions", mostRecentlyAttemptedQuestionsList);
-        questionInfo.put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest));
-
-        return questionInfo;
-
+        return userQuestionInformation.toMap(this.userManager.convertToUserSummaryObject(userOfInterest), contentSummarizerService::extractContentSummary);
     }
 
     /**
@@ -646,8 +536,9 @@ public class StatisticsManager implements IStatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
+    @Override
     public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final boolean binDataByMonth) throws SegueDatabaseException {
         return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
@@ -667,8 +558,9 @@ public class StatisticsManager implements IStatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
+    @Override
     public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
             final boolean binDataByMonth) throws SegueDatabaseException {
@@ -689,6 +581,7 @@ public class StatisticsManager implements IStatisticsManager {
      *            week's data.
      * @return a collection containing the users who meet the criteria
      */
+    @Override
     public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
             final Map<String, Date> lastSeenUserMap, final int daysFromToday) {
 

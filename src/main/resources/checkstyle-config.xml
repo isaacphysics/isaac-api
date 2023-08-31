@@ -101,6 +101,10 @@
     <module name="SuppressWarningsHolder"/>
   </module>
   <module name="SuppressWarningsFilter"/>
+  <module name="SuppressionFilter">
+    <property name="file" value="checkstyle-suppressions.xml"/>
+    <property name="optional" value="false"/>
+  </module>
   <module name="JavadocPackage">
     <property name="severity" value="ignore"/>
     <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>

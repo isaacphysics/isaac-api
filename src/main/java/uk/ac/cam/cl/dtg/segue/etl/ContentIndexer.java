@@ -74,11 +74,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class ContentIndexer {
     private static final Logger log = LoggerFactory.getLogger(Content.class);
 
-    private static ConcurrentHashMap<String, Boolean> versionLocks = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> VERSION_LOCKS = new ConcurrentHashMap<>();
 
-    private ElasticSearchIndexer es;
-    private GitDb database;
-    private ContentMapper mapper;
+    private final ElasticSearchIndexer es;
+    private final GitDb database;
+    private final ContentMapper mapper;
 
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
@@ -94,7 +94,7 @@ public class ContentIndexer {
     void loadAndIndexContent(final String version) throws Exception, VersionLockedException {
 
         // Take version lock or fail
-        Boolean alreadyLocked = versionLocks.putIfAbsent(version, true);
+        Boolean alreadyLocked = VERSION_LOCKS.putIfAbsent(version, true);
 
         if (Boolean.TRUE.equals(alreadyLocked)) {
             throw new VersionLockedException(version);
@@ -153,7 +153,7 @@ public class ContentIndexer {
             log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
         } finally {
-            versionLocks.remove(version);
+            VERSION_LOCKS.remove(version);
         }
 
     }
@@ -234,92 +234,7 @@ public class ContentIndexer {
                     content = this.augmentChildContent(content, treeWalk.getPathString(), null, content.getPublished());
 
                     if (null != content) {
-                        // Walk the content for site-wide searchable fields
-                        StringBuilder searchableContentBuilder = new StringBuilder();
-                        this.collateSearchableContent(content, searchableContentBuilder);
-                        content.setSearchableContent(searchableContentBuilder.toString());
-
-                        // add children (and parent) from flattened Set to
-                        // cache if they have ids
-                        for (Content flattenedContent : this.flattenContentObjects(content)) {
-                            if (flattenedContent.getId() == null) {
-                                continue;
-                            }
-
-                            // Prevents ETL indexing of quizzes that contain anything that is not an IsaacQuizSection
-                            // in the top-level children array.
-                            // NOTE: I'm not sure if this is the right place for this but I couldn't find a better one.
-                            // This also seems to be the only time we can prevent a file from being indexed entirely.
-                            if (flattenedContent instanceof IsaacQuiz) {
-                                List<ContentBase> children = flattenedContent.getChildren();
-                                if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
-                                    log.debug("IsaacQuiz (" + flattenedContent.getId()
-                                           + ") contains top-level non-quiz sections. Skipping.");
-                                    this.registerContentProblem(flattenedContent, "Index failure - Invalid "
-                                           + "content type among quiz sections. Quizzes can only contain quiz sections "
-                                           + "in the top-level children array.", indexProblemCache);
-                                    continue;
-                                }
-                            }
-
-                            if (flattenedContent.getId().length() > MAXIMUM_CONTENT_ID_LENGTH) {
-                                log.debug("Content ID too long: " + flattenedContent.getId());
-                                this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(), indexProblemCache);
-                                continue;
-                            }
-
-                            if (flattenedContent.getId().contains(".")) {
-                                // Otherwise, duplicate IDs with different content,
-                                // therefore log an error
-                                log.debug("Resource with invalid ID (" + content.getId()
-                                        + ") detected in cache. Skipping " + treeWalk.getPathString());
-
-                                this.registerContentProblem(flattenedContent, "Index failure - Invalid ID "
-                                        + flattenedContent.getId() + " found in file " + treeWalk.getPathString()
-                                        + ". Must not contain restricted characters.", indexProblemCache);
-                                continue;
-                            }
-
-                            // check if we have seen this key before if
-                            // we have then we don't want to add it
-                            // again
-                            if (!contentCache.containsKey(flattenedContent.getId())) {
-                                // It must be new so we can add it
-                                log.debug("Loading into cache: " + flattenedContent.getId() + "("
-                                        + flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
-                                contentCache.put(flattenedContent.getId(), flattenedContent);
-                                registerTags(flattenedContent.getTags(), tagsList);
-
-                                // If this is a numeric question, extract any
-                                // units from its answers.
-
-                                if (flattenedContent instanceof IsaacNumericQuestion) {
-                                    registerUnits((IsaacNumericQuestion) flattenedContent, allUnits, publishedUnits);
-                                }
-
-                                continue; // our work here is done
-                            }
-
-                            // shaCache contains key already, compare the
-                            // content
-                            if (contentCache.get(flattenedContent.getId()).equals(flattenedContent)) {
-                                // content is the same therefore it is just
-                                // reuse of a content object so that is
-                                // fine.
-                                log.debug("Resource (" + content.getId() + ") already seen in cache. Skipping "
-                                        + treeWalk.getPathString());
-                                continue;
-                            }
-
-                            // Otherwise, duplicate IDs with different content,
-                            // therefore log an error
-                            log.debug("Resource with duplicate ID (" + content.getId()
-                                    + ") detected in cache. Skipping " + treeWalk.getPathString());
-                            this.registerContentProblem(flattenedContent, String.format(
-                                    "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
-                                    content.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
-                                indexProblemCache);
-                        }
+                        indexContentObject(contentCache, tagsList, allUnits, publishedUnits, indexProblemCache, treeWalk.getPathString(), content);
                     }
                 } catch (JsonMappingException e) {
                     log.debug(String.format("Unable to parse the json file found %s as a content object. "
@@ -346,6 +261,98 @@ public class ContentIndexer {
         } catch (IOException e) {
             log.error("IOException while trying to access git repository. ", e);
             throw new ContentManagerException("Unable to index content, due to an IOException.");
+        }
+    }
+
+    private void indexContentObject(
+            final Map<String, Content> contentCache, final Set<String> tagsList, final Map<String, String> allUnits,
+            final Map<String, String> publishedUnits, final Map<Content, List<String>> indexProblemCache, final String treeWalkPath,
+            final Content content) {
+        // Walk the content for site-wide searchable fields
+        StringBuilder searchableContentBuilder = new StringBuilder();
+        this.collateSearchableContent(content, searchableContentBuilder);
+        content.setSearchableContent(searchableContentBuilder.toString());
+
+        // add children (and parent) from flattened Set to
+        // cache if they have ids
+        for (Content flattenedContent : this.flattenContentObjects(content)) {
+            if (flattenedContent.getId() == null) {
+                continue;
+            }
+
+            // Prevents ETL indexing of quizzes that contain anything that is not an IsaacQuizSection
+            // in the top-level children array.
+            // NOTE: I'm not sure if this is the right place for this but I couldn't find a better one.
+            // This also seems to be the only time we can prevent a file from being indexed entirely.
+            if (flattenedContent instanceof IsaacQuiz) {
+                List<ContentBase> children = flattenedContent.getChildren();
+                if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
+                    log.debug("IsaacQuiz (" + flattenedContent.getId()
+                           + ") contains top-level non-quiz sections. Skipping.");
+                    this.registerContentProblem(flattenedContent, "Index failure - Invalid "
+                           + "content type among quiz sections. Quizzes can only contain quiz sections "
+                           + "in the top-level children array.", indexProblemCache);
+                    continue;
+                }
+            }
+
+            if (flattenedContent.getId().length() > MAXIMUM_CONTENT_ID_LENGTH) {
+                log.debug("Content ID too long: " + flattenedContent.getId());
+                this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(), indexProblemCache);
+                continue;
+            }
+
+            if (flattenedContent.getId().contains(".")) {
+                // Otherwise, duplicate IDs with different content,
+                // therefore log an error
+                log.debug("Resource with invalid ID (" + content.getId()
+                        + ") detected in cache. Skipping " + treeWalkPath);
+
+                this.registerContentProblem(flattenedContent, "Index failure - Invalid ID "
+                        + flattenedContent.getId() + " found in file " + treeWalkPath
+                        + ". Must not contain restricted characters.", indexProblemCache);
+                continue;
+            }
+
+            // check if we have seen this key before if
+            // we have then we don't want to add it
+            // again
+            if (!contentCache.containsKey(flattenedContent.getId())) {
+                // It must be new so we can add it
+                log.debug("Loading into cache: " + flattenedContent.getId() + "("
+                        + flattenedContent.getType() + ")" + " from " + treeWalkPath);
+                contentCache.put(flattenedContent.getId(), flattenedContent);
+                registerTags(flattenedContent.getTags(), tagsList);
+
+                // If this is a numeric question, extract any
+                // units from its answers.
+
+                if (flattenedContent instanceof IsaacNumericQuestion) {
+                    registerUnits((IsaacNumericQuestion) flattenedContent, allUnits, publishedUnits);
+                }
+
+                continue; // our work here is done
+            }
+
+            // shaCache contains key already, compare the
+            // content
+            if (contentCache.get(flattenedContent.getId()).equals(flattenedContent)) {
+                // content is the same therefore it is just
+                // reuse of a content object so that is
+                // fine.
+                log.debug("Resource (" + content.getId() + ") already seen in cache. Skipping "
+                        + treeWalkPath);
+                continue;
+            }
+
+            // Otherwise, duplicate IDs with different content,
+            // therefore log an error
+            log.debug("Resource with duplicate ID (" + content.getId()
+                    + ") detected in cache. Skipping " + treeWalkPath);
+            this.registerContentProblem(flattenedContent, String.format(
+                    "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
+                    content.getId(), treeWalkPath, contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
+                    indexProblemCache);
         }
     }
 
@@ -766,6 +773,7 @@ public class ContentIndexer {
      * @param indexProblemCache
      *            a map of problems found in the indexed content
      */
+    @SuppressWarnings("checkstyle:OneStatementPerLine")
     private void recordContentErrors(final String sha, final Map<String, Content> gitCache,
                                      final Map<Content, List<String>> indexProblemCache) {
 
@@ -914,194 +922,41 @@ public class ContentIndexer {
      */
     private void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
         // ensure content does not have children and a value
-        if (content.getValue() != null && !content.getChildren().isEmpty()) {
-            String id = content.getId();
-            String firstLine = "Content";
-            if (id != null) {
-                firstLine += ": " + id;
-            }
-
-            this.registerContentProblem(content, firstLine + " in " + content.getCanonicalSourceFile()
-                    + " found with both children and a value. "
-                    + "Content objects are only allowed to have one or the other.", indexProblemCache);
-
-            log.error("Invalid content item detected: The object with ID (" + content.getCanonicalSourceFile()
-                    + ") has both children and a value.");
-        }
+        registerContentProblemValueWithChildren(content, indexProblemCache);
 
         // Make sure no children of potentially expandable content are expandable, if so record a content error
-        if ((null != content.getLayout() && content.getLayout().equals("tabs") || content instanceof CodeSnippet) && null != content.getChildren()) {
-            String expandableChildrenLog = collateExpandableChildren(content);
-            if (!expandableChildrenLog.equals("")) {
-                this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
-                        + "potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
-                        + ". These children will have their expandable property disabled since we cannot handle nested "
-                        + "expandable content. Please make sure the parent content block is "
-                        + "marked as expandable instead, and that it's children blocks have the expandable property "
-                        + "disabled.", indexProblemCache);
-            }
-        }
+        registerContentProblemNestedExpandables(content, indexProblemCache);
 
         // Ensure that the expandable content is only of a type that support expansion
-        if (null != content.getExpandable() && content.getExpandable() && (null == content.getLayout()
-                || !content.getLayout().equals("tabs")) && !(content instanceof CodeSnippet)) {
-            this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
-                    + "marked as expandable, but we do not support expanding this type of content yet. If this is a HTML"
-                    + " table, use class='expandable' in the table tag instead.", indexProblemCache);
-        }
+        registerContentProblemUnsupportedTypeExpandable(content, indexProblemCache);
 
-        if (content instanceof Media) {
-            Media f = (Media) content;
+        registerContentProblemsMediaInvalidProperties(sha, content, indexProblemCache);
 
-            if (f.getSrc() != null && !f.getSrc().startsWith("http")) {
-                ByteArrayOutputStream fileData = null;
-                try {
-                    // This will return null if the file is not found:
-                    fileData = database.getFileByCommitSHA(sha, f.getSrc());
-                } catch (IOException | UnsupportedOperationException e) {
-                    // Leave fileData = null;
-                }
-                if (null == fileData) {
-                    this.registerContentProblem(content, "Unable to find Image: " + f.getSrc()
-                            + " in Git. Could the reference be incorrect? SourceFile is " + content.getCanonicalSourceFile(), indexProblemCache);
-                } else if (fileData.size() > MEDIA_FILE_SIZE_LIMIT) {
-                    int sizeInKiloBytes = fileData.size() / BYTES_IN_ONE_KILOBYTE;
-                    this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
-                            f.getSrc(), sizeInKiloBytes), indexProblemCache);
-                }
-            }
+        registerContentProblemQuestionMissingId(content, indexProblemCache);
 
-            // check that there is some alt text.
-            if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                if (!(f instanceof Video) && !f.getId().equals("eventThumbnail")) {
-                    // Videos probably don't need alt text unless there is a good reason. It's not important that event
-                    // thumbnails have alt text, so we don't record errors for those either.
-                    this.registerContentProblem(content, "No altText attribute set for media element: " + f.getSrc()
-                            + " in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
-                }
-            }
-        }
-        if (content instanceof Question && content.getId() == null) {
-            this.registerContentProblem(content, "Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
-                    + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
-        }
+        registerContentProblemsChoiceQuestionMissingChoicesOrAnswer(content, indexProblemCache);
 
-        if (content instanceof ChoiceQuestion
-                && !(content.getType().equals("isaacQuestion"))) {
-            ChoiceQuestion question = (ChoiceQuestion) content;
+        registerContentProblemEmailTemplateMissingPainTextContentField(content, indexProblemCache);
 
-            if (question.getChoices() == null || question.getChoices().isEmpty()) {
-                this.registerContentProblem(question,
-                        "Question: " + question.getId() + " found without any choice metadata. "
-                                + "This question will always be automatically " + "marked as incorrect", indexProblemCache);
-            } else {
-                boolean correctOptionFound = false;
-                for (Choice choice : question.getChoices()) {
-                    if (choice.isCorrect()) {
-                        correctOptionFound = true;
-                    }
-                }
-                if (!correctOptionFound) {
-                    this.registerContentProblem(question,
-                            "Question: " + question.getId() + " found without a correct answer. "
-                                    + "This question will always be automatically marked as incorrect", indexProblemCache);
-                }
-            }
-        }
-
-        if (content instanceof EmailTemplate) {
-            EmailTemplate e = (EmailTemplate) content;
-            if (e.getPlainTextContent() == null) {
-                this.registerContentProblem(content,
-                        "Email template should always have plain text content field", indexProblemCache);
-            }
-        }
-
-        if (content instanceof IsaacEventPage) {
-            IsaacEventPage e = (IsaacEventPage) content;
-            if (e.getEndDate() == null) {
-                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
-            } else if (e.getEndDate().before(e.getDate())) {
-                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
-            }
-        }
+        registerContentProblemEventMissingOrInvalidEndDate(content, indexProblemCache);
 
         // Find quantities with values that cannot be parsed as numbers.
-        if (content instanceof IsaacNumericQuestion) {
-            IsaacNumericQuestion q = (IsaacNumericQuestion) content;
-            for (Choice choice : q.getChoices()) {
-                if (choice instanceof Quantity) {
-                    Quantity quantity = (Quantity) choice;
-
-                    // Check valid number by parsing in the same way as IsaacNumericValidator::stringValueToDouble:
-                    try {
-                        new BigDecimal(quantity.getValue()).doubleValue();
-                    } catch (NumberFormatException e) {
-                        this.registerContentProblem(content,
-                                "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
-                                        + ")  with value that cannot be interpreted as a number. "
-                                        + "Users will never be able to match this answer.", indexProblemCache);
-                    }
-
-                    if (!q.getRequireUnits() && null != quantity.getUnits() && !quantity.getUnits().isEmpty()) {
-                        this.registerContentProblem(content, "Numeric Question: " + q.getId()
-                                + " has a Quantity with units but does not require units!", indexProblemCache);
-                    }
-
-
-                } else {
-                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
-                            + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
-                }
-            }
-            if (q.getRequireUnits() && null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty()) {
-                this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
-                        + " Units will be ignored for this question!", indexProblemCache);
-            }
-        }
+        registerContentProblemsNumericQuestionInvalidChoicesOrUnits(content, indexProblemCache);
 
         // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
         if (content instanceof IsaacSymbolicQuestion) {
             if (content.getClass().equals(IsaacSymbolicQuestion.class)) {
-                IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) content;
-                for (String sym : q.getAvailableSymbols()) {
-                    if (sym.contains("\\")) {
-                        this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has availableSymbol ("
-                                + sym + ") which contains a '\\' character.", indexProblemCache);
-                    }
-                }
-                for (Choice choice : q.getChoices()) {
-                    if (choice instanceof Formula) {
-                        Formula f = (Formula) choice;
-                        if (f.getPythonExpression().contains("\\")) {
-                            this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
-                                    + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
-                        } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
-                            this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
-                                    + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
-                        }
-                    } else {
-                        this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
-                                + choice.getValue() + "). It must be deleted and a new Formula Choice created.", indexProblemCache);
-                    }
-                }
+                registerContentProblemsSymbolicQuestionInvalidProperties(content, indexProblemCache);
             } else if (content.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
-                IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) content;
-                for (Choice choice : q.getChoices()) {
-                    if (choice instanceof ChemicalFormula) {
-                        ChemicalFormula f = (ChemicalFormula) choice;
-                        if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
-                            this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
-                                    + " with empty mhchemExpression!", indexProblemCache);
-                        }
-                    } else {
-                        this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
-                                + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
-                    }
-                }
+                registerContentProblemsSymbolicChemistryQuestionInvalidProperties(content, indexProblemCache);
             }
         }
 
+        registerContentProblemsClozeQuestionChoicesHaveWrongNumberOFItems(content, indexProblemCache);
+    }
+
+    private void registerContentProblemsClozeQuestionChoicesHaveWrongNumberOFItems(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
         if (content instanceof IsaacClozeQuestion) {
             IsaacClozeQuestion q = (IsaacClozeQuestion) content;
             Integer numberItems = null;
@@ -1121,6 +976,289 @@ public class ContentIndexer {
                     numberItems = items;
                 }
             }
+        }
+    }
+
+    private void registerContentProblemsSymbolicChemistryQuestionInvalidProperties(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        IsaacSymbolicChemistryQuestion question = (IsaacSymbolicChemistryQuestion) content;
+        for (Choice choice : question.getChoices()) {
+            if (choice instanceof ChemicalFormula) {
+                ChemicalFormula formula = (ChemicalFormula) choice;
+                registerContentProblemQuestionChemicalFormulaIsEmpty(content, indexProblemCache, question, formula);
+            } else {
+                registerContentProblemSymbolicChemistryQuestionChoiceIsNotChemicalFormula(content, indexProblemCache, question, choice);
+            }
+        }
+    }
+
+    private void registerContentProblemSymbolicChemistryQuestionChoiceIsNotChemicalFormula(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacSymbolicChemistryQuestion question, final Choice choice) {
+        this.registerContentProblem(content, "Chemistry Question: " + question.getId() + " has non-ChemicalFormula Choice ("
+                + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
+    }
+
+    private void registerContentProblemQuestionChemicalFormulaIsEmpty(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacSymbolicChemistryQuestion question, final ChemicalFormula formula) {
+        if (formula.getMhchemExpression() == null || formula.getMhchemExpression().isEmpty()) {
+            this.registerContentProblem(content, "Chemistry Question: " + question.getId() + " has ChemicalFormula"
+                    + " with empty mhchemExpression!", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemsSymbolicQuestionInvalidProperties(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        IsaacSymbolicQuestion question = (IsaacSymbolicQuestion) content;
+        for (String sym : question.getAvailableSymbols()) {
+            registerContentProblemQuestionSymbolContainsBackslash(content, indexProblemCache, question, sym);
+        }
+        for (Choice choice : question.getChoices()) {
+            if (choice instanceof Formula) {
+                Formula f = (Formula) choice;
+                if (f.getPythonExpression().contains("\\")) {
+                    registerContentProblemQuestionFormulaContainsBackslash(content, indexProblemCache, question, choice);
+                } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
+                    registerContentProblemQuestionFormulaIsEmpty(content, indexProblemCache, question, choice);
+                }
+            } else {
+                registerContentProblemSymbolicQuestionChoiceIsNotFormula(content, indexProblemCache, question, choice);
+            }
+        }
+    }
+
+    private void registerContentProblemSymbolicQuestionChoiceIsNotFormula(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacSymbolicQuestion question, final Choice choice) {
+        this.registerContentProblem(content, "Symbolic Question: " + question.getId() + " has non-Formula Choice ("
+                + choice.getValue() + "). It must be deleted and a new Formula Choice created.", indexProblemCache);
+    }
+
+    private void registerContentProblemQuestionFormulaIsEmpty(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacSymbolicQuestion question, final Choice choice) {
+        this.registerContentProblem(content, "Symbolic Question: " + question.getId() + " has Formula ("
+                + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
+    }
+
+    private void registerContentProblemQuestionFormulaContainsBackslash(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacSymbolicQuestion question, final Choice choice) {
+        this.registerContentProblem(content, "Symbolic Question: " + question.getId() + " has Formula ("
+                + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
+    }
+
+    private void registerContentProblemQuestionSymbolContainsBackslash(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacSymbolicQuestion question, final String sym) {
+        if (sym.contains("\\")) {
+            this.registerContentProblem(content, "Symbolic Question: " + question.getId() + " has availableSymbol ("
+                    + sym + ") which contains a '\\' character.", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemsNumericQuestionInvalidChoicesOrUnits(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content instanceof IsaacNumericQuestion) {
+            IsaacNumericQuestion question = (IsaacNumericQuestion) content;
+            for (Choice choice : question.getChoices()) {
+                if (choice instanceof Quantity) {
+                    Quantity quantity = (Quantity) choice;
+
+                    registerContentProblemCannotParseQuantityChoiceAsNumber(content, indexProblemCache, question, quantity);
+
+                    registerContentProblemUnnecessaryQuantityChoiceUnits(content, indexProblemCache, question, quantity);
+
+
+                } else {
+                    registerContentProblemNumericQuestionChoiceIsNotQuantity(content, indexProblemCache, question, choice);
+                }
+            }
+            registerContentProblemConflictingUnitSettings(content, indexProblemCache, question);
+        }
+    }
+
+    private void registerContentProblemConflictingUnitSettings(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacNumericQuestion question) {
+        if (question.getRequireUnits() && null != question.getDisplayUnit() && !question.getDisplayUnit().isEmpty()) {
+            this.registerContentProblem(content, "Numeric Question: " + question.getId() + " has a displayUnit set but also requiresUnits!"
+                    + " Units will be ignored for this question!", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemNumericQuestionChoiceIsNotQuantity(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacNumericQuestion question, final Choice choice) {
+        this.registerContentProblem(content, "Numeric Question: " + question.getId() + " has non-Quantity Choice ("
+                + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
+    }
+
+    private void registerContentProblemUnnecessaryQuantityChoiceUnits(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacNumericQuestion question, final Quantity quantity) {
+        if (!question.getRequireUnits() && null != quantity.getUnits() && !quantity.getUnits().isEmpty()) {
+            this.registerContentProblem(content, "Numeric Question: " + question.getId()
+                    + " has a Quantity with units but does not require units!", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemCannotParseQuantityChoiceAsNumber(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final IsaacNumericQuestion question, final Quantity quantity) {
+        // Check valid number by parsing in the same way as IsaacNumericValidator::stringValueToDouble:
+        try {
+            new BigDecimal(quantity.getValue()).doubleValue();
+        } catch (NumberFormatException e) {
+            this.registerContentProblem(content,
+                    "Numeric Question: " + question.getId() + " has Quantity (" + quantity.getValue()
+                            + ")  with value that cannot be interpreted as a number. "
+                            + "Users will never be able to match this answer.", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemEventMissingOrInvalidEndDate(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content instanceof IsaacEventPage) {
+            IsaacEventPage eventPage = (IsaacEventPage) content;
+            if (eventPage.getEndDate() == null) {
+                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
+            } else if (eventPage.getEndDate().before(eventPage.getDate())) {
+                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
+            }
+        }
+    }
+
+    private void registerContentProblemEmailTemplateMissingPainTextContentField(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content instanceof EmailTemplate) {
+            EmailTemplate emailTemplate = (EmailTemplate) content;
+            if (emailTemplate.getPlainTextContent() == null) {
+                this.registerContentProblem(content,
+                        "Email template should always have plain text content field", indexProblemCache);
+            }
+        }
+    }
+
+    private void registerContentProblemsChoiceQuestionMissingChoicesOrAnswer(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content instanceof ChoiceQuestion && !(content.getType().equals("isaacQuestion"))) {
+            ChoiceQuestion question = (ChoiceQuestion) content;
+
+            if (question.getChoices() == null || question.getChoices().isEmpty()) {
+                registerContentProblemChoiceQuestionMissingChoices(indexProblemCache, question);
+            } else {
+                registerContentProblemChoiceQuestionMissingAnswer(indexProblemCache, question);
+            }
+        }
+    }
+
+    private void registerContentProblemChoiceQuestionMissingAnswer(
+            final Map<Content, List<String>> indexProblemCache, final ChoiceQuestion question) {
+        boolean correctOptionFound = false;
+        for (Choice choice : question.getChoices()) {
+            if (choice.isCorrect()) {
+                correctOptionFound = true;
+            }
+        }
+        if (!correctOptionFound) {
+            this.registerContentProblem(question,
+                    "Question: " + question.getId() + " found without a correct answer. "
+                            + "This question will always be automatically marked as incorrect", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemChoiceQuestionMissingChoices(
+            final Map<Content, List<String>> indexProblemCache, final ChoiceQuestion question) {
+        this.registerContentProblem(question,
+                "Question: " + question.getId() + " found without any choice metadata. "
+                        + "This question will always be automatically " + "marked as incorrect", indexProblemCache);
+    }
+
+    private void registerContentProblemQuestionMissingId(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content instanceof Question && content.getId() == null) {
+            this.registerContentProblem(content, "Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
+                    + " found without a unique id. " + "This question cannot be logged correctly.", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemsMediaInvalidProperties(
+            final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content instanceof Media) {
+            Media media = (Media) content;
+
+            registerContentProblemMediaNotFoundOrTooLarge(sha, content, indexProblemCache, media);
+
+            // check that there is some alt text.
+            registerContentProblemMediaMissingAltText(content, indexProblemCache, media);
+        }
+    }
+
+    private void registerContentProblemMediaMissingAltText(
+            final Content content, final Map<Content, List<String>> indexProblemCache, final Media media) {
+        if (media.getAltText() == null || media.getAltText().isEmpty()) {
+            if (!(media instanceof Video) && !media.getId().equals("eventThumbnail")) {
+                // Videos probably don't need alt text unless there is a good reason. It's not important that event
+                // thumbnails have alt text, so we don't record errors for those either.
+                this.registerContentProblem(content, "No altText attribute set for media element: " + media.getSrc()
+                        + " in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
+            }
+        }
+    }
+
+    private void registerContentProblemMediaNotFoundOrTooLarge(
+            final String sha, final Content content, final Map<Content, List<String>> indexProblemCache, final Media media) {
+        if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
+            ByteArrayOutputStream fileData = null;
+            try {
+                // This will return null if the file is not found:
+                fileData = database.getFileByCommitSHA(sha, media.getSrc());
+            } catch (IOException | UnsupportedOperationException e) {
+                // Leave fileData = null;
+            }
+            if (null == fileData) {
+                this.registerContentProblem(content, "Unable to find Image: " + media.getSrc()
+                        + " in Git. Could the reference be incorrect? SourceFile is " + content.getCanonicalSourceFile(), indexProblemCache);
+            } else if (fileData.size() > MEDIA_FILE_SIZE_LIMIT) {
+                int sizeInKiloBytes = fileData.size() / BYTES_IN_ONE_KILOBYTE;
+                this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
+                        media.getSrc(), sizeInKiloBytes), indexProblemCache);
+            }
+        }
+    }
+
+    private void registerContentProblemUnsupportedTypeExpandable(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (null != content.getExpandable() && content.getExpandable() && (null == content.getLayout()
+                || !content.getLayout().equals("tabs")) && !(content instanceof CodeSnippet)) {
+            this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
+                    + "marked as expandable, but we do not support expanding this type of content yet. If this is a HTML"
+                    + " table, use class='expandable' in the table tag instead.", indexProblemCache);
+        }
+    }
+
+    private void registerContentProblemNestedExpandables(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if ((null != content.getLayout() && content.getLayout().equals("tabs") || content instanceof CodeSnippet) && null != content.getChildren()) {
+            String expandableChildrenLog = collateExpandableChildren(content);
+            if (!expandableChildrenLog.equals("")) {
+                this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
+                        + "potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
+                        + ". These children will have their expandable property disabled since we cannot handle nested "
+                        + "expandable content. Please make sure the parent content block is "
+                        + "marked as expandable instead, and that it's children blocks have the expandable property "
+                        + "disabled.", indexProblemCache);
+            }
+        }
+    }
+
+    private void registerContentProblemValueWithChildren(
+            final Content content, final Map<Content, List<String>> indexProblemCache) {
+        if (content.getValue() != null && !content.getChildren().isEmpty()) {
+            String id = content.getId();
+            String firstLine = "Content";
+            if (id != null) {
+                firstLine += ": " + id;
+            }
+
+            this.registerContentProblem(content, firstLine + " in " + content.getCanonicalSourceFile()
+                    + " found with both children and a value. "
+                    + "Content objects are only allowed to have one or the other.", indexProblemCache);
+
+            log.error("Invalid content item detected: The object with ID (" + content.getCanonicalSourceFile()
+                    + ") has both children and a value.");
         }
     }
 

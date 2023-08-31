@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.util.EmailCommonParameters;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
 import jakarta.mail.MessagingException;
@@ -100,12 +101,12 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
             }
 
             if (email.getHTMLMessage() == null) {
-                mailer.sendPlainTextMail(new String[] { email.getRecipientAddress() }, fromAddress,
-                        overrideEnvelopeFrom, replyTo, email.getSubject(), email.getPlainTextMessage());
+                mailer.sendPlainTextMail(new EmailCommonParameters(new String[]{email.getRecipientAddress()}, fromAddress,
+						overrideEnvelopeFrom, replyTo, email.getSubject()), email.getPlainTextMessage());
             } else {
-                mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, fromAddress,
-                        overrideEnvelopeFrom, replyTo, email.getSubject(),
-                        email.getPlainTextMessage(), email.getHTMLMessage(), email.getAttachments());
+                mailer.sendMultiPartMail(new EmailCommonParameters(new String[]{email.getRecipientAddress()}, fromAddress,
+						overrideEnvelopeFrom, replyTo, email.getSubject()), email.getPlainTextMessage(), email.getHTMLMessage(),
+						email.getAttachments());
             }
         } catch (MessagingException | UnsupportedEncodingException e) {
             throw new CommunicationException(e);

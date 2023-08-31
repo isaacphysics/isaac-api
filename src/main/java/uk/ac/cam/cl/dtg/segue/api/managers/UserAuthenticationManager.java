@@ -884,44 +884,39 @@ public class UserAuthenticationManager {
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
                                final RegisteredUser user, final boolean partialLoginFlag) throws SegueDatabaseException {
+        Validate.notNull(response);
+        Validate.notNull(user);
+        Validate.notNull(user.getId());
         int sessionExpiryTimeInSeconds = properties.getIntegerPropertyOrFallback(SESSION_EXPIRY_SECONDS_DEFAULT, SESSION_EXPIRY_SECONDS_FALLBACK);
-        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag);
+
+        if (partialLoginFlag) {
+            // use shortened expiry time if partial login
+            createSession(response, user, PARTIAL_LOGIN_SESSION_EXPIRY_SECONDS, String.valueOf(true));
+        } else {
+            createSession(response, user, sessionExpiryTimeInSeconds, null);
+        }
     }
 
     /**
      * Create a session with a specified expiry time and attach it to the request provided.
-     * 
-     * @param request
-     *            to enable access to anonymous user information.
+     *
      * @param response
      *            to store the session in our own segue cookie.
      * @param user
      *            account to associate the session with.
      * @param sessionExpiryTimeInSeconds
-     *            max age of the cookie if not a partial login.
-     * @param partialLoginFlag
-     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     *            max age of the cookie.
+     * @param partialLoginFlagString
+     *            either null if this is a full login cookie or a string value of true if this is a partial login cookie
      */
-    private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag)
-            throws SegueDatabaseException {
-        Validate.notNull(response);
-        Validate.notNull(user);
-        Validate.notNull(user.getId());
+    private void createSession(final HttpServletResponse response, final RegisteredUser user, final int sessionExpiryTimeInSeconds,
+                               @Nullable final String partialLoginFlagString) throws SegueDatabaseException {
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        final int partialExpiryTimeInSeconds = 1200; // 20 mins
-
         String newUserSessionToken = this.database.regenerateSessionToken(user).toString();
         String userId = user.getId().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
-        String partialLoginFlagString = null;
 
         try {
-            if (partialLoginFlag) {
-                // use shortened expiry time if partial login
-                sessionExpiryTimeInSeconds = partialExpiryTimeInSeconds;
-            }
-
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
             String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
@@ -931,8 +926,7 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(SESSION_TOKEN, newUserSessionToken);
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
 
-            if (partialLoginFlag) {
-                partialLoginFlagString = String.valueOf(true);
+            if (partialLoginFlagString != null) {
                 sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
             }
 
@@ -946,12 +940,12 @@ public class UserAuthenticationManager {
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
             response.addCookie(authCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
-            
+
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
         }
     }
-    
+
     /**
      * Executes checks on the users sessions to ensure it is valid.
      * <p>

@@ -50,16 +50,14 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         EXACT
     }
 
-    private final String hostname;
-    private final String port;
     private final String externalValidatorUrl;
 
     public IsaacSymbolicChemistryValidator(final String hostname, final String port) {
-        this.hostname = hostname;
-        this.port = port;
-        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check";
+        this.externalValidatorUrl = "http://" + hostname + ":" + port + "/check";
     }
 
+    // We're planning to remove the chemistry code sooner or later so there's not much point cleaning this up.
+    @SuppressWarnings("checkstyle:MethodLength")
     @Override
     public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) throws ValidatorUnavailableException {
         Validate.notNull(question);

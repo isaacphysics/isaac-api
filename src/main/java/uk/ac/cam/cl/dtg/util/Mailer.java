@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.util;
 
 import jakarta.activation.DataHandler;
-import jakarta.annotation.Nullable;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.Message.RecipientType;
@@ -80,30 +79,16 @@ public class Mailer {
 
     /**
      * SendMail Utility Method Sends e-mail to a given recipient using the hard-coded MAIL_ADDRESS and SMTP details.
-     * 
-     * @param recipient
-     *            - string array of recipients that the message should be sent to
-     * @param fromAddress
-     *            - the e-mail address that should be used as the sending address
-     * @param overrideEnvelopeFrom
-     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
-     * @param replyTo
-     *            - (nullable) the e-mail address that should be used as the reply-to address
-     * @param subject
-     *            - The message subject
-     * @param contents
-     *            - The message body
-     * @throws MessagingException
-     *             - if we cannot send the message for some reason.
-     * @throws AddressException
-     *             - if the address is not valid.
+     *
+     * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
+     * @param contents              - The message body
+     * @throws MessagingException - if we cannot send the message for some reason.
+     * @throws AddressException   - if the address is not valid.
      */
-    public void sendPlainTextMail(final String[] recipient, final InternetAddress fromAddress,
-                                  @Nullable final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
-                                  final String subject, final String contents)
+    public void sendPlainTextMail(final EmailCommonParameters emailCommonParameters, final String contents)
 			throws MessagingException {
-        Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
-        
+        Message msg = this.setupMessage(emailCommonParameters);
+
         msg.setText(contents);
 
         Transport.send(msg);
@@ -112,35 +97,18 @@ public class Mailer {
     /**
      * Utility method to allow us to send multipart messages using HTML and plain text.
      * <p>
-     * 
-     * @param recipient
-     *            - string array of recipients that the message should be sent to
-     * @param fromAddress
-     *            - the e-mail address that should be used as the sending address
-     * @param overrideEnvelopeFrom
-     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
-     * @param replyTo
-     *            - (nullable) the e-mail address that should be used as the reply-to address
-     * @param subject
-     *            - The message subject
-     * @param plainText
-     *            - The message body
-     * @param html
-     *            - The message body in html
-	 * @param attachments
-	 * 			  - list of attachment objects
-     * @throws MessagingException
-     *             - if we cannot send the message for some reason.
-     * @throws AddressException
-     *             - if the address is not valid.
+     *
+     * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
+     * @param plainText             - The message body
+     * @param html                  - The message body in html
+     * @param attachments           - list of attachment objects
+     * @throws MessagingException - if we cannot send the message for some reason.
+     * @throws AddressException   - if the address is not valid.
      */
-    public void sendMultiPartMail(final String[] recipient, final InternetAddress fromAddress,
-                                  @Nullable final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
-                                  final String subject, final String plainText, final String html,
-                                  final List<EmailAttachment> attachments)
-			throws MessagingException, AddressException {
+    public void sendMultiPartMail(final EmailCommonParameters emailCommonParameters, final String plainText, final String html,
+                                  final List<EmailAttachment> attachments) throws MessagingException, AddressException {
 
-    	Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
+    	Message msg = this.setupMessage(emailCommonParameters);
         
         // Create the text part
         MimeBodyPart textPart = new MimeBodyPart();
@@ -173,25 +141,14 @@ public class Mailer {
     }
 
     /**
-     * @param recipient
-     *            - string array of recipients that the message should be sent to
-     * @param fromAddress
-     *            - the e-mail address that should be used as the sending address
-     * @param overrideEnvelopeFrom
-     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
-     * @param replyTo
-     *            - the e-mail address that should be used as the reply-to address
-     * @param subject
-     *            - The message subject
+     * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
      * @return a newly created message with all of the headers populated.
      * @throws MessagingException - if there is an error in setting up the message
      */
-    private Message setupMessage(final String[] recipient, final InternetAddress fromAddress,
-                                 final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
-                                 final String subject) throws MessagingException {
-        Validate.notEmpty(recipient);
-        Validate.notBlank(recipient[0]);
-        Validate.notNull(fromAddress);
+    private Message setupMessage(final EmailCommonParameters emailCommonParameters) throws MessagingException {
+        Validate.notEmpty(emailCommonParameters.getRecipient());
+        Validate.notBlank(emailCommonParameters.getRecipient()[0]);
+        Validate.notNull(emailCommonParameters.getFromAddress());
 
         Properties p = new Properties();
 
@@ -201,11 +158,11 @@ public class Mailer {
 
         // Configure the email headers and routing:
         String envelopeFrom = mailAddress;
-        if (null != overrideEnvelopeFrom) {
-            envelopeFrom = overrideEnvelopeFrom;
+        if (null != emailCommonParameters.getOverrideEnvelopeFrom()) {
+            envelopeFrom = emailCommonParameters.getOverrideEnvelopeFrom();
         }
         p.put("mail.smtp.from", envelopeFrom);  // Used for Return-Path
-        p.put("mail.from", fromAddress.getAddress()); // Should only affect Message-ID, since From overridden below
+        p.put("mail.from", emailCommonParameters.getFromAddress().getAddress()); // Should only affect Message-ID, since From overridden below
         p.put("mail.smtp.port", smtpPort);
         p.put("mail.smtp.auth", "true");
         // Create the jakarta.mail.Session object needed to send the email.
@@ -224,18 +181,18 @@ public class Mailer {
         // Create the message and set the recipients:
         Message msg = new MimeMessage(s);
 
-        InternetAddress[] receivers = new InternetAddress[recipient.length];
+        InternetAddress[] receivers = new InternetAddress[emailCommonParameters.getRecipient().length];
 
-        for (int i = 0; i < recipient.length; i++) {
-            receivers[i] = new InternetAddress(recipient[i]);
+        for (int i = 0; i < emailCommonParameters.getRecipient().length; i++) {
+            receivers[i] = new InternetAddress(emailCommonParameters.getRecipient()[i]);
         }
 
-        msg.setFrom(fromAddress);
+        msg.setFrom(emailCommonParameters.getFromAddress());
         msg.setRecipients(RecipientType.TO, receivers);
-        msg.setSubject(subject);
+        msg.setSubject(emailCommonParameters.getSubject());
 
-        if (null != replyTo) {
-            msg.setReplyTo(new InternetAddress[]{replyTo});
+        if (null != emailCommonParameters.getReplyTo()) {
+            msg.setReplyTo(new InternetAddress[]{emailCommonParameters.getReplyTo()});
         }
 
         return msg;

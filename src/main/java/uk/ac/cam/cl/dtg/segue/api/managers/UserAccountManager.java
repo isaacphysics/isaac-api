@@ -154,7 +154,9 @@ public class UserAccountManager implements IUserAccountManager {
      * @param logManager
      *            - so that we can log events for users.
      * @param userAuthenticationManager
+     *            - for managing sessions, passwords and third-party provider links
      * @param secondFactorManager
+     *            - for configuring 2FA
      * @param userPreferenceManager
      *            - Allows user preferences to be managed.
      */
@@ -195,11 +197,11 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * This method will start the authentication process and ultimately provide a url for the client to redirect the
+     * This method will start the authentication process and ultimately provide an url for the client to redirect the
      * user to. This url will be for a 3rd party authenticator who will use the callback method provided after they have
      * authenticated.
      * <p>
-     * Users who are already logged already will be returned their UserDTO without going through the authentication
+     * Users who are already logged will be returned their UserDTO without going through the authentication
      * process.
      * 
      * @param request
@@ -217,7 +219,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     /**
      * This method will start the authentication process for linking a user to a 3rd party provider. It will ultimately
-     * provide a url for the client to redirect the user to. This url will be for a 3rd party authenticator who will use
+     * provide an url for the client to redirect the user to. This url will be for a 3rd party authenticator who will use
      * the callback method provided after they have authenticated.
      * <p>
      * Users must already be logged in to use this method otherwise a 401 will be returned.
@@ -533,8 +535,10 @@ public class UserAccountManager implements IUserAccountManager {
      * @param userPreferenceObject - the preferences for this user
      * @param registeredUserContexts - a List of User Contexts (stage, exam board)
      * @return the updated user object.
-     * @throws NoCredentialsAvailableException
-     * @throws IncorrectCredentialsProvidedException
+     * @throws IncorrectCredentialsProvidedException - if the password is incorrect
+     * @throws NoCredentialsAvailableException - if the account exists but does not have a local password
+     * @throws InvalidKeySpecException - if the preconfigured key spec is invalid
+     * @throws NoSuchAlgorithmException - if the configured algorithm is not valid
      */
     public Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
                                      final RegisteredUser userObjectFromClient, final String passwordCurrent,
@@ -548,7 +552,7 @@ public class UserAccountManager implements IUserAccountManager {
         // this is an update as the user has an id
         // security checks
         try {
-            // check that the current user has permissions to change this users details.
+            // check that the current user has permissions to change this user's details.
             RegisteredUserDTO currentlyLoggedInUser = this.getCurrentRegisteredUser(request);
             if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                     && !checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))) {
@@ -912,6 +916,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is another database error       
      */
+    @Override
     public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
         return this.getUserDTOById(id, false);
     }
@@ -919,7 +924,7 @@ public class UserAccountManager implements IUserAccountManager {
     /**
      * This function can be used to find user information about a user when given an id - EVEN if it is a deleted user.
      * <p>
-     * WARNING- Do not expect complete RegisteredUser Objects as data may be missing if you include deleted users
+     * WARNING - Do not expect complete RegisteredUser Objects as data may be missing if you include deleted users
      * @param id
      *            - the id of the user to search for.
      * @param includeDeleted
@@ -930,6 +935,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is another database error
      */
+    @Override
     public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
             SegueDatabaseException {
         RegisteredUser user;
@@ -1067,11 +1073,11 @@ public class UserAccountManager implements IUserAccountManager {
 
         // Before save we should validate the user for mandatory fields.
         // validate names
-        if (!this.isUserNameValid(user.getGivenName())) {
+        if (!isUserNameValid(user.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(user.getFamilyName())) {
+        if (!isUserNameValid(user.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
@@ -1163,11 +1169,11 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!this.isUserNameValid(updatedUser.getGivenName())) {
+        if (!isUserNameValid(updatedUser.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
 
-        if (!this.isUserNameValid(updatedUser.getFamilyName())) {
+        if (!isUserNameValid(updatedUser.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
@@ -1528,7 +1534,7 @@ public class UserAccountManager implements IUserAccountManager {
      * Check if account has MFA configured.
      *
      * @param user - who requested it
-     * @return true if yes false if not.
+     * @return true if yes, false if not.
      * @throws SegueDatabaseException - If there is an internal database error.
      */
     public boolean has2FAConfigured(final RegisteredUserDTO user) throws SegueDatabaseException {
@@ -1634,7 +1640,7 @@ public class UserAccountManager implements IUserAccountManager {
      * WARNING: Do not use this method to determine if a user has successfully logged in or not as they could have omitted the 2FA step.
      *
      * @param request to pull back the user
-     * @return UserSummaryDTO of the partially logged in user or will throw an exception if cannot be found.
+     * @return UserSummaryDTO of the partially logged-in user or will throw an exception if cannot be found.
      * @throws NoUserLoggedInException if they haven't started the flow.
      */
     public UserSummaryWithEmailAddressDTO getPartiallyIdentifiedUser(final HttpServletRequest request) throws NoUserLoggedInException {
@@ -1722,7 +1728,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Generate a partially logged in session for the user based on successful password authentication.
+     * Generate a partially logged-in session for the user based on successful password authentication.
      * <p>
      * To complete this the user must also complete MFA authentication.
      *
@@ -1892,15 +1898,11 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     public static boolean isEmailValid(final String email) {
-        if (email == null
-                || email.isEmpty()
-                || !email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")
-                || !EMAIL_PERMITTED_CHARS_REGEX.matcher(email).matches()
-                || EMAIL_CONSECUTIVE_FULL_STOP_REGEX.matcher(email).find()
-        ) {
-            return false;
-        }
-        return true;
+        return email != null
+                && !email.isEmpty()
+                && email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")
+                && EMAIL_PERMITTED_CHARS_REGEX.matcher(email).matches()
+                && !EMAIL_CONSECUTIVE_FULL_STOP_REGEX.matcher(email).find();
     }
 
     /**
@@ -1910,16 +1912,12 @@ public class UserAccountManager implements IUserAccountManager {
      *            - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public static final boolean isUserNameValid(final String name) {
-        if (null == name
-                || name.isEmpty()
-                || name.isBlank()
-                || name.length() > USER_NAME_MAX_LENGTH
-                || !USER_NAME_PERMITTED_CHARS_REGEX.matcher(name).matches()
-        ) {
-            return false;
-        }
-        return true;
+    public static boolean isUserNameValid(final String name) {
+        return null != name
+                && !name.isEmpty()
+                && !name.isBlank()
+                && name.length() <= USER_NAME_MAX_LENGTH
+                && USER_NAME_PERMITTED_CHARS_REGEX.matcher(name).matches();
     }
 
     /**
@@ -1953,7 +1951,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Get the RegisteredUserDO of the currently logged in user. This is for internal use only.
+     * Get the RegisteredUserDO of the currently logged-in user. This is for internal use only.
      * <p>
      * This method will validate the session as well returning null if it is invalid.
      * 
