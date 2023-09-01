@@ -186,24 +186,16 @@ public class EventBookingManager {
         return this.bookingPersistenceManager.adminGetBookingsByEventId(eventId);
     }
 
-    /**
-     * Utility method to provide a count of the number of bookings on a given event with a given status.
-     *
-     * @param eventId the event id to look up
-     * @param status  - the status of bookings we are interested in
-     * @return the total bookings matching the criteria provided.
-     * @throws SegueDatabaseException if we cannot get the booking.
-     */
-    public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
-            throws SegueDatabaseException {
-        long v = 0L;
-        for (EventBookingDTO eb : this.bookingPersistenceManager.adminGetBookingsByEventId(eventId)) {
-            if (status.equals(eb.getBookingStatus())) {
-                v++;
-            }
+    public Map<String, List<DetailedEventBookingDTO>> adminGetBookingsByEventIds(final List<String> eventIds) throws SegueDatabaseException {
+        Map<String, List<DetailedEventBookingDTO>> result = new HashMap<>();
+
+        for (String eventId : eventIds) {
+            result.put(eventId, adminGetBookingsByEventId(eventId));
         }
-        return v;
+
+        return result;
     }
+
 
     /**
      * Ensure an event allows group bookings.

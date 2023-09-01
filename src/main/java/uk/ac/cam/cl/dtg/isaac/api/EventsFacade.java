@@ -1489,16 +1489,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                                             @QueryParam("filter") final String filter) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
-
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
@@ -1528,13 +1518,18 @@ public class EventsFacade extends AbstractIsaacFacade {
                     DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
                     filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
                 }
+
             }
 
-            ResultsWrapper<ContentDTO> findByFieldNames = null;
-
-            findByFieldNames = this.contentManager.findByFieldNames(
+            ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+                    startIndex, limit, sortInstructions, filterInstructions);
+
+            // Get list of event IDs
+            List<String> eventIds = findByFieldNames.getResults().stream().map(ContentDTO::getId).collect(Collectors.toList());
+
+            // Get all bookings for multiple events in one go
+            Map<String, List<DetailedEventBookingDTO>> allBookings = this.bookingManager.adminGetBookingsByEventIds(eventIds);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
 
@@ -1561,14 +1556,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                     eventOverviewBuilder.put("location", event.getLocation());
                 }
 
-                eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.CONFIRMED));
-                eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.WAITING_LIST));
-                eventOverviewBuilder.put("numberAttended",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ATTENDED));
-                eventOverviewBuilder.put("numberAbsent",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ABSENT));
+                // Use counts from batch query
+                List<DetailedEventBookingDTO> bookingsForThisEvent = allBookings.getOrDefault(event.getId(), new ArrayList<>());
+                long numberOfConfirmedBookings = bookingsForThisEvent.stream().filter(b -> BookingStatus.CONFIRMED.equals(b.getBookingStatus())).count();
+                long numberOfWaitingListBookings = bookingsForThisEvent.stream().filter(b -> BookingStatus.WAITING_LIST.equals(b.getBookingStatus())).count();
+
+                eventOverviewBuilder.put("numberOfConfirmedBookings", numberOfConfirmedBookings);
+                eventOverviewBuilder.put("numberOfWaitingListBookings", numberOfWaitingListBookings);
 
                 if (null != event.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());
