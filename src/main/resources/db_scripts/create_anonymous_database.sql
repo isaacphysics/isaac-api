@@ -1,5 +1,5 @@
 ﻿-- Note that this may require the pg_crypto extension:
-CREATE EXTENSION pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- The anonymous database produced may not yet be fully anonymous due to issues with gameboards!
 
