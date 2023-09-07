@@ -1,5 +1,5 @@
 ﻿-- Note that this may require the pg_crypto extension:
---CREATE EXTENSION pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- The anonymous database produced may not yet be fully anonymous due to issues with gameboards!
 
@@ -41,7 +41,8 @@ CREATE TABLE anonymous.users AS
         END AS date_of_birth,
         school_id,
         registration_date,
-        last_seen
+        last_seen,
+        country_code
     FROM public.users;
 
 CREATE TABLE anonymous.linked_accounts AS

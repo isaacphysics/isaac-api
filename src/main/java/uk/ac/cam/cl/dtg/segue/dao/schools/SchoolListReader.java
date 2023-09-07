@@ -29,15 +29,9 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_BASE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_POSTCODE_FIELDNAME_POJO;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME_POJO;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -95,22 +89,15 @@ public class SchoolListReader {
 
         Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
 
-        // FIXME: for one release cycle, we need backwards compatibility and so cannot use the fieldsThatMustMatch property
-        // It should be set to ImmutableMap.of("closed", ImmutableList.of("false"))
         List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, queryLimit, null, null, SCHOOL_URN_FIELDNAME_POJO,
+                searchQuery, 0, queryLimit, Map.of(SCHOOL_CLOSED_FIELDNAME_POJO, List.of("false")), null, SCHOOL_URN_FIELDNAME_POJO,
                 SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
                 .getResults();
 
         List<School> resultList = Lists.newArrayList();
         for (String schoolString : schoolSearchResults) {
             try {
-                School school = mapper.readValue(schoolString, School.class);
-                if (school.isClosed() != null && school.isClosed()) {
-                    // FIXME: this filtering will be unnecessary once the above fix is implemented!
-                    continue;
-                }
-                resultList.add(school);
+                resultList.add(mapper.readValue(schoolString, School.class));
             } catch (JsonParseException | JsonMappingException e) {
                 log.error("Unable to parse the school " + schoolString, e);
             } catch (IOException e) {

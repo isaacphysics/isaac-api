@@ -29,6 +29,7 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
     protected String testCode;
     protected String expectedResult;
     protected Boolean wrapCodeInMain;
+    protected String dataUrl;
 
     @JsonCreator
     public InteractiveCodeSnippetDTO(@JsonProperty("language") String language, @JsonProperty("code") String code,
@@ -72,6 +73,14 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
 
     public void setWrapCodeInMain(Boolean wrapCodeInMain) {
         this.wrapCodeInMain = wrapCodeInMain;
+    }
+
+    public String getDataUrl() {
+        return dataUrl;
+    }
+
+    public void setDataUrl(final String dataUrl) {
+        this.dataUrl = dataUrl;
     }
 }
 

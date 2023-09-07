@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v3.8.7-SNAPSHOT</segue.version>
+        <segue.version>v3.9.4-SNAPSHOT</segue.version>
         <log4j.version>2.19.0</log4j.version>
         <resteasy.version>6.2.2.Final</resteasy.version>
         <guice.version>5.1.0</guice.version>
@@ -147,7 +147,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>32.0.1-jre</version>
         </dependency>
 
         <dependency>
@@ -453,6 +453,12 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>1.70</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.maxmind.geoip2</groupId>
+            <artifactId>geoip2</artifactId>
+            <version>4.1.0</version>
         </dependency>
 
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we

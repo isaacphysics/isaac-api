@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserSettings;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -294,6 +295,48 @@ public class UsersFacade extends AbstractSegueFacade {
                     "Can't load user preferences!", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        }
+    }
+
+    @POST
+    @Path("users/current_user/upgrade/{role}")
+    @Operation(summary = "Upgrade the current user's role in a self-service manner.",
+               description = "Currently only upgrading from student to teacher is supported and only on some sites.")
+    public Response upgradeCurrentAccountRole(@Context final HttpServletRequest request, @PathParam("role") final String role) {
+        if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES))) {
+            try {
+                Role requestedRole = Role.valueOf(role);
+                if (!requestedRole.equals(Role.TEACHER)) {
+                    return SegueErrorResponse.getBadRequestResponse("You can only upgrade your account to a teacher account.");
+                }
+
+                RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+                if (!Role.STUDENT.equals(user.getRole())) {
+                    return SegueErrorResponse.getBadRequestResponse("You already have an upgraded account.");
+                }
+
+                if (user.getEmailVerificationStatus() != EmailVerificationStatus.VERIFIED) {
+                    return SegueErrorResponse.getBadRequestResponse("You need to have a verified email address to upgrade to a teacher account.");
+                }
+
+                // We'll leave TEACHER hard-coded here for security until we support a wider range of requestedRoles:
+                userManager.updateUserRole(user.getId(), Role.TEACHER);
+                log.info(String.format("User (%s) has upgraded their account from %s to %s", user.getId(), user.getRole(), Role.TEACHER));
+                this.getLogManager().logEvent(user, request, SegueServerLogType.USER_UPGRADE_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
+                                    "oldRole", user.getRole(),
+                                    "newRole", Role.TEACHER));
+
+                return Response.ok().build();
+
+            } catch (NoUserLoggedInException e) {
+                return SegueErrorResponse.getNotLoggedInResponse();
+            } catch (SegueDatabaseException e) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Could not save new role to the database.").toResponse();
+            }
+        } else {
+            return SegueErrorResponse.getNotImplementedResponse();
         }
     }
 

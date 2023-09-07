@@ -426,8 +426,11 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     public void previewQuiz() {
         forEndpoint(() -> quizFacade.previewQuiz(requestForCaching, httpServletRequest, studentQuiz.getId()),
             requiresLogin(),
-            as(student, failsWith(SegueErrorResponse.getIncorrectRoleResponse())),
-            as(teacher, respondsWith(studentQuiz))
+            as(student,
+                failsWith(SegueErrorResponse.getIncorrectRoleResponse())),
+            as(teacher,
+                prepare(quizQuestionManager, m -> expect(m.augmentQuestionsForPreview(studentQuiz)).andReturn(studentQuiz)),
+                respondsWith(studentQuiz))
         );
     }
 

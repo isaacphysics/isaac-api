@@ -90,6 +90,8 @@ public final class Constants {
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
+    public static final String MAXMIND_CITY_DB_LOCATION = "MAXMIND_CITY_DB_LOCATION";
+
     // GIT stuff
     public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
     public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
@@ -393,6 +395,7 @@ public final class Constants {
         SEND_MASS_EMAIL,
         SENT_EMAIL,
         USER_REGISTRATION,
+        USER_UPGRADE_ROLE,
         USER_SCHOOL_CHANGE
     }
 
@@ -488,6 +491,7 @@ public final class Constants {
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
     public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
+    public static final String SCHOOL_CLOSED_FIELDNAME_POJO = "closed";
 
     // User School Reporting
 
@@ -570,6 +574,8 @@ public final class Constants {
 
     public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
     public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
+
+    public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
 
     /**
      * Private constructor to prevent this class being created.

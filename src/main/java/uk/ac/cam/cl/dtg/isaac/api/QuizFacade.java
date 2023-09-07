@@ -346,6 +346,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
 
+            quiz = quizQuestionManager.augmentQuestionsForPreview(quiz);
+
             // Check this user is actually allowed to preview this quiz. A tutor counts as both a student and teacher
             // in this check
             if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
