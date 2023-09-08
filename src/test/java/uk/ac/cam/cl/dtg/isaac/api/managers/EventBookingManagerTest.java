@@ -34,14 +34,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.mock;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -82,7 +75,7 @@ public class EventBookingManagerTest {
         };
 
         expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
-        expect(this.dummyPropertiesLoader.getProperty(MAIL_NAME)).andReturn("Isaac Physics").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(MAIL_NAME)).andReturn("Isaac Computer Science").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(EVENT_ADMIN_EMAIL)).andReturn("admin@hostname.com").anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(EVENT_ICAL_UID_DOMAIN)).andReturn("hostname.com").anyTimes();
         this.someAdditionalInformation = Maps.newHashMap();
@@ -95,7 +88,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setTags(ImmutableSet.of("student", "computerscience"));
         testEvent.setEmailEventDetails("Some Details");
         testEvent.setDate(someFutureDate);
 
@@ -151,7 +144,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setTags(ImmutableSet.of("student", "computerscience"));
         testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
@@ -197,7 +190,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
         testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
@@ -242,7 +235,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setTags(ImmutableSet.of("student", "computerscience"));
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -269,7 +262,7 @@ public class EventBookingManagerTest {
         old.setTime(958074310000L);
 
         testEvent.setBookingDeadline(old);
-        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setTags(ImmutableSet.of("student", "computerscience"));
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -292,7 +285,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
         testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
@@ -346,7 +339,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
         testEvent.setEmailEventDetails("Some Details");
         testEvent.setDate(someFutureDate);
 
@@ -403,7 +396,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(2);
-        testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
         testEvent.setEmailEventDetails("Some Details");
         testEvent.setDate(someFutureDate);
 
@@ -512,7 +505,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
         testEvent.setEmailEventDetails("some details");
         testEvent.setDate(someFutureDate);
 
@@ -582,7 +575,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
-        testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
         testEvent.setDate(someFutureDate);
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
@@ -675,7 +668,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(2);
-        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setTags(ImmutableSet.of("student", "computerscience"));
         testEvent.setEventStatus(EventStatus.WAITING_LIST_ONLY);
         testEvent.setDate(someFutureDate);
 
@@ -718,7 +711,7 @@ public class EventBookingManagerTest {
         IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(2);
-        testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setTags(ImmutableSet.of("student", "computerscience"));
         testEvent.setEventStatus(EventStatus.OPEN);
         testEvent.setDate(new Date(System.currentTimeMillis()+24*60*60*1000)); // future dated
         testEvent.setAllowGroupReservations(true);

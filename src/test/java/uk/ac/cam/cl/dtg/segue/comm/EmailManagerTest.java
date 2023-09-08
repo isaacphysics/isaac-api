@@ -15,14 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -31,23 +25,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.api.easymock.PowerMock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
@@ -55,7 +38,20 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  * Test class for the EmailManager class.
@@ -128,10 +124,10 @@ public class EmailManagerTest {
         userPreferenceManager = EasyMock.createMock(PgUserPreferenceManager.class);
 
         mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
-        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaaccomputerscience.org").anyTimes();
         EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com").anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).andReturn("no-reply@isaacphysics.org").anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Physics").anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).andReturn("no-reply@isaaccomputerscience.org").anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Computer Science").anyTimes();
 
         EasyMock.replay(mockPropertiesLoader);
 
@@ -225,7 +221,7 @@ public class EmailManagerTest {
                 + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
 
         ContentDTO htmlTemplate = createDummyContentTemplate("<!DOCTYPE html><html><head><meta charset='utf-8'>"
-                + "<title>Isaac Physics project</title></head><body>" + "{{content}}" + "</body></html>");
+                + "<title>Isaac Computer Science project</title></head><body>" + "{{content}}" + "</body></html>");
 
         ContentDTO asciiTemplate = createDummyContentTemplate("{{content}}");
         try {
@@ -264,13 +260,13 @@ public class EmailManagerTest {
 
         final String expectedMessagePlainText = "Hi, tester."
                 + "\nThanks for registering!\nYour Isaac email address is: "
-                + "</a href='mailto:test@test.com'>test@test.com<a>.\naddress</a>\nIsaac Physics Project";
+                + "</a href='mailto:test@test.com'>test@test.com<a>.\naddress</a>\nIsaac Computer Science Project";
 
         final String expectedMessageHTML = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Isaac "
-                + "Physics project</title></head><body>"
+                + "Computer Science project</title></head><body>"
                 + "Hi, tester.\nThanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:test@test.com'>test@test.com<a>.\n" + "address</a>\nIsaac "
-                + "Physics Project</body></html>";
+                + "Computer Science Project</body></html>";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -342,7 +338,7 @@ public class EmailManagerTest {
 
         final String expectedMessage = "Hello, tester.\n\nYou requested a password reset. "
                 + "However you use testString to log in to our site. You need to go to your "
-                + "authentication testWord to reset your password.\n\nRegards,\n\nIsaac Physics Project";
+                + "authentication testWord to reset your password.\n\nRegards,\n\nIsaac Computer Science Project";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -399,7 +395,7 @@ public class EmailManagerTest {
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
-                    "https://dev.isaacphysics.org/resetpassword/resetToken");
+                    "https://dev.isaaccomputerscience.org/resetpassword/resetToken");
 
             manager.sendTemplatedEmailToUser(userDTO,
                     manager.getEmailTemplateDTO("email-template-password-reset"),
@@ -415,8 +411,8 @@ public class EmailManagerTest {
 
         final String expectedMessage = "Hello, tester.\n\nA request has been "
                 + "made to reset the password for the account: </a href='mailto:test@test.com'>test@test.com<a>"
-                + ".\n\nTo reset your password <a href='https://dev.isaacphysics.org/resetpassword/resetToken'>"
-                + "Click Here</a>\n\nRegards,\n\nIsaac Physics Project";
+                + ".\n\nTo reset your password <a href='https://dev.isaaccomputerscience.org/resetpassword/resetToken'>"
+                + "Click Here</a>\n\nRegards,\n\nIsaac Computer Science Project";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -736,7 +732,7 @@ public class EmailManagerTest {
 
     private Map generateGlobalTokenMap() {
         Map<String, String> globalTokens = Maps.newHashMap();
-        globalTokens.put("sig", "Isaac Physics Project");
+        globalTokens.put("sig", "Isaac Computer Science Project");
         globalTokens.put("emailPreferencesURL", "https://test/assignments");
 
         return globalTokens;

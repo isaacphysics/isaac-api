@@ -40,7 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test class for the user manager class.
@@ -80,7 +80,7 @@ public class GameboardsFacadeTest {
 
 	/**
 	 * Verify that when an empty gameboard is noticed a 204 is returned.
-	 * 
+	 *
 	 * @throws ContentManagerException
 	 */
 	@Test
@@ -92,7 +92,7 @@ public class GameboardsFacadeTest {
 				userManager, userAssociationManager, userBadgeManager, fastTrackManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
-		String subjects = "physics";
+		String subjects = "computerscience";
 		String fields = "mechanics";
 		String topics = "dynamics";
 		String levels = "2,3,4";

@@ -87,7 +87,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +95,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DEFAULT_MISUSE_STATISTICS_LIMIT;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -749,8 +747,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by school other field.
      * @param schoolURN
      *            - if searching by school by the URN.
-     * @param subjectOfInterest
-     *            - if searching by subject interest
      * @return a userDTO or a segue error response
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -762,8 +758,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
-            @QueryParam("schoolURN") @Nullable final String schoolURN,
-            @QueryParam("subjectOfInterest") @Nullable final String subjectOfInterest) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -842,23 +837,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 foundUsers = this.userManager.findUsers(userPrototype);
             }
             Map<Long, RegisteredUserDTO> userMapById = foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
-
-            // FIXME - this shouldn't really be in a segue class!
-            if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
-                List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
-                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), foundUsers);
-
-                for (RegisteredUserDTO userToFilter: foundUsers) {
-                    if (userPreferences.containsKey(userToFilter.getId())) {
-                        for (UserPreference pref : userPreferences.get(userToFilter.getId())) {
-                            if (pref.getPreferenceName().equals(subjectOfInterest) && pref.getPreferenceValue()) {
-                                subjectFilteredUsers.add(userToFilter);
-                            }
-                        }
-                    }
-                }
-                foundUsers = subjectFilteredUsers;
-            }
 
             // Calculate the ETag
             EntityTag etag = new EntityTag(foundUsers.size() + foundUsers.toString().hashCode()

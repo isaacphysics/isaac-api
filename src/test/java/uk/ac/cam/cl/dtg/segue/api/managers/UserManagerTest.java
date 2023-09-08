@@ -142,7 +142,7 @@ public class UserManagerTest {
         expect(this.dummyPropertiesLoader.getIntegerPropertyOrFallback(Constants.SESSION_EXPIRY_SECONDS_DEFAULT,
                 SESSION_EXPIRY_SECONDS_FALLBACK)).andReturn(Integer.valueOf("60")).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andReturn("DEV").anyTimes();
-        expect(this.dummyPropertiesLoader.getProperty(Constants.RESTRICTED_SIGNUP_EMAIL_REGEX)).andReturn(".*@isaacphysics\\.org").anyTimes();
+        expect(this.dummyPropertiesLoader.getProperty(Constants.RESTRICTED_SIGNUP_EMAIL_REGEX)).andReturn(".*@isaaccomputerscience\\.org").anyTimes();
         replay(this.dummyPropertiesLoader);
     }
 
