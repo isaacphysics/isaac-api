@@ -121,10 +121,10 @@ public interface IUserDataManager {
 
   /**
    * Unlink providerFromUser.
-   * <p>
+   * <br>
    * This will delete the entry in the linkedAccounts table and prevent a user from authenticating using that linked
    * account in the future.
-   * <p>
+   * <br>
    * Note: It is best practice to make sure the user can login with some other means before doing this.
    *
    * @param user     - The user to use as a search term.

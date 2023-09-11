@@ -320,7 +320,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * This method checks the database for the user's email preferences and either adds them to
    * the queue, or filters them out.
-   * <p>
+   * <br>
    * This method will also check to see if the email type is allowed to be filtered by preference first
    * e.g. SYSTEM emails cannot be filtered
    *
@@ -389,7 +389,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Method to take a random (potentially nested map) and flatten it into something where values can be easily extracted
    * for email templates.
-   * <p>
+   * <br>
    * Nested fields are addressed as per json objects and separated with the dot operator.
    *
    * @param inputMap  - A map of string to random object

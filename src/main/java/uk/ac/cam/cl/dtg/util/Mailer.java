@@ -96,7 +96,7 @@ public class Mailer {
 
   /**
    * Utility method to allow us to send multipart messages using HTML and plain text.
-   * <p>
+   * <br>
    *
    * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
    * @param plainText             - The message body

@@ -112,9 +112,9 @@ public class EmailFacade extends AbstractSegueFacade {
 
   /**
    * GetEmailInBrowserById from the database.
-   * <p>
+   * <br>
    * This method will return serialised html that displays an email object
-   * <p>
+   * <br>
    * FIXME - this cannot be used for more complicated templated emails, only those using account info!
    * (i.e. events emails or assignment emails cannot be previewed like this!)
    *
@@ -300,7 +300,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
   /**
    * SendEmails
-   * <p>
+   * <br>
    * Send emails to all users of specified roles if their email preferences allow it.
    *
    * @param request         - so that we can allow only logged in users to view their own data.
@@ -381,7 +381,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
   /**
    * sendemailwithuserids allows sending an email to a given list of userids.
-   * <p>
+   * <br>
    * This method will return serialised html that displays an email object
    *
    * @param request         - so that we can allow only logged in users to view their own data.
@@ -475,7 +475,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
   /**
    * sendemailwithuserids allows sending an email to a given list of userids.
-   * <p>
+   * <br>
    * This method will return 200 ok
    *
    * @param request          - so that we can allow only logged in users to view their own data.

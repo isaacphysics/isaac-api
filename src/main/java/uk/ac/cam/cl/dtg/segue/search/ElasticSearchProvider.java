@@ -515,15 +515,15 @@ public class ElasticSearchProvider implements ISearchProvider {
 
   /**
    * Provides default search execution using the fields specified.
-   * <p>
+   * <br>
    * This method does not provide any way of controlling sort order or limiting information returned. It is most
    * useful for doing simple searches with fewer results e.g. by id.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - search index base string to execute the query against
-   *                              <p>indexType - index type to execute the query against
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results.
+   *<br>indexBase - search index base string to execute the query against
+   *<br>indexType - index type to execute the query against
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
    * @param query                 - the query to run.
    * @return list of the search results
    */
@@ -536,15 +536,15 @@ public class ElasticSearchProvider implements ISearchProvider {
 
   /**
    * Provides default search execution using the fields specified.
-   * <p>
+   * <br>
    * This method does not provide any way of controlling sort order or limiting information returned. It is most
    * useful for doing simple searches with fewer results e.g. by id.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - search index base string to execute the query against
-   *                              <p>indexType - index type to execute the query against
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results.
+   *<br>indexBase - search index base string to execute the query against
+   *<br>indexType - index type to execute the query against
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
    * @param query                 - the query to run.
    * @param sortInstructions      - a map of fields to sorting orders (ASC/DESC)
    * @return list of the search results
@@ -559,7 +559,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
   /**
    * Provides default search execution using the fields specified.
-   * <p>
+   * <br>
    * This method does not provide any way of controlling sort order or limiting information returned. It is most
    * useful for doing simple searches with fewer results e.g. by id.
    *
@@ -738,9 +738,9 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * This method returns the maximum window size. i.e. the number of results that can be returned in a single result
    * set without having to do a special scroll query.
-   * <p>
+   * <br>
    * This is a configurable value but the default Elastic Search value is 10,000.
-   * <p>
+   * <br>
    * TODO: we may want to selectively upgrade queries to scroll requests if exceeding this limit.
    *
    * @param indexBase - to look up

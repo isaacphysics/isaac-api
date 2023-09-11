@@ -21,7 +21,7 @@ import java.util.Collection;
 /**
  * TermsFilterInstruction.
  * A class to help encapsulate filter instructions.
- * <p>
+ * <br>
  * This instruction will expect to match at least one of the terms in the list provided.
  */
 public class TermsFilterInstruction extends AbstractFilterInstruction {

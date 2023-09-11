@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Handler to detect bruteforce login attempts.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as they may be trying to brute force someones password.
  */
 public class SegueLoginByIPMisuseHandler implements IMisuseHandler {

@@ -178,7 +178,7 @@ public class UserAuthenticationManager {
 
   /**
    * This method will trigger the authentication flow for a 3rd party authenticator.
-   * <p>
+   * <br>
    * This method can be used for regular logins, new registrations or for linking 3rd party authenticators to an
    * existing Segue user account.
    *
@@ -401,7 +401,7 @@ public class UserAuthenticationManager {
 
   /**
    * Extract the session expiry time from a request.
-   * <p>
+   * <br>
    * Does not check session validity.
    *
    * @param request The request to extract the session information from
@@ -425,7 +425,7 @@ public class UserAuthenticationManager {
 
   /**
    * This method tries to address some of the duplication when extracting a user from a request.
-   * <p>
+   * <br>
    * Note: This method has an important security enforcing function. Users who haven't completed MFA will have a cookie
    * as per normal users but will have an additional status flag that indicates they haven't completed MFA.
    * This method will act upon that by refusing to return the user if the boolean parameter is set to false.
@@ -592,7 +592,7 @@ public class UserAuthenticationManager {
 
   /**
    * Unlink User From AuthenticationProvider
-   * <p>
+   * <br>
    * Removes the link between a user and a provider.
    *
    * @param userDO         - user to affect.
@@ -909,7 +909,7 @@ public class UserAuthenticationManager {
 
   /**
    * Executes checks on the users sessions to ensure it is valid.
-   * <p>
+   * <br>
    * Verifies the HMAC for userId, expiry date, session token and partial login status; but DOES NOT enforce
    * partial login as invalid! I.e. this method will return true for partial logins.
    *
@@ -994,7 +994,7 @@ public class UserAuthenticationManager {
   /**
    * This method is used to check whether a Segue Session's reported HMAC matches our recalculation. Assuming we've
    * kept our HMAC_SALT secret and non-guessable, that will mean the session information has not been tampered with.
-   * <p>
+   * <br>
    * NOTE: Even if the HMAC is correct, it does not mean the session is valid, for that, use #isValidUsersSession(...).
    *
    * @param sessionInformation Map of keys and values representing the session.

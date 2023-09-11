@@ -105,7 +105,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Pages Facade
- * <p>
+ * <br>
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
@@ -156,7 +156,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
   /**
    * REST end point to provide a list of concepts.
-   * <p>
+   * <br>
    * Uses ETag caching to attempt to reduce load on the server.
    *
    * @param request    - used to determine if we can return a cache response.
@@ -724,7 +724,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
   /**
    * Utility method to allow related content to be populated as summary objects.
-   * <p>
+   * <br>
    * By default content summary objects may just have ids.
    *
    * @param version               - version of the content to use for augmentation.
@@ -749,7 +749,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
   /**
    * A method which augments related questions with attempt information.
-   * <p>
+   * <br>
    * i.e. sets whether the related content summary has been completed.
    *
    * @param content               the content to be augmented.
@@ -851,7 +851,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
   /**
    * For use when we expect to only find a single result.
-   * <p>
+   * <br>
    * By default related content ContentSummary objects will be fully augmented.
    *
    * @param fieldsToMatch         - expects a map of the form fieldname -> list of queries to match
@@ -890,7 +890,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
   /**
    * Helper method to query segue for a list of content objects.
-   * <p>
+   * <br>
    * This method will only use the latest version of the content.
    *
    * @param fieldsToMatch              - expects a map of the form fieldname -> list of queries to match

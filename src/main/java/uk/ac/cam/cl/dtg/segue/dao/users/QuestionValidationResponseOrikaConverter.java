@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConver
 
 /**
  * QuestionValidationResponseOrikaConverter A specialist converter class to work with the Orika automapper library.
- * <p>
+ * <br>
  * Responsible for converting QuestionValidationResponse objects to their correct subtype.
  */
 public class QuestionValidationResponseOrikaConverter extends

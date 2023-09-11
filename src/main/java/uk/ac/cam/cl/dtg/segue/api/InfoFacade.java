@@ -49,7 +49,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Info Facade
- * <p>
+ * <br>
  * This facade is intended to provide access to meta data about the current running system.
  */
 @Path("/info")

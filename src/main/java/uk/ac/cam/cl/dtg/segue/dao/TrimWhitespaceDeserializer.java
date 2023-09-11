@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * Content deserializer will try and use the map built up in the ContentMapper class to determine what subtype of
  * content needs to be created.
- * <p>
+ * <br>
  * Currently this is dependent on the register map key being the exact same text as the json type property value stored
  * in the database.
  *

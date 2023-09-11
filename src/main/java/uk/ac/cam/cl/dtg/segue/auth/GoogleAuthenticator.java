@@ -265,10 +265,10 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
   /**
    * This method will contact the identity provider to verify that the token is valid for our application.
-   * <p>
+   * <br>
    * This check is intended to mitigate against the confused deputy problem; although I suspect the google client
    * might already do this.
-   * <p>
+   * <br>
    * Todo from the future: this necessary because OAuth 2 is for authorization not authentication, and doesn't share
    *  information about the original authentication event by default. We should consider replacing this with OpenID,
    *  however the Google library doesn't appear to support that well.

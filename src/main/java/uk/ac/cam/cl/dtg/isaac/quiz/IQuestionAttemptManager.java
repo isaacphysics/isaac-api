@@ -92,9 +92,9 @@ public interface IQuestionAttemptManager {
 
   /**
    * getQuestionAttemptCountForUserByDateRange.
-   * <p>
+   * <br>
    * An optimised method for getting question attempt counts data by month for a given date range.
-   * <p>
+   * <br>
    * This relies on the database doing the binning for us.
    *
    * @param fromDate - the earliest date the log event can have occurred

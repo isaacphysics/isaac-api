@@ -101,7 +101,7 @@ public class MailJetApiClientWrapper {
 
   /**
    * Add a new user to MailJet
-   * <p>
+   * <br>
    * If the user already exists, find by email as a fallback to ensure idempotence and better error recovery.
    *
    * @param email - email address

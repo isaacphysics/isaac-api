@@ -52,10 +52,10 @@ public interface ISearchProvider {
    * Paginated Match search for one field.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - ElasticSearch index base string
-   *                              <p>indexType - Index type
-   *                              <p>startIndex - e.g. 0 for the first set of results
-   *                              <p>limit - e.g. 10 for 10 results per page
+   *<br>indexBase - ElasticSearch index base string
+   *<br>indexType - Index type
+   *<br>startIndex - e.g. 0 for the first set of results
+   *<br>limit - e.g. 10 for 10 results per page
    * @param fieldsToMatch         - the field name to use - and the field name search term
    * @param sortInstructions      - the map of how to sort each field of interest.
    * @param filterInstructions    - the map of how to sort each field of interest.
@@ -69,14 +69,14 @@ public interface ISearchProvider {
 
   /**
    * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
-   * <p>
+   * <br>
    * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - the base string for the name of the index
-   *                              <p>indexType - the name of the type of document being searched for
-   *                              <p>startIndex - e.g. 0 for the first set of results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results.
+   *<br>indexBase - the base string for the name of the index
+   *<br>indexType - the name of the type of document being searched for
+   *<br>startIndex - e.g. 0 for the first set of results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
    * @param searchString          - the string to use for fuzzy matching
    * @param fieldsThatMustMatch   - Map of Must match field -> value
    * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
@@ -96,16 +96,16 @@ public interface ISearchProvider {
 
   /**
    * Executes a terms search using an array of terms on a single field.
-   * <p>
+   * <br>
    * Useful for tag searches - Current setting is that results will only be returned if they match all search terms.
-   * <p>
+   * <br>
    * note: null searches are allowed providing a filter is specified.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - the base string for the name of the index
-   *                              <p>indexType - the name of the type of document being searched for
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results.
+   *<br>indexBase - the base string for the name of the index
+   *<br>indexType - the name of the type of document being searched for
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
    * @param searchTerms           - e.g. tags can be null
    * @param field                 - to match against - cannot be null if searchterm is not null.
    * @param filterInstructions    - instructions for filtering the results
@@ -120,10 +120,10 @@ public interface ISearchProvider {
    * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - base string for the index that the content is stored in
-   *                              <p>indexType - type of index as registered with search provider
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return
+   *<br>indexBase - base string for the index that the content is stored in
+   *<br>indexType - type of index as registered with search provider
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return
    * @param fieldsToMatch         - List of boolean clauses used for field matching.
    * @param randomSeed            - random seed.
    * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
@@ -138,10 +138,10 @@ public interface ISearchProvider {
    * Query for a list of Results that exactly match a given id.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - base string for the index that the content is stored in
-   *                              <p>indexType - type of index as registered with search provider
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results
+   *<br>indexBase - base string for the index that the content is stored in
+   *<br>indexType - type of index as registered with search provider
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results
    * @param fieldName             - fieldName to search within.
    * @param needle                - needle to search for.
    * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
@@ -154,14 +154,14 @@ public interface ISearchProvider {
 
   /**
    * Query for a list of Results that match a given id prefix.
-   * <p>
+   * <br>
    * This is useful if you use un-analysed fields for ids and use the dot separator as a way of nesting fields.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - base string for the index that the content is stored in
-   *                              <p>indexType - type of index as registered with search provider
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results
+   *<br>indexBase - base string for the index that the content is stored in
+   *<br>indexType - type of index as registered with search provider
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results
    * @param fieldname             - fieldName to search within.
    * @param prefix                - idPrefix to search for.
    * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
@@ -176,10 +176,10 @@ public interface ISearchProvider {
    * Find content by a regex.
    *
    * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *                              <p>indexBase - base string for the index that the content is stored in
-   *                              <p>indexType - type of index as registered with search provider
-   *                              <p>startIndex - start index for results
-   *                              <p>limit - the maximum number of results to return -1 will attempt to return all results
+   *<br>indexBase - base string for the index that the content is stored in
+   *<br>indexType - type of index as registered with search provider
+   *<br>startIndex - start index for results
+   *<br>limit - the maximum number of results to return -1 will attempt to return all results
    * @param fieldname             - fieldName to search within.
    * @param regex                 - regex to search for.
    * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.

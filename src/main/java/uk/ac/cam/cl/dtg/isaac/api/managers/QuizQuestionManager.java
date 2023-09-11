@@ -68,7 +68,7 @@ public class QuizQuestionManager {
 
   /**
    * Manage questions on quizzes.
-   * <p>
+   * <br>
    * Delegates some behaviour to QuestionManager for the safety of consumers who must not confuse questions with
    * quiz questions.
    *
@@ -117,9 +117,9 @@ public class QuizQuestionManager {
 
   /**
    * This method will ensure any user question attempt information available is used to augment this question object.
-   * <p>
+   * <br>
    * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
-   * <p>
+   * <br>
    * Note: It will not do anything to related content
    *
    * @param quiz           - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
@@ -184,7 +184,7 @@ public class QuizQuestionManager {
 
   /**
    * Return a map of users to their individual feedback for an assignment. Also augments the quiz with totals.
-   * <p>
+   * <br>
    * Sets total and sectionTotals on the quiz object.
    *
    * @param quiz       - to augment - this object will be mutated as a result of this method. i.e. total and sectionsTotals will be set.
@@ -271,7 +271,7 @@ public class QuizQuestionManager {
 
   /**
    * Modify the questions in a quiz to contain the latest answers if available.
-   * <p>
+   * <br>
    * When we say bestAttempt, we actually mean latest attempt.
    *
    * @param answerMap      Map from QuestionDTOs to the latest answer (or null if there is no latest answer).
@@ -413,7 +413,7 @@ public class QuizQuestionManager {
 
   /**
    * Extract the fully-qualified section ID from the question ID.
-   * <p>
+   * <br>
    * Note this means we extract "quizId|sectionId" from "quizId|sectionId|questionId".
    * It ends up being neater because all the section objects have ids that are fully-qualified.
    *

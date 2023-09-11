@@ -33,7 +33,7 @@ public class AuditMonitor implements ContainerResponseFilter {
 
   /**
    * A filter to record an audit log of endpoint access by user.
-   * <p>
+   * <br>
    * NOTE: User identifiers are taken from the request, we do not checked these against the database as that would add
    * too great an overhead.
    *

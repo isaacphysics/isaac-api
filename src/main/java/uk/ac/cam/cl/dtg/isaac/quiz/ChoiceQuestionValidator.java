@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 /**
  * Default quiz validator for ChoiceQuestions.
- * <p>
+ * <br>
  * This relies on the annotation {@link ValidatesWith} being used.
  */
 public class ChoiceQuestionValidator implements IValidator {

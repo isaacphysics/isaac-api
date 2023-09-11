@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
  * Content DO for IsaacGraphSketcherQuestion.
- * <p>
+ * <br>
  * Created by hhrl2 on 01/08/2016.
  */
 @JsonContentType("isaacGraphSketcherQuestion")

@@ -110,7 +110,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Abstract superclass for integration tests, providing them with dependencies including ElasticSearch and PostgreSQL
  * (as docker containers) and other managers (some of which are mocked). These dependencies are created before and
  * destroyed after every test class.
- * <p>
+ * <br>
  * Subclasses should be named "*IT.java" so Maven Failsafe detects them. They are runnable via the "verify" Maven target.
  */
 public abstract class IsaacIntegrationTest {

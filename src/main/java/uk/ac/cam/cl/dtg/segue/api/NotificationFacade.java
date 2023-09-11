@@ -48,7 +48,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * This facade is to support the sending of notifications to lots of users.
- * <p>
+ * <br>
  * Currently we support sending something like a user study participation request to all users.
  */
 @Path("/notifications")

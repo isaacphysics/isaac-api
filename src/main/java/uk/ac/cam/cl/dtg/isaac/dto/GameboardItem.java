@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 
 /**
  * DTO that provides high level information for Isaac Questions.
- * <p>
+ * <br>
  * Used for gameboards to represent cut down versions of questions
  */
 public class GameboardItem {

@@ -314,7 +314,7 @@ public class PgLogManager implements ILogManager {
 
   /**
    * getLogsCountByMonthFilteredByUserAndType.
-   * <p>
+   * <br>
    * An optimised method for getting log counts data by month.
    * This relies on the database doing the binning for us.
    *
@@ -391,7 +391,7 @@ public class PgLogManager implements ILogManager {
 
   /**
    * getLogsByUserAndType.
-   * <p>
+   * <br>
    * WARNING: This should be used with care. Do not request too much
    * TODO: add pagination
    *

@@ -79,7 +79,7 @@ import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * Question Facade
- * <p>
+ * <br>
  * This facade is intended to support external interaction with segue supported questions.
  */
 @Path("/questions")

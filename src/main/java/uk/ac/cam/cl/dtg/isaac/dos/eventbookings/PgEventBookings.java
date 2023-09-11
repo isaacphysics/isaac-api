@@ -44,7 +44,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
  * PgEventBookings.
- * <p>
+ * <br>
  * Postgres aware EventBookings.
  */
 public class PgEventBookings implements EventBookings {
@@ -504,7 +504,7 @@ public class PgEventBookings implements EventBookings {
 
   /**
    * Find all bookings for a given event with a given status.
-   * <p>
+   * <br>
    * Useful for finding all on a waiting list or confirmed.
    *
    * @param eventId - the event of interest.
@@ -592,7 +592,7 @@ public class PgEventBookings implements EventBookings {
 
   /**
    * Create a pgEventBooking from a results set.
-   * <p>
+   * <br>
    * Assumes there is a result to read.
    *
    * @param results - the results to convert

@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * Representation of a collection of event bookings.
- * <p>
+ * <br>
  * This should be a database aware object.
  *
  * @author sac92
@@ -103,7 +103,7 @@ public interface EventBookings {
 
   /**
    * countAllEventBookings.
-   * <p>
+   * <br>
    * Note: This will include any with users who have been deleted.
    *
    * @return the current count of all event bookings.
@@ -124,7 +124,7 @@ public interface EventBookings {
 
   /**
    * Find all bookings for a given event with a given status.
-   * <p>
+   * <br>
    * Useful for finding all on a waiting list or confirmed.
    *
    * @param eventId - the event of interest.

@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 /**
  * SimpleFilterInstruction
  * A class to help encapsulate filter instructions.
- * <p>
+ * <br>
  * SimpleFilterInstructions expect a single value which must be matched in the results.
  */
 public class SimpleFilterInstruction extends AbstractFilterInstruction {

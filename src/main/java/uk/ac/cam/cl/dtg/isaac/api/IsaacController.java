@@ -86,10 +86,10 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Isaac Controller
- * <p>
+ * <br>
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Isaac site.
- * <p>
+ * <br>
  * TODO: This class should be refactored, as it is just a random collection of endpoints.
  */
 @Path("/")
@@ -487,7 +487,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
   /**
    * Get some statistics out of how many questions the user has completed.
-   * <p>
+   * <br>
    * Only users with permission can use this endpoint.
    *
    * @param request          - so we can authenticate the current user.

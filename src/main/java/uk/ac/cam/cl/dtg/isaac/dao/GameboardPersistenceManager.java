@@ -180,7 +180,7 @@ public class GameboardPersistenceManager {
 
   /**
    * Keep generated gameboard in non-persistent storage.
-   * <p>
+   * <br>
    * This will be removed if the gameboard is saved to persistent storage.
    *
    * @param gameboard
@@ -476,7 +476,7 @@ public class GameboardPersistenceManager {
 
   /**
    * Attempt to improve performance of getting gameboard items in a batch.
-   * <p>
+   * <br>
    * This method will attempt to ensure that all gameboards provided have their associated
    * gameboard items populated with meaningful titles.
    *
@@ -650,7 +650,7 @@ public class GameboardPersistenceManager {
 
   /**
    * Convert form a gameboard DO to a Gameboard DTO.
-   * <p>
+   * <br>
    * This method relies on the api to fully resolve questions.
    *
    * @param gameboardDO
@@ -663,7 +663,7 @@ public class GameboardPersistenceManager {
 
   /**
    * Convert form a gameboard DO to a Gameboard DTO.
-   * <p>
+   * <br>
    * This method relies on the api to fully resolve questions.
    *
    * @param gameboardDO

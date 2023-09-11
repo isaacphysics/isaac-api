@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Handler to deal with sending email requests.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as only limited email sending capacity exists
  *
  * @author Connor Holloway

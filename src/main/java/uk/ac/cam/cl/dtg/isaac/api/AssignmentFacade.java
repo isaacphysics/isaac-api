@@ -103,7 +103,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * AssignmentFacade
- * <p>
+ * <br>
  * This class provides endpoints to support assigning work to users.
  */
 @Path("/assignments")
@@ -301,7 +301,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
   /**
    * Allows a user to get all assignments they have set in lightweight objects.
-   * <p>
+   * <br>
    * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be returned.
    *
    * @param request           - so that we can identify the current user.

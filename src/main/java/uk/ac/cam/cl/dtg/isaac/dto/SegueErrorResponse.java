@@ -156,7 +156,7 @@ public class SegueErrorResponse implements Serializable {
 
   /**
    * Returns the response builder preconfigured with this SegueErrorMessage.
-   * <p>
+   * <br>
    * This allows you to attach cache control headers or anything else that you may want to do.
    *
    * @return preconfigured reponse builder.

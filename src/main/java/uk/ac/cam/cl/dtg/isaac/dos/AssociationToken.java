@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 /**
  * AssociationToken. This allows one user to request permission to view other users details.
- * <p>
+ * <br>
  * This token will be used to make new associations between users.
  */
 public class AssociationToken {

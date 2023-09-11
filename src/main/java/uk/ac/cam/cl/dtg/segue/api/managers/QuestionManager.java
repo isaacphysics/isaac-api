@@ -78,7 +78,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
  * Questions.
- * <p>
+ * <br>
  * It is also responsible for orchestrating question attempt persistence.
  */
 public class QuestionManager {
@@ -199,9 +199,9 @@ public class QuestionManager {
 
   /**
    * This method will ensure any user question attempt information available is used to augment this question object.
-   * <p>
+   * <br>
    * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
-   * <p>
+   * <br>
    * Note: It will not do anything to related content
    *
    * @param page                  - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
@@ -447,7 +447,7 @@ public class QuestionManager {
 
   /**
    * getQuestionAttemptCountsByDate.
-   * <p>
+   * <br>
    * Retrieves a map of days and number of question attempts
    *
    * @param user     - a User DTO for the user to get question attempt count for

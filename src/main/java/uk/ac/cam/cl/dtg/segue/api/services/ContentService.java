@@ -111,7 +111,7 @@ public class ContentService {
 
   /**
    * Helper method to generate field to match requirements for search queries.
-   * <p>
+   * <br>
    * An overloaded version of the static method also exists which allows overloading default boolean operator values.
    *
    * @param fieldsToMatch
@@ -125,7 +125,7 @@ public class ContentService {
 
   /**
    * Helper method to generate field to match requirements for search queries.
-   * <p>
+   * <br>
    * Assumes whether to filter by 'any' or 'all' on a field by field basis, with the default being 'all'.
    * You can pass an optional map specifying particular kinds of matching for specific fields
    *

@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * EventBooking.
- * <p>
+ * <br>
  * Database aware EventBooking.
  *
  */

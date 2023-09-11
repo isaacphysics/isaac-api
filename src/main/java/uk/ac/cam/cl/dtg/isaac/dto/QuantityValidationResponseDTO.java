@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 /**
  * The DTO which can be used to inform clients of the result of an answered question.
- * <p>
+ * <br>
  *
  */
 public class QuantityValidationResponseDTO extends QuestionValidationResponseDTO {

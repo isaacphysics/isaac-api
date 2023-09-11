@@ -34,7 +34,7 @@ public final class RequestIPExtractor {
 
   /**
    * Extract client ip address.
-   * <p>
+   * <br>
    * Solution based upon:
    * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
    *

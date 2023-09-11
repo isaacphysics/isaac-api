@@ -38,10 +38,10 @@ public interface IOAuthAuthenticator extends IFederatedAuthenticator {
   /**
    * Step 3 of OAUTH - Exchange short term authorisation code for an access
    * token which can be used to authenticate the user.
-   * <p>
+   * <br>
    * This method will contact the oauth provider directly to exchange the
    * authorisation code for a token.
-   * <p>
+   * <br>
    * This method returns an internal reference which will allow it to look up
    * the 3rd party token. e.g. if you call an IFederatedAuthenticator method
    * getUserDetails - it will require this internal reference.

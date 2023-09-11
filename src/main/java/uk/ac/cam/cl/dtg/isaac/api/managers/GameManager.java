@@ -223,7 +223,7 @@ public class GameManager {
 
   /**
    * Get a gameboard by its id.
-   * <p>
+   * <br>
    * Note: This gameboard will not be augmented with user information.
    *
    * @param gameboardId - to look up.
@@ -241,7 +241,7 @@ public class GameManager {
 
   /**
    * Get a list of gameboards by their ids.
-   * <p>
+   * <br>
    * Note: These gameboards will not be augmented with any user information.
    *
    * @param gameboardIds - to look up.
@@ -255,7 +255,7 @@ public class GameManager {
 
   /**
    * Get a list of gameboards by their ids.
-   * <p>
+   * <br>
    * Note: These gameboards WILL be augmented with user attempt information, but not whether the gameboard is saved
    * to the user's boards.
    *
@@ -282,7 +282,7 @@ public class GameManager {
 
   /**
    * Get a list of gameboards by their ids, augmented with attempt information.
-   * <p>
+   * <br>
    * Note: These gameboards WILL be augmented with user attempt information, but not whether the gameboard is saved
    * to the user's boards.
    *
@@ -977,7 +977,7 @@ public class GameManager {
 
   /**
    * AugmentGameItemWithAttemptInformation
-   * <p>
+   * <br>
    * This method will calculate the question state for use in gameboards based on the question.
    *
    * @param gameItem                 - the gameboard item.
@@ -1154,7 +1154,7 @@ public class GameManager {
 
   /**
    * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
-   * <p>
+   * <br>
    * This method will decide what should be AND and what should be OR based on the field names used.
    *
    * @param gameFilter - filter object containing all the filter information used to make this board.

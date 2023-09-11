@@ -172,7 +172,7 @@ public class ContentIndexer {
 
   /**
    * This method will populate the internal gitCache based on the content object files found for a given SHA.
-   * <p>
+   * <br>
    * Currently, it only looks for json files in the repository.
    *
    * @param sha                - the version to index.
@@ -360,9 +360,9 @@ public class ContentIndexer {
 
   /**
    * Augments all child objects recursively to include additional information.
-   * <p>
+   * <br>
    * This should be done before saving to the local gitCache in memory storage.
-   * <p>
+   * <br>
    * This method will also attempt to reconstruct object id's of nested content such that they are unique to the page
    * by default.
    *

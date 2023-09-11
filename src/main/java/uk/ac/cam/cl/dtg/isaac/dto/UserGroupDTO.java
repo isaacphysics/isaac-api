@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 
 /**
  * UserGroupDTO - this object represents a group or label assigned to users who have been placed into a group.
- * <p>
+ * <br>
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class UserGroupDTO {

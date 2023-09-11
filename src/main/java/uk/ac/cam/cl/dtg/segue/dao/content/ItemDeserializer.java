@@ -30,9 +30,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 
 /**
  * Item deserializer
- * <p>
+ * <br>
  * This class requires the primary content base deserializer as a constructor argument.
- * <p>
+ * <br>
  * It is to allow subclasses of the Item object to be detected correctly.
  */
 public class ItemDeserializer extends JsonDeserializer<Item> {

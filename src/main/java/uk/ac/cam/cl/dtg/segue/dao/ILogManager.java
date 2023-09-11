@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
 /**
  * Interface for logging components.
- * <p>
+ * <br>
  * This is for logging user interaction events for the purpose of research and / or technology improvement not for
  * logging system errors / events.
  *
@@ -86,7 +86,7 @@ public interface ILogManager {
   /**
    * This method will endeavour to find all log events for a given user and reassign ownership to a
    * registered user.
-   * <p>
+   * <br>
    * It assumes that the new userId is a registered user of the system and not anonymous.
    *
    * @param oldUserId
@@ -140,7 +140,7 @@ public interface ILogManager {
 
   /**
    * Utility method that will generate a map of type -- > localDate -- > number of events.
-   * <p>
+   * <br>
    * This is done at the database level to allow efficient use of memory.
    *
    * @param eventTypes

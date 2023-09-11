@@ -60,7 +60,7 @@ import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore;
 
 /**
  * This class is a representation of the Git Database and provides some helper methods to allow file access.
- * <p>
+ * <br>
  * It is responsible for providing basic functionality to search a specified Git Repository and find files based on a
  * given SHA.
  *
@@ -75,7 +75,7 @@ public class GitDb {
 
   /**
    * Create a new instance of a GitDb object
-   * <p>
+   * <br>
    * This will immediately try and connect to the Git folder specified to check its validity.
    *
    * @param repoLocation
@@ -101,7 +101,7 @@ public class GitDb {
 
   /**
    * Create a new instance of a GitDb object.
-   * <p>
+   * <br>
    * This is meant to be used for unit testing, allowing injection of a mocked Git object.
    *
    * @param gitHandle
@@ -118,7 +118,7 @@ public class GitDb {
 
   /**
    * getFileByCommitSHA
-   * <p>
+   * <br>
    * This method will access the git repository given a particular SHA and will attempt to locate a unique file and
    * return a bytearrayoutputstream of the files contents.
    *
@@ -316,7 +316,7 @@ public class GitDb {
 
   /**
    * Gets a complete list of commits with the most recent commit first.
-   * <p>
+   * <br>
    * Will return null if there is a problem and will write a log to the configured logger with the stack trace.
    *
    * @return List of the commit shas we have found in the git repository.

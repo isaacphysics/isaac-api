@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * An abstract representation of a Segue CMS facade.
- * <p>
+ * <br>
  * Provides useful methods such as cache control.
  *
  * @author Stephen Cummins
@@ -73,7 +73,7 @@ public abstract class AbstractSegueFacade {
   /**
    * generateCachedResponse This method will accept a request and an entity tag and determine whether the entity tag
    * is the same.
-   * <p>
+   * <br>
    * If the entity tag is the same a response will be returned which is ready to be sent to the client as we do not
    * need to resent anything.
    *
@@ -93,7 +93,7 @@ public abstract class AbstractSegueFacade {
   /**
    * generateCachedResponse This method will accept a request and an entity tag and determine whether the entity tag
    * is the same.
-   * <p>
+   * <br>
    * If the entity tag is the same a response will be returned which is ready to be sent to the client as we do not
    * need to resent anything.
    *

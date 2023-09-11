@@ -58,7 +58,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 
 /**
  * A test base for testing Facades, specifically targeted around testing facades as different users.
- * <p>
+ * <br>
  * A typical test case using this class can look like:
  *
  * <pre>{@code
@@ -135,7 +135,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
   /**
    * Run tests on an endpoint with different parameters.
-   * <p>
+   * <br>
    * Only supports varying one parameter to the endpoint. Use multiple calls to vary multiple parameters.
    */
   @SafeVarargs
@@ -209,7 +209,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
   /**
    * Run checks for all users that haven't be specifically "as"-ed in this block.
-   * <p>
+   * <br>
    * Use `everyoneElse(...)` instead of `as(anyOf(thatOtherUser, andTheOtherOne, andTheLastOne), ...)`
    */
   protected Testcase everyoneElse(Step... steps) {
@@ -218,7 +218,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
   /**
    * Add one or more expectations to a mock. The mock is passed in as an argument to the consumer.
-   * <p>
+   * <br>
    * e.g. <code>prepare(someManager, m -> expect(m.someMethodCall(someArgs)).andReturn(someResult))</code>
    */
   protected <T> PrepareStep<T> prepare(T mock, MockConfigurer<T> preparation) {

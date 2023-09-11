@@ -322,7 +322,7 @@ public class EventBookingManager {
    * Create booking on behalf of a user.
    * This method will allow users to be booked onto an event providing there is space. No other rules are applied.
    * This is likely to be only for admin users.
-   * <p>
+   * <br>
    * This method will not enforce some of the restrictions such as event deadlines and email verification
    *
    * @param event                      - of interest
@@ -878,11 +878,11 @@ public class EventBookingManager {
    * This method is not threadsafe and will not acquire a lock.
    * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity for all events apart from
    * WAITING_LIST_ONLY events where only confirmed bookings count.
-   * <p>
+   * <br>
    * This assumption allows waiting list bookings to be manually changed into CONFIRMED by event
    * managers without the possibility of someone creating a new booking to occupy the space after a confirmed
    * cancellation.
-   * <p>
+   * <br>
    * It also assumes teachers don't count on student events.
    *
    * @param event - the event we care about
@@ -901,7 +901,7 @@ public class EventBookingManager {
   /**
    * getPlacesAvailable.
    * This method is not threadsafe and will not acquire a lock.
-   * <p>
+   * <br>
    * It also assumes teachers don't count on student events.
    *
    * @param event              - the event we care about
@@ -1043,7 +1043,7 @@ public class EventBookingManager {
 
   /**
    * Cancel a booking.
-   * <p>
+   * <br>
    * Note: cancelled bookings no longer occupy space on an events capacity calculations.
    *
    * @param event - event
@@ -1228,7 +1228,7 @@ public class EventBookingManager {
 
   /**
    * Helper method to ensure that that the booking would not violate space restrictions on the event.
-   * <p>
+   * <br>
    * If it does an exception will be thrown if a new booking wouldn't no exception will be thrown.
    *
    * @param event the event the user wants to book on to
@@ -1243,7 +1243,7 @@ public class EventBookingManager {
 
   /**
    * Helper method to ensure a batch can be booked onto an event without violating space restrictions on the event.
-   * <p>
+   * <br>
    * If it does an exception will be thrown if a new booking wouldn't no exception will be thrown.
    *
    * @param event the event the user wants to book on to
@@ -1340,7 +1340,7 @@ public class EventBookingManager {
 
   /**
    * Helper method to generate an ics file for emailing to users who have booked on to an event.
-   * <p>
+   * <br>
    * Note: This method may return null in the event we cannot communicate with a third party service.
    *
    * @param event          - the event booked on

@@ -143,7 +143,7 @@ public interface IAssociationDataManager {
 
   /**
    * Get a list of user associations for a given user.
-   * <p>
+   * <br>
    * I.e. Who can currently view a users data.
    *
    * @param userId
@@ -156,7 +156,7 @@ public interface IAssociationDataManager {
 
   /**
    * Get a list of user associations that provide grant access for a given user.
-   * <p>
+   * <br>
    * I.e. Who can I currently see data for.
    *
    * @param userId

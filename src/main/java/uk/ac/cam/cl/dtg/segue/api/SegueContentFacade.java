@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Segue Content Facade
- * <p>
+ * <br>
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Rutherford site.
  */
@@ -105,7 +105,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
   /**
    * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the results in a
    * randomised order.
-   * <p>
+   * <br>
    * This method is the same as {@link #findMatchingContentRandomOrder(String, List, Integer, Integer, Long)} but uses
    * a default random seed.
    *

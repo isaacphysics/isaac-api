@@ -21,7 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 /**
  * Validator that only provides functionality to validate graph questions.
- * <p>
+ * <br>
  * Created by hhrl2 on 01/08/2016.
  */
 public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
@@ -126,7 +126,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
 
   /**
    * Create a new list of Choice objects, with no change in sort order.
-   * <p>
+   * <br>
    * This is desirable if you ever need to use a feature in a negative way to identify an incorrect answer.
    *
    * @param choices - the Choices from a Question

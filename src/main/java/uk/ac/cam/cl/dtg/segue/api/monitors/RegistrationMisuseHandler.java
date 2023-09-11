@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Handler to deal with registration requests.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as it can be used to pollute our data and spam people!
  *
  * @author James Sharkey

@@ -113,7 +113,7 @@ public class UserAssociationManager {
 
   /**
    * Generate a new string value for a token.
-   * <p>
+   * <br>
    * There are 30 non-ambiguous uppercase alphanumeric characters. We use a 5 bit encoding system to generate the
    * number for which character to choose, skipping in the 1/16 chance it is outside the allowed range. Loop until we
    * generate all tokenLength required characters.
@@ -196,7 +196,7 @@ public class UserAssociationManager {
 
   /**
    * get Associations.
-   * <p>
+   * <br>
    * I.e. Who can currently view a given user's data.
    *
    * @param user
@@ -359,7 +359,7 @@ public class UserAssociationManager {
 
   /**
    * Check if one user has permission to view another user's data.
-   * <p>
+   * <br>
    * Users always have permission to view their own data. Students never have permission to view another users data.
    *
    * @param currentUser
@@ -395,7 +395,7 @@ public class UserAssociationManager {
 
   /**
    * Check if one user has teacher-level permission to view another user's data.
-   * <p>
+   * <br>
    * Users always have permission to view their own data. Students never have permission to view another users data,
    * and tutors do not have teacher-level permissions.
    *

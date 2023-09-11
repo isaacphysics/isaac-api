@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
 
 /**
  * Represents any content related data that can be stored by the api
- * <p>
+ * <br>
  * This class is required mainly due to the relatively complex polymorphic type hierarchy that gets serialized and
  * deserialized using a custom serializer (ContentBaseDeserializer).
  */

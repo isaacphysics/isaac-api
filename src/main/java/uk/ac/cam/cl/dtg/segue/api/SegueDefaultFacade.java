@@ -39,7 +39,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Segue Default Api Facade.
- * <p>
+ * <br>
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Rutherford site.
  */

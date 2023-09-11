@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Handler to deal with email verification requests.
- * <p>
+ * <br>
  * Preventing an IP address scanning many email addresses for account existence
  * by limiting reset requests on a per-IP basis.
  */

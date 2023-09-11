@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
  * interface) of allowing a user to be authenticated. The result of this
  * authentication should be some unique reference that when provided to this
  * class will allow us to extract user information from the external provider.
- * <p>
+ * <br>
  * The exact specification of the unique reference number is up to the
  * implementing class as long as it can be used to gain information about a
  * specific user.

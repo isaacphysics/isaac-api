@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
 /**
  * ********************************************
- * <p>
+ * <br>
  * Note: This class is currently not used.!! TODO: make sure mapping is completed.
  * ********************************************
  */

@@ -41,7 +41,7 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 /**
  * Class responsible for reading the local school list csv file.
- * <p>
+ * <br>
  * This class is threadsafe providing that the ISearchProvider given as a dependency is not given to another instance of
  * this class. Normally this class should be treated as a singleton to ensure the ISearchProvider is not shared with
  * another instance of this class.

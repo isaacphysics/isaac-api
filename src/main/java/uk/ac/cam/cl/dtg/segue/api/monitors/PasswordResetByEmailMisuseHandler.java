@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Handler to deal with email verification requests.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as some email address information is exposed for email
  * verification purposes.
  *

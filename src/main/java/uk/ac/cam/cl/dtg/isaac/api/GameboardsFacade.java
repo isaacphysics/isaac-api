@@ -420,10 +420,10 @@ public class GameboardsFacade extends AbstractIsaacFacade {
   /**
    * REST end point to allow gameboards to be persisted into permanent storage and for the title to be updated by
    * users.
-   * <p>
+   * <br>
    * Currently we only support updating the title and saving the gameboard that exists in temporary storage into
    * permanent storage. No other fields can be updated at the moment.
-   * <p>
+   * <br>
    * TODO: This will need to change if we want to change more than the board title.
    *
    * @param request           - so that we can find out the currently logged in user
@@ -677,7 +677,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
   /**
    * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
-   * <p>
+   * <br>
    * This does not delete the gameboard from the system just removes it from the user's my boards page.
    *
    * @param request      - So that we can find the user information.

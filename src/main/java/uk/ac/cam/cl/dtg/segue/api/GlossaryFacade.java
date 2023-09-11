@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Glossary Facade
- * <p> <p>
+ * <br>
  * This facade is intended to provide access to glossary terms.
  */
 @Path("/glossary")

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Handler to deal with teacher password reset requests.
- * <p>
+ * <br>
  * Separate from PasswordResetRequestMisuseHandler since teachers may need to reset the passwords of numerous
  * students within a short period of time.
  *

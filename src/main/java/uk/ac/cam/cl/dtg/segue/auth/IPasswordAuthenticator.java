@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * An interface defining the password authentication process.
- * <p>
+ * <br>
  * Note: This is used for authenticating users using locally held credentials.
  *
  * @author Stephen Cummins

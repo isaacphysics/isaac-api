@@ -89,7 +89,7 @@ public class SegueJobService implements ServletContextListener {
 
   /**
    * Remove an already-existing job from the Scheduler's list of scheduled jobs.
-   * <p>
+   * <br>
    * If the job isn't already registered, this is safe and will have no effect.
    *
    * @param jobToRemove the job to remove
@@ -126,7 +126,7 @@ public class SegueJobService implements ServletContextListener {
 
   /**
    * Register a new job or update the trigger of an existing job.
-   * <p>
+   * <br>
    * This currently does not alter the job details!
    *
    * @param jobToRegister the job to schedule

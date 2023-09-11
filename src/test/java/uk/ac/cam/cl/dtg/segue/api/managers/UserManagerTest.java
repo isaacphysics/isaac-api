@@ -533,7 +533,7 @@ public class UserManagerTest {
 
   /**
    * Verify that a correct HMAC response works correctly.
-   * <p>
+   * <br>
    * This method is dependent on the crypto algorithm used.
    *
    * @throws Exception

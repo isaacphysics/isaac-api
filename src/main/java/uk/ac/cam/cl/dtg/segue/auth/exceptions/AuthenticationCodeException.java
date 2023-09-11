@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
  * This exception is used for when we are unable to get an authentication code.
- * <p>
+ * <br>
  * e.g. if the user denies access to our app.
  *
  */

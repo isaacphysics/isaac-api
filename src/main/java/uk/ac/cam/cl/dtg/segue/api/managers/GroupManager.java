@@ -229,7 +229,7 @@ public class GroupManager {
 
   /**
    * getAllGroupsOwnedAndManagedByUser.
-   * <p>
+   * <br>
    * This method will get all groups that a user could have an interest in.
    * I.e. if the user is the owner or additional manager of the group the group should be included in the list.
    *

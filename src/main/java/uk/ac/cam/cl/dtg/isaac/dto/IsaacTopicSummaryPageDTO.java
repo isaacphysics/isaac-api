@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 
 /**
  * Isaac Topic Summary Page DTO.
- * <p>
+ * <br>
  * Provide a summary of a topic with a list of relevant questions and concepts.
  * It is a separate type to a standard page to ensure that only pages that are
  * meant to be topic indices can be loaded as such.

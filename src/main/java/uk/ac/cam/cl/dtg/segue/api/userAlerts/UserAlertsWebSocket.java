@@ -283,7 +283,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
   /**
    * Handles errors in WebSocket connections.
-   * <p>
+   * <br>
    * TODO: should this also deal with the closing part?
    * This for now is just to remove an error that Jetty outputs if no handler is configured.
    *

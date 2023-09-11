@@ -13,7 +13,7 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 /**
  * SegueContextListener
- * <p>
+ * <br>
  * A class alerts any registered segue listeners as to the servlet context.
  *
  * @author Stephen Cummins

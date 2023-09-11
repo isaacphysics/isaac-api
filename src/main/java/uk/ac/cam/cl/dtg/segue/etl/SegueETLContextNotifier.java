@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * SegueContextListener
- * <p>
+ * <br>
  * A class alerts any registered segue listeners as to the servlet context.
  *
  * @author Stephen Cummins

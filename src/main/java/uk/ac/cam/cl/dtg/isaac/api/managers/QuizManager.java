@@ -170,7 +170,7 @@ public class QuizManager {
 
   /**
    * Get all of the sections in a quiz.
-   * <p>
+   * <br>
    * In DEV mode, this throws exceptions on top-level non-sections. In PROD, it throws them away with a warning.
    *
    * @param quiz The quiz to extract sections from.

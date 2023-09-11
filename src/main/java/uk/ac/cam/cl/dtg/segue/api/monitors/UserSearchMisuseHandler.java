@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Handler to deal with user search requests.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as event managers could extract all users
  * by making repeat queries.
  *

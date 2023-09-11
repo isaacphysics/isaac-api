@@ -26,7 +26,7 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
- * <p>
+ * <br>
  * This is a parent class for PBKDF2 algorithms.
  *
  * @deprecated

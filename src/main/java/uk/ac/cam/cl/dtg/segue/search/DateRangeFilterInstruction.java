@@ -21,7 +21,7 @@ import java.util.Date;
 
 /**
  * DateRangeFilterInstruction.
- * <p>
+ * <br>
  * To be used to filter results based on a date range.
  *
  * @author sac92
@@ -32,7 +32,7 @@ public class DateRangeFilterInstruction extends AbstractFilterInstruction {
 
   /**
    * Create a new date range filter instruction.
-   * <p>
+   * <br>
    * At least one of the fields should be populated. Otherwise you will get an illegal arguments exception;
    *
    * @param fromDate

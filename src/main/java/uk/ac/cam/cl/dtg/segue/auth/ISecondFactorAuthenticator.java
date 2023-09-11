@@ -35,7 +35,7 @@ public interface ISecondFactorAuthenticator {
 
   /**
    * Generate a new shared secret and return it so the user can capture it.
-   * <p>
+   * <br>
    * At this stage the secret is not confirmed against the user.
    *
    * @param user - so the DO can be populated with the userid
@@ -45,9 +45,9 @@ public interface ISecondFactorAuthenticator {
 
   /**
    * Activation and Verification step.
-   * <p>
+   * <br>
    * Make sure the user can generate a correct code.
-   * <p>
+   * <br>
    * After this step 2FA becomes active and required for the user.
    *
    * @param user          - user account to turn on 2FA
@@ -73,7 +73,7 @@ public interface ISecondFactorAuthenticator {
 
   /**
    * Remove 2FA settings for a given user's account.
-   * <p>
+   * <br>
    * This will deactivate 2FA protection
    *
    * @param user - user account to turn on 2FA

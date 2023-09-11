@@ -297,7 +297,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
   /**
    * Get all groups owned by the user id provided.
-   * <p>
+   * <br>
    * ADMIN Only end point.
    *
    * @param request - so we can identify the current user.

@@ -880,7 +880,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
   /**
    * Create a pgEventBooking from a results set.
-   * <p>
+   * <br>
    * Assumes there is a result to read.
    *
    * @param results - the results to convert

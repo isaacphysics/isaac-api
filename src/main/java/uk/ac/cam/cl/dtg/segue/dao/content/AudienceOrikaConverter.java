@@ -9,7 +9,7 @@ import ma.glasnost.orika.metadata.Type;
 
 /**
  * AudienceOrikaConverter A specialist converter class to work with the Orika automapper library.
- * <p> <p>
+ * <br>
  * Responsible for converting the intended audience data structure from DO to DTO.
  * This converter will be adopted by Orika whenever it introspects a conversion between these specific types (not only
  * for the audience field). Its implementation is generic so that is fine.

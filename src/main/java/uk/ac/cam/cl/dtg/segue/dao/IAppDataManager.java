@@ -52,7 +52,7 @@ public interface IAppDataManager<T> {
 
   /**
    * Delete a given object from the database.
-   * <p>
+   * <br>
    * The object should contain an _id field which is used for equality checking.
    *
    * @param objectId

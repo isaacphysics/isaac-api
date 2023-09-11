@@ -473,7 +473,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the elasticSearch client that can be used by Guice.
-   * <p>
+   * <br>
    * The client is threadsafe, so we don't need to keep creating new ones.
    *
    * @param address  - address of the cluster to create.
@@ -515,7 +515,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the git content manager for the segue facade.
-   * <p>
+   * <br>
    * TODO: This is a singleton as the units and tags are stored in memory. If we move these out it can be an instance.
    * This would be better as then we can give it a new search provider if the client has closed.
    *
@@ -541,7 +541,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the LogManager for the Segue facade.
-   * <p>
+   * <br>
    * Note: This is a singleton as logs are created very often and we wanted to minimise the overhead in class
    * creation. Although we can convert this to instances if we want to tidy this up.
    *
@@ -591,7 +591,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides an instance of the SegueLocalAuthenticator.
-   * <p>
+   * <br>
    *
    * @param database            - the database to access userInformation
    * @param passwordDataManager - the database to access passwords
@@ -621,7 +621,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the e-mail manager class.
-   * <p>
+   * <br>
    * Note: This has to be a singleton because it manages all emails sent using this JVM.
    *
    * @param properties            - the properties so we can generate email
@@ -667,7 +667,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the UserManager for various facades.
-   * <p>
+   * <br>
    * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
    *
    * @param database            - the user persistence manager.
@@ -693,7 +693,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the UserManager for various facades.
-   * <p>
+   * <br>
    * Note: This has to be a singleton as the User Manager keeps a temporary cache of anonymous users.
    *
    * @param database                  - the user persistence manager.
@@ -755,7 +755,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the GroupManager.
-   * <p>
+   * <br>
    * Note: This needs to be a singleton as we register observers for groups.
    *
    * @param userGroupDataManager - user group data manager
@@ -796,7 +796,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * Get singleton of misuseMonitor.
-   * <p>
+   * <br>
    * Note: this has to be a singleton as it tracks (in memory) the number of misuses.
    *
    * @param emailManager - so that the monitors can send e-mails.
@@ -902,7 +902,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * Gets the instance of the postgres connection wrapper.
-   * <p>
+   * <br>
    * Note: This needs to be a singleton as it contains a connection pool.
    *
    * @param databaseUrl - database to connect to.
@@ -1106,7 +1106,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * Gets a Game persistence manager.
-   * <p>
+   * <br>
    * This needs to be a singleton as it maintains temporary boards in memory.
    *
    * @param database       - the database that persists gameboards.
@@ -1138,7 +1138,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * Gets an assignment manager.
-   * <p>
+   * <br>
    * This needs to be a singleton because operations like emailing are run for each IGroupObserver, the
    * assignment manager should only be one observer.
    *
@@ -1210,7 +1210,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   /**
    * This provides a singleton of the SchoolListReader for use by segue backed applications..
-   * <p>
+   * <br>
    * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
    *
    * @param provider - The search provider.

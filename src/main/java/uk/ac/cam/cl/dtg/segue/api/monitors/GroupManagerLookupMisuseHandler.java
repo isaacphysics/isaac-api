@@ -29,7 +29,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Handler to deal with additional group managers requests.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as account existence information is exposed
  *
  */

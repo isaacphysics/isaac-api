@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * This annotation is used to allow mapping of Domain Objects to string type identifiers.
- * <p>
+ * <br>
  * e.g. jsonType("video").
  *
  */

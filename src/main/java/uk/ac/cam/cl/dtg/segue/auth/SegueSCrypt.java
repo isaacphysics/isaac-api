@@ -23,7 +23,7 @@ import org.bouncycastle.crypto.generators.SCrypt;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
- * <p>
+ * <br>
  * This is a parent class for Scrypt versions.
  */
 public class SegueSCrypt {

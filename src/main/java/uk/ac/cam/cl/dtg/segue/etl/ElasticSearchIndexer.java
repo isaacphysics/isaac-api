@@ -306,7 +306,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
   /**
    * This function will allow top level fields to have their contents cloned into an unanalysed field with the name
    * {FieldName}.{raw}
-   * <p>
+   * <br>
    * This is useful if we want to query the original data without ElasticSearch having messed with it.
    *
    * @param typedIndex - type suffixed index to send the mapping corrections to.

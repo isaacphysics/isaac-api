@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * This annotation is used to allow mapping of Domain Objects to string type identifiers.
- * <p>
+ * <br>
  * e.g. DTOClass(Content.class).
  *
  */
@@ -33,7 +33,7 @@ public @interface DTOMapping {
 
   /**
    * gets the DTO class that any Domain objects should be mapped to and from.
-   * <p>
+   * <br>
    * default is ContentDTO.class
    * @return the class
    */

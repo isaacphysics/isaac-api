@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePol
 
 /**
  * Management layer for updating and retrieving badge states
- * <p>
+ * <br>
  * Created by du220 on 27/04/2018.
  */
 public class UserBadgeManager {

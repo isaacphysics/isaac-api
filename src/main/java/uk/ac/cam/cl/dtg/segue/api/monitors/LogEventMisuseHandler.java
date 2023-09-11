@@ -27,9 +27,9 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Handler to detect users storing large amounts of data in our log database.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as they may be trying to brute force someones password.
- * <p>
+ * <br>
  * NOTE: The accounting unit for this handler is bytes.
  */
 public class LogEventMisuseHandler implements IMisuseHandler {

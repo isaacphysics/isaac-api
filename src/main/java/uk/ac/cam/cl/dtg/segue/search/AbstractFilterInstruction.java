@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 /**
  * FilterInstruction
- * <p>
+ * <br>
  * Class to help abstract away the search filter format within Segue.
  */
 public abstract class AbstractFilterInstruction {

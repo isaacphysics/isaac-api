@@ -28,10 +28,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 /**
  * Quiz validator for UnmarkedInputQuestionValidator.
- * <p>
+ * <br>
  * This validator will not bother to try and mark the answer but will store it exactly as entered and return the correct
  * answer in the explanation field.
- * <p>
+ * <br>
  * This relies on the annotation {@link ValidatesWith} being used.
  */
 public class UnmarkedInputQuestionValidator implements IValidator {

@@ -21,7 +21,7 @@ import java.util.Date;
 
 /**
  * UserGroupDO - this object represents a group or collection of users
- * <p>
+ * <br>
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class UserGroup {

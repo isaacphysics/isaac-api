@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * A generic DO / DTO wrapper that can be used to return results from one layer of the application to another or indeed
  * as a DTO.
- * <p>
+ * <br>
  *
  * @param <T>
  *            - The type of result that can be held in the Wrapper.

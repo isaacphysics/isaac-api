@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 
 /**
  * This DTO represents high level information about a piece of content
- * <p>
+ * <br>
  * This should be a light weight object used for presenting search results etc.
  *
  */

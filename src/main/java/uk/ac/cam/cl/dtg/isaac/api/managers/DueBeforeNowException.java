@@ -20,7 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * An exception to show a quiz assignment has been set with a due date before now.
- * <p>
+ * <br>
  * As this would give students no time to answer the quiz, it is considered illegal.
  */
 public class DueBeforeNowException extends SegueDatabaseException {

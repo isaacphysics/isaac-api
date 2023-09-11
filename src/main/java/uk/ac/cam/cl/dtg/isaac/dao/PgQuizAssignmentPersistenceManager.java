@@ -239,7 +239,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
 
   /**
    * Convert from a QuizAssignment DO to a QuizAssignment DTO.
-   * <p>
+   * <br>
    * This method relies on the api to fully resolve questions.
    *
    * @param quizAssignmentDO

@@ -43,7 +43,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.StringChoiceDTO;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
- * <p> <p>
+ * <br>
  * Responsible for converting Choice objects to their correct subtype.
  */
 public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConverter<Choice, ChoiceDTO> {

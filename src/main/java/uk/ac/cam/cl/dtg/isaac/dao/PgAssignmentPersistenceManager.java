@@ -313,7 +313,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
   /**
    * Convert form a Assignment DO to a Assignment DTO.
-   * <p>
+   * <br>
    * This method relies on the api to fully resolve questions.
    *
    * @param assignmentDO

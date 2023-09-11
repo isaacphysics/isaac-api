@@ -29,7 +29,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Handler to deal with token ownership requests.
- * <p>
+ * <br>
  * Preventing users from overusing this endpoint is important as some email address information is exposed for identity
  * verification purposes.
  */
