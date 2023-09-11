@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_BY_EMAIL_DEFAULT_HARD_THRESHOLD;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_BY_EMAIL_DEFAULT_SOFT_THRESHOLD;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
 
 /**
  * Handler to deal with email verification requests.
@@ -32,52 +35,54 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
  */
 public class PasswordResetByEmailMisuseHandler implements IMisuseHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetByEmailMisuseHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(PasswordResetByEmailMisuseHandler.class);
 
-    private final Integer softThreshold;
-    private final Integer hardThreshold;
-    private final Integer accountingInterval;
+  private final Integer softThreshold;
+  private final Integer hardThreshold;
+  private final Integer accountingInterval;
 
-    @Inject
-    public PasswordResetByEmailMisuseHandler() {
-        this(PASSWORD_RESET_BY_EMAIL_DEFAULT_SOFT_THRESHOLD, PASSWORD_RESET_BY_EMAIL_DEFAULT_HARD_THRESHOLD, NUMBER_SECONDS_IN_MINUTE);
-    }
+  @Inject
+  public PasswordResetByEmailMisuseHandler() {
+    this(PASSWORD_RESET_BY_EMAIL_DEFAULT_SOFT_THRESHOLD, PASSWORD_RESET_BY_EMAIL_DEFAULT_HARD_THRESHOLD,
+        NUMBER_SECONDS_IN_MINUTE);
+  }
 
-    @Inject
-    public PasswordResetByEmailMisuseHandler(final Integer softThreshold, final Integer hardThreshold, final Integer interval) {
-        this.softThreshold = softThreshold;
-        this.hardThreshold = hardThreshold;
-        this.accountingInterval = interval;
-    }
+  @Inject
+  public PasswordResetByEmailMisuseHandler(final Integer softThreshold, final Integer hardThreshold,
+                                           final Integer interval) {
+    this.softThreshold = softThreshold;
+    this.hardThreshold = hardThreshold;
+    this.accountingInterval = interval;
+  }
 
-    @Override
-    public Integer getSoftThreshold() {
-        return softThreshold;
-    }
+  @Override
+  public Integer getSoftThreshold() {
+    return softThreshold;
+  }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
-     */
-    @Override
-    public Integer getHardThreshold() {
-        return hardThreshold;
-    }
+  /*
+   * (non-Javadoc)
+   *
+   * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
+   */
+  @Override
+  public Integer getHardThreshold() {
+    return hardThreshold;
+  }
 
-    @Override
-    public Integer getAccountingIntervalInSeconds() {
-        return accountingInterval;
-    }
+  @Override
+  public Integer getAccountingIntervalInSeconds() {
+    return accountingInterval;
+  }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + sanitiseLogValue(message));
-    }
+  @Override
+  public void executeSoftThresholdAction(final String message) {
+    log.warn("Soft threshold limit: " + sanitiseLogValue(message));
+  }
 
-    @Override
-    public void executeHardThresholdAction(final String message) {
-        log.error("Hard threshold limit: " + sanitiseLogValue(message));
-    }
+  @Override
+  public void executeHardThresholdAction(final String message) {
+    log.error("Hard threshold limit: " + sanitiseLogValue(message));
+  }
 
 }

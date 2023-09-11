@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 /**
  * Content DTO for IsaacParsonsQuestions.
- *
  */
 @JsonContentType("isaacParsonsQuestion")
 public class IsaacParsonsQuestionDTO extends IsaacItemQuestionDTO {
 
-    private Boolean disableIndentation;
+  private Boolean disableIndentation;
 
-    public Boolean getDisableIndentation() {
-        return disableIndentation;
-    }
+  public Boolean getDisableIndentation() {
+    return disableIndentation;
+  }
 
-    public void setDisableIndentation(final Boolean disableIndentation) {
-        this.disableIndentation = disableIndentation;
-    }
+  public void setDisableIndentation(final Boolean disableIndentation) {
+    this.disableIndentation = disableIndentation;
+  }
 }

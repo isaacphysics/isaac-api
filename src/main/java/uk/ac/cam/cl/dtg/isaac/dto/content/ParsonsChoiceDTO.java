@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 /**
  * Choice for Parsons Questions, containing a list of ParsonsItems.
- *
  */
 public class ParsonsChoiceDTO extends ItemChoiceDTO {
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public ParsonsChoiceDTO() {
-    }
+  /**
+   * Default constructor required for mapping.
+   */
+  public ParsonsChoiceDTO() {
+  }
 
 }

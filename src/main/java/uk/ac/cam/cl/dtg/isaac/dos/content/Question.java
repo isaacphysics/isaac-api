@@ -13,84 +13,80 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
-
 import java.util.List;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 
 /**
  * Base class for all question types.
- *
  */
 @DTOMapping(QuestionDTO.class)
 @JsonContentType("question")
 public class Question extends Content {
 
-    private ContentBase answer;
-    private List<ContentBase> hints;
-    private Content defaultFeedback;
+  private ContentBase answer;
+  private List<ContentBase> hints;
+  private Content defaultFeedback;
 
 
-    public Question() {
+  public Question() {
 
-    }
+  }
 
-    /**
-     * Gets the answer.
-     * 
-     * @return the answer
-     */
-    public final ContentBase getAnswer() {
-        return answer;
-    }
+  /**
+   * Gets the answer.
+   *
+   * @return the answer
+   */
+  public final ContentBase getAnswer() {
+    return answer;
+  }
 
-    /**
-     * Sets the answer.
-     * 
-     * @param answer
-     *            the answer to set
-     */
-    public final void setAnswer(final ContentBase answer) {
-        this.answer = answer;
-    }
+  /**
+   * Sets the answer.
+   *
+   * @param answer the answer to set
+   */
+  public final void setAnswer(final ContentBase answer) {
+    this.answer = answer;
+  }
 
-    /**
-     * Gets the hints.
-     * 
-     * @return the hints
-     */
-    public final List<ContentBase> getHints() {
-        return hints;
-    }
+  /**
+   * Gets the hints.
+   *
+   * @return the hints
+   */
+  public final List<ContentBase> getHints() {
+    return hints;
+  }
 
-    /**
-     * Sets the hints.
-     * 
-     * @param hints
-     *            the hints to set
-     */
-    public final void setHints(final List<ContentBase> hints) {
-        this.hints = hints;
-    }
+  /**
+   * Sets the hints.
+   *
+   * @param hints the hints to set
+   */
+  public final void setHints(final List<ContentBase> hints) {
+    this.hints = hints;
+  }
 
-    /**
-     * Gets the default feedback to be used when no other feedback is generated..
-     *
-     * @return the defaultFeedback
-     */
-    public final Content getDefaultFeedback() {
-        return defaultFeedback;
-    }
+  /**
+   * Gets the default feedback to be used when no other feedback is generated..
+   *
+   * @return the defaultFeedback
+   */
+  public final Content getDefaultFeedback() {
+    return defaultFeedback;
+  }
 
-    /**
-     * Sets the default feedback to be used when no other feedback is generated.
-     *
-     * @param defaultFeedback
-     *            the defaultFeedback to set
-     */
-    public final void setDefaultFeedback(final Content defaultFeedback) {
-        this.defaultFeedback = defaultFeedback;
-    }
+  /**
+   * Sets the default feedback to be used when no other feedback is generated.
+   *
+   * @param defaultFeedback the defaultFeedback to set
+   */
+  public final void setDefaultFeedback(final Content defaultFeedback) {
+    this.defaultFeedback = defaultFeedback;
+  }
 
 }

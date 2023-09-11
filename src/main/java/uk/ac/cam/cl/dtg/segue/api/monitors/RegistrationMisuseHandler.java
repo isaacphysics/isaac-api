@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -34,66 +34,66 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  *
  */
 public class RegistrationMisuseHandler implements IMisuseHandler {
-    private static final Logger log = LoggerFactory.getLogger(RegistrationMisuseHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(RegistrationMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 30;
-    private static final Integer HARD_THRESHOLD = 120;
-    private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+  private static final Integer SOFT_THRESHOLD = 30;
+  private static final Integer HARD_THRESHOLD = 120;
+  private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
-    private PropertiesLoader properties;
-    private EmailManager emailManager;
+  private PropertiesLoader properties;
+  private EmailManager emailManager;
 
-    /**
-     * @param emailManager
-     *            - so we can send e-mails if the threshold limits have been reached.
-     * @param properties
-     *            - so that we can look up properties set.
-     */
-    @Inject
-    public RegistrationMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this.properties = properties;
-        this.emailManager = emailManager;
-    }
+  /**
+   * @param emailManager
+   *            - so we can send e-mails if the threshold limits have been reached.
+   * @param properties
+   *            - so that we can look up properties set.
+   */
+  @Inject
+  public RegistrationMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    this.properties = properties;
+    this.emailManager = emailManager;
+  }
 
 
-    @Override
-    public Integer getSoftThreshold() {
-        return SOFT_THRESHOLD;
-    }
+  @Override
+  public Integer getSoftThreshold() {
+    return SOFT_THRESHOLD;
+  }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
-     */
-    @Override
-    public Integer getHardThreshold() {
-        return HARD_THRESHOLD;
-    }
+  /*
+   * (non-Javadoc)
+   *
+   * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
+   */
+  @Override
+  public Integer getHardThreshold() {
+    return HARD_THRESHOLD;
+  }
 
-    @Override
-    public Integer getAccountingIntervalInSeconds() {
-        return ACCOUNTING_INTERVAL;
-    }
+  @Override
+  public Integer getAccountingIntervalInSeconds() {
+    return ACCOUNTING_INTERVAL;
+  }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) {
-        final String subject = "Soft Threshold limit reached for Registration endpoint";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                subject, message, message, EmailType.ADMIN);
-        emailManager.addSystemEmailToQueue(e);
-        log.warn("Lots of registration requests from: " + message);
+  @Override
+  public void executeSoftThresholdAction(final String message) {
+    final String subject = "Soft Threshold limit reached for Registration endpoint";
+    EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
+        subject, message, message, EmailType.ADMIN);
+    emailManager.addSystemEmailToQueue(e);
+    log.warn("Lots of registration requests from: " + message);
 
-    }
+  }
 
-    @Override
-    public void executeHardThresholdAction(final String message) {
-        final String subject = "HARD Threshold limit reached for Registration endpoint";
+  @Override
+  public void executeHardThresholdAction(final String message) {
+    final String subject = "HARD Threshold limit reached for Registration endpoint";
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                subject, message, message, EmailType.ADMIN);
-        emailManager.addSystemEmailToQueue(e);
-        log.warn("Too many registration requests from: " + message);
+    EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
+        subject, message, message, EmailType.ADMIN);
+    emailManager.addSystemEmailToQueue(e);
+    log.warn("Too many registration requests from: " + message);
 
-    }
+  }
 }

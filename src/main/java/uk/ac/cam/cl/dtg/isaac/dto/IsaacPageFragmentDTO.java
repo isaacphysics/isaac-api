@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -21,30 +22,29 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 @JsonContentType("isaacPageFragment")
 public class IsaacPageFragmentDTO extends ContentDTO {
-    private String summary;
+  private String summary;
 
-    @Override
-    @JsonIgnore(false) // Override the parent class decorator!
-    public String getCanonicalSourceFile() {
-        return super.getCanonicalSourceFile();
-    }
+  @Override
+  @JsonIgnore(false) // Override the parent class decorator!
+  public String getCanonicalSourceFile() {
+    return super.getCanonicalSourceFile();
+  }
 
-    /**
-     * Gets the summary.
-     *
-     * @return the summary
-     */
-    public final String getSummary() {
-        return summary;
-    }
+  /**
+   * Gets the summary.
+   *
+   * @return the summary
+   */
+  public final String getSummary() {
+    return summary;
+  }
 
-    /**
-     * Sets the summary.
-     *
-     * @param summary
-     *            the summary to set
-     */
-    public final void setSummary(final String summary) {
-        this.summary = summary;
-    }
+  /**
+   * Sets the summary.
+   *
+   * @param summary the summary to set
+   */
+  public final void setSummary(final String summary) {
+    this.summary = summary;
+  }
 }

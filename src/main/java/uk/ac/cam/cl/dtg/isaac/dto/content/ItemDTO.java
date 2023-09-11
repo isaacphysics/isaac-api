@@ -13,37 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * DTO to represent items in Item Choices and Questions.
- *
  */
 public class ItemDTO extends ContentDTO {
 
-    private String altText;
+  private String altText;
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public ItemDTO() {
-    }
+  /**
+   * Default constructor required for mapping.
+   */
+  public ItemDTO() {
+  }
 
-    // We don't want this field appearing in the DTO JSON!
-    @Override
-    @JsonIgnore
-    public Boolean getPublished() {
-        return super.getPublished();
-    }
+  // We don't want this field appearing in the DTO JSON!
+  @Override
+  @JsonIgnore
+  public Boolean getPublished() {
+    return super.getPublished();
+  }
 
-    public String getAltText() {
-        return this.altText;
-    }
+  public String getAltText() {
+    return this.altText;
+  }
 
-    public void setAltText(final String altText) {
-        this.altText = altText;
-    }
+  public void setAltText(final String altText) {
+    this.altText = altText;
+  }
 
 }

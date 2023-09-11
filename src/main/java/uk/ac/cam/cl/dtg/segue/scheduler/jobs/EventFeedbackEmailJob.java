@@ -10,21 +10,21 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.EventNotificationEmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 public class EventFeedbackEmailJob implements Job {
-    private static final Logger log = LoggerFactory.getLogger(EventReminderEmailJob.class);
-    private final EventNotificationEmailManager scheduledEmailManager;
+  private static final Logger log = LoggerFactory.getLogger(EventReminderEmailJob.class);
+  private final EventNotificationEmailManager scheduledEmailManager;
 
-    /**
-     * This class is required by quartz and must be executable by any instance of the segue api relying only on the
-     * jobdata context provided.
-     */
-    public EventFeedbackEmailJob() {
-        Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-        scheduledEmailManager = injector.getInstance(EventNotificationEmailManager.class);
-    }
+  /**
+   * This class is required by quartz and must be executable by any instance of the segue api relying only on the
+   * jobdata context provided.
+   */
+  public EventFeedbackEmailJob() {
+    Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
+    scheduledEmailManager = injector.getInstance(EventNotificationEmailManager.class);
+  }
 
-    @Override
-    public void execute(final JobExecutionContext context) throws JobExecutionException {
-        scheduledEmailManager.sendFeedbackEmails();
-        log.info("Ran EventFeedbackEmailJob");
-    }
+  @Override
+  public void execute(final JobExecutionContext context) throws JobExecutionException {
+    scheduledEmailManager.sendFeedbackEmails();
+    log.info("Ran EventFeedbackEmailJob");
+  }
 }

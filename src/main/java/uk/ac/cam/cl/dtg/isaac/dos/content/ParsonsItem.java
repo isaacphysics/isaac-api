@@ -13,43 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsItemDTO;
 
 /**
  * Specific content for items in Parsons Choices and Questions.
- *
  */
 @DTOMapping(ParsonsItemDTO.class)
 @JsonContentType("parsonsItem")
 public class ParsonsItem extends Item {
 
-    private Integer indentation;
+  private Integer indentation;
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public ParsonsItem() {
-    }
+  /**
+   * Default constructor required for mapping.
+   */
+  public ParsonsItem() {
+  }
 
-    /**
-     * Constructor to make testing easier.
-     *
-     * @param id - the ID for the Item
-     * @param value - the value of the Item
-     * @param indentation - the indentation of the item
-     */
-    public ParsonsItem(final String id, final String value, final Integer indentation) {
-        super(id, value);
-        this.indentation = indentation;
-    }
+  /**
+   * Constructor to make testing easier.
+   *
+   * @param id          - the ID for the Item
+   * @param value       - the value of the Item
+   * @param indentation - the indentation of the item
+   */
+  public ParsonsItem(final String id, final String value, final Integer indentation) {
+    super(id, value);
+    this.indentation = indentation;
+  }
 
-    public Integer getIndentation() {
-        return indentation;
-    }
+  public Integer getIndentation() {
+    return indentation;
+  }
 
-    public void setIndentation(final Integer indentation) {
-        this.indentation = indentation;
-    }
+  public void setIndentation(final Integer indentation) {
+    this.indentation = indentation;
+  }
 }

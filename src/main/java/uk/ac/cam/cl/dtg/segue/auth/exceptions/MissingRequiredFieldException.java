@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
  * An exception which indicates that the user provided is invalid.
- * 
+ *
  * @author Stephen Cummins
- * 
+ *
  */
 public class MissingRequiredFieldException extends Exception {
-    private static final long serialVersionUID = -3077816042521699195L;
+  private static final long serialVersionUID = -3077816042521699195L;
 
-    /**
-     * A required field is missing and must be present to save the user.
-     * 
-     * @param message
-     *            - a message to accompany the exception.
-     */
-    public MissingRequiredFieldException(final String message) {
-        super(message);
-    }
+  /**
+   * A required field is missing and must be present to save the user.
+   *
+   * @param message
+   *            - a message to accompany the exception.
+   */
+  public MissingRequiredFieldException(final String message) {
+    super(message);
+  }
 }

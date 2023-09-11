@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 /**
  * DTO to represent items in Parsons Choices and Questions.
- *
  */
 public class ParsonsItemDTO extends ItemDTO {
 
-    private Integer indentation;
+  private Integer indentation;
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public ParsonsItemDTO() {
-    }
+  /**
+   * Default constructor required for mapping.
+   */
+  public ParsonsItemDTO() {
+  }
 
-    public Integer getIndentation() {
-        return indentation;
-    }
+  public Integer getIndentation() {
+    return indentation;
+  }
 
-    public void setIndentation(final Integer indentation) {
-        this.indentation = indentation;
-    }
+  public void setIndentation(final Integer indentation) {
+    this.indentation = indentation;
+  }
 }

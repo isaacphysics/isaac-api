@@ -13,74 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.ItemValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.ItemValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuantityValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dao.content.AbstractPolymorphicBidirectionalConverter;
 
 /**
  * QuestionValidationResponseOrikaConverter A specialist converter class to work with the Orika automapper library.
  * <p>
  * Responsible for converting QuestionValidationResponse objects to their correct subtype.
- * 
  */
 public class QuestionValidationResponseOrikaConverter extends
-        AbstractPolymorphicBidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
+    AbstractPolymorphicBidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
 
-    /**
-     * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
-     * 
-     */
-    public QuestionValidationResponseOrikaConverter() {
+  /**
+   * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
+   */
+  public QuestionValidationResponseOrikaConverter() {
 
+  }
+
+  @Override
+  public QuestionValidationResponseDTO convertTo(final QuestionValidationResponse source,
+                                                 final Type<QuestionValidationResponseDTO> destinationType,
+                                                 final MappingContext context) {
+    if (null == source) {
+      return null;
     }
 
-    @Override
-    public QuestionValidationResponseDTO convertTo(final QuestionValidationResponse source,
-                                                   final Type<QuestionValidationResponseDTO> destinationType,
-                                                   final MappingContext context) {
-        if (null == source) {
-            return null;
-        }
+    if (source instanceof QuantityValidationResponse) {
+      return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
+    } else if (source instanceof ItemValidationResponse) {
+      return super.mapperFacade.map(source, ItemValidationResponseDTO.class);
+    } else {
+      // I would have expected this to cause an infinite loop / stack
+      // overflow but apparently it doesn't.
+      QuestionValidationResponseDTO questionValidationResponseDTO = new QuestionValidationResponseDTO();
+      super.mapperFacade.map(source, questionValidationResponseDTO);
+      return questionValidationResponseDTO;
+    }
+  }
 
-        if (source instanceof QuantityValidationResponse) {
-            return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
-        } else if (source instanceof ItemValidationResponse) {
-            return super.mapperFacade.map(source, ItemValidationResponseDTO.class);
-        } else {
-            // I would have expected this to cause an infinite loop / stack
-            // overflow but apparently it doesn't.
-            QuestionValidationResponseDTO questionValidationResponseDTO = new QuestionValidationResponseDTO();
-            super.mapperFacade.map(source, questionValidationResponseDTO);
-            return questionValidationResponseDTO;
-        }
+  @Override
+  public QuestionValidationResponse convertFrom(final QuestionValidationResponseDTO source,
+                                                final Type<QuestionValidationResponse> destinationType,
+                                                final MappingContext context) {
+    if (null == source) {
+      return null;
     }
 
-    @Override
-    public QuestionValidationResponse convertFrom(final QuestionValidationResponseDTO source,
-                                                  final Type<QuestionValidationResponse> destinationType,
-                                                  final MappingContext context) {
-        if (null == source) {
-            return null;
-        }
-
-        if (source instanceof QuantityValidationResponseDTO) {
-            return super.mapperFacade.map(source, QuantityValidationResponse.class);
-        } else if (source instanceof ItemValidationResponseDTO) {
-            return super.mapperFacade.map(source, ItemValidationResponse.class);
-        } else {
-            // I would have expected this to cause an infinite loop / stack
-            // overflow but apparently it doesn't.
-            QuestionValidationResponse questionValidationResponse = new QuestionValidationResponse();
-            super.mapperFacade.map(source, questionValidationResponse);
-            return questionValidationResponse;
-        }
+    if (source instanceof QuantityValidationResponseDTO) {
+      return super.mapperFacade.map(source, QuantityValidationResponse.class);
+    } else if (source instanceof ItemValidationResponseDTO) {
+      return super.mapperFacade.map(source, ItemValidationResponse.class);
+    } else {
+      // I would have expected this to cause an infinite loop / stack
+      // overflow but apparently it doesn't.
+      QuestionValidationResponse questionValidationResponse = new QuestionValidationResponse();
+      super.mapperFacade.map(source, questionValidationResponse);
+      return questionValidationResponse;
     }
+  }
 }

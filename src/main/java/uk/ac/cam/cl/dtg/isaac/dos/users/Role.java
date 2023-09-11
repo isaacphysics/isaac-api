@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 /**
  * Enum of valid roles for users of Segue to have.
  */
 public enum Role {
-    STUDENT, TUTOR, TEACHER, EVENT_LEADER, CONTENT_EDITOR, EVENT_MANAGER, ADMIN
+  STUDENT, TUTOR, TEACHER, EVENT_LEADER, CONTENT_EDITOR, EVENT_MANAGER, ADMIN
 }

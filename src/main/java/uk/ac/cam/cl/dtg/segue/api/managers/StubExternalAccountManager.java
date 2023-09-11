@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 /**
- *  A stub external account manager for local development or staging environments where synchronisation is not desired.
+ * A stub external account manager for local development or staging environments where synchronisation is not desired.
  */
 public class StubExternalAccountManager implements IExternalAccountManager {
 
-    @Override
-    public void synchroniseChangedUsers() throws ExternalAccountSynchronisationException {
-        // Do not fail silently:
-        throw new ExternalAccountSynchronisationException("No external account details configured!");
-    }
+  @Override
+  public void synchroniseChangedUsers() throws ExternalAccountSynchronisationException {
+    // Do not fail silently:
+    throw new ExternalAccountSynchronisationException("No external account details configured!");
+  }
 }

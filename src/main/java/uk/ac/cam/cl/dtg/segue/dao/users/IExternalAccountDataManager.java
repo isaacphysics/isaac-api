@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserExternalAccountChanges;
-
 import java.util.List;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserExternalAccountChanges;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 public interface IExternalAccountDataManager {
 
-    List<UserExternalAccountChanges> getRecentlyChangedRecords() throws SegueDatabaseException;
+  List<UserExternalAccountChanges> getRecentlyChangedRecords() throws SegueDatabaseException;
 
-    void updateProviderLastUpdated(Long userId) throws SegueDatabaseException;
+  void updateProviderLastUpdated(Long userId) throws SegueDatabaseException;
 
-    void updateExternalAccount(Long userId, String providerUserIdentifier) throws SegueDatabaseException;
+  void updateExternalAccount(Long userId, String providerUserIdentifier) throws SegueDatabaseException;
 }

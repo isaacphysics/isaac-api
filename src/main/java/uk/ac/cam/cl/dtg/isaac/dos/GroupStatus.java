@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 public enum GroupStatus {
-    ACTIVE, DELETED
+  ACTIVE, DELETED
 }

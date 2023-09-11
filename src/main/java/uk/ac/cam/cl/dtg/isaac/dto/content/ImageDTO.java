@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 /**
@@ -20,51 +21,51 @@ package uk.ac.cam.cl.dtg.isaac.dto.content;
  *
  */
 public class ImageDTO extends MediaDTO {
-    private String clickUrl;
-    private String clickTarget;
+  private String clickUrl;
+  private String clickTarget;
 
-    /**
-     * Constructor for Mappers.
-     */
-    public ImageDTO() {
+  /**
+   * Constructor for Mappers.
+   */
+  public ImageDTO() {
 
-    }
+  }
 
-    /**
-     * Gets the clickUrl.
-     * 
-     * @return the clickUrl
-     */
-    public String getClickUrl() {
-        return clickUrl;
-    }
+  /**
+   * Gets the clickUrl.
+   *
+   * @return the clickUrl
+   */
+  public String getClickUrl() {
+    return clickUrl;
+  }
 
-    /**
-     * Sets the clickUrl.
-     * 
-     * @param clickUrl
-     *            the clickUrl to set
-     */
-    public void setClickUrl(final String clickUrl) {
-        this.clickUrl = clickUrl;
-    }
+  /**
+   * Sets the clickUrl.
+   *
+   * @param clickUrl
+   *            the clickUrl to set
+   */
+  public void setClickUrl(final String clickUrl) {
+    this.clickUrl = clickUrl;
+  }
 
-    /**
-     * Gets the clickTarget.
-     * 
-     * @return the clickTarget
-     */
-    public String getClickTarget() {
-        return clickTarget;
-    }
+  /**
+   * Gets the clickTarget.
+   *
+   * @return the clickTarget
+   */
+  public String getClickTarget() {
+    return clickTarget;
+  }
 
-    /**
-     * Sets the clickTarget.
-     * 
-     * @param clickTarget
-     *            the clickTarget to set
-     */
-    public void setClickTarget(final String clickTarget) {
-        this.clickTarget = clickTarget;
-    }
+  /**
+   * Sets the clickTarget.
+   *
+   * @param clickTarget
+   *            the clickTarget to set
+   */
+  public void setClickTarget(final String clickTarget) {
+    this.clickTarget = clickTarget;
+  }
 }

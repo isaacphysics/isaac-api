@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.comm;
 
 /**
@@ -20,25 +21,25 @@ package uk.ac.cam.cl.dtg.segue.comm;
  */
 public class EmailAttachment {
 
-    private final String fileName;
-    private final String mimeType;
-    private final Object attachment;
+  private final String fileName;
+  private final String mimeType;
+  private final Object attachment;
 
-    public EmailAttachment(final String fileName, final String mimeType, final Object attachment) {
-        this.fileName = fileName;
-        this.mimeType = mimeType;
-        this.attachment = attachment;
-    }
+  public EmailAttachment(final String fileName, final String mimeType, final Object attachment) {
+    this.fileName = fileName;
+    this.mimeType = mimeType;
+    this.attachment = attachment;
+  }
 
-    public String getFileName() {
-        return fileName;
-    }
+  public String getFileName() {
+    return fileName;
+  }
 
-    public String getMimeType() {
-        return mimeType;
-    }
+  public String getMimeType() {
+    return mimeType;
+  }
 
-    public Object getAttachment() {
-        return attachment;
-    }
+  public Object getAttachment() {
+    return attachment;
+  }
 }

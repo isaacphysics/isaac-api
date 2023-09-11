@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,33 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 
 /**
  * Created by mlt47 on 09/03/2018.
  */
 public class PrometheusMetricsExporter implements IMetricsExporter {
-    private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsExporter.class);
+  private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsExporter.class);
 
-    /**
-     * Constructs a metrics exporter on the port specified for reporting custom logic in a Prometheus style.
-     * @param port the port to expose the metrics.
-     * @throws IOException could be thrown by the socket.
-     */
-    public PrometheusMetricsExporter(final int port) throws IOException {
-        HTTPServer server = new HTTPServer(port);
-    }
+  /**
+   * Constructs a metrics exporter on the port specified for reporting custom logic in a Prometheus style.
+   * @param port the port to expose the metrics.
+   * @throws IOException could be thrown by the socket.
+   */
+  public PrometheusMetricsExporter(final int port) throws IOException {
+    HTTPServer server = new HTTPServer(port);
+  }
 
-    @Override
-    public void exposeJvmMetrics() {
-        DefaultExports.initialize();
-    }
+  @Override
+  public void exposeJvmMetrics() {
+    DefaultExports.initialize();
+  }
 }

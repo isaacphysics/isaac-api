@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import com.google.inject.Inject;
@@ -23,50 +24,50 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(QuestionAttemptMisuseHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(QuestionAttemptMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 10;
-    private static final Integer HARD_THRESHOLD = 15;
-    private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIFTEEN_MINUTES;
+  private static final Integer SOFT_THRESHOLD = 10;
+  private static final Integer HARD_THRESHOLD = 15;
+  private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIFTEEN_MINUTES;
 
-    private Integer overrideHardThreshold;
+  private Integer overrideHardThreshold;
 
 
-    /**
-     * @param properties
-     *            - so that we can look up properties set.
-     */
-    @Inject
-    public QuestionAttemptMisuseHandler(final PropertiesLoader properties) {
-        String overrideThresholdString = properties.getProperty(Constants.QUESTION_MISUSE_THRESHOLD_OVERRIDE);
-        if (null != overrideThresholdString) {
-            this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
-        }
+  /**
+   * @param properties - so that we can look up properties set.
+   */
+  @Inject
+  public QuestionAttemptMisuseHandler(final PropertiesLoader properties) {
+    String overrideThresholdString = properties.getProperty(Constants.QUESTION_MISUSE_THRESHOLD_OVERRIDE);
+    if (null != overrideThresholdString) {
+      this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
     }
+  }
 
-    @Override
-    public Integer getSoftThreshold() {
-        return SOFT_THRESHOLD;
+  @Override
+  public Integer getSoftThreshold() {
+    return SOFT_THRESHOLD;
+  }
+
+  @Override
+  public Integer getHardThreshold() {
+    if (null != overrideHardThreshold) {
+      return overrideHardThreshold;
     }
+    return HARD_THRESHOLD;
+  }
 
-    @Override
-    public Integer getHardThreshold() {
-        if (null != overrideHardThreshold) {
-            return overrideHardThreshold;
-        }
-        return HARD_THRESHOLD;
-    }
+  @Override
+  public Integer getAccountingIntervalInSeconds() {
+    return ACCOUNTING_INTERVAL;
+  }
 
-    @Override
-    public Integer getAccountingIntervalInSeconds() {
-        return ACCOUNTING_INTERVAL;
-    }
+  @Override
+  public void executeSoftThresholdAction(final String message) {
+  }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) { }
-
-    @Override
-    public void executeHardThresholdAction(final String message) {
-        log.warn("Hard threshold limit: " + message);
-    }
+  @Override
+  public void executeHardThresholdAction(final String message) {
+    log.warn("Hard threshold limit: " + message);
+  }
 }

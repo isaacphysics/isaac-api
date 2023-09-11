@@ -25,16 +25,16 @@ import org.isaacphysics.graphchecker.settings.SettingsWrapper;
  */
 public class IsaacGraphSketcherSettings implements SettingsWrapper {
 
-    private static final double ISAAC_AXIS_SLOP = 0.0025;
-    private static final double ISAAC_ORIGIN_SLOP = 0.01;
+  private static final double ISAAC_AXIS_SLOP = 0.0025;
+  private static final double ISAAC_ORIGIN_SLOP = 0.01;
 
-    @Override
-    public double getAxisSlop() {
-        return ISAAC_AXIS_SLOP;
-    }
+  @Override
+  public double getAxisSlop() {
+    return ISAAC_AXIS_SLOP;
+  }
 
-    @Override
-    public double getOriginSlop() {
-        return ISAAC_ORIGIN_SLOP;
-    }
+  @Override
+  public double getOriginSlop() {
+    return ISAAC_ORIGIN_SLOP;
+  }
 }

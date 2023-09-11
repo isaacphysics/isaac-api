@@ -13,32 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.ext.Provider;
+package uk.ac.cam.cl.dtg.isaac.configuration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.ext.Provider;
 
 /**
  * This class modifies the RestEasyJackson Configuration globally for all end points.
- * 
- * @author Stephen Cummins
  *
+ * @author Stephen Cummins
  */
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class RestEasyJacksonConfiguration extends JacksonJsonProvider {
 
-    /**
-     * Constructor.
-     */
-    public RestEasyJacksonConfiguration() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        super.setMapper(mapper);
-    }
+  /**
+   * Constructor.
+   */
+  public RestEasyJacksonConfiguration() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    super.setMapper(mapper);
+  }
 }

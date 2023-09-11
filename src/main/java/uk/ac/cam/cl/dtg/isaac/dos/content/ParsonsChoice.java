@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsChoiceDTO;
 
 /**
  * Choice for Parsons Questions, containing a list of ParsonsItems.
- *
  */
 @DTOMapping(ParsonsChoiceDTO.class)
 @JsonContentType("parsonsChoice")
 public class ParsonsChoice extends ItemChoice {
-    /**
-     * Default constructor required for mapping.
-     */
-    public ParsonsChoice() {
-    }
+  /**
+   * Default constructor required for mapping.
+   */
+  public ParsonsChoice() {
+  }
 }

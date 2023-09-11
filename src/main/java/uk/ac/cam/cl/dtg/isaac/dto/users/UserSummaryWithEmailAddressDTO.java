@@ -13,54 +13,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 /**
  * View of a User Summary object, which contains additional information (email). Usually used where a sharing relationship has or will be created.
  */
 public class UserSummaryWithEmailAddressDTO extends UserSummaryDTO {
-    private String email;
+  private String email;
 
-    /**
-     * UserSummaryDTO.
-     */
-    public UserSummaryWithEmailAddressDTO() {
+  /**
+   * UserSummaryDTO.
+   */
+  public UserSummaryWithEmailAddressDTO() {
 
-    }
+  }
 
-    /**
-     * Gets the email.
-     * @return the email
-     */
-    public String getEmail() {
-        return email;
-    }
+  /**
+   * Gets the email.
+   *
+   * @return the email
+   */
+  public String getEmail() {
+    return email;
+  }
 
 
-    /**
-     * Sets the email.
-     * @param email the id to set
-     */
-    public void setEmail(final String email) {
-        this.email = email;
-    }
+  /**
+   * Sets the email.
+   *
+   * @param email the id to set
+   */
+  public void setEmail(final String email) {
+    this.email = email;
+  }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("UserSummaryDTO [id=");
-        builder.append(this.getId());
-        builder.append(", givenName=");
-        builder.append(this.getGivenName());
-        builder.append(", familyName=");
-        builder.append(this.getFamilyName());
-        builder.append(", email=");
-        builder.append(email);
-        builder.append(", emailVerificationStatus=");
-        builder.append(this.getEmailVerificationStatus().name());
-        builder.append(", authorisedFullAccess=");
-        builder.append(this.isAuthorisedFullAccess());
-        builder.append("]");
-        return builder.toString();
-    }
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("UserSummaryDTO [id=");
+    builder.append(this.getId());
+    builder.append(", givenName=");
+    builder.append(this.getGivenName());
+    builder.append(", familyName=");
+    builder.append(this.getFamilyName());
+    builder.append(", email=");
+    builder.append(email);
+    builder.append(", emailVerificationStatus=");
+    builder.append(this.getEmailVerificationStatus().name());
+    builder.append(", authorisedFullAccess=");
+    builder.append(this.isAuthorisedFullAccess());
+    builder.append("]");
+    return builder.toString();
+  }
 }

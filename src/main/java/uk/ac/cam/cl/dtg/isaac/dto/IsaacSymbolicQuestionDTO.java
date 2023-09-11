@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
-import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
-
 import java.util.List;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
  * Isaac Symbolic Question DTO.
@@ -28,23 +28,23 @@ import java.util.List;
 @JsonContentType("isaacSymbolicQuestion")
 @ValidatesWith(IsaacSymbolicValidator.class)
 public class IsaacSymbolicQuestionDTO extends IsaacQuestionBaseDTO {
-    private String formulaSeed;
-    private List<String> availableSymbols;
+  private String formulaSeed;
+  private List<String> availableSymbols;
 
-    public final String getFormulaSeed() {
-        return formulaSeed;
-    }
+  public final String getFormulaSeed() {
+    return formulaSeed;
+  }
 
-    public void setFormulaSeed(final String formulaSeed) {
-        this.formulaSeed = formulaSeed;
-    }
+  public void setFormulaSeed(final String formulaSeed) {
+    this.formulaSeed = formulaSeed;
+  }
 
-    public final List<String> getAvailableSymbols() {
-        return availableSymbols;
-    }
+  public final List<String> getAvailableSymbols() {
+    return availableSymbols;
+  }
 
-    public void setAvailableSymbols(final List<String> availableSymbols) {
-        this.availableSymbols = availableSymbols;
-    }
+  public void setAvailableSymbols(final List<String> availableSymbols) {
+    this.availableSymbols = availableSymbols;
+  }
 
 }

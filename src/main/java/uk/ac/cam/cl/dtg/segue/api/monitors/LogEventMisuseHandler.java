@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
-import com.google.inject.Inject;
 
 /**
  * Handler to detect users storing large amounts of data in our log database.
@@ -34,54 +33,54 @@ import com.google.inject.Inject;
  * NOTE: The accounting unit for this handler is bytes.
  */
 public class LogEventMisuseHandler implements IMisuseHandler {
-    private static final Logger log = LoggerFactory.getLogger(LogEventMisuseHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(LogEventMisuseHandler.class);
 
-    public static final Integer SOFT_THRESHOLD = 700000; // bytes
-    public static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_DAY;
+  public static final Integer SOFT_THRESHOLD = 700000; // bytes
+  public static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_DAY;
 
-    private final PropertiesLoader properties;
-    private final EmailManager emailManager;
+  private final PropertiesLoader properties;
+  private final EmailManager emailManager;
 
-    /**
-     * @param emailManager
-     *            - so we can send e-mails if the threshold limits have been reached.
-     * @param properties
-     *            - so that we can look up properties set.
-     */
-    @Inject
-    public LogEventMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this.properties = properties;
-        this.emailManager = emailManager;
-    }
+  /**
+   * @param emailManager
+   *            - so we can send e-mails if the threshold limits have been reached.
+   * @param properties
+   *            - so that we can look up properties set.
+   */
+  @Inject
+  public LogEventMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    this.properties = properties;
+    this.emailManager = emailManager;
+  }
 
-    @Override
-    public Integer getSoftThreshold() {
-        return SOFT_THRESHOLD;
-    }
+  @Override
+  public Integer getSoftThreshold() {
+    return SOFT_THRESHOLD;
+  }
 
-    @Override
-    public Integer getHardThreshold() {
-        return Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES;
-    }
+  @Override
+  public Integer getHardThreshold() {
+    return Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES;
+  }
 
-    @Override
-    public Integer getAccountingIntervalInSeconds() {
-        return ACCOUNTING_INTERVAL;
-    }
+  @Override
+  public Integer getAccountingIntervalInSeconds() {
+    return ACCOUNTING_INTERVAL;
+  }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
-    }
+  @Override
+  public void executeSoftThresholdAction(final String message) {
+    log.warn("Soft threshold limit: " + message);
+  }
 
-    @Override
-    public void executeHardThresholdAction(final String message) {
-        final String subject = "HARD Threshold limit reached for: LogEventMisuseHandler -- Log Data Requests too large";
+  @Override
+  public void executeHardThresholdAction(final String message) {
+    final String subject = "HARD Threshold limit reached for: LogEventMisuseHandler -- Log Data Requests too large";
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                subject, message, message, EmailType.ADMIN);
+    EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
+        subject, message, message, EmailType.ADMIN);
 
-        emailManager.addSystemEmailToQueue(e);
-        log.warn("Hard threshold limit: " + message);
-    }
+    emailManager.addSystemEmailToQueue(e);
+    log.warn("Hard threshold limit: " + message);
+  }
 }

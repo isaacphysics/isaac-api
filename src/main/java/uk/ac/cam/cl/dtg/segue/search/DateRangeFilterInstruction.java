@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,59 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.search;
 
 import jakarta.annotation.Nullable;
-
 import java.util.Date;
 
 /**
  * DateRangeFilterInstruction.
  * <p>
  * To be used to filter results based on a date range.
- * 
+ *
  * @author sac92
  */
 public class DateRangeFilterInstruction extends AbstractFilterInstruction {
-    private Date fromDate;
-    private Date toDate;
+  private Date fromDate;
+  private Date toDate;
 
-    /**
-     * Create a new date range filter instruction.
-     * <p>
-     * At least one of the fields should be populated. Otherwise you will get an illegal arguments exception;
-     * 
-     * @param fromDate
-     *            the start date results should match.
-     * @param toDate
-     *            the end date that results can match.
-     */
-    public DateRangeFilterInstruction(@Nullable final Date fromDate, @Nullable final Date toDate) {
-        this.fromDate = fromDate;
-        this.toDate = toDate;
+  /**
+   * Create a new date range filter instruction.
+   * <p>
+   * At least one of the fields should be populated. Otherwise you will get an illegal arguments exception;
+   *
+   * @param fromDate
+   *            the start date results should match.
+   * @param toDate
+   *            the end date that results can match.
+   */
+  public DateRangeFilterInstruction(@Nullable final Date fromDate, @Nullable final Date toDate) {
+    this.fromDate = fromDate;
+    this.toDate = toDate;
 
-        if (null == fromDate && null == toDate) {
-            throw new IllegalArgumentException(
-                    "You must provide either a from date or a to date for this filter to work. "
-                            + "Both are currently null");
-        }
+    if (null == fromDate && null == toDate) {
+      throw new IllegalArgumentException(
+          "You must provide either a from date or a to date for this filter to work. "
+              + "Both are currently null");
     }
+  }
 
-    /**
-     * Gets the fromDate.
-     * 
-     * @return the fromDate
-     */
-    public final Date getFromDate() {
-        return fromDate;
-    }
+  /**
+   * Gets the fromDate.
+   *
+   * @return the fromDate
+   */
+  public final Date getFromDate() {
+    return fromDate;
+  }
 
-    /**
-     * Gets the toDate.
-     * 
-     * @return the toDate
-     */
-    public final Date getToDate() {
-        return toDate;
-    }
+  /**
+   * Gets the toDate.
+   *
+   * @return the toDate
+   */
+  public final Date getToDate() {
+    return toDate;
+  }
 }

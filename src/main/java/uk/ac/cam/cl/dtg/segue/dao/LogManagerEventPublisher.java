@@ -17,162 +17,164 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.joda.time.LocalDate;
-import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.joda.time.LocalDate;
+import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
 /**
- *  Abstract class for publishing logged events to interested listeners.
- *  Uses decorator pattern.
+ * Abstract class for publishing logged events to interested listeners.
+ * Uses decorator pattern.
  *
- *  @author Dan Underwood
+ * @author Dan Underwood
  */
 public abstract class LogManagerEventPublisher implements ILogManager {
 
-    private ILogManager logManager;
-    private Collection<LoggingEventHandler> logListeners;
+  private ILogManager logManager;
+  private Collection<LoggingEventHandler> logListeners;
 
-    public LogManagerEventPublisher(final ILogManager logManager) {
-        this.logManager = logManager;
+  public LogManagerEventPublisher(final ILogManager logManager) {
+    this.logManager = logManager;
+  }
+
+
+  /**
+   * Add listener object to collection of listeners that wish to subscribe to events raised.
+   *
+   * @param listener - the listener who wants to subscribe to raised events
+   */
+  public void addListener(final LoggingEventHandler listener) {
+
+    if (null == logListeners) {
+      logListeners = new HashSet<>();
     }
 
-
-    /**
-     * Add listener object to collection of listeners that wish to subscribe to events raised.
-     *
-     * @param listener
-     *            - the listener who wants to subscribe to raised events
-     */
-    public void addListener(final LoggingEventHandler listener) {
-
-        if (null == logListeners) {
-            logListeners = new HashSet<>();
-        }
-
-        this.logListeners.add(listener);
-    }
+    this.logListeners.add(listener);
+  }
 
 
-    /**
-     * Method Overrides.
-     */
+  /**
+   * Method Overrides.
+   */
 
-    @Override
-    public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType, final Object eventDetails) {
+  @Override
+  public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType,
+                       final Object eventDetails) {
 
-        this.logManager.logEvent(user, httpRequest, eventType, eventDetails);
+    this.logManager.logEvent(user, httpRequest, eventType, eventDetails);
 
-        if (null != logListeners) {
+    if (null != logListeners) {
 
-            for (LoggingEventHandler listener: logListeners) {
-                listener.handleEvent(user, httpRequest, eventType.name(), eventDetails);
-            }
-
-        }
-    }
-
-    @Override
-    public void logExternalEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final String eventType, final Object eventDetails) {
-
-        this.logManager.logExternalEvent(user, httpRequest, eventType, eventDetails);
-
-        if (null != logListeners) {
-
-            for (LoggingEventHandler listener: logListeners) {
-                listener.handleEvent(user, httpRequest, eventType, eventDetails);
-            }
-
-        }
-    }
-
-    @Override
-    public void logInternalEvent(final AbstractSegueUserDTO user, final LogType eventType, final Object eventDetails) {
-
-        this.logManager.logInternalEvent(user, eventType, eventDetails);
-
-        if (null != logListeners) {
-
-            for (LoggingEventHandler listener: logListeners) {
-                listener.handleEvent(user, null, eventType.name(), eventDetails);
-            }
-
-        }
+      for (LoggingEventHandler listener : logListeners) {
+        listener.handleEvent(user, httpRequest, eventType.name(), eventDetails);
+      }
 
     }
+  }
 
-    @Override
-    public void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId) {
+  @Override
+  public void logExternalEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
+                               final String eventType, final Object eventDetails) {
 
-        this.logManager.transferLogEventsToRegisteredUser(oldUserId, newUserId);
+    this.logManager.logExternalEvent(user, httpRequest, eventType, eventDetails);
 
-        if (null != logListeners) {
+    if (null != logListeners) {
 
-            for (LoggingEventHandler listener: logListeners) {
-                listener.transferLogEventsToRegisteredUser(oldUserId, newUserId);
-            }
+      for (LoggingEventHandler listener : logListeners) {
+        listener.handleEvent(user, httpRequest, eventType, eventDetails);
+      }
 
-        }
+    }
+  }
+
+  @Override
+  public void logInternalEvent(final AbstractSegueUserDTO user, final LogType eventType, final Object eventDetails) {
+
+    this.logManager.logInternalEvent(user, eventType, eventDetails);
+
+    if (null != logListeners) {
+
+      for (LoggingEventHandler listener : logListeners) {
+        listener.handleEvent(user, null, eventType.name(), eventDetails);
+      }
 
     }
 
-    @Override
-    public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate)
-            throws SegueDatabaseException {
+  }
 
-        return this.logManager.getLogsByType(type, fromDate, toDate);
-    }
+  @Override
+  public void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId) {
 
-    @Override
-    public Long getLogCountByType(final String type) throws SegueDatabaseException {
+    this.logManager.transferLogEventsToRegisteredUser(oldUserId, newUserId);
 
-        return this.logManager.getLogCountByType(type);
+    if (null != logListeners) {
 
-    }
-
-    @Override
-    public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate, final List<RegisteredUserDTO> usersOfInterest)
-            throws SegueDatabaseException {
-
-        return this.logManager.getLogsByType(type, fromDate, toDate, usersOfInterest);
+      for (LoggingEventHandler listener : logListeners) {
+        listener.transferLogEventsToRegisteredUser(oldUserId, newUserId);
+      }
 
     }
 
-    @Override
-    public Map<String, Map<LocalDate, Long>> getLogCountByDate(
-            final Collection<String> eventTypes, final Date fromDate, final Date toDate,
-            final List<RegisteredUserDTO> usersOfInterest, final boolean binDataByMonth) throws SegueDatabaseException {
+  }
 
-        return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, usersOfInterest, binDataByMonth);
+  @Override
+  public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate)
+      throws SegueDatabaseException {
 
-    }
+    return this.logManager.getLogsByType(type, fromDate, toDate);
+  }
 
-    @Override
-    public Set<String> getAllIpAddresses() {
+  @Override
+  public Long getLogCountByType(final String type) throws SegueDatabaseException {
 
-        return this.logManager.getAllIpAddresses();
+    return this.logManager.getLogCountByType(type);
 
-    }
+  }
 
-    @Override
-    public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException {
+  @Override
+  public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
+                                            final List<RegisteredUserDTO> usersOfInterest)
+      throws SegueDatabaseException {
 
-        return this.logManager.getLastLogDateForAllUsers(qualifyingLogEventType);
+    return this.logManager.getLogsByType(type, fromDate, toDate, usersOfInterest);
 
-    }
+  }
 
-    @Override
-    public Set<String> getAllEventTypes() throws SegueDatabaseException {
+  @Override
+  public Map<String, Map<LocalDate, Long>> getLogCountByDate(
+      final Collection<String> eventTypes, final Date fromDate, final Date toDate,
+      final List<RegisteredUserDTO> usersOfInterest, final boolean binDataByMonth) throws SegueDatabaseException {
 
-        return this.logManager.getAllEventTypes();
+    return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, usersOfInterest, binDataByMonth);
 
-    }
+  }
+
+  @Override
+  public Set<String> getAllIpAddresses() {
+
+    return this.logManager.getAllIpAddresses();
+
+  }
+
+  @Override
+  public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType)
+      throws SegueDatabaseException {
+
+    return this.logManager.getLastLogDateForAllUsers(qualifyingLogEventType);
+
+  }
+
+  @Override
+  public Set<String> getAllEventTypes() throws SegueDatabaseException {
+
+    return this.logManager.getAllEventTypes();
+
+  }
 }

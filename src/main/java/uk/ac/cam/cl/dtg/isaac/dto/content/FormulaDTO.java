@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 /**
@@ -20,48 +21,48 @@ package uk.ac.cam.cl.dtg.isaac.dto.content;
  *
  */
 public class FormulaDTO extends ChoiceDTO {
-    private String pythonExpression;
-    private boolean requiresExactMatch;
+  private String pythonExpression;
+  private boolean requiresExactMatch;
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public FormulaDTO() {
+  /**
+   * Default constructor required for mapping.
+   */
+  public FormulaDTO() {
 
-    }
+  }
 
-    /**
-     * Gets the python expression.
-     *
-     * @return the python expression
-     */
-    public final String getPythonExpression() {
-        return pythonExpression;
-    }
+  /**
+   * Gets the python expression.
+   *
+   * @return the python expression
+   */
+  public final String getPythonExpression() {
+    return pythonExpression;
+  }
 
-    /**
-     * Sets the python expression.
-     *
-     * @param pythonExpression
-     *            the python expression to set
-     */
-    public final void setPythonExpression(final String pythonExpression) {
-        this.pythonExpression = pythonExpression;
-    }
+  /**
+   * Sets the python expression.
+   *
+   * @param pythonExpression
+   *            the python expression to set
+   */
+  public final void setPythonExpression(final String pythonExpression) {
+    this.pythonExpression = pythonExpression;
+  }
 
-    /**
-     * @return Whether this formula requires an exact match. Believe it or not.
-     */
-    public boolean requiresExactMatch() {
-        return requiresExactMatch;
-    }
+  /**
+   * @return Whether this formula requires an exact match. Believe it or not.
+   */
+  public boolean requiresExactMatch() {
+    return requiresExactMatch;
+  }
 
-    /**
-     * Yes, you guessed it. Sets whether this formula requires an exact match.
-     *
-     * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
-     */
-    public void setRequiresExactMatch(final boolean requiresExactMatch) {
-        this.requiresExactMatch = requiresExactMatch;
-    }
+  /**
+   * Yes, you guessed it. Sets whether this formula requires an exact match.
+   *
+   * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
+   */
+  public void setRequiresExactMatch(final boolean requiresExactMatch) {
+    this.requiresExactMatch = requiresExactMatch;
+  }
 }

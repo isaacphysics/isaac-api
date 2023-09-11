@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.util.email;
 
 public enum MailJetSubscriptionAction {
-    SOFT_SUBSCRIBE("addnoforce"),
-    FORCE_SUBSCRIBE("addforce"),
-    UNSUBSCRIBE("unsub"),
-    REMOVE("remove");
+  SOFT_SUBSCRIBE("addnoforce"),
+  FORCE_SUBSCRIBE("addforce"),
+  UNSUBSCRIBE("unsub"),
+  REMOVE("remove");
 
-    private final String value;
+  private final String value;
 
-    /**
-     *  Class to represent the different possible subscription actions supported by the MailJet API.
-     * @param value string value needed by MailJet
-     */
-    MailJetSubscriptionAction(final String value) {
-        this.value = value;
-    }
+  /**
+   * Class to represent the different possible subscription actions supported by the MailJet API.
+   *
+   * @param value string value needed by MailJet
+   */
+  MailJetSubscriptionAction(final String value) {
+    this.value = value;
+  }
 
-    public String getValue() {
-        return value;
-    }
+  public String getValue() {
+    return value;
+  }
 }

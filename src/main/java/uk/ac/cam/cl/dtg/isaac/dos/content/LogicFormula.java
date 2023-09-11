@@ -13,52 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.LogicFormulaDTO;
 
 /**
  * LogicFormula is a specialised choice object that allows a python expression representing the formula to be stored.
- *
  */
 @DTOMapping(LogicFormulaDTO.class)
 @JsonContentType("logicFormula")
 public class LogicFormula extends Choice {
-    private String pythonExpression;
-    private boolean requiresExactMatch;
+  private String pythonExpression;
+  private boolean requiresExactMatch;
 
-    public LogicFormula() {
+  public LogicFormula() {
 
-    }
+  }
 
-    /**
-     * @return the pythonExpression
-     */
-    public String getPythonExpression() {
-        return pythonExpression;
-    }
+  /**
+   * @return the pythonExpression
+   */
+  public String getPythonExpression() {
+    return pythonExpression;
+  }
 
-    /**
-     * @param pythonExpression the pythonExpression to set
-     */
-    public void setPythonExpression(final String pythonExpression) {
-        this.pythonExpression = pythonExpression;
-    }
+  /**
+   * @param pythonExpression the pythonExpression to set
+   */
+  public void setPythonExpression(final String pythonExpression) {
+    this.pythonExpression = pythonExpression;
+  }
 
-    /**
-     * @return Whether this formula requires an exact match. Believe it or not.
-     */
-    public boolean getRequiresExactMatch() {
-        return requiresExactMatch;
-    }
+  /**
+   * @return Whether this formula requires an exact match. Believe it or not.
+   */
+  public boolean getRequiresExactMatch() {
+    return requiresExactMatch;
+  }
 
-    /**
-     * Yes, you guessed it. Sets whether this formula requires an exact match.
-     *
-     * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
-     */
-    public void setRequiresExactMatch(final boolean requiresExactMatch) {
-        this.requiresExactMatch = requiresExactMatch;
-    }
+  /**
+   * Yes, you guessed it. Sets whether this formula requires an exact match.
+   *
+   * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
+   */
+  public void setRequiresExactMatch(final boolean requiresExactMatch) {
+    this.requiresExactMatch = requiresExactMatch;
+  }
 
 }

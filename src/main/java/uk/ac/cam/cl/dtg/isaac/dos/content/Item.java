@@ -13,42 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.ItemDTO;
 
 /**
  * Specific content for items in Item Choices and Questions.
- *
  */
 @DTOMapping(ItemDTO.class)
 @JsonContentType("item")
 public class Item extends Content {
 
-    private String altText;
+  private String altText;
 
-    /**
-     * Default constructor required for mapping.
-     */
-    public Item() {
-    }
+  /**
+   * Default constructor required for mapping.
+   */
+  public Item() {
+  }
 
-    /**
-     * Constructor to make testing easier.
-     *
-     * @param id - the ID for the Item
-     * @param value - the value of the Item
-     */
-    public Item(final String id, final String value) {
-        this.setId(id);
-        this.setValue(value);
-    }
+  /**
+   * Constructor to make testing easier.
+   *
+   * @param id    - the ID for the Item
+   * @param value - the value of the Item
+   */
+  public Item(final String id, final String value) {
+    this.setId(id);
+    this.setValue(value);
+  }
 
-    public String getAltText() {
-        return this.altText;
-    }
+  public String getAltText() {
+    return this.altText;
+  }
 
-    public void setAltText(final String altText) {
-        this.altText = altText;
-    }
+  public void setAltText(final String altText) {
+    this.altText = altText;
+  }
 }

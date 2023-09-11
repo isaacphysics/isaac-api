@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,34 +21,33 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
-import java.util.UUID;
-
 /**
- *  RESTEasy ExceptionMapper to turn unhandled exceptions into useful Response objects.
+ * RESTEasy ExceptionMapper to turn unhandled exceptions into useful Response objects.
  */
 @Provider
 public class UnhandledExceptionMapper implements ExceptionMapper<Exception> {
-    private static final Logger log = LoggerFactory.getLogger(UnhandledExceptionMapper.class);
+  private static final Logger log = LoggerFactory.getLogger(UnhandledExceptionMapper.class);
 
-    @Context
-    private HttpServletRequest request;
+  @Context
+  private HttpServletRequest request;
 
-    @Override
-    public Response toResponse(final Exception e) {
-        UUID generatedUUID = UUID.randomUUID();
-        String logMessage = String.format(
-                "Unhandled exception captured. Assigned ID: %1$s. Exception at: %2$s on %3$s %4$s",
-                generatedUUID, e.getClass().getSimpleName(), request.getMethod(), request.getRequestURI()
-        );
-        String responseMessage = String.format(
-                "An unhandled error occurred!\nPlease report this ID if you contact support: %1$s.",
-                generatedUUID
-        );
-        log.error(logMessage, e);
-        return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, responseMessage, null).toResponse();
-    }
+  @Override
+  public Response toResponse(final Exception e) {
+    UUID generatedUUID = UUID.randomUUID();
+    String logMessage = String.format(
+        "Unhandled exception captured. Assigned ID: %1$s. Exception at: %2$s on %3$s %4$s",
+        generatedUUID, e.getClass().getSimpleName(), request.getMethod(), request.getRequestURI()
+    );
+    String responseMessage = String.format(
+        "An unhandled error occurred!\nPlease report this ID if you contact support: %1$s.",
+        generatedUUID
+    );
+    log.error(logMessage, e);
+    return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, responseMessage, null).toResponse();
+  }
 }

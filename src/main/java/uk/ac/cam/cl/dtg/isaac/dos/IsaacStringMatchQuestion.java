@@ -13,47 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacStringMatchQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacStringMatchQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
  * DO for isaacStringMatchQuestion.
- *
  */
 @DTOMapping(IsaacStringMatchQuestionDTO.class)
 @JsonContentType("isaacStringMatchQuestion")
 @ValidatesWith(IsaacStringMatchValidator.class)
 public class IsaacStringMatchQuestion extends IsaacQuestionBase {
-    private Boolean multiLineEntry;
-    private Boolean preserveLeadingWhitespace;
-    private Boolean preserveTrailingWhitespace;
+  private Boolean multiLineEntry;
+  private Boolean preserveLeadingWhitespace;
+  private Boolean preserveTrailingWhitespace;
 
-    public Boolean getMultiLineEntry() {
-        return multiLineEntry;
-    }
+  public Boolean getMultiLineEntry() {
+    return multiLineEntry;
+  }
 
-    public void setMultiLineEntry(final Boolean multiLineEntry) {
-        this.multiLineEntry = multiLineEntry;
-    }
+  public void setMultiLineEntry(final Boolean multiLineEntry) {
+    this.multiLineEntry = multiLineEntry;
+  }
 
-    public Boolean getPreserveTrailingWhitespace() {
-        return preserveTrailingWhitespace;
-    }
+  public Boolean getPreserveTrailingWhitespace() {
+    return preserveTrailingWhitespace;
+  }
 
-    public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
-        this.preserveTrailingWhitespace = preserveTrailingWhitespace;
-    }
+  public void setPreserveTrailingWhitespace(final Boolean preserveTrailingWhitespace) {
+    this.preserveTrailingWhitespace = preserveTrailingWhitespace;
+  }
 
-    public Boolean getPreserveLeadingWhitespace() {
-        return preserveLeadingWhitespace;
-    }
+  public Boolean getPreserveLeadingWhitespace() {
+    return preserveLeadingWhitespace;
+  }
 
-    public void setPreserveLeadingWhitespace(final Boolean preserveLeadingWhitespace) {
-        this.preserveLeadingWhitespace = preserveLeadingWhitespace;
-    }
+  public void setPreserveLeadingWhitespace(final Boolean preserveLeadingWhitespace) {
+    this.preserveLeadingWhitespace = preserveLeadingWhitespace;
+  }
 }

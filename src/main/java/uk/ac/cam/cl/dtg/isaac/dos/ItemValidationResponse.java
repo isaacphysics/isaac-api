@@ -13,55 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import java.util.Date;
+import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dto.ItemValidationResponseDTO;
 
-import java.util.Date;
-import java.util.List;
-
 
 /**
- *  Class for providing correctness feedback about individual items in a submitted Choice.
+ * Class for providing correctness feedback about individual items in a submitted Choice.
  * <p>
- *  This is unlikely to be useful for {@link IsaacItemQuestion}'s, however, since to provide
- *  detailed correctness feedback on them would enable questions to be answered trivially.
+ * This is unlikely to be useful for {@link IsaacItemQuestion}'s, however, since to provide
+ * detailed correctness feedback on them would enable questions to be answered trivially.
  */
 @DTOMapping(ItemValidationResponseDTO.class)
 public class ItemValidationResponse extends QuestionValidationResponse {
-    private List<Boolean> itemsCorrect;
+  private List<Boolean> itemsCorrect;
 
-    /**
-     * Default constructor for Jackson.
-     */
-    public ItemValidationResponse() {
-    }
+  /**
+   * Default constructor for Jackson.
+   */
+  public ItemValidationResponse() {
+  }
 
-    /**
-     *  Full constructor.
-     *
-     * @param questionId - questionId.
-     * @param answer - answer.
-     * @param correct - correct.
-     * @param itemsCorrect - ordered list of correctness status of each submitted item.
-     * @param explanation - explanation.
-     * @param dateAttempted - dateAttempted.
-     */
-    public ItemValidationResponse(final String questionId, final Choice answer,
-                                  final Boolean correct, final List<Boolean> itemsCorrect,
-                                  final Content explanation, final Date dateAttempted) {
-        super(questionId, answer, correct, explanation, dateAttempted);
-        this.itemsCorrect = itemsCorrect;
-    }
+  /**
+   * Full constructor.
+   *
+   * @param questionId    - questionId.
+   * @param answer        - answer.
+   * @param correct       - correct.
+   * @param itemsCorrect  - ordered list of correctness status of each submitted item.
+   * @param explanation   - explanation.
+   * @param dateAttempted - dateAttempted.
+   */
+  public ItemValidationResponse(final String questionId, final Choice answer,
+                                final Boolean correct, final List<Boolean> itemsCorrect,
+                                final Content explanation, final Date dateAttempted) {
+    super(questionId, answer, correct, explanation, dateAttempted);
+    this.itemsCorrect = itemsCorrect;
+  }
 
-    public List<Boolean> getItemsCorrect() {
-        return itemsCorrect;
-    }
+  public List<Boolean> getItemsCorrect() {
+    return itemsCorrect;
+  }
 
-    public void setItemsCorrect(final List<Boolean> itemsCorrect) {
-        this.itemsCorrect = itemsCorrect;
-    }
+  public void setItemsCorrect(final List<Boolean> itemsCorrect) {
+    this.itemsCorrect = itemsCorrect;
+  }
 }

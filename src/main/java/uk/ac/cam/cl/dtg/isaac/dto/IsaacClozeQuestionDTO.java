@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 /**
  * Content DTO for IsaacClozeQuestions.
- *
  */
 @JsonContentType("isaacClozeQuestion")
 public class IsaacClozeQuestionDTO extends IsaacItemQuestionDTO {
 
-    private Boolean withReplacement;
+  private Boolean withReplacement;
 
-    public Boolean getWithReplacement() {
-        return withReplacement;
-    }
+  public Boolean getWithReplacement() {
+    return withReplacement;
+  }
 
-    public void setWithReplacement(final Boolean withReplacement) {
-        this.withReplacement = withReplacement;
-    }
+  public void setWithReplacement(final Boolean withReplacement) {
+    this.withReplacement = withReplacement;
+  }
 }

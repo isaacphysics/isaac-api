@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.auth;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
+ *
  * @deprecated
  */
 @Deprecated
 public class SeguePBKDF2v3 extends SeguePBKDF2 implements ISegueHashingAlgorithm {
-    private static final String CRYPTO_ALGORITHM = "PBKDF2WithHmacSHA512";
-    private static final String SALTING_ALGORITHM = "SHA1PRNG";
-    private static final Integer ITERATIONS = 150000;
-    private static final Integer KEY_LENGTH = 512;
-    private static final int SALT_SIZE = 16;
+  private static final String CRYPTO_ALGORITHM = "PBKDF2WithHmacSHA512";
+  private static final String SALTING_ALGORITHM = "SHA1PRNG";
+  private static final Integer ITERATIONS = 150000;
+  private static final Integer KEY_LENGTH = 512;
+  private static final int SALT_SIZE = 16;
 
-    public SeguePBKDF2v3() {
-        super(CRYPTO_ALGORITHM, KEY_LENGTH, ITERATIONS, SALTING_ALGORITHM, SALT_SIZE);
-    }
+  public SeguePBKDF2v3() {
+    super(CRYPTO_ALGORITHM, KEY_LENGTH, ITERATIONS, SALTING_ALGORITHM, SALT_SIZE);
+  }
 
-    @Override
-    public String hashingAlgorithmName() {
-        return "SeguePBKDF2v3";
-    }
+  @Override
+  public String hashingAlgorithmName() {
+    return "SeguePBKDF2v3";
+  }
 }

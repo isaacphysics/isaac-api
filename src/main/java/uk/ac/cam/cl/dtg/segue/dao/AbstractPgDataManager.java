@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.sql.PreparedStatement;
@@ -25,42 +26,42 @@ import java.sql.Types;
  */
 public abstract class AbstractPgDataManager {
 
-    /**
-     * Helper that picks the correct pst method based on the value provided.
-     *
-     * @param pst - prepared statement - already initialised
-     * @param index - index of the value to be replaced in the pst
-     * @param value - value
-     * @throws SQLException - if there is a db problem.
-     */
-    protected void setValueHelper(final PreparedStatement pst, final int index, final Object value) throws SQLException {
-        if (null == value) {
-            pst.setNull(index, Types.NULL);
-            return;
-        }
-
-        if (value.getClass().isEnum()) {
-            pst.setString(index, ((Enum<?>) value).name());
-        }
-
-        if (value instanceof String) {
-            pst.setString(index, (String) value);
-        }
-
-        if (value instanceof Integer) {
-            pst.setInt(index, (Integer) value);
-        }
-
-        if (value instanceof Long) {
-            pst.setLong(index, (Long) value);
-        }
-
-        if (value instanceof java.util.Date) {
-            pst.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()));
-        }
-
-        if (value instanceof Boolean) {
-            pst.setBoolean(index, (Boolean) value);
-        }
+  /**
+   * Helper that picks the correct pst method based on the value provided.
+   *
+   * @param pst   - prepared statement - already initialised
+   * @param index - index of the value to be replaced in the pst
+   * @param value - value
+   * @throws SQLException - if there is a db problem.
+   */
+  protected void setValueHelper(final PreparedStatement pst, final int index, final Object value) throws SQLException {
+    if (null == value) {
+      pst.setNull(index, Types.NULL);
+      return;
     }
+
+    if (value.getClass().isEnum()) {
+      pst.setString(index, ((Enum<?>) value).name());
+    }
+
+    if (value instanceof String) {
+      pst.setString(index, (String) value);
+    }
+
+    if (value instanceof Integer) {
+      pst.setInt(index, (Integer) value);
+    }
+
+    if (value instanceof Long) {
+      pst.setLong(index, (Long) value);
+    }
+
+    if (value instanceof java.util.Date) {
+      pst.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()));
+    }
+
+    if (value instanceof Boolean) {
+      pst.setBoolean(index, (Boolean) value);
+    }
+  }
 }

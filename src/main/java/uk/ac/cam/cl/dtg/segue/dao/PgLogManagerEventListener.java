@@ -17,14 +17,14 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 /**
- *  Postgres implementation of abstract log manager/even publisher.
+ * Postgres implementation of abstract log manager/even publisher.
  *
- *  @author Dan Underwood
+ * @author Dan Underwood
  */
 public class PgLogManagerEventListener extends LogManagerEventPublisher {
 
-    public PgLogManagerEventListener(final PgLogManager logManager) {
-        super(logManager);
-    }
+  public PgLogManagerEventListener(final PgLogManager logManager) {
+    super(logManager);
+  }
 
 }

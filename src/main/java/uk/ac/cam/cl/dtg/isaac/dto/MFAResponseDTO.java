@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,33 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 /**
  * The DTO which is used to transfer the response to a MFA challenge.
  */
 public class MFAResponseDTO {
-    private String mfaVerificationCode;
-    private boolean rememberMe;
+  private String mfaVerificationCode;
+  private boolean rememberMe;
 
-    /**
-     * Default constructor.
-     */
-    public MFAResponseDTO() { }
+  /**
+   * Default constructor.
+   */
+  public MFAResponseDTO() {
+  }
 
-    public Boolean getRememberMe() {
-        return rememberMe;
-    }
+  public Boolean getRememberMe() {
+    return rememberMe;
+  }
 
-    public void setRememberMe(final Boolean rememberMe) {
-        this.rememberMe = rememberMe;
-    }
+  public void setRememberMe(final Boolean rememberMe) {
+    this.rememberMe = rememberMe;
+  }
 
-    public String getMfaVerificationCode() {
-        return mfaVerificationCode;
-    }
+  public String getMfaVerificationCode() {
+    return mfaVerificationCode;
+  }
 
-    public void setMfaVerificationCode(final String mfaVerificationCode) {
-        this.mfaVerificationCode = mfaVerificationCode;
-    }
+  public void setMfaVerificationCode(final String mfaVerificationCode) {
+    this.mfaVerificationCode = mfaVerificationCode;
+  }
 }

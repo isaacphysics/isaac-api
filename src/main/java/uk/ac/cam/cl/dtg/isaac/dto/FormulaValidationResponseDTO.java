@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,123 +13,124 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-
-import java.util.Date;
 
 /**
  * The DTO which can be used to inform clients of the result of an answered question.
  * <p>
- * 
+ *
  */
 public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO {
-    private Boolean correctExact;
-    private Boolean correctSymbolic;
-    private Boolean correctNumeric;
+  private Boolean correctExact;
+  private Boolean correctSymbolic;
+  private Boolean correctNumeric;
 
-    /**
-     * Default constructor.
-     */
-    public FormulaValidationResponseDTO() {
+  /**
+   * Default constructor.
+   */
+  public FormulaValidationResponseDTO() {
 
-    }
+  }
 
-    /**
-     * Full constructor.
-     *
-     * @param questionId
-     *            -
-     * @param answer
-     *            -
-     * @param explanation
-     *            -
-     * @param correctExact
-     *            -
-     * @param correctSymbolic
-     *            -
-     * @param correctNumeric
-     *            -
-     * @param dateAttempted
-     *            -
-     */
-    public FormulaValidationResponseDTO(final String questionId, final ChoiceDTO answer,
-                                        final ContentDTO explanation, final Boolean correctExact,
-                                        final Boolean correctSymbolic, final Boolean correctNumeric,
-                                        final Date dateAttempted) {
-        super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
-        this.correctExact = correctExact;
-        this.correctSymbolic = correctSymbolic;
-        this.correctNumeric = correctNumeric;
-    }
+  /**
+   * Full constructor.
+   *
+   * @param questionId
+   *            -
+   * @param answer
+   *            -
+   * @param explanation
+   *            -
+   * @param correctExact
+   *            -
+   * @param correctSymbolic
+   *            -
+   * @param correctNumeric
+   *            -
+   * @param dateAttempted
+   *            -
+   */
+  public FormulaValidationResponseDTO(final String questionId, final ChoiceDTO answer,
+                                      final ContentDTO explanation, final Boolean correctExact,
+                                      final Boolean correctSymbolic, final Boolean correctNumeric,
+                                      final Date dateAttempted) {
+    super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
+    this.correctExact = correctExact;
+    this.correctSymbolic = correctSymbolic;
+    this.correctNumeric = correctNumeric;
+  }
 
-    /**
-     * Gets the correctExact.
-     *
-     * @return the correctExact
-     */
-    public final Boolean getCorrectExact() {
-        return correctExact;
-    }
+  /**
+   * Gets the correctExact.
+   *
+   * @return the correctExact
+   */
+  public final Boolean getCorrectExact() {
+    return correctExact;
+  }
 
-    /**
-     * Sets the correctExact.
-     *
-     * @param correctExact
-     *            the correctExact to set
-     */
-    public final void setCorrectExact(final Boolean correctExact) {
-        this.correctExact = correctExact;
-        // N.B. If we ever get here, it's likely that this.correct is now out of date.
-        // This should really be an immutable object, so we shouldn't need this method.
-    }
+  /**
+   * Sets the correctExact.
+   *
+   * @param correctExact
+   *            the correctExact to set
+   */
+  public final void setCorrectExact(final Boolean correctExact) {
+    this.correctExact = correctExact;
+    // N.B. If we ever get here, it's likely that this.correct is now out of date.
+    // This should really be an immutable object, so we shouldn't need this method.
+  }
 
-    /**
-     * Gets the correctSymbolic.
-     *
-     * @return the correctSymbolic
-     */
-    public final Boolean getCorrectSymbolic() {
-        return correctSymbolic;
-    }
+  /**
+   * Gets the correctSymbolic.
+   *
+   * @return the correctSymbolic
+   */
+  public final Boolean getCorrectSymbolic() {
+    return correctSymbolic;
+  }
 
-    /**
-     * Sets the correctSymbolic.
-     *
-     * @param correctSymbolic
-     *            the correctSymbolic to set
-     */
-    public final void setCorrectSymbolic(final Boolean correctSymbolic) {
-        this.correctSymbolic = correctSymbolic;
-        // N.B. If we ever get here, it's likely that this.correct is now out of date.
-        // This should really be an immutable object, so we shouldn't need this method.
-    }
+  /**
+   * Sets the correctSymbolic.
+   *
+   * @param correctSymbolic
+   *            the correctSymbolic to set
+   */
+  public final void setCorrectSymbolic(final Boolean correctSymbolic) {
+    this.correctSymbolic = correctSymbolic;
+    // N.B. If we ever get here, it's likely that this.correct is now out of date.
+    // This should really be an immutable object, so we shouldn't need this method.
+  }
 
-    /**
-     * Gets the correctNumeric.
-     * 
-     * @return the correctNumeric
-     */
-    public final Boolean getCorrectNumeric() {
-        return correctNumeric;
-    }
+  /**
+   * Gets the correctNumeric.
+   *
+   * @return the correctNumeric
+   */
+  public final Boolean getCorrectNumeric() {
+    return correctNumeric;
+  }
 
-    /**
-     * Sets the correctNumeric.
-     * 
-     * @param correctNumeric
-     *            the correctNumeric to set
-     */
-    public final void setCorrectNumeric(final Boolean correctNumeric) {
-        this.correctNumeric = correctNumeric;
-        // N.B. If we ever get here, it's likely that this.correct is now out of date.
-        // This should really be an immutable object, so we shouldn't need this method.
-    }
+  /**
+   * Sets the correctNumeric.
+   *
+   * @param correctNumeric
+   *            the correctNumeric to set
+   */
+  public final void setCorrectNumeric(final Boolean correctNumeric) {
+    this.correctNumeric = correctNumeric;
+    // N.B. If we ever get here, it's likely that this.correct is now out of date.
+    // This should really be an immutable object, so we shouldn't need this method.
+  }
 
-    @Override
-    public String toString() {
-        return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
-    }
+  @Override
+  public String toString() {
+    return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic
+        + ", correctNumeric=" + correctNumeric + "]";
+  }
 }

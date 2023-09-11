@@ -13,84 +13,77 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.auth;
 
-import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.crypto.generators.SCrypt;
+package uk.ac.cam.cl.dtg.segue.auth;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.crypto.generators.SCrypt;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
  * <p>
  * This is a parent class for Scrypt versions.
- *
  */
 public class SegueSCrypt {
-    private final Integer iterations;
-    private final Integer blockSize;
-    private final Integer parallelismFactor;
-    private final Integer keyLength;
-    private final String saltingAlgorithm;
-    private final Integer saltSize;
+  private final Integer iterations;
+  private final Integer blockSize;
+  private final Integer parallelismFactor;
+  private final Integer keyLength;
+  private final String saltingAlgorithm;
+  private final Integer saltSize;
 
-    public SegueSCrypt(final Integer iterations, final Integer blockSize, final Integer parallelismFactor,
-                       final Integer keyLength, final String saltingAlgorithm, final Integer saltSize) {
-        this.iterations = iterations;
-        this.blockSize = blockSize;
-        this.parallelismFactor = parallelismFactor;
-        this.keyLength = keyLength;
-        this.saltingAlgorithm = saltingAlgorithm;
-        this.saltSize = saltSize;
-    }
+  public SegueSCrypt(final Integer iterations, final Integer blockSize, final Integer parallelismFactor,
+                     final Integer keyLength, final String saltingAlgorithm, final Integer saltSize) {
+    this.iterations = iterations;
+    this.blockSize = blockSize;
+    this.parallelismFactor = parallelismFactor;
+    this.keyLength = keyLength;
+    this.saltingAlgorithm = saltingAlgorithm;
+    this.saltSize = saltSize;
+  }
 
-    /**
-     * Hash the password using the preconfigured hashing function.
-     *
-     * @param password
-     *            - password to hash
-     * @param salt
-     *            - random string to use as a salt.
-     * @return the Base64 encoded hashed password
-     */
-    public String hashPassword(final String password, final String salt) {
+  /**
+   * Hash the password using the preconfigured hashing function.
+   *
+   * @param password - password to hash
+   * @param salt     - random string to use as a salt.
+   * @return the Base64 encoded hashed password
+   */
+  public String hashPassword(final String password, final String salt) {
 
-        byte[] hashedPassword = computeHash(password, salt, keyLength);
-        return new String(Base64.encodeBase64(hashedPassword));
-    }
+    byte[] hashedPassword = computeHash(password, salt, keyLength);
+    return new String(Base64.encodeBase64(hashedPassword));
+  }
 
-    /**
-     * Compute the hash of a string using the Scrypt hashing function.
-     *
-     * @param str
-     *            - string to hash
-     * @param salt
-     *            - random string to use as a salt.
-     * @param keyLength
-     *            - the desired output key length
-     * @return a byte array of the hash
-     */
-    public byte[] computeHash(final String str, final String salt, final int keyLength) {
-        byte[] strBytes = str.getBytes();
-        byte[] saltBytes = salt.getBytes();
+  /**
+   * Compute the hash of a string using the Scrypt hashing function.
+   *
+   * @param str       - string to hash
+   * @param salt      - random string to use as a salt.
+   * @param keyLength - the desired output key length
+   * @return a byte array of the hash
+   */
+  public byte[] computeHash(final String str, final String salt, final int keyLength) {
+    byte[] strBytes = str.getBytes();
+    byte[] saltBytes = salt.getBytes();
 
-        return SCrypt.generate(strBytes, saltBytes, iterations, blockSize, parallelismFactor, keyLength);
-    }
+    return SCrypt.generate(strBytes, saltBytes, iterations, blockSize, parallelismFactor, keyLength);
+  }
 
-    /**
-     * Helper method to generate a base64 encoded salt.
-     *
-     * @return generate a base64 encoded secure salt.
-     * @throws NoSuchAlgorithmException
-     *             - problem locating the algorithm.
-     */
-    public String generateSalt() throws NoSuchAlgorithmException {
-        SecureRandom sr = SecureRandom.getInstance(saltingAlgorithm);
+  /**
+   * Helper method to generate a base64 encoded salt.
+   *
+   * @return generate a base64 encoded secure salt.
+   * @throws NoSuchAlgorithmException - problem locating the algorithm.
+   */
+  public String generateSalt() throws NoSuchAlgorithmException {
+    SecureRandom sr = SecureRandom.getInstance(saltingAlgorithm);
 
-        byte[] salt = new byte[saltSize];
-        sr.nextBytes(salt);
+    byte[] salt = new byte[saltSize];
+    sr.nextBytes(salt);
 
-        return new String(Base64.encodeBase64(salt));
-    }
+    return new String(Base64.encodeBase64(salt));
+  }
 }

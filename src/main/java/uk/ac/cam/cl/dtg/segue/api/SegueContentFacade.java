@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -45,221 +39,206 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Segue Content Facade
  * <p>
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Rutherford site.
- * 
  */
 @Path("/content")
 @Tag(name = "/content")
 public class SegueContentFacade extends AbstractSegueFacade {
-    private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
+  private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
-    private final GitContentManager contentManager;
-    private final String contentIndex;
-    private final ContentService contentService;
+  private final GitContentManager contentManager;
+  private final String contentIndex;
+  private final ContentService contentService;
 
-    /**
-     * @param properties
-     *            - the fully configured properties loader for the api.
-     * @param contentManager
-     *            - The content version controller used by the api.
-     * @param contentIndex
-     *            - The index string for current content version
-     * @param logManager
-     *            - An instance of the log manager used for recording usage of the CMS.
-     * @param contentService
-     *            - An instance of the content service used to search for matching content
-     */
-    @Inject
-    public SegueContentFacade(final PropertiesLoader properties, final GitContentManager contentManager,
-                              @Named(CONTENT_INDEX) final String contentIndex,
-                              final ILogManager logManager, final ContentService contentService) {
-        super(properties, logManager);
+  /**
+   * @param properties     - the fully configured properties loader for the api.
+   * @param contentManager - The content version controller used by the api.
+   * @param contentIndex   - The index string for current content version
+   * @param logManager     - An instance of the log manager used for recording usage of the CMS.
+   * @param contentService - An instance of the content service used to search for matching content
+   */
+  @Inject
+  public SegueContentFacade(final PropertiesLoader properties, final GitContentManager contentManager,
+                            @Named(CONTENT_INDEX) final String contentIndex,
+                            final ILogManager logManager, final ContentService contentService) {
+    super(properties, logManager);
 
-        this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
-        this.contentService = contentService;
+    this.contentManager = contentManager;
+    this.contentIndex = contentIndex;
+    this.contentService = contentService;
+  }
+
+  /**
+   * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied.
+   *
+   * @param version       - the version of the content to search. If null it will default to the current live version.
+   * @param fieldsToMatch - List of Boolean search clauses that must be true for the returned content.
+   * @param startIndex    - the start index for the search results.
+   * @param limit         - the max number of results to return.
+   * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
+   */
+  public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
+                                                              final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+                                                              @Nullable final Integer startIndex,
+                                                              @Nullable final Integer limit)
+      throws ContentManagerException {
+
+    return contentService.findMatchingContent(version, fieldsToMatch, startIndex, limit);
+  }
+
+  /**
+   * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the results in a
+   * randomised order.
+   * <p>
+   * This method is the same as {@link #findMatchingContentRandomOrder(String, List, Integer, Integer, Long)} but uses
+   * a default random seed.
+   *
+   * @param version       - the version of the content to search. If null it will default to the current live version.
+   * @param fieldsToMatch - List of Boolean search clauses that must be true for the returned content.
+   * @param startIndex    - the start index for the search results.
+   * @param limit         - the max number of results to return.
+   * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
+   */
+  public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
+      @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+      final Integer startIndex, final Integer limit) {
+    return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
+  }
+
+  /**
+   * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the
+   * results in a randomised order.
+   *
+   * @param version       - the version of the content to search. If null it will default to the current live version.
+   * @param fieldsToMatch - List of Boolean search clauses that must be true for the returned content.
+   * @param startIndex    - the start index for the search results.
+   * @param limit         - the max number of results to return.
+   * @param randomSeed    - to allow some control over the random order of the results.
+   * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
+   */
+  public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
+      @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+      final Integer startIndex, final Integer limit, final Long randomSeed) {
+
+    String newVersion = this.contentIndex;
+    Integer newLimit = DEFAULT_RESULTS_LIMIT;
+    Integer newStartIndex = 0;
+    if (version != null) {
+      newVersion = version;
+    }
+    if (limit != null) {
+      newLimit = limit;
+    }
+    if (startIndex != null) {
+      newStartIndex = startIndex;
     }
 
-    /**
-     * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied.
-     * 
-     * @param version
-     *            - the version of the content to search. If null it will default to the current live version.
-     * @param fieldsToMatch
-     *            - List of Boolean search clauses that must be true for the returned content.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
-     */
-    public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
+    ResultsWrapper<ContentDTO> c = null;
 
-        return contentService.findMatchingContent(version, fieldsToMatch, startIndex, limit);
+    // Deserialize object into POJO of specified type, providing one exists.
+    try {
+      c = this.contentManager.findByFieldNamesRandomOrder(fieldsToMatch, newStartIndex,
+          newLimit, randomSeed);
+    } catch (IllegalArgumentException e) {
+      log.error("Unable to map content object.", e);
+      throw e;
+    } catch (ContentManagerException e1) {
+      SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+          e1);
+      log.error(error.getErrorMessage(), e1);
     }
 
-    /**
-     * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the results in a
-     * randomised order.
-     * <p>
-     * This method is the same as {@link #findMatchingContentRandomOrder(String, List, Integer, Integer, Long)} but uses
-     * a default random seed.
-     * 
-     * @param version
-     *            - the version of the content to search. If null it will default to the current live version.
-     * @param fieldsToMatch
-     *            - List of Boolean search clauses that must be true for the returned content.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
-     */
-    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            final Integer startIndex, final Integer limit) {
-        return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
+    return c;
+  }
+
+  /**
+   * Library method that searches the content manager for some search string and provides map of fields that must
+   * match.
+   *
+   * @param searchString        - to pass to the search engine.
+   * @param version             - of the content to search.
+   * @param fieldsThatMustMatch - a map of fieldName to list of possible matches.
+   * @param startIndex          - the start index for the search results.
+   * @param limit               - the max number of results to return.
+   * @return a response containing the search results (results wrapper) or an empty list.
+   * @throws ContentManagerException - an exception when the content is not found
+   */
+  public final ResultsWrapper<ContentDTO> segueSearch(final String searchString, @Nullable final String version,
+                                                      @Nullable final Map<String, List<String>> fieldsThatMustMatch,
+                                                      @Nullable final Integer startIndex,
+                                                      @Nullable final Integer limit) throws ContentManagerException {
+
+    return contentService.segueSearch(searchString, version, fieldsThatMustMatch, startIndex, limit);
+  }
+
+  /**
+   * This method provides a set of all tags for the live version of the content.
+   *
+   * @param request so that we can determine whether we can make use of caching via etags.
+   * @return a set of all tags used in the live version
+   */
+  @GET
+  @Path("tags")
+  @Produces(MediaType.APPLICATION_JSON)
+  @GZIP
+  @Operation(summary = "List all tags currently in use.")
+  public final Response getTagListByLiveVersion(@Context final Request request) {
+    // Calculate the ETag on last modified date of tags list
+    EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
+        + "tagList".hashCode() + "");
+
+    Response cachedResponse = generateCachedResponse(request, etag);
+
+    if (cachedResponse != null) {
+      return cachedResponse;
     }
 
-    /**
-     * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the
-     * results in a randomised order.
-     * 
-     * @param version
-     *            - the version of the content to search. If null it will default to the current live version.
-     * @param fieldsToMatch
-     *            - List of Boolean search clauses that must be true for the returned content.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @param randomSeed
-     *            - to allow some control over the random order of the results.
-     * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
-     */
-    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            final Integer startIndex, final Integer limit, final Long randomSeed) {
+    Set<String> tags = this.contentManager.getTagsList();
 
-        String newVersion = this.contentIndex;
-        Integer newLimit = DEFAULT_RESULTS_LIMIT;
-        Integer newStartIndex = 0;
-        if (version != null) {
-            newVersion = version;
-        }
-        if (limit != null) {
-            newLimit = limit;
-        }
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
+    return Response.ok(tags).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+  }
 
-        ResultsWrapper<ContentDTO> c = null;
+  /**
+   * This method provides a set of all units for the live version of the content.
+   *
+   * @param request - so that we can set cache headers.
+   * @return a set of all units used in the live version
+   */
+  @GET
+  @Path("units")
+  @Produces(MediaType.APPLICATION_JSON)
+  @GZIP
+  @Operation(summary = "List all units currently in use by numeric questions.")
+  public final Response getAllUnitsByLiveVersion(@Context final Request request) {
+    // Calculate the ETag on last modified date of tags list
+    EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
+        + "unitsList".hashCode() + "");
 
-        // Deserialize object into POJO of specified type, providing one exists.
-        try {
-            c = this.contentManager.findByFieldNamesRandomOrder(fieldsToMatch, newStartIndex,
-                    newLimit, randomSeed);
-        } catch (IllegalArgumentException e) {
-            log.error("Unable to map content object.", e);
-            throw e;
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-        }
+    Response cachedResponse = generateCachedResponse(request, etag);
 
-        return c;
+    if (cachedResponse != null) {
+      return cachedResponse;
     }
 
-    /**
-     * Library method that searches the content manager for some search string and provides map of fields that must
-     * match.
-     * 
-     * @param searchString
-     *            - to pass to the search engine.
-     * @param version
-     *            - of the content to search.
-     * @param fieldsThatMustMatch
-     *            - a map of fieldName to list of possible matches.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @return a response containing the search results (results wrapper) or an empty list.
-     * @throws ContentManagerException
-     *             - an exception when the content is not found
-     */
-    public final ResultsWrapper<ContentDTO> segueSearch(final String searchString, @Nullable final String version,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, @Nullable final Integer startIndex,
-            @Nullable final Integer limit) throws ContentManagerException {
+    Collection<String> units;
+    units = this.contentManager.getAllUnits();
 
-        return contentService.segueSearch(searchString, version, fieldsThatMustMatch, startIndex, limit);
-    }
-
-    /**
-     * This method provides a set of all tags for the live version of the content.
-     * 
-     * @param request
-     *            so that we can determine whether we can make use of caching via etags.
-     * @return a set of all tags used in the live version
-     */
-    @GET
-    @Path("tags")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @Operation(summary = "List all tags currently in use.")
-    public final Response getTagListByLiveVersion(@Context final Request request) {
-        // Calculate the ETag on last modified date of tags list
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
-                + "tagList".hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(request, etag);
-
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        Set<String> tags = this.contentManager.getTagsList();
-
-        return Response.ok(tags).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-    }
-
-    /**
-     * This method provides a set of all units for the live version of the content.
-     * 
-     * @param request
-     *            - so that we can set cache headers.
-     * @return a set of all units used in the live version
-     */
-    @GET
-    @Path("units")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @Operation(summary = "List all units currently in use by numeric questions.")
-    public final Response getAllUnitsByLiveVersion(@Context final Request request) {
-        // Calculate the ETag on last modified date of tags list
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
-                + "unitsList".hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(request, etag);
-
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        Collection<String> units;
-        units = this.contentManager.getAllUnits();
-
-        return Response.ok(units).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).build();
-    }
+    return Response.ok(units).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).build();
+  }
 }

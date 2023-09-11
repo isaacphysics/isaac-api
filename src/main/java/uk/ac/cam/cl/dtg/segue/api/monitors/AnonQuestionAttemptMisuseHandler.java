@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import com.google.inject.Inject;
@@ -22,38 +23,39 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 
 public class AnonQuestionAttemptMisuseHandler implements IMisuseHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(AnonQuestionAttemptMisuseHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(AnonQuestionAttemptMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 3;
-    private static final Integer HARD_THRESHOLD = 5;
-    private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIVE_MINUTES;
+  private static final Integer SOFT_THRESHOLD = 3;
+  private static final Integer HARD_THRESHOLD = 5;
+  private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIVE_MINUTES;
 
-    /**
-     */
-    @Inject
-    public AnonQuestionAttemptMisuseHandler() {
-    }
+  /**
+   */
+  @Inject
+  public AnonQuestionAttemptMisuseHandler() {
+  }
 
-    @Override
-    public Integer getSoftThreshold() {
-        return SOFT_THRESHOLD;
-    }
+  @Override
+  public Integer getSoftThreshold() {
+    return SOFT_THRESHOLD;
+  }
 
-    @Override
-    public Integer getHardThreshold() {
-        return HARD_THRESHOLD;
-    }
+  @Override
+  public Integer getHardThreshold() {
+    return HARD_THRESHOLD;
+  }
 
-    @Override
-    public Integer getAccountingIntervalInSeconds() {
-        return ACCOUNTING_INTERVAL;
-    }
+  @Override
+  public Integer getAccountingIntervalInSeconds() {
+    return ACCOUNTING_INTERVAL;
+  }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) { }
+  @Override
+  public void executeSoftThresholdAction(final String message) {
+  }
 
-    @Override
-    public void executeHardThresholdAction(final String message) {
-        log.warn("Hard threshold limit: " + message);
-    }
+  @Override
+  public void executeHardThresholdAction(final String message) {
+    log.warn("Hard threshold limit: " + message);
+  }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.auth;
 
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -24,11 +25,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
  *
  */
 public @interface SecuredEndpoint {
-	
-	/**
-	 * Gets the role that the user must be in order to access this endpoint.
-	 *
-	 * @return the required Role
-	 */
-	Role value();
+
+  /**
+   * Gets the role that the user must be in order to access this endpoint.
+   *
+   * @return the required Role
+   */
+  Role value();
 }

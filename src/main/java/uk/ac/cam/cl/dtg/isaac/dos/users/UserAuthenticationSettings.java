@@ -13,90 +13,90 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-
 import java.util.List;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 
 /**
  * Immutable (virtual) Data Object to represent the user authentication settings.
- *
  */
 public class UserAuthenticationSettings extends AbstractSegueUser {
-    private Long id;
+  private Long id;
 
-    private List<AuthenticationProvider> linkedAccounts;
-    private boolean hasSegueAccount;
+  private List<AuthenticationProvider> linkedAccounts;
+  private boolean hasSegueAccount;
 
-    private boolean mfaStatus;
+  private boolean mfaStatus;
 
-    /**
-     * Create a UserAuthenticationSettings DTO.
-     *
-     * @param id - user id
-     * @param linkedAccounts - The list of linked accounts the user has setup
-     * @param hasSegueAccount - boolean whether or not they have a segue account
-     * @param mfaStatus - indicates if MFA is enabled for the account.
-     */
-    public UserAuthenticationSettings(final Long id, final List<AuthenticationProvider> linkedAccounts,
-                                      final boolean hasSegueAccount, final boolean mfaStatus) {
-        this.id = id;
-        this.linkedAccounts = linkedAccounts;
-        this.hasSegueAccount = hasSegueAccount;
-        this.mfaStatus = mfaStatus;
-    }
+  /**
+   * Create a UserAuthenticationSettings DTO.
+   *
+   * @param id              - user id
+   * @param linkedAccounts  - The list of linked accounts the user has setup
+   * @param hasSegueAccount - boolean whether or not they have a segue account
+   * @param mfaStatus       - indicates if MFA is enabled for the account.
+   */
+  public UserAuthenticationSettings(final Long id, final List<AuthenticationProvider> linkedAccounts,
+                                    final boolean hasSegueAccount, final boolean mfaStatus) {
+    this.id = id;
+    this.linkedAccounts = linkedAccounts;
+    this.hasSegueAccount = hasSegueAccount;
+    this.mfaStatus = mfaStatus;
+  }
 
-    /**
-     * Default constructor required for Jackson.
-     */
-    public UserAuthenticationSettings() {
+  /**
+   * Default constructor required for Jackson.
+   */
+  public UserAuthenticationSettings() {
 
-    }
+  }
 
-    /**
-     * Gets the id.
-     * @return the id
-     */
-    @JsonProperty("id")
-    public Long getId() {
-        return id;
-    }
+  /**
+   * Gets the id.
+   *
+   * @return the id
+   */
+  @JsonProperty("id")
+  public Long getId() {
+    return id;
+  }
 
-    /**
-     * Gets the linkedAccounts.
-     * 
-     * @return the linkedAccounts
-     */
-    public List<AuthenticationProvider> getLinkedAccounts() {
-        return linkedAccounts;
-    }
+  /**
+   * Gets the linkedAccounts.
+   *
+   * @return the linkedAccounts
+   */
+  public List<AuthenticationProvider> getLinkedAccounts() {
+    return linkedAccounts;
+  }
 
-    /**
-     * Gets the hasSegueAccount.
-     * 
-     * @return the hasSegueAccount
-     */
-    public boolean getHasSegueAccount() {
-        return hasSegueAccount;
-    }
+  /**
+   * Gets the hasSegueAccount.
+   *
+   * @return the hasSegueAccount
+   */
+  public boolean getHasSegueAccount() {
+    return hasSegueAccount;
+  }
 
-    /**
-     * Gets if MFA is enabled for the account.
-     *
-     * @return Enabled is true disabled is false
-     */
-    public boolean isMfaStatus() {
-        return mfaStatus;
-    }
+  /**
+   * Gets if MFA is enabled for the account.
+   *
+   * @return Enabled is true disabled is false
+   */
+  public boolean isMfaStatus() {
+    return mfaStatus;
+  }
 
-    /**
-     * Gets if MFA is enabled for the account.
-     *
-     * @param mfaStatus boolean
-     */
-    public void setMfaStatus(final boolean mfaStatus) {
-        this.mfaStatus = mfaStatus;
-    }
+  /**
+   * Gets if MFA is enabled for the account.
+   *
+   * @param mfaStatus boolean
+   */
+  public void setMfaStatus(final boolean mfaStatus) {
+    this.mfaStatus = mfaStatus;
+  }
 }

@@ -13,127 +13,125 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
 
 import jakarta.annotation.Nullable;
 import java.util.Date;
-
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
 
 /**
  * This class is the Domain Object used to store Quiz attempts in the isaac CMS.
  */
 public class QuizAttemptDO {
-    private Long id;
-    private Long userId;
-    private String quizId;
-    @Nullable private Long quizAssignmentId;
-    private Date startDate;
-    @Nullable private Date completedDate;
+  private Long id;
+  private Long userId;
+  private String quizId;
+  @Nullable
+  private Long quizAssignmentId;
+  private Date startDate;
+  @Nullable
+  private Date completedDate;
 
-    /**
-     * Complete QuizAttemptDO constructor with all dependencies.
-     * @param id
-     *            - unique id for the quiz attempt
-     * @param userId
-     *            - The user making this attempt
-     * @param quizId
-     *            - The quiz being attempted.
-     * @param quizAssignmentId
-     *            - The quiz assignment, or null if this is a self-selected quiz.
-     * @param startDate
-     *            - When this attempt began.
-     * @param completedDate
-     *            - When this attempt was marked complete, or null if not yet completed.
-     */
-    public QuizAttemptDO(final Long id, final Long userId, final String quizId, final Long quizAssignmentId,
-                         final Date startDate, @Nullable final Date completedDate) {
-        this.id = id;
-        this.userId = userId;
-        this.quizId = quizId;
-        this.quizAssignmentId = quizAssignmentId;
-        this.startDate = startDate;
-        this.completedDate = completedDate;
+  /**
+   * Complete QuizAttemptDO constructor with all dependencies.
+   *
+   * @param id               - unique id for the quiz attempt
+   * @param userId           - The user making this attempt
+   * @param quizId           - The quiz being attempted.
+   * @param quizAssignmentId - The quiz assignment, or null if this is a self-selected quiz.
+   * @param startDate        - When this attempt began.
+   * @param completedDate    - When this attempt was marked complete, or null if not yet completed.
+   */
+  public QuizAttemptDO(final Long id, final Long userId, final String quizId, final Long quizAssignmentId,
+                       final Date startDate, @Nullable final Date completedDate) {
+    this.id = id;
+    this.userId = userId;
+    this.quizId = quizId;
+    this.quizAssignmentId = quizAssignmentId;
+    this.startDate = startDate;
+    this.completedDate = completedDate;
+  }
+
+  /**
+   * Default constructor required for AutoMapping.
+   */
+  public QuizAttemptDO() {
+
+  }
+
+  @Override
+  public int hashCode() {
+    return DO_HASHCODE_PRIME + ((id == null) ? 0 : id.hashCode());
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    /**
-     * Default constructor required for AutoMapping.
-     */
-    public QuizAttemptDO() {
-
+    if (obj == null) {
+      return false;
     }
-
-    @Override
-    public int hashCode() {
-        return DO_HASHCODE_PRIME + ((id == null) ? 0 : id.hashCode());
+    if (!(obj instanceof QuizAttemptDO)) {
+      return false;
     }
-
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof QuizAttemptDO)) {
-            return false;
-        }
-        QuizAttemptDO other = (QuizAttemptDO) obj;
-        if (id == null) {
-            return other.id == null;
-        } else {
-            return id.equals(other.id);
-        }
+    QuizAttemptDO other = (QuizAttemptDO) obj;
+    if (id == null) {
+      return other.id == null;
+    } else {
+      return id.equals(other.id);
     }
+  }
 
-    public Long getId() {
-        return id;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public void setId(final Long id) {
-        this.id = id;
-    }
+  public void setId(final Long id) {
+    this.id = id;
+  }
 
-    public Long getUserId() {
-        return userId;
-    }
+  public Long getUserId() {
+    return userId;
+  }
 
-    public void setUserId(final Long userId) {
-        this.userId = userId;
-    }
+  public void setUserId(final Long userId) {
+    this.userId = userId;
+  }
 
-    public String getQuizId() {
-        return quizId;
-    }
+  public String getQuizId() {
+    return quizId;
+  }
 
-    public void setQuizId(final String quizId) {
-        this.quizId = quizId;
-    }
+  public void setQuizId(final String quizId) {
+    this.quizId = quizId;
+  }
 
-    @Nullable
-    public Long getQuizAssignmentId() {
-        return quizAssignmentId;
-    }
+  @Nullable
+  public Long getQuizAssignmentId() {
+    return quizAssignmentId;
+  }
 
-    public void setQuizAssignmentId(@Nullable final Long quizAssignmentId) {
-        this.quizAssignmentId = quizAssignmentId;
-    }
+  public void setQuizAssignmentId(@Nullable final Long quizAssignmentId) {
+    this.quizAssignmentId = quizAssignmentId;
+  }
 
-    public Date getStartDate() {
-        return startDate;
-    }
+  public Date getStartDate() {
+    return startDate;
+  }
 
-    public void setStartDate(final Date startDate) {
-        this.startDate = startDate;
-    }
+  public void setStartDate(final Date startDate) {
+    this.startDate = startDate;
+  }
 
-    @Nullable
-    public Date getCompletedDate() {
-        return completedDate;
-    }
+  @Nullable
+  public Date getCompletedDate() {
+    return completedDate;
+  }
 
-    public void setCompletedDate(@Nullable final Date completedDate) {
-        this.completedDate = completedDate;
-    }
+  public void setCompletedDate(@Nullable final Date completedDate) {
+    this.completedDate = completedDate;
+  }
 }

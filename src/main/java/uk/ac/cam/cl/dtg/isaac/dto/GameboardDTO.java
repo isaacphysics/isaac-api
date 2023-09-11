@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,463 +13,463 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.google.api.client.util.Sets;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
 /**
  * DTO representation of a gameboard.
- * 
+ *
  */
 public class GameboardDTO implements EmailService.HasTitleOrId {
-    private String id;
-    private String title;
-    private List<GameboardItem> contents;
-    private IsaacWildcard wildCard;
-    private Integer wildCardPosition;
-    private Date creationDate;
-    private GameFilter gameFilter;
-    private Long ownerUserId;
-    private UserSummaryDTO ownerUserInformation;
-    private Set<String> tags;
-    
-    private Boolean isSavedToCurrentUser;
+  private String id;
+  private String title;
+  private List<GameboardItem> contents;
+  private IsaacWildcard wildCard;
+  private Integer wildCardPosition;
+  private Date creationDate;
+  private GameFilter gameFilter;
+  private Long ownerUserId;
+  private UserSummaryDTO ownerUserInformation;
+  private Set<String> tags;
 
-    private GameboardCreationMethod creationMethod;
+  private Boolean isSavedToCurrentUser;
 
-    private Integer percentageCompleted;
-    private Date lastVisited;
+  private GameboardCreationMethod creationMethod;
 
-    // indicates whether or not a question in this board has at least been marked as in progress
-    private boolean startedQuestion;
+  private Integer percentageCompleted;
+  private Date lastVisited;
 
-    /**
-     * Default Gameboard Constructor.
-     */
-    public GameboardDTO() {
-        this.tags = Sets.newHashSet();
+  // indicates whether or not a question in this board has at least been marked as in progress
+  private boolean startedQuestion;
+
+  /**
+   * Default Gameboard Constructor.
+   */
+  public GameboardDTO() {
+    this.tags = Sets.newHashSet();
+  }
+
+  /**
+   * Complete gameboard constructor with all dependencies.
+   *
+   * @param id
+   *            - unique id for the gameboard
+   * @param title
+   *            - optional title for gameboard.
+   * @param contents
+   *            - list of gameboard contents (can be questions or concepts).
+   * @param wildCard
+   *            - wildcard content object for advertising purposes.
+   * @param wildcardPosition
+   *            - position for where the front end should display this.
+   * @param creationDate
+   *            - Date in which the gameboard was created.
+   * @param gameFilter
+   *            - simple DO that represents the filter criteria used to creat the gameboard.
+   * @param ownerUserId
+   *            - User id of the owner of the gameboard.
+   * @param creationMethod
+   *            - Method used to construct this game board.
+   * @param tags
+   *            - Set of tags associated with the game board.
+   */
+  public GameboardDTO(final String id, final String title, final List<GameboardItem> contents,
+                      final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
+                      final GameFilter gameFilter, final Long ownerUserId,
+                      final GameboardCreationMethod creationMethod, final Set<String> tags) {
+    this.id = id;
+    this.title = title;
+    this.contents = contents;
+    this.wildCard = wildCard;
+    this.wildCardPosition = wildcardPosition;
+    this.creationDate = creationDate;
+    this.gameFilter = gameFilter;
+    this.ownerUserId = ownerUserId;
+    this.creationMethod = creationMethod;
+    this.tags = tags;
+  }
+
+  /**
+   * Gets the id.
+   *
+   * @return the id
+   */
+  public String getId() {
+    return id;
+  }
+
+  /**
+   * Sets the id.
+   *
+   * @param id
+   *            the id to set
+   */
+  public void setId(final String id) {
+    this.id = id;
+  }
+
+  /**
+   * Gets the title.
+   *
+   * @return the title
+   */
+  public String getTitle() {
+    return title;
+  }
+
+  /**
+   * Sets the title.
+   *
+   * @param title
+   *            the title to set
+   */
+  public void setTitle(final String title) {
+    this.title = title;
+  }
+
+  public List<GameboardItem> getContents() {
+    return contents;
+  }
+
+  public void setContents(final List<GameboardItem> contents) {
+    this.contents = contents;
+  }
+
+  /**
+   * Gets the wildCard.
+   *
+   * @return the wildCard
+   */
+  public IsaacWildcard getWildCard() {
+    return wildCard;
+  }
+
+  /**
+   * Sets the wildCard.
+   *
+   * @param wildCard
+   *            the wildCard to set
+   */
+  public void setWildCard(final IsaacWildcard wildCard) {
+    this.wildCard = wildCard;
+  }
+
+  /**
+   * Gets the wildCardPosition.
+   *
+   * @return the wildCardPosition
+   */
+  public Integer getWildCardPosition() {
+    return wildCardPosition;
+  }
+
+  /**
+   * Sets the wildCardPosition.
+   *
+   * @param wildCardPosition
+   *            the wildCardPosition to set
+   */
+  public void setWildCardPosition(final Integer wildCardPosition) {
+    this.wildCardPosition = wildCardPosition;
+  }
+
+  /**
+   * Gets the creationDate.
+   *
+   * @return the creationDate
+   */
+  public Date getCreationDate() {
+    return creationDate;
+  }
+
+  /**
+   * Sets the creationDate.
+   *
+   * @param creationDate
+   *            the creationDate to set
+   */
+  public void setCreationDate(final Date creationDate) {
+    this.creationDate = creationDate;
+  }
+
+  /**
+   * Gets the gameFilter.
+   *
+   * @return the gameFilter
+   */
+  public GameFilter getGameFilter() {
+    return gameFilter;
+  }
+
+  /**
+   * Sets the gameFilter.
+   *
+   * @param gameFilter
+   *            the gameFilter to set
+   */
+  public void setGameFilter(final GameFilter gameFilter) {
+    this.gameFilter = gameFilter;
+  }
+
+  /**
+   * Gets the userId.
+   *
+   * @return the userId
+   */
+  public Long getOwnerUserId() {
+    return ownerUserId;
+  }
+
+  /**
+   * Sets the ownerUserId.
+   *
+   * @param ownerUserId
+   *            the ownerUserId to set
+   */
+  public void setOwnerUserId(final Long ownerUserId) {
+    this.ownerUserId = ownerUserId;
+  }
+
+  /**
+   * Gets the ownerUserInformation.
+   *
+   * @return the ownerUserInformation
+   */
+  public UserSummaryDTO getOwnerUserInformation() {
+    return ownerUserInformation;
+  }
+
+  /**
+   * Sets the ownerUserInformation.
+   *
+   * @param ownerUserInformation
+   *            the ownerUserInformation to set
+   */
+  public void setOwnerUserInformation(final UserSummaryDTO ownerUserInformation) {
+    this.ownerUserInformation = ownerUserInformation;
+  }
+
+  /**
+   * Gets the isSavedToCurrentUser.
+   * @return the isSavedToCurrentUser
+   */
+  public Boolean isSavedToCurrentUser() {
+    return isSavedToCurrentUser;
+  }
+
+
+  /**
+   * Sets the isSavedToCurrentUser.
+   * @param isSavedToCurrentUser the isSavedToCurrentUser to set
+   */
+  public void setSavedToCurrentUser(final Boolean isSavedToCurrentUser) {
+    this.isSavedToCurrentUser = isSavedToCurrentUser;
+  }
+
+
+  /**
+   * Gets the creationMethod.
+   *
+   * @return the creationMethod
+   */
+  public GameboardCreationMethod getCreationMethod() {
+    return creationMethod;
+  }
+
+  /**
+   * Sets the creationMethod.
+   *
+   * @param creationMethod
+   *            the creationMethod to set
+   */
+  public void setCreationMethod(final GameboardCreationMethod creationMethod) {
+    this.creationMethod = creationMethod;
+  }
+
+  /**
+   * Gets the percentageCompleted.
+   *
+   * @return the percentageCompleted
+   */
+  public Integer getPercentageCompleted() {
+    return percentageCompleted;
+  }
+
+  /**
+   * Sets the percentageCompleted.
+   *
+   * @param percentageCompleted
+   *            the percentageCompleted to set
+   */
+  public void setPercentageCompleted(final Integer percentageCompleted) {
+    this.percentageCompleted = percentageCompleted;
+  }
+
+  /**
+   * Gets the lastVisited.
+   *
+   * @return the lastVisited
+   */
+  public Date getLastVisited() {
+    return lastVisited;
+  }
+
+  /**
+   * Sets the lastVisited.
+   *
+   * @param lastVisited
+   *            the lastVisited to set
+   */
+  public void setLastVisited(final Date lastVisited) {
+    this.lastVisited = lastVisited;
+  }
+
+  /**
+   * Gets the startedQuestion.
+   *
+   * @return the startedQuestion
+   */
+  public boolean isStartedQuestion() {
+    return startedQuestion;
+  }
+
+  /**
+   * Sets the startedQuestion.
+   *
+   * @param startedQuestion
+   *            the startedQuestion to set
+   */
+  public void setStartedQuestion(final boolean startedQuestion) {
+    this.startedQuestion = startedQuestion;
+  }
+
+  /**
+   * Gets the gameboard's tags.
+   *
+   * @return the gameboard's tags
+   */
+  public Set<String> getTags() {
+    return tags;
+  }
+
+  /**
+   * Sets the gameboard's tags.
+   *
+   * @param tags
+   *            the gameboard's tags
+   */
+  public void setTags(final Set<String> tags) {
+    this.tags = tags;
+  }
+
+  @Override
+  public String toString() {
+    return "GameboardDTO ["
+        + "id='" + id + '\''
+        + ", title='" + title + '\''
+        + ", contents=" + contents
+        + ", wildCard=" + wildCard
+        + ", wildCardPosition=" + wildCardPosition
+        + ", creationDate=" + creationDate
+        + ", gameFilter=" + gameFilter
+        + ", ownerUserId=" + ownerUserId
+        + ", ownerUserInformation=" + ownerUserInformation
+        + ", tags=" + tags
+        + ", isSavedToCurrentUser=" + isSavedToCurrentUser
+        + ", creationMethod=" + creationMethod
+        + ", percentageCompleted=" + percentageCompleted
+        + ", lastVisited=" + lastVisited
+        + ", startedQuestion=" + startedQuestion
+        + ']';
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((creationDate == null) ? 0 : creationDate.hashCode());
+    result = prime * result + ((gameFilter == null) ? 0 : gameFilter.hashCode());
+    result = prime * result + ((id == null) ? 0 : id.hashCode());
+    result = prime * result + ((ownerUserId == null) ? 0 : ownerUserId.hashCode());
+    result = prime * result + ((contents == null) ? 0 : contents.hashCode());
+    result = prime * result + ((wildCard == null) ? 0 : wildCard.hashCode());
+    result = prime * result + ((wildCardPosition == null) ? 0 : wildCardPosition.hashCode());
+    result = prime * result + ((tags == null) ? 0 : tags.hashCode());
+    return result;
+  }
+
+  /**
+   * The only mutable field is the title field and so this is excluded from the equality check.
+   *
+   * @param obj
+   *            - object to test equality of.
+   * @return true if the same or false if different.
+   */
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    /**
-     * Complete gameboard constructor with all dependencies.
-     * 
-     * @param id
-     *            - unique id for the gameboard
-     * @param title
-     *            - optional title for gameboard.
-     * @param contents
-     *            - list of gameboard contents (can be questions or concepts).
-     * @param wildCard
-     *            - wildcard content object for advertising purposes.
-     * @param wildcardPosition
-     *            - position for where the front end should display this.
-     * @param creationDate
-     *            - Date in which the gameboard was created.
-     * @param gameFilter
-     *            - simple DO that represents the filter criteria used to creat the gameboard.
-     * @param ownerUserId
-     *            - User id of the owner of the gameboard.
-     * @param creationMethod
-     *            - Method used to construct this game board.
-     * @param tags
-     *            - Set of tags associated with the game board.
-     */
-    public GameboardDTO(final String id, final String title, final List<GameboardItem> contents,
-                        final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
-                        final GameFilter gameFilter, final Long ownerUserId,
-                        final GameboardCreationMethod creationMethod, final Set<String> tags) {
-        this.id = id;
-        this.title = title;
-        this.contents = contents;
-        this.wildCard = wildCard;
-        this.wildCardPosition = wildcardPosition;
-        this.creationDate = creationDate;
-        this.gameFilter = gameFilter;
-        this.ownerUserId = ownerUserId;
-        this.creationMethod = creationMethod;
-        this.tags = tags;
+    if (obj == null) {
+      return false;
     }
-
-    /**
-     * Gets the id.
-     * 
-     * @return the id
-     */
-    public String getId() {
-        return id;
+    if (!(obj instanceof GameboardDTO)) {
+      return false;
     }
-
-    /**
-     * Sets the id.
-     * 
-     * @param id
-     *            the id to set
-     */
-    public void setId(final String id) {
-        this.id = id;
+    GameboardDTO other = (GameboardDTO) obj;
+    if (creationDate == null) {
+      if (other.creationDate != null) {
+        return false;
+      }
+    } else if (!creationDate.equals(other.creationDate)) {
+      return false;
     }
-
-    /**
-     * Gets the title.
-     * 
-     * @return the title
-     */
-    public String getTitle() {
-        return title;
+    if (id == null) {
+      if (other.id != null) {
+        return false;
+      }
+    } else if (!id.equals(other.id)) {
+      return false;
     }
-
-    /**
-     * Sets the title.
-     * 
-     * @param title
-     *            the title to set
-     */
-    public void setTitle(final String title) {
-        this.title = title;
+    if (ownerUserId == null) {
+      if (other.ownerUserId != null) {
+        return false;
+      }
+    } else if (!ownerUserId.equals(other.ownerUserId)) {
+      return false;
     }
-
-    public List<GameboardItem> getContents() {
-        return contents;
+    if (contents == null) {
+      if (other.contents != null) {
+        return false;
+      }
+    } else if (!contents.equals(other.contents)) {
+      return false;
     }
-
-    public void setContents(final List<GameboardItem> contents) {
-        this.contents = contents;
+    if (wildCard == null) {
+      if (other.wildCard != null) {
+        return false;
+      }
+    } else if (!wildCard.equals(other.wildCard)) {
+      return false;
     }
-
-    /**
-     * Gets the wildCard.
-     * 
-     * @return the wildCard
-     */
-    public IsaacWildcard getWildCard() {
-        return wildCard;
+    if (wildCardPosition == null) {
+      if (other.wildCardPosition != null) {
+        return false;
+      }
+    } else if (!wildCardPosition.equals(other.wildCardPosition)) {
+      return false;
+    } else if (!tags.equals(other.tags)) {
+      return false;
     }
-
-    /**
-     * Sets the wildCard.
-     * 
-     * @param wildCard
-     *            the wildCard to set
-     */
-    public void setWildCard(final IsaacWildcard wildCard) {
-        this.wildCard = wildCard;
-    }
-
-    /**
-     * Gets the wildCardPosition.
-     * 
-     * @return the wildCardPosition
-     */
-    public Integer getWildCardPosition() {
-        return wildCardPosition;
-    }
-
-    /**
-     * Sets the wildCardPosition.
-     * 
-     * @param wildCardPosition
-     *            the wildCardPosition to set
-     */
-    public void setWildCardPosition(final Integer wildCardPosition) {
-        this.wildCardPosition = wildCardPosition;
-    }
-
-    /**
-     * Gets the creationDate.
-     * 
-     * @return the creationDate
-     */
-    public Date getCreationDate() {
-        return creationDate;
-    }
-
-    /**
-     * Sets the creationDate.
-     * 
-     * @param creationDate
-     *            the creationDate to set
-     */
-    public void setCreationDate(final Date creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    /**
-     * Gets the gameFilter.
-     * 
-     * @return the gameFilter
-     */
-    public GameFilter getGameFilter() {
-        return gameFilter;
-    }
-
-    /**
-     * Sets the gameFilter.
-     * 
-     * @param gameFilter
-     *            the gameFilter to set
-     */
-    public void setGameFilter(final GameFilter gameFilter) {
-        this.gameFilter = gameFilter;
-    }
-
-    /**
-     * Gets the userId.
-     * 
-     * @return the userId
-     */
-    public Long getOwnerUserId() {
-        return ownerUserId;
-    }
-
-    /**
-     * Sets the ownerUserId.
-     * 
-     * @param ownerUserId
-     *            the ownerUserId to set
-     */
-    public void setOwnerUserId(final Long ownerUserId) {
-        this.ownerUserId = ownerUserId;
-    }
-
-    /**
-     * Gets the ownerUserInformation.
-     * 
-     * @return the ownerUserInformation
-     */
-    public UserSummaryDTO getOwnerUserInformation() {
-        return ownerUserInformation;
-    }
-
-    /**
-     * Sets the ownerUserInformation.
-     * 
-     * @param ownerUserInformation
-     *            the ownerUserInformation to set
-     */
-    public void setOwnerUserInformation(final UserSummaryDTO ownerUserInformation) {
-        this.ownerUserInformation = ownerUserInformation;
-    }
-
-    /**
-     * Gets the isSavedToCurrentUser.
-     * @return the isSavedToCurrentUser
-     */
-    public Boolean isSavedToCurrentUser() {
-        return isSavedToCurrentUser;
-    }
-    
-
-    /**
-     * Sets the isSavedToCurrentUser.
-     * @param isSavedToCurrentUser the isSavedToCurrentUser to set
-     */
-    public void setSavedToCurrentUser(final Boolean isSavedToCurrentUser) {
-        this.isSavedToCurrentUser = isSavedToCurrentUser;
-    }
-    
-
-    /**
-     * Gets the creationMethod.
-     * 
-     * @return the creationMethod
-     */
-    public GameboardCreationMethod getCreationMethod() {
-        return creationMethod;
-    }
-
-    /**
-     * Sets the creationMethod.
-     * 
-     * @param creationMethod
-     *            the creationMethod to set
-     */
-    public void setCreationMethod(final GameboardCreationMethod creationMethod) {
-        this.creationMethod = creationMethod;
-    }
-
-    /**
-     * Gets the percentageCompleted.
-     * 
-     * @return the percentageCompleted
-     */
-    public Integer getPercentageCompleted() {
-        return percentageCompleted;
-    }
-
-    /**
-     * Sets the percentageCompleted.
-     * 
-     * @param percentageCompleted
-     *            the percentageCompleted to set
-     */
-    public void setPercentageCompleted(final Integer percentageCompleted) {
-        this.percentageCompleted = percentageCompleted;
-    }
-
-    /**
-     * Gets the lastVisited.
-     * 
-     * @return the lastVisited
-     */
-    public Date getLastVisited() {
-        return lastVisited;
-    }
-
-    /**
-     * Sets the lastVisited.
-     * 
-     * @param lastVisited
-     *            the lastVisited to set
-     */
-    public void setLastVisited(final Date lastVisited) {
-        this.lastVisited = lastVisited;
-    }
-
-    /**
-     * Gets the startedQuestion.
-     * 
-     * @return the startedQuestion
-     */
-    public boolean isStartedQuestion() {
-        return startedQuestion;
-    }
-
-    /**
-     * Sets the startedQuestion.
-     * 
-     * @param startedQuestion
-     *            the startedQuestion to set
-     */
-    public void setStartedQuestion(final boolean startedQuestion) {
-        this.startedQuestion = startedQuestion;
-    }
-
-    /**
-     * Gets the gameboard's tags.
-     *
-     * @return the gameboard's tags
-     */
-    public Set<String> getTags() {
-        return tags;
-    }
-
-    /**
-     * Sets the gameboard's tags.
-     *
-     * @param tags
-     *            the gameboard's tags
-     */
-    public void setTags(final Set<String> tags) {
-        this.tags = tags;
-    }
-
-    @Override
-    public String toString() {
-        return "GameboardDTO ["
-                + "id='" + id + '\''
-                + ", title='" + title + '\''
-                + ", contents=" + contents
-                + ", wildCard=" + wildCard
-                + ", wildCardPosition=" + wildCardPosition
-                + ", creationDate=" + creationDate
-                + ", gameFilter=" + gameFilter
-                + ", ownerUserId=" + ownerUserId
-                + ", ownerUserInformation=" + ownerUserInformation
-                + ", tags=" + tags
-                + ", isSavedToCurrentUser=" + isSavedToCurrentUser
-                + ", creationMethod=" + creationMethod
-                + ", percentageCompleted=" + percentageCompleted
-                + ", lastVisited=" + lastVisited
-                + ", startedQuestion=" + startedQuestion
-                + ']';
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((creationDate == null) ? 0 : creationDate.hashCode());
-        result = prime * result + ((gameFilter == null) ? 0 : gameFilter.hashCode());
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
-        result = prime * result + ((ownerUserId == null) ? 0 : ownerUserId.hashCode());
-        result = prime * result + ((contents == null) ? 0 : contents.hashCode());
-        result = prime * result + ((wildCard == null) ? 0 : wildCard.hashCode());
-        result = prime * result + ((wildCardPosition == null) ? 0 : wildCardPosition.hashCode());
-        result = prime * result + ((tags == null) ? 0 : tags.hashCode());
-        return result;
-    }
-
-    /**
-     * The only mutable field is the title field and so this is excluded from the equality check.
-     * 
-     * @param obj
-     *            - object to test equality of.
-     * @return true if the same or false if different.
-     */
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof GameboardDTO)) {
-            return false;
-        }
-        GameboardDTO other = (GameboardDTO) obj;
-        if (creationDate == null) {
-            if (other.creationDate != null) {
-                return false;
-            }
-        } else if (!creationDate.equals(other.creationDate)) {
-            return false;
-        }
-        if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.id)) {
-            return false;
-        }
-        if (ownerUserId == null) {
-            if (other.ownerUserId != null) {
-                return false;
-            }
-        } else if (!ownerUserId.equals(other.ownerUserId)) {
-            return false;
-        }
-        if (contents == null) {
-            if (other.contents != null) {
-                return false;
-            }
-        } else if (!contents.equals(other.contents)) {
-            return false;
-        }
-        if (wildCard == null) {
-            if (other.wildCard != null) {
-                return false;
-            }
-        } else if (!wildCard.equals(other.wildCard)) {
-            return false;
-        }
-        if (wildCardPosition == null) {
-            if (other.wildCardPosition != null) {
-                return false;
-            }
-        } else if (!wildCardPosition.equals(other.wildCardPosition)) {
-            return false;
-        } else if (!tags.equals(other.tags)) {
-            return false;
-        }
-        return true;
-    }
+    return true;
+  }
 }

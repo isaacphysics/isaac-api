@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.search;
 
 /**
  * FilterInstruction
  * <p>
  * Class to help abstract away the search filter format within Segue.
- *
  */
 public abstract class AbstractFilterInstruction {
 

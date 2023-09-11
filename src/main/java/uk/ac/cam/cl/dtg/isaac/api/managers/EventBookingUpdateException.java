@@ -5,7 +5,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
  */
 public class EventBookingUpdateException extends Exception {
 
-	public EventBookingUpdateException(final String message) {
-		super(message);
-	}
+  public EventBookingUpdateException(final String message) {
+    super(message);
+  }
 }

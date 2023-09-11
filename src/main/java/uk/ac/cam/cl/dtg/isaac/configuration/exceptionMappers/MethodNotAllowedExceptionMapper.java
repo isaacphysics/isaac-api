@@ -13,29 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+package uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
 @Provider
 public class MethodNotAllowedExceptionMapper implements ExceptionMapper<jakarta.ws.rs.NotAllowedException> {
-    private static final Logger log = LoggerFactory.getLogger(MethodNotAllowedExceptionMapper.class);
+  private static final Logger log = LoggerFactory.getLogger(MethodNotAllowedExceptionMapper.class);
 
-    @Context
-    private HttpServletRequest request;
+  @Context
+  private HttpServletRequest request;
 
-    @Override
-    public Response toResponse(final jakarta.ws.rs.NotAllowedException e) {
-        String message = String.format("Request %s %s is not allowed", request.getMethod(), request.getRequestURI());
-        log.error(message);
-        return SegueErrorResponse.getMethodNotAllowedReponse(message);
-    }
+  @Override
+  public Response toResponse(final jakarta.ws.rs.NotAllowedException e) {
+    String message = String.format("Request %s %s is not allowed", request.getMethod(), request.getRequestURI());
+    log.error(message);
+    return SegueErrorResponse.getMethodNotAllowedReponse(message);
+  }
 }

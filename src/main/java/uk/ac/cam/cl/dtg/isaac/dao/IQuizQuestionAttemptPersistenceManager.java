@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dao;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.util.List;
 import java.util.Map;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 public interface IQuizQuestionAttemptPersistenceManager {
-    void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponseDO) throws SegueDatabaseException;
+  void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponseDO)
+      throws SegueDatabaseException;
 
-    Map<String, List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(Long quizAttemptId) throws SegueDatabaseException;
+  Map<String, List<QuestionValidationResponse>> getAllAnswersForQuizAttempt(Long quizAttemptId)
+      throws SegueDatabaseException;
 
-    Map<Long, Map<String, List<QuestionValidationResponse>>> getAllAnswersForQuizAssignment(Long quizAssignmentId) throws SegueDatabaseException;
+  Map<Long, Map<String, List<QuestionValidationResponse>>> getAllAnswersForQuizAssignment(Long quizAssignmentId)
+      throws SegueDatabaseException;
 }

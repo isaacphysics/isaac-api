@@ -13,53 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 
 /**
  * Interface for managing and persisting user specific data in segue.
- * 
+ *
  * @author Stephen Cummins
  */
 public interface IAnonymousUserDataManager {
 
-    /**
-     * Save the anonymous user object in the data store.
-     * 
-     * @param user
-     *            - the user object to persist.
-     * 
-     * @return user which was saved.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    AnonymousUser storeAnonymousUser(AnonymousUser user) throws SegueDatabaseException;
+  /**
+   * Save the anonymous user object in the data store.
+   *
+   * @param user - the user object to persist.
+   * @return user which was saved.
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  AnonymousUser storeAnonymousUser(AnonymousUser user) throws SegueDatabaseException;
 
-    /**
-     * Delete a anonymous user by id.
-     * 
-     * @param userToDelete
-     *            - the user account id to remove.
-     * @throws SegueDatabaseException
-     *             if an error occurs
-     */
-    void deleteAnonymousUser(AnonymousUser userToDelete) throws SegueDatabaseException;
+  /**
+   * Delete a anonymous user by id.
+   *
+   * @param userToDelete - the user account id to remove.
+   * @throws SegueDatabaseException if an error occurs
+   */
+  void deleteAnonymousUser(AnonymousUser userToDelete) throws SegueDatabaseException;
 
-    /**
-     * Retrieve and extend the life of an anonymous user in our db.
-     * @param id - unique identifier of the user
-     * @return anonymous user
-     * @throws SegueDatabaseException - if we can't access the database
-     */
-    AnonymousUser getById(String id) throws SegueDatabaseException;
+  /**
+   * Retrieve and extend the life of an anonymous user in our db.
+   *
+   * @param id - unique identifier of the user
+   * @return anonymous user
+   * @throws SegueDatabaseException - if we can't access the database
+   */
+  AnonymousUser getById(String id) throws SegueDatabaseException;
 
-    /**
-     * Find out how many live anonymous users we have currently in the database.
-     *
-     * @return count of anonymous users
-     */
-    Long getCountOfAnonymousUsers() throws SegueDatabaseException;
+  /**
+   * Find out how many live anonymous users we have currently in the database.
+   *
+   * @return count of anonymous users
+   */
+  Long getCountOfAnonymousUsers() throws SegueDatabaseException;
 }

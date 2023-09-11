@@ -19,7 +19,6 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.google.api.client.json.GenericJson;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.Key;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
@@ -34,51 +33,52 @@ import java.util.List;
  */
 public class OidcDiscoveryResponse extends GenericJson {
 
-    @Key("issuer")
-    private String issuer;
+  @Key("issuer")
+  private String issuer;
 
-    @Key("authorization_endpoint")
-    private String authorizationEndpoint;
+  @Key("authorization_endpoint")
+  private String authorizationEndpoint;
 
-    @Key("token_endpoint")
-    private String tokenEndpoint;
+  @Key("token_endpoint")
+  private String tokenEndpoint;
 
-    @Key("jwks_uri")
-    private String jwksUri;
+  @Key("jwks_uri")
+  private String jwksUri;
 
-    @Key("id_token_signing_alg_values_supported")
-    private List<String> idTokenSigningAlgorithmsSupported;
+  @Key("id_token_signing_alg_values_supported")
+  private List<String> idTokenSigningAlgorithmsSupported;
 
-    public String getAuthorizationEndpoint() {
-        return authorizationEndpoint;
-    }
+  public String getAuthorizationEndpoint() {
+    return authorizationEndpoint;
+  }
 
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
-    }
+  public String getTokenEndpoint() {
+    return tokenEndpoint;
+  }
 
-    public String getJwksUri() {
-        return jwksUri;
-    }
+  public String getJwksUri() {
+    return jwksUri;
+  }
 
-    public List<String> getIdTokenSigningAlgorithmsSupported() {
-        return idTokenSigningAlgorithmsSupported;
-    }
+  public List<String> getIdTokenSigningAlgorithmsSupported() {
+    return idTokenSigningAlgorithmsSupported;
+  }
 
-    public String getIssuer() {
-        return issuer;
-    }
+  public String getIssuer() {
+    return issuer;
+  }
 
 
-    /**
-     * Alternatively, load saved OIDC IdP metadata from disk.
-     * @param jsonFactory The JSON factory to use to load the file from disk.
-     * @param reader The reader to use to load the file from disk.
-     * @return A configured {@link OidcDiscoveryResponse}.
-     * @throws IOException
-     */
-    public static OidcDiscoveryResponse load(final JsonFactory jsonFactory, final Reader reader)
-            throws IOException {
-        return jsonFactory.fromReader(reader, OidcDiscoveryResponse.class);
-    }
+  /**
+   * Alternatively, load saved OIDC IdP metadata from disk.
+   *
+   * @param jsonFactory The JSON factory to use to load the file from disk.
+   * @param reader      The reader to use to load the file from disk.
+   * @return A configured {@link OidcDiscoveryResponse}.
+   * @throws IOException
+   */
+  public static OidcDiscoveryResponse load(final JsonFactory jsonFactory, final Reader reader)
+      throws IOException {
+    return jsonFactory.fromReader(reader, OidcDiscoveryResponse.class);
+  }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -23,30 +24,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 public class FacebookTokenInfo {
-    private FacebookTokenData data;
+  private FacebookTokenData data;
 
-    /**
-     * 
-     * @param data
-     *            -
-     */
-    @JsonCreator
-    public FacebookTokenInfo(@JsonProperty("data") final FacebookTokenData data) {
-        this.data = data;
-    }
+  /**
+   *
+   * @param data
+   *            -
+   */
+  @JsonCreator
+  public FacebookTokenInfo(@JsonProperty("data") final FacebookTokenData data) {
+    this.data = data;
+  }
 
-    /**
-     * @return the data
-     */
-    public FacebookTokenData getData() {
-        return data;
-    }
+  /**
+   * @return the data
+   */
+  public FacebookTokenData getData() {
+    return data;
+  }
 
-    /**
-     * @param data
-     *            the data to set
-     */
-    public void setData(final FacebookTokenData data) {
-        this.data = data;
-    }
+  /**
+   * @param data
+   *            the data to set
+   */
+  public void setData(final FacebookTokenData data) {
+    this.data = data;
+  }
 }

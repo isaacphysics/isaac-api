@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 /**
@@ -20,44 +21,44 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
  * For urls.
  */
 public class ExternalReference {
-    private String title;
-    private String url;
+  private String title;
+  private String url;
 
-    /**
-     * Gets the title.
-     * 
-     * @return the title
-     */
-    public String getTitle() {
-        return title;
-    }
+  /**
+   * Gets the title.
+   *
+   * @return the title
+   */
+  public String getTitle() {
+    return title;
+  }
 
-    /**
-     * Sets the title.
-     * 
-     * @param title
-     *            the title to set
-     */
-    public void setTitle(final String title) {
-        this.title = title;
-    }
+  /**
+   * Sets the title.
+   *
+   * @param title
+   *            the title to set
+   */
+  public void setTitle(final String title) {
+    this.title = title;
+  }
 
-    /**
-     * Gets the url.
-     * 
-     * @return the url
-     */
-    public String getUrl() {
-        return url;
-    }
+  /**
+   * Gets the url.
+   *
+   * @return the url
+   */
+  public String getUrl() {
+    return url;
+  }
 
-    /**
-     * Sets the url.
-     * 
-     * @param url
-     *            the url to set
-     */
-    public void setUrl(final String url) {
-        this.url = url;
-    }
+  /**
+   * Sets the url.
+   *
+   * @param url
+   *            the url to set
+   */
+  public void setUrl(final String url) {
+    this.url = url;
+  }
 }

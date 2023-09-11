@@ -13,41 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.TOTPSharedSecret;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * Interface representing an abstract persistence mechanism for 2FA secrets.
  */
 public interface ITOTPDataManager {
 
-    /**
-     * get2FASharedSecret.
-     *
-     * @param userId - userId to look up.
-     * @return TOTPSharedSecret pojo
-     * @throws SegueDatabaseException - if something goes wrong in the database.
-     */
-    TOTPSharedSecret get2FASharedSecret(Long userId) throws SegueDatabaseException;
+  /**
+   * get2FASharedSecret.
+   *
+   * @param userId - userId to look up.
+   * @return TOTPSharedSecret pojo
+   * @throws SegueDatabaseException - if something goes wrong in the database.
+   */
+  TOTPSharedSecret get2FASharedSecret(Long userId) throws SegueDatabaseException;
 
-    /**
-     * save2FASharedSecret.
-     *
-     * @param userId - userId to attach to.
-     * @param secret - shared secret to store
-     * @return TOTPSharedSecret stored pojo
-     * @throws SegueDatabaseException - if something goes wrong in the database.
-     */
-    TOTPSharedSecret save2FASharedSecret(Long userId, TOTPSharedSecret secret) throws SegueDatabaseException;
+  /**
+   * save2FASharedSecret.
+   *
+   * @param userId - userId to attach to.
+   * @param secret - shared secret to store
+   * @return TOTPSharedSecret stored pojo
+   * @throws SegueDatabaseException - if something goes wrong in the database.
+   */
+  TOTPSharedSecret save2FASharedSecret(Long userId, TOTPSharedSecret secret) throws SegueDatabaseException;
 
-    /**
-     * Remove all MFA information for an account thereby making it appear as they never configured it.
-     *
-     * @param userId - userId to affect
-     * @throws SegueDatabaseException - if something goes wrong in the database.
-     */
-    void delete2FACredentials(Long userId) throws SegueDatabaseException;
+  /**
+   * Remove all MFA information for an account thereby making it appear as they never configured it.
+   *
+   * @param userId - userId to affect
+   * @throws SegueDatabaseException - if something goes wrong in the database.
+   */
+  void delete2FACredentials(Long userId) throws SegueDatabaseException;
 
 }

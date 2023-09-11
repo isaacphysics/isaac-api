@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,420 +13,432 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.junit.Assert.*;
-import static org.easymock.EasyMock.*;
+import static org.easymock.EasyMock.anyLong;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.api.client.util.Sets;
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 
 /**
  * Test class for the user Association class.
- * 
+ *
  */
 @PowerMockIgnore({"jakarta.ws.*"})
 public class UserAssociationManagerTest {
-	private IAssociationDataManager dummyAssociationDataManager;
-	private GroupManager dummyGroupDataManager;
-	private UserAccountManager dummyUserManager;
+  private IAssociationDataManager dummyAssociationDataManager;
+  private GroupManager dummyGroupDataManager;
+  private UserAccountManager dummyUserManager;
 
-	/**
-	 * Initial configuration of tests.
-	 * 
-	 * @throws Exception
-	 *             - test exception
-	 */
-	@Before
-	public final void setUp() throws Exception {
-		dummyAssociationDataManager = createMock(IAssociationDataManager.class);
-		dummyGroupDataManager = createMock(GroupManager.class);
-	}
+  /**
+   * Initial configuration of tests.
+   *
+   * @throws Exception
+   *             - test exception
+   */
+  @Before
+  public final void setUp() throws Exception {
+    dummyAssociationDataManager = createMock(IAssociationDataManager.class);
+    dummyGroupDataManager = createMock(GroupManager.class);
+  }
 
-	/**
-	 * Verify that the constructor responds correctly to bad input.
-	 * 
-	 * @throws SegueDatabaseException
-	 * @throws UserGroupNotFoundException
-	 */
-	@Test
-	public final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
-		throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+  /**
+   * Verify that the constructor responds correctly to bad input.
+   *
+   * @throws SegueDatabaseException
+   * @throws UserGroupNotFoundException
+   */
+  @Test
+  public final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
-		Long someUserId = 89745531132231213L;
+    Long someUserId = 89745531132231213L;
 
-		RegisteredUserDTO someRegisteredUser = createMock(RegisteredUserDTO.class);
-		Long someAssociatedGroupId = 565481L;
+    RegisteredUserDTO someRegisteredUser = createMock(RegisteredUserDTO.class);
+    Long someAssociatedGroupId = 565481L;
 
-		expect(someRegisteredUser.getId()).andReturn(someUserId).anyTimes();
-		replay(someRegisteredUser);
+    expect(someRegisteredUser.getId()).andReturn(someUserId).anyTimes();
+    replay(someRegisteredUser);
 
-		AssociationToken someToken = new AssociationToken("someToken", someUserId, someAssociatedGroupId);
-		
-		expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).once();
-		
-		expect(dummyAssociationDataManager.saveAssociationToken((AssociationToken) anyObject())).andReturn(
-				someToken).once();
-		
-		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(anyLong())).andReturn(null);
-		
-		replay(dummyAssociationDataManager, dummyGroupDataManager);
+    AssociationToken someToken = new AssociationToken("someToken", someUserId, someAssociatedGroupId);
 
-		AssociationToken someGeneratedToken = managerUnderTest.generateAssociationToken(someRegisteredUser,
-				someAssociatedGroupId);
+    expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).once();
 
-		assertTrue(someGeneratedToken != null);
+    expect(dummyAssociationDataManager.saveAssociationToken((AssociationToken) anyObject())).andReturn(
+        someToken).once();
 
-		verify(someRegisteredUser, dummyAssociationDataManager);
-	}
-	
-	@Test
-	public final void userAssociationManager_createAssociationWithTokenAndAddToGroup_associationShouldBeCreatedAndUserAddedToGroup()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    expect(dummyAssociationDataManager.getAssociationTokenByGroupId(anyLong())).andReturn(null);
 
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+    replay(dummyAssociationDataManager, dummyGroupDataManager);
 
-		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
-		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		Long someAssociatedGroupId = 56548L;
+    AssociationToken someGeneratedToken = managerUnderTest.generateAssociationToken(someRegisteredUser,
+        someAssociatedGroupId);
 
-		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		replay(someRegisteredUserGrantingAccess);
+    assertTrue(someGeneratedToken != null);
 
-		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
-		
-		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
-		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(false);
-		
-		dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
-		expectLastCall().once();
-		
-		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
-		expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
+    verify(someRegisteredUser, dummyAssociationDataManager);
+  }
 
-		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
-		
-		dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
-		expectLastCall().once();
-		
-		replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
+  @Test
+  public final void userAssociationManager_createAssociationWithTokenAndAddToGroup_associationShouldBeCreatedAndUserAddedToGroup()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
-		try {
-			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (InvalidUserAssociationTokenException e) {
-			e.printStackTrace();
-			fail("InvalidUserAssociationTokenException is unexpected");
-		}
+    Long someUserIdGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
 
-		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
-	}
-	
-	@Test
-	public final void userAssociationManager_DuplicateAssociationButAddToGroupAnyway_associationShouldNotBeCreatedButUserShouldBeAddedToGroup()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+    RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
+    Long someAssociatedGroupId = 56548L;
 
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+    expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 
-		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
-		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		Long someAssociatedGroupId = 5654811L;
+    expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+    replay(someRegisteredUserGrantingAccess);
 
-		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		replay(someRegisteredUserGrantingAccess);
+    AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
 
-		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
-		
-		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
-		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(true);
-		
-		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
-		expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
-		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
-		
-		dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
-		expectLastCall().once();
-		
-		replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
+    expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
 
-		try {
-			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (InvalidUserAssociationTokenException e) {
-			e.printStackTrace();
-			fail("InvalidUserAssociationTokenException is unexpected");
-		}
+    expect(
+        dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+            someUserIdGrantingAccess)).andReturn(false);
 
-		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
-	}	
-	
-	@Test
-	public final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
+    expectLastCall().once();
 
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+    UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+    expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
 
-		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
-		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		Long someAssociatedGroupId = null; // no group
+    expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
 
-		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		replay(someRegisteredUserGrantingAccess);
+    dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
+    expectLastCall().once();
 
-		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
-		
-		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
-		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(false);
-		
-		dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
-		expectLastCall().once();
-		
-		replay(dummyAssociationDataManager);
+    replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
 
-		try {
-			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (InvalidUserAssociationTokenException e) {
-			e.printStackTrace();
-			fail("InvalidUserAssociationTokenException is unexpected");
-		}
+    try {
+      managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
+    } catch (InvalidUserAssociationTokenException e) {
+      e.printStackTrace();
+      fail("InvalidUserAssociationTokenException is unexpected");
+    }
 
-		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
-	}	
-	
-	@Test
-	public final void userAssociationManager_createAssociationWithBadToken_exceptionShouldBeThrown()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
+  }
 
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+  @Test
+  public final void userAssociationManager_DuplicateAssociationButAddToGroupAnyway_associationShouldNotBeCreatedButUserShouldBeAddedToGroup()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
-		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
-		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
+    Long someUserIdGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
 
-		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		replay(someRegisteredUserGrantingAccess);
-		
-		String someBadToken = "bad token";
-		
-		expect(dummyAssociationDataManager.lookupAssociationToken(someBadToken)).andReturn(null);
-		
-		replay(dummyAssociationDataManager, dummyGroupDataManager);
+    RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+    RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
+    Long someAssociatedGroupId = 5654811L;
 
-		try {
-			managerUnderTest.createAssociationWithToken(someBadToken, someRegisteredUserGrantingAccess);
-			fail("An exception was expected");
-		} catch (InvalidUserAssociationTokenException e) {
-			// this is a success as the exception was expected.
-		}
+    expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 
-		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
-	}
-	
-	@Test
-	public final void userAssociationManager_hasPermissionUserIsTheOwner_trueShouldBeRetured()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+    replay(someRegisteredUserGrantingAccess);
 
-		Long someGroupOwnerUserId = 17659214141L;
+    AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
 
-		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
-		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+    expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
 
-		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		
-		replay(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
-		
-		if (!managerUnderTest.hasPermission(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary)) {
-			fail("If the user id of the owner and the requester are the same always return true.");	
-		}
+    expect(
+        dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+            someUserIdGrantingAccess)).andReturn(true);
 
-		verify(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
-	}
-	
-	@Test
-	public final void userAssociationManager_hasPermissionUserIsAdmin_trueShouldBeRetured()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+    expect(groupToAddUserTo.getAdditionalManagersUserIds()).andReturn(Sets.newHashSet()).atLeastOnce();
+    expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
 
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+    dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
+    expectLastCall().once();
 
-		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
-		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+    replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
 
-		expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		
-		expect(someUserRequestingAccess.getRole()).andReturn(Role.ADMIN).anyTimes();
-		
-		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
-		
-		if (!managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
-			fail("If the user requesting access is an admin they should always have access.");	
-		}
+    try {
+      managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
+    } catch (InvalidUserAssociationTokenException e) {
+      e.printStackTrace();
+      fail("InvalidUserAssociationTokenException is unexpected");
+    }
 
-		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
-	}
-	
-	@Test
-	public final void userAssociationManager_hasPermissionUserHasValidAssociation_trueShouldBeRetured()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
+  }
 
-		Long someUserIdGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+  @Test
+  public final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
-		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
-		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+    Long someUserIdGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
 
-		expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		
-		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
-		
-		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
-		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdGrantingAccess)).andReturn(true).once();
-		
-		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
-		
-		if (!managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
-			fail("If the user requesting access has a valid association they should have permission");	
-		}
+    RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+    RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
+    Long someAssociatedGroupId = null; // no group
 
-		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
-	}
-	
-	@Test
-	public final void userAssociationManager_NoPermissionUserHasNoValidAssociation_falseShouldBeRetured()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 
-		Long someUserIdNotGrantingAccess = 89745531132231213L;
-		Long someGroupOwnerUserId = 17659214141L;
+    expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+    replay(someRegisteredUserGrantingAccess);
 
-		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
-		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+    AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
 
-		
-		expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
-		
-		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
-		
-		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
-		
-		expect(
-				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
-						someUserIdNotGrantingAccess)).andReturn(false).once();
-		
-		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
-		
-		if (managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
-			fail("This user should not have access as they are not an admin and do not have a valid association.");	
-		}
+    expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
 
-		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
-	}
+    expect(
+        dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+            someUserIdGrantingAccess)).andReturn(false);
 
-	@Test
-	public final void userAssociationManager_TokenMustBeSixCharactersAndRandom()
-			throws SegueDatabaseException, UserGroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(
-				dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
-		Long someAssociatedGroupId = 5654811L;
+    dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
+    expectLastCall().once();
 
-		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+    replay(dummyAssociationDataManager);
 
-		expect(someUserRequestingAccess.getId()).andReturn(0L).anyTimes();
-		expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).anyTimes();
-		// This line means we'll get a new token each time we run generateAssociationToken:
-		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(someAssociatedGroupId)).andReturn(null).anyTimes();
-		final Capture<AssociationToken> associationTokenCapture = Capture.newInstance();
-		// This was a lambda that overrode saveAssociationToken using andAnswer to return its only argument. IntelliJ
-		// simplified this to associationTokenCapture::getValue which apparently does the same thing . . .
-		expect(dummyAssociationDataManager.saveAssociationToken(capture(associationTokenCapture))).andAnswer(
-				associationTokenCapture::getValue).anyTimes();
-		replay(someUserRequestingAccess, dummyGroupDataManager, dummyAssociationDataManager);
+    try {
+      managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
+    } catch (InvalidUserAssociationTokenException e) {
+      e.printStackTrace();
+      fail("InvalidUserAssociationTokenException is unexpected");
+    }
 
-		// We want to test the randomness of tokens, which means sampling them lots:
-		int iterations = 100000;
-		int tokenLength = 6;
-		String charSpace = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
+  }
 
-		int[][] occurrences = new int[tokenLength][charSpace.length()];
+  @Test
+  public final void userAssociationManager_createAssociationWithBadToken_exceptionShouldBeThrown()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
-		for (int i = 0; i < iterations; i++) {
+    Long someUserIdGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
 
-			AssociationToken token = managerUnderTest.generateAssociationToken(someUserRequestingAccess, someAssociatedGroupId);
-			assertTrue(token.getToken().length() == tokenLength);
-			String t = token.getToken();
-			for (int j = 0; j < t.length(); j++) {
-				char c = t.charAt(j);
-				int chr = charSpace.indexOf(c);
-				occurrences[j][chr] += 1;
-			}
-		}
-		// If any letters appear too frequently, there's a problem. Before we were 500+% out!
-		int expectedAvg = (iterations / 30);  // There are 30 allowed characters after 0,O,1,I,5,S are removed.
-		int allowedDelta = expectedAvg / 5;  // Allow 20% leeway.
-		for (int x = 0; x < tokenLength; x++) {
-			for (int y = 0; y < charSpace.length(); y++) {
-				if (y == 8 || y == 14 || y == 18 || y == 26 || y == 27|| y == 31 ) {
-					// I=8, O=14, S=18, 0=26, 1=27, 5=31
-					// These characters are allowed to be blank!
-					continue;
-				}
-				assertFalse("Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!",
-					(occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
-			}
-		}
-	}
+    RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+    RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
+
+    expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
+
+    expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+    replay(someRegisteredUserGrantingAccess);
+
+    String someBadToken = "bad token";
+
+    expect(dummyAssociationDataManager.lookupAssociationToken(someBadToken)).andReturn(null);
+
+    replay(dummyAssociationDataManager, dummyGroupDataManager);
+
+    try {
+      managerUnderTest.createAssociationWithToken(someBadToken, someRegisteredUserGrantingAccess);
+      fail("An exception was expected");
+    } catch (InvalidUserAssociationTokenException e) {
+      // this is a success as the exception was expected.
+    }
+
+    verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
+  }
+
+  @Test
+  public final void userAssociationManager_hasPermissionUserIsTheOwner_trueShouldBeRetured()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+
+    Long someGroupOwnerUserId = 17659214141L;
+
+    RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+    UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+    expect(someRegisteredUserGrantingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+    expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+
+    replay(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
+
+    if (!managerUnderTest.hasPermission(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary)) {
+      fail("If the user id of the owner and the requester are the same always return true.");
+    }
+
+    verify(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
+  }
+
+  @Test
+  public final void userAssociationManager_hasPermissionUserIsAdmin_trueShouldBeRetured()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+
+    Long someUserIdGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
+
+    RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+    UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+    expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+
+    expect(someUserRequestingAccess.getRole()).andReturn(Role.ADMIN).anyTimes();
+
+    expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
+
+    replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
+
+    if (!managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
+      fail("If the user requesting access is an admin they should always have access.");
+    }
+
+    verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
+  }
+
+  @Test
+  public final void userAssociationManager_hasPermissionUserHasValidAssociation_trueShouldBeRetured()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+
+    Long someUserIdGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
+
+    RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+    UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+    expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+
+    expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
+
+    expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
+
+    expect(
+        dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+            someUserIdGrantingAccess)).andReturn(true).once();
+
+    replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+
+    if (!managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
+      fail("If the user requesting access has a valid association they should have permission");
+    }
+
+    verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+  }
+
+  @Test
+  public final void userAssociationManager_NoPermissionUserHasNoValidAssociation_falseShouldBeRetured()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+
+    Long someUserIdNotGrantingAccess = 89745531132231213L;
+    Long someGroupOwnerUserId = 17659214141L;
+
+    RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+    UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+
+    expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+
+    expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
+
+    expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
+
+    expect(
+        dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+            someUserIdNotGrantingAccess)).andReturn(false).once();
+
+    replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+
+    if (managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
+      fail("This user should not have access as they are not an admin and do not have a valid association.");
+    }
+
+    verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+  }
+
+  @Test
+  public final void userAssociationManager_TokenMustBeSixCharactersAndRandom()
+      throws SegueDatabaseException, UserGroupNotFoundException {
+    UserAssociationManager managerUnderTest = new UserAssociationManager(
+        dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
+    Long someAssociatedGroupId = 5654811L;
+
+    RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+
+    expect(someUserRequestingAccess.getId()).andReturn(0L).anyTimes();
+    expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).anyTimes();
+    // This line means we'll get a new token each time we run generateAssociationToken:
+    expect(dummyAssociationDataManager.getAssociationTokenByGroupId(someAssociatedGroupId)).andReturn(null).anyTimes();
+    final Capture<AssociationToken> associationTokenCapture = Capture.newInstance();
+    // This was a lambda that overrode saveAssociationToken using andAnswer to return its only argument. IntelliJ
+    // simplified this to associationTokenCapture::getValue which apparently does the same thing . . .
+    expect(dummyAssociationDataManager.saveAssociationToken(capture(associationTokenCapture))).andAnswer(
+        associationTokenCapture::getValue).anyTimes();
+    replay(someUserRequestingAccess, dummyGroupDataManager, dummyAssociationDataManager);
+
+    // We want to test the randomness of tokens, which means sampling them lots:
+    int iterations = 100000;
+    int tokenLength = 6;
+    String charSpace = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    int[][] occurrences = new int[tokenLength][charSpace.length()];
+
+    for (int i = 0; i < iterations; i++) {
+
+      AssociationToken token =
+          managerUnderTest.generateAssociationToken(someUserRequestingAccess, someAssociatedGroupId);
+      assertTrue(token.getToken().length() == tokenLength);
+      String t = token.getToken();
+      for (int j = 0; j < t.length(); j++) {
+        char c = t.charAt(j);
+        int chr = charSpace.indexOf(c);
+        occurrences[j][chr] += 1;
+      }
+    }
+    // If any letters appear too frequently, there's a problem. Before we were 500+% out!
+    int expectedAvg = (iterations / 30);  // There are 30 allowed characters after 0,O,1,I,5,S are removed.
+    int allowedDelta = expectedAvg / 5;  // Allow 20% leeway.
+    for (int x = 0; x < tokenLength; x++) {
+      for (int y = 0; y < charSpace.length(); y++) {
+        if (y == 8 || y == 14 || y == 18 || y == 26 || y == 27 || y == 31) {
+          // I=8, O=14, S=18, 0=26, 1=27, 5=31
+          // These characters are allowed to be blank!
+          continue;
+        }
+        assertFalse(
+            "Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y]
+                + "!",
+            (occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
+      }
+    }
+  }
 }

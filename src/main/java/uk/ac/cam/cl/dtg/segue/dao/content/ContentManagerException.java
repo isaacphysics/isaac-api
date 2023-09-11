@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 /**
@@ -20,27 +21,27 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
  *
  */
 public class ContentManagerException extends Exception {
-    private static final long serialVersionUID = -4900667815265966457L;
+  private static final long serialVersionUID = -4900667815265966457L;
 
-    /**
-     * Exception that occurred at the content manager DAO layer.
-     * 
-     * @param message
-     *            - explaining the problem
-     */
-    public ContentManagerException(final String message) {
-        super(message);
-    }
+  /**
+   * Exception that occurred at the content manager DAO layer.
+   *
+   * @param message
+   *            - explaining the problem
+   */
+  public ContentManagerException(final String message) {
+    super(message);
+  }
 
-    /**
-     * Create a new exception wrapping another.
-     *
-     * @param message
-     *            - message to add
-     * @param e
-     *            - exception to add.
-     */
-    public ContentManagerException(final String message, final Exception e) {
-        super(message, e);
-    }
+  /**
+   * Create a new exception wrapping another.
+   *
+   * @param message
+   *            - message to add
+   * @param e
+   *            - exception to add.
+   */
+  public ContentManagerException(final String message, final Exception e) {
+    super(message, e);
+  }
 }

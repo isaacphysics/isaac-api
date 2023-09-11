@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.search;
 
 /**
@@ -21,18 +22,19 @@ package uk.ac.cam.cl.dtg.segue.search;
  * SimpleExclusionInstruction expect a single value which must not appear in the results.
  */
 public class SimpleExclusionInstruction extends AbstractFilterInstruction {
-    private final String mustNotMatchValue;
+  private final String mustNotMatchValue;
 
-    public SimpleExclusionInstruction(final String mustNotMatchValue) {
+  public SimpleExclusionInstruction(final String mustNotMatchValue) {
 
-        this.mustNotMatchValue = mustNotMatchValue;
-    }
+    this.mustNotMatchValue = mustNotMatchValue;
+  }
 
-    /**
-     * Get the value which must not be matched.
-     * @return the value to exclude.
-     */
-    public String getMustNotMatchValue() {
-        return mustNotMatchValue;
-    }
+  /**
+   * Get the value which must not be matched.
+   *
+   * @return the value to exclude.
+   */
+  public String getMustNotMatchValue() {
+    return mustNotMatchValue;
+  }
 }

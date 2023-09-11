@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.Date;
@@ -20,126 +21,124 @@ import java.util.Date;
 
 /**
  * GroupMembership Object - this object represents a users membership to a group.
- *
  */
 public class GroupMembership {
-    private Long groupId;
-    private Long userId;
-    private GroupMembershipStatus status;
-    private Date updated;
-    private Date created;
+  private Long groupId;
+  private Long userId;
+  private GroupMembershipStatus status;
+  private Date updated;
+  private Date created;
 
-    /**
-     * Default Constructor.
-     */
-    public GroupMembership() {
+  /**
+   * Default Constructor.
+   */
+  public GroupMembership() {
 
-    }
+  }
 
-    /**
-     * @param groupId - the group id
-     * @param userId - the user id
-     * @param status - the group membership status
-     * @param created - the date the membership object was created
-     * @param updated - the date the membership object was last updated
-     */
-    public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created, final Date updated) {
-        this.groupId = groupId;
-        this.userId = userId;
-        this.status = status;
-        this.created = created;
-        this.updated = updated;
-    }
+  /**
+   * @param groupId - the group id
+   * @param userId  - the user id
+   * @param status  - the group membership status
+   * @param created - the date the membership object was created
+   * @param updated - the date the membership object was last updated
+   */
+  public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created,
+                         final Date updated) {
+    this.groupId = groupId;
+    this.userId = userId;
+    this.status = status;
+    this.created = created;
+    this.updated = updated;
+  }
 
-    /**
-     * Gets the groupId.
-     * 
-     * @return the groupId
-     */
-    public Long getGroupId() {
-        return groupId;
-    }
+  /**
+   * Gets the groupId.
+   *
+   * @return the groupId
+   */
+  public Long getGroupId() {
+    return groupId;
+  }
 
-    /**
-     * Sets the groupId.
-     * 
-     * @param groupId
-     *            the groupId to set
-     */
-    public void setGroupId(final Long groupId) {
-        this.groupId = groupId;
-    }
+  /**
+   * Sets the groupId.
+   *
+   * @param groupId the groupId to set
+   */
+  public void setGroupId(final Long groupId) {
+    this.groupId = groupId;
+  }
 
-    /**
-     * Gets the userId.
-     * 
-     * @return the userId
-     */
-    public Long getUserId() {
-        return userId;
-    }
+  /**
+   * Gets the userId.
+   *
+   * @return the userId
+   */
+  public Long getUserId() {
+    return userId;
+  }
 
-    /**
-     * Sets the userId.
-     * 
-     * @param userId
-     *            the userId to set
-     */
-    public void setUserId(final Long userId) {
-        this.userId = userId;
-    }
+  /**
+   * Sets the userId.
+   *
+   * @param userId the userId to set
+   */
+  public void setUserId(final Long userId) {
+    this.userId = userId;
+  }
 
-    /**
-     * Get the status of the group membership.
-     * @return the group status
-     */
-    public GroupMembershipStatus getStatus() {
-        return status;
-    }
+  /**
+   * Get the status of the group membership.
+   *
+   * @return the group status
+   */
+  public GroupMembershipStatus getStatus() {
+    return status;
+  }
 
-    /**
-     * set the status of the group membership.
-     * @param status to set
-     */
-    public void setStatus(final GroupMembershipStatus status) {
-        this.status = status;
-    }
+  /**
+   * set the status of the group membership.
+   *
+   * @param status to set
+   */
+  public void setStatus(final GroupMembershipStatus status) {
+    this.status = status;
+  }
 
-    /**
-     * Gets the updated date.
-     *
-     * @return the updated date
-     */
-    public Date getUpdated() {
-        return updated;
-    }
+  /**
+   * Gets the updated date.
+   *
+   * @return the updated date
+   */
+  public Date getUpdated() {
+    return updated;
+  }
 
-    /**
-     * Sets the updated date.
-     *
-     * @param updated
-     *            the updated date to set
-     */
-    public void setUpdated(final Date updated) {
-        this.updated = updated;
-    }
+  /**
+   * Sets the updated date.
+   *
+   * @param updated the updated date to set
+   */
+  public void setUpdated(final Date updated) {
+    this.updated = updated;
+  }
 
-    /**
-     * Gets the created.
-     * 
-     * @return the created
-     */
-    public Date getCreated() {
-        return created;
-    }
+  /**
+   * Gets the created.
+   *
+   * @return the created
+   */
+  public Date getCreated() {
+    return created;
+  }
 
-    /**
-     * Sets the created.
-     * 
-     * @param created
-     *            the created to set
-     */
-    public void setCreated(final Date created) {
-        this.created = created;
-    }
+  /**
+   * Sets the created.
+   *
+   * @param created the created to set
+   */
+  public void setCreated(final Date created) {
+    this.created = created;
+  }
 }

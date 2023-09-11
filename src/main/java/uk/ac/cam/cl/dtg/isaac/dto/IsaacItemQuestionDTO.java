@@ -13,49 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ItemDTO;
 
-import java.util.List;
-
 /**
  * Content DTO for IsaacItemQuestions.
- *
  */
 @JsonContentType("isaacItemQuestion")
 public class IsaacItemQuestionDTO extends IsaacQuestionBaseDTO {
 
-    private List<ItemDTO> items;
-    private Boolean randomiseItems;
+  private List<ItemDTO> items;
+  private Boolean randomiseItems;
 
-    public List<ItemDTO> getItems() {
-        return items;
-    }
+  public List<ItemDTO> getItems() {
+    return items;
+  }
 
-    public void setItems(final List<ItemDTO> items) {
-        this.items = items;
-    }
+  public void setItems(final List<ItemDTO> items) {
+    this.items = items;
+  }
 
-    /**
-     * Gets whether to randomiseItems.
-     *
-     * @return randomiseItems
-     */
-    @JsonIgnore
-    public Boolean getRandomiseItems() {
-        return randomiseItems;
-    }
+  /**
+   * Gets whether to randomiseItems.
+   *
+   * @return randomiseItems
+   */
+  @JsonIgnore
+  public Boolean getRandomiseItems() {
+    return randomiseItems;
+  }
 
-    /**
-     * Sets the randomiseItems.
-     *
-     * @param randomiseItems
-     *            the randomiseItems to set
-     */
-    public void setRandomiseItems(final Boolean randomiseItems) {
-        this.randomiseItems = randomiseItems;
-    }
+  /**
+   * Sets the randomiseItems.
+   *
+   * @param randomiseItems the randomiseItems to set
+   */
+  public void setRandomiseItems(final Boolean randomiseItems) {
+    this.randomiseItems = randomiseItems;
+  }
 }

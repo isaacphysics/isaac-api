@@ -6,9 +6,9 @@ package uk.ac.cam.cl.dtg.segue.etl;
 public class General {
 
 
-    // ContentVersionController
+  // ContentVersionController
 
-    //    /**
+  //    /**
 //     * Trigger a sync job that will request a sync and subsequent index of the latest version of the content available
 //     *
 //     * This method will cause a new job to be added to the indexer queue.
@@ -245,8 +245,6 @@ public class General {
 //                    + this.indexQueue.size() + ")");
 //        }
 //    }
-
-
 
 
 }

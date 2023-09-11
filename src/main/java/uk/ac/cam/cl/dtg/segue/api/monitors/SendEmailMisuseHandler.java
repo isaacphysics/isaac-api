@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.monitors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with sending email requests.
@@ -27,46 +28,46 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Preventing users from overusing this endpoint is important as only limited email sending capacity exists
  *
  * @author Connor Holloway
- *
  */
 public class SendEmailMisuseHandler implements IMisuseHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(SendEmailMisuseHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(SendEmailMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 201;
-    private static final Integer HARD_THRESHOLD = 401;
-    private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
+  private static final Integer SOFT_THRESHOLD = 201;
+  private static final Integer HARD_THRESHOLD = 401;
+  private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
 
-    @Inject
-    public SendEmailMisuseHandler() { }
+  @Inject
+  public SendEmailMisuseHandler() {
+  }
 
-    @Override
-    public Integer getSoftThreshold() {
-        return SOFT_THRESHOLD;
-    }
+  @Override
+  public Integer getSoftThreshold() {
+    return SOFT_THRESHOLD;
+  }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
-     */
-    @Override
-    public Integer getHardThreshold() {
-        return HARD_THRESHOLD;
-    }
+  /*
+   * (non-Javadoc)
+   *
+   * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
+   */
+  @Override
+  public Integer getHardThreshold() {
+    return HARD_THRESHOLD;
+  }
 
-    @Override
-    public Integer getAccountingIntervalInSeconds() {
-        return ACCOUNTING_INTERVAL;
-    }
+  @Override
+  public Integer getAccountingIntervalInSeconds() {
+    return ACCOUNTING_INTERVAL;
+  }
 
-    @Override
-    public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
-    }
+  @Override
+  public void executeSoftThresholdAction(final String message) {
+    log.warn("Soft threshold limit: " + message);
+  }
 
-    @Override
-    public void executeHardThresholdAction(final String message) {
-        log.error("Hard threshold limit: " + message);
-    }
+  @Override
+  public void executeHardThresholdAction(final String message) {
+    log.error("Hard threshold limit: " + message);
+  }
 }

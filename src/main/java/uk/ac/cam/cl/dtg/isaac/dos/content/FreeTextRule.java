@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
@@ -20,42 +21,52 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
 @DTOMapping(FreeTextRuleDTO.class)
 @JsonContentType("freeTextRule")
 public class FreeTextRule extends Choice {
-    private boolean caseInsensitive;
-    private boolean allowsAnyOrder;
-    private boolean allowsExtraWords;
-    private boolean allowsMisspelling;
-    private Integer proximityDistance;
+  private boolean caseInsensitive;
+  private boolean allowsAnyOrder;
+  private boolean allowsExtraWords;
+  private boolean allowsMisspelling;
+  private Integer proximityDistance;
 
-    public FreeTextRule() { }
+  public FreeTextRule() {
+  }
 
-    public void setCaseInsensitive(final boolean caseInsensitive) {
-        this.caseInsensitive = caseInsensitive;
-    }
-    public boolean isCaseInsensitive() {
-        return this.caseInsensitive;
-    }
-    public void setAllowsAnyOrder(final boolean allowsAnyOrder) {
-        this.allowsAnyOrder = allowsAnyOrder;
-    }
-    public boolean getAllowsAnyOrder() {
-        return this.allowsAnyOrder;
-    }
-    public void setAllowsExtraWords(final boolean allowsExtraWords) {
-        this.allowsExtraWords = allowsExtraWords;
-    }
-    public boolean getAllowsExtraWords() {
-        return this.allowsExtraWords;
-    }
-    public void setAllowsMisspelling(final boolean allowsMisspelling) {
-        this.allowsMisspelling = allowsMisspelling;
-    }
-    public boolean getAllowsMisspelling() {
-        return this.allowsMisspelling;
-    }
-    public void setWordProximity(final Integer proximityDistance) {
-        this.proximityDistance = proximityDistance;
-    }
-    public Integer getWordProximity() {
-        return this.proximityDistance;
-    }
+  public void setCaseInsensitive(final boolean caseInsensitive) {
+    this.caseInsensitive = caseInsensitive;
+  }
+
+  public boolean isCaseInsensitive() {
+    return this.caseInsensitive;
+  }
+
+  public void setAllowsAnyOrder(final boolean allowsAnyOrder) {
+    this.allowsAnyOrder = allowsAnyOrder;
+  }
+
+  public boolean getAllowsAnyOrder() {
+    return this.allowsAnyOrder;
+  }
+
+  public void setAllowsExtraWords(final boolean allowsExtraWords) {
+    this.allowsExtraWords = allowsExtraWords;
+  }
+
+  public boolean getAllowsExtraWords() {
+    return this.allowsExtraWords;
+  }
+
+  public void setAllowsMisspelling(final boolean allowsMisspelling) {
+    this.allowsMisspelling = allowsMisspelling;
+  }
+
+  public boolean getAllowsMisspelling() {
+    return this.allowsMisspelling;
+  }
+
+  public void setWordProximity(final Integer proximityDistance) {
+    this.proximityDistance = proximityDistance;
+  }
+
+  public Integer getWordProximity() {
+    return this.proximityDistance;
+  }
 }

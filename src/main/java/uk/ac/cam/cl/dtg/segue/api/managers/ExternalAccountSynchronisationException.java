@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 public class ExternalAccountSynchronisationException extends Exception {
-    private static final long serialVersionUID = 503895514003323L;
+  private static final long serialVersionUID = 503895514003323L;
 
-    /**
-     *  General exception for exceptions when synchronising data with external providers.
-     *
-     * @param message
-     *            - to explain the exception.
-     */
-    public ExternalAccountSynchronisationException(final String message) {
-        super(message);
-    }
+  /**
+   * General exception for exceptions when synchronising data with external providers.
+   *
+   * @param message - to explain the exception.
+   */
+  public ExternalAccountSynchronisationException(final String message) {
+    super(message);
+  }
 }

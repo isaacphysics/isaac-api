@@ -13,103 +13,95 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.comm;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
+import java.io.UnsupportedEncodingException;
 import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.EmailCommonParameters;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.InternetAddress;
-import java.io.UnsupportedEncodingException;
-
 /**
  * @author nr378 and Alistair Stead
  */
 public class EmailCommunicator implements ICommunicator<EmailCommunicationMessage> {
-	private static Mailer mailer;
-	private final String defaultFromAddress;
-	private final String mailName;
+  private static Mailer mailer;
+  private final String defaultFromAddress;
+  private final String mailName;
 
-	/**
-	 * Creates an instance of an email communicator that can send e-mails.
-	 * 
-	 * @param smtpAddress
-	 *            the SMTP server to use to send e-mails. Must be open for this
-	 *            implementation.
-	 * @param smtpPort
-	 *            The SMTP port.
-	 * @param smtpUsername
-	 *            the SMTP username to use to send e-mails.
-	 * @param smtpPassword
-	 *            the SMTP password to use to send e-mails.
-	 * @param defaultFromAddress
-	 *            The email address to show as the from address.
-	 * @param mailName
-	 *            The name email will be sent from.
-	 */
-	@Inject
-	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
-							 @Named(Constants.MAILER_SMTP_PORT) final String smtpPort,
-							 @Named(Constants.MAILER_SMTP_USERNAME) final String smtpUsername,
-							 @Named(Constants.MAILER_SMTP_PASSWORD) final String smtpPassword,
-							 @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
-							 @Named(Constants.MAIL_NAME) final String mailName) {
-		Validate.notNull(smtpAddress);
-		Validate.notNull(defaultFromAddress);
+  /**
+   * Creates an instance of an email communicator that can send e-mails.
+   *
+   * @param smtpAddress        the SMTP server to use to send e-mails. Must be open for this
+   *                           implementation.
+   * @param smtpPort           The SMTP port.
+   * @param smtpUsername       the SMTP username to use to send e-mails.
+   * @param smtpPassword       the SMTP password to use to send e-mails.
+   * @param defaultFromAddress The email address to show as the from address.
+   * @param mailName           The name email will be sent from.
+   */
+  @Inject
+  public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
+                           @Named(Constants.MAILER_SMTP_PORT) final String smtpPort,
+                           @Named(Constants.MAILER_SMTP_USERNAME) final String smtpUsername,
+                           @Named(Constants.MAILER_SMTP_PASSWORD) final String smtpPassword,
+                           @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
+                           @Named(Constants.MAIL_NAME) final String mailName) {
+    Validate.notNull(smtpAddress);
+    Validate.notNull(defaultFromAddress);
 
-		this.defaultFromAddress = defaultFromAddress;
-		this.mailName = mailName;
+    this.defaultFromAddress = defaultFromAddress;
+    this.mailName = mailName;
 
-		// Construct a new instance of the mailer object
-		if (mailer == null) {
-			mailer = new Mailer(smtpAddress, defaultFromAddress, smtpPort, smtpUsername, smtpPassword);
-		}
-	}
-
-    /**
-     * @param email
-     *            - message to be sent. Will be plain text if no HTML is provided
-     * @throws CommunicationException
-     *            - if email fails to be created and added to queue
-     */
-	@Override
-	public void sendMessage(final EmailCommunicationMessage email) throws CommunicationException {
-	    String fromEmailAddress = this.defaultFromAddress;
-	    String fromName = this.mailName;
-	    String overrideEnvelopeFrom = null;
-
-	    // If override "From" details specified, use them:
-	    if (email.getOverrideFromAddress() != null && !email.getOverrideFromAddress().isEmpty()) {
-	        fromEmailAddress = email.getOverrideFromAddress();
-        }
-	    if (email.getOverrideFromName() != null && !email.getOverrideFromName().isEmpty()) {
-	        fromName = email.getOverrideFromName();
-        }
-	    if (email.getOverrideEnvelopeFrom() != null && !email.getOverrideEnvelopeFrom().isEmpty()) {
-	        overrideEnvelopeFrom = email.getOverrideEnvelopeFrom();
-        }
-
-        try {
-            InternetAddress fromAddress = new InternetAddress(fromEmailAddress, fromName);
-            InternetAddress replyTo = null;
-            if (null != email.getReplyToAddress()) {
-                replyTo = new InternetAddress(email.getReplyToAddress(), email.getReplyToName());
-            }
-
-            if (email.getHTMLMessage() == null) {
-                mailer.sendPlainTextMail(new EmailCommonParameters(new String[]{email.getRecipientAddress()}, fromAddress,
-						overrideEnvelopeFrom, replyTo, email.getSubject()), email.getPlainTextMessage());
-            } else {
-                mailer.sendMultiPartMail(new EmailCommonParameters(new String[]{email.getRecipientAddress()}, fromAddress,
-						overrideEnvelopeFrom, replyTo, email.getSubject()), email.getPlainTextMessage(), email.getHTMLMessage(),
-						email.getAttachments());
-            }
-        } catch (MessagingException | UnsupportedEncodingException e) {
-            throw new CommunicationException(e);
-        }
+    // Construct a new instance of the mailer object
+    if (mailer == null) {
+      mailer = new Mailer(smtpAddress, defaultFromAddress, smtpPort, smtpUsername, smtpPassword);
     }
+  }
+
+  /**
+   * @param email - message to be sent. Will be plain text if no HTML is provided
+   * @throws CommunicationException - if email fails to be created and added to queue
+   */
+  @Override
+  public void sendMessage(final EmailCommunicationMessage email) throws CommunicationException {
+    String fromEmailAddress = this.defaultFromAddress;
+    String fromName = this.mailName;
+    String overrideEnvelopeFrom = null;
+
+    // If override "From" details specified, use them:
+    if (email.getOverrideFromAddress() != null && !email.getOverrideFromAddress().isEmpty()) {
+      fromEmailAddress = email.getOverrideFromAddress();
+    }
+    if (email.getOverrideFromName() != null && !email.getOverrideFromName().isEmpty()) {
+      fromName = email.getOverrideFromName();
+    }
+    if (email.getOverrideEnvelopeFrom() != null && !email.getOverrideEnvelopeFrom().isEmpty()) {
+      overrideEnvelopeFrom = email.getOverrideEnvelopeFrom();
+    }
+
+    try {
+      InternetAddress fromAddress = new InternetAddress(fromEmailAddress, fromName);
+      InternetAddress replyTo = null;
+      if (null != email.getReplyToAddress()) {
+        replyTo = new InternetAddress(email.getReplyToAddress(), email.getReplyToName());
+      }
+
+      if (email.getHTMLMessage() == null) {
+        mailer.sendPlainTextMail(new EmailCommonParameters(new String[] {email.getRecipientAddress()}, fromAddress,
+            overrideEnvelopeFrom, replyTo, email.getSubject()), email.getPlainTextMessage());
+      } else {
+        mailer.sendMultiPartMail(new EmailCommonParameters(new String[] {email.getRecipientAddress()}, fromAddress,
+                overrideEnvelopeFrom, replyTo, email.getSubject()), email.getPlainTextMessage(), email.getHTMLMessage(),
+            email.getAttachments());
+      }
+    } catch (MessagingException | UnsupportedEncodingException e) {
+      throw new CommunicationException(e);
+    }
+  }
 }

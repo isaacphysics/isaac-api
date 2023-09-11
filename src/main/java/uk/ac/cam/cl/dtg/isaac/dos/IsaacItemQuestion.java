@@ -13,54 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import java.util.List;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacItemQuestionValidator;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
-
-import java.util.List;
 
 /**
  * Content DO for IsaacItemQuestions.
- *
  */
 @DTOMapping(IsaacItemQuestionDTO.class)
 @JsonContentType("isaacItemQuestion")
 @ValidatesWith(IsaacItemQuestionValidator.class)
 public class IsaacItemQuestion extends IsaacQuestionBase {
 
-    private List<Item> items;
-    private Boolean randomiseItems;
+  private List<Item> items;
+  private Boolean randomiseItems;
 
-    public List<Item> getItems() {
-        return items;
-    }
+  public List<Item> getItems() {
+    return items;
+  }
 
-    public void setItems(final List<Item> items) {
-        this.items = items;
-    }
+  public void setItems(final List<Item> items) {
+    this.items = items;
+  }
 
-    /**
-     * Gets whether to randomiseItems.
-     *
-     * @return randomiseItems
-     */
-    public Boolean getRandomiseItems() {
-        return randomiseItems;
-    }
+  /**
+   * Gets whether to randomiseItems.
+   *
+   * @return randomiseItems
+   */
+  public Boolean getRandomiseItems() {
+    return randomiseItems;
+  }
 
-    /**
-     * Sets the randomiseItems.
-     *
-     * @param randomiseItems
-     *            the randomiseItems to set
-     */
-    public void setRandomiseItems(final Boolean randomiseItems) {
-        this.randomiseItems = randomiseItems;
-    }
+  /**
+   * Sets the randomiseItems.
+   *
+   * @param randomiseItems the randomiseItems to set
+   */
+  public void setRandomiseItems(final Boolean randomiseItems) {
+    this.randomiseItems = randomiseItems;
+  }
 
 }

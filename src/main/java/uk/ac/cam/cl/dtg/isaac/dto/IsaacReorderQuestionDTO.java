@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 
 /**
  * Content DTO for IsaacReorderQuestions.
- *
  */
 @JsonContentType("isaacReorderQuestion")
 public class IsaacReorderQuestionDTO extends IsaacItemQuestionDTO {

@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 /**
  * @author nr378
  */
 public class NoWildcardException extends InvalidGameboardException {
-    private static final long serialVersionUID = 8222475145102964489L;
+  private static final long serialVersionUID = 8222475145102964489L;
 
 }

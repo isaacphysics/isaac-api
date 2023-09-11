@@ -16,17 +16,18 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import jakarta.servlet.http.HttpServletRequest;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 /**
- *  Abstract class for handling logging events raised.
- *  @author Dan Underwood
+ * Abstract class for handling logging events raised.
+ *
+ * @author Dan Underwood
  */
 public abstract class LoggingEventHandler {
 
-    public abstract void handleEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
+  public abstract void handleEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType,
+                                   Object eventDetails);
 
-    public abstract void transferLogEventsToRegisteredUser(String oldUserId, String newUserId);
+  public abstract void transferLogEventsToRegisteredUser(String oldUserId, String newUserId);
 }

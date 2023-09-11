@@ -13,41 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
 import com.google.common.collect.Maps;
+import java.util.Map;
 import org.quartz.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Specialised class for capturing information needed to execute an SQL file on the database where segue is running.
  */
 public class SegueScheduledDatabaseScriptJob extends SegueScheduledJob {
-    private final String sqlFile;
-    private Map<String, Object> executionContext;
+  private final String sqlFile;
+  private Map<String, Object> executionContext;
 
-    private static final Logger log = LoggerFactory.getLogger(SegueScheduledDatabaseScriptJob.class);
+  private static final Logger log = LoggerFactory.getLogger(SegueScheduledDatabaseScriptJob.class);
 
-    public SegueScheduledDatabaseScriptJob(final String jobKey, final String jobGroupName, final String description,
-                                           final String cronString, final String sqlFilePath) {
-        super(jobKey, jobGroupName, description, cronString);
+  public SegueScheduledDatabaseScriptJob(final String jobKey, final String jobGroupName, final String description,
+                                         final String cronString, final String sqlFilePath) {
+    super(jobKey, jobGroupName, description, cronString);
 
-        this.sqlFile = sqlFilePath;
+    this.sqlFile = sqlFilePath;
 
-        executionContext = Maps.newHashMap();
-    }
+    executionContext = Maps.newHashMap();
+  }
 
-    @Override
-    public Map<String, Object> getExecutionContext() {
-        executionContext.put("SQLFile", sqlFile);
-        return executionContext;
-    }
+  @Override
+  public Map<String, Object> getExecutionContext() {
+    executionContext.put("SQLFile", sqlFile);
+    return executionContext;
+  }
 
-    @Override
-    public Job getExecutableTask() {
-        return new DatabaseScriptExecutionJob();
-    }
+  @Override
+  public Job getExecutableTask() {
+    return new DatabaseScriptExecutionJob();
+  }
 }

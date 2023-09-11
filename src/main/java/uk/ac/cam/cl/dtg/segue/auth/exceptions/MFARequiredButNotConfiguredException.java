@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
  * An exception which indicates that multi-factor authentication is required but
  * not configured for an account.
- * 
  */
 public class MFARequiredButNotConfiguredException extends Exception {
-    private static final long serialVersionUID = 2703137658697650020L;
+  private static final long serialVersionUID = 2703137658697650020L;
 
-    /**
-     * Creates a NoMFAAvailableException.
-     *
-     * @param message
-     *            - to accompany the exception.
-     */
-    public MFARequiredButNotConfiguredException(final String message) {
-        super(message);
-    }
+  /**
+   * Creates a NoMFAAvailableException.
+   *
+   * @param message - to accompany the exception.
+   */
+  public MFARequiredButNotConfiguredException(final String message) {
+    super(message);
+  }
 }

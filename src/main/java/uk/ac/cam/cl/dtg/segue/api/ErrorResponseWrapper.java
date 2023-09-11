@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api;
 
+import jakarta.ws.rs.core.Response;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
-import jakarta.ws.rs.core.Response;
-
 public class ErrorResponseWrapper extends Exception {
-    private static final long serialVersionUID = 776713551334466191L;
-    private final SegueErrorResponse response;
+  private static final long serialVersionUID = 776713551334466191L;
+  private final SegueErrorResponse response;
 
-    public ErrorResponseWrapper(final SegueErrorResponse response) {
-        this.response = response;
-    }
+  public ErrorResponseWrapper(final SegueErrorResponse response) {
+    this.response = response;
+  }
 
-    public Response toResponse() {
-        return response.toResponse();
-    }
+  public Response toResponse() {
+    return response.toResponse();
+  }
 }

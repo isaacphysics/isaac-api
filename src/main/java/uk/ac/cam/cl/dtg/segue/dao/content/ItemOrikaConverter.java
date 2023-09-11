@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import ma.glasnost.orika.MappingContext;
@@ -24,47 +25,45 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsItemDTO;
 
 /**
  * Converts Item objects to and from their DTO equivalents.
- *
  */
 public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverter<Item, ItemDTO> {
 
-    /**
-     * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
-     *
-     */
-    public ItemOrikaConverter() {
+  /**
+   * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
+   */
+  public ItemOrikaConverter() {
 
+  }
+
+  @Override
+  public ItemDTO convertTo(final Item source, final Type<ItemDTO> destinationType, final MappingContext context) {
+    if (null == source) {
+      return null;
     }
 
-    @Override
-    public ItemDTO convertTo(final Item source, final Type<ItemDTO> destinationType, final MappingContext context) {
-        if (null == source) {
-            return null;
-        }
+    if (source instanceof ParsonsItem) {
+      return super.mapperFacade.map(source, ParsonsItemDTO.class);
+    } else {
+      // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
+      ItemDTO itemDTO = new ItemDTO();
+      super.mapperFacade.map(source, itemDTO);
+      return itemDTO;
+    }
+  }
 
-        if (source instanceof ParsonsItem) {
-            return super.mapperFacade.map(source, ParsonsItemDTO.class);
-        } else {
-            // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
-            ItemDTO itemDTO = new ItemDTO();
-            super.mapperFacade.map(source, itemDTO);
-            return itemDTO;
-        }
+  @Override
+  public Item convertFrom(final ItemDTO source, final Type<Item> destinationType, final MappingContext context) {
+    if (null == source) {
+      return null;
     }
 
-    @Override
-    public Item convertFrom(final ItemDTO source, final Type<Item> destinationType, final MappingContext context) {
-        if (null == source) {
-            return null;
-        }
-
-        if (source instanceof ParsonsItemDTO) {
-            return super.mapperFacade.map(source, ParsonsItem.class);
-        } else {
-            // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
-            Item item = new Item();
-            super.mapperFacade.map(source, item);
-            return item;
-        }
+    if (source instanceof ParsonsItemDTO) {
+      return super.mapperFacade.map(source, ParsonsItem.class);
+    } else {
+      // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
+      Item item = new Item();
+      super.mapperFacade.map(source, item);
+      return item;
     }
+  }
 }

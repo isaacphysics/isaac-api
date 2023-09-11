@@ -10,10 +10,10 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
  */
 public class EventIsCancelledException extends Exception {
 
-    /**
-     * @param message the message explaining the errors.
-     */
-    public EventIsCancelledException(final String message) {
-        super(message);
-    }
+  /**
+   * @param message the message explaining the errors.
+   */
+  public EventIsCancelledException(final String message) {
+    super(message);
+  }
 }

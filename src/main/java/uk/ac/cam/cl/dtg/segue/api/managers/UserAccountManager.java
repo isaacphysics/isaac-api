@@ -13,7 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.api.managers;
+
+import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_USER;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LAST_SEEN_UPDATE_FREQUENCY_MINUTES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LINK_ACCOUNT_PARAM_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOGIN_2FA_REQUIRED_MESSAGE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.RESTRICTED_SIGNUP_EMAIL_REGEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_DEFAULT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
@@ -21,6 +37,24 @@ import com.google.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.URI;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.EnumUtils;
@@ -82,2037 +116,1872 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.io.IOException;
-import java.net.URI;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
 /**
  * This class is responsible for managing all user data and orchestration of calls to a user Authentication Manager for
  * dealing with sessions and passwords.
  */
 public class UserAccountManager implements IUserAccountManager {
-    private static final Logger log = LoggerFactory.getLogger(UserAccountManager.class);
+  private static final Logger log = LoggerFactory.getLogger(UserAccountManager.class);
 
-    private final IUserDataManager database;
-    private final QuestionManager questionAttemptDb;
-    private final ILogManager logManager;
-    private final MapperFacade dtoMapper;
-    private final EmailManager emailManager;
+  private final IUserDataManager database;
+  private final QuestionManager questionAttemptDb;
+  private final ILogManager logManager;
+  private final MapperFacade dtoMapper;
+  private final EmailManager emailManager;
 
-    private final IAnonymousUserDataManager temporaryUserCache;
+  private final IAnonymousUserDataManager temporaryUserCache;
 
-    private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
-    private final UserAuthenticationManager userAuthenticationManager;
-    private final PropertiesLoader properties;
+  private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
+  private final UserAuthenticationManager userAuthenticationManager;
+  private final PropertiesLoader properties;
 
-    private final ISecondFactorAuthenticator secondFactorManager;
+  private final ISecondFactorAuthenticator secondFactorManager;
 
-    private final AbstractUserPreferenceManager userPreferenceManager;
+  private final AbstractUserPreferenceManager userPreferenceManager;
 
-    private final Pattern restrictedSignupEmailRegex;
-    private static final int USER_NAME_MAX_LENGTH = 255;
-    private static final Pattern USER_NAME_PERMITTED_CHARS_REGEX = Pattern.compile("^[\\p{L}\\d_\\-' ]+$", Pattern.CANON_EQ);
-    private static final Pattern EMAIL_PERMITTED_CHARS_REGEX = Pattern.compile("^[a-zA-Z0-9!#$%&'+\\-=?^_`.{|}~@]+$");
-    private static final Pattern EMAIL_CONSECUTIVE_FULL_STOP_REGEX = Pattern.compile("\\.\\.");
+  private final Pattern restrictedSignupEmailRegex;
+  private static final int USER_NAME_MAX_LENGTH = 255;
+  private static final Pattern USER_NAME_PERMITTED_CHARS_REGEX =
+      Pattern.compile("^[\\p{L}\\d_\\-' ]+$", Pattern.CANON_EQ);
+  private static final Pattern EMAIL_PERMITTED_CHARS_REGEX = Pattern.compile("^[a-zA-Z0-9!#$%&'+\\-=?^_`.{|}~@]+$");
+  private static final Pattern EMAIL_CONSECUTIVE_FULL_STOP_REGEX = Pattern.compile("\\.\\.");
 
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+  private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
-    /**
-     * Create an instance of the user manager class.
-     *  @param database
-     *            - an IUserDataManager that will support persistence.
-     * @param questionDb
-     *            - allows this class to instruct the questionDB to merge an anonymous user with a registered user.
-     * @param properties
-     *            - A property loader
-     * @param providersToRegister
-     *            - A map of known authentication providers.
-     * @param dtoMapper
-     *            - the preconfigured DO to DTO object mapper for user objects.
-     * @param emailQueue
-     *            - the preconfigured communicator manager for sending e-mails.
-     * @param temporaryUserCache
-     *            - temporary user cache for anonymous users
-     * @param logManager
-     *            - so that we can log events for users.
-     * @param userAuthenticationManager
-     *            - for managing sessions, passwords and third-party provider links
-     * @param secondFactorManager
-     *            - for configuring 2FA
-     * @param userPreferenceManager
-     *            - Allows user preferences to be managed.
-     */
-    @Inject
-    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final PropertiesLoader properties,
-                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
-                              final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
-                              final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
-                              final ISecondFactorAuthenticator secondFactorManager,
-                              final AbstractUserPreferenceManager userPreferenceManager) {
+  /**
+   * Create an instance of the user manager class.
+   *
+   * @param database                  - an IUserDataManager that will support persistence.
+   * @param questionDb                - allows this class to instruct the questionDB to merge an anonymous user with a registered user.
+   * @param properties                - A property loader
+   * @param providersToRegister       - A map of known authentication providers.
+   * @param dtoMapper                 - the preconfigured DO to DTO object mapper for user objects.
+   * @param emailQueue                - the preconfigured communicator manager for sending e-mails.
+   * @param temporaryUserCache        - temporary user cache for anonymous users
+   * @param logManager                - so that we can log events for users.
+   * @param userAuthenticationManager - for managing sessions, passwords and third-party provider links
+   * @param secondFactorManager       - for configuring 2FA
+   * @param userPreferenceManager     - Allows user preferences to be managed.
+   */
+  @Inject
+  public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
+                            final PropertiesLoader properties,
+                            final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+                            final MapperFacade dtoMapper,
+                            final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
+                            final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
+                            final ISecondFactorAuthenticator secondFactorManager,
+                            final AbstractUserPreferenceManager userPreferenceManager) {
 
-        Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-        Validate.notNull(properties.getProperty(HOST_NAME));
+    Validate.notNull(properties.getProperty(HMAC_SALT));
+    Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+    Validate.notNull(properties.getProperty(HOST_NAME));
 
-        this.properties = properties;
+    this.properties = properties;
 
-        this.database = database;
-        this.questionAttemptDb = questionDb;
-        this.temporaryUserCache = temporaryUserCache;
+    this.database = database;
+    this.questionAttemptDb = questionDb;
+    this.temporaryUserCache = temporaryUserCache;
 
-        this.logManager = logManager;
+    this.logManager = logManager;
 
-        this.registeredAuthProviders = providersToRegister;
-        this.dtoMapper = dtoMapper;
+    this.registeredAuthProviders = providersToRegister;
+    this.dtoMapper = dtoMapper;
 
-        this.emailManager = emailQueue;
-        this.userAuthenticationManager = userAuthenticationManager;
-        this.secondFactorManager = secondFactorManager;
-        this.userPreferenceManager = userPreferenceManager;
+    this.emailManager = emailQueue;
+    this.userAuthenticationManager = userAuthenticationManager;
+    this.secondFactorManager = secondFactorManager;
+    this.userPreferenceManager = userPreferenceManager;
 
-        String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
-        if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
-            this.restrictedSignupEmailRegex = null;
-        } else {
-            this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex);
-        }
+    String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
+    if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
+      this.restrictedSignupEmailRegex = null;
+    } else {
+      this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex);
+    }
+  }
+
+  /**
+   * This method will start the authentication process and ultimately provide an url for the client to redirect the
+   * user to. This url will be for a 3rd party authenticator who will use the callback method provided after they have
+   * authenticated.
+   * <p>
+   * Users who are already logged will be returned their UserDTO without going through the authentication
+   * process.
+   *
+   * @param request  - http request that we can attach the session to and save redirect url in.
+   * @param provider - the provider the user wishes to authenticate with.
+   * @return a URI for redirection
+   * @throws IOException                            -
+   * @throws AuthenticationProviderMappingException - as per exception description.
+   */
+  public URI authenticate(final HttpServletRequest request, final String provider)
+      throws IOException, AuthenticationProviderMappingException {
+    return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+  }
+
+  /**
+   * This method will start the authentication process for linking a user to a 3rd party provider. It will ultimately
+   * provide an url for the client to redirect the user to. This url will be for a 3rd party authenticator who will use
+   * the callback method provided after they have authenticated.
+   * <p>
+   * Users must already be logged in to use this method otherwise a 401 will be returned.
+   *
+   * @param request  - http request that we can attach the session to.
+   * @param provider - the provider the user wishes to authenticate with.
+   * @return A redirection URI - also this endpoint ensures that the request has a session attribute on so we know
+   * that this is a link request not a new user.
+   * @throws IOException                            -
+   * @throws AuthenticationProviderMappingException - as per exception description.
+   */
+  public URI initiateLinkAccountToUserFlow(final HttpServletRequest request, final String provider)
+      throws IOException, AuthenticationProviderMappingException {
+    // record our intention to link an account.
+    request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
+
+    return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+  }
+
+  /**
+   * Authenticate Callback will receive the authentication information from the different provider types. (e.g. OAuth
+   * 2.0 (IOAuth2Authenticator) or bespoke)
+   * <p>
+   * This method will either register a new user and attach the linkedAccount or locate the existing account of the
+   * user and create a session for that.
+   *
+   * @param request  - http request from the user - should contain url encoded token details.
+   * @param response to store the session in our own segue cookie.
+   * @param provider - the provider who has just authenticated the user.
+   * @return Response containing the user object. Alternatively a SegueErrorResponse could be returned.
+   * @throws AuthenticationProviderMappingException - if we cannot locate an appropriate authenticator.
+   * @throws SegueDatabaseException                 - if there is a local database error.
+   * @throws IOException                            - Problem reading something
+   * @throws NoUserException                        - If the user doesn't exist with the provider.
+   * @throws AuthenticatorSecurityException         - If there is a security probably with the authenticator.
+   * @throws CrossSiteRequestForgeryException       - as per exception description.
+   * @throws CodeExchangeException                  - as per exception description.
+   * @throws AuthenticationCodeException            - as per exception description.
+   */
+  public RegisteredUserDTO authenticateCallback(final HttpServletRequest request,
+                                                final HttpServletResponse response, final String provider)
+      throws AuthenticationProviderMappingException,
+      AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException,
+      AuthenticationCodeException, CodeExchangeException, CrossSiteRequestForgeryException {
+    IAuthenticator authenticator = this.userAuthenticationManager.mapToProvider(provider);
+    // get the auth provider user data.
+    UserFromAuthProvider providerUserDO = this.userAuthenticationManager.getThirdPartyUserInformation(request,
+        provider);
+
+    // if the UserFromAuthProvider exists then this is a login request so process it.
+    RegisteredUser userFromLinkedAccount = this.userAuthenticationManager.getSegueUserFromLinkedAccount(
+        authenticator.getAuthenticationProvider(), providerUserDO.getProviderUserId());
+    if (userFromLinkedAccount != null) {
+      return this.logUserIn(request, response, userFromLinkedAccount);
     }
 
-    /**
-     * This method will start the authentication process and ultimately provide an url for the client to redirect the
-     * user to. This url will be for a 3rd party authenticator who will use the callback method provided after they have
-     * authenticated.
-     * <p>
-     * Users who are already logged will be returned their UserDTO without going through the authentication
-     * process.
-     * 
-     * @param request
-     *            - http request that we can attach the session to and save redirect url in.
-     * @param provider
-     *            - the provider the user wishes to authenticate with.
-     * @return a URI for redirection
-     * @throws IOException - 
-     * @throws AuthenticationProviderMappingException - as per exception description.
-     */
-    public URI authenticate(final HttpServletRequest request, final String provider) 
-            throws IOException, AuthenticationProviderMappingException {
-        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+    RegisteredUser currentUser = getCurrentRegisteredUserDO(request);
+    // if the user is currently logged in and this is a request for a linked account, then create the new link.
+    if (null != currentUser) {
+      Boolean intentionToLinkRegistered = (Boolean) request.getSession().getAttribute(LINK_ACCOUNT_PARAM_NAME);
+      if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
+        throw new SegueDatabaseException("User is already authenticated - "
+            + "expected request to link accounts but none was found.");
+      }
+
+      List<AuthenticationProvider> usersProviders = this.database.getAuthenticationProvidersByUser(currentUser);
+      if (!usersProviders.contains(authenticator.getAuthenticationProvider())) {
+        // create linked account
+        this.userAuthenticationManager.linkProviderToExistingAccount(currentUser,
+            authenticator.getAuthenticationProvider(), providerUserDO);
+        // clear link accounts intention until next time
+        request.removeAttribute(LINK_ACCOUNT_PARAM_NAME);
+      }
+
+      return this.convertUserDOToUserDTO(getCurrentRegisteredUserDO(request));
+    } else {
+      if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty()
+          && this.findUserByEmail(providerUserDO.getEmail()) != null) {
+        log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
+            + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
+        throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
+            + " You may have registered using a different provider, or a username and password.");
+      }
+      // this must be a registration request
+      RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
+          authenticator.getAuthenticationProvider(), providerUserDO);
+      RegisteredUserDTO segueUserDTO = this.logUserIn(request, response, segueUserDO);
+      segueUserDTO.setFirstLogin(true);
+
+      try {
+        ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider",
+            capitalizeFully(provider));
+
+        emailManager.sendTemplatedEmailToUser(segueUserDTO,
+            emailManager.getEmailTemplateDTO("email-template-registration-confirmation-federated"),
+            emailTokens, EmailType.SYSTEM);
+
+      } catch (ContentManagerException e) {
+        log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+      }
+
+      return segueUserDTO;
+    }
+  }
+
+  /**
+   * This method will attempt to authenticate the user using the provided credentials and if successful will log the
+   * user in and create a session.
+   *
+   * @param request  - http request that we can attach the session to.
+   * @param response to store the session in our own segue cookie.
+   * @param provider - the provider the user wishes to authenticate with.
+   * @param email    - the email address of the account holder.
+   * @param password - the plain text password.
+   * @return A response containing the UserDTO object or a SegueErrorResponse.
+   * @throws AuthenticationProviderMappingException    - if we cannot find an authenticator
+   * @throws IncorrectCredentialsProvidedException     - if the password is incorrect
+   * @throws NoCredentialsAvailableException           - If the account exists but does not have a local password
+   * @throws AdditionalAuthenticationRequiredException - If the account has 2FA enabled and we need to initiate that flow
+   * @throws MFARequiredButNotConfiguredException      - If the account type requires 2FA to be configured but none is enabled for the account
+   * @throws SegueDatabaseException                    - if there is a problem with the database.
+   */
+  public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
+                                                             final HttpServletResponse response, final String provider,
+                                                             final String email, final String password)
+      throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
+      NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException,
+      MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException {
+    Validate.notBlank(email);
+    Validate.notBlank(password);
+
+    // get the current user based on their session id information.
+    RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
+    if (null != currentUser) {
+      log.debug(String.format("UserId (%s) already has a valid session - not bothering to reauthenticate",
+          currentUser.getId()));
+      return currentUser;
     }
 
-    /**
-     * This method will start the authentication process for linking a user to a 3rd party provider. It will ultimately
-     * provide an url for the client to redirect the user to. This url will be for a 3rd party authenticator who will use
-     * the callback method provided after they have authenticated.
-     * <p>
-     * Users must already be logged in to use this method otherwise a 401 will be returned.
-     * 
-     * @param request
-     *            - http request that we can attach the session to.
-     * @param provider
-     *            - the provider the user wishes to authenticate with.
-     * @return A redirection URI - also this endpoint ensures that the request has a session attribute on so we know
-     *         that this is a link request not a new user.
-     * @throws IOException - 
-     * @throws AuthenticationProviderMappingException - as per exception description.
-     */
-    public URI initiateLinkAccountToUserFlow(final HttpServletRequest request, final String provider) 
-            throws IOException, AuthenticationProviderMappingException {
-        // record our intention to link an account.
-        request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
+    RegisteredUser user = this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
+    log.debug(String.format("UserId (%s) authenticated with credentials", user.getId()));
 
-        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
+    // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
+    if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
+      // we can't just log them in we have to set a caveat cookie
+      this.partialLogInForMFA(request, response, user);
+      throw new AdditionalAuthenticationRequiredException();
+    } else if (Role.ADMIN.equals(user.getRole())) {
+      // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
+      throw new MFARequiredButNotConfiguredException(LOGIN_2FA_REQUIRED_MESSAGE);
+    } else {
+      return this.logUserIn(request, response, user);
     }
+  }
 
-    /**
-     * Authenticate Callback will receive the authentication information from the different provider types. (e.g. OAuth
-     * 2.0 (IOAuth2Authenticator) or bespoke)
-     * <p>
-     * This method will either register a new user and attach the linkedAccount or locate the existing account of the
-     * user and create a session for that.
-     * 
-     * @param request
-     *            - http request from the user - should contain url encoded token details.
-     * @param response
-     *            to store the session in our own segue cookie.
-     * @param provider
-     *            - the provider who has just authenticated the user.
-     * @return Response containing the user object. Alternatively a SegueErrorResponse could be returned.
-     * @throws AuthenticationProviderMappingException
-     *             - if we cannot locate an appropriate authenticator.
-     * @throws SegueDatabaseException
-     *             - if there is a local database error.
-     * @throws IOException
-     *             - Problem reading something
-     * @throws NoUserException
-     *             - If the user doesn't exist with the provider.
-     * @throws AuthenticatorSecurityException
-     *             - If there is a security probably with the authenticator.
-     * @throws CrossSiteRequestForgeryException
-     *             - as per exception description.
-     * @throws CodeExchangeException
-     *             - as per exception description.
-     * @throws AuthenticationCodeException
-     *             - as per exception description.
-     */
-    public RegisteredUserDTO authenticateCallback(final HttpServletRequest request,
-            final HttpServletResponse response, final String provider)
-            throws AuthenticationProviderMappingException,
-            AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException,
-            AuthenticationCodeException, CodeExchangeException, CrossSiteRequestForgeryException {
-        IAuthenticator authenticator = this.userAuthenticationManager.mapToProvider(provider);
-        // get the auth provider user data.
-        UserFromAuthProvider providerUserDO = this.userAuthenticationManager.getThirdPartyUserInformation(request,
-                provider);
+  /**
+   * Create a user object. This method allows new user objects to be created.
+   *
+   * @param request                - so that we can identify the user
+   * @param response               to tell the browser to store the session in our own segue cookie.
+   * @param userObjectFromClient   - the new user object from the clients' perspective.
+   * @param newPassword            - the new password for the user.
+   * @param userPreferenceObject   - the new preferences for this user
+   * @param registeredUserContexts - a List of User Contexts (stage, exam board)
+   * @return the updated user object.
+   */
+  public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
+                                           final RegisteredUser userObjectFromClient, final String newPassword,
+                                           final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                           final List<UserContext> registeredUserContexts)
+      throws InvalidKeySpecException, NoSuchAlgorithmException {
+    try {
+      RegisteredUserDTO savedUser = this.createUserObjectAndSession(request, response,
+          userObjectFromClient, newPassword, registeredUserContexts);
 
-        // if the UserFromAuthProvider exists then this is a login request so process it.
-        RegisteredUser userFromLinkedAccount = this.userAuthenticationManager.getSegueUserFromLinkedAccount(
-                authenticator.getAuthenticationProvider(), providerUserDO.getProviderUserId());
-        if (userFromLinkedAccount != null) {
-            return this.logUserIn(request, response, userFromLinkedAccount);
-        }
+      if (userPreferenceObject != null) {
+        List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
+        userPreferenceManager.saveUserPreferences(userPreferences);
+      }
 
-        RegisteredUser currentUser = getCurrentRegisteredUserDO(request);
-        // if the user is currently logged in and this is a request for a linked account, then create the new link.
-        if (null != currentUser) {
-            Boolean intentionToLinkRegistered = (Boolean) request.getSession().getAttribute(LINK_ACCOUNT_PARAM_NAME);
-            if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
-                throw new SegueDatabaseException("User is already authenticated - "
-                        + "expected request to link accounts but none was found.");
-            }
-            
-            List<AuthenticationProvider> usersProviders = this.database.getAuthenticationProvidersByUser(currentUser);
-            if (!usersProviders.contains(authenticator.getAuthenticationProvider())) {
-                // create linked account
-                this.userAuthenticationManager.linkProviderToExistingAccount(currentUser,
-                        authenticator.getAuthenticationProvider(), providerUserDO);
-                // clear link accounts intention until next time
-                request.removeAttribute(LINK_ACCOUNT_PARAM_NAME);
-            }
-
-            return this.convertUserDOToUserDTO(getCurrentRegisteredUserDO(request));
-        } else {
-            if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty() && this.findUserByEmail(providerUserDO.getEmail()) != null) {
-                log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
-                        + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
-                throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
-                + " You may have registered using a different provider, or a username and password.");
-            }
-            // this must be a registration request
-            RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
-                    authenticator.getAuthenticationProvider(), providerUserDO);
-            RegisteredUserDTO segueUserDTO = this.logUserIn(request, response, segueUserDO);
-            segueUserDTO.setFirstLogin(true);
-            
-            try {
-                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider",
-                        capitalizeFully(provider));
-
-                emailManager.sendTemplatedEmailToUser(segueUserDTO,
-                        emailManager.getEmailTemplateDTO("email-template-registration-confirmation-federated"),
-                        emailTokens, EmailType.SYSTEM);
-
-            } catch (ContentManagerException e) {
-                log.error("Registration email could not be sent due to content issue: " + e.getMessage());
-            }
-            
-            return segueUserDTO;
-        }
+      return Response.ok(savedUser).build();
+    } catch (InvalidPasswordException e) {
+      log.warn("Invalid password exception occurred during registration!");
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+    } catch (FailedToHashPasswordException e) {
+      log.error("Failed to hash password during user registration!");
+      return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+          "Unable to set a password.").toResponse();
+    } catch (MissingRequiredFieldException e) {
+      log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You are missing a required field. "
+          + "Please make sure you have specified all mandatory fields in your response.").toResponse();
+    } catch (DuplicateAccountException e) {
+      log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+    } catch (SegueDatabaseException e) {
+      String errorMsg = "Unable to set a password, due to an internal database error.";
+      log.error(errorMsg, e);
+      return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+    } catch (EmailMustBeVerifiedException e) {
+      log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST,
+          "You cannot register with an Isaac email address.").toResponse();
+    } catch (InvalidNameException e) {
+      log.warn("Invalid name provided during registration.");
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
     }
+  }
 
-    /**
-     * This method will attempt to authenticate the user using the provided credentials and if successful will log the
-     * user in and create a session.
-     * 
-     * @param request
-     *            - http request that we can attach the session to.
-     * @param response
-     *            to store the session in our own segue cookie.
-     * @param provider
-     *            - the provider the user wishes to authenticate with.
-     * @param email
-     *            - the email address of the account holder.
-     * @param password
-     *            - the plain text password.
-     * @return A response containing the UserDTO object or a SegueErrorResponse.
-     * @throws AuthenticationProviderMappingException
-     *             - if we cannot find an authenticator
-     * @throws IncorrectCredentialsProvidedException
-     *             - if the password is incorrect
-     * @throws NoCredentialsAvailableException
-     *             - If the account exists but does not have a local password
-     * @throws AdditionalAuthenticationRequiredException
-     *             - If the account has 2FA enabled and we need to initiate that flow
-     * @throws MFARequiredButNotConfiguredException
-     *             - If the account type requires 2FA to be configured but none is enabled for the account
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
-            final HttpServletResponse response, final String provider, final String email, final String password)
-            throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException,
-            MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException {
-        Validate.notBlank(email);
-        Validate.notBlank(password);
 
-        // get the current user based on their session id information.
-        RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
-        if (null != currentUser) {
-            log.debug(String.format("UserId (%s) already has a valid session - not bothering to reauthenticate",
-                    currentUser.getId()));
-            return currentUser;
-        }
-
-        RegisteredUser user = this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
-        log.debug(String.format("UserId (%s) authenticated with credentials", user.getId()));
-
-        // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
-        if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
-            // we can't just log them in we have to set a caveat cookie
-            this.partialLogInForMFA(request, response, user);
-            throw new AdditionalAuthenticationRequiredException();
-        } else if (Role.ADMIN.equals(user.getRole())) {
-            // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
-            throw new MFARequiredButNotConfiguredException(LOGIN_2FA_REQUIRED_MESSAGE);
-        } else {
-            return this.logUserIn(request, response, user);
-        }
+  /**
+   * Convert user-provided preference maps to UserPreference lists.
+   *
+   * @param userPreferenceObject - the user-provided preference object
+   * @param userId               - the userId of the user
+   * @return whether the preference is valid
+   */
+  private List<UserPreference> userPreferenceObjectToList(final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                                          final long userId) {
+    List<UserPreference> userPreferences = com.google.common.collect.Lists.newArrayList();
+    if (null == userPreferenceObject) {
+      return userPreferences;
     }
+    // FIXME: This entire method is horrible, but required to sanitise what is stored in the database . . .
+    for (String preferenceType : userPreferenceObject.keySet()) {
 
-    /**
-     * Create a user object. This method allows new user objects to be created.
-     *
-     * @param request
-     *            - so that we can identify the user
-     * @param response
-     *            to tell the browser to store the session in our own segue cookie.
-     * @param userObjectFromClient
-     *            - the new user object from the clients' perspective.
-     * @param newPassword
-     *            - the new password for the user.
-     * @param userPreferenceObject
-     * 			  - the new preferences for this user
-     * @param registeredUserContexts
-     * 			  - a List of User Contexts (stage, exam board)
-     * @return the updated user object.
-     */
-    public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-                                              final RegisteredUser userObjectFromClient, final String newPassword,
-                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                             final List<UserContext> registeredUserContexts)
-            throws InvalidKeySpecException, NoSuchAlgorithmException {
-        try {
-            RegisteredUserDTO savedUser = this.createUserObjectAndSession(request, response,
-                    userObjectFromClient, newPassword, registeredUserContexts);
+      // Check if the given preference type is one we support:
+      if (!EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class, preferenceType)
+          && !EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)) {
+        log.warn("Unknown user preference type '" + preferenceType + "' provided. Skipping.");
+        continue;
+      }
 
-            if (userPreferenceObject != null) {
-                List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
-                userPreferenceManager.saveUserPreferences(userPreferences);
-            }
+      if (EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)
+          && SegueUserPreferences.EMAIL_PREFERENCE.equals(SegueUserPreferences.valueOf(preferenceType))) {
+        // This is an email preference, which is treated specially:
+        for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
+          if (!EnumUtils.isValidEnum(EmailType.class, preferenceName)
+              || !EmailType.valueOf(preferenceName).isValidEmailPreference()) {
+            log.warn("Invalid email preference name '" + preferenceName + "' provided for '"
+                + preferenceType + "'! Skipping.");
+            continue;
+          }
+          boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
+          userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
+        }
+      } else if (EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class,
+          preferenceType)) {
+        // Isaac user preference names are configured in the config files:
+        String acceptedPreferenceNamesProperty = properties.getProperty(preferenceType);
+        if (null == acceptedPreferenceNamesProperty) {
+          log.error("Failed to find allowed user preferences names for '" + preferenceType
+              + "'! Has it been configured?");
+          acceptedPreferenceNamesProperty = "";
+        }
+        List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
+        for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
+          if (!acceptedPreferenceNames.contains(preferenceName)) {
+            log.warn("Invalid user preference name '" + preferenceName + "' provided for type '"
+                + preferenceType + "'! Skipping.");
+            continue;
+          }
+          boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
+          userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
+        }
+      } else {
+        log.warn("Unexpected user preference type '" + preferenceType + "' provided. Skipping.");
+      }
+    }
+    return userPreferences;
+  }
 
-            return Response.ok(savedUser).build();
-        } catch (InvalidPasswordException e) {
-            log.warn("Invalid password exception occurred during registration!");
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (FailedToHashPasswordException e) {
-            log.error("Failed to hash password during user registration!");
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
-                    "Unable to set a password.").toResponse();
-        } catch (MissingRequiredFieldException e) {
-            log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You are missing a required field. "
-                    + "Please make sure you have specified all mandatory fields in your response.").toResponse();
-        } catch (DuplicateAccountException e) {
-            log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (SegueDatabaseException e) {
-            String errorMsg = "Unable to set a password, due to an internal database error.";
-            log.error(errorMsg, e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (EmailMustBeVerifiedException e) {
-            log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
+  /**
+   * Update a user object.
+   * <p>
+   * This method does all of the necessary security checks to determine who is allowed to edit what.
+   *
+   * @param request                - so that we can identify the user
+   * @param response               - so we can modify the session
+   * @param userObjectFromClient   - the new user object from the clients' perspective.
+   * @param passwordCurrent        - the current password, used if the password has changed
+   * @param newPassword            - the new password, used if the password has changed
+   * @param userPreferenceObject   - the preferences for this user
+   * @param registeredUserContexts - a List of User Contexts (stage, exam board)
+   * @return the updated user object.
+   * @throws IncorrectCredentialsProvidedException - if the password is incorrect
+   * @throws NoCredentialsAvailableException       - if the account exists but does not have a local password
+   * @throws InvalidKeySpecException               - if the preconfigured key spec is invalid
+   * @throws NoSuchAlgorithmException              - if the configured algorithm is not valid
+   */
+  public Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
+                                   final RegisteredUser userObjectFromClient, final String passwordCurrent,
+                                   final String newPassword,
+                                   final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                   final List<UserContext> registeredUserContexts)
+      throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
+      NoSuchAlgorithmException {
+    Validate.notNull(userObjectFromClient.getId());
+
+    // this is an update as the user has an id
+    // security checks
+    try {
+      // check that the current user has permissions to change this user's details.
+      RegisteredUserDTO currentlyLoggedInUser = this.getCurrentRegisteredUser(request);
+      if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
+          && !checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))) {
+        return new SegueErrorResponse(Response.Status.FORBIDDEN,
+            "You cannot change someone else's user settings.").toResponse();
+      }
+
+      // check if they are trying to change a password
+      if (newPassword != null && !newPassword.isEmpty()) {
+        // only admins and the account owner can change passwords
+        if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
+            && !checkUserRole(currentlyLoggedInUser, Collections.singletonList(Role.ADMIN))) {
+          return new SegueErrorResponse(Response.Status.FORBIDDEN,
+              "You cannot change someone else's password.").toResponse();
+        }
+
+        // Password change requires auth check unless admin is modifying non-admin user account
+        if (!(checkUserRole(currentlyLoggedInUser, Collections.singletonList(Role.ADMIN))
+            && userObjectFromClient.getRole() != Role.ADMIN)) {
+          // authenticate the user to check they are allowed to change the password
+
+          if (null == passwordCurrent) {
             return new SegueErrorResponse(Response.Status.BAD_REQUEST,
-                    "You cannot register with an Isaac email address.").toResponse();
-        } catch (InvalidNameException e) {
-            log.warn("Invalid name provided during registration.");
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+                "You must provide your current password to change your password!").toResponse();
+          }
+
+          this.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
+              userObjectFromClient.getEmail(), passwordCurrent);
         }
-    }
+      }
 
+      // check that any changes to protected fields being made are allowed.
+      RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient.getId());
 
-    /**
-     * Convert user-provided preference maps to UserPreference lists.
-     *
-     * @param userPreferenceObject
-     *            - the user-provided preference object
-     * @param userId
-     *            - the userId of the user
-     * @return whether the preference is valid
-     */
-    private List<UserPreference> userPreferenceObjectToList(final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                                            final long userId) {
-        List<UserPreference> userPreferences = com.google.common.collect.Lists.newArrayList();
-        if (null == userPreferenceObject) {
-            return userPreferences;
-        }
-        // FIXME: This entire method is horrible, but required to sanitise what is stored in the database . . .
-        for (String preferenceType: userPreferenceObject.keySet()) {
+      // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
+      // role modification)
+      if (null == userObjectFromClient.getRole() || !existingUserFromDb.getRole()
+          .equals(userObjectFromClient.getRole())) {
+        return new SegueErrorResponse(Response.Status.FORBIDDEN,
+            "You cannot change a users role.").toResponse();
+      }
 
-            // Check if the given preference type is one we support:
-            if (!EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class, preferenceType)
-                    && !EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)) {
-                log.warn("Unknown user preference type '" + preferenceType + "' provided. Skipping.");
-                continue;
-            }
+      if (registeredUserContexts != null) {
+        // We always set the last confirmed date from code rather than trusting the client
+        userObjectFromClient.setRegisteredContexts(registeredUserContexts);
+        userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
+      } else {
+        // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
+        // server that sets the time that they last confirmed their user context values.
+        // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
+        userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
+        userObjectFromClient.setRegisteredContextsLastConfirmed(
+            existingUserFromDb.getRegisteredContextsLastConfirmed());
+      }
 
-            if (EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)
-                    && SegueUserPreferences.EMAIL_PREFERENCE.equals(SegueUserPreferences.valueOf(preferenceType))) {
-                // This is an email preference, which is treated specially:
-                for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
-                    if (!EnumUtils.isValidEnum(EmailType.class, preferenceName)
-                            || !EmailType.valueOf(preferenceName).isValidEmailPreference()) {
-                        log.warn("Invalid email preference name '" + preferenceName + "' provided for '"
-                                + preferenceType + "'! Skipping.");
-                        continue;
-                    }
-                    boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
-                    userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
-                }
-            } else if (EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class,
-                    preferenceType)) {
-                // Isaac user preference names are configured in the config files:
-                String acceptedPreferenceNamesProperty = properties.getProperty(preferenceType);
-                if (null == acceptedPreferenceNamesProperty) {
-                    log.error("Failed to find allowed user preferences names for '" + preferenceType
-                            + "'! Has it been configured?");
-                    acceptedPreferenceNamesProperty = "";
-                }
-                List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
-                for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
-                    if (!acceptedPreferenceNames.contains(preferenceName)) {
-                        log.warn("Invalid user preference name '" + preferenceName + "' provided for type '"
-                                + preferenceType + "'! Skipping.");
-                        continue;
-                    }
-                    boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
-                    userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
-                }
-            } else {
-                log.warn("Unexpected user preference type '" + preferenceType + "' provided. Skipping.");
-            }
-        }
-        return userPreferences;
-    }
+      if (userObjectFromClient.getTeacherPending() == null) {
+        userObjectFromClient.setTeacherPending(existingUserFromDb.getTeacherPending());
+      }
 
-    /**
-     * Update a user object.
-     * <p>
-     * This method does all of the necessary security checks to determine who is allowed to edit what.
-     *
-     * @param request              - so that we can identify the user
-     * @param response             - so we can modify the session
-     * @param userObjectFromClient - the new user object from the clients' perspective.
-     * @param passwordCurrent      - the current password, used if the password has changed
-     * @param newPassword          - the new password, used if the password has changed
-     * @param userPreferenceObject - the preferences for this user
-     * @param registeredUserContexts - a List of User Contexts (stage, exam board)
-     * @return the updated user object.
-     * @throws IncorrectCredentialsProvidedException - if the password is incorrect
-     * @throws NoCredentialsAvailableException - if the account exists but does not have a local password
-     * @throws InvalidKeySpecException - if the preconfigured key spec is invalid
-     * @throws NoSuchAlgorithmException - if the configured algorithm is not valid
-     */
-    public Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
-                                     final RegisteredUser userObjectFromClient, final String passwordCurrent,
-                                     final String newPassword,
-                                     final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                     final List<UserContext> registeredUserContexts)
-            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
-            NoSuchAlgorithmException {
-        Validate.notNull(userObjectFromClient.getId());
+      RegisteredUserDTO updatedUser = updateUserObject(userObjectFromClient, newPassword);
 
-        // this is an update as the user has an id
-        // security checks
-        try {
-            // check that the current user has permissions to change this user's details.
-            RegisteredUserDTO currentlyLoggedInUser = this.getCurrentRegisteredUser(request);
-            if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
-                    && !checkUserRole(currentlyLoggedInUser, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER))) {
-                return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                        "You cannot change someone else's user settings.").toResponse();
-            }
+      // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
+      if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
+          || !Objects.equals(updatedUser.getSchoolOther(), existingUserFromDb.getSchoolOther())) {
+        LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+        eventDetails.put("oldSchoolId", existingUserFromDb.getSchoolId());
+        eventDetails.put("newSchoolId", updatedUser.getSchoolId());
+        eventDetails.put("oldSchoolOther", existingUserFromDb.getSchoolOther());
+        eventDetails.put("newSchoolOther", updatedUser.getSchoolOther());
 
-            // check if they are trying to change a password
-            if (newPassword != null && !newPassword.isEmpty()) {
-                // only admins and the account owner can change passwords 
-                if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
-                        && !checkUserRole(currentlyLoggedInUser, Collections.singletonList(Role.ADMIN))) {
-                    return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                            "You cannot change someone else's password.").toResponse();
-                }
-
-                // Password change requires auth check unless admin is modifying non-admin user account
-                if (!(checkUserRole(currentlyLoggedInUser, Collections.singletonList(Role.ADMIN))
-                        && userObjectFromClient.getRole() != Role.ADMIN)) {
-                    // authenticate the user to check they are allowed to change the password
-
-                    if (null == passwordCurrent) {
-                        return new SegueErrorResponse(Response.Status.BAD_REQUEST,
-                                "You must provide your current password to change your password!").toResponse();
-                    }
-
-                    this.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
-                            userObjectFromClient.getEmail(), passwordCurrent);
-                }
-            }
-
-            // check that any changes to protected fields being made are allowed.
-            RegisteredUserDTO existingUserFromDb = this.getUserDTOById(userObjectFromClient.getId());
-
-            // You cannot modify role using this endpoint (an admin needs to go through the endpoint specifically for
-            // role modification)
-            if (null == userObjectFromClient.getRole() || !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
-                return new SegueErrorResponse(Response.Status.FORBIDDEN,
-                        "You cannot change a users role.").toResponse();
-            }
-
-            if (registeredUserContexts != null) {
-                // We always set the last confirmed date from code rather than trusting the client
-                userObjectFromClient.setRegisteredContexts(registeredUserContexts);
-                userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
-            } else {
-                // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
-                // server that sets the time that they last confirmed their user context values.
-                // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
-                userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
-                userObjectFromClient.setRegisteredContextsLastConfirmed(existingUserFromDb.getRegisteredContextsLastConfirmed());
-            }
-
-            if (userObjectFromClient.getTeacherPending() == null) {
-                userObjectFromClient.setTeacherPending(existingUserFromDb.getTeacherPending());
-            }
-
-            RegisteredUserDTO updatedUser = updateUserObject(userObjectFromClient, newPassword);
-
-            // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
-            if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
-                    || !Objects.equals(updatedUser.getSchoolOther(), existingUserFromDb.getSchoolOther())) {
-                LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
-                eventDetails.put("oldSchoolId", existingUserFromDb.getSchoolId());
-                eventDetails.put("newSchoolId", updatedUser.getSchoolId());
-                eventDetails.put("oldSchoolOther", existingUserFromDb.getSchoolOther());
-                eventDetails.put("newSchoolOther", updatedUser.getSchoolOther());
-
-                if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
-                    // This is an ADMIN user changing another user's school:
-                    eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
-                    this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.ADMIN_CHANGE_USER_SCHOOL,
-                            eventDetails);
-                } else {
-                    this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.USER_SCHOOL_CHANGE,
-                            eventDetails);
-                }
-            }
-
-            if (userPreferenceObject != null) {
-                List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject,
-                        updatedUser.getId());
-                userPreferenceManager.saveUserPreferences(userPreferences);
-            }
-
-            return Response.ok(updatedUser).build();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (NoUserException e) {
-            return new SegueErrorResponse(Response.Status.NOT_FOUND,
-                    "The user specified does not exist.").toResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to modify user", e);
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
-                    "Error while modifying the user").toResponse();
-        } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (MissingRequiredFieldException e) {
-            log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (AuthenticationProviderMappingException e) {
-            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
-                    "Unable to map to a known authenticator. The provider: is unknown").toResponse();
-        } catch (InvalidNameException e) {
-            log.warn("Invalid name provided during user update.");
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
-        }
-    }
-
-    /**
-     * Complete the MFA login process. If the correct TOTPCode is provided we will give the user a full session cookie
-     * rather than a partial one.
-     *
-     * @param request - containing the partially logged-in user.
-     * @param response - response will be updated to include fully logged in cookie if TOTPCode is successfully verified
-     * @param totpCode - code to verify
-     * @return RegisteredUserDTO as they are now considered logged in.
-     * @throws IncorrectCredentialsProvidedException
-     *             - if the password is incorrect
-     * @throws NoCredentialsAvailableException
-     *             - If the account exists but does not have a local password
-     * @throws NoUserLoggedInException
-     *             - If the user hasn't completed the first step of the authentication process.
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
-                                             final Integer totpCode)
-            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException {
-        RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
-
-        if (registeredUser == null) {
-            throw new NoUserLoggedInException();
-        }
-
-        RegisteredUserDTO userToReturn = convertUserDOToUserDTO(registeredUser);
-        this.secondFactorManager.authenticate2ndFactor(userToReturn, totpCode);
-
-        // replace cookie to no longer have caveat
-        return this.logUserIn(request, response, registeredUser);
-    }
-
-    /**
-     * Utility method to ensure that the credentials provided are the current correct ones. If they are invalid an
-     * exception will be thrown otherwise nothing will happen.
-     * 
-     * @param provider
-     *            - the password provider who will validate the credentials.
-     * @param email
-     *            - the email address of the account holder.
-     * @param password
-     *            - the plain text password.
-     * @throws AuthenticationProviderMappingException
-     *             - if we cannot find an authenticator
-     * @throws IncorrectCredentialsProvidedException
-     *             - if the password is incorrect
-     * @throws NoUserException
-     *             - if the user does not exist
-     * @throws NoCredentialsAvailableException
-     *             - If the account exists but does not have a local password
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public void ensureCorrectPassword(final String provider, final String email, final String password)
-            throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
-
-        // this method will throw an error if the credentials are incorrect.
-        this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
-    }
-   
-
-    /**
-     * Unlink User From AuthenticationProvider
-     * <p>
-     * Removes the link between a user and a provider.
-     * 
-     * @param user
-     *            - user to affect.
-     * @param providerString
-     *            - provider to unassociated.
-     * @throws SegueDatabaseException
-     *             - if there is an error during the database update.
-     * @throws MissingRequiredFieldException
-     *             - If the change will mean that the user will be unable to login again.
-     * @throws AuthenticationProviderMappingException
-     *             - if we are unable to locate the authentication provider specified.
-     */
-    public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
-            throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
-        RegisteredUser userDO = this.findUserById(user.getId());
-        this.userAuthenticationManager.unlinkUserAndProvider(userDO, providerString);
-    }
-
-    /**
-     * CheckUserRole matches a list of valid roles.
-     * 
-     * @param request
-     *            - http request so that we can get current users details.
-     * @param validRoles
-     *            - a Collection of roles that we would want the user to match.
-     * @return true if the user is a member of one of the roles in our valid roles list. False if not.
-     * @throws NoUserLoggedInException
-     *             - if there is no registered user logged in.
-     */
-    public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
-            throws NoUserLoggedInException {
-        RegisteredUserDTO user = this.getCurrentRegisteredUser(request);
-
-        return this.checkUserRole(user, validRoles);
-    }
-
-    /**
-     * CheckUserRole matches a list of valid roles.
-     *
-     * @param user
-     *            - the users details.
-     * @param validRoles
-     *            - a Collection of roles that we would want the user to match.
-     * @return true if the user is a member of one of the roles in our valid roles list. False if not.
-     * @throws NoUserLoggedInException
-     *             - if there is no registered user logged in.
-     */
-    public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
-            throws NoUserLoggedInException {
-        if (null == user) {
-            throw new NoUserLoggedInException();
-        }
-
-        for (Role roleToMatch : validRoles) {
-            if (user.getRole() != null && user.getRole().equals(roleToMatch)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Determine if there is a user logged in with a valid session.
-     * 
-     * @param request
-     *            - to retrieve session information from
-     * @return True if the user is logged in and the session is valid, false if not.
-     */
-    public final boolean isRegisteredUserLoggedIn(final HttpServletRequest request) {
-        try {
-            return this.getCurrentRegisteredUser(request) != null;
-        } catch (NoUserLoggedInException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Get the details of the currently logged in registered user.
-     * <p>
-     * This method will validate the session and will throw a NoUserLoggedInException if invalid.
-     * 
-     * @param request
-     *            - to retrieve session information from
-     * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
-     * @throws NoUserLoggedInException
-     *             - When the session has expired or there is no user currently logged in.
-     */
-    public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
-            throws NoUserLoggedInException {
-        Validate.notNull(request);
-
-        RegisteredUser user = this.getCurrentRegisteredUserDO(request);
-
-        if (null == user) {
-            throw new NoUserLoggedInException();
-        }
-
-        try {
-            updateLastSeen(user);
-        } catch (SegueDatabaseException e) {
-            log.error(String.format("Unable to update user (%s) last seen date.", user.getId()));
-        }
-
-        return this.convertUserDOToUserDTO(user);
-    }
-
-    /**
-     * Extract the session expiry time from a request.
-     * <p>
-     * Does not check session validity.
-     *
-     * @param request The request to extract the session information from
-     * @return The session expiry as a Date
-     */
-    public Date getSessionExpiry(final HttpServletRequest request) {
-        return userAuthenticationManager.getSessionExpiry(request);
-    }
-
-    /**
-     * Get the authentication settings of particular user.
-     *
-     * @param user
-     *            - to retrieve settings from
-     * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error
-     */
-    public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
-            throws SegueDatabaseException {
-        Validate.notNull(user);
-
-        UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
-        if (userAuthenticationSettings != null) {
-            return this.dtoMapper.map(userAuthenticationSettings, UserAuthenticationSettingsDTO.class);
+        if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
+          // This is an ADMIN user changing another user's school:
+          eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
+          this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.ADMIN_CHANGE_USER_SCHOOL,
+              eventDetails);
         } else {
-            return new UserAuthenticationSettingsDTO();
+          this.logManager.logEvent(currentlyLoggedInUser, request, SegueServerLogType.USER_SCHOOL_CHANGE,
+              eventDetails);
         }
+      }
+
+      if (userPreferenceObject != null) {
+        List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject,
+            updatedUser.getId());
+        userPreferenceManager.saveUserPreferences(userPreferences);
+      }
+
+      return Response.ok(updatedUser).build();
+    } catch (NoUserLoggedInException e) {
+      return SegueErrorResponse.getNotLoggedInResponse();
+    } catch (NoUserException e) {
+      return new SegueErrorResponse(Response.Status.NOT_FOUND,
+          "The user specified does not exist.").toResponse();
+    } catch (SegueDatabaseException e) {
+      log.error("Unable to modify user", e);
+      return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+          "Error while modifying the user").toResponse();
+    } catch (InvalidPasswordException e) {
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+    } catch (MissingRequiredFieldException e) {
+      log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+    } catch (AuthenticationProviderMappingException e) {
+      return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+          "Unable to map to a known authenticator. The provider: is unknown").toResponse();
+    } catch (InvalidNameException e) {
+      log.warn("Invalid name provided during user update.");
+      return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+    }
+  }
+
+  /**
+   * Complete the MFA login process. If the correct TOTPCode is provided we will give the user a full session cookie
+   * rather than a partial one.
+   *
+   * @param request  - containing the partially logged-in user.
+   * @param response - response will be updated to include fully logged in cookie if TOTPCode is successfully verified
+   * @param totpCode - code to verify
+   * @return RegisteredUserDTO as they are now considered logged in.
+   * @throws IncorrectCredentialsProvidedException - if the password is incorrect
+   * @throws NoCredentialsAvailableException       - If the account exists but does not have a local password
+   * @throws NoUserLoggedInException               - If the user hasn't completed the first step of the authentication process.
+   * @throws SegueDatabaseException                - if there is a problem with the database.
+   */
+  public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
+                                           final Integer totpCode)
+      throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException,
+      NoUserLoggedInException {
+    RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
+
+    if (registeredUser == null) {
+      throw new NoUserLoggedInException();
     }
 
-    /**
-     * Find a list of users based on some user prototype.
-     * 
-     * @param prototype
-     *            - partially completed user object to base search on
-     * @return list of registered user dtos.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    public List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
-        List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
-                RegisteredUser.class));
+    RegisteredUserDTO userToReturn = convertUserDOToUserDTO(registeredUser);
+    this.secondFactorManager.authenticate2ndFactor(userToReturn, totpCode);
 
-        return this.convertUserDOListToUserDTOList(registeredUsersDOs);
+    // replace cookie to no longer have caveat
+    return this.logUserIn(request, response, registeredUser);
+  }
+
+  /**
+   * Utility method to ensure that the credentials provided are the current correct ones. If they are invalid an
+   * exception will be thrown otherwise nothing will happen.
+   *
+   * @param provider - the password provider who will validate the credentials.
+   * @param email    - the email address of the account holder.
+   * @param password - the plain text password.
+   * @throws AuthenticationProviderMappingException - if we cannot find an authenticator
+   * @throws IncorrectCredentialsProvidedException  - if the password is incorrect
+   * @throws NoUserException                        - if the user does not exist
+   * @throws NoCredentialsAvailableException        - If the account exists but does not have a local password
+   * @throws SegueDatabaseException                 - if there is a problem with the database.
+   */
+  public void ensureCorrectPassword(final String provider, final String email, final String password)
+      throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
+      NoCredentialsAvailableException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
+
+    // this method will throw an error if the credentials are incorrect.
+    this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
+  }
+
+
+  /**
+   * Unlink User From AuthenticationProvider
+   * <p>
+   * Removes the link between a user and a provider.
+   *
+   * @param user           - user to affect.
+   * @param providerString - provider to unassociated.
+   * @throws SegueDatabaseException                 - if there is an error during the database update.
+   * @throws MissingRequiredFieldException          - If the change will mean that the user will be unable to login again.
+   * @throws AuthenticationProviderMappingException - if we are unable to locate the authentication provider specified.
+   */
+  public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
+      throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
+    RegisteredUser userDO = this.findUserById(user.getId());
+    this.userAuthenticationManager.unlinkUserAndProvider(userDO, providerString);
+  }
+
+  /**
+   * CheckUserRole matches a list of valid roles.
+   *
+   * @param request    - http request so that we can get current users details.
+   * @param validRoles - a Collection of roles that we would want the user to match.
+   * @return true if the user is a member of one of the roles in our valid roles list. False if not.
+   * @throws NoUserLoggedInException - if there is no registered user logged in.
+   */
+  public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
+      throws NoUserLoggedInException {
+    RegisteredUserDTO user = this.getCurrentRegisteredUser(request);
+
+    return this.checkUserRole(user, validRoles);
+  }
+
+  /**
+   * CheckUserRole matches a list of valid roles.
+   *
+   * @param user       - the users details.
+   * @param validRoles - a Collection of roles that we would want the user to match.
+   * @return true if the user is a member of one of the roles in our valid roles list. False if not.
+   * @throws NoUserLoggedInException - if there is no registered user logged in.
+   */
+  public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
+      throws NoUserLoggedInException {
+    if (null == user) {
+      throw new NoUserLoggedInException();
     }
 
-    /**
-     * Find a list of users based on a List of user ids.
-     * 
-     * @param userIds
-     *            - partially completed user object to base search on
-     * @return list of registered user dtos.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    public List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
-        Validate.notNull(userIds);
-        if (userIds.isEmpty()) {
-            return Lists.newArrayList();
-        }
-
-        List<RegisteredUser> registeredUsersDOs = this.database.findUsers(Lists.newArrayList(userIds));
-
-        return this.convertUserDOListToUserDTOList(registeredUsersDOs);
-    }
-
-    /**
-     * This function can be used to find user information about a user when given an id.
-     * 
-     * @param id
-     *            - the id of the user to search for.
-     * @return the userDTO
-     * @throws NoUserException
-     *             - If we cannot find a valid user with the email address provided.
-     * @throws SegueDatabaseException
-     *             - If there is another database error       
-     */
-    @Override
-    public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
-        return this.getUserDTOById(id, false);
-    }
-
-    /**
-     * This function can be used to find user information about a user when given an id - EVEN if it is a deleted user.
-     * <p>
-     * WARNING - Do not expect complete RegisteredUser Objects as data may be missing if you include deleted users
-     * @param id
-     *            - the id of the user to search for.
-     * @param includeDeleted
-     *            - include deleted users in results - true for yes false for no
-     * @return the userDTO
-     * @throws NoUserException
-     *             - If we cannot find a valid user with the email address provided.
-     * @throws SegueDatabaseException
-     *             - If there is another database error
-     */
-    @Override
-    public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
-            SegueDatabaseException {
-        RegisteredUser user;
-        if (includeDeleted) {
-            user = this.database.getById(id, true);
-        } else {
-            user = this.findUserById(id);
-        }
-
-        if (null == user) {
-            throw new NoUserException("No user found with this ID!");
-        }
-        return this.convertUserDOToUserDTO(user);
-    }
-
-    /**
-     * This function can be used to find user information about a user when given an email.
-     * 
-     * @param email
-     *            - the e-mail address of the user to search for
-     * @return the userDTO
-     * @throws NoUserException
-     *             - If we cannot find a valid user with the email address provided.
-     * @throws SegueDatabaseException
-     *             - If there is another database error
-     */
-    public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException,
-            SegueDatabaseException {
-        RegisteredUser findUserByEmail = this.findUserByEmail(email);
-
-        if (null == findUserByEmail) {
-            throw new NoUserException("No user found with this email!");
-        }
-
-        return this.convertUserDOToUserDTO(findUserByEmail);
-    }
-
-    /**
-     * This method will return either an AnonymousUserDTO or a RegisteredUserDTO
-     * <p>
-     * If the user is currently logged in you will get a RegisteredUserDTO otherwise you will get an AnonymousUserDTO
-     * containing a sessionIdentifier and any questionAttempts made by the anonymous user.
-     * 
-     * @param request
-     *            - containing session information.
-     * 
-     * @return AbstractSegueUserDTO - Either a RegisteredUser or an AnonymousUser
-     */
-    public AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) throws SegueDatabaseException {
-        try {
-            return this.getCurrentRegisteredUser(request);
-        } catch (NoUserLoggedInException e) {
-            return this.getAnonymousUserDTO(request);
-        }
-    }
-
-    /**
-     * Destroy a session attached to the request.
-     * 
-     * @param request
-     *            containing the tomcat session to destroy
-     * @param response
-     *            to destroy the segue cookie.
-     */
-    public void logUserOut(final HttpServletRequest request, final HttpServletResponse response) throws NoUserLoggedInException, SegueDatabaseException {
-        Validate.notNull(request);
-        this.userAuthenticationManager.destroyUserSession(request, response);
-    }
-
-    /**
-     * Method to create a user object in our database and log them in.
-     * <p>
-     * Note: this method is intended for creation of accounts in segue - not for linked account registration.
-     * 
-     * @param request
-     *            to enable access to anonymous user information.
-     * @param response
-     *            to store the session in our own segue cookie.
-     * @param user
-     *            - the user DO to use for updates - must not contain a user id.
-     * @param newPassword
-     *            - new password for the account being created.
-     * @param registeredUserContexts
-     *            - a List of User Contexts (stage, exam board)
-     * @throws InvalidPasswordException
-     *             - the password provided does not meet our requirements.
-     * @throws MissingRequiredFieldException
-     *             - A required field is missing for the user object so cannot be saved.
-     * @return the user object as was saved.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     * @throws EmailMustBeVerifiedException
-     *             - if a user attempts to sign up with an email that must be verified before it can be used
-     *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
-     */
-    public RegisteredUserDTO createUserObjectAndSession(
-            final HttpServletRequest request, final HttpServletResponse response, final RegisteredUser user,
-            final String newPassword, final List<UserContext> registeredUserContexts) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
-        Validate.isTrue(user.getId() == null,
-                "When creating a new user the user id must not be set.");
-
-        // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
-        if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
-            log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
-            throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
-        }
-
-        RegisteredUser userToSave;
-        MapperFacade mapper = this.dtoMapper;
-
-        // We want to map to DTO first to make sure that the user cannot
-        // change fields that aren't exposed to them
-        RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
-
-        // This is a new registration
-        userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
-
-        // Set defaults
-        userToSave.setRole(Role.STUDENT);
-        userToSave.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
-        userToSave.setRegistrationDate(new Date());
-        userToSave.setLastUpdated(new Date());
-
-        if (registeredUserContexts != null) {
-            // We always set the last confirmed date from code rather than trusting the client
-            userToSave.setRegisteredContexts(registeredUserContexts);
-            userToSave.setRegisteredContextsLastConfirmed(new Date());
-        }
-
-        if (userToSave.getTeacherPending() == null) {
-            userToSave.setTeacherPending(false);
-        }
-
-        // Before save we should validate the user for mandatory fields.
-        // validate names
-        if (!isUserNameValid(user.getGivenName())) {
-            throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
-        }
-
-        if (!isUserNameValid(user.getFamilyName())) {
-            throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
-        }
-
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
-        authenticator.ensureValidPassword(newPassword);
-
-        // Validate email address and check for existing accounts last to help mitigate enumeration attacks
-        if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The email address provided is invalid.");
-        }
-
-        if (this.findUserByEmail(user.getEmail()) != null) {
-            throw new DuplicateAccountException("The email address provided is invalid.");
-        }
-
-        authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
-
-        // save the user to get the userId
-        RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
-
-        // create password for the user
-        authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
-
-        // send an email confirmation and set up verification
-        try {
-            RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
-
-            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL",
-                    generateEmailVerificationURL(userToReturnDTO, userToReturn.getEmailVerificationToken()));
-
-            emailManager.sendTemplatedEmailToUser(userToReturnDTO,
-                    emailManager.getEmailTemplateDTO("email-template-registration-confirmation"),
-                    emailTokens, EmailType.SYSTEM);
-
-        } catch (ContentManagerException e) {
-            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
-        } catch (NoUserException e) {
-            log.error("Registration email could not be sent due to not being able to locate the user: " + e.getMessage());
-        }
-
-        // save the user again with updated token
-        //TODO: do we need this?
-        userToReturn = this.database.createOrUpdateUser(userToReturn);
-
-        logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, SegueServerLogType.USER_REGISTRATION,
-                ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
-
-        // return it to the caller.
-        return this.logUserIn(request, response, userToReturn);
-    }
-
-    /**
-     * Method to update a user object in our database.
-     * 
-     * @param updatedUser
-     *            - the user to update - must contain a user id
-     * @param newPassword - the new password if being changed.
-     * @throws InvalidPasswordException
-     *             - the password provided does not meet our requirements.
-     * @throws MissingRequiredFieldException
-     *             - A required field is missing for the user object so cannot be saved.
-     * @return the user object as was saved.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
-            throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
-        Validate.notNull(updatedUser.getId());
-
-        // We want to map to DTO first to make sure that the user cannot
-        // change fields that aren't exposed to them
-        RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
-        if (updatedUser.getId() == null) {
-            throw new IllegalArgumentException(
-                    "The user object specified does not have an id. Users cannot be updated without a specific id set.");
-        }
-
-        // This is an update operation.
-        final RegisteredUser existingUser = this.findUserById(updatedUser.getId());
-        // userToSave = existingUser;
-
-        // Check that the user isn't trying to take an existing users e-mail.
-        if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail().equals(updatedUser.getEmail())) {
-            throw new DuplicateAccountException("An account with that e-mail address already exists.");
-        }
-
-        // validate names
-        if (!isUserNameValid(updatedUser.getGivenName())) {
-            throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
-        }
-
-        if (!isUserNameValid(updatedUser.getFamilyName())) {
-            throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
-        }
-
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        // Check if there is a new password and it is invalid as early as possible:
-        if (null != newPassword && !newPassword.isEmpty()) {
-            authenticator.ensureValidPassword(newPassword);
-        }
-
-        MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
-
-        RegisteredUser userToSave = new RegisteredUser();
-        mergeMapper.map(existingUser, userToSave);
-        mergeMapper.map(userDTOContainingUpdates, userToSave);
-        // Don't modify email verification status, registration date, or role
-        userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
-        userToSave.setRegistrationDate(existingUser.getRegistrationDate());
-        userToSave.setRole(existingUser.getRole());
-        userToSave.setLastUpdated(new Date());
-
-        if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
-            userToSave.setSchoolId(null);
-        }
-        // Correctly remove school_other when it is set to be the empty string:
-        if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
-            userToSave.setSchoolOther(null);
-        }
-
-        // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
-        // null values are explicitly not mapped by `mergeMapper`.
-        if (updatedUser.getDateOfBirth() == null) {
-            userToSave.setDateOfBirth(null);
-        }
-
-        // Before save we should validate the user for mandatory fields.
-        // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
-        // invalid email, and (b) that users with an invalid email can change their email to a valid one!
-        if (!this.isUserValid(userToSave)) {
-            throw new MissingRequiredFieldException("The email address provided is invalid.");
-        }
-
-        // Make sure the email address is preserved (can't be changed until new email is verified)
-        // Send a new verification email if the user has changed their email
-        if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
-            try {
-                String newEmail = updatedUser.getEmail();
-                authenticator.createEmailVerificationTokenForUser(userToSave, newEmail);
-
-                RegisteredUserDTO userDTO = this.getUserDTOById(userToSave.getId());
-                String emailVerificationToken = userToSave.getEmailVerificationToken();
-                this.sendVerificationEmailsForEmailChange(userDTO, newEmail, emailVerificationToken);
-
-            } catch (ContentManagerException | NoUserException e) {
-                log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-            }
-
-            userToSave.setEmail(existingUser.getEmail());
-        }
-
-        // save the user
-        RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
-        if (null != newPassword && !newPassword.isEmpty()) {
-            authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
-        }
-
-        // return it to the caller
-        return this.convertUserDOToUserDTO(userToReturn);
-    }
-
-    /**
-     * @param id
-     *            - the user id
-     * @param requestedRole
-     *            - the new role
-     * @throws SegueDatabaseException
-     *             - an exception when accessing the database
-     */
-    public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
-        Validate.notNull(requestedRole);
-        RegisteredUser userToSave = this.findUserById(id);
-
-        // Send welcome email if user has become teacher or tutor, otherwise, role change notification
-        try {
-            RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
-            if (userToSave.getRole() != requestedRole) {
-                String emailTemplate;
-                switch (requestedRole) {
-                    case TUTOR:
-                        emailTemplate = "email-template-tutor-welcome";
-                        break;
-                    case TEACHER:
-                        emailTemplate = "email-template-teacher-welcome";
-                        break;
-                    default:
-                        emailTemplate = "email-template-default-role-change";
-                }
-                emailManager.sendTemplatedEmailToUser(existingUserDTO,
-                        emailManager.getEmailTemplateDTO(emailTemplate),
-                        ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
-                                "newrole", requestedRole.toString()),
-                        EmailType.SYSTEM);
-            }
-        } catch (ContentManagerException | NoUserException e) {
-            log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
-        }
-
-        userToSave.setRole(requestedRole);
-        userToSave.setTeacherPending(false);
-        this.database.createOrUpdateUser(userToSave);
-    }
-
-    /**
-     * @param email
-     *            - the user email
-     * @param requestedEmailVerificationStatus
-     *            - the new email verification status
-     * @throws SegueDatabaseException
-     *             - an exception when accessing the database
-     */
-    public void updateUserEmailVerificationStatus(final String email, 
-            final EmailVerificationStatus requestedEmailVerificationStatus) throws SegueDatabaseException {
-        Validate.notNull(requestedEmailVerificationStatus);
-        RegisteredUser userToSave = this.findUserByEmail(email);
-        if (null == userToSave) {
-            log.warn(String.format(
-                    "Could not update email verification status of email address (%s) - does not exist",
-                    email));
-            return;
-        }
-        userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
-        userToSave.setLastUpdated(new Date());
-        this.database.createOrUpdateUser(userToSave);
-    }
-
-    /**
-     * This method facilitates the removal of personal user data from Segue.
-     * 
-     * @param userToDelete
-     *            - the user to delete.
-     * @throws SegueDatabaseException
-     *             - if a general database error has occurred.
-     * @throws NoUserException
-     *             - if we cannot find the user account specified
-     */
-    public void deleteUserAccount(final RegisteredUserDTO userToDelete) throws NoUserException, SegueDatabaseException {
-        // check the user exists
-        if (null == userToDelete) {
-            throw new NoUserException("Unable to delete the user as no user was provided.");
-        }
-
-        RegisteredUser userDOById = this.findUserById(userToDelete.getId());
-
-        // delete the user.
-        this.database.deleteUserAccount(userDOById);
-    }
-
-    /**
-     * This method facilitates the merging of two user accounts.
-     *
-     * @param target
-     *            - the user account to remove.
-     * @param source
-     *            - the user account to merge into.
-     * @throws SegueDatabaseException
-     *             if an error occurs
-     */
-    public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source)
-            throws SegueDatabaseException {
-        // check the users exist
-        if (null == target) {
-            throw new SegueDatabaseException("Merge users target is null");
-        } else if (null == source) {
-            throw new SegueDatabaseException("Merge users source is null");
-        }
-
-        RegisteredUser targetUser = this.findUserById(target.getId());
-        RegisteredUser sourceUser = this.findUserById(source.getId());
-
-        // merge the users.
-        this.database.mergeUserAccounts(targetUser, sourceUser);
-    }
-
-    /**
-     * This method will use an email address to check a local user exists and if so, will send an email with a unique
-     * token to allow a password reset. This method does not indicate whether or not the email actually existed.
-     *
-     * @param userObject
-     *            - A user object containing the email address of the user to reset the password for.
-     * @return true if the request was successfully submitted or false if the user was not found
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    public final boolean resetPasswordRequest(final RegisteredUserDTO userObject)
-            throws SegueDatabaseException {
-        RegisteredUser user = this.findUserByEmail(userObject.getEmail());
-
-        if (null == user) {
-            return false;
-        }
-
-        EXECUTOR.submit(() -> {
-            RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
-            try {
-                this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
-                log.info("Password reset sent");
-            } catch (CommunicationException e) {
-                log.error("Error sending reset message.", e);
-            } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-                log.error("Error generating password reset token.", e);
-            }
-        });
+    for (Role roleToMatch : validRoles) {
+      if (user.getRole() != null && user.getRole().equals(roleToMatch)) {
         return true;
+      }
     }
 
-    /**
-     * This method will use an email address to check a local user exists and if so, will send an email with a unique
-     * token to allow a password reset. This method does not indicate whether or not the email actually existed.
-     * 
-     * @param request
-     *            - so we can look up the registered user object.
-     * @param email
-     *            - The email the user wants to verify.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    public final void emailVerificationRequest(final HttpServletRequest request, final String email)
-            throws SegueDatabaseException {
+    return false;
+  }
 
-        try {
-            RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
-            RegisteredUser user = this.findUserById(userDTO.getId());
+  /**
+   * Determine if there is a user logged in with a valid session.
+   *
+   * @param request - to retrieve session information from
+   * @return True if the user is logged in and the session is valid, false if not.
+   */
+  public final boolean isRegisteredUserLoggedIn(final HttpServletRequest request) {
+    try {
+      return this.getCurrentRegisteredUser(request) != null;
+    } catch (NoUserLoggedInException e) {
+      return false;
+    }
+  }
 
-            // TODO: Email verification stuff does not belong in the password authenticator... It should be moved.
-            // Generate token
-            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                    .get(AuthenticationProvider.SEGUE);
-            user = authenticator.createEmailVerificationTokenForUser(user, email);
+  /**
+   * Get the details of the currently logged in registered user.
+   * <p>
+   * This method will validate the session and will throw a NoUserLoggedInException if invalid.
+   *
+   * @param request - to retrieve session information from
+   * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
+   * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
+   */
+  public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
+      throws NoUserLoggedInException {
+    Validate.notNull(request);
 
-            // Save user object
-            this.database.createOrUpdateUser(user);
+    RegisteredUser user = this.getCurrentRegisteredUserDO(request);
 
-            String emailVerificationToken = user.getEmailVerificationToken();
+    if (null == user) {
+      throw new NoUserLoggedInException();
+    }
 
-            if (email.equals(user.getEmail())) {
-                this.sendVerificationEmailForCurrentEmail(userDTO, emailVerificationToken);
-            } else {
-                this.sendVerificationEmailsForEmailChange(userDTO, email, emailVerificationToken);
-            }
+    try {
+      updateLastSeen(user);
+    } catch (SegueDatabaseException e) {
+      log.error(String.format("Unable to update user (%s) last seen date.", user.getId()));
+    }
 
-        } catch (NoUserLoggedInException e) {
-            log.error(String.format("Verification requested for email:%s where email does not exist "
-                    + "and user not logged in!", email));
-        } catch (ContentManagerException e) {
-            log.debug("ContentManagerException " + e.getMessage());
+    return this.convertUserDOToUserDTO(user);
+  }
+
+  /**
+   * Extract the session expiry time from a request.
+   * <p>
+   * Does not check session validity.
+   *
+   * @param request The request to extract the session information from
+   * @return The session expiry as a Date
+   */
+  public Date getSessionExpiry(final HttpServletRequest request) {
+    return userAuthenticationManager.getSessionExpiry(request);
+  }
+
+  /**
+   * Get the authentication settings of particular user.
+   *
+   * @param user - to retrieve settings from
+   * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
+   * @throws SegueDatabaseException - If there is an internal database error
+   */
+  public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
+      throws SegueDatabaseException {
+    Validate.notNull(user);
+
+    UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
+    if (userAuthenticationSettings != null) {
+      return this.dtoMapper.map(userAuthenticationSettings, UserAuthenticationSettingsDTO.class);
+    } else {
+      return new UserAuthenticationSettingsDTO();
+    }
+  }
+
+  /**
+   * Find a list of users based on some user prototype.
+   *
+   * @param prototype - partially completed user object to base search on
+   * @return list of registered user dtos.
+   * @throws SegueDatabaseException - if there is a database error.
+   */
+  public List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
+    List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
+        RegisteredUser.class));
+
+    return this.convertUserDOListToUserDTOList(registeredUsersDOs);
+  }
+
+  /**
+   * Find a list of users based on a List of user ids.
+   *
+   * @param userIds - partially completed user object to base search on
+   * @return list of registered user dtos.
+   * @throws SegueDatabaseException - if there is a database error.
+   */
+  public List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
+    Validate.notNull(userIds);
+    if (userIds.isEmpty()) {
+      return Lists.newArrayList();
+    }
+
+    List<RegisteredUser> registeredUsersDOs = this.database.findUsers(Lists.newArrayList(userIds));
+
+    return this.convertUserDOListToUserDTOList(registeredUsersDOs);
+  }
+
+  /**
+   * This function can be used to find user information about a user when given an id.
+   *
+   * @param id - the id of the user to search for.
+   * @return the userDTO
+   * @throws NoUserException        - If we cannot find a valid user with the email address provided.
+   * @throws SegueDatabaseException - If there is another database error
+   */
+  @Override
+  public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
+    return this.getUserDTOById(id, false);
+  }
+
+  /**
+   * This function can be used to find user information about a user when given an id - EVEN if it is a deleted user.
+   * <p>
+   * WARNING - Do not expect complete RegisteredUser Objects as data may be missing if you include deleted users
+   *
+   * @param id             - the id of the user to search for.
+   * @param includeDeleted - include deleted users in results - true for yes false for no
+   * @return the userDTO
+   * @throws NoUserException        - If we cannot find a valid user with the email address provided.
+   * @throws SegueDatabaseException - If there is another database error
+   */
+  @Override
+  public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
+      SegueDatabaseException {
+    RegisteredUser user;
+    if (includeDeleted) {
+      user = this.database.getById(id, true);
+    } else {
+      user = this.findUserById(id);
+    }
+
+    if (null == user) {
+      throw new NoUserException("No user found with this ID!");
+    }
+    return this.convertUserDOToUserDTO(user);
+  }
+
+  /**
+   * This function can be used to find user information about a user when given an email.
+   *
+   * @param email - the e-mail address of the user to search for
+   * @return the userDTO
+   * @throws NoUserException        - If we cannot find a valid user with the email address provided.
+   * @throws SegueDatabaseException - If there is another database error
+   */
+  public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException,
+      SegueDatabaseException {
+    RegisteredUser findUserByEmail = this.findUserByEmail(email);
+
+    if (null == findUserByEmail) {
+      throw new NoUserException("No user found with this email!");
+    }
+
+    return this.convertUserDOToUserDTO(findUserByEmail);
+  }
+
+  /**
+   * This method will return either an AnonymousUserDTO or a RegisteredUserDTO
+   * <p>
+   * If the user is currently logged in you will get a RegisteredUserDTO otherwise you will get an AnonymousUserDTO
+   * containing a sessionIdentifier and any questionAttempts made by the anonymous user.
+   *
+   * @param request - containing session information.
+   * @return AbstractSegueUserDTO - Either a RegisteredUser or an AnonymousUser
+   */
+  public AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) throws SegueDatabaseException {
+    try {
+      return this.getCurrentRegisteredUser(request);
+    } catch (NoUserLoggedInException e) {
+      return this.getAnonymousUserDTO(request);
+    }
+  }
+
+  /**
+   * Destroy a session attached to the request.
+   *
+   * @param request  containing the tomcat session to destroy
+   * @param response to destroy the segue cookie.
+   */
+  public void logUserOut(final HttpServletRequest request, final HttpServletResponse response)
+      throws NoUserLoggedInException, SegueDatabaseException {
+    Validate.notNull(request);
+    this.userAuthenticationManager.destroyUserSession(request, response);
+  }
+
+  /**
+   * Method to create a user object in our database and log them in.
+   * <p>
+   * Note: this method is intended for creation of accounts in segue - not for linked account registration.
+   *
+   * @param request                to enable access to anonymous user information.
+   * @param response               to store the session in our own segue cookie.
+   * @param user                   - the user DO to use for updates - must not contain a user id.
+   * @param newPassword            - new password for the account being created.
+   * @param registeredUserContexts - a List of User Contexts (stage, exam board)
+   * @return the user object as was saved.
+   * @throws InvalidPasswordException      - the password provided does not meet our requirements.
+   * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
+   * @throws SegueDatabaseException        - If there is an internal database error.
+   * @throws EmailMustBeVerifiedException  - if a user attempts to sign up with an email that must be verified before it can be used
+   *                                       (i.e. an @isaacphysics.org or @isaacchemistry.org address).
+   */
+  public RegisteredUserDTO createUserObjectAndSession(
+      final HttpServletRequest request, final HttpServletResponse response, final RegisteredUser user,
+      final String newPassword, final List<UserContext> registeredUserContexts) throws InvalidPasswordException,
+      MissingRequiredFieldException, SegueDatabaseException,
+      EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+    Validate.isTrue(user.getId() == null,
+        "When creating a new user the user id must not be set.");
+
+    // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
+    if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
+      log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
+      throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
+    }
+
+    RegisteredUser userToSave;
+    MapperFacade mapper = this.dtoMapper;
+
+    // We want to map to DTO first to make sure that the user cannot
+    // change fields that aren't exposed to them
+    RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
+
+    // This is a new registration
+    userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
+
+    // Set defaults
+    userToSave.setRole(Role.STUDENT);
+    userToSave.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
+    userToSave.setRegistrationDate(new Date());
+    userToSave.setLastUpdated(new Date());
+
+    if (registeredUserContexts != null) {
+      // We always set the last confirmed date from code rather than trusting the client
+      userToSave.setRegisteredContexts(registeredUserContexts);
+      userToSave.setRegisteredContextsLastConfirmed(new Date());
+    }
+
+    if (userToSave.getTeacherPending() == null) {
+      userToSave.setTeacherPending(false);
+    }
+
+    // Before save we should validate the user for mandatory fields.
+    // validate names
+    if (!isUserNameValid(user.getGivenName())) {
+      throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
+    }
+
+    if (!isUserNameValid(user.getFamilyName())) {
+      throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+    }
+
+    IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+        .get(AuthenticationProvider.SEGUE);
+
+    // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
+    authenticator.ensureValidPassword(newPassword);
+
+    // Validate email address and check for existing accounts last to help mitigate enumeration attacks
+    if (!this.isUserValid(userToSave)) {
+      throw new MissingRequiredFieldException("The email address provided is invalid.");
+    }
+
+    if (this.findUserByEmail(user.getEmail()) != null) {
+      throw new DuplicateAccountException("The email address provided is invalid.");
+    }
+
+    authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
+
+    // save the user to get the userId
+    RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+
+    // create password for the user
+    authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
+
+    // send an email confirmation and set up verification
+    try {
+      RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
+
+      ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL",
+          generateEmailVerificationURL(userToReturnDTO, userToReturn.getEmailVerificationToken()));
+
+      emailManager.sendTemplatedEmailToUser(userToReturnDTO,
+          emailManager.getEmailTemplateDTO("email-template-registration-confirmation"),
+          emailTokens, EmailType.SYSTEM);
+
+    } catch (ContentManagerException e) {
+      log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+    } catch (NoUserException e) {
+      log.error("Registration email could not be sent due to not being able to locate the user: " + e.getMessage());
+    }
+
+    // save the user again with updated token
+    //TODO: do we need this?
+    userToReturn = this.database.createOrUpdateUser(userToReturn);
+
+    logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, SegueServerLogType.USER_REGISTRATION,
+        ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
+
+    // return it to the caller.
+    return this.logUserIn(request, response, userToReturn);
+  }
+
+  /**
+   * Method to update a user object in our database.
+   *
+   * @param updatedUser - the user to update - must contain a user id
+   * @param newPassword - the new password if being changed.
+   * @return the user object as was saved.
+   * @throws InvalidPasswordException      - the password provided does not meet our requirements.
+   * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
+   * @throws SegueDatabaseException        - If there is an internal database error.
+   */
+  public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
+      throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
+      InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+    Validate.notNull(updatedUser.getId());
+
+    // We want to map to DTO first to make sure that the user cannot
+    // change fields that aren't exposed to them
+    RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
+    if (updatedUser.getId() == null) {
+      throw new IllegalArgumentException(
+          "The user object specified does not have an id. Users cannot be updated without a specific id set.");
+    }
+
+    // This is an update operation.
+    final RegisteredUser existingUser = this.findUserById(updatedUser.getId());
+    // userToSave = existingUser;
+
+    // Check that the user isn't trying to take an existing users e-mail.
+    if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail()
+        .equals(updatedUser.getEmail())) {
+      throw new DuplicateAccountException("An account with that e-mail address already exists.");
+    }
+
+    // validate names
+    if (!isUserNameValid(updatedUser.getGivenName())) {
+      throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
+    }
+
+    if (!isUserNameValid(updatedUser.getFamilyName())) {
+      throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+    }
+
+    IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+        .get(AuthenticationProvider.SEGUE);
+
+    // Check if there is a new password and it is invalid as early as possible:
+    if (null != newPassword && !newPassword.isEmpty()) {
+      authenticator.ensureValidPassword(newPassword);
+    }
+
+    MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
+
+    RegisteredUser userToSave = new RegisteredUser();
+    mergeMapper.map(existingUser, userToSave);
+    mergeMapper.map(userDTOContainingUpdates, userToSave);
+    // Don't modify email verification status, registration date, or role
+    userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
+    userToSave.setRegistrationDate(existingUser.getRegistrationDate());
+    userToSave.setRole(existingUser.getRole());
+    userToSave.setLastUpdated(new Date());
+
+    if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
+      userToSave.setSchoolId(null);
+    }
+    // Correctly remove school_other when it is set to be the empty string:
+    if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
+      userToSave.setSchoolOther(null);
+    }
+
+    // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
+    // null values are explicitly not mapped by `mergeMapper`.
+    if (updatedUser.getDateOfBirth() == null) {
+      userToSave.setDateOfBirth(null);
+    }
+
+    // Before save we should validate the user for mandatory fields.
+    // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
+    // invalid email, and (b) that users with an invalid email can change their email to a valid one!
+    if (!this.isUserValid(userToSave)) {
+      throw new MissingRequiredFieldException("The email address provided is invalid.");
+    }
+
+    // Make sure the email address is preserved (can't be changed until new email is verified)
+    // Send a new verification email if the user has changed their email
+    if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
+      try {
+        String newEmail = updatedUser.getEmail();
+        authenticator.createEmailVerificationTokenForUser(userToSave, newEmail);
+
+        RegisteredUserDTO userDTO = this.getUserDTOById(userToSave.getId());
+        String emailVerificationToken = userToSave.getEmailVerificationToken();
+        this.sendVerificationEmailsForEmailChange(userDTO, newEmail, emailVerificationToken);
+
+      } catch (ContentManagerException | NoUserException e) {
+        log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+      }
+
+      userToSave.setEmail(existingUser.getEmail());
+    }
+
+    // save the user
+    RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+    if (null != newPassword && !newPassword.isEmpty()) {
+      authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
+    }
+
+    // return it to the caller
+    return this.convertUserDOToUserDTO(userToReturn);
+  }
+
+  /**
+   * @param id            - the user id
+   * @param requestedRole - the new role
+   * @throws SegueDatabaseException - an exception when accessing the database
+   */
+  public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
+    Validate.notNull(requestedRole);
+    RegisteredUser userToSave = this.findUserById(id);
+
+    // Send welcome email if user has become teacher or tutor, otherwise, role change notification
+    try {
+      RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
+      if (userToSave.getRole() != requestedRole) {
+        String emailTemplate;
+        switch (requestedRole) {
+          case TUTOR:
+            emailTemplate = "email-template-tutor-welcome";
+            break;
+          case TEACHER:
+            emailTemplate = "email-template-teacher-welcome";
+            break;
+          default:
+            emailTemplate = "email-template-default-role-change";
         }
+        emailManager.sendTemplatedEmailToUser(existingUserDTO,
+            emailManager.getEmailTemplateDTO(emailTemplate),
+            ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                "newrole", requestedRole.toString()),
+            EmailType.SYSTEM);
+      }
+    } catch (ContentManagerException | NoUserException e) {
+      log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
     }
 
-    /**
-     * This method will test if the specified token is a valid password reset token.
-     * <p>
-     * 
-     * @param token
-     *            - The token to test
-     * @return true if the reset token is valid
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    public final boolean validatePasswordResetToken(final String token) throws SegueDatabaseException {
-        // Set user's password
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
+    userToSave.setRole(requestedRole);
+    userToSave.setTeacherPending(false);
+    this.database.createOrUpdateUser(userToSave);
+  }
 
-        return authenticator.isValidResetToken(token);
+  /**
+   * @param email                            - the user email
+   * @param requestedEmailVerificationStatus - the new email verification status
+   * @throws SegueDatabaseException - an exception when accessing the database
+   */
+  public void updateUserEmailVerificationStatus(final String email,
+                                                final EmailVerificationStatus requestedEmailVerificationStatus)
+      throws SegueDatabaseException {
+    Validate.notNull(requestedEmailVerificationStatus);
+    RegisteredUser userToSave = this.findUserByEmail(email);
+    if (null == userToSave) {
+      log.warn(String.format(
+          "Could not update email verification status of email address (%s) - does not exist",
+          email));
+      return;
+    }
+    userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
+    userToSave.setLastUpdated(new Date());
+    this.database.createOrUpdateUser(userToSave);
+  }
+
+  /**
+   * This method facilitates the removal of personal user data from Segue.
+   *
+   * @param userToDelete - the user to delete.
+   * @throws SegueDatabaseException - if a general database error has occurred.
+   * @throws NoUserException        - if we cannot find the user account specified
+   */
+  public void deleteUserAccount(final RegisteredUserDTO userToDelete) throws NoUserException, SegueDatabaseException {
+    // check the user exists
+    if (null == userToDelete) {
+      throw new NoUserException("Unable to delete the user as no user was provided.");
     }
 
-    /**
-     * processEmailVerification.
-     * @param userId
-     *            - the user id
-     *
-     * @param token
-     *            - token used to verify email address
-     * 
-     * @return - whether the token is valid or not
-     * @throws SegueDatabaseException
-     *             - exception if token cannot be validated
-     * @throws InvalidTokenException - if something is wrong with the token provided
-     * @throws NoUserException - if the user does not exist.
-     */
-    public RegisteredUserDTO processEmailVerification(final Long userId, final String token)
-            throws SegueDatabaseException, InvalidTokenException, NoUserException {
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
+    RegisteredUser userDOById = this.findUserById(userToDelete.getId());
 
-        RegisteredUser user = this.findUserById(userId);
+    // delete the user.
+    this.database.deleteUserAccount(userDOById);
+  }
 
-        if (null == user) {
-            log.warn(String.format("Received an invalid email token request for (%s)", userId));
-            throw new NoUserException("No user found with this userId!");
-        }
-
-        if (!userId.equals(user.getId())) {
-            log.warn(String.format("Received an invalid email token request by (%s) - provided bad userid",
-                    user.getId()));
-            throw new InvalidTokenException();
-        }
-
-        EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
-        if (evStatus == EmailVerificationStatus.VERIFIED
-                && user.getEmail().equals(user.getEmailToVerify())) {
-            log.warn(String.format("Received a duplicate email verification request for (%s) - already verified",
-                    user.getEmail()));
-            return this.convertUserDOToUserDTO(user);
-        }
-
-        if (authenticator.isValidEmailVerificationToken(user, token)) {
-            user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-            user.setEmail(user.getEmailToVerify());
-            user.setEmailVerificationToken(null);
-            user.setEmailToVerify(null);
-            user.setLastUpdated(new Date());
-
-            // Save user
-            RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-            log.info(String.format("Email verification for user (%s) has completed successfully.",
-                    createOrUpdateUser.getId()));
-            return this.convertUserDOToUserDTO(createOrUpdateUser);
-        } else {
-            log.warn(String.format("Received an invalid email verification token for (%s) - invalid token", userId));
-            throw new InvalidTokenException();
-        }
+  /**
+   * This method facilitates the merging of two user accounts.
+   *
+   * @param target - the user account to remove.
+   * @param source - the user account to merge into.
+   * @throws SegueDatabaseException if an error occurs
+   */
+  public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source)
+      throws SegueDatabaseException {
+    // check the users exist
+    if (null == target) {
+      throw new SegueDatabaseException("Merge users target is null");
+    } else if (null == source) {
+      throw new SegueDatabaseException("Merge users source is null");
     }
 
-    /**
-     * This method will use a unique password reset token to set a new password.
-     *
-     * @param token
-     *            - the password reset token
-     * @param newPassword
-     *            - the supplied password
-     * @return the user which has had the password reset.
-     * @throws InvalidTokenException
-     *             - If the token provided is invalid.
-     * @throws InvalidPasswordException
-     *             - If the password provided is invalid.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    public RegisteredUserDTO resetPassword(final String token, final String newPassword)
-            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException,
-            NoSuchAlgorithmException {
-        return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, newPassword));
+    RegisteredUser targetUser = this.findUserById(target.getId());
+    RegisteredUser sourceUser = this.findUserById(source.getId());
+
+    // merge the users.
+    this.database.mergeUserAccounts(targetUser, sourceUser);
+  }
+
+  /**
+   * This method will use an email address to check a local user exists and if so, will send an email with a unique
+   * token to allow a password reset. This method does not indicate whether or not the email actually existed.
+   *
+   * @param userObject - A user object containing the email address of the user to reset the password for.
+   * @return true if the request was successfully submitted or false if the user was not found
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  public final boolean resetPasswordRequest(final RegisteredUserDTO userObject)
+      throws SegueDatabaseException {
+    RegisteredUser user = this.findUserByEmail(userObject.getEmail());
+
+    if (null == user) {
+      return false;
     }
 
-    /**
-     * Check if account has MFA configured.
-     *
-     * @param user - who requested it
-     * @return true if yes, false if not.
-     * @throws SegueDatabaseException - If there is an internal database error.
-     */
-    public boolean has2FAConfigured(final RegisteredUserDTO user) throws SegueDatabaseException {
-        return this.secondFactorManager.has2FAConfigured(user);
+    EXECUTOR.submit(() -> {
+      RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
+      try {
+        this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
+        log.info("Password reset sent");
+      } catch (CommunicationException e) {
+        log.error("Error sending reset message.", e);
+      } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
+        log.error("Error generating password reset token.", e);
+      }
+    });
+    return true;
+  }
+
+  /**
+   * This method will use an email address to check a local user exists and if so, will send an email with a unique
+   * token to allow a password reset. This method does not indicate whether or not the email actually existed.
+   *
+   * @param request - so we can look up the registered user object.
+   * @param email   - The email the user wants to verify.
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  public final void emailVerificationRequest(final HttpServletRequest request, final String email)
+      throws SegueDatabaseException {
+
+    try {
+      RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
+      RegisteredUser user = this.findUserById(userDTO.getId());
+
+      // TODO: Email verification stuff does not belong in the password authenticator... It should be moved.
+      // Generate token
+      IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+          .get(AuthenticationProvider.SEGUE);
+      user = authenticator.createEmailVerificationTokenForUser(user, email);
+
+      // Save user object
+      this.database.createOrUpdateUser(user);
+
+      String emailVerificationToken = user.getEmailVerificationToken();
+
+      if (email.equals(user.getEmail())) {
+        this.sendVerificationEmailForCurrentEmail(userDTO, emailVerificationToken);
+      } else {
+        this.sendVerificationEmailsForEmailChange(userDTO, email, emailVerificationToken);
+      }
+
+    } catch (NoUserLoggedInException e) {
+      log.error(String.format("Verification requested for email:%s where email does not exist "
+          + "and user not logged in!", email));
+    } catch (ContentManagerException e) {
+      log.debug("ContentManagerException " + e.getMessage());
+    }
+  }
+
+  /**
+   * This method will test if the specified token is a valid password reset token.
+   * <p>
+   *
+   * @param token - The token to test
+   * @return true if the reset token is valid
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  public final boolean validatePasswordResetToken(final String token) throws SegueDatabaseException {
+    // Set user's password
+    IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+        .get(AuthenticationProvider.SEGUE);
+
+    return authenticator.isValidResetToken(token);
+  }
+
+  /**
+   * processEmailVerification.
+   *
+   * @param userId - the user id
+   * @param token  - token used to verify email address
+   * @return - whether the token is valid or not
+   * @throws SegueDatabaseException - exception if token cannot be validated
+   * @throws InvalidTokenException  - if something is wrong with the token provided
+   * @throws NoUserException        - if the user does not exist.
+   */
+  public RegisteredUserDTO processEmailVerification(final Long userId, final String token)
+      throws SegueDatabaseException, InvalidTokenException, NoUserException {
+    IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+        .get(AuthenticationProvider.SEGUE);
+
+    RegisteredUser user = this.findUserById(userId);
+
+    if (null == user) {
+      log.warn(String.format("Received an invalid email token request for (%s)", userId));
+      throw new NoUserException("No user found with this userId!");
     }
 
-    /**
-     * Generate a random shared secret - currently not stored against the users account.
-     *
-     * @param user - who requested it
-     * @return TOTPSharedSecret object
-     */
-    public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
-        return this.secondFactorManager.getNewSharedSecret(user);
+    if (!userId.equals(user.getId())) {
+      log.warn(String.format("Received an invalid email token request by (%s) - provided bad userid",
+          user.getId()));
+      throw new InvalidTokenException();
     }
 
-    /**
-     * Activate MFA for user's account by passing secret and code submitted.
-     *
-     * @param user - registered user
-     * @param sharedSecret - shared secret provided by getNewSharedSecret call
-     * @param codeSubmitted - latest TOTP code to confirm successful recording of secret.
-     * @return true if it is now active on the account, false if secret / TOTP code do not match.
-     * @throws SegueDatabaseException - unable to save secret to account.
-     */
-    public boolean activateMFAForUser(final RegisteredUserDTO user, final String sharedSecret, final Integer codeSubmitted) throws SegueDatabaseException {
-        return this.secondFactorManager.activate2FAForUser(user, sharedSecret, codeSubmitted);
+    EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
+    if (evStatus == EmailVerificationStatus.VERIFIED
+        && user.getEmail().equals(user.getEmailToVerify())) {
+      log.warn(String.format("Received a duplicate email verification request for (%s) - already verified",
+          user.getEmail()));
+      return this.convertUserDOToUserDTO(user);
     }
 
-    /**
-     * Deactivate MFA for user's account - should only be used by admins!
-     *
-     * @param user - the User to deactivate 2FA for
-     * @throws SegueDatabaseException - unable to save secret to account.
-     */
-    public void deactivateMFAForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
-        this.secondFactorManager.deactivate2FAForUser(user);
+    if (authenticator.isValidEmailVerificationToken(user, token)) {
+      user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+      user.setEmail(user.getEmailToVerify());
+      user.setEmailVerificationToken(null);
+      user.setEmailToVerify(null);
+      user.setLastUpdated(new Date());
+
+      // Save user
+      RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
+      log.info(String.format("Email verification for user (%s) has completed successfully.",
+          createOrUpdateUser.getId()));
+      return this.convertUserDOToUserDTO(createOrUpdateUser);
+    } else {
+      log.warn(String.format("Received an invalid email verification token for (%s) - invalid token", userId));
+      throw new InvalidTokenException();
+    }
+  }
+
+  /**
+   * This method will use a unique password reset token to set a new password.
+   *
+   * @param token       - the password reset token
+   * @param newPassword - the supplied password
+   * @return the user which has had the password reset.
+   * @throws InvalidTokenException    - If the token provided is invalid.
+   * @throws InvalidPasswordException - If the password provided is invalid.
+   * @throws SegueDatabaseException   - If there is an internal database error.
+   */
+  public RegisteredUserDTO resetPassword(final String token, final String newPassword)
+      throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException,
+      NoSuchAlgorithmException {
+    return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, newPassword));
+  }
+
+  /**
+   * Check if account has MFA configured.
+   *
+   * @param user - who requested it
+   * @return true if yes, false if not.
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  public boolean has2FAConfigured(final RegisteredUserDTO user) throws SegueDatabaseException {
+    return this.secondFactorManager.has2FAConfigured(user);
+  }
+
+  /**
+   * Generate a random shared secret - currently not stored against the users account.
+   *
+   * @param user - who requested it
+   * @return TOTPSharedSecret object
+   */
+  public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
+    return this.secondFactorManager.getNewSharedSecret(user);
+  }
+
+  /**
+   * Activate MFA for user's account by passing secret and code submitted.
+   *
+   * @param user          - registered user
+   * @param sharedSecret  - shared secret provided by getNewSharedSecret call
+   * @param codeSubmitted - latest TOTP code to confirm successful recording of secret.
+   * @return true if it is now active on the account, false if secret / TOTP code do not match.
+   * @throws SegueDatabaseException - unable to save secret to account.
+   */
+  public boolean activateMFAForUser(final RegisteredUserDTO user, final String sharedSecret,
+                                    final Integer codeSubmitted) throws SegueDatabaseException {
+    return this.secondFactorManager.activate2FAForUser(user, sharedSecret, codeSubmitted);
+  }
+
+  /**
+   * Deactivate MFA for user's account - should only be used by admins!
+   *
+   * @param user - the User to deactivate 2FA for
+   * @throws SegueDatabaseException - unable to save secret to account.
+   */
+  public void deactivateMFAForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
+    this.secondFactorManager.deactivate2FAForUser(user);
+  }
+
+  /**
+   * Helper method to convert a user object into a userSummary DTO with as little detail as possible about the user.
+   *
+   * @param userToConvert - full user object.
+   * @return a summarised object with minimal personal information
+   */
+  public UserSummaryDTO convertToUserSummaryObject(final RegisteredUserDTO userToConvert) {
+    return this.dtoMapper.map(userToConvert, UserSummaryDTO.class);
+  }
+
+  /**
+   * Helper method to convert a user object into a more detailed summary object depending on the dto provided.
+   *
+   * @param userToConvert    - full user object.
+   * @param detailedDTOClass - The level of detail required for the conversion
+   * @return a summarised object with reduced personal information
+   */
+  public UserSummaryWithEmailAddressDTO convertToDetailedUserSummaryObject(
+      final RegisteredUserDTO userToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTOClass) {
+    return this.dtoMapper.map(userToConvert, detailedDTOClass);
+  }
+
+  /**
+   * Helper method to convert user objects into cutdown userSummary DTOs.
+   *
+   * @param userListToConvert - full user objects.
+   * @return a list of summarised objects with minimal personal information
+   */
+  public List<UserSummaryDTO> convertToUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
+    Validate.notNull(userListToConvert);
+    List<UserSummaryDTO> resultList = Lists.newArrayList();
+    for (RegisteredUserDTO user : userListToConvert) {
+      resultList.add(this.convertToUserSummaryObject(user));
+    }
+    return resultList;
+  }
+
+  /**
+   * Helper method to convert user objects into cutdown DetailedUserSummary DTOs.
+   *
+   * @param userListToConvert - full user objects.
+   * @param detailedDTO       - The level of detail required for the conversion
+   * @return a list of summarised objects with reduced personal information
+   */
+  public List<UserSummaryWithEmailAddressDTO> convertToDetailedUserSummaryObjectList(
+      final List<RegisteredUserDTO> userListToConvert,
+      final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTO) {
+    Validate.notNull(userListToConvert);
+    List<UserSummaryWithEmailAddressDTO> resultList = Lists.newArrayList();
+    for (RegisteredUserDTO user : userListToConvert) {
+      resultList.add(this.convertToDetailedUserSummaryObject(user, detailedDTO));
+    }
+    return resultList;
+  }
+
+  /**
+   * Get the user object from the partially completed cookie.
+   * <p>
+   * WARNING: Do not use this method to determine if a user has successfully logged in or not as they could have omitted the 2FA step.
+   *
+   * @param request to pull back the user
+   * @return UserSummaryDTO of the partially logged-in user or will throw an exception if cannot be found.
+   * @throws NoUserLoggedInException if they haven't started the flow.
+   */
+  public UserSummaryWithEmailAddressDTO getPartiallyIdentifiedUser(final HttpServletRequest request)
+      throws NoUserLoggedInException {
+    RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
+    if (null == registeredUser) {
+      throw new NoUserLoggedInException();
+    }
+    return this.convertToDetailedUserSummaryObject(this.convertUserDOToUserDTO(registeredUser),
+        UserSummaryWithEmailAddressDTO.class);
+  }
+
+  /**
+   * Sends verification email for the user's current email address. The destination will match the userDTO's email.
+   *
+   * @param userDTO                - user to which the email is to be sent.
+   * @param emailVerificationToken - the generated email verification token.
+   * @throws ContentManagerException - if the email template does not exist.
+   * @throws SegueDatabaseException  - if there is a database exception during the processing of the email.
+   */
+  private void sendVerificationEmailForCurrentEmail(final RegisteredUserDTO userDTO,
+                                                    final String emailVerificationToken)
+      throws ContentManagerException, SegueDatabaseException {
+
+    EmailTemplateDTO emailVerificationTemplate =
+        emailManager.getEmailTemplateDTO("email-template-email-verification");
+    Map<String, Object> emailTokens =
+        ImmutableMap.of("verificationURL", this.generateEmailVerificationURL(userDTO, emailVerificationToken));
+
+    log.info(String.format("Sending email verification message to %s", userDTO.getEmail()));
+
+    emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
+  }
+
+  /**
+   * Sends a notice email for email change to the user's current email address and then creates a copy of the user
+   * with the new email to send to the sendVerificationEmailForCurrentEmail method.
+   *
+   * @param userDTO       - initial user where the notice of change is to be sent.
+   * @param newEmail      - the new email which has been requested to change to.
+   * @param newEmailToken - the generated HMAC token for the new email.
+   * @throws ContentManagerException - if the email template does not exist.
+   * @throws SegueDatabaseException  - if there is a database exception during the processing of the email.
+   */
+  private void sendVerificationEmailsForEmailChange(final RegisteredUserDTO userDTO,
+                                                    final String newEmail,
+                                                    final String newEmailToken)
+      throws ContentManagerException, SegueDatabaseException {
+
+    EmailTemplateDTO emailChangeTemplate = emailManager.getEmailTemplateDTO("email-verification-change");
+    Map<String, Object> emailTokens = ImmutableMap.of("requestedemail", newEmail);
+
+    log.info(String.format("Sending email for email address change for user (%s)"
+        + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), newEmail));
+    emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate, emailTokens, EmailType.SYSTEM);
+
+    // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
+    RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
+    temporaryUser.setEmail(newEmail);
+    temporaryUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
+    this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
+  }
+
+  /**
+   * Logs the user in and creates the signed sessions.
+   *
+   * @param request  - for the session to be attached
+   * @param response - for the session to be attached.
+   * @param user     - the user who is being logged in.
+   * @return the DTO version of the user.
+   * @throws SegueDatabaseException - if there is a problem with the database.
+   */
+  private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
+                                      final RegisteredUser user) throws SegueDatabaseException {
+    AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
+    if (anonymousUser != null) {
+      log.debug(String.format("Anonymous User (%s) located during login - need to merge question information",
+          anonymousUser.getSessionId()));
     }
 
-    /**
-     * Helper method to convert a user object into a userSummary DTO with as little detail as possible about the user.
-     * 
-     * @param userToConvert
-     *            - full user object.
-     * @return a summarised object with minimal personal information
-     */
-    public UserSummaryDTO convertToUserSummaryObject(final RegisteredUserDTO userToConvert) {
-        return this.dtoMapper.map(userToConvert, UserSummaryDTO.class);
-    }
+    // now we want to clean up any data generated by the user while they weren't logged in.
+    mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
 
-    /**
-     * Helper method to convert a user object into a more detailed summary object depending on the dto provided.
-     *
-     * @param userToConvert
-     *            - full user object.
-     * @param detailedDTOClass
-     *            - The level of detail required for the conversion
-     * @return a summarised object with reduced personal information
-     */
-    public UserSummaryWithEmailAddressDTO convertToDetailedUserSummaryObject(
-            final RegisteredUserDTO userToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTOClass) {
-        return this.dtoMapper.map(userToConvert, detailedDTOClass);
-    }
+    return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSession(request, response, user));
+  }
 
-    /**
-     * Helper method to convert user objects into cutdown userSummary DTOs.
-     * 
-     * @param userListToConvert
-     *            - full user objects.
-     * @return a list of summarised objects with minimal personal information
-     */
-    public List<UserSummaryDTO> convertToUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
-        Validate.notNull(userListToConvert);
-        List<UserSummaryDTO> resultList = Lists.newArrayList();
-        for (RegisteredUserDTO user : userListToConvert) {
-            resultList.add(this.convertToUserSummaryObject(user));
-        }
-        return resultList;
-    }
+  /**
+   * Generate a partially logged-in session for the user based on successful password authentication.
+   * <p>
+   * To complete this the user must also complete MFA authentication.
+   *
+   * @param request  - http request containing the cookie
+   * @param response - response to update cookie information
+   * @param user     - user of interest
+   */
+  private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
+                                  final RegisteredUser user) throws SegueDatabaseException {
+    this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user);
+  }
 
-    /**
-     * Helper method to convert user objects into cutdown DetailedUserSummary DTOs.
-     *
-     * @param userListToConvert
-     *            - full user objects.
-     * @param detailedDTO
-     *            - The level of detail required for the conversion
-     * @return a list of summarised objects with reduced personal information
-     */
-    public List<UserSummaryWithEmailAddressDTO> convertToDetailedUserSummaryObjectList(
-            final List<RegisteredUserDTO> userListToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTO) {
-        Validate.notNull(userListToConvert);
-        List<UserSummaryWithEmailAddressDTO> resultList = Lists.newArrayList();
-        for (RegisteredUserDTO user : userListToConvert) {
-            resultList.add(this.convertToDetailedUserSummaryObject(user, detailedDTO));
-        }
-        return resultList;
-    }
+  /**
+   * Retrieve a partially logged-in session for the user based on successful password authentication.
+   * <p>
+   * NOTE: You should not treat users has having logged in using this method as they haven't completed login.
+   *
+   * @param request - http request containing the cookie
+   * @return the user retrieved using the id extracted from the cookie
+   */
+  private RegisteredUser retrievePartialLogInForMFA(final HttpServletRequest request) {
+    return this.userAuthenticationManager.getUserFromSession(request, true);
+  }
 
-    /**
-     * Get the user object from the partially completed cookie.
-     * <p>
-     * WARNING: Do not use this method to determine if a user has successfully logged in or not as they could have omitted the 2FA step.
-     *
-     * @param request to pull back the user
-     * @return UserSummaryDTO of the partially logged-in user or will throw an exception if cannot be found.
-     * @throws NoUserLoggedInException if they haven't started the flow.
-     */
-    public UserSummaryWithEmailAddressDTO getPartiallyIdentifiedUser(final HttpServletRequest request) throws NoUserLoggedInException {
-        RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
-        if (null == registeredUser) {
-            throw new NoUserLoggedInException();
-        }
-        return this.convertToDetailedUserSummaryObject(this.convertUserDOToUserDTO(registeredUser), UserSummaryWithEmailAddressDTO.class);
-    }
+  /**
+   * Method to migrate anonymously generated data to a persisted account.
+   *
+   * @param anonymousUser to look up.
+   * @param user          to migrate to.
+   */
+  private void mergeAnonymousUserWithRegisteredUser(final AnonymousUser anonymousUser, final RegisteredUser user) {
+    if (anonymousUser != null) {
+      // merge any anonymous information collected with this user.
+      try {
+        final RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
 
-    /**
-     * Sends verification email for the user's current email address. The destination will match the userDTO's email.
-     *
-     * @param userDTO - user to which the email is to be sent.
-     * @param emailVerificationToken - the generated email verification token.
-     * @throws ContentManagerException - if the email template does not exist.
-     * @throws SegueDatabaseException - if there is a database exception during the processing of the email.
-     */
-    private void sendVerificationEmailForCurrentEmail(final RegisteredUserDTO userDTO,
-                                                            final String emailVerificationToken)
-            throws ContentManagerException, SegueDatabaseException {
+        this.questionAttemptDb.mergeAnonymousQuestionAttemptsIntoRegisteredUser(
+            this.dtoMapper.map(anonymousUser, AnonymousUserDTO.class), userDTO);
 
-        EmailTemplateDTO emailVerificationTemplate =
-                emailManager.getEmailTemplateDTO("email-template-email-verification");
-        Map<String, Object> emailTokens =
-                ImmutableMap.of("verificationURL", this.generateEmailVerificationURL(userDTO, emailVerificationToken));
+        // may as well spawn a new thread to do the log migration stuff asynchronously
+        // work now.
+        Thread logMigrationJob = new Thread() {
+          @Override
+          public void run() {
+            // run this asynchronously as there is no need to block and it is quite slow.
+            logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
+                .toString());
 
-        log.info(String.format("Sending email verification message to %s", userDTO.getEmail()));
+            logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
+                ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
-        emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
-    }
-
-    /**
-     * Sends a notice email for email change to the user's current email address and then creates a copy of the user
-     * with the new email to send to the sendVerificationEmailForCurrentEmail method.
-     *
-     * @param userDTO - initial user where the notice of change is to be sent.
-     * @param newEmail - the new email which has been requested to change to.
-     * @param newEmailToken - the generated HMAC token for the new email.
-     * @throws ContentManagerException - if the email template does not exist.
-     * @throws SegueDatabaseException - if there is a database exception during the processing of the email.
-     */
-    private void sendVerificationEmailsForEmailChange(final RegisteredUserDTO userDTO,
-                                                         final String newEmail,
-                                                         final String newEmailToken)
-            throws ContentManagerException, SegueDatabaseException {
-
-        EmailTemplateDTO emailChangeTemplate = emailManager.getEmailTemplateDTO("email-verification-change");
-        Map<String, Object> emailTokens = ImmutableMap.of("requestedemail", newEmail);
-
-        log.info(String.format("Sending email for email address change for user (%s)"
-                + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), newEmail));
-        emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate,  emailTokens, EmailType.SYSTEM);
-
-        // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
-        RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
-        temporaryUser.setEmail(newEmail);
-        temporaryUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
-        this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
-    }
-
-    /**
-     * Logs the user in and creates the signed sessions.
-     * 
-     * @param request
-     *            - for the session to be attached
-     * @param response
-     *            - for the session to be attached.
-     * @param user
-     *            - the user who is being logged in.
-     * @throws SegueDatabaseException - if there is a problem with the database.
-     * @return the DTO version of the user.
-     */
-    private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user) throws SegueDatabaseException {
-        AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
-        if (anonymousUser != null) {
-            log.debug(String.format("Anonymous User (%s) located during login - need to merge question information", anonymousUser.getSessionId()));
-        }
-
-        // now we want to clean up any data generated by the user while they weren't logged in.
-        mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
-
-        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSession(request, response, user));
-    }
-
-    /**
-     * Generate a partially logged-in session for the user based on successful password authentication.
-     * <p>
-     * To complete this the user must also complete MFA authentication.
-     *
-     * @param request - http request containing the cookie
-     * @param response - response to update cookie information
-     * @param user - user of interest
-     */
-    private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
-                                                 final RegisteredUser user) throws SegueDatabaseException {
-        this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user);
-    }
-
-    /**
-     * Retrieve a partially logged-in session for the user based on successful password authentication.
-     * <p>
-     * NOTE: You should not treat users has having logged in using this method as they haven't completed login.
-     *
-     * @param request - http request containing the cookie
-     * @return the user retrieved using the id extracted from the cookie
-     */
-    private RegisteredUser retrievePartialLogInForMFA(final HttpServletRequest request) {
-        return this.userAuthenticationManager.getUserFromSession(request, true);
-    }
-
-    /**
-     * Method to migrate anonymously generated data to a persisted account.
-     * 
-     * @param anonymousUser
-     *            to look up.
-     * @param user
-     *            to migrate to.
-     */
-    private void mergeAnonymousUserWithRegisteredUser(final AnonymousUser anonymousUser, final RegisteredUser user) {
-        if (anonymousUser != null) {
-            // merge any anonymous information collected with this user.
+            // delete the session attribute as merge has completed.
             try {
-                final RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
-
-                this.questionAttemptDb.mergeAnonymousQuestionAttemptsIntoRegisteredUser(
-                        this.dtoMapper.map(anonymousUser, AnonymousUserDTO.class), userDTO);
-
-                // may as well spawn a new thread to do the log migration stuff asynchronously
-                // work now.
-                Thread logMigrationJob = new Thread() {
-                    @Override
-                    public void run() {
-                        // run this asynchronously as there is no need to block and it is quite slow.
-                        logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
-                                .toString());
-
-                        logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
-                                ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
-
-                        // delete the session attribute as merge has completed.
-                        try {
-                            temporaryUserCache.deleteAnonymousUser(anonymousUser);
-                        } catch (SegueDatabaseException e) {
-                            log.error("Unable to delete anonymous user during merge operation.", e);
-                        }
-                    }
-                };
-
-                logMigrationJob.start();
-
+              temporaryUserCache.deleteAnonymousUser(anonymousUser);
             } catch (SegueDatabaseException e) {
-                log.error("Unable to merge anonymously collected data with stored user object.", e);
+              log.error("Unable to delete anonymous user during merge operation.", e);
             }
-        }
+          }
+        };
+
+        logMigrationJob.start();
+
+      } catch (SegueDatabaseException e) {
+        log.error("Unable to merge anonymously collected data with stored user object.", e);
+      }
     }
-    
-    /**
-     * Library method that allows the api to locate a user object from the database based on a given unique id.
-     *
-     * @param userId
-     *            - to search for.
-     * @return user or null if we cannot find it.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser findUserById(final Long userId) throws SegueDatabaseException {
-        if (null == userId) {
-            return null;
-        }
-        return this.database.getById(userId);
+  }
+
+  /**
+   * Library method that allows the api to locate a user object from the database based on a given unique id.
+   *
+   * @param userId - to search for.
+   * @return user or null if we cannot find it.
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  private RegisteredUser findUserById(final Long userId) throws SegueDatabaseException {
+    if (null == userId) {
+      return null;
     }
+    return this.database.getById(userId);
+  }
 
-    /**
-     * Library method that allows the api to locate a user object from the database based on a given unique email
-     * address.
-     *
-     * @param email
-     *            - to search for.
-     * @return user or null if we cannot find it.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser findUserByEmail(final String email) throws SegueDatabaseException {
-        if (null == email) {
-            return null;
-        }
-        return this.database.getByEmail(email);
+  /**
+   * Library method that allows the api to locate a user object from the database based on a given unique email
+   * address.
+   *
+   * @param email - to search for.
+   * @return user or null if we cannot find it.
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  private RegisteredUser findUserByEmail(final String email) throws SegueDatabaseException {
+    if (null == email) {
+      return null;
     }
+    return this.database.getByEmail(email);
+  }
 
-    /**
-     * This method should use the provider specific reference to either register a new user or retrieve an existing
-     * user.
-     * 
-     * @param federatedAuthenticator
-     *            the federatedAuthenticator we are using for authentication
-     * @param userFromProvider
-     *            - the user object returned by the auth provider.
-     * @return a Segue UserDO that exists in the segue database.
-     * @throws NoUserException
-     *             - If we are unable to locate the user id based on the lookup reference provided.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser registerUserWithFederatedProvider(final AuthenticationProvider federatedAuthenticator,
-            final UserFromAuthProvider userFromProvider) throws NoUserException, SegueDatabaseException {
+  /**
+   * This method should use the provider specific reference to either register a new user or retrieve an existing
+   * user.
+   *
+   * @param federatedAuthenticator the federatedAuthenticator we are using for authentication
+   * @param userFromProvider       - the user object returned by the auth provider.
+   * @return a Segue UserDO that exists in the segue database.
+   * @throws NoUserException        - If we are unable to locate the user id based on the lookup reference provided.
+   * @throws SegueDatabaseException - If there is an internal database error.
+   */
+  private RegisteredUser registerUserWithFederatedProvider(final AuthenticationProvider federatedAuthenticator,
+                                                           final UserFromAuthProvider userFromProvider)
+      throws NoUserException, SegueDatabaseException {
 
-        log.debug(String.format("New registration (%s) as user does not already exist.", federatedAuthenticator));
+    log.debug(String.format("New registration (%s) as user does not already exist.", federatedAuthenticator));
 
-        if (null == userFromProvider) {
-            log.warn("Unable to create user for the provider "
-                    + federatedAuthenticator);
-            throw new NoUserException("No user returned by the provider!");
-        }
-
-        RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
-        newLocalUser.setRegistrationDate(new Date());
-
-        // register user
-        RegisteredUser newlyRegisteredUser = database.registerNewUserWithProvider(newLocalUser,
-                federatedAuthenticator, userFromProvider.getProviderUserId());
-
-        RegisteredUser localUserInformation = this.database.getById(newlyRegisteredUser.getId());
-
-        if (null == localUserInformation) {
-            // we just put it in so something has gone very wrong.
-            log.error("Failed to retrieve user even though we just put it in the database!");
-            throw new NoUserException("Failed to retrieve user immediately after saving to database!");
-        }
-
-        // since the federated providers didn't always provide email addresses - we have to check and update accordingly.
-        if (!localUserInformation.getEmail().contains("@")
-                && !EmailVerificationStatus.DELIVERY_FAILED.equals(localUserInformation.getEmailVerificationStatus())) {
-            this.updateUserEmailVerificationStatus(localUserInformation.getEmail(),
-                    EmailVerificationStatus.DELIVERY_FAILED);
-        }
-
-        logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), SegueServerLogType.USER_REGISTRATION,
-                ImmutableMap.builder().put("provider", federatedAuthenticator.name())
-                        .build());
-
-        return localUserInformation;
+    if (null == userFromProvider) {
+      log.warn("Unable to create user for the provider "
+          + federatedAuthenticator);
+      throw new NoUserException("No user returned by the provider!");
     }
 
-    /**
-     * IsUserValid This function will check that the user object is valid.
-     * 
-     * @param userToValidate
-     *            - the user to validate.
-     * @return true if it meets the internal storage requirements, false if not.
-     */
-    private boolean isUserValid(final RegisteredUser userToValidate) {
-        return userToValidate.getEmail() != null && isEmailValid(userToValidate.getEmail());
+    RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
+    newLocalUser.setRegistrationDate(new Date());
+
+    // register user
+    RegisteredUser newlyRegisteredUser = database.registerNewUserWithProvider(newLocalUser,
+        federatedAuthenticator, userFromProvider.getProviderUserId());
+
+    RegisteredUser localUserInformation = this.database.getById(newlyRegisteredUser.getId());
+
+    if (null == localUserInformation) {
+      // we just put it in so something has gone very wrong.
+      log.error("Failed to retrieve user even though we just put it in the database!");
+      throw new NoUserException("Failed to retrieve user immediately after saving to database!");
     }
 
-    public static boolean isEmailValid(final String email) {
-        return email != null
-                && !email.isEmpty()
-                && email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")
-                && EMAIL_PERMITTED_CHARS_REGEX.matcher(email).matches()
-                && !EMAIL_CONSECUTIVE_FULL_STOP_REGEX.matcher(email).find();
+    // since the federated providers didn't always provide email addresses - we have to check and update accordingly.
+    if (!localUserInformation.getEmail().contains("@")
+        && !EmailVerificationStatus.DELIVERY_FAILED.equals(localUserInformation.getEmailVerificationStatus())) {
+      this.updateUserEmailVerificationStatus(localUserInformation.getEmail(),
+          EmailVerificationStatus.DELIVERY_FAILED);
     }
 
-    /**
-     * This function checks that the name provided is valid.
-     *
-     * @param name
-     *            - the name to validate.
-     * @return true if the name is valid, false otherwise.
-     */
-    public static boolean isUserNameValid(final String name) {
-        return null != name
-                && !name.isEmpty()
-                && !name.isBlank()
-                && name.length() <= USER_NAME_MAX_LENGTH
-                && USER_NAME_PERMITTED_CHARS_REGEX.matcher(name).matches();
+    logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), SegueServerLogType.USER_REGISTRATION,
+        ImmutableMap.builder().put("provider", federatedAuthenticator.name())
+            .build());
+
+    return localUserInformation;
+  }
+
+  /**
+   * IsUserValid This function will check that the user object is valid.
+   *
+   * @param userToValidate - the user to validate.
+   * @return true if it meets the internal storage requirements, false if not.
+   */
+  private boolean isUserValid(final RegisteredUser userToValidate) {
+    return userToValidate.getEmail() != null && isEmailValid(userToValidate.getEmail());
+  }
+
+  public static boolean isEmailValid(final String email) {
+    return email != null
+        && !email.isEmpty()
+        && email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)")
+        && EMAIL_PERMITTED_CHARS_REGEX.matcher(email).matches()
+        && !EMAIL_CONSECUTIVE_FULL_STOP_REGEX.matcher(email).find();
+  }
+
+  /**
+   * This function checks that the name provided is valid.
+   *
+   * @param name - the name to validate.
+   * @return true if the name is valid, false otherwise.
+   */
+  public static boolean isUserNameValid(final String name) {
+    return null != name
+        && !name.isEmpty()
+        && !name.isBlank()
+        && name.length() <= USER_NAME_MAX_LENGTH
+        && USER_NAME_PERMITTED_CHARS_REGEX.matcher(name).matches();
+  }
+
+  /**
+   * Converts the sensitive UserDO into a limited DTO.
+   *
+   * @param user - DO
+   * @return user - DTO
+   */
+  private RegisteredUserDTO convertUserDOToUserDTO(final RegisteredUser user) {
+    if (null == user) {
+      return null;
+    }
+    return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).get(0);
+  }
+
+  /**
+   * Converts a list of userDOs into a List of userDTOs.
+   *
+   * @param users - list of DOs to convert
+   * @return the list of user dtos.
+   */
+  private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
+    List<RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+    if (userDOs.isEmpty()) {
+      return new ArrayList<>();
     }
 
-    /**
-     * Converts the sensitive UserDO into a limited DTO.
-     * 
-     * @param user
-     *            - DO
-     * @return user - DTO
-     */
-    private RegisteredUserDTO convertUserDOToUserDTO(final RegisteredUser user) {
+    return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Get the RegisteredUserDO of the currently logged-in user. This is for internal use only.
+   * <p>
+   * This method will validate the session as well returning null if it is invalid.
+   *
+   * @param request - to retrieve session information from
+   * @return Returns the current UserDTO if we can get it or null if user is not currently logged in / there is an
+   * invalid session
+   */
+  private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
+    return this.userAuthenticationManager.getUserFromSession(request, false);
+  }
+
+  /**
+   * Retrieves anonymous user information if it is available.
+   *
+   * @param request - request containing session information.
+   * @return An anonymous user containing any anonymous question attempts (which could be none)
+   */
+  private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) throws SegueDatabaseException {
+    return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
+  }
+
+  /**
+   * Retrieves anonymous user information if it is available.
+   *
+   * @param request - request containing session information.
+   * @return An anonymous user containing any anonymous question attempts (which could be none)
+   */
+  private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) throws SegueDatabaseException {
+    AnonymousUser user;
+
+    // no session exists so create one.
+    if (request.getSession().getAttribute(ANONYMOUS_USER) == null) {
+      String anonymousUserId = getAnonymousUserIdFromRequest(request);
+      user = new AnonymousUser(anonymousUserId);
+      user.setDateCreated(new Date());
+      // add the user reference to the session
+      request.getSession().setAttribute(ANONYMOUS_USER, anonymousUserId);
+      this.temporaryUserCache.storeAnonymousUser(user);
+
+    } else {
+      // reuse existing one
+      if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String) {
+        String userId = (String) request.getSession().getAttribute(ANONYMOUS_USER);
+        user = this.temporaryUserCache.getById(userId);
+
         if (null == user) {
-            return null;
+          // the session must have expired. Create a new user and run this method again.
+          // this probably won't happen often as the session expiry and the cache should be timed correctly.
+          request.getSession().removeAttribute(ANONYMOUS_USER);
+          log.warn("Anonymous user session expired so creating a"
+              + " new one - this should not happen often if cache settings are correct.");
+          return this.getAnonymousUserDO(request);
         }
-        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).get(0);
+      } else {
+        // this means that someone has put the wrong type in to the session variable.
+        throw new ClassCastException("Unable to get AnonymousUser from session.");
+      }
     }
+    return user;
+  }
 
-    /**
-     * Converts a list of userDOs into a List of userDTOs.
-     *
-     * @param users
-     *            - list of DOs to convert
-     * @return the list of user dtos.
-     */
-    private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
-        List <RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
-        if (userDOs.isEmpty()) {
-            return new ArrayList<>();
-        }
+  /**
+   * Hide the Jetty internals of session IDs and return an anonymous user ID.
+   *
+   * @param request - to extract the Jetty session ID
+   * @return - a String suitable for use as an anonymous identifier
+   */
+  private String getAnonymousUserIdFromRequest(final HttpServletRequest request) {
+    // TODO - could prepend with API segue version?
+    return request.getSession().getId().replace("node0", "");
+  }
 
-        return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class)).collect(Collectors.toList());
+  /**
+   * Update the users' last seen field.
+   *
+   * @param user of interest
+   * @throws SegueDatabaseException - if an error occurs with the update.
+   */
+  private void updateLastSeen(final RegisteredUser user) throws SegueDatabaseException {
+    if (user.getLastSeen() == null) {
+      this.database.updateUserLastSeen(user);
+    } else {
+      // work out if we should update the user record again...
+      long timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
+      long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
+      if (minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
+        this.database.updateUserLastSeen(user);
+      }
     }
+  }
 
-    /**
-     * Get the RegisteredUserDO of the currently logged-in user. This is for internal use only.
-     * <p>
-     * This method will validate the session as well returning null if it is invalid.
-     * 
-     * @param request
-     *            - to retrieve session information from
-     * @return Returns the current UserDTO if we can get it or null if user is not currently logged in / there is an
-     *         invalid session
-     */
-    private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
-        return this.userAuthenticationManager.getUserFromSession(request, false);
-    }
+  /**
+   * @param userDTO                the userDTO of interest
+   * @param emailVerificationToken the verifcation token
+   * @return verification URL
+   */
+  private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
+    List<NameValuePair> urlParamPairs = Lists.newArrayList();
+    urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
+    urlParamPairs.add(
+        new BasicNameValuePair("token", emailVerificationToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH)));
+    String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
 
-    /**
-     * Retrieves anonymous user information if it is available.
-     * 
-     * @param request
-     *            - request containing session information.
-     * @return An anonymous user containing any anonymous question attempts (which could be none)
-     */
-    private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) throws SegueDatabaseException {
-        return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
-    }
+    return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
+  }
 
-    /**
-     * Retrieves anonymous user information if it is available.
-     * 
-     * @param request
-     *            - request containing session information.
-     * @return An anonymous user containing any anonymous question attempts (which could be none)
-     */
-    private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) throws SegueDatabaseException {
-        AnonymousUser user;
+  /**
+   * Method to retrieve the number of users by role from the Database.
+   *
+   * @return a map of role to counter
+   */
+  public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
+    return this.database.getRoleCount();
+  }
 
-        // no session exists so create one.
-        if (request.getSession().getAttribute(ANONYMOUS_USER) == null) {
-            String anonymousUserId = getAnonymousUserIdFromRequest(request);
-            user = new AnonymousUser(anonymousUserId);
-            user.setDateCreated(new Date());
-            // add the user reference to the session
-            request.getSession().setAttribute(ANONYMOUS_USER, anonymousUserId);
-            this.temporaryUserCache.storeAnonymousUser(user);
+  /**
+   * Count the users by role seen over the previous time interval.
+   *
+   * @param timeInterval time interval over which to count
+   * @return map of counts for each role
+   * @throws SegueDatabaseException - if there is a problem with the database.
+   */
+  public Map<Role, Long> getActiveRolesOverPrevious(final TimeInterval timeInterval) throws SegueDatabaseException {
+    return this.database.getRolesLastSeenOver(timeInterval);
+  }
 
-        } else {
-            // reuse existing one
-            if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String) {
-                String userId = (String) request.getSession().getAttribute(ANONYMOUS_USER);
-                user = this.temporaryUserCache.getById(userId);
+  /**
+   * Count users' reported genders.
+   *
+   * @return map of counts for each gender.
+   * @throws SegueDatabaseException - if there is a problem with the database.
+   */
+  public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
+    return this.database.getGenderCount();
+  }
 
-                if (null == user) {
-                    // the session must have expired. Create a new user and run this method again.
-                    // this probably won't happen often as the session expiry and the cache should be timed correctly.
-                    request.getSession().removeAttribute(ANONYMOUS_USER);
-                    log.warn("Anonymous user session expired so creating a"
-                            + " new one - this should not happen often if cache settings are correct.");
-                    return this.getAnonymousUserDO(request);
-                }
-            } else {
-                // this means that someone has put the wrong type in to the session variable.
-                throw new ClassCastException("Unable to get AnonymousUser from session.");
-            }
-        }
-        return user;
-    }
+  /**
+   * Count users' reported school information.
+   *
+   * @return map of counts for students who have provided or not provided school information
+   * @throws SegueDatabaseException - if there is a problem with the database.
+   */
+  public Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException {
+    return this.database.getSchoolInfoStats();
+  }
 
-    /**
-     * Hide the Jetty internals of session IDs and return an anonymous user ID.
-     * @param request - to extract the Jetty session ID
-     * @return - a String suitable for use as an anonymous identifier
-     */
-    private String getAnonymousUserIdFromRequest(final HttpServletRequest request) {
-        // TODO - could prepend with API segue version?
-        return request.getSession().getId().replace("node0", "");
-    }
-
-    /**
-     * Update the users' last seen field.
-     * 
-     * @param user
-     *            of interest
-     * @throws SegueDatabaseException
-     *             - if an error occurs with the update.
-     */
-    private void updateLastSeen(final RegisteredUser user) throws SegueDatabaseException {
-        if (user.getLastSeen() == null) {
-            this.database.updateUserLastSeen(user);
-        } else {
-            // work out if we should update the user record again...
-            long timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
-            long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
-            if (minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
-                this.database.updateUserLastSeen(user);
-            }
-        }
-    }
-
-    /**
-     * @param userDTO the userDTO of interest
-     * @param emailVerificationToken the verifcation token
-     * @return verification URL
-     */
-    private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
-        List<NameValuePair> urlParamPairs = Lists.newArrayList();
-        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
-        urlParamPairs.add(
-                new BasicNameValuePair("token", emailVerificationToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH)));
-        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
-
-        return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
-    }
-
-    /**
-     * Method to retrieve the number of users by role from the Database.
-     *
-     * @return a map of role to counter
-     */
-    public Map<Role, Long> getRoleCount() throws SegueDatabaseException {
-        return this.database.getRoleCount();
-    }
-
-    /**
-     * Count the users by role seen over the previous time interval.
-     *
-     * @param timeInterval time interval over which to count
-     * @return map of counts for each role
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public Map<Role, Long> getActiveRolesOverPrevious(final TimeInterval timeInterval) throws SegueDatabaseException {
-        return this.database.getRolesLastSeenOver(timeInterval);
-    }
-
-    /**
-     * Count users' reported genders.
-     *
-     * @return map of counts for each gender.
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
-        return this.database.getGenderCount();
-    }
-
-    /**
-     * Count users' reported school information.
-     *
-     * @return map of counts for students who have provided or not provided school information
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException {
-        return this.database.getSchoolInfoStats();
-    }
-
-    /**
-     * Count the number of anonymous users currently in our temporary user cache.
-     *
-     * @return the number of anonymous users
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
-     */
-    public Long getNumberOfAnonymousUsers() throws SegueDatabaseException {
-        return temporaryUserCache.getCountOfAnonymousUsers();
-    }
+  /**
+   * Count the number of anonymous users currently in our temporary user cache.
+   *
+   * @return the number of anonymous users
+   * @throws SegueDatabaseException - if there is a problem with the database.
+   */
+  public Long getNumberOfAnonymousUsers() throws SegueDatabaseException {
+    return temporaryUserCache.getCountOfAnonymousUsers();
+  }
 }

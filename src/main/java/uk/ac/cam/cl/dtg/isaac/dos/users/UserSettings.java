@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 import java.util.Map;
 
@@ -26,85 +26,86 @@ import java.util.Map;
  *
  * @author Alistair Stead
  * @author James Sharkey
- *
  */
 public class UserSettings {
-	
-	private RegisteredUser registeredUser;
-	private String passwordCurrent;
-	private Map<String, Map<String, Boolean>> userPreferences;
-	private List<UserContext> registeredUserContexts;
 
-    /**
-     * A collection of user settings objects.
-     * @param registeredUser - the user data
-     * @param userPreferences - a list of email preferences
-     * @param registeredUserContexts -
-	 * a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
-	 * It is set separately from the user so that we can record the time it was last set or acknowledged on the server.
-	 */
-    @JsonCreator
-    public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
-						@JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences,
-						@JsonProperty("registeredUserContexts") final List<UserContext> registeredUserContexts
-	) {
-        this.registeredUser = registeredUser;
-		this.userPreferences = userPreferences;
-		this.registeredUserContexts = registeredUserContexts;
-    }
+  private RegisteredUser registeredUser;
+  private String passwordCurrent;
+  private Map<String, Map<String, Boolean>> userPreferences;
+  private List<UserContext> registeredUserContexts;
 
-	/**
-	 * @return the passwordCurrent
-	 */
-	public String getPasswordCurrent() {
-		return passwordCurrent;
-	}
+  /**
+   * A collection of user settings objects.
+   *
+   * @param registeredUser         - the user data
+   * @param userPreferences        - a list of email preferences
+   * @param registeredUserContexts -
+   *                               a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
+   *                               It is set separately from the user so that we can record the time it was last set or acknowledged on the server.
+   */
+  @JsonCreator
+  public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
+                      @JsonProperty("userPreferences") final Map<String, Map<String, Boolean>> userPreferences,
+                      @JsonProperty("registeredUserContexts") final List<UserContext> registeredUserContexts
+  ) {
+    this.registeredUser = registeredUser;
+    this.userPreferences = userPreferences;
+    this.registeredUserContexts = registeredUserContexts;
+  }
 
-	/**
-	 * @param passwordCurrent the passwordCurrent to set
-	 */
-	public void setPasswordCurrent(final String passwordCurrent) {
-		this.passwordCurrent = passwordCurrent;
-	}
+  /**
+   * @return the passwordCurrent
+   */
+  public String getPasswordCurrent() {
+    return passwordCurrent;
+  }
 
-	/**
-     * @return a registered user object
-     */
-    @JsonProperty("registeredUser")
-    public RegisteredUser getRegisteredUser() {
-        return this.registeredUser;
-    }
-    /**
-	 * @param registeredUser the registeredUser to set
-	 */
-	@JsonProperty("registeredUser")
-	public void setRegisteredUser(final RegisteredUser registeredUser) {
-		this.registeredUser = registeredUser;
-	}
+  /**
+   * @param passwordCurrent the passwordCurrent to set
+   */
+  public void setPasswordCurrent(final String passwordCurrent) {
+    this.passwordCurrent = passwordCurrent;
+  }
 
-	/**
-	 * @return a list of user preferences
-	 */
-	@JsonProperty("userPreferences")
-	public Map<String, Map<String, Boolean>> getUserPreferences() {
-		return this.userPreferences;
-	}
+  /**
+   * @return a registered user object
+   */
+  @JsonProperty("registeredUser")
+  public RegisteredUser getRegisteredUser() {
+    return this.registeredUser;
+  }
 
-	/**
-	 * @param userPreferences the userPreferences to set
-	 */
-	@JsonProperty("userPreferences")
-	public void setUserPreferences(final Map<String, Map<String, Boolean>> userPreferences) {
-		this.userPreferences = userPreferences;
-	}
+  /**
+   * @param registeredUser the registeredUser to set
+   */
+  @JsonProperty("registeredUser")
+  public void setRegisteredUser(final RegisteredUser registeredUser) {
+    this.registeredUser = registeredUser;
+  }
 
-	@JsonProperty("registeredUserContexts")
-	public List<UserContext> getRegisteredUserContexts() {
-		return registeredUserContexts;
-	}
+  /**
+   * @return a list of user preferences
+   */
+  @JsonProperty("userPreferences")
+  public Map<String, Map<String, Boolean>> getUserPreferences() {
+    return this.userPreferences;
+  }
 
-	@JsonProperty("registeredUserContexts")
-	public void setRegisteredUserContexts(final List<UserContext> registeredUserContexts) {
-		this.registeredUserContexts = registeredUserContexts;
-	}
+  /**
+   * @param userPreferences the userPreferences to set
+   */
+  @JsonProperty("userPreferences")
+  public void setUserPreferences(final Map<String, Map<String, Boolean>> userPreferences) {
+    this.userPreferences = userPreferences;
+  }
+
+  @JsonProperty("registeredUserContexts")
+  public List<UserContext> getRegisteredUserContexts() {
+    return registeredUserContexts;
+  }
+
+  @JsonProperty("registeredUserContexts")
+  public void setRegisteredUserContexts(final List<UserContext> registeredUserContexts) {
+    this.registeredUserContexts = registeredUserContexts;
+  }
 }

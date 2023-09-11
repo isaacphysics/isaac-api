@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers;
 
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
 /**
  * Created by mlt47 on 06/04/2018.
@@ -34,16 +34,16 @@ import jakarta.ws.rs.ext.Provider;
  */
 @Provider
 public class JacksonInvalidFormatExceptionMapper implements ExceptionMapper<InvalidFormatException> {
-    private static final Logger log = LoggerFactory.getLogger(JacksonInvalidFormatExceptionMapper.class);
+  private static final Logger log = LoggerFactory.getLogger(JacksonInvalidFormatExceptionMapper.class);
 
-    @Context
-    private HttpServletRequest request;
+  @Context
+  private HttpServletRequest request;
 
-    @Override
-    public Response toResponse(final InvalidFormatException e) {
-        String message = String.format("%s on %s request to %s", e.getClass().getSimpleName(), request.getMethod(),
-                 request.getRequestURI());
-        log.error(message);
-        return SegueErrorResponse.getBadRequestResponse("Invalid Format");
-    }
+  @Override
+  public Response toResponse(final InvalidFormatException e) {
+    String message = String.format("%s on %s request to %s", e.getClass().getSimpleName(), request.getMethod(),
+        request.getRequestURI());
+    log.error(message);
+    return SegueErrorResponse.getBadRequestResponse("Invalid Format");
+  }
 }

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
-
-import java.util.List;
 
 /**
  * Isaac Topic Summary Page DTO.
@@ -30,22 +30,24 @@ import java.util.List;
 @JsonContentType("isaacTopicSummaryPage")
 public class IsaacTopicSummaryPageDTO extends SeguePageDTO {
 
-    private List<GameboardDTO> linkedGameboards;
+  private List<GameboardDTO> linkedGameboards;
 
-    /**
-     * Gets the list of linked gameboard DTOs.
-     * @return the linked gameboard DTOs
-     */
-    public List<GameboardDTO> getLinkedGameboards() {
-        return linkedGameboards;
-    }
+  /**
+   * Gets the list of linked gameboard DTOs.
+   *
+   * @return the linked gameboard DTOs
+   */
+  public List<GameboardDTO> getLinkedGameboards() {
+    return linkedGameboards;
+  }
 
-    /**
-     * Sets the list of linked gameboard DTOs.
-     * @param linkedGameboards the linked gameboard DTOs to set
-     */
-    public void setLinkedGameboards(final List<GameboardDTO> linkedGameboards) {
-        this.linkedGameboards = linkedGameboards;
-    }
+  /**
+   * Sets the list of linked gameboard DTOs.
+   *
+   * @param linkedGameboards the linked gameboard DTOs to set
+   */
+  public void setLinkedGameboards(final List<GameboardDTO> linkedGameboards) {
+    this.linkedGameboards = linkedGameboards;
+  }
 
 }

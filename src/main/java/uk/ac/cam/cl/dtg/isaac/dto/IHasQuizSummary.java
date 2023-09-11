@@ -4,9 +4,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
 public interface IHasQuizSummary {
 
-    ContentSummaryDTO getQuizSummary();
+  ContentSummaryDTO getQuizSummary();
 
-    void setQuizSummary(ContentSummaryDTO summary);
+  void setQuizSummary(ContentSummaryDTO summary);
 
-    String getQuizId();
+  String getQuizId();
 }

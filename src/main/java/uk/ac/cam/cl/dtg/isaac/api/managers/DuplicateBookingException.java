@@ -7,10 +7,10 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
  */
 public class DuplicateBookingException extends Exception {
 
-	/**
-	 * @param message the message explaining the errors.
-	 */
-	public DuplicateBookingException(final String message) {
-		super(message);
-	}
+  /**
+   * @param message the message explaining the errors.
+   */
+  public DuplicateBookingException(final String message) {
+    super(message);
+  }
 }

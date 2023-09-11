@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 /**
  * Data structure to hold the expected correctness of a user's answer.
  */
 public class TestCase extends QuestionValidationResponse {
-    private Boolean expected;
+  private Boolean expected;
 
-    public void setExpected(final Boolean expected) {
-        this.expected = expected;
-    }
-    public Boolean getExpected() {
-        return this.expected;
-    }
+  public void setExpected(final Boolean expected) {
+    this.expected = expected;
+  }
+
+  public Boolean getExpected() {
+    return this.expected;
+  }
 }

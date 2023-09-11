@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
@@ -26,41 +27,41 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
 @DTOMapping(FormulaDTO.class)
 @JsonContentType("formula")
 public class Formula extends Choice {
-    private String pythonExpression;
-    private boolean requiresExactMatch;
-    
-    public Formula() {
-        
-    }
-    
-    /**
-     * @return the pythonExpression
-     */
-    public String getPythonExpression() {
-        return pythonExpression;
-    }
+  private String pythonExpression;
+  private boolean requiresExactMatch;
 
-    /**
-     * @param pythonExpression the pythonExpression to set
-     */
-    public void setPythonExpression(final String pythonExpression) {
-        this.pythonExpression = pythonExpression;
-    }
+  public Formula() {
 
-    /**
-     * @return Whether this formula requires an exact match. Believe it or not.
-     */
-    public boolean getRequiresExactMatch() {
-        return requiresExactMatch;
-    }
+  }
 
-    /**
-     * Yes, you guessed it. Sets whether this formula requires an exact match.
-     *
-     * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
-     */
-    public void setRequiresExactMatch(final boolean requiresExactMatch) {
-        this.requiresExactMatch = requiresExactMatch;
-    }
+  /**
+   * @return the pythonExpression
+   */
+  public String getPythonExpression() {
+    return pythonExpression;
+  }
+
+  /**
+   * @param pythonExpression the pythonExpression to set
+   */
+  public void setPythonExpression(final String pythonExpression) {
+    this.pythonExpression = pythonExpression;
+  }
+
+  /**
+   * @return Whether this formula requires an exact match. Believe it or not.
+   */
+  public boolean getRequiresExactMatch() {
+    return requiresExactMatch;
+  }
+
+  /**
+   * Yes, you guessed it. Sets whether this formula requires an exact match.
+   *
+   * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
+   */
+  public void setRequiresExactMatch(final boolean requiresExactMatch) {
+    this.requiresExactMatch = requiresExactMatch;
+  }
 
 }

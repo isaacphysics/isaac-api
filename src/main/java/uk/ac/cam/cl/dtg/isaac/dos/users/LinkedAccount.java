@@ -13,127 +13,118 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dos.users;
 
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 
 /**
  * Data Object to represent a user has linked their local account to an external authenticators account.
- *
  */
 public class LinkedAccount {
 
-    private String id;
-    private String localUserId;
-    private AuthenticationProvider provider;
-    private String providerUserId;
+  private String id;
+  private String localUserId;
+  private AuthenticationProvider provider;
+  private String providerUserId;
 
-    /**
-     * Default constructor for linkedAccount.
-     */
-    public LinkedAccount() {
+  /**
+   * Default constructor for linkedAccount.
+   */
+  public LinkedAccount() {
 
-    }
+  }
 
-    /**
-     * Linked Account Constructor.
-     * 
-     * @param id
-     *            - Database Id.
-     * @param localUserId
-     *            - Local user id.
-     * @param provider
-     *            - provider for authentication
-     * @param providerUserId
-     *            - provider's user Id.
-     */
-    @JsonCreator
-    public LinkedAccount(@JsonProperty("id") final String id, @JsonProperty("localUserId") final String localUserId,
-            @JsonProperty("provider") final AuthenticationProvider provider,
-            @JsonProperty("providerId") final String providerUserId) {
-        this.id = id;
-        this.localUserId = localUserId;
-        this.provider = provider;
-        this.providerUserId = providerUserId;
-    }
+  /**
+   * Linked Account Constructor.
+   *
+   * @param id             - Database Id.
+   * @param localUserId    - Local user id.
+   * @param provider       - provider for authentication
+   * @param providerUserId - provider's user Id.
+   */
+  @JsonCreator
+  public LinkedAccount(@JsonProperty("id") final String id, @JsonProperty("localUserId") final String localUserId,
+                       @JsonProperty("provider") final AuthenticationProvider provider,
+                       @JsonProperty("providerId") final String providerUserId) {
+    this.id = id;
+    this.localUserId = localUserId;
+    this.provider = provider;
+    this.providerUserId = providerUserId;
+  }
 
-    /**
-     * Get database Id.
-     * 
-     * @return database id
-     */
-    public final String getId() {
-        return id;
-    }
+  /**
+   * Get database Id.
+   *
+   * @return database id
+   */
+  public final String getId() {
+    return id;
+  }
 
-    /**
-     * Set id method.
-     * 
-     * @param id
-     *            - database id
-     */
-    public final void setId(final String id) {
-        this.id = id;
-    }
+  /**
+   * Set id method.
+   *
+   * @param id - database id
+   */
+  public final void setId(final String id) {
+    this.id = id;
+  }
 
-    /**
-     * Gets the localUserId.
-     * 
-     * @return the localUserId
-     */
-    public final String getLocalUserId() {
-        return localUserId;
-    }
+  /**
+   * Gets the localUserId.
+   *
+   * @return the localUserId
+   */
+  public final String getLocalUserId() {
+    return localUserId;
+  }
 
-    /**
-     * Sets the localUserId.
-     * 
-     * @param localUserId
-     *            the localUserId to set
-     */
-    public final void setLocalUserId(final String localUserId) {
-        this.localUserId = localUserId;
-    }
+  /**
+   * Sets the localUserId.
+   *
+   * @param localUserId the localUserId to set
+   */
+  public final void setLocalUserId(final String localUserId) {
+    this.localUserId = localUserId;
+  }
 
-    /**
-     * Gets the provider.
-     * 
-     * @return the provider
-     */
-    public final AuthenticationProvider getProvider() {
-        return provider;
-    }
+  /**
+   * Gets the provider.
+   *
+   * @return the provider
+   */
+  public final AuthenticationProvider getProvider() {
+    return provider;
+  }
 
-    /**
-     * Sets the provider.
-     * 
-     * @param provider
-     *            the provider to set
-     */
-    public final void setProvider(final AuthenticationProvider provider) {
-        this.provider = provider;
-    }
+  /**
+   * Sets the provider.
+   *
+   * @param provider the provider to set
+   */
+  public final void setProvider(final AuthenticationProvider provider) {
+    this.provider = provider;
+  }
 
-    /**
-     * Gets the providerUserId.
-     * 
-     * @return the providerUserId
-     */
-    public final String getProviderUserId() {
-        return providerUserId;
-    }
+  /**
+   * Gets the providerUserId.
+   *
+   * @return the providerUserId
+   */
+  public final String getProviderUserId() {
+    return providerUserId;
+  }
 
-    /**
-     * Sets the providerUserId.
-     * 
-     * @param providerUserId
-     *            the providerUserId to set
-     */
-    public final void setProviderUserId(final String providerUserId) {
-        this.providerUserId = providerUserId;
-    }
+  /**
+   * Sets the providerUserId.
+   *
+   * @param providerUserId the providerUserId to set
+   */
+  public final void setProviderUserId(final String providerUserId) {
+    this.providerUserId = providerUserId;
+  }
 
 }

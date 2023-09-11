@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.segue.search;
 
 /**
@@ -22,18 +23,19 @@ package uk.ac.cam.cl.dtg.segue.search;
  * SimpleFilterInstructions expect a single value which must be matched in the results.
  */
 public class SimpleFilterInstruction extends AbstractFilterInstruction {
-    private final String mustMatchValue;
+  private final String mustMatchValue;
 
-    public SimpleFilterInstruction(final String mustMatchValue) {
+  public SimpleFilterInstruction(final String mustMatchValue) {
 
-        this.mustMatchValue = mustMatchValue;
-    }
+    this.mustMatchValue = mustMatchValue;
+  }
 
-    /**
-     * Get the value which must be matched.
-     * @return valueForFiltering.
-     */
-    public String getMustMatchValue() {
-        return mustMatchValue;
-    }
+  /**
+   * Get the value which must be matched.
+   *
+   * @return valueForFiltering.
+   */
+  public String getMustMatchValue() {
+    return mustMatchValue;
+  }
 }

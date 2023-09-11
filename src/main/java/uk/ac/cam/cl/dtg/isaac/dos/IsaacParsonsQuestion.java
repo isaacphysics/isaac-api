@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacParsonsQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacParsonsValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacParsonsQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacParsonsValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 
 /**
  * Content DO for IsaacParsonsQuestions.
- *
  */
 @DTOMapping(IsaacParsonsQuestionDTO.class)
 @JsonContentType("isaacParsonsQuestion")
 @ValidatesWith(IsaacParsonsValidator.class)
 public class IsaacParsonsQuestion extends IsaacItemQuestion {
 
-    private Boolean disableIndentation;
+  private Boolean disableIndentation;
 
-    public Boolean getDisableIndentation() {
-        return disableIndentation;
-    }
+  public Boolean getDisableIndentation() {
+    return disableIndentation;
+  }
 
-    public void setDisableIndentation(final Boolean disableIndentation) {
-        this.disableIndentation = disableIndentation;
-    }
+  public void setDisableIndentation(final Boolean disableIndentation) {
+    this.disableIndentation = disableIndentation;
+  }
 }

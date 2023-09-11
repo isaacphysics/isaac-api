@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 public enum QuizFeedbackMode {
-    NONE,
-    OVERALL_MARK,
-    SECTION_MARKS,
-    DETAILED_FEEDBACK
+  NONE,
+  OVERALL_MARK,
+  SECTION_MARKS,
+  DETAILED_FEEDBACK
 }

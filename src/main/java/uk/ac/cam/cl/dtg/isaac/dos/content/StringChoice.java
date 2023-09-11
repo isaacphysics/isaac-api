@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.StringChoiceDTO;
@@ -24,26 +25,26 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.StringChoiceDTO;
 @DTOMapping(StringChoiceDTO.class)
 @JsonContentType("stringChoice")
 public class StringChoice extends Choice {
-    private boolean caseInsensitive;
+  private boolean caseInsensitive;
 
-    public StringChoice() {
-        
-    }
+  public StringChoice() {
 
-    /**
-     * @return Whether this string choice should allow any case to match.
-     */
-    public boolean isCaseInsensitive() {
-        return caseInsensitive;
-    }
+  }
 
-    /**
-     * Whether to match strictly to case or not.
-     *
-     * @param caseInsensitive Whether to ignore the case when checking.
-     */
-    public void setCaseInsensitive(final boolean caseInsensitive) {
-        this.caseInsensitive = caseInsensitive;
-    }
+  /**
+   * @return Whether this string choice should allow any case to match.
+   */
+  public boolean isCaseInsensitive() {
+    return caseInsensitive;
+  }
+
+  /**
+   * Whether to match strictly to case or not.
+   *
+   * @param caseInsensitive Whether to ignore the case when checking.
+   */
+  public void setCaseInsensitive(final boolean caseInsensitive) {
+    this.caseInsensitive = caseInsensitive;
+  }
 
 }

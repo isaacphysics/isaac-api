@@ -13,42 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 /**
  * Used to augment user summary information with group membership details given a particular group context.
  */
 public class UserSummaryWithGroupMembershipDTO extends UserSummaryDTO {
-    private GroupMembershipDTO groupMembershipInformation;
+  private GroupMembershipDTO groupMembershipInformation;
 
-    public UserSummaryWithGroupMembershipDTO() {
+  public UserSummaryWithGroupMembershipDTO() {
 
-    }
+  }
 
-    public GroupMembershipDTO getGroupMembershipInformation() {
-        return groupMembershipInformation;
-    }
+  public GroupMembershipDTO getGroupMembershipInformation() {
+    return groupMembershipInformation;
+  }
 
-    public void setGroupMembershipInformation(final GroupMembershipDTO groupMembershipInformation) {
-        this.groupMembershipInformation = groupMembershipInformation;
-    }
+  public void setGroupMembershipInformation(final GroupMembershipDTO groupMembershipInformation) {
+    this.groupMembershipInformation = groupMembershipInformation;
+  }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("UserSummaryDTO [databaseId=");
-        builder.append(this.getId().toString());
-        builder.append(", givenName=");
-        builder.append(this.getGivenName());
-        builder.append(", familyName=");
-        builder.append(this.getFamilyName());
-        builder.append(", groups=");
-        builder.append(groupMembershipInformation.toString());
-        builder.append(", emailVerificationStatus=");
-        builder.append(this.getEmailVerificationStatus().name());
-        builder.append(", authorisedFullAccess=");
-        builder.append(this.isAuthorisedFullAccess());
-        builder.append("]");
-        return builder.toString();
-    }
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("UserSummaryDTO [databaseId=");
+    builder.append(this.getId().toString());
+    builder.append(", givenName=");
+    builder.append(this.getGivenName());
+    builder.append(", familyName=");
+    builder.append(this.getFamilyName());
+    builder.append(", groups=");
+    builder.append(groupMembershipInformation.toString());
+    builder.append(", emailVerificationStatus=");
+    builder.append(this.getEmailVerificationStatus().name());
+    builder.append(", authorisedFullAccess=");
+    builder.append(this.isAuthorisedFullAccess());
+    builder.append("]");
+    return builder.toString();
+  }
 }

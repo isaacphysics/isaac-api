@@ -11,22 +11,22 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.GraphChoiceDTO;
 @JsonContentType("graphChoice")
 public class GraphChoice extends Choice {
 
-    /**
-     * GraphChoice data, in JSON string format.
-     */
-    private String graphSpec;
+  /**
+   * GraphChoice data, in JSON string format.
+   */
+  private String graphSpec;
 
-    /**
-     * @return the graph data
-     */
-    public String getGraphSpec() {
-        return graphSpec;
-    }
+  /**
+   * @return the graph data
+   */
+  public String getGraphSpec() {
+    return graphSpec;
+  }
 
-    /**
-     * @param graphSpec the graph data to set
-     */
-    public void setGraphSpec(final String graphSpec) {
-        this.graphSpec = graphSpec;
-    }
+  /**
+   * @param graphSpec the graph data to set
+   */
+  public void setGraphSpec(final String graphSpec) {
+    this.graphSpec = graphSpec;
+  }
 }

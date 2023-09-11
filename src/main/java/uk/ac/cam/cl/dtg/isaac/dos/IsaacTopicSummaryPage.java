@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
+import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
-
-import java.util.List;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 
 /**
  * Isaac Topic Summary Page DO.
@@ -33,22 +33,24 @@ import java.util.List;
 @JsonContentType("isaacTopicSummaryPage")
 public class IsaacTopicSummaryPage extends SeguePage {
 
-    private List<String> linkedGameboards;
+  private List<String> linkedGameboards;
 
-    /**
-     * Gets the list of linked gameboard IDs.
-     * @return the linked gameboard IDs
-     */
-    public List<String> getLinkedGameboards() {
-        return linkedGameboards;
-    }
+  /**
+   * Gets the list of linked gameboard IDs.
+   *
+   * @return the linked gameboard IDs
+   */
+  public List<String> getLinkedGameboards() {
+    return linkedGameboards;
+  }
 
-    /**
-     * Sets the list of linked gameboard IDs.
-     * @param linkedGameboards the linked gameboard IDs to set
-     */
-    public void setLinkedGameboards(final List<String> linkedGameboards) {
-        this.linkedGameboards = linkedGameboards;
-    }
+  /**
+   * Sets the list of linked gameboard IDs.
+   *
+   * @param linkedGameboards the linked gameboard IDs to set
+   */
+  public void setLinkedGameboards(final List<String> linkedGameboards) {
+    this.linkedGameboards = linkedGameboards;
+  }
 
 }

@@ -7,10 +7,10 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
  */
 public class EventIsFullException extends Exception {
 
-	/**
-	 * @param message explaining the error
-	 */
-	public EventIsFullException(final String message) {
-		super(message);
-	}
+  /**
+   * @param message explaining the error
+   */
+  public EventIsFullException(final String message) {
+    super(message);
+  }
 }

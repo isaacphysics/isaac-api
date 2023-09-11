@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.scheduler;
 
-import org.quartz.utils.ConnectionProvider;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+package uk.ac.cam.cl.dtg.segue.scheduler;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.quartz.utils.ConnectionProvider;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 
 /**
@@ -28,26 +28,26 @@ import java.sql.SQLException;
  */
 public class SchedulerClusterDataSource implements ConnectionProvider {
 
-    private static PostgresSqlDb ds;
+  private static PostgresSqlDb ds;
 
-    public SchedulerClusterDataSource() {
-        // horrible dependency injection hack because quartz insists on initialising its own db connection class.
-        ds = SegueGuiceConfigurationModule.getGuiceInjector().getInstance(PostgresSqlDb.class);
-    }
+  public SchedulerClusterDataSource() {
+    // horrible dependency injection hack because quartz insists on initialising its own db connection class.
+    ds = SegueGuiceConfigurationModule.getGuiceInjector().getInstance(PostgresSqlDb.class);
+  }
 
-    @Override
-    public Connection getConnection() throws SQLException {
-        return ds.getDatabaseConnection();
-    }
+  @Override
+  public Connection getConnection() throws SQLException {
+    return ds.getDatabaseConnection();
+  }
 
-    @Override
-    public void shutdown() {
+  @Override
+  public void shutdown() {
 
-    }
+  }
 
-    @Override
-    public void initialize() {
+  @Override
+  public void initialize() {
 
-    }
+  }
 
 }
