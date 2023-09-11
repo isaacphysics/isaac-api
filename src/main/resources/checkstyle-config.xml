@@ -31,8 +31,7 @@
   </module>
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
   <module name="SuppressionFilter">
-    <property name="file" value="${org.checkstyle.google.suppressionfilter.config}"
-              default="checkstyle-suppressions.xml" />
+    <property name="file" value="src/main/resources/checkstyle-suppressions.xml" />
     <property name="optional" value="true"/>
   </module>
 
@@ -361,8 +360,7 @@
     </module>
     <!-- https://checkstyle.org/filters/suppressionxpathfilter.html -->
     <module name="SuppressionXpathFilter">
-      <property name="file" value="${org.checkstyle.google.suppressionxpathfilter.config}"
-                default="checkstyle-xpath-suppressions.xml" />
+      <property name="file" value="src/main/resources/checkstyle-xpath-suppressions.xml" />
       <property name="optional" value="true"/>
     </module>
     <module name="SuppressWarningsHolder" />
