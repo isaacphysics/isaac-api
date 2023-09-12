@@ -38,7 +38,8 @@ public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<Cont
   /**
    * Constructs an Orika Converter specialises in selecting the correct subclass for content objects.
    *
-   * @param contentMapper - An instance of a preconfigured content mapper that knows about the content inheritance hierarchy.
+   * @param contentMapper - An instance of a preconfigured content mapper that knows about the content inheritance
+   *                            hierarchy.
    */
   public ContentBaseOrikaConverter(final ContentMapper contentMapper) {
     this.contentMapper = contentMapper;

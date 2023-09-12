@@ -81,7 +81,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the user manager class.
- *
  */
 @PowerMockIgnore({"jakarta.ws.*"})
 public class UserManagerTest {
@@ -108,8 +107,7 @@ public class UserManagerTest {
   /**
    * Initial configuration of tests.
    *
-   * @throws Exception
-   *             - test exception
+   * @throws Exception - test exception
    */
   @Before
   public final void setUp() throws Exception {
@@ -257,8 +255,7 @@ public class UserManagerTest {
   /**
    * Test that a valid OAuth provider (Facebook) provides a redirect response.
    *
-   * @throws IOException
-   *             - test exception
+   * @throws IOException                            - test exception
    * @throws AuthenticationProviderMappingException
    */
   @Test
@@ -303,8 +300,7 @@ public class UserManagerTest {
   /**
    * Check that a new (unseen) user is registered when seen with 3rd party authenticator.
    *
-   * @throws Exception
-   *             -
+   * @throws Exception -
    */
   @Test
   public final void authenticateCallback_checkNewUserIsAuthenticated_createInternalUserAccount() throws Exception {
@@ -389,9 +385,11 @@ public class UserManagerTest {
     mappedUser.setSessionToken(0);
 
     expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
-        .andReturn(new HashMap<RegisteredUser, List<AuthenticationProvider>>() {{
-          put(mappedUser, Lists.newArrayList(AuthenticationProvider.GOOGLE));
-        }}).atLeastOnce();
+        .andReturn(new HashMap<RegisteredUser, List<AuthenticationProvider>>() {
+          {
+            put(mappedUser, Lists.newArrayList(AuthenticationProvider.GOOGLE));
+          }
+        }).atLeastOnce();
     expect(dummyDatabase.getSegueAccountExistenceByUsers(Collections.singletonList(mappedUser)))
         .andReturn(ImmutableMap.of(mappedUser, false)).atLeastOnce();
 
@@ -445,7 +443,6 @@ public class UserManagerTest {
 
   /**
    * Verify that a bad CSRF response from the authentication provider causes an error response.
-   *
    */
   @Test
   public final void authenticateCallback_checkInvalidCSRF_throwsCSRFException() {
@@ -489,7 +486,6 @@ public class UserManagerTest {
 
   /**
    * Verify that a bad (null) CSRF response from the authentication provider causes an error response.
-   *
    */
   @Test
   public final void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() {
@@ -695,7 +691,6 @@ public class UserManagerTest {
 
   /**
    * Ensure isUserNameValid returns false when an excessively long name is provided.
-   *
    */
   @Test
   public final void isUserNameValid_longNameProvided_returnsFalse() {
@@ -712,7 +707,6 @@ public class UserManagerTest {
 
   /**
    * Ensure isUserNameValid returns true when a name of acceptable length and no illegal characters is provided.
-   *
    */
   @Test
   public final void isUserNameValid_acceptableNameProvided_returnsTrue() {
@@ -729,7 +723,6 @@ public class UserManagerTest {
 
   /**
    * Ensure isUserNameValid returns false when a name with illegal characters is provided.
-   *
    */
   @Test
   public final void isUserNameValid_nameWithIllegalCharactersProvided_returnsFalse() {
@@ -746,7 +739,6 @@ public class UserManagerTest {
 
   /**
    * Ensure isUserNameValid returns false when an empty name is provided.
-   *
    */
   @Test
   public final void isUserNameValid_emptyNameProvided_returnsFalse() {
@@ -763,7 +755,6 @@ public class UserManagerTest {
 
   /**
    * Ensure isUserNameValid returns false when a null string is provided.
-   *
    */
   @Test
   public final void isUserNameValid_nullNameProvided_returnsFalse() {
@@ -791,10 +782,8 @@ public class UserManagerTest {
   /**
    * Helper method to construct a UserManager with the specified providers.
    *
-   * @param provider
-   *            - The provider to register
-   * @param authenticator
-   *            - The associated authenticating engine
+   * @param provider      - The provider to register
+   * @param authenticator - The associated authenticating engine
    * @return A new UserManager instance
    */
   private UserAccountManager buildTestUserManager(final AuthenticationProvider provider,

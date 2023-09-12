@@ -53,9 +53,10 @@ public interface IUserGroupPersistenceManager {
   List<UserGroup> getGroupsByOwner(Long ownerUserId, Boolean archivedGroupsOnly) throws SegueDatabaseException;
 
   /**
-   * Find User group by Id including deleted groups.
+   * Find User group by id including deleted groups.
    * <br>
-   * Note this should only be used when trying to reconstruct assignment state, never when exposing group information directly to users.
+   * Note this should only be used when trying to reconstruct assignment state, never when exposing group information
+   * directly to users.
    *
    * @param groupId              - the id of the group to find.
    * @param includeDeletedGroups - Enable retrieval of groups marked as deleted
@@ -125,8 +126,8 @@ public interface IUserGroupPersistenceManager {
    * Delete group and all membership information.
    *
    * @param groupId       to delete.
-   * @param markAsDeleted if true, then the group will have the status set to deleted rather than actually being removed,
-   *                      false will actually delete the group from the database permanently
+   * @param markAsDeleted if true, then the group will have the status set to deleted rather than actually being
+   *                          removed, false will actually delete the group from the database permanently
    * @throws SegueDatabaseException - if there is a database error.
    */
   void deleteGroup(Long groupId, boolean markAsDeleted) throws SegueDatabaseException;

@@ -10,12 +10,12 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.services.SimpleHttpClientService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-public class RECAPTCHAManager {
+public class RecaptchaManager {
   private final PropertiesLoader properties;
-  private static final Logger log = LoggerFactory.getLogger(RECAPTCHAManager.class);
+  private static final Logger log = LoggerFactory.getLogger(RecaptchaManager.class);
 
   @Inject
-  public RECAPTCHAManager(final PropertiesLoader properties) {
+  public RecaptchaManager(final PropertiesLoader properties) {
     Validate.notNull(properties.getProperty(GOOGLE_RECAPTCHA_SECRET));
     this.properties = properties;
   }

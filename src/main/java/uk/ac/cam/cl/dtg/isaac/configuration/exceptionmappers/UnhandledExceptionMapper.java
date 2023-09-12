@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers;
+package uk.ac.cam.cl.dtg.isaac.configuration.exceptionmappers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Context;
@@ -38,14 +38,14 @@ public class UnhandledExceptionMapper implements ExceptionMapper<Exception> {
 
   @Override
   public Response toResponse(final Exception e) {
-    UUID generatedUUID = UUID.randomUUID();
+    UUID generatedUuid = UUID.randomUUID();
     String logMessage = String.format(
         "Unhandled exception captured. Assigned ID: %1$s. Exception at: %2$s on %3$s %4$s",
-        generatedUUID, e.getClass().getSimpleName(), request.getMethod(), request.getRequestURI()
+        generatedUuid, e.getClass().getSimpleName(), request.getMethod(), request.getRequestURI()
     );
     String responseMessage = String.format(
         "An unhandled error occurred!\nPlease report this ID if you contact support: %1$s.",
-        generatedUUID
+        generatedUuid
     );
     log.error(logMessage, e);
     return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, responseMessage, null).toResponse();

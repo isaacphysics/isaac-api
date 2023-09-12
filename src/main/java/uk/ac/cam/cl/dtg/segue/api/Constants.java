@@ -143,8 +143,8 @@ public final class Constants {
   public static final String SEGUE_CONFIG_LOCATION_ENVIRONMENT_PROPERTY = "SEGUE_CONFIG_LOCATION";
   public static final String MAILER_SMTP_PORT = "MAILER_SMTP_PORT";
   public static final String SEGUE_CONFIG_LOCATION_NOT_SPECIFIED_MESSAGE =
-      "Segue configuration location not specified, "
-          + "please provide it as either a java system property (config.location) or environment variable SEGUE_CONFIG_LOCATION";
+      "Segue configuration location not specified, please provide it as either a java system property"
+          + " (config.location) or environment variable SEGUE_CONFIG_LOCATION";
 
   /**
    * Enum to describe types of server environment / profile.
@@ -175,12 +175,14 @@ public final class Constants {
   public static final String SESSION_EXPIRY_SECONDS_DEFAULT = "SESSION_EXPIRY_SECONDS_DEFAULT";
 
   /**
-   * Constant representing the value to be used for the session expiry in seconds in the event that parsing the config value throws an exception.
+   * Constant representing the value to be used for the session expiry in seconds in the event that parsing the config
+   * value throws an exception.
    */
   public static final Integer SESSION_EXPIRY_SECONDS_FALLBACK = 1800;
 
   /**
-   * Constant representing the value to be used for the session expiry in seconds in the event that parsing the config value throws an exception.
+   * Constant representing the value to be used for the session expiry in seconds in the event that parsing the config
+   * value throws an exception.
    */
   public static final Integer PARTIAL_LOGIN_SESSION_EXPIRY_SECONDS = 1200;
 
@@ -341,7 +343,8 @@ public final class Constants {
 
   // Local authentication response messages
   public static final String PASSWORD_REQUIREMENTS_ERROR_MESSAGE = "Passwords must be at least 12 characters in length "
-      + "and contain at least one of each of: uppercase character, lowercase character, number and ascii punctuation character.";
+      + "and contain at least one of each of: uppercase character, lowercase character, number and ascii punctuation"
+      + " character.";
   public static final String LOGIN_MISSING_CREDENTIALS_MESSAGE =
       "You must specify an email and password when logging in.";
   public static final String LOGIN_RATE_THROTTLE_MESSAGE =
@@ -410,6 +413,7 @@ public final class Constants {
   public interface LogType {
     /**
      * Get the string value of the log Enum.
+     *
      * @return name of the log type
      */
     String name();
@@ -576,6 +580,7 @@ public final class Constants {
 
     /**
      *  Return the status given the state of the two school fields.
+     *
      * @param schoolIdProvided - whether a school_id is provided
      * @param schoolOtherProvided - whether a school_other is provided
      * @return the provision status

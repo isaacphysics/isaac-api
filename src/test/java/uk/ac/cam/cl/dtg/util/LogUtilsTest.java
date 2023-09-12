@@ -16,6 +16,7 @@ public class LogUtilsTest {
     assertEquals(expectedSanitisedValue, sanitiseLogValue(initialValue));
   }
 
+  @SuppressWarnings("checkstyle:AvoidEscapedUnicodeCharacters")
   private static Stream<Arguments> valuesToTest() {
     return Stream.of(
         Arguments.of("", ""),

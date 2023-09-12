@@ -73,10 +73,12 @@ public class QuizQuestionManager {
    * quiz questions.
    *
    * @param questionManager            - for parsing and validating question answers.
-   * @param mapper                     - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs and DTOs.
+   * @param mapper                     - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs
+   *                                         and DTOs.
    * @param quizQuestionAttemptManager - for quiz question attempt persistence.
    * @param quizManager                - for quiz sections.
-   * @param quizAttemptManager         - for attempts, particularly checking attempts are completed before revealing feedback.
+   * @param quizAttemptManager         - for attempts, particularly checking attempts are completed before revealing
+   *                                         feedback.
    */
   @Inject
   public QuizQuestionManager(final QuestionManager questionManager, final ContentMapper mapper,
@@ -122,8 +124,8 @@ public class QuizQuestionManager {
    * <br>
    * Note: It will not do anything to related content
    *
-   * @param quiz           - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
-   *                       question DTOs.
+   * @param quiz           - to augment - this object may be mutated as a result of this method. i.e. BestAttempt field
+   *                             set on question DTOs.
    * @param quizAttempt    - which attempt at the quiz to get attempts for.
    * @param includeCorrect - include whether the answers are correct.
    * @return The quiz object augmented (generally a modified parameter).
@@ -146,8 +148,8 @@ public class QuizQuestionManager {
    * Modify the quiz to contain feedback for the specified mode, and possibly the users answers and the correct answers.
    *
    * @param quizAttempt  - which attempt at the quiz to get attempts for.
-   * @param quiz         - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
-   *                     question DTOs.
+   * @param quiz         - to augment - this object may be mutated as a result of this method. i.e. BestAttempt field
+   *                           set on question DTOs.
    * @param feedbackMode - what level of feedback to augment with.
    * @return the augmented QuizAttemptDTO
    */
@@ -187,7 +189,8 @@ public class QuizQuestionManager {
    * <br>
    * Sets total and sectionTotals on the quiz object.
    *
-   * @param quiz       - to augment - this object will be mutated as a result of this method. i.e. total and sectionsTotals will be set.
+   * @param quiz       - to augment - this object will be mutated as a result of this method. i.e. total and
+   *                         sectionsTotals will be set.
    * @param assignment - the quiz assignment to get feedback for.
    * @param users      - the users to get feedback for.
    * @return a Map of Users to their associated Quiz Feedback

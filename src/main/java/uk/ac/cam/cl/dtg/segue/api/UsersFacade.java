@@ -71,7 +71,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.RECAPTCHAManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.RecaptchaManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -94,7 +94,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
+import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
 /**
  * User facade.
@@ -106,7 +106,7 @@ import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 public class UsersFacade extends AbstractSegueFacade {
   private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
   private final UserAccountManager userManager;
-  private final RECAPTCHAManager recaptchaManager;
+  private final RecaptchaManager recaptchaManager;
   private final UserAssociationManager userAssociationManager;
   private final IMisuseMonitor misuseMonitor;
   private final AbstractUserPreferenceManager userPreferenceManager;
@@ -126,7 +126,7 @@ public class UsersFacade extends AbstractSegueFacade {
    */
   @Inject
   public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                     final RECAPTCHAManager recaptchaManager, final ILogManager logManager,
+                     final RecaptchaManager recaptchaManager, final ILogManager logManager,
                      final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
                      final AbstractUserPreferenceManager userPreferenceManager,
                      final SchoolListReader schoolListReader) {
@@ -202,7 +202,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     UserSettings userSettingsObjectFromClient;
     String newPassword;
-    String reCAPTCHAToken;
+    String recaptchaToken;
     try {
       ObjectMapper tmpObjectMapper = new ObjectMapper();
       tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -210,7 +210,7 @@ public class UsersFacade extends AbstractSegueFacade {
       //TODO: We need to change the way the frontend sends passwords to reduce complexity
       Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
       newPassword = (String) ((Map) mapRepresentation.get("registeredUser")).get("password");
-      reCAPTCHAToken = (String) mapRepresentation.get("recaptchaToken");
+      recaptchaToken = (String) mapRepresentation.get("recaptchaToken");
       ((Map) mapRepresentation.get("registeredUser")).remove("password");
       userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
 
@@ -243,12 +243,12 @@ public class UsersFacade extends AbstractSegueFacade {
       }
     } else {
       try {
-        String recaptchaResponse = recaptchaManager.recaptchaResultString(reCAPTCHAToken);
+        String recaptchaResponse = recaptchaManager.recaptchaResultString(recaptchaToken);
 
         if (!recaptchaResponse.equals("reCAPTCHA verification successful.")) {
           return new SegueErrorResponse(Status.BAD_REQUEST, "reCAPTCHA not validated correctly.").toResponse();
         }
-        String ipAddress = RequestIPExtractor.getClientIpAddr(request);
+        String ipAddress = RequestIpExtractor.getClientIpAddr(request);
         misuseMonitor.notifyEvent(ipAddress, RegistrationMisuseHandler.class.getSimpleName());
         SegueMetrics.USER_REGISTRATION.inc();
 
@@ -265,7 +265,7 @@ public class UsersFacade extends AbstractSegueFacade {
             registeredUserContexts);
       } catch (SegueResourceMisuseException e) {
         log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!",
-            RequestIPExtractor.getClientIpAddr(request)));
+            RequestIpExtractor.getClientIpAddr(request)));
         return SegueErrorResponse.getRateThrottledResponse(
             "Too many registration requests. Please try again later or contact us!");
       }
@@ -317,7 +317,7 @@ public class UsersFacade extends AbstractSegueFacade {
    * @param httpServletRequest - the request, to work out the current user
    * @param userIdOfInterest   - userId of interest - usually the teacher's student
    * @return a successful response regardless of whether the email exists or an error code if there is a technical
-   * fault
+   *     fault
    */
   @POST
   @Path("users/{user_id}/resetpassword")
@@ -382,14 +382,15 @@ public class UsersFacade extends AbstractSegueFacade {
    * @param userObject - A user object containing the email of the user requesting a reset
    * @param request    - For logging purposes.
    * @return a successful response regardless of whether the email exists or an error code if there is a technical
-   * fault
+   *     fault
    */
   @POST
   @Path("users/resetpassword")
   @Consumes(MediaType.APPLICATION_JSON)
   @GZIP
   @Operation(summary = "Request password reset for an email address.",
-      description = "The email address must be provided as a RegisteredUserDTO object, although only the 'email' field is required.")
+      description = "The email address must be provided as a RegisteredUserDTO object, although only the 'email'"
+          + " field is required.")
   public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
                                              @Context final HttpServletRequest request) {
     if (null == userObject || null == userObject.getEmail() || userObject.getEmail().isEmpty()) {
@@ -398,7 +399,7 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     try {
-      String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
+      String requestingIPAddress = RequestIpExtractor.getClientIpAddr(request);
       misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetByEmailMisuseHandler.class.getSimpleName());
       misuseMonitor.notifyEvent(requestingIPAddress, PasswordResetByIPMisuseHandler.class.getSimpleName());
       boolean userExists = userManager.resetPasswordRequest(userObject);

@@ -51,6 +51,7 @@ public abstract class IOAuthAuthenticatorTest {
 
   /**
    * Verify that the extractAuthCode method returns the correct value.
+   *
    * @throws NoUserException
    * @throws IOException
    */
@@ -66,6 +67,7 @@ public abstract class IOAuthAuthenticatorTest {
 
   /**
    * Verify that the getAntiForgeryStateToken returns some non-null non-empty string.
+   *
    * @throws IOException
    * @throws NoUserException
    * @throws AuthenticatorSecurityException

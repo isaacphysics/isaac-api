@@ -33,6 +33,7 @@ public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
 
   /**
    * Verify that the authenticator returns a valid authorization URL.
+   *
    * @throws IOException
    */
   @Test
@@ -54,6 +55,7 @@ public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
 
   /**
    * Verify that the extractAuthCode method returns the correct value.
+   *
    * @throws IOException
    */
   @Test

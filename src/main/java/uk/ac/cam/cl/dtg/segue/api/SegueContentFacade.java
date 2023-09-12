@@ -93,18 +93,16 @@ public class SegueContentFacade extends AbstractSegueFacade {
    * @param limit         - the max number of results to return.
    * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
    */
-  public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-                                                              final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-                                                              @Nullable final Integer startIndex,
-                                                              @Nullable final Integer limit)
-      throws ContentManagerException {
+  public final ResultsWrapper<ContentDTO> findMatchingContent(
+      final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+      @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
 
     return contentService.findMatchingContent(version, fieldsToMatch, startIndex, limit);
   }
 
   /**
-   * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the results in a
-   * randomised order.
+   * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied. Providing the
+   * results in a randomised order.
    * <br>
    * This method is the same as {@link #findMatchingContentRandomOrder(String, List, Integer, Integer, Long)} but uses
    * a default random seed.

@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao.userBadges;
+package uk.ac.cam.cl.dtg.segue.dao.userbadges;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

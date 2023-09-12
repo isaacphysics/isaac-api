@@ -160,8 +160,8 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.PgUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
@@ -231,7 +231,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
    * A setter method that is mostly useful for testing. It populates the global properties static value if it has not
    * previously been set.
    *
-   * @param globalProperties PropertiesLoader object to be used for loading properties (if it has not previously been set).
+   * @param globalProperties PropertiesLoader object to be used for loading properties
+   *                             (if it has not previously been set).
    */
   public static void setGlobalPropertiesIfNotSet(final PropertiesLoader globalProperties) {
     if (SegueGuiceConfigurationModule.globalProperties == null) {
@@ -500,15 +501,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
       }
     }
     // eventually we want to do something like the below to make sure we get updated clients
-//        if (elasticSearchClient instanceof TransportClient) {
-//            TransportClient tc = (TransportClient) elasticSearchClient;
-//            if (tc.connectedNodes().isEmpty()) {
-//                tc.close();
-//                log.error("The elasticsearch client is not connected to any nodes. Trying to reconnect...");
-//                elasticSearchClient = null;
-//                return getSearchConnectionInformation(clusterName, address, port);
-//            }
-//        }
+    //    if (elasticSearchClient instanceof TransportClient) {
+    //      TransportClient tc = (TransportClient) elasticSearchClient;
+    //      if (tc.connectedNodes().isEmpty()) {
+    //        tc.close();
+    //        log.error("The elasticsearch client is not connected to any nodes. Trying to reconnect...");
+    //        elasticSearchClient = null;
+    //        return getSearchConnectionInformation(clusterName, address, port);
+    //      }
+    //    }
 
     return elasticSearchClient;
   }
@@ -679,10 +680,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   @Inject
   @Provides
   @Singleton
-  private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database,
-                                                                 final PropertiesLoader properties,
-                                                                 final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                                                                 final EmailManager emailQueue) {
+  private UserAuthenticationManager getUserAuthenticationManager(
+      final IUserDataManager database, final PropertiesLoader properties,
+      final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final EmailManager emailQueue) {
     if (null == userAuthenticationManager) {
       userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister, emailQueue);
       log.info("Creating singleton of UserAuthenticationManager");

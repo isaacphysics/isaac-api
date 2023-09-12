@@ -87,7 +87,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 @PrepareForTest({UserAccountManager.class})
 @PowerMockIgnore({"jakarta.ws.*", "jakarta.management.*", "jakarta.script.*"})
 @Deprecated
-abstract public class AbstractFacadeTest extends IsaacTest {
+public abstract class AbstractFacadeTest extends IsaacTest {
   protected Request request;
   protected HttpServletRequest httpServletRequest;
   protected UserAccountManager userManager;
@@ -277,20 +277,20 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         + " with details " + extractErrorInfo(actual), expectedStatus.getStatusCode(), actual.getStatus());
   }
 
-  private String extractErrorInfo(Response response) {
-    if (response.getEntity() instanceof SegueErrorResponse) {
-      SegueErrorResponse error = (SegueErrorResponse) response.getEntity();
-      return error.getErrorMessage();
-    }
-    return response.getEntity().toString();
-  }
-
   private void assertErrorResponse(Response expected, Response actual) {
     assertErrorResponse(expected.getStatusInfo().toEnum(), actual);
     if (expected.getEntity() instanceof SegueErrorResponse) {
       SegueErrorResponse expectedError = (SegueErrorResponse) expected.getEntity();
       assertEquals(expectedError.getErrorMessage(), ((SegueErrorResponse) actual.getEntity()).getErrorMessage());
     }
+  }
+
+  private String extractErrorInfo(Response response) {
+    if (response.getEntity() instanceof SegueErrorResponse) {
+      SegueErrorResponse error = (SegueErrorResponse) response.getEntity();
+      return error.getErrorMessage();
+    }
+    return response.getEntity().toString();
   }
 
   interface Step {

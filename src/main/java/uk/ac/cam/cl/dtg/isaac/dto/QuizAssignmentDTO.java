@@ -39,7 +39,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
 
   private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
   private List<QuizUserFeedbackDTO> userFeedback;
-      // For augmenting all student's marks when a teacher fetches assignment.
+  // For augmenting all student's marks when a teacher fetches assignment.
   private IsaacQuizDTO quiz; // For augmenting when a teacher fetches assignment.
 
   /**

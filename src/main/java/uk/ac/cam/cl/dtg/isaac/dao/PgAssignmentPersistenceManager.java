@@ -64,9 +64,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
   public Long saveAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
     AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
 
-    String query =
-        "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes, scheduled_start_date)"
-            + " VALUES (?, ?, ?, ?, ?, ?, ?);";
+    String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes,"
+        + " scheduled_start_date) VALUES (?, ?, ?, ?, ?, ?, ?);";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
     ) {

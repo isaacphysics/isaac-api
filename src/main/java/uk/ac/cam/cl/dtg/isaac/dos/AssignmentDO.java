@@ -41,7 +41,8 @@ public class AssignmentDO {
    * @param notes
    * @param creationDate       - the date the assignment was created.
    * @param dueDate
-   * @param scheduledStartDate - the date and time the assignment should have notification emails sent to its group (using Quartz)
+   * @param scheduledStartDate - the date and time the assignment should have notification emails sent to its group
+   *                                 (using Quartz)
    */
   public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
                       final String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate) {

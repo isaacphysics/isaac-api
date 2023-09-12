@@ -41,6 +41,7 @@ public class ChoiceQuestionDTO extends QuestionDTO {
   /**
    * Gets the choices. Defaults to not return choices.
    * Manually unignore, e.g. multi-choice questions
+   *
    * @return the choices
    */
   @JsonIgnore
@@ -51,8 +52,7 @@ public class ChoiceQuestionDTO extends QuestionDTO {
   /**
    * Sets the choices.
    *
-   * @param choices
-   *            the choices to set
+   * @param choices the choices to set
    */
   public final void setChoices(final List<ChoiceDTO> choices) {
     this.choices = choices;
@@ -71,8 +71,7 @@ public class ChoiceQuestionDTO extends QuestionDTO {
   /**
    * Sets the randomiseChoices.
    *
-   * @param randomiseChoices
-   *            the randomiseChoices to set
+   * @param randomiseChoices the randomiseChoices to set
    */
   public void setRandomiseChoices(final Boolean randomiseChoices) {
     this.randomiseChoices = randomiseChoices;

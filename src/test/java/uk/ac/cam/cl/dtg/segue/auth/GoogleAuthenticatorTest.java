@@ -20,7 +20,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
 import org.junit.Before;
 
-
 public class GoogleAuthenticatorTest extends IOAuth2AuthenticatorTest {
   /**
    * Initial configuration of tests.

@@ -152,7 +152,8 @@ public class UserAccountManager implements IUserAccountManager {
    * Create an instance of the user manager class.
    *
    * @param database                  - an IUserDataManager that will support persistence.
-   * @param questionDb                - allows this class to instruct the questionDB to merge an anonymous user with a registered user.
+   * @param questionDb                - allows this class to instruct the questionDB to merge an anonymous user with a
+   *                                        registered user.
    * @param properties                - A property loader
    * @param providersToRegister       - A map of known authentication providers.
    * @param dtoMapper                 - the preconfigured DO to DTO object mapper for user objects.
@@ -230,7 +231,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @param request  - http request that we can attach the session to.
    * @param provider - the provider the user wishes to authenticate with.
    * @return A redirection URI - also this endpoint ensures that the request has a session attribute on so we know
-   * that this is a link request not a new user.
+   *     that this is a link request not a new user.
    * @throws IOException                            -
    * @throws AuthenticationProviderMappingException - as per exception description.
    */
@@ -341,8 +342,10 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws AuthenticationProviderMappingException    - if we cannot find an authenticator
    * @throws IncorrectCredentialsProvidedException     - if the password is incorrect
    * @throws NoCredentialsAvailableException           - If the account exists but does not have a local password
-   * @throws AdditionalAuthenticationRequiredException - If the account has 2FA enabled and we need to initiate that flow
-   * @throws MFARequiredButNotConfiguredException      - If the account type requires 2FA to be configured but none is enabled for the account
+   * @throws AdditionalAuthenticationRequiredException - If the account has 2FA enabled and we need to initiate that
+   *                                                         flow
+   * @throws MFARequiredButNotConfiguredException      - If the account type requires 2FA to be configured but none is
+   *                                                         enabled for the account
    * @throws SegueDatabaseException                    - if there is a problem with the database.
    */
   public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
@@ -573,9 +576,11 @@ public class UserAccountManager implements IUserAccountManager {
         userObjectFromClient.setRegisteredContexts(registeredUserContexts);
         userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
       } else {
-        // Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
-        // server that sets the time that they last confirmed their user context values.
-        // To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is null
+        /* Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
+           server that sets the time that they last confirmed their user context values.
+           To ensure this, we overwrite the fields with the values already set in the db if registeredUserContexts is
+           null
+         */
         userObjectFromClient.setRegisteredContexts(existingUserFromDb.getRegisteredContexts());
         userObjectFromClient.setRegisteredContextsLastConfirmed(
             existingUserFromDb.getRegisteredContextsLastConfirmed());
@@ -638,6 +643,116 @@ public class UserAccountManager implements IUserAccountManager {
   }
 
   /**
+   * Method to update a user object in our database.
+   *
+   * @param updatedUser - the user to update - must contain a user id
+   * @param newPassword - the new password if being changed.
+   * @return the user object as was saved.
+   * @throws InvalidPasswordException      - the password provided does not meet our requirements.
+   * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
+   * @throws SegueDatabaseException        - If there is an internal database error.
+   */
+  public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
+      throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
+      InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
+    Validate.notNull(updatedUser.getId());
+
+    // We want to map to DTO first to make sure that the user cannot
+    // change fields that aren't exposed to them
+    RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
+    if (updatedUser.getId() == null) {
+      throw new IllegalArgumentException(
+          "The user object specified does not have an id. Users cannot be updated without a specific id set.");
+    }
+
+    // This is an update operation.
+    final RegisteredUser existingUser = this.findUserById(updatedUser.getId());
+    // userToSave = existingUser;
+
+    // Check that the user isn't trying to take an existing users e-mail.
+    if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail()
+        .equals(updatedUser.getEmail())) {
+      throw new DuplicateAccountException("An account with that e-mail address already exists.");
+    }
+
+    // validate names
+    if (!isUserNameValid(updatedUser.getGivenName())) {
+      throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
+    }
+
+    if (!isUserNameValid(updatedUser.getFamilyName())) {
+      throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
+    }
+
+    IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+        .get(AuthenticationProvider.SEGUE);
+
+    // Check if there is a new password and it is invalid as early as possible:
+    if (null != newPassword && !newPassword.isEmpty()) {
+      authenticator.ensureValidPassword(newPassword);
+    }
+
+    MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
+
+    RegisteredUser userToSave = new RegisteredUser();
+    mergeMapper.map(existingUser, userToSave);
+    mergeMapper.map(userDTOContainingUpdates, userToSave);
+    // Don't modify email verification status, registration date, or role
+    userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
+    userToSave.setRegistrationDate(existingUser.getRegistrationDate());
+    userToSave.setRole(existingUser.getRole());
+    userToSave.setLastUpdated(new Date());
+
+    if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
+      userToSave.setSchoolId(null);
+    }
+    // Correctly remove school_other when it is set to be the empty string:
+    if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
+      userToSave.setSchoolOther(null);
+    }
+
+    // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
+    // null values are explicitly not mapped by `mergeMapper`.
+    if (updatedUser.getDateOfBirth() == null) {
+      userToSave.setDateOfBirth(null);
+    }
+
+    // Before save we should validate the user for mandatory fields.
+    // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
+    // invalid email, and (b) that users with an invalid email can change their email to a valid one!
+    if (!this.isUserValid(userToSave)) {
+      throw new MissingRequiredFieldException("The email address provided is invalid.");
+    }
+
+    // Make sure the email address is preserved (can't be changed until new email is verified)
+    // Send a new verification email if the user has changed their email
+    if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
+      try {
+        String newEmail = updatedUser.getEmail();
+        authenticator.createEmailVerificationTokenForUser(userToSave, newEmail);
+
+        RegisteredUserDTO userDTO = this.getUserDTOById(userToSave.getId());
+        String emailVerificationToken = userToSave.getEmailVerificationToken();
+        this.sendVerificationEmailsForEmailChange(userDTO, newEmail, emailVerificationToken);
+
+      } catch (ContentManagerException | NoUserException e) {
+        log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+      }
+
+      userToSave.setEmail(existingUser.getEmail());
+    }
+
+    // save the user
+    RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+    if (null != newPassword && !newPassword.isEmpty()) {
+      authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
+    }
+
+    // return it to the caller
+    return this.convertUserDOToUserDTO(userToReturn);
+  }
+
+  /**
    * Complete the MFA login process. If the correct TOTPCode is provided we will give the user a full session cookie
    * rather than a partial one.
    *
@@ -647,7 +762,8 @@ public class UserAccountManager implements IUserAccountManager {
    * @return RegisteredUserDTO as they are now considered logged in.
    * @throws IncorrectCredentialsProvidedException - if the password is incorrect
    * @throws NoCredentialsAvailableException       - If the account exists but does not have a local password
-   * @throws NoUserLoggedInException               - If the user hasn't completed the first step of the authentication process.
+   * @throws NoUserLoggedInException               - If the user hasn't completed the first step of the authentication
+   *                                                     process.
    * @throws SegueDatabaseException                - if there is a problem with the database.
    */
   public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
@@ -697,7 +813,8 @@ public class UserAccountManager implements IUserAccountManager {
    * @param user           - user to affect.
    * @param providerString - provider to unassociated.
    * @throws SegueDatabaseException                 - if there is an error during the database update.
-   * @throws MissingRequiredFieldException          - If the change will mean that the user will be unable to login again.
+   * @throws MissingRequiredFieldException          - If the change will mean that the user will be unable to login
+   *                                                      again.
    * @throws AuthenticationProviderMappingException - if we are unable to locate the authentication provider specified.
    */
   public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
@@ -951,8 +1068,8 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws InvalidPasswordException      - the password provided does not meet our requirements.
    * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
    * @throws SegueDatabaseException        - If there is an internal database error.
-   * @throws EmailMustBeVerifiedException  - if a user attempts to sign up with an email that must be verified before it can be used
-   *                                       (i.e. an @isaacphysics.org or @isaacchemistry.org address).
+   * @throws EmailMustBeVerifiedException  - if a user attempts to sign up with an email that must be verified before it
+   *                                             can be used (i.e. an @isaaccomputerscience.org address).
    */
   public RegisteredUserDTO createUserObjectAndSession(
       final HttpServletRequest request, final HttpServletResponse response, final RegisteredUser user,
@@ -962,7 +1079,8 @@ public class UserAccountManager implements IUserAccountManager {
     Validate.isTrue(user.getId() == null,
         "When creating a new user the user id must not be set.");
 
-    // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
+    // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them,
+    // however.
     if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
       log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
       throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
@@ -1053,116 +1171,6 @@ public class UserAccountManager implements IUserAccountManager {
 
     // return it to the caller.
     return this.logUserIn(request, response, userToReturn);
-  }
-
-  /**
-   * Method to update a user object in our database.
-   *
-   * @param updatedUser - the user to update - must contain a user id
-   * @param newPassword - the new password if being changed.
-   * @return the user object as was saved.
-   * @throws InvalidPasswordException      - the password provided does not meet our requirements.
-   * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
-   * @throws SegueDatabaseException        - If there is an internal database error.
-   */
-  public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
-      throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-      InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
-    Validate.notNull(updatedUser.getId());
-
-    // We want to map to DTO first to make sure that the user cannot
-    // change fields that aren't exposed to them
-    RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
-    if (updatedUser.getId() == null) {
-      throw new IllegalArgumentException(
-          "The user object specified does not have an id. Users cannot be updated without a specific id set.");
-    }
-
-    // This is an update operation.
-    final RegisteredUser existingUser = this.findUserById(updatedUser.getId());
-    // userToSave = existingUser;
-
-    // Check that the user isn't trying to take an existing users e-mail.
-    if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail()
-        .equals(updatedUser.getEmail())) {
-      throw new DuplicateAccountException("An account with that e-mail address already exists.");
-    }
-
-    // validate names
-    if (!isUserNameValid(updatedUser.getGivenName())) {
-      throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
-    }
-
-    if (!isUserNameValid(updatedUser.getFamilyName())) {
-      throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
-    }
-
-    IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-        .get(AuthenticationProvider.SEGUE);
-
-    // Check if there is a new password and it is invalid as early as possible:
-    if (null != newPassword && !newPassword.isEmpty()) {
-      authenticator.ensureValidPassword(newPassword);
-    }
-
-    MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
-
-    RegisteredUser userToSave = new RegisteredUser();
-    mergeMapper.map(existingUser, userToSave);
-    mergeMapper.map(userDTOContainingUpdates, userToSave);
-    // Don't modify email verification status, registration date, or role
-    userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
-    userToSave.setRegistrationDate(existingUser.getRegistrationDate());
-    userToSave.setRole(existingUser.getRole());
-    userToSave.setLastUpdated(new Date());
-
-    if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
-      userToSave.setSchoolId(null);
-    }
-    // Correctly remove school_other when it is set to be the empty string:
-    if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
-      userToSave.setSchoolOther(null);
-    }
-
-    // Allow the user to clear their DOB, they have already confirmed they are over 11 at least once.
-    // null values are explicitly not mapped by `mergeMapper`.
-    if (updatedUser.getDateOfBirth() == null) {
-      userToSave.setDateOfBirth(null);
-    }
-
-    // Before save we should validate the user for mandatory fields.
-    // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
-    // invalid email, and (b) that users with an invalid email can change their email to a valid one!
-    if (!this.isUserValid(userToSave)) {
-      throw new MissingRequiredFieldException("The email address provided is invalid.");
-    }
-
-    // Make sure the email address is preserved (can't be changed until new email is verified)
-    // Send a new verification email if the user has changed their email
-    if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
-      try {
-        String newEmail = updatedUser.getEmail();
-        authenticator.createEmailVerificationTokenForUser(userToSave, newEmail);
-
-        RegisteredUserDTO userDTO = this.getUserDTOById(userToSave.getId());
-        String emailVerificationToken = userToSave.getEmailVerificationToken();
-        this.sendVerificationEmailsForEmailChange(userDTO, newEmail, emailVerificationToken);
-
-      } catch (ContentManagerException | NoUserException e) {
-        log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-      }
-
-      userToSave.setEmail(existingUser.getEmail());
-    }
-
-    // save the user
-    RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
-    if (null != newPassword && !newPassword.isEmpty()) {
-      authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
-    }
-
-    // return it to the caller
-    return this.convertUserDOToUserDTO(userToReturn);
   }
 
   /**
@@ -1459,7 +1467,7 @@ public class UserAccountManager implements IUserAccountManager {
   }
 
   /**
-   * Deactivate MFA for user's account - should only be used by admins!
+   * Deactivate MFA for user's account - should only be used by admins!.
    *
    * @param user - the User to deactivate 2FA for
    * @throws SegueDatabaseException - unable to save secret to account.
@@ -1526,7 +1534,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Get the user object from the partially completed cookie.
    * <br>
-   * WARNING: Do not use this method to determine if a user has successfully logged in or not as they could have omitted the 2FA step.
+   * WARNING: Do not use this method to determine if a user has successfully logged in or not as they could have omitted
+   * the 2FA step.
    *
    * @param request to pull back the user
    * @return UserSummaryDTO of the partially logged-in user or will throw an exception if cannot be found.
@@ -1834,7 +1843,7 @@ public class UserAccountManager implements IUserAccountManager {
    *
    * @param request - to retrieve session information from
    * @return Returns the current UserDTO if we can get it or null if user is not currently logged in / there is an
-   * invalid session
+   *     invalid session
    */
   private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
     return this.userAuthenticationManager.getUserFromSession(request, false);

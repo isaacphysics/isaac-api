@@ -82,7 +82,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
+import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
 /**
  * AuthenticationFacade.
@@ -123,7 +123,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
   @GET
   @Path("/user_authentication_settings")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
+  @Operation(summary = "The current users authentication settings, e.g. linked accounts and whether they have segue or"
+      + " not")
   public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request) {
 
     return this.getCurrentUserAuthorisationSettings(request, null);
@@ -139,7 +140,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
   @GET
   @Path("/user_authentication_settings/{user_id}")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "The current users authentication settings, e.g. linked accounts and whether they have segue or not")
+  @Operation(summary = "The current users authentication settings, e.g. linked accounts and whether they have segue or"
+      + " not")
   public final Response getCurrentUserAuthorisationSettings(@Context final HttpServletRequest request,
                                                             @PathParam("user_id") final Long userId) {
     try {
@@ -179,7 +181,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
    * This is the initial step of the authentication process.
    *
    * @param request        - the http request of the user wishing to authenticate
-   * @param signinProvider - string representing the supported auth provider so that we know who to redirect the user to.
+   * @param signinProvider - string representing the supported auth provider so that we know who to redirect the user to
    * @return Redirect response to the auth providers site.
    */
   @GET
@@ -218,14 +220,16 @@ public class AuthenticationFacade extends AbstractSegueFacade {
    * Link existing user to provider.
    *
    * @param request              - the http request of the user wishing to authenticate
-   * @param authProviderAsString - string representing the supported auth provider so that we know who to redirect the user to.
+   * @param authProviderAsString - string representing the supported auth provider so that we know who to redirect the
+   *                                   user to.
    * @return a redirect to where the client asked to be redirected to.
    */
   @GET
   @Path("/{provider}/link")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get the SSO redirect URL for an authentication provider.",
-      description = "Very similar to the login case, but records this is a link request not an account creation request.")
+      description = "Very similar to the login case, but records this is a link request not an account creation"
+          + " request.")
   public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
                                                    @PathParam("provider") final String authProviderAsString) {
     if (!this.userManager.isRegisteredUserLoggedIn(request)) {
@@ -343,8 +347,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
    *
    * @param request        - the http request of the user wishing to authenticate
    * @param response       to tell the browser to store the session in our own segue cookie if successful.
-   * @param signinProvider - string representing the supported auth provider so that we know who to redirect the user to.
-   * @param localAuthDTO   - for local authentication only, credentials should be specified within a LocalAuthDTO object.
+   * @param signinProvider - string representing the supported auth provider so that we know who to redirect the user to
+   * @param localAuthDTO   - for local authentication only, credentials should be specified within a LocalAuthDTO object
    *                       e.g. email and password.
    * @return The users DTO or a SegueErrorResponse
    */
@@ -408,10 +412,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
   private void notifySegueLoginRateLimiters(final HttpServletRequest request, final String email)
       throws SegueResourceMisuseException {
-    String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
+    String requestingIpAddress = RequestIpExtractor.getClientIpAddr(request);
     // Stop users logging in who have already locked their account.
     misuseMonitor.notifyEvent(email.toLowerCase(), SegueLoginByEmailMisuseHandler.class.getSimpleName());
-    misuseMonitor.notifyEvent(requestingIPAddress, SegueLoginByIPMisuseHandler.class.getSimpleName());
+    misuseMonitor.notifyEvent(requestingIpAddress, SegueLoginByIPMisuseHandler.class.getSimpleName());
   }
 
   private static boolean areCredentialsMissing(final LocalAuthDTO localAuthDTO) {

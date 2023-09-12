@@ -1,7 +1,7 @@
-package uk.ac.cam.cl.dtg.segue.api.userAlerts;
+package uk.ac.cam.cl.dtg.segue.api.useralerts;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.util.RequestIPExtractor.getClientIpAddr;
+import static uk.ac.cam.cl.dtg.util.RequestIpExtractor.getClientIpAddr;
 
 import com.google.inject.Injector;
 import jakarta.servlet.ServletException;

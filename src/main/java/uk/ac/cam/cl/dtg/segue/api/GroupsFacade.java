@@ -577,7 +577,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 
       if (!GroupManager.hasAdditionalManagerPrivileges(groupBasedOnId, currentRegisteredUser.getId())) {
         return new SegueErrorResponse(Status.FORBIDDEN,
-            "You are neither the owner of this group, nor an additional manager with additional privileges!").toResponse();
+            "You are neither the owner of this group, nor an additional manager with additional privileges!"
+        ).toResponse();
       }
 
       RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
@@ -657,7 +658,8 @@ public class GroupsFacade extends AbstractSegueFacade {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Add an additional manager to a group.",
-      description = "The email of the user to add must be provided as 'email' in the request body and they must have a teacher account.")
+      description = "The email of the user to add must be provided as 'email' in the request body and they must have a"
+          + " teacher account.")
   public Response addAdditionalManagerToGroup(@Context final HttpServletRequest request,
                                               @PathParam("group_id") final Long groupId,
                                               final Map<String, String> responseMap) {
@@ -690,7 +692,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 
       // Tutors cannot be added as additional managers of a group
       if (null == userToAdd || !isUserTeacherOrAbove(userManager, userToAdd)) {
-        // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account scanning.
+        // deliberately be vague about whether the account exists or they don't have a teacher account to avoid account
+        // scanning.
         return new SegueErrorResponse(Status.BAD_REQUEST, PROBLEM_ADDING_GROUP_MANAGER_MESSAGE).toResponse();
       }
 
@@ -765,7 +768,8 @@ public class GroupsFacade extends AbstractSegueFacade {
             "Only an additional manager of a group can be promoted to group owner!").toResponse();
       }
 
-      // Don't allow current owner to be promoted to owner - doesn't make sense (this shouldn't be possible in the UI anyway)
+      // Don't allow current owner to be promoted to owner - doesn't make sense
+      // (this shouldn't be possible in the UI anyway)
       if (groupOwner.getId().equals(userIdToPromote)) {
         return new SegueErrorResponse(Status.BAD_REQUEST,
             "The user being promoted is already the owner of this group!").toResponse();

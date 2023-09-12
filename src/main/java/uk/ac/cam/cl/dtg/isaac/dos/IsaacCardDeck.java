@@ -32,6 +32,7 @@ public class IsaacCardDeck extends Content {
 
   /**
    * Get the cards.
+   *
    * @return the cards.
    */
   public List<IsaacCard> getCards() {
@@ -40,6 +41,7 @@ public class IsaacCardDeck extends Content {
 
   /**
    * Set the list of cards.
+   *
    * @param cards the list of cards to set.
    */
   public void setCards(final List<IsaacCard> cards) {

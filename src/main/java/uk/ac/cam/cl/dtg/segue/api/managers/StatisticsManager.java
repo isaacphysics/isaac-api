@@ -197,7 +197,7 @@ public class StatisticsManager implements IStatisticsManager {
    * Get an overview of all school performance. This is for analytics / admin users.
    *
    * @return list of school to statistics mapping. The object in the map is another map with keys connections,
-   * numberActiveLastThirtyDays.
+   *     numberActiveLastThirtyDays.
    * @throws UnableToIndexSchoolsException - if there is a problem getting school details.
    */
   public List<Map<String, Object>> getSchoolStatistics()
@@ -243,7 +243,7 @@ public class StatisticsManager implements IStatisticsManager {
 
     Collections.sort(result, new Comparator<Map<String, Object>>() {
       /**
-       * Descending numerical order
+       * Descending numerical order.
        */
       @Override
       public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
@@ -566,8 +566,8 @@ public class StatisticsManager implements IStatisticsManager {
    *
    * @param users           - collection of users to consider.
    * @param lastSeenUserMap - The map of user event data. UserId --> last event date.
-   * @param daysFromToday   - the number of days from today that should be included in the calculation e.g. 7 would be the last
-   *                        week's data.
+   * @param daysFromToday   - the number of days from today that should be included in the calculation e.g. 7 would be
+   *                              the last week's data.
    * @return a collection containing the users who meet the criteria
    */
   @Override

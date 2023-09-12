@@ -504,7 +504,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
   @Consumes(MediaType.APPLICATION_JSON)
   @GZIP
   @Operation(summary = "Use a group join token to authorise users and join a group.",
-      description = "This should be used after listing the group owners and managers and asking the user's permission to share data.")
+      description = "This should be used after listing the group owners and managers and asking the user's permission"
+          + " to share data.")
   public Response useToken(@Context final HttpServletRequest request, @PathParam("token") final String token) {
     if (null == token || token.isEmpty()) {
       return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();

@@ -83,8 +83,8 @@ public class EventNotificationEmailManager {
       throws SegueDatabaseException {
     List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(event.getId());
     List<Long> ids = eventBookings.stream()
-        .filter(DetailedEventBookingDTO -> bookingStatuses == null || bookingStatuses.contains(
-            DetailedEventBookingDTO.getBookingStatus()))
+        .filter(detailedEventBookingDTO -> bookingStatuses == null || bookingStatuses.contains(
+            detailedEventBookingDTO.getBookingStatus()))
         .map(DetailedEventBookingDTO::getUserBooked)
         .map(UserSummaryDTO::getId)
         .distinct().collect(Collectors.toList());

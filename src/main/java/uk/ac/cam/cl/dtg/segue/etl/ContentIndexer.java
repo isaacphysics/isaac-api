@@ -125,7 +125,9 @@ public class ContentIndexer {
       Map<String, String> publishedUnits = new HashMap<>();
       Map<Content, List<String>> indexProblemCache = new HashMap<>();
 
-      long totalStartTime, startTime, endTime;
+      long totalStartTime;
+      long startTime;
+      long endTime;
 
       totalStartTime = System.nanoTime();
       buildGitContentIndex(version, true, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
@@ -682,7 +684,8 @@ public class ContentIndexer {
       }
     }
 
-    long startTime, endTime;
+    long startTime;
+    long endTime;
 
     try {
       es.indexObject(sha, ContentIndextype.METADATA.toString(),
@@ -737,7 +740,7 @@ public class ContentIndexer {
 
     try {
       startTime = System.nanoTime();
-      es.bulkIndexWithIDs(sha, ContentIndextype.CONTENT.toString(), contentToIndex);
+      es.bulkIndexWithIds(sha, ContentIndextype.CONTENT.toString(), contentToIndex);
       endTime = System.nanoTime();
       log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
       log.info("Search index request sent for: " + sha);
@@ -832,8 +835,9 @@ public class ContentIndexer {
     if (indexProblemCache.size() == 0) {
       // Register a no-op style error to simplify application logic by ensuring there is always a content errors index
       Content dummyContentRecord = new Content() {{
-        setCanonicalSourceFile("\uD83D\uDE0E");
-      }};
+          // "\uD83D\uDE0E"
+          setCanonicalSourceFile("😎");
+        }};
       this.registerContentProblem(dummyContentRecord, "No content errors!", indexProblemCache);
     }
   }
@@ -875,14 +879,11 @@ public class ContentIndexer {
         .anyMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
   }
 
-//
-//
-//
-///*
-//    @Override
-//    public void setIndexRestriction(final boolean loadOnlyPublishedContent) {
-//        this.indexOnlyPublishedParentContent = loadOnlyPublishedContent;
-//    }*/
+  /*
+      @Override
+      public void setIndexRestriction(final boolean loadOnlyPublishedContent) {
+          this.indexOnlyPublishedParentContent = loadOnlyPublishedContent;
+      }*/
 
   // GitContentManager ensureCache
 

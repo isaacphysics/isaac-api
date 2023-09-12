@@ -164,31 +164,6 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
   }
 
   @Override
-  public List<UserPreference> getAllUserPreferences(final long userId) throws SegueDatabaseException {
-
-    String query = "SELECT * FROM user_preferences WHERE user_id=?;";
-    try (Connection conn = database.getDatabaseConnection();
-         PreparedStatement pst = conn.prepareStatement(query)
-    ) {
-      pst.setLong(FIELD_GET_ALL_PREFERENCES_USER_ID, userId);
-
-      try (ResultSet results = pst.executeQuery()) {
-
-        List<UserPreference> userPreferences = Lists.newArrayList();
-
-        while (results.next()) {
-          UserPreference pref = userPreferenceFromResultSet(results);
-          userPreferences.add(pref);
-        }
-
-        return userPreferences;
-      }
-    } catch (SQLException e) {
-      throw new SegueDatabaseException("Postgres exception", e);
-    }
-  }
-
-  @Override
   public Map<Long, List<UserPreference>> getUserPreferences(final String preferenceType,
                                                             final List<RegisteredUserDTO> users)
       throws SegueDatabaseException {
@@ -243,6 +218,31 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
       }
     }
     return usersPreferencesMap;
+  }
+
+  @Override
+  public List<UserPreference> getAllUserPreferences(final long userId) throws SegueDatabaseException {
+
+    String query = "SELECT * FROM user_preferences WHERE user_id=?;";
+    try (Connection conn = database.getDatabaseConnection();
+         PreparedStatement pst = conn.prepareStatement(query)
+    ) {
+      pst.setLong(FIELD_GET_ALL_PREFERENCES_USER_ID, userId);
+
+      try (ResultSet results = pst.executeQuery()) {
+
+        List<UserPreference> userPreferences = Lists.newArrayList();
+
+        while (results.next()) {
+          UserPreference pref = userPreferenceFromResultSet(results);
+          userPreferences.add(pref);
+        }
+
+        return userPreferences;
+      }
+    } catch (SQLException e) {
+      throw new SegueDatabaseException("Postgres exception", e);
+    }
   }
 
   @Override

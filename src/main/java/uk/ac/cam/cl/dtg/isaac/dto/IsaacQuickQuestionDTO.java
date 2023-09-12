@@ -31,6 +31,7 @@ public class IsaacQuickQuestionDTO extends IsaacQuestionBaseDTO {
   /**
    * Unignores getting the answer as it is.
    * required to be shown in a quick question
+   *
    * @return the answer
    */
   @Override

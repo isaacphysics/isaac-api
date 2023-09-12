@@ -107,6 +107,7 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 
   /**
    * This is to reduce overhead in creating object mappers.
+   *
    * @return a preconfigured object mapper.
    */
   private ObjectMapper getSingletonChoiceMapper() {

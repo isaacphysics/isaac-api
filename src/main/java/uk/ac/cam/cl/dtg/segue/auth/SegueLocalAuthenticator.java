@@ -198,7 +198,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
       // because the @ symbol is not a valid Base64 character and the KEY_LENGTH is also shorter than those used
       // when checking real passwords.
       // If new password algorithms are implemented that use short keys and/or a larger charset than Base64 does
-      // this may become an issue, although unlikely because short keys are risky and Base64 is an encoding safe charset.
+      // this may become an issue, although unlikely because short keys are risky and Base64 is an encoding safe charset
       luc = new LocalUserCredential(userToAttachToken.getId(),
           "LOCKED@" + new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
               UUID.randomUUID().toString(), SHORT_KEY_LENGTH))),
@@ -239,7 +239,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     // measured to the nearest millisecond.
     Date now = new Date();
 
-    // check the token matches and hasn't expired (I know that we have just looked it up but that might change so checking anyway)
+    // check the token matches and hasn't expired
+    // (I know that we have just looked it up but that might change so checking anyway)
     return luc.getResetToken().equals(token) && luc.getResetExpiry().after(now);
   }
 

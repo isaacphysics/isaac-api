@@ -84,8 +84,10 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
     boolean responseCorrect = false;                // Whether we're right or wrong
 
     boolean allTypeMismatch = true;                 // Whether type of answer matches one of the correct answers
-    boolean allChemistry = true, allNuclear = true;
-    boolean allEquation = true, allExpression = true;
+    boolean allChemistry = true;
+    boolean allNuclear = true;
+    boolean allEquation = true;
+    boolean allExpression = true;
     boolean containsError = false;                  // Whether student answer contains any error terms.
     boolean isEquation = false;                     // Whether student answer is equation or not.
     boolean isBalanced = false;                     // Whether student answer has balanced equation.

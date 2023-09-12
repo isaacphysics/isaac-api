@@ -17,7 +17,8 @@
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 /**
- * View of a User Summary object, which contains additional information (email). Usually used where a sharing relationship has or will be created.
+ * View of a User Summary object, which contains additional information (email).
+ * Usually used where a sharing relationship has or will be created.
  */
 public class UserSummaryWithEmailAddressDTO extends UserSummaryDTO {
   private String email;

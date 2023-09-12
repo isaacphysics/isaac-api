@@ -83,14 +83,16 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
               page.getEndDate() == null && page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
           if (endDate30DaysAgo || noEndDateAndStartDate30DaysAgo) {
             String query =
-                "UPDATE event_bookings SET additional_booking_information=jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information,"
+                "UPDATE event_bookings SET additional_booking_information="
+                    + "jsonb_set(jsonb_set(jsonb_set(jsonb_set(additional_booking_information,"
                     + " '{emergencyName}', '\"[REMOVED]\"'::JSONB, FALSE),"
                     + " '{emergencyNumber}', '\"[REMOVED]\"'::JSONB, FALSE),"
                     + " '{accessibilityRequirements}', '\"[REMOVED]\"'::JSONB, FALSE),"
                     + " '{medicalRequirements}', '\"[REMOVED]\"'::JSONB, FALSE),"
                     + " pii_removed=? "
                     + " WHERE event_id = ?"
-                    + " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber', 'accessibilityRequirements', 'medicalRequirements']"
+                    + " AND additional_booking_information ??| array['emergencyName', 'emergencyNumber',"
+                    + " 'accessibilityRequirements', 'medicalRequirements']"
                     + " AND pii_removed IS NULL";
             try (Connection conn = database.getDatabaseConnection();
                  PreparedStatement pst = conn.prepareStatement(query)

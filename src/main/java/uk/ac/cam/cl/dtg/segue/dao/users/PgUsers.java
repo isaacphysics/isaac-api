@@ -162,10 +162,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   public UserAuthenticationSettings getUserAuthenticationSettings(final Long userId) throws SegueDatabaseException {
 
     String query =
-        "SELECT users.id, password IS NOT NULL AS has_segue_account, user_totp.shared_secret IS NOT NULL AS mfa_status, array_agg(provider) AS linked_accounts "
+        "SELECT users.id, password IS NOT NULL AS has_segue_account, "
+            + "user_totp.shared_secret IS NOT NULL AS mfa_status, array_agg(provider) AS linked_accounts "
             + "FROM (users LEFT OUTER JOIN user_credentials ON user_credentials.user_id=users.id) "
             + "LEFT OUTER JOIN linked_accounts ON users.id=linked_accounts.user_id "
-            + "LEFT OUTER JOIN user_totp ON users.id=user_totp.user_id WHERE users.id=? GROUP BY users.id, user_credentials.user_id, mfa_status;";
+            + "LEFT OUTER JOIN user_totp ON users.id=user_totp.user_id WHERE users.id=? "
+            + "GROUP BY users.id, user_credentials.user_id, mfa_status;";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {
@@ -597,7 +599,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         // save it using this connection with auto commit turned off
         this.updateUser(conn, userToDelete);
 
-        // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new account.
+        // Replace all linked providers with a uid account provider IDs to prevent clashes if the user creates a new
+        // account.
         String deleteLinkedAccountsQuery = "UPDATE linked_accounts SET provider_user_id = ? WHERE user_id = ?";
         try (PreparedStatement deleteLinkedAccounts = conn.prepareStatement(deleteLinkedAccountsQuery)) {
           deleteLinkedAccounts.setString(FIELD_DELETE_USER_PROVIDER_USER_ID, UUID.randomUUID().toString());
@@ -823,7 +826,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   /**
    * Helper method that enables a connection configured for transactions to be passed in.
    *
-   * @param conn         - A pre-created sql connection object - ideal if you want to pre configure auto commit to be turned off.
+   * @param conn         - A pre-created sql connection object - ideal if you want to pre-configure auto commit to be
+   *                           turned off.
    * @param userToCreate - user object to save.
    * @return the user as from the database
    * @throws SQLException - if there is a database problem

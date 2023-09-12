@@ -75,6 +75,7 @@ public class IsaacPod extends Content {
 
   /**
    * Gets the image.
+   *
    * @return the image
    */
   public Image getImage() {
@@ -83,6 +84,7 @@ public class IsaacPod extends Content {
 
   /**
    * Sets the image.
+   *
    * @param image the image to set
    */
   public void setImage(final Image image) {
@@ -91,6 +93,7 @@ public class IsaacPod extends Content {
 
   /**
    * Gets the url.
+   *
    * @return the url
    */
   public String getUrl() {
@@ -99,6 +102,7 @@ public class IsaacPod extends Content {
 
   /**
    * Sets the url.
+   *
    * @param url the url to set
    */
   public void setUrl(final String url) {

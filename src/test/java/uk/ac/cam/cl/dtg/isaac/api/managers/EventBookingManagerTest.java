@@ -51,7 +51,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * EventBookingManagerTest.
  */
 public class EventBookingManagerTest {
-  static private Date someFutureDate = new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000);
+  private static Date someFutureDate = new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000);
   private EventBookingPersistenceManager dummyEventBookingPersistenceManager;
   private EmailManager dummyEmailManager;
   private UserAssociationManager dummyUserAssociationManager;
@@ -485,19 +485,23 @@ public class EventBookingManagerTest {
 
     RegisteredUserDTO reservedStudent = testCase.student1;
     DetailedEventBookingDTO reservedStudentBooking = new DetailedEventBookingDTO() {{
-      setEventId(testCase.event.getId());
-      setBookingStatus(BookingStatus.RESERVED);
-      setUserBooked(new UserSummaryDTO() {{
-        setId(reservedStudent.getId());
-      }});
-    }};
+        setEventId(testCase.event.getId());
+        setBookingStatus(BookingStatus.RESERVED);
+        setUserBooked(new UserSummaryDTO() {
+          {
+            setId(reservedStudent.getId());
+          }
+        });
+      }};
     DetailedEventBookingDTO reservedStudentBookingAfterConfirmation = new DetailedEventBookingDTO() {{
-      setEventId(testCase.event.getId());
-      setBookingStatus(BookingStatus.CONFIRMED);
-      setUserBooked(new UserSummaryDTO() {{
-        setId(reservedStudent.getId());
-      }});
-    }};
+        setEventId(testCase.event.getId());
+        setBookingStatus(BookingStatus.CONFIRMED);
+        setUserBooked(new UserSummaryDTO() {
+          {
+            setId(reservedStudent.getId());
+          }
+        });
+      }};
 
     // Expected external calls
     dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
@@ -664,12 +668,12 @@ public class EventBookingManagerTest {
     EventBookingManager ebm = this.buildEventBookingManager();
     int initialNumberOfPlaces = 1000;
     IsaacEventPageDTO testEvent = new IsaacEventPageDTO() {{
-      setId("someEventId");
-      setNumberOfPlaces(initialNumberOfPlaces);
-      setTags(ImmutableSet.of("student"));
-      setEventStatus(EventStatus.OPEN);
-      setDate(someFutureDate);
-    }};
+        setId("someEventId");
+        setNumberOfPlaces(initialNumberOfPlaces);
+        setTags(ImmutableSet.of("student"));
+        setEventStatus(EventStatus.OPEN);
+        setDate(someFutureDate);
+      }};
 
     // Mock the event booking status count result from the event booking persistence manager
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
@@ -870,15 +874,15 @@ public class EventBookingManagerTest {
         }},
         new TestCase() {{
           eventPageDTO = new IsaacEventPageDTO() {{
-            setAllowGroupReservations(true);
-          }};
+              setAllowGroupReservations(true);
+            }};
           expected = true;
           assertion = "Events which allow group reservations should return true";
         }},
         new TestCase() {{
           eventPageDTO = new IsaacEventPageDTO() {{
-            setAllowGroupReservations(false);
-          }};
+              setAllowGroupReservations(false);
+            }};
           expected = false;
           assertion = "Events which explicitly disallow group reservations should return false";
         }}
@@ -898,12 +902,14 @@ public class EventBookingManagerTest {
 
     // Make student two have a cancelled booking
     DetailedEventBookingDTO student2sCancelledBooking = new DetailedEventBookingDTO() {{
-      setBookingStatus(BookingStatus.CANCELLED);
-      setEventId(testCase.event.getId());
-      setUserBooked(new UserSummaryDTO() {{
-        setId(testCase.student2.getId());
-      }});
-    }};
+        setBookingStatus(BookingStatus.CANCELLED);
+        setEventId(testCase.event.getId());
+        setUserBooked(new UserSummaryDTO() {
+          {
+            setId(testCase.student2.getId());
+          }
+        });
+      }};
 
     // Define expected external calls
     dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
@@ -1011,13 +1017,15 @@ public class EventBookingManagerTest {
     Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
     previousBookingCounts.put(BookingStatus.CONFIRMED, ImmutableMap.of(Role.STUDENT, 1L));
     DetailedEventBookingDTO existingEventBooking = new DetailedEventBookingDTO() {{
-      setEventId(testCase.event.getId());
-      setBookingStatus(BookingStatus.CONFIRMED);
-      setReservedById(testCase.teacher.getId());
-      setUserBooked(new UserSummaryDTO() {{
-        setId(previouslyReservedStudent.getId());
-      }});
-    }};
+        setEventId(testCase.event.getId());
+        setBookingStatus(BookingStatus.CONFIRMED);
+        setReservedById(testCase.teacher.getId());
+        setUserBooked(new UserSummaryDTO() {
+          {
+            setId(previouslyReservedStudent.getId());
+          }
+        });
+      }};
 
     // Define expected external calls
     expect(dummyTransactionManager.getTransaction()).andReturn(dummyTransaction).once();
@@ -1057,13 +1065,15 @@ public class EventBookingManagerTest {
 
     // Make student two have a cancelled booking
     DetailedEventBookingDTO student2sCancelledReservation = new DetailedEventBookingDTO() {{
-      setBookingStatus(BookingStatus.CANCELLED);
-      setEventId(testCase.event.getId());
-      setUserBooked(new UserSummaryDTO() {{
-        setId(testCase.student2.getId());
-      }});
-      setReservedById(testCase.teacher.getId());
-    }};
+        setBookingStatus(BookingStatus.CANCELLED);
+        setEventId(testCase.event.getId());
+        setUserBooked(new UserSummaryDTO() {
+          {
+            setId(testCase.student2.getId());
+          }
+        });
+        setReservedById(testCase.teacher.getId());
+      }};
     Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
     previousBookingCounts.put(BookingStatus.CANCELLED, ImmutableMap.of(Role.STUDENT, 1L));
 
@@ -1121,43 +1131,45 @@ public class EventBookingManagerTest {
 
   static class ReservationTestDefaults {
     IsaacEventPageDTO event = new IsaacEventPageDTO() {{
-      setId("SomeEventId");
-      setDate(EventBookingManagerTest.someFutureDate);
-    }};
+        setId("SomeEventId");
+        setDate(EventBookingManagerTest.someFutureDate);
+      }};
     RegisteredUserDTO teacher = new RegisteredUserDTO() {{
-      setId(10L);
-    }};
+        setId(10L);
+      }};
     RegisteredUserDTO student1 = new RegisteredUserDTO() {{
-      setId(1L);
-      setEmail("student1");
-      setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-    }};
-    DetailedEventBookingDTO student1Booking = new DetailedEventBookingDTO() {{
-      setBookingStatus(BookingStatus.RESERVED);
-      setEventId("SomeEventId");
-      setUserBooked(new UserSummaryDTO() {{
         setId(1L);
+        setEmail("student1");
         setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-      }});
-    }};
+      }};
+    DetailedEventBookingDTO student1Booking = new DetailedEventBookingDTO() {{
+        setBookingStatus(BookingStatus.RESERVED);
+        setEventId("SomeEventId");
+        setUserBooked(new UserSummaryDTO() {{
+            setId(1L);
+            setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+          }
+        });
+      }};
     RegisteredUserDTO student2 = new RegisteredUserDTO() {{
-      setId(2L);
-      setEmail("student2");
-      setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-    }};
-    DetailedEventBookingDTO student2Booking = new DetailedEventBookingDTO() {{
-      setBookingStatus(BookingStatus.RESERVED);
-      setEventId("SomeEventId");
-      setUserBooked(new UserSummaryDTO() {{
         setId(2L);
+        setEmail("student2");
         setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-      }});
-    }};
+      }};
+    DetailedEventBookingDTO student2Booking = new DetailedEventBookingDTO() {{
+        setBookingStatus(BookingStatus.RESERVED);
+        setEventId("SomeEventId");
+        setUserBooked(new UserSummaryDTO() {{
+            setId(2L);
+            setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+          }
+        });
+      }};
     RegisteredUserDTO student3 = new RegisteredUserDTO() {{
-      setId(2L);
-      setEmail("student2");
-      setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-    }};
+        setId(2L);
+        setEmail("student2");
+        setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+      }};
     EmailTemplateDTO reservationEmail = new EmailTemplateDTO();
   }
 
@@ -1167,7 +1179,7 @@ public class EventBookingManagerTest {
         dummyPropertiesLoader, dummyGroupManager, dummyUserAccountManager, dummyTransactionManager);
   }
 
-  static private Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
+  private static Map<BookingStatus, Map<Role, Long>> generatePlacesAvailableMap() {
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = Maps.newHashMap();
     placesAvailableMap.put(BookingStatus.CANCELLED, Maps.newHashMap());
     placesAvailableMap.put(BookingStatus.WAITING_LIST, Maps.newHashMap());

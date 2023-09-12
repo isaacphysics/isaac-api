@@ -113,6 +113,7 @@ public class PgUserNotification implements IUserNotification {
 
   /**
    * Gets the created.
+   *
    * @return the created
    */
   @Override
@@ -122,6 +123,7 @@ public class PgUserNotification implements IUserNotification {
 
   /**
    * Sets the created.
+   *
    * @param created the created to set
    */
   @Override

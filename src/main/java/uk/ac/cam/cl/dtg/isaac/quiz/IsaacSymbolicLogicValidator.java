@@ -144,7 +144,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
       validationResult.setFeedback(symbolicLogicQuestion.getDefaultFeedback());
     }
 
-    // If we got this far and feedback is still null, they were wrong. There's no useful feedback we can give at this point.
+    // If we got this far and feedback is still null, they were wrong. There's no useful feedback we can give at this
+    // point.
 
     return new FormulaValidationResponse(symbolicLogicQuestion.getId(), answer, validationResult.getFeedback(),
         validationResult.isResponseCorrect(), validationResult.getResponseMatchType().toString(), new Date());

@@ -292,14 +292,14 @@ public class PagesFacade extends AbstractIsaacFacade {
    * @param ids          - the ids of the concepts to request.
    * @param searchString - an optional search string to allow finding of questions by title.
    * @param tags         - a comma separated list of strings
-   * @param level        - a string value to be converted into an integer which represents the levels that must match the
-   *                     questions returned.
+   * @param level        - a string value to be converted into an integer which represents the levels that must match
+   *                           the questions returned.
    * @param stages       - a comma separated list of stages
    * @param difficulties - a comma separated list of difficulties
    * @param examBoards   - a comma separated list of examBoards
    * @param fasttrack    - a flag to indicate whether to search isaacFasttrackQuestions or not.
-   * @param startIndex   - a string value to be converted into an integer which represents the start index of the results
-   * @param limit        - a string value to be converted into an integer that represents the number of results to return.
+   * @param startIndex   - a string value to be converted into an integer representing the start index of the results
+   * @param limit        - a string value to be converted into an integer representing the number of results to return
    * @return A response object which contains a list of questions or an empty list.
    */
   @SuppressWarnings("checkstyle:ParameterNumber")
@@ -411,9 +411,9 @@ public class PagesFacade extends AbstractIsaacFacade {
    * Rest end point that gets a single question page based on a given id.
    *
    * @param questionId         to find as a string
-   * @param request            - so that we can do etag and cache resolution.
-   * @param httpServletRequest - so that we can try and determine if the user is logged in. This will allow us to augment the
-   *                           question objects with any recorded state.
+   * @param request            so that we can do etag and cache resolution.
+   * @param httpServletRequest so that we can try and determine if the user is logged in. This will allow us to
+   *                               augment the question objects with any recorded state.
    * @return A Response object containing a question page object or a SegueErrorResponse.
    */
   @GET
@@ -733,10 +733,10 @@ public class PagesFacade extends AbstractIsaacFacade {
    * @return content which has been augmented
    * @throws ContentManagerException - an exception when the content is not found
    */
-  private ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment,
-                                                      @Nullable
-                                                      final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
-      throws ContentManagerException {
+  private ContentDTO augmentContentWithRelatedContent(
+      final String version, final ContentDTO contentToAugment,
+      @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts
+  ) throws ContentManagerException {
 
     ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
@@ -858,9 +858,9 @@ public class PagesFacade extends AbstractIsaacFacade {
    * @param usersQuestionAttempts - optional question attempt information to support augmentation of content.
    * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
    */
-  private Response findSingleResult(final Map<String, List<String>> fieldsToMatch,
-                                    @Nullable
-                                    final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+  private Response findSingleResult(
+      final Map<String, List<String>> fieldsToMatch,
+      @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
     try {
       ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
           ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
@@ -894,9 +894,9 @@ public class PagesFacade extends AbstractIsaacFacade {
    * This method will only use the latest version of the content.
    *
    * @param fieldsToMatch              - expects a map of the form fieldname -> list of queries to match
-   * @param booleanOperatorOverrideMap - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
-   *                                   type of matching needed for that field. Overrides any other default matching behaviour
-   *                                   for the given fields
+   * @param booleanOperatorOverrideMap - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to
+   *                                         specify the type of matching needed for that field. Overrides any other
+   *                                         default matching behaviour for the given fields
    * @param startIndex                 - the initial index for the first result.
    * @param limit                      - the maximums number of results to return
    * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse

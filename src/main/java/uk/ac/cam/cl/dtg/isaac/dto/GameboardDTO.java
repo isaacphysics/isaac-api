@@ -260,6 +260,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
 
   /**
    * Gets the isSavedToCurrentUser.
+   *
    * @return the isSavedToCurrentUser
    */
   public Boolean isSavedToCurrentUser() {
@@ -269,6 +270,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
 
   /**
    * Sets the isSavedToCurrentUser.
+   *
    * @param isSavedToCurrentUser the isSavedToCurrentUser to set
    */
   public void setSavedToCurrentUser(final Boolean isSavedToCurrentUser) {

@@ -36,6 +36,7 @@ public class IsaacCard extends Content {
 
   /**
    * Get the image.
+   *
    * @return the image.
    */
   public Image getImage() {
@@ -44,6 +45,7 @@ public class IsaacCard extends Content {
 
   /**
    * Set the image.
+   *
    * @param image the image to set.
    */
   public void setImage(final Image image) {
@@ -52,6 +54,7 @@ public class IsaacCard extends Content {
 
   /**
    * Get the click url.
+   *
    * @return the click url.
    */
   public String getClickUrl() {
@@ -60,6 +63,7 @@ public class IsaacCard extends Content {
 
   /**
    * Set the click url.
+   *
    * @param clickUrl the click url to set.
    */
   public void setClickUrl(final String clickUrl) {
@@ -68,6 +72,7 @@ public class IsaacCard extends Content {
 
   /**
    * Get the button text.
+   *
    * @return the button text.
    */
   public String getButtonText() {
@@ -76,6 +81,7 @@ public class IsaacCard extends Content {
 
   /**
    * Set the button text.
+   *
    * @param buttonText the button text to set.
    */
   public void setButtonText(final String buttonText) {
@@ -84,6 +90,7 @@ public class IsaacCard extends Content {
 
   /**
    * Return if the card is disabled.
+   *
    * @return if is disabled.
    */
   public boolean isDisabled() {
@@ -92,6 +99,7 @@ public class IsaacCard extends Content {
 
   /**
    * Set if the card is disabled.
+   *
    * @param disabled the disabled state to set to.
    */
   public void setDisabled(final boolean disabled) {
@@ -100,6 +108,7 @@ public class IsaacCard extends Content {
 
   /**
    * Return if the card should be vertically displayed.
+   *
    * @return if is verticalContent.
    */
   public boolean isVerticalContent() {
@@ -108,6 +117,7 @@ public class IsaacCard extends Content {
 
   /**
    * Set if the card is vertical content.
+   *
    * @param verticalContent vertical content state to set to.
    */
   public void setVerticalContent(final boolean verticalContent) {

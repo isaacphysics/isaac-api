@@ -129,7 +129,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         }
         resultSet.next();
 
-        // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the hideousness
+        // We need to try and generate QuestionValidationResponses in the correct object structure - Apologies for the
+        // hideousness
         Map<String, Map<String, List<Object>>> questionAttemptsFromDB
             = objectMapper.readValue(resultSet.getString("question_attempts"), Map.class);
         Map<String, Map<String, List<QuestionValidationResponse>>> result = Maps.newHashMap();
@@ -226,9 +227,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
   }
 
-  public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getLightweightQuestionAttemptsByUsers(
-      final List<Long> userIds)
-      throws SegueDatabaseException {
+  public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+      getLightweightQuestionAttemptsByUsers(final List<Long> userIds) throws SegueDatabaseException {
 
     if (userIds.isEmpty()) {
       return Maps.newHashMap();
@@ -286,8 +286,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
   @Override
   public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
-  getQuestionAttemptsByUsersAndQuestionPrefix(final List<Long> userIds, final List<String> allQuestionPageIds)
-      throws SegueDatabaseException {
+      getQuestionAttemptsByUsersAndQuestionPrefix(final List<Long> userIds, final List<String> allQuestionPageIds
+  ) throws SegueDatabaseException {
     if (allQuestionPageIds.isEmpty()) {
       log.error("Attempted to fetch group progress for an empty gameboard.");
       return Maps.newHashMap();
@@ -444,7 +444,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
       queryToBuild.append(
           " FROM generate_series(date_trunc('month', ?::timestamp), ?, INTERVAL '1' MONTH) m(gen_date)");
       queryToBuild.append(
-          " LEFT OUTER JOIN filtered_attempts ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_date) )");
+          " LEFT OUTER JOIN filtered_attempts ON ( date_trunc('month', \"timestamp\")"
+              + " = date_trunc('month', gen_date) )");
     }
     queryToBuild.append(" GROUP BY gen_date ORDER BY gen_date ASC;");
 

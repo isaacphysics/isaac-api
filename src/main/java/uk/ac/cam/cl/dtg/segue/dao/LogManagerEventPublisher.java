@@ -132,18 +132,18 @@ public abstract class LogManagerEventPublisher implements ILogManager {
   }
 
   @Override
-  public Long getLogCountByType(final String type) throws SegueDatabaseException {
-
-    return this.logManager.getLogCountByType(type);
-
-  }
-
-  @Override
   public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
                                             final List<RegisteredUserDTO> usersOfInterest)
       throws SegueDatabaseException {
 
     return this.logManager.getLogsByType(type, fromDate, toDate, usersOfInterest);
+
+  }
+
+  @Override
+  public Long getLogCountByType(final String type) throws SegueDatabaseException {
+
+    return this.logManager.getLogCountByType(type);
 
   }
 

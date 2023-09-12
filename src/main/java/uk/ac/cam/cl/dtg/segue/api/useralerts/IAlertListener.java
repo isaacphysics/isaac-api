@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.api.userAlerts;
+package uk.ac.cam.cl.dtg.segue.api.useralerts;
 
 public interface IAlertListener {
   // Useful listener methods are static because each user can have multiple alert listeners (one for each tab).

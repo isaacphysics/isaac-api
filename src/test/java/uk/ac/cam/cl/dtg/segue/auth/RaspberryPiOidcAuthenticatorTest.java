@@ -61,7 +61,7 @@ public class RaspberryPiOidcAuthenticatorTest {
   /**
    * If an empty full name is provided, use the nickname in both fields.
    *
-   * @throws Exception, not expected under test.
+   * @throws Exception not expected under test.
    */
   @Test
   public void getGivenNameFamilyName_emptyTokenisedNameProvided_returnsSensibleName() throws Exception {
@@ -121,7 +121,7 @@ public class RaspberryPiOidcAuthenticatorTest {
   /**
    * In some countries the first given name is not necessarily the "calling name".
    *
-   * @throws Exception, not expected under test.
+   * @throws Exception not expected under test.
    */
   @Test
   public void getGivenNameFamilyName_nickNameAndUnorderedTokenisedNamesProvided_returnsSensibleName() throws Exception {

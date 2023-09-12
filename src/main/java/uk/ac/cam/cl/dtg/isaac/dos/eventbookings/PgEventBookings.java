@@ -76,12 +76,18 @@ public class PgEventBookings implements EventBookings {
         Objects.requireNonNullElseGet(additionalEventInformation, Maps::newHashMap));
   }
 
+  @Override
+  public EventBooking add(final ITransaction transaction, final String eventId, final Long userId,
+                          final BookingStatus status,
+                          final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
+    return add(transaction, eventId, userId, null, status, additionalEventInformation);
+  }
+
   private PgEventBooking addEventBooking(
       final PgTransaction transaction, final String eventId, final Long userId, final Long reserveById,
       final BookingStatus status, final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
-    String query =
-        "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated, additional_booking_information)"
-            + " VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)";
+    String query = "INSERT INTO event_bookings (id, user_id, reserved_by, event_id, status, created, updated,"
+        + " additional_booking_information) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?::text::jsonb)";
     Connection conn = transaction.getConnection();
     try (PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
       Date creationDate = new Date();
@@ -116,13 +122,6 @@ public class PgEventBookings implements EventBookings {
     } catch (JsonProcessingException e) {
       throw new SegueDatabaseException("Unable to convert json to string for persistence.", e);
     }
-  }
-
-  @Override
-  public EventBooking add(final ITransaction transaction, final String eventId, final Long userId,
-                          final BookingStatus status,
-                          final Map<String, String> additionalEventInformation) throws SegueDatabaseException {
-    return add(transaction, eventId, userId, null, status, additionalEventInformation);
   }
 
   @Override
@@ -161,7 +160,8 @@ public class PgEventBookings implements EventBookings {
     }
 
     String query =
-        "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb, reserved_by = ? WHERE event_id = ? AND user_id = ?;";
+        "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb,"
+            + " reserved_by = ? WHERE event_id = ? AND user_id = ?;";
     Connection conn = ((PgTransaction) transaction).getConnection();
     try (PreparedStatement pst = conn.prepareStatement(query)) {
       pst.setString(FIELD_UPDATE_BOOKING_STATUS, status.name());
@@ -239,7 +239,8 @@ public class PgEventBookings implements EventBookings {
     }
 
     String query =
-        "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb WHERE event_id = ? AND user_id = ?;";
+        "UPDATE event_bookings SET status = ?, updated = ?, additional_booking_information = ?::text::jsonb"
+            + " WHERE event_id = ? AND user_id = ?;";
     Connection conn = ((PgTransaction) transaction).getConnection();
     try (PreparedStatement pst = conn.prepareStatement(query)) {
       pst.setString(FIELD_UPDATE_BOOKING_STATUS, status.name());
@@ -518,8 +519,8 @@ public class PgEventBookings implements EventBookings {
     Validate.notBlank(eventId);
 
     StringBuilder sb = new StringBuilder();
-    sb.append(
-        "SELECT event_bookings.* FROM event_bookings JOIN users ON users.id=user_id WHERE event_id=? AND NOT users.deleted");
+    sb.append("SELECT event_bookings.* FROM event_bookings JOIN users ON users.id=user_id WHERE event_id=?"
+        + " AND NOT users.deleted");
 
     if (status != null) {
       sb.append(" AND status = ?");

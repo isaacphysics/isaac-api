@@ -256,7 +256,8 @@ public class UserGroupDTO {
   }
 
   /**
-   * Get the list of other users who should be able to view this group's data subject to individual permissions being granted.
+   * Get the list of other users who should be able to view this group's data subject to individual permissions being
+   * granted.
    *
    * @return list of user ids
    */
@@ -265,7 +266,8 @@ public class UserGroupDTO {
   }
 
   /**
-   * Set the list of other users who should be able to view this group's data subject to individual permissions being granted.
+   * Set the list of other users who should be able to view this group's data subject to individual permissions being
+   * granted.
    *
    * @param additionalManagers - those users who should have access to this group.
    */

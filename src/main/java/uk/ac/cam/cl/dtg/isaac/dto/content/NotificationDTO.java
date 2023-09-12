@@ -61,6 +61,7 @@ public class NotificationDTO extends ContentDTO {
 
   /**
    * Gets the expiry.
+   *
    * @return the expiry
    */
   public Date getExpiry() {
@@ -69,6 +70,7 @@ public class NotificationDTO extends ContentDTO {
 
   /**
    * Sets the expiry.
+   *
    * @param expiry the expiry to set
    */
   public void setExpiry(final Date expiry) {

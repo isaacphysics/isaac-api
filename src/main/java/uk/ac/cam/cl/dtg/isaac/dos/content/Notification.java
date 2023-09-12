@@ -64,6 +64,7 @@ public class Notification extends Content {
 
   /**
    * Gets the expiry.
+   *
    * @return the expiry
    */
   public Date getExpiry() {
@@ -72,6 +73,7 @@ public class Notification extends Content {
 
   /**
    * Sets the expiry.
+   *
    * @param expiry the expiry to set
    */
   public void setExpiry(final Date expiry) {

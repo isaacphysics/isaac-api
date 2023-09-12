@@ -39,9 +39,9 @@ public class ExceptionSanitiserTest {
 
     exceptionSanitiser.filter(mockRequestContext, mockResponseContext);
 
-    String generatedUUID = replacementErrorCapture.getValue().getErrorMessage().substring(59, 95);
+    String generatedUuid = replacementErrorCapture.getValue().getErrorMessage().substring(59, 95);
     SegueErrorResponse expectedPostFilterError = new SegueErrorResponse(Response.Status.BAD_REQUEST,
-        "Test message\nPlease report this ID if you contact support: " + generatedUUID + ".", null);
+        "Test message\nPlease report this ID if you contact support: " + generatedUuid + ".", null);
     SegueErrorResponse actualPostFilterError = replacementErrorCapture.getValue();
 
     verify(mockResponseContext);

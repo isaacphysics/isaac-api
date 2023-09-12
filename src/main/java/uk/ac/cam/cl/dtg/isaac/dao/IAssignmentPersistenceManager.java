@@ -51,9 +51,9 @@ public interface IAssignmentPersistenceManager {
    *
    * @param gameboardId - gameboard of interest
    * @param groupId     - the group id has the gameboard assigned.
-   * @return assignment if found null if not.
-   * @throws SegueDatabaseException - if there is an error when accessing the database or if duplicate assignments exist in the
-   *                                database..
+   * @return assignment if found or null if not.
+   * @throws SegueDatabaseException - if there is an error when accessing the database or if duplicate assignments exist
+   *                                      in the database...
    */
   List<AssignmentDTO> getAssignmentsByGameboardAndGroup(String gameboardId, Long groupId)
       throws SegueDatabaseException;

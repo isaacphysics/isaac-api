@@ -128,13 +128,13 @@ public class UserAssociationManager {
     char[] authToken = new char[TOKEN_LENGTH];
 
     int index = 0;  // Where we are in the token.
-    int shift = 0;  // Where we are in the random 32 bit integer.
+    int shift = 0;  // Where we are in the random 32-bit integer.
     int randomBits = SECURE_RANDOM.nextInt();
 
     // Use 5 bit ints extracted from randomBits, to generate tokenLength random characters from sample space.
     while (index < TOKEN_LENGTH) {
-      if (shift >= BITS_IN_INTEGER
-          / RANDOM_BITS_TO_EXTRACT) {  // If we've expired the 32/5 values in this random int, get a new one, reset shift.
+      if (shift >= BITS_IN_INTEGER / RANDOM_BITS_TO_EXTRACT) {
+        // If we've expired the 32/5 values in this random int, get a new one, reset shift.
         randomBits = SECURE_RANDOM.nextInt();
         shift = 0;
       }
@@ -383,11 +383,10 @@ public class UserAssociationManager {
 
   /**
    * Overloaded method to handle different user representation object.
-   * @param currentUser
-   *            - requesting permission
-   * @param userRequested
-   *            - the owner of the data to view.
-   * @return true if yes false if no.
+   *
+   * @param currentUser - requesting permission
+   * @param userRequested - the owner of the data to view.
+   * @return true if yes or false if no.
    */
   public boolean hasPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
     return this.hasPermission(currentUser, userManager.convertToUserSummaryObject(userRequested));
@@ -420,10 +419,9 @@ public class UserAssociationManager {
 
   /**
    * Overloaded method to handle different user representation object.
-   * @param currentUser
-   *            - requesting permission
-   * @param userRequested
-   *            - the owner of the data to view.
+   *
+   * @param currentUser - requesting permission
+   * @param userRequested - the owner of the data to view.
    * @return true if yes or false if no.
    */
   public boolean hasTeacherPermission(final RegisteredUserDTO currentUser, final RegisteredUserDTO userRequested) {
@@ -432,6 +430,7 @@ public class UserAssociationManager {
 
   /**.
    * Filter a list of records on whether a user ID has an association with the current user
+   *
    * @param currentUser the user which might have been granted access.
    * @param records a list of objects containing an ID.
    * @param userIdKey a function which takes the record and returns the user ID.
@@ -458,6 +457,7 @@ public class UserAssociationManager {
 
   /**
    * A special case of the generic filterUnassociatedRecords for when the records are a list of user IDs.
+   *
    * @param currentUser the user which might have been granted access.
    * @param userIds a list of user IDs.
    * @return a list of user ID which has granted the current user to view their data.

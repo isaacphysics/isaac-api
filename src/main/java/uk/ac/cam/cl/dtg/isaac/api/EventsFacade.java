@@ -943,7 +943,8 @@ public class EventsFacade extends AbstractIsaacFacade {
           .toResponse();
     } catch (DuplicateBookingException e) {
       return new SegueErrorResponse(Status.BAD_REQUEST,
-          "One of the users requested is already booked or reserved on this event. Unable to create a duplicate booking.")
+          "One of the users requested is already booked or reserved on this event."
+              + " Unable to create a duplicate booking.")
           .toResponse();
     } catch (NoUserException e) {
       return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
@@ -1092,7 +1093,8 @@ public class EventsFacade extends AbstractIsaacFacade {
           .toResponse();
     } catch (EmailMustBeVerifiedException e) {
       return new SegueErrorResponse(Status.BAD_REQUEST,
-          "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
+          "In order to book on this event your user account must have a verified email address."
+              + " Please verify your address to make a booking.")
           .toResponse();
     } catch (DuplicateBookingException e) {
       return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -1149,7 +1151,8 @@ public class EventsFacade extends AbstractIsaacFacade {
           .toResponse();
     } catch (EmailMustBeVerifiedException e) {
       return new SegueErrorResponse(Status.BAD_REQUEST,
-          "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
+          "In order to book on this event your user account must have a verified email address."
+              + " Please verify your address to make a booking.")
           .toResponse();
     } catch (DuplicateBookingException e) {
       return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -1161,7 +1164,8 @@ public class EventsFacade extends AbstractIsaacFacade {
           .toResponse();
     } catch (EventIsNotFullException e) {
       return new SegueErrorResponse(Status.CONFLICT,
-          "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
+          "There are spaces on this event and the deadline has not passed."
+              + " Please use the request booking endpoint to book you on to it.")
           .toResponse();
     } catch (EventIsCancelledException e) {
       return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
@@ -1434,11 +1438,11 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * REST end point to provide a list of events.
    *
-   * @param request    - this allows us to check to see if a user is currently loggedin.
-   * @param startIndex - the initial index for the first result.
+   * @param request    - this allows us to check to see if a user is currently logged-in
+   * @param startIndex - the initial index for the first result
    * @param limit      - the maximums number of results to return
-   * @param filter     - in which way should the results be filtered from a choice defined in the EventFilterOption enum.
-   * @return a Response containing a list of events objects or containing a SegueErrorResponse.
+   * @param filter     - in which way should the results be filtered from a choice defined in the EventFilterOption enum
+   * @return a Response containing a list of events objects or containing a SegueErrorResponse
    */
   @GET
   @Path("/overview")

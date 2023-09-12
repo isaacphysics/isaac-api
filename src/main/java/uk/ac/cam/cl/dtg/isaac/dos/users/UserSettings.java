@@ -39,9 +39,9 @@ public class UserSettings {
    *
    * @param registeredUser         - the user data
    * @param userPreferences        - a list of email preferences
-   * @param registeredUserContexts -
-   *                               a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
-   *                               It is set separately from the user so that we can record the time it was last set or acknowledged on the server.
+   * @param registeredUserContexts - a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
+   *                                     It is set separately from the user so that we can record the time it was last
+   *                                     set or acknowledged on the server.
    */
   @JsonCreator
   public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,

@@ -15,12 +15,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.UserBadge;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherAssignmentsBadgePolicy;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGameboardsBadgePolicy;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.teacherbadges.TeacherAssignmentsBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.teacherbadges.TeacherCpdBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.teacherbadges.TeacherGameboardsBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.teacherbadges.TeacherGroupsBadgePolicy;
 
 /**
  * Management layer for updating and retrieving badge states

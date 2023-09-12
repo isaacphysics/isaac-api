@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-public class RECAPTCHAManagerTest {
+public class RecaptchaManagerTest {
   private PropertiesLoader properties;
 
   @Before
@@ -29,45 +29,45 @@ public class RECAPTCHAManagerTest {
     replay(properties);
   }
 
-  private RECAPTCHAManager createTestInstance() {
-    return new RECAPTCHAManager(properties);
+  private RecaptchaManager createTestInstance() {
+    return new RecaptchaManager(properties);
   }
 
   @Test
   public final void verifyRecaptcha_ValidResponse_ShouldReturnSuccess() {
-    RECAPTCHAManager testInstance = createTestInstance();
+    RecaptchaManager testInstance = createTestInstance();
     assertTrue(testInstance.verifyRecaptcha("valid-response"));
   }
 
   @Test
   public final void isCaptchaValid_ValidResponse_ShouldReturnSuccessMessage() {
-    RECAPTCHAManager testInstance = createTestInstance();
+    RecaptchaManager testInstance = createTestInstance();
     assertEquals("reCAPTCHA verification successful.", testInstance.recaptchaResultString("valid-response"));
   }
 
   @Test
   public final void verifyRecaptcha_InvalidResponse_ShouldReturnFailure() {
     setSecretInvalid();
-    RECAPTCHAManager testInstance = createTestInstance();
+    RecaptchaManager testInstance = createTestInstance();
     assertFalse(testInstance.verifyRecaptcha("invalid-response"));
   }
 
   @Test
   public final void isCaptchaValid_InvalidResponse_ShouldReturnFailedMessage() {
     setSecretInvalid();
-    RECAPTCHAManager testInstance = createTestInstance();
+    RecaptchaManager testInstance = createTestInstance();
     assertEquals("reCAPTCHA verification failed.", testInstance.recaptchaResultString("invalid-response"));
   }
 
   @Test
   public final void verifyRecaptcha_EmptyResponse_ShouldReturnFailure() {
-    RECAPTCHAManager testInstance = createTestInstance();
+    RecaptchaManager testInstance = createTestInstance();
     assertFalse(testInstance.verifyRecaptcha(""));
   }
 
   @Test
   public final void isCaptchaValid_EmptyResponse_ShouldReturnMissingResponseMessage() {
-    RECAPTCHAManager testInstance = createTestInstance();
+    RecaptchaManager testInstance = createTestInstance();
     assertEquals("Missing reCAPTCHA response token.", testInstance.recaptchaResultString(""));
   }
 }

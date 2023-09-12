@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
-import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
+import uk.ac.cam.cl.dtg.segue.api.useralerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 

@@ -14,7 +14,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
+import uk.ac.cam.cl.dtg.segue.api.useralerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**

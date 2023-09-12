@@ -14,15 +14,15 @@ public abstract class AbstractPolymorphicConverter<S, D> extends CustomConverter
 
   @Override
   public boolean canConvert(final Type<?> sourceType, final Type<?> destinationType) {
-        /* The behaviour of canConvert changed in Orika v1.5.0 to only convert exact class matches,
-           to fix an issue with converters acting too loosely on pairs of classes they were not
-           meant to convert.
-           The crux of the change was swapping from sourceType.isAssignableFrom() to sourceType.equals(),
-           which for our use case prevents the clever polymorphism we do with subtypes working in converters.
+    /* The behaviour of canConvert changed in Orika v1.5.0 to only convert exact class matches,
+       to fix an issue with converters acting too loosely on pairs of classes they were not
+       meant to convert.
+       The crux of the change was swapping from sourceType.isAssignableFrom() to sourceType.equals(),
+       which for our use case prevents the clever polymorphism we do with subtypes working in converters.
 
-           See the commit that changed this behaviour here:
-           https://github.com/orika-mapper/orika/commit/554396579c96b3356c3c31ceb2e236cba0ffbaba
-         */
+       See the commit that changed this behaviour here:
+       https://github.com/orika-mapper/orika/commit/554396579c96b3356c3c31ceb2e236cba0ffbaba
+     */
     return this.sourceType.isAssignableFrom(sourceType) && this.destinationType.equals(destinationType);
   }
 }

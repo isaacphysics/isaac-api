@@ -542,6 +542,15 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
   }
 
+  private QuizAttemptDTO getQuizAttempt(final Long quizAttemptId) throws ErrorResponseWrapper, SegueDatabaseException {
+    if (null == quizAttemptId) {
+      throw new ErrorResponseWrapper(
+          new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test attempt id."));
+    }
+
+    return this.quizAttemptManager.getById(quizAttemptId);
+  }
+
   /**
    * Get the feedback for a quiz attempt.
    * <br>
@@ -957,22 +966,22 @@ public class QuizFacade extends AbstractIsaacFacade {
       clientQuizAssignment.setId(null);
 
       // modifies assignment passed in to include an id.
-      QuizAssignmentDTO assignmentWithID = this.quizAssignmentManager.createAssignment(clientQuizAssignment);
+      QuizAssignmentDTO assignmentWithId = this.quizAssignmentManager.createAssignment(clientQuizAssignment);
 
       Map<String, Object> eventDetails = ImmutableMap.of(
-          QUIZ_ID_FKEY, assignmentWithID.getQuizId(),
-          GROUP_FK, assignmentWithID.getGroupId(),
-          QUIZ_ASSIGNMENT_FK, assignmentWithID.getId(),
-          ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate()
+          QUIZ_ID_FKEY, assignmentWithId.getQuizId(),
+          GROUP_FK, assignmentWithId.getGroupId(),
+          QUIZ_ASSIGNMENT_FK, assignmentWithId.getId(),
+          ASSIGNMENT_DUEDATE, assignmentWithId.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithId.getDueDate()
       );
 
       this.getLogManager()
           .logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
 
-      List<QuizAssignmentDTO> assignments = Collections.singletonList(assignmentWithID);
+      List<QuizAssignmentDTO> assignments = Collections.singletonList(assignmentWithId);
       quizManager.augmentWithQuizSummary(assignments);
 
-      return Response.ok(assignmentWithID).build();
+      return Response.ok(assignmentWithId).build();
     } catch (NoUserLoggedInException e) {
       return SegueErrorResponse.getNotLoggedInResponse();
     } catch (DuplicateAssignmentException | DueBeforeNowException e) {
@@ -1115,6 +1124,15 @@ public class QuizFacade extends AbstractIsaacFacade {
       log.error("Content error whilst viewing test assignment", e);
       return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
     }
+  }
+
+  @Nullable
+  private QuizAssignmentDTO getQuizAssignment(final QuizAttemptDTO quizAttempt)
+      throws SegueDatabaseException, AssignmentCancelledException {
+    if (quizAttempt.getQuizAssignmentId() != null) {
+      return quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
+    }
+    return null;
   }
 
   /**
@@ -1548,11 +1566,13 @@ public class QuizFacade extends AbstractIsaacFacade {
   /**
    * Allows a teacher to update a quiz assignment.
    * <br>
-   * Only changes to the feedbackMode and dueDate fields are accepted. A bad request error will be thrown if any other fields are set.
+   * Only changes to the feedbackMode and dueDate fields are accepted. A bad request error will be thrown if any other
+   * fields are set.
    *
    * @param httpServletRequest   so that we can extract user information.
    * @param quizAssignmentId     the id of the assignment to update.
-   * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode and dueDate may be set.)
+   * @param clientQuizAssignment a partial object with new values for the quiz assignment
+   *                                 (only feedbackMode and dueDate may be set.)
    * @return Confirmation or error.
    */
   @POST
@@ -1712,15 +1732,6 @@ public class QuizFacade extends AbstractIsaacFacade {
     return quizAssignment;
   }
 
-  @Nullable
-  private QuizAssignmentDTO getQuizAssignment(final QuizAttemptDTO quizAttempt)
-      throws SegueDatabaseException, AssignmentCancelledException {
-    if (quizAttempt.getQuizAssignmentId() != null) {
-      return quizAssignmentManager.getById(quizAttempt.getQuizAssignmentId());
-    }
-    return null;
-  }
-
   @SuppressWarnings("deprecation")
   private QuizAttemptDTO getIncompleteQuizAttemptForUser(final Long quizAttemptId, final RegisteredUserDTO user)
       throws SegueDatabaseException, ErrorResponseWrapper {
@@ -1755,15 +1766,6 @@ public class QuizFacade extends AbstractIsaacFacade {
     return quizAttempt;
   }
 
-  private QuizAttemptDTO getQuizAttempt(final Long quizAttemptId) throws ErrorResponseWrapper, SegueDatabaseException {
-    if (null == quizAttemptId) {
-      throw new ErrorResponseWrapper(
-          new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test attempt id."));
-    }
-
-    return this.quizAttemptManager.getById(quizAttemptId);
-  }
-
   private boolean canManageAssignment(final QuizAssignmentDTO clientQuizAssignment,
                                       final RegisteredUserDTO currentlyLoggedInUser)
       throws SegueDatabaseException, NoUserLoggedInException {
@@ -1789,6 +1791,17 @@ public class QuizFacade extends AbstractIsaacFacade {
     return augmentAttempt(quizAttempt, quizAssignment);
   }
 
+  private QuizAttemptDTO augmentAttempt(final QuizAttemptDTO quizAttempt,
+                                        @Nullable final QuizAssignmentDTO quizAssignment)
+      throws SegueDatabaseException {
+    if (quizAssignment != null) {
+      this.assignmentService.augmentAssignerSummaries(Collections.singletonList(quizAssignment));
+      quizAttempt.setQuizAssignment(quizAssignment);
+    }
+
+    return quizAttempt;
+  }
+
   private List<QuizUserFeedbackDTO> getUserFeedback(
       final RegisteredUserDTO user, final QuizAssignmentDTO assignment, final IsaacQuizDTO quiz,
       final List<RegisteredUserDTO> groupMembers)
@@ -1805,17 +1818,5 @@ public class QuizFacade extends AbstractIsaacFacade {
           userSummary.isAuthorisedFullAccess() ? feedback : null));
     }
     return userFeedback;
-  }
-
-
-  private QuizAttemptDTO augmentAttempt(final QuizAttemptDTO quizAttempt,
-                                        @Nullable final QuizAssignmentDTO quizAssignment)
-      throws SegueDatabaseException {
-    if (quizAssignment != null) {
-      this.assignmentService.augmentAssignerSummaries(Collections.singletonList(quizAssignment));
-      quizAttempt.setQuizAssignment(quizAssignment);
-    }
-
-    return quizAttempt;
   }
 }

@@ -110,8 +110,8 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
       group.setStatus(GroupStatus.ACTIVE);
     }
 
-    String query =
-        "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?, additional_manager_privileges=?, group_status=?, last_updated=? WHERE id = ?;";
+    String query = "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?,"
+        + " additional_manager_privileges=?, group_status=?, last_updated=? WHERE id = ?;";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {

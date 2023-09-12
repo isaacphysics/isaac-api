@@ -228,6 +228,21 @@ public class GroupManager {
   }
 
   /**
+   * getGroupsByOwner.
+   *
+   * @param ownerUser          - the owner of the groups to search for.
+   * @param archivedGroupsOnly if true then only archived groups will be returned,
+   *                           if false then only unarchived groups will be returned.
+   * @return List of groups or empty list.
+   * @throws SegueDatabaseException if there is a db error
+   */
+  public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, final boolean archivedGroupsOnly)
+      throws SegueDatabaseException {
+    Validate.notNull(ownerUser);
+    return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
+  }
+
+  /**
    * getAllGroupsOwnedAndManagedByUser.
    * <br>
    * This method will get all groups that a user could have an interest in.
@@ -248,21 +263,6 @@ public class GroupManager {
     combinedResults.addAll(
         convertGroupsToDTOs(groupDatabase.getGroupsByAdditionalManager(ownerUser.getId(), archivedGroupsOnly)));
     return combinedResults;
-  }
-
-  /**
-   * getGroupsByOwner.
-   *
-   * @param ownerUser          - the owner of the groups to search for.
-   * @param archivedGroupsOnly if true then only archived groups will be returned,
-   *                           if false then only unarchived groups will be returned.
-   * @return List of groups or empty list.
-   * @throws SegueDatabaseException if there is a db error
-   */
-  public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, final boolean archivedGroupsOnly)
-      throws SegueDatabaseException {
-    Validate.notNull(ownerUser);
-    return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
   }
 
   /**
@@ -487,11 +487,11 @@ public class GroupManager {
   }
 
   /**
-   * isUserInGroup?
+   * isUserInGroup?.
    *
    * @param user  - to look for
    * @param group - group to check.
-   * @return true if yes false if no.
+   * @return true if yes, false if no.
    * @throws SegueDatabaseException - if there is a database problem.
    */
   public boolean isUserInGroup(final RegisteredUserDTO user, final UserGroupDTO group) throws SegueDatabaseException {
@@ -649,8 +649,9 @@ public class GroupManager {
   /**
    * Mutates the list to include group membership information.
    *
-   * @param group                group to look up membership info
-   * @param summarisedMemberInfo - the list containing summarised user objects - this will be replaced with summarised user objects that include membership information
+   * @param group                - group to look up membership info
+   * @param summarisedMemberInfo - the list containing summarised user objects - this will be replaced with summarised
+   *                                   user objects that include membership information
    * @throws SegueDatabaseException - if there is an error.
    */
   public void convertToUserSummaryGroupMembership(final UserGroupDTO group,
@@ -700,11 +701,11 @@ public class GroupManager {
         RegisteredUserDTO user = userProgress.getKey();
         List<GameboardItem> progress = userProgress.getValue();
 
-        int questionPartsCorrect = 0,
-            questionPartsIncorrect = 0,
-            questionPartsNotAttempted = 0,
-            questionPartsTotal = 0,
-            questionPagesPerfect = 0;
+        int questionPartsCorrect = 0;
+        int questionPartsIncorrect = 0;
+        int questionPartsNotAttempted = 0;
+        int questionPartsTotal = 0;
+        int questionPagesPerfect = 0;
         float passMark = 0.0f;
 
         for (GameboardItem gameboardItem : progress) {

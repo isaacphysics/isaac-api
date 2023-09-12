@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao.userBadges;
+package uk.ac.cam.cl.dtg.segue.dao.userbadges;
 
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.UserBadge;

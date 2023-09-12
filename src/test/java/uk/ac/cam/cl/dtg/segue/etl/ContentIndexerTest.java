@@ -1,5 +1,3 @@
-package uk.ac.cam.cl.dtg.segue.etl;
-
 /**
  * Copyright 2014 Stephen Cummins
  * <br>
@@ -15,6 +13,8 @@ package uk.ac.cam.cl.dtg.segue.etl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package uk.ac.cam.cl.dtg.segue.etl;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
@@ -157,7 +157,7 @@ public class ContentIndexerTest {
     expectLastCall().once();
 
     // Ensure at least one bulk index for general content is requested
-    searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.ContentIndextype.CONTENT.toString()),
+    searchProvider.bulkIndexWithIds(eq(INITIAL_VERSION), eq(Constants.ContentIndextype.CONTENT.toString()),
         anyObject());
     expectLastCall().once();
 

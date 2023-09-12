@@ -353,7 +353,8 @@ public class IsaacNumericValidator implements IValidator {
   private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
                                      final Integer significantFiguresRequired) throws NumberFormatException {
     log.debug("\t[numericValuesMatch]");
-    double trustedDouble, untrustedDouble;
+    double trustedDouble;
+    double untrustedDouble;
 
     String untrustedParsedValue = reformatNumberForParsing(untrustedValue);
     String trustedParsedValue = reformatNumberForParsing(trustedValue);
@@ -469,11 +470,11 @@ public class IsaacNumericValidator implements IValidator {
       untrustedValueSigFigs = sigFigsFromUser.sigFigsMin;
     }
 
-        /* The number of significant figures to validate to must be less than or equal to the max allowed, and greater
-           than or equal to the minimum allowed. If the ranges intersect, or the untrusted value is unambiguous in the
-           acceptable range, choose the least number of sig figs the user answer allows; this is kindest to the user
-           in terms of matching known wrong answers.
-         */
+    /* The number of significant figures to validate to must be less than or equal to the max allowed, and greater
+       than or equal to the minimum allowed. If the ranges intersect, or the untrusted value is unambiguous in the
+       acceptable range, choose the least number of sig figs the user answer allows; this is kindest to the user
+       in terms of matching known wrong answers.
+     */
     return max(min(untrustedValueSigFigs, maxAllowedSigFigs), minAllowedSigFigs);
   }
 
@@ -587,7 +588,8 @@ public class IsaacNumericValidator implements IValidator {
     if (null != question.getDefaultFeedback() && feedbackEmptyOrGeneric) {
       log.debug("Replacing generic or blank explanation with default feedback from question.");
       response.setExplanation(question.getDefaultFeedback());
-      // TODO - should this preserve the 'sig_figs' tag? If so, how to do it without modifying the referenced default feedback?
+      // TODO - should this preserve the 'sig_figs' tag? If so, how to do it without modifying the referenced default
+      //  feedback?
     }
     return response;
   }

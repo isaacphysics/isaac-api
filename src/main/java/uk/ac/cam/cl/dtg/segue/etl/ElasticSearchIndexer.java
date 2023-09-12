@@ -67,10 +67,31 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     indexObject(indexBase, indexType, content, null);
   }
 
+  void indexObject(final String indexBase, final String indexType, final String content, final String uniqueId)
+      throws SegueSearchException {
+    String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
+    // check index already exists if not execute any initialisation steps.
+    if (!this.hasIndex(indexBase, indexType)) {
+      if (this.rawFieldsListByType.containsKey(indexType)) {
+        this.sendMappingCorrections(typedIndex, indexType);
+      }
+    }
+
+    try {
+      IndexRequest request = new IndexRequest(typedIndex).id(uniqueId).source(content, XContentType.JSON);
+      IndexResponse indexResponse = getClient().index(request, RequestOptions.DEFAULT);
+      log.debug("Document: " + indexResponse.getId() + " indexed.");
+
+    } catch (ElasticsearchException | IOException e) {
+      throw new SegueSearchException("Error during index operation.", e);
+    }
+  }
+
   /**
    * @param indexBase        the index name
    * @param indexType        type of index as registered with search provider
-   * @param buildBulkRequest a function that takes an elasticsearch typed index name, and produces a (populated) BulkRequestBuilder
+   * @param buildBulkRequest a function that takes an elasticsearch typed index name, and produces a (populated)
+   *                             BulkRequestBuilder
    * @throws SegueSearchException if an error occurs during the index operation
    */
   private void executeBulkIndexRequest(final String indexBase, final String indexType,
@@ -126,7 +147,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     });
   }
 
-  void bulkIndexWithIDs(final String indexBase, final String indexType,
+  void bulkIndexWithIds(final String indexBase, final String indexType,
                         final List<Map.Entry<String, String>> dataToIndex)
       throws SegueSearchException {
     executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
@@ -137,27 +158,6 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
       ));
       return bulkRequest;
     });
-  }
-
-
-  void indexObject(final String indexBase, final String indexType, final String content, final String uniqueId)
-      throws SegueSearchException {
-    String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-    // check index already exists if not execute any initialisation steps.
-    if (!this.hasIndex(indexBase, indexType)) {
-      if (this.rawFieldsListByType.containsKey(indexType)) {
-        this.sendMappingCorrections(typedIndex, indexType);
-      }
-    }
-
-    try {
-      IndexRequest request = new IndexRequest(typedIndex).id(uniqueId).source(content, XContentType.JSON);
-      IndexResponse indexResponse = getClient().index(request, RequestOptions.DEFAULT);
-      log.debug("Document: " + indexResponse.getId() + " indexed.");
-
-    } catch (ElasticsearchException | IOException e) {
-      throw new SegueSearchException("Error during index operation.", e);
-    }
   }
 
   public boolean expungeEntireSearchCache() {

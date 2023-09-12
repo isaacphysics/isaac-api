@@ -20,7 +20,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
 /**
  * SecuredEndpoint.
- * To access this endpoint the user must meet the role specified. 
+ * To access this endpoint the user must meet the role specified.
+ *
  * @author Stephen Cummins
  *
  */

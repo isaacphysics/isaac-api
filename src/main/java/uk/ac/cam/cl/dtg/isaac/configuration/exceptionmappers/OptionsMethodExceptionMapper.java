@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers;
+package uk.ac.cam.cl.dtg.isaac.configuration.exceptionmappers;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

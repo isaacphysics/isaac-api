@@ -35,8 +35,7 @@ public class ChoiceQuestionValidator implements IValidator {
   private static final Logger log = LoggerFactory.getLogger(ChoiceQuestionValidator.class);
 
   @Override
-  public final QuestionValidationResponse validateQuestionResponse(final Question question,
-                                                                   final Choice answer) {
+  public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
     Validate.notNull(question);
     Validate.notNull(answer);
 

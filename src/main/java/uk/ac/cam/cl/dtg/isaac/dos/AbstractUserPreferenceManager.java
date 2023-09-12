@@ -64,15 +64,6 @@ public abstract class AbstractUserPreferenceManager {
       throws SegueDatabaseException;
 
   /**
-   * Get all preferences for a specific user.
-   *
-   * @param userId - the ID of the user interested in
-   * @return a list of the UserPreference objects
-   * @throws SegueDatabaseException - if a database error occurs
-   */
-  public abstract List<UserPreference> getAllUserPreferences(long userId) throws SegueDatabaseException;
-
-  /**
    * Get all preferences of one type for many users.
    *
    * @param preferenceType - the type of preferences interested in
@@ -80,9 +71,17 @@ public abstract class AbstractUserPreferenceManager {
    * @return a map of user IDs to a list of the UserPreference objects
    * @throws SegueDatabaseException - if a database error occurs
    */
-  public abstract Map<Long, List<UserPreference>> getUserPreferences(String preferenceType,
-                                                                     List<RegisteredUserDTO> users)
-      throws SegueDatabaseException;
+  public abstract Map<Long, List<UserPreference>> getUserPreferences(
+      String preferenceType, List<RegisteredUserDTO> users) throws SegueDatabaseException;
+
+  /**
+   * Get all preferences for a specific user.
+   *
+   * @param userId - the ID of the user interested in
+   * @return a list of the UserPreference objects
+   * @throws SegueDatabaseException - if a database error occurs
+   */
+  public abstract List<UserPreference> getAllUserPreferences(long userId) throws SegueDatabaseException;
 
   /**
    * Save a users preferences.

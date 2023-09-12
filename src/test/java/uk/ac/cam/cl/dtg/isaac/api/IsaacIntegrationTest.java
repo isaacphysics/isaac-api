@@ -66,7 +66,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.RECAPTCHAManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.RecaptchaManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
@@ -133,7 +133,7 @@ public abstract class IsaacIntegrationTest {
   protected static UserAuthenticationManager userAuthenticationManager;
   protected static ISecondFactorAuthenticator secondFactorManager;
   protected static UserAccountManager userAccountManager;
-  protected static RECAPTCHAManager recaptchaManager;
+  protected static RecaptchaManager recaptchaManager;
   protected static GameManager gameManager;
   protected static GroupManager groupManager;
   protected static EventBookingManager eventBookingManager;
@@ -249,7 +249,7 @@ public abstract class IsaacIntegrationTest {
     globalTokens.put("accountURL", String.format("https://%s/account", properties.getProperty(HOST_NAME)));
     globalTokens.put("siteBaseURL", String.format("https://%s", properties.getProperty(HOST_NAME)));
 
-    recaptchaManager = new RECAPTCHAManager(properties);
+    recaptchaManager = new RecaptchaManager(properties);
 
     JsonMapper jsonMapper = new JsonMapper();
     PgUsers pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
@@ -336,7 +336,7 @@ public abstract class IsaacIntegrationTest {
     misuseMonitor = new InMemoryMisuseMonitor();
     misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(),
         new GroupManagerLookupMisuseHandler(emailManager, properties));
-    // todo: more handlers as required by different endpoints
+    // TODO: more handlers as required by different endpoints
 
     String someSegueAnonymousUserId = "9284723987anonymous83924923";
     httpSession = createNiceMock(HttpSession.class);
@@ -344,22 +344,22 @@ public abstract class IsaacIntegrationTest {
     expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
     replay(httpSession);
 
-    // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
-        /*
-        // Create Mocked Injector
-        SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(properties);
-        Module productionModule = new SegueGuiceConfigurationModule();
-        Module testModule = Modules.override(productionModule).with(new AbstractModule() {
-            @Override protected void configure() {
-                // ... register mocks
-                bind(UserAccountManager.class).toInstance(userAccountManager);
-                bind(GameManager.class).toInstance(createNiceMock(GameManager.class));
-                bind(GroupChangedService.class).toInstance(createNiceMock(GroupChangedService.class));
-                bind(EventBookingManager.class).toInstance(eventBookingManager);
-            }
-        });
-        Injector injector = Guice.createInjector(testModule);
-         */
+    // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us...
+    /*
+    // Create Mocked Injector
+    SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(properties);
+    Module productionModule = new SegueGuiceConfigurationModule();
+    Module testModule = Modules.override(productionModule).with(new AbstractModule() {
+        @Override protected void configure() {
+            // ... register mocks
+            bind(UserAccountManager.class).toInstance(userAccountManager);
+            bind(GameManager.class).toInstance(createNiceMock(GameManager.class));
+            bind(GroupChangedService.class).toInstance(createNiceMock(GroupChangedService.class));
+            bind(EventBookingManager.class).toInstance(eventBookingManager);
+        }
+    });
+    Injector injector = Guice.createInjector(testModule);
+     */
   }
 
   protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password)

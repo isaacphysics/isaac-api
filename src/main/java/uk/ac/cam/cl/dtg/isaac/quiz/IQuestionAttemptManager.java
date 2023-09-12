@@ -18,8 +18,8 @@ public interface IQuestionAttemptManager {
    * Update a particular field on a user object.
    *
    * @param userId          - the user id to try and find.
-   * @param questionPageId  - the high level id of the question page. This may be used for determining whether a page of questions
-   *                        has been completed.
+   * @param questionPageId  - the high level id of the question page. This may be used for determining whether a page
+   *                              of questions has been completed.
    * @param fullQuestionId  - the full id of the question.
    * @param questionAttempt - the question attempt object recording the users result.
    * @throws SegueDatabaseException - if there is an error during the database operation.
@@ -46,11 +46,11 @@ public interface IQuestionAttemptManager {
    *                     too long, it may be ignored and all attempts returned for the relevant users to avoid expensive
    *                     additional filtering.
    * @return a Map of userId --> Map of question_page --> Map of Question_id --> List of lightweight users attempts
-   * (without the actual question attempt values).
-   * @throws SegueDatabaseException - if a database error occurrs
+   *     (without the actual question attempt values).
+   * @throws SegueDatabaseException - if a database error occurs
    */
   Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
-  getQuestionAttemptsByUsersAndQuestionPrefix(List<Long> userIds, List<String> questionPage)
+      getQuestionAttemptsByUsersAndQuestionPrefix(List<Long> userIds, List<String> questionPage)
       throws SegueDatabaseException;
 
   /**

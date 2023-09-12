@@ -37,6 +37,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Get the image.
+   *
    * @return the image.
    */
   public ImageDTO getImage() {
@@ -45,6 +46,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Set the image.
+   *
    * @param image the image to set.
    */
   public void setImage(final ImageDTO image) {
@@ -53,6 +55,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Get the click url.
+   *
    * @return the click url.
    */
   public String getClickUrl() {
@@ -61,6 +64,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Set the click url.
+   *
    * @param clickUrl the click url to set.
    */
   public void setClickUrl(final String clickUrl) {
@@ -69,6 +73,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Get the button text.
+   *
    * @return the button text.
    */
   public String getButtonText() {
@@ -77,6 +82,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Set the button text.
+   *
    * @param buttonText the button text to set.
    */
   public void setButtonText(final String buttonText) {
@@ -85,6 +91,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Return if the card is disabled.
+   *
    * @return if is disabled.
    */
   public boolean isDisabled() {
@@ -93,6 +100,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Set if the card is disabled.
+   *
    * @param disabled the disabled state to set to.
    */
   public void setDisabled(final boolean disabled) {
@@ -101,6 +109,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Return if the card should be vertically displayed.
+   *
    * @return if is verticalContent.
    */
   public boolean isVerticalContent() {
@@ -109,6 +118,7 @@ public class IsaacCardDTO extends ContentDTO {
 
   /**
    * Set if the card is vertical content.
+   *
    * @param verticalContent vertical content state to set to.
    */
   public void setVerticalContent(final boolean verticalContent) {

@@ -258,9 +258,8 @@ public class GroupChangedService implements IGroupObserver {
     } catch (ContentManagerException e) {
       log.info("Could not send group additional manager promotion to owner email ", e);
     } catch (SegueDatabaseException e) {
-      log.error(
-          "Unable to send group additional manager promotion to owner e-mail due to a database error. Failing silently.",
-          e);
+      log.error("Unable to send group additional manager promotion to owner e-mail due to a database error."
+              + " Failing silently.", e);
     }
   }
 
@@ -305,9 +304,8 @@ public class GroupChangedService implements IGroupObserver {
     } catch (NoUserException e) {
       log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
     } catch (SegueDatabaseException e) {
-      log.error(
-          "Unable to send group additional manager privileges modified e-mail due to a database error. Failing silently.",
-          e);
+      log.error("Unable to send group additional manager privileges modified e-mail due to a database error."
+              + " Failing silently.", e);
     }
   }
 }

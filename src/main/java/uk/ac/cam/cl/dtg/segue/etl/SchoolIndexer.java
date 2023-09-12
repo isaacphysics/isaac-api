@@ -79,13 +79,14 @@ class SchoolIndexer {
     }
 
     try {
-      es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(), indexList);
+      es.bulkIndexWithIds(SCHOOLS_INDEX_BASE, SchoolsIndexType.SCHOOL_SEARCH.toString(), indexList);
       log.info("School list index request complete.");
     } catch (SegueSearchException e) {
       log.error("Unable to complete bulk index operation for schools list.", e);
     }
 
-    // Create an alias (could be anything) to prevent this schools index from being garbage-collected by ElasticSearchIndexer.expungeOldIndices
+    // Create an alias (could be anything) to prevent this schools index from being garbage-collected by
+    // ElasticSearchIndexer.expungeOldIndices
     List<String> allSchoolTypes = Arrays.stream(SchoolsIndexType.values())
         .map(SchoolsIndexType::toString).collect(Collectors.toList());
     es.addOrMoveIndexAlias("schools-latest", SCHOOLS_INDEX_BASE, allSchoolTypes);

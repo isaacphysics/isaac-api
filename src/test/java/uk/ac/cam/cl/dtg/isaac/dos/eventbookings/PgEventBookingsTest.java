@@ -76,17 +76,20 @@ public class PgEventBookingsTest {
 
     // Create expected status count
     Map<BookingStatus, Map<Role, Long>> expectedStatusCounts = new HashMap<BookingStatus, Map<Role, Long>>() {{
-      put(BookingStatus.CONFIRMED, new HashMap<Role, Long>() {{
-        put(Role.STUDENT, 20L);
-        put(Role.TEACHER, 4L);
-      }});
-      put(BookingStatus.WAITING_LIST, new HashMap<Role, Long>() {{
-        put(Role.STUDENT, 10L);
-      }});
-      put(BookingStatus.CANCELLED, new HashMap<Role, Long>() {{
-        put(Role.TEACHER, 2L);
-      }});
-    }};
+        put(BookingStatus.CONFIRMED, new HashMap<Role, Long>() {{
+            put(Role.STUDENT, 20L);
+            put(Role.TEACHER, 4L);
+          }
+        });
+        put(BookingStatus.WAITING_LIST, new HashMap<Role, Long>() {{
+            put(Role.STUDENT, 10L);
+          }
+        });
+        put(BookingStatus.CANCELLED, new HashMap<Role, Long>() {{
+            put(Role.TEACHER, 2L);
+          }
+        });
+      }};
 
     // Run test
     Object[] mockedObjects = {dummyPostgresSqlDb, dummyConnection, dummyPreparedStatement, dummyResultSet};

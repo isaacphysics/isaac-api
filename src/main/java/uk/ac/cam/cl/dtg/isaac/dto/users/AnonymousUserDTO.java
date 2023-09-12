@@ -115,6 +115,7 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
 
   /**
    * set the last update date.
+   *
    * @param lastUpdated last update date
    */
   public void setLastUpdated(final Date lastUpdated) {

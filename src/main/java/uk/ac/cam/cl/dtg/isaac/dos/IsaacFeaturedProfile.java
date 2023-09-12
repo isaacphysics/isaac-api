@@ -78,6 +78,7 @@ public class IsaacFeaturedProfile extends Content {
 
   /**
    * Gets the e-mail address.
+   *
    * @return the email
    */
   public String getEmailAddress() {
@@ -86,6 +87,7 @@ public class IsaacFeaturedProfile extends Content {
 
   /**
    * Sets the email address.
+   *
    * @param emailAddress to set
    */
   public void setEmailAddress(final String emailAddress) {
@@ -94,6 +96,7 @@ public class IsaacFeaturedProfile extends Content {
 
   /**
    * Get the profile image.
+   *
    * @return the image
    */
   public Image getImage() {
@@ -102,6 +105,7 @@ public class IsaacFeaturedProfile extends Content {
 
   /**
    * Set the image for the profile.
+   *
    * @param image the image to set
    */
   public void setImage(final Image image) {
@@ -110,6 +114,7 @@ public class IsaacFeaturedProfile extends Content {
 
   /**
    * Gets the homepage.
+   *
    * @return the homepage
    */
   public String getHomepage() {
@@ -118,6 +123,7 @@ public class IsaacFeaturedProfile extends Content {
 
   /**
    * Sets the homepage.
+   *
    * @param homepage the homepage to set
    */
   public void setHomepage(final String homepage) {

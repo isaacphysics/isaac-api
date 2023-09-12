@@ -81,7 +81,8 @@ public class ContentMapper {
   /**
    * Alternative constructor that will attempt to search for valid types to pre-register.
    *
-   * @param configuredReflectionClass - string representing the parent package to search for content classes. e.g. uk.ac.cam.cl.dtg.segue
+   * @param configuredReflectionClass - string representing the parent package to search for content classes.
+   *                                        e.g. uk.ac.cam.cl.dtg.segue
    */
   @SuppressWarnings("unchecked")
   public ContentMapper(final Reflections configuredReflectionClass) {
@@ -330,9 +331,9 @@ public class ContentMapper {
     ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
     contentDeserializer.registerTypeMap(jsonTypes);
 
-        /* When deserialising from Git, the top-level content mapper needs to have an ItemDeseriaizer,
-           and when deserialising a Choice object directly then the ChoiceDeserializer needs to have an
-           ItemDeserializer inside it too. The perils of a recursive content model! */
+    /* When deserialising from Git, the top-level content mapper needs to have an ItemDeserializer,
+       and when deserialising a Choice object directly then the ChoiceDeserializer needs to have an
+       ItemDeserializer inside it too. The perils of a recursive content model! */
     ItemDeserializer itemDeserializer = new ItemDeserializer(contentDeserializer);
     ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer, itemDeserializer);
 

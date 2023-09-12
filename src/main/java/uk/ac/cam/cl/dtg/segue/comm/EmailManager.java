@@ -88,8 +88,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * @param globalProperties      global properties used to get host name
    * @param contentManager        content for email templates
    * @param logManager            so we can log e-mail events.
-   * @param globalStringTokens    a map containing a token that if seen in an email template should be replaced with some
-   *                              static string.
+   * @param globalStringTokens    a map containing a token that if seen in an email template should be replaced with
+   *                                  some static string.
    */
   @Inject
   public EmailManager(final EmailCommunicator communicator, final AbstractUserPreferenceManager userPreferenceManager,
@@ -136,7 +136,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * @param userDTO              - the user to email
    * @param emailContentTemplate - the content template to send to the user.
    * @param tokenToValueMapping  - a Map of tokens to values that will be replaced in the email template.
-   * @param emailType            - the type of email that this is so that it is filtered appropriately based on user email prefs.
+   * @param emailType            - the type of email that this is so that it is filtered appropriately based on user
+   *                                   email prefs.
    * @throws ContentManagerException if we can't parse the content
    * @throws SegueDatabaseException  if we cannot contact the database for logging.
    */
@@ -152,7 +153,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * @param userDTO              - the user to email
    * @param emailContentTemplate - the content template to send to the user.
    * @param tokenToValueMapping  - a Map of tokens to values that will be replaced in the email template.
-   * @param emailType            - the type of email that this is so that it is filtered appropriately based on user email prefs.
+   * @param emailType            - the type of email that this is so that it is filtered appropriately based on user
+   *                                   email prefs.
    * @param attachments          - list of attachment objects
    * @throws ContentManagerException if we can't parse the content
    * @throws SegueDatabaseException  if we cannot contact the database for logging.
@@ -187,7 +189,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * Function that enables contact us messages to be sent to a random email address (not to a known user).
    *
    * @param recipientEmailAddress - Email Address to send the contact us message to.
-   * @param emailValues           - must contain at least contactEmail, replyToName, contactSubject plus any other email tokens to replace.
+   * @param emailValues           - must contain at least contactEmail, replyToName, contactSubject plus any other
+   *                                    email tokens to replace.
    * @throws ContentManagerException - if some content is not found
    * @throws SegueDatabaseException  - if the database cannot be accessed
    */
@@ -438,7 +441,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
           outputMap.put(keyPrefix + mapEntry.getKey(), valueToStore);
         }
 
-        // assume that the first entry into the output map is the correct one and only replace if something isn't already there
+        // assume that the first entry into the output map is the correct one and only replace if something isn't
+        // already there
         outputMap.putIfAbsent(keyPrefix + mapEntry.getKey(), valueToStore);
       }
     }

@@ -460,7 +460,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                   expectLastCall();
                 }),
                 respondsWith(attempt),
-                check(_ignore -> assertEquals(testQuiz, attempt.getQuiz()))),
+                check(ignore -> assertEquals(testQuiz, attempt.getQuiz()))),
             forbiddenForEveryoneElse()
         ),
         with(overdueAssignment,
@@ -520,7 +520,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                   expectLastCall();
                 }),
                 respondsWith(studentAttempt),
-                check(_ignore -> assertEquals(augmentedQuiz, studentAttempt.getQuiz()))
+                check(ignore -> assertEquals(augmentedQuiz, studentAttempt.getQuiz()))
             )
         ),
         with(overdueAttempt,

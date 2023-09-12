@@ -303,6 +303,10 @@ public class ElasticSearchProvider implements ISearchProvider {
     return client;
   }
 
+  public RestHighLevelClient getClient() {
+    return client;
+  }
+
   @Override
   public boolean hasIndex(final String indexBase, final String indexType) {
     Validate.notNull(indexBase);
@@ -638,7 +642,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
   }
 
-
   /**
    * Utility function to support conversion between simple field maps and bool maps.
    *
@@ -745,8 +748,8 @@ public class ElasticSearchProvider implements ISearchProvider {
    *
    * @param indexBase - to look up
    * @param indexType - type of index as registered with search provider
-   * @return the configured index max window size or a default,
-   * if a request exceeds this an error will be thrown. (or we should use the scroll api.)
+   * @return the configured index max window size or a default,if a request exceeds this an error will be thrown.
+   *     (or we should use the scroll api.)
    */
   private int getMaxResultSize(final String indexBase, final String indexType) {
     final String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
@@ -770,9 +773,5 @@ public class ElasticSearchProvider implements ISearchProvider {
           typedIndex, DEFAULT_MAX_WINDOW_SIZE), e);
       return DEFAULT_MAX_WINDOW_SIZE;
     }
-  }
-
-  public RestHighLevelClient getClient() {
-    return client;
   }
 }

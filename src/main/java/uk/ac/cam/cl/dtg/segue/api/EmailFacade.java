@@ -256,7 +256,7 @@ public class EmailFacade extends AbstractSegueFacade {
    * @param payload - Post request payload containing the email address requested for verification
    * @param request - For logging purposes.
    * @return a successful response regardless of whether the email exists or an error code if there is a technical
-   * fault
+   *     fault
    */
   @POST
   @Path("/users/verifyemail")

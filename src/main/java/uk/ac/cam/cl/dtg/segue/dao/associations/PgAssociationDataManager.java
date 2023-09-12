@@ -307,6 +307,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
 
   /**
    * Helper function to allow deletion of all associations for a given user.
+   *
    * @param userIdOfInterest - the user id of interest
    * @param isOwner - if true it will delete all cases where the user is the data owner and has shared,
    *                if false it will delete all cases where the user is the recipient.

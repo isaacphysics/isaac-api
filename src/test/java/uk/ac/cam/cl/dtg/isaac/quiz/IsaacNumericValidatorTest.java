@@ -168,11 +168,11 @@ public class IsaacNumericValidatorTest {
   @Test
   public final void isaacNumericValidator_IncorrectSigFigsCorrectUnit_IncorrectResponseShouldHappen() {
     // Set up user answer:
-    Quantity q_tooFew = new Quantity("4", correctUnits);
+    Quantity quantityTooFew = new Quantity("4", correctUnits);
 
     // Test response:
     QuantityValidationResponse responseTooFew =
-        (QuantityValidationResponse) validator.validateQuestionResponse(numericQuestionWithUnits, q_tooFew);
+        (QuantityValidationResponse) validator.validateQuestionResponse(numericQuestionWithUnits, quantityTooFew);
 
     // Check answer is wrong,
     assertFalse(responseTooFew.isCorrect());
@@ -181,11 +181,11 @@ public class IsaacNumericValidatorTest {
     assertTrue(responseTooFew.getCorrectUnits());
 
     // Set up user answer:
-    Quantity q_tooMany = new Quantity("42.000", correctUnits);
+    Quantity quantityTooMany = new Quantity("42.000", correctUnits);
 
     // Test response:
     QuantityValidationResponse responseTooMany =
-        (QuantityValidationResponse) validator.validateQuestionResponse(numericQuestionWithUnits, q_tooMany);
+        (QuantityValidationResponse) validator.validateQuestionResponse(numericQuestionWithUnits, quantityTooMany);
 
     // Check answer is wrong,
     assertFalse(responseTooMany.isCorrect());
@@ -367,18 +367,18 @@ public class IsaacNumericValidatorTest {
     someNumericQuestion.setChoices(answerList);
 
     // Set up a user answer:
-    Quantity q_3sf = new Quantity("1.66");
+    Quantity quantity3sf = new Quantity("1.66");
     // Test response:
-    QuestionValidationResponse response_3sf = validator.validateQuestionResponse(someNumericQuestion, q_3sf);
-    assertFalse(response_3sf.isCorrect());
-    assertFalse(response_3sf.getExplanation().getTags().contains("sig_figs"));
+    QuestionValidationResponse response3sf = validator.validateQuestionResponse(someNumericQuestion, quantity3sf);
+    assertFalse(response3sf.isCorrect());
+    assertFalse(response3sf.getExplanation().getTags().contains("sig_figs"));
 
     // Set up a user answer:
-    Quantity q_2sf = new Quantity("2.0");
+    Quantity quantity2sf = new Quantity("2.0");
     // Test response:
-    QuestionValidationResponse response_2sf = validator.validateQuestionResponse(someNumericQuestion, q_2sf);
-    assertFalse(response_2sf.isCorrect());
-    assertFalse(response_2sf.getExplanation().getTags().contains("sig_figs"));
+    QuestionValidationResponse response2sf = validator.validateQuestionResponse(someNumericQuestion, quantity2sf);
+    assertFalse(response2sf.isCorrect());
+    assertFalse(response2sf.getExplanation().getTags().contains("sig_figs"));
   }
 
   /*
@@ -400,18 +400,18 @@ public class IsaacNumericValidatorTest {
     someNumericQuestion.setChoices(answerList);
 
     // Set up a user answer:
-    Quantity q_5sf = new Quantity("1.6875");
+    Quantity quantity5sf = new Quantity("1.6875");
     // Test response:
-    QuestionValidationResponse response_5sf = validator.validateQuestionResponse(someNumericQuestion, q_5sf);
-    assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf.isCorrect());
-    assertTrue(response_5sf.getExplanation().getTags().contains("sig_figs"));
+    QuestionValidationResponse response5sf = validator.validateQuestionResponse(someNumericQuestion, quantity5sf);
+    assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response5sf.isCorrect());
+    assertTrue(response5sf.getExplanation().getTags().contains("sig_figs"));
 
     // Set up a user answer:
-    Quantity q_1sf = new Quantity("2");
+    Quantity quantity1sf = new Quantity("2");
     // Test response:
-    QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
-    assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
-    assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
+    QuestionValidationResponse response1sf = validator.validateQuestionResponse(someNumericQuestion, quantity1sf);
+    assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response1sf.isCorrect());
+    assertTrue(response1sf.getExplanation().getTags().contains("sig_figs"));
   }
 
   /*
@@ -433,29 +433,29 @@ public class IsaacNumericValidatorTest {
     someNumericQuestion.setChoices(answerList);
 
     // Set up a correct user answer with too many sig figs:
-    Quantity q_5sf_corr = new Quantity("1.6875");
+    Quantity quantity5sfCorrect = new Quantity("1.6875");
     // Test response is sig fig message:
-    QuestionValidationResponse response_5sf_corr = validator.validateQuestionResponse(someNumericQuestion, q_5sf_corr);
-    assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf_corr.isCorrect());
-    assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs"));
-    assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs_too_many"));
+    QuestionValidationResponse response5sfCorrect = validator.validateQuestionResponse(someNumericQuestion, quantity5sfCorrect);
+    assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response5sfCorrect.isCorrect());
+    assertTrue(response5sfCorrect.getExplanation().getTags().contains("sig_figs"));
+    assertTrue(response5sfCorrect.getExplanation().getTags().contains("sig_figs_too_many"));
 
     // Set up a wrong user answer with too many sig figs:
-    Quantity q_5sf_wrong = new Quantity("2.7986");
+    Quantity quantity5sfWrong = new Quantity("2.7986");
     // Test response does not mention sig figs:
-    QuestionValidationResponse response_5sf_wrong =
-        validator.validateQuestionResponse(someNumericQuestion, q_5sf_wrong);
-    assertFalse("expected 2.7986 not to match 1.6875", response_5sf_wrong.isCorrect());
+    QuestionValidationResponse response5sfWrong =
+        validator.validateQuestionResponse(someNumericQuestion, quantity5sfWrong);
+    assertFalse("expected 2.7986 not to match 1.6875", response5sfWrong.isCorrect());
     assertFalse("expected 2.7986 without sig fig message",
-        response_5sf_wrong.getExplanation().getTags().contains("sig_figs"));
+        response5sfWrong.getExplanation().getTags().contains("sig_figs"));
 
     // Set up a user answer:
-    Quantity q_1sf = new Quantity("5");
+    Quantity quantity1sf = new Quantity("5");
     // Test response:
-    QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
-    assertFalse("expected 5 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
-    assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
-    assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs_too_few"));
+    QuestionValidationResponse response1sf = validator.validateQuestionResponse(someNumericQuestion, quantity1sf);
+    assertFalse("expected 5 not to match 1.6875 to 2 or 3 sf", response1sf.isCorrect());
+    assertTrue(response1sf.getExplanation().getTags().contains("sig_figs"));
+    assertTrue(response1sf.getExplanation().getTags().contains("sig_figs_too_few"));
   }
 
   /*
@@ -672,8 +672,8 @@ public class IsaacNumericValidatorTest {
     // Check that units are ignored for validation:
     assertTrue(response.isCorrect());
     if (response instanceof QuantityValidationResponse) {
-      QuantityValidationResponse qResponse = (QuantityValidationResponse) response;
-      assertNull(qResponse.getCorrectUnits());
+      QuantityValidationResponse quantityResponse = (QuantityValidationResponse) response;
+      assertNull(quantityResponse.getCorrectUnits());
     }
   }
 

@@ -111,16 +111,6 @@ public interface ILogManager {
   Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate) throws SegueDatabaseException;
 
   /**
-   * Convenience method to find out how many of a particular type of event have been logged.
-   *
-   * @param type
-   *            - event type of interest.
-   * @return the number of that type recorded.
-   * @throws SegueDatabaseException
-   */
-  Long getLogCountByType(String type) throws SegueDatabaseException;
-
-  /**
    * Allows filtering by date range.
    *
    * @param type
@@ -137,6 +127,16 @@ public interface ILogManager {
    */
   Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest)
       throws SegueDatabaseException;
+
+  /**
+   * Convenience method to find out how many of a particular type of event have been logged.
+   *
+   * @param type
+   *            - event type of interest.
+   * @return the number of that type recorded.
+   * @throws SegueDatabaseException
+   */
+  Long getLogCountByType(String type) throws SegueDatabaseException;
 
   /**
    * Utility method that will generate a map of type -- > localDate -- > number of events.

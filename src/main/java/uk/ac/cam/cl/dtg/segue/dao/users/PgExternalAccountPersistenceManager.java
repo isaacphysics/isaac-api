@@ -40,9 +40,11 @@ public class PgExternalAccountPersistenceManager implements IExternalAccountData
     String query = "SELECT id, provider_user_identifier, email, role, given_name, deleted, email_verification_status, "
         + "       news_prefs.preference_value AS news_emails, events_prefs.preference_value AS events_emails "
         + "FROM users "
-        + "    LEFT OUTER JOIN user_preferences AS news_prefs ON users.id = news_prefs.user_id AND news_prefs.preference_type='EMAIL_PREFERENCE' "
+        + "    LEFT OUTER JOIN user_preferences AS news_prefs ON users.id = news_prefs.user_id "
+        + "AND news_prefs.preference_type='EMAIL_PREFERENCE' "
         + "AND news_prefs.preference_name='NEWS_AND_UPDATES' "
-        + "    LEFT OUTER JOIN user_preferences AS events_prefs ON users.id = events_prefs.user_id AND events_prefs.preference_type='EMAIL_PREFERENCE' "
+        + "    LEFT OUTER JOIN user_preferences AS events_prefs ON users.id = events_prefs.user_id "
+        + "AND events_prefs.preference_type='EMAIL_PREFERENCE' "
         + "AND events_prefs.preference_name='EVENTS' "
         + "    LEFT OUTER JOIN external_accounts ON users.id=external_accounts.user_id AND provider_name='MailJet' "
         + "WHERE (users.last_updated >= provider_last_updated OR news_prefs.last_updated >= provider_last_updated "
@@ -85,7 +87,8 @@ public class PgExternalAccountPersistenceManager implements IExternalAccountData
     // Upsert the value in, using Postgres 9.5 syntax 'ON CONFLICT DO UPDATE ...'
     String query =
         "INSERT INTO external_accounts(user_id, provider_name, provider_user_identifier) VALUES (?, 'MailJet', ?)"
-            + " ON CONFLICT (user_id, provider_name) DO UPDATE SET provider_user_identifier=excluded.provider_user_identifier";
+            + " ON CONFLICT (user_id, provider_name) DO UPDATE SET"
+            + " provider_user_identifier=excluded.provider_user_identifier";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {

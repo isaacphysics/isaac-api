@@ -71,7 +71,8 @@ public interface IQuizAttemptPersistenceManager {
    * Mark a quiz complete (or incomplete) in the database.
    *
    * @param quizAttemptId       The id of the attempt to update.
-   * @param newCompletionStatus If true sets the completed_date on the quiz attempt to the current date, if false sets it to null
+   * @param newCompletionStatus If true sets the completed_date on the quiz attempt to the current date, if false sets
+   *                                it to null
    * @return The new value for completedDate.
    */
   @Nullable

@@ -33,13 +33,9 @@ public interface ISpecifier {
    * <br>
    * i.e. when a question expects a single answer from the user.
    *
-   * @param answer
-   *            - answer from the user.
-   *
-   * @throws ValidatorUnavailableException
-   *            - If the checking server/code is not working.
-   *
+   * @param answer - answer from the user.
    * @return a string describing the specification.
+   * @throws ValidatorUnavailableException - If the checking server/code is not working.
    */
   String createSpecification(Choice answer)
       throws ValidatorUnavailableException;

@@ -33,6 +33,7 @@ public class IsaacCardDeckDTO extends ContentDTO {
 
   /**
    * Get the cards.
+   *
    * @return the cards.
    */
   public List<IsaacCardDTO> getCards() {
@@ -41,6 +42,7 @@ public class IsaacCardDeckDTO extends ContentDTO {
 
   /**
    * Set the cards.
+   *
    * @param cards the cards to set.
    */
   public void setCards(final List<IsaacCardDTO> cards) {

@@ -161,7 +161,8 @@ public class EventBookingPersistenceManager {
 
   /**
    * Get event bookings by an event id.
-   * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
+   * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back
+   *  the event.
    * WARNING: This pulls PII such as medical info, email, and other stuff that should not (always) make it to end users.
    *
    * @param eventId - of interest
@@ -190,7 +191,8 @@ public class EventBookingPersistenceManager {
 
   /**
    * Get event bookings by an event id.
-   * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
+   * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back
+   *  the event.
    * TODO: This is a patch to stop leaking PII (see adminGetBookingsByEventId). The problem may need a better solution.
    *
    * @param eventId - of interest

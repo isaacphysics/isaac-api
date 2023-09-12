@@ -268,7 +268,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void authenticateWithCredentials_local_rateThrottleByIP()
+  public void authenticateWithCredentials_local_rateThrottleByIp()
       throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
     testLocalAuthDTO.setEmail("test-student1@test.com");

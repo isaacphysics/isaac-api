@@ -145,7 +145,7 @@ public class GameManager {
    * @param gameFilter Object representing the group of filters to use
    * @param boardOwner The user that should be marked as the creator of the gameBoard.
    * @return a gameboard if possible that satisfies the conditions provided by the parameters. Will return null if no
-   * questions can be provided.
+   *     questions can be provided.
    * @throws NoWildcardException     - when we are unable to provide you with a wildcard object.
    * @throws SegueDatabaseException  - if there is an error contacting the database.
    * @throws ContentManagerException - if there is an error retrieving the content requested.
@@ -228,8 +228,8 @@ public class GameManager {
    *
    * @param gameboardId - to look up.
    * @return the gameboard or null.
-   * @throws SegueDatabaseException - if there is a problem retrieving the gameboard in the database or updating the users gameboard link
-   *                                table.
+   * @throws SegueDatabaseException - if there is a problem retrieving the gameboard in the database or updating the
+   *                                      users gameboard link table.
    */
   public final GameboardDTO getGameboard(final String gameboardId) throws SegueDatabaseException {
     if (null == gameboardId || gameboardId.isEmpty()) {
@@ -240,14 +240,35 @@ public class GameManager {
   }
 
   /**
+   * Get a gameboard by its id and augment with user information.
+   *
+   * @param gameboardId          - to look up.
+   * @param user                 - This allows state information to be retrieved.
+   * @param userQuestionAttempts - so that we can augment the gameboard.
+   * @return the gameboard or null.
+   * @throws SegueDatabaseException  - if there is a problem retrieving the gameboard in the database or updating the
+   *                                       users gameboard link table.
+   * @throws ContentManagerException - if there is an error retrieving the content requested.
+   */
+  public final GameboardDTO getGameboard(
+      final String gameboardId, final AbstractSegueUserDTO user,
+      final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts
+  ) throws SegueDatabaseException, ContentManagerException {
+
+    // we need to augment the DTO with whether this gameboard is in a users my boards list.
+    return augmentGameboardWithQuestionAttemptInformationAndUserInformation(
+        this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
+  }
+
+  /**
    * Get a list of gameboards by their ids.
    * <br>
    * Note: These gameboards will not be augmented with any user information.
    *
    * @param gameboardIds - to look up.
    * @return the gameboards or null.
-   * @throws SegueDatabaseException - if there is a problem retrieving the gameboards in the database or updating the users gameboards
-   *                                link table.
+   * @throws SegueDatabaseException - if there is a problem retrieving the gameboards in the database or updating the
+   *                                      users gameboards link table.
    */
   public final List<GameboardDTO> getGameboards(final List<String> gameboardIds) throws SegueDatabaseException {
     return this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
@@ -265,9 +286,10 @@ public class GameManager {
    * @throws SegueDatabaseException  - if there is a problem retrieving the gameboards in the database.
    * @throws ContentManagerException - if there is a problem resolving content
    */
-  public final List<GameboardDTO> getGameboards(final List<String> gameboardIds,
-                                                final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-      throws SegueDatabaseException, ContentManagerException {
+  public final List<GameboardDTO> getGameboards(
+      final List<String> gameboardIds,
+      final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts
+  ) throws SegueDatabaseException, ContentManagerException {
     if (null == gameboardIds || gameboardIds.isEmpty()) {
       return new ArrayList<>();
     }
@@ -332,27 +354,6 @@ public class GameManager {
    */
   public List<GameboardDTO> getLiteGameboards(final Collection<String> gameboardId) throws SegueDatabaseException {
     return this.gameboardPersistenceManager.getLiteGameboardsByIds(gameboardId);
-  }
-
-  /**
-   * Get a gameboard by its id and augment with user information.
-   *
-   * @param gameboardId          - to look up.
-   * @param user                 - This allows state information to be retrieved.
-   * @param userQuestionAttempts - so that we can augment the gameboard.
-   * @return the gameboard or null.
-   * @throws SegueDatabaseException  - if there is a problem retrieving the gameboard in the database or updating the users gameboard link
-   *                                 table.
-   * @throws ContentManagerException - if there is an error retrieving the content requested.
-   */
-  public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
-                                         final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-      throws SegueDatabaseException, ContentManagerException {
-
-
-    // we need to augment the DTO with whether this gameboard is in a users my boards list.
-    return augmentGameboardWithQuestionAttemptInformationAndUserInformation(
-        this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
   }
 
   /**
@@ -694,10 +695,11 @@ public class GameManager {
    * @throws SegueDatabaseException  - if there is an error retrieving the content requested.
    * @throws ContentManagerException - if there is an error retrieving the content requested.
    */
-  private GameboardDTO augmentGameboardWithQuestionAttemptInformationAndUserInformation(final GameboardDTO gameboardDTO,
-                                                                                        final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser,
-                                                                                        final AbstractSegueUserDTO user)
-      throws SegueDatabaseException, ContentManagerException {
+  private GameboardDTO augmentGameboardWithQuestionAttemptInformationAndUserInformation(
+      final GameboardDTO gameboardDTO,
+      final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser,
+      final AbstractSegueUserDTO user
+  ) throws SegueDatabaseException, ContentManagerException {
     if (user instanceof RegisteredUserDTO) {
       gameboardDTO
           .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
@@ -738,7 +740,8 @@ public class GameManager {
         this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
       } catch (ResourceNotFoundException e) {
         log.info(String.format(
-            "The gameboard '%s' references an unavailable question '%s' - treating it as if it never existed for marking!",
+            "The gameboard '%s' references an unavailable question '%s'"
+                + " - treating it as if it never existed for marking!",
             gameboardDTO.getId(), gameItem.getId()));
         continue;
       }
@@ -858,9 +861,10 @@ public class GameManager {
    * @return Gameboard questions
    * @throws ContentManagerException - if there is an error retrieving the content requested.
    */
-  private List<GameboardItem> getSelectedGameboardQuestions(final GameFilter gameFilter,
-                                                            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
-      throws ContentManagerException {
+  private List<GameboardItem> getSelectedGameboardQuestions(
+      final GameFilter gameFilter,
+      final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts
+  ) throws ContentManagerException {
 
     Long seed = new Random().nextLong();
     int searchIndex = 0;
@@ -982,8 +986,7 @@ public class GameManager {
    *
    * @param gameItem                 - the gameboard item.
    * @param questionAttemptsFromUser - the user that may or may not have attempted questions in the gameboard.
-   * @return gameItem
-   * - the gameItem passed in having been modified (augmented)), returned for possiblity of chaining.
+   * @return the gameItem passed in having been modified (augmented)), returned for possibility of chaining.
    * @throws ContentManagerException   - if there is an error retrieving the content requested.
    * @throws ResourceNotFoundException - if we cannot find the question specified.
    */
@@ -1037,7 +1040,7 @@ public class GameManager {
     } else {
       questionPartsNotAttempted = listOfQuestionParts.size();
       questionPartStates = listOfQuestionParts.stream()
-          .map(_q -> QuestionPartState.NOT_ATTEMPTED).collect(Collectors.toList());
+          .map(questionPart -> QuestionPartState.NOT_ATTEMPTED).collect(Collectors.toList());
     }
 
     // Get the pass mark for the question page
@@ -1299,8 +1302,10 @@ public class GameManager {
       }
     }
 
-    // We don't check topics since it no longer matters if multiple fields are specified (after CS question finder addition).
-    //  This doesn't change how the PHY question finder works, unless the user uses the URL to specify multiple fields
+    /* We don't check topics since it no longer matters if multiple fields are specified
+       (after CS question finder addition).
+       This doesn't change how the PHY question finder works, unless the user uses the URL to specify multiple fields
+     */
 
     return true;
   }

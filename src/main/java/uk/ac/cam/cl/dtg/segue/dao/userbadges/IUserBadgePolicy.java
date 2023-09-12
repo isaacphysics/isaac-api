@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao.userBadges;
+package uk.ac.cam.cl.dtg.segue.dao.userbadges;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;

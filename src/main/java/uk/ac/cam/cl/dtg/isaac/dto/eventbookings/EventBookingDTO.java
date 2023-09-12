@@ -218,6 +218,7 @@ public class EventBookingDTO {
 
   /**
    * Get the lastUpdate date.
+   *
    * @return the Date it was most recently updated
    */
   public Date getUpdated() {
@@ -226,6 +227,7 @@ public class EventBookingDTO {
 
   /**
    * Set the lastUpdate Date.
+   *
    * @param lastUpdated - date it was updated.
    */
   public void setUpdated(final Date lastUpdated) {
@@ -234,6 +236,7 @@ public class EventBookingDTO {
 
   /**
    * Get the booking status.
+   *
    * @return the status of the booking.
    */
   public BookingStatus getBookingStatus() {
@@ -242,6 +245,7 @@ public class EventBookingDTO {
 
   /**
    * Set the status of the booking.
+   *
    * @param bookingStatus - the status to set.
    */
   public void setBookingStatus(final BookingStatus bookingStatus) {

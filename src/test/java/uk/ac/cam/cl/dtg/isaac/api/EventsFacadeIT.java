@@ -145,47 +145,47 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
       MFARequiredButNotConfiguredException {
     // Get event bookings by event id as an anonymous user (should fail)
-    HttpServletRequest getEventBookingsAsAnonymous_Request = createRequestWithCookies(new Cookie[] {});
-    Response getEventBookingsAsAnonymous_Response =
-        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsAnonymous_Request, "_regular_test_event");
-    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsAnonymous_Response.getStatus());
+    HttpServletRequest getEventBookingsAsAnonymousRequest = createRequestWithCookies(new Cookie[] {});
+    Response getEventBookingsAsAnonymousResponse =
+        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsAnonymousRequest, "_regular_test_event");
+    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsAnonymousResponse.getStatus());
 
     // Get event bookings by event id as a student (should fail)
     LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
-    HttpServletRequest getEventBookingsAsStudent_Request = createRequestWithCookies(new Cookie[] {studentLogin.cookie});
-    replay(getEventBookingsAsStudent_Request);
-    Response getEventBookingsAsStudent_Response =
-        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsStudent_Request, "_regular_test_event");
-    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsStudent_Response.getStatus());
+    HttpServletRequest getEventBookingsAsStudentRequest = createRequestWithCookies(new Cookie[] {studentLogin.cookie});
+    replay(getEventBookingsAsStudentRequest);
+    Response getEventBookingsAsStudentResponse =
+        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsStudentRequest, "_regular_test_event");
+    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsStudentResponse.getStatus());
 
     // Get event bookings by event id as a teacher (should fail)
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL, ITConstants.TEST_TEACHER_PASSWORD);
-    HttpServletRequest getEventBookingsAsTeacher_Request = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
-    replay(getEventBookingsAsTeacher_Request);
-    Response getEventBookingsAsTeacher_Response =
-        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsTeacher_Request, "_regular_test_event");
-    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsTeacher_Response.getStatus());
+    HttpServletRequest getEventBookingsAsTeacherRequest = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
+    replay(getEventBookingsAsTeacherRequest);
+    Response getEventBookingsAsTeacherResponse =
+        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsTeacherRequest, "_regular_test_event");
+    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsTeacherResponse.getStatus());
 
     // Get event bookings by event id as a teacher (should fail)
     LoginResult editorLogin = loginAs(httpSession, ITConstants.TEST_EDITOR_EMAIL, ITConstants.TEST_EDITOR_PASSWORD);
-    HttpServletRequest getEventBookingsAsEditor_Request = createRequestWithCookies(new Cookie[] {editorLogin.cookie});
-    replay(getEventBookingsAsEditor_Request);
-    Response getEventBookingsAsEditor_Response =
-        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEditor_Request, "_regular_test_event");
-    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEditor_Response.getStatus());
+    HttpServletRequest getEventBookingsAsEditorRequest = createRequestWithCookies(new Cookie[] {editorLogin.cookie});
+    replay(getEventBookingsAsEditorRequest);
+    Response getEventBookingsAsEditorResponse =
+        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEditorRequest, "_regular_test_event");
+    assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEditorResponse.getStatus());
 
     // Get event bookings by event id as an event manager (should succeed)
     LoginResult eventManagerLogin =
         loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD);
-    HttpServletRequest getEventBookingsAsEventManager_Request =
+    HttpServletRequest getEventBookingsAsEventManagerRequest =
         createRequestWithCookies(new Cookie[] {eventManagerLogin.cookie});
-    replay(getEventBookingsAsEventManager_Request);
-    Response getEventBookingsAsEventManager_Response =
-        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManager_Request, "_regular_test_event");
-    assertEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEventManager_Response.getStatus());
-    assertNotNull(getEventBookingsAsEventManager_Response.getEntity());
-    assertTrue(getEventBookingsAsEventManager_Response.getEntity() instanceof List);
-    List<?> entity = (List<?>) getEventBookingsAsEventManager_Response.getEntity();
+    replay(getEventBookingsAsEventManagerRequest);
+    Response getEventBookingsAsEventManagerResponse =
+        eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManagerRequest, "_regular_test_event");
+    assertEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEventManagerResponse.getStatus());
+    assertNotNull(getEventBookingsAsEventManagerResponse.getEntity());
+    assertTrue(getEventBookingsAsEventManagerResponse.getEntity() instanceof List);
+    List<?> entity = (List<?>) getEventBookingsAsEventManagerResponse.getEntity();
     assertEquals(3, entity.size());
     for (Object o : entity) {
       assertEquals(DetailedEventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
@@ -205,29 +205,29 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
       MFARequiredButNotConfiguredException {
     // Get event bookings by event id as an anonymous user (should fail)
-    HttpServletRequest anonymous_Request = createRequestWithCookies(new Cookie[] {});
-    replay(anonymous_Request);
-    Response anonymous_Response = eventsFacade.getEventBookingForAllGroups(anonymous_Request, "_regular_test_event");
-    assertNotEquals(Response.Status.OK.getStatusCode(), anonymous_Response.getStatus());
+    HttpServletRequest anonymousRequest = createRequestWithCookies(new Cookie[] {});
+    replay(anonymousRequest);
+    Response anonymousResponse = eventsFacade.getEventBookingForAllGroups(anonymousRequest, "_regular_test_event");
+    assertNotEquals(Response.Status.OK.getStatusCode(), anonymousResponse.getStatus());
 
     // Get event bookings by event id as a student (should fail)
     LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
-    HttpServletRequest student_Request = createRequestWithCookies(new Cookie[] {studentLogin.cookie});
-    replay(student_Request);
-    Response student_Response = eventsFacade.getEventBookingForAllGroups(student_Request, "_regular_test_event");
-    assertNotEquals(Response.Status.OK.getStatusCode(), student_Response.getStatus());
+    HttpServletRequest studentRequest = createRequestWithCookies(new Cookie[] {studentLogin.cookie});
+    replay(studentRequest);
+    Response studentResponse = eventsFacade.getEventBookingForAllGroups(studentRequest, "_regular_test_event");
+    assertNotEquals(Response.Status.OK.getStatusCode(), studentResponse.getStatus());
 
     // Get event bookings by event id as a teacher (should succeed)
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL, ITConstants.TEST_TEACHER_PASSWORD);
-    HttpServletRequest teacher_Request = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
-    replay(teacher_Request);
-    Response teacher_Response = eventsFacade.getEventBookingForAllGroups(teacher_Request, "_regular_test_event");
-    assertEquals(Response.Status.OK.getStatusCode(), teacher_Response.getStatus());
-    assertNotNull(teacher_Response.getEntity());
+    HttpServletRequest teacherRequest = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
+    replay(teacherRequest);
+    Response teacherResponse = eventsFacade.getEventBookingForAllGroups(teacherRequest, "_regular_test_event");
+    assertEquals(Response.Status.OK.getStatusCode(), teacherResponse.getStatus());
+    assertNotNull(teacherResponse.getEntity());
 
     // Make sure the EventBookingDTOs contain UserSummaryDTOs, thus not leaking information
-    assertTrue(teacher_Response.getEntity() instanceof List);
-    List<?> teacherEntity = (List<?>) teacher_Response.getEntity();
+    assertTrue(teacherResponse.getEntity() instanceof List);
+    List<?> teacherEntity = (List<?>) teacherResponse.getEntity();
     for (Object o : teacherEntity) {
       assertEquals(EventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
       assertEquals(UserSummaryDTO.class.getCanonicalName(),
@@ -244,15 +244,15 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
     // Try logging in with another teacher account and see if we are sending the wrong information to the wrong teachers
     LoginResult daveLogin = loginAs(httpSession, "dave-teacher@test.com", ITConstants.TEST_TEACHER_PASSWORD);
-    HttpServletRequest dave_Request = createRequestWithCookies(new Cookie[] {daveLogin.cookie});
-    replay(dave_Request);
-    Response dave_Response = eventsFacade.getEventBookingForAllGroups(dave_Request, "_regular_test_event");
-    assertEquals(Response.Status.OK.getStatusCode(), dave_Response.getStatus());
-    assertNotNull(dave_Response.getEntity());
+    HttpServletRequest daveRequest = createRequestWithCookies(new Cookie[] {daveLogin.cookie});
+    replay(daveRequest);
+    Response daveResponse = eventsFacade.getEventBookingForAllGroups(daveRequest, "_regular_test_event");
+    assertEquals(Response.Status.OK.getStatusCode(), daveResponse.getStatus());
+    assertNotNull(daveResponse.getEntity());
     // Make sure the EventBookingDTOs contain UserSummaryDTOs, thus not leaking information
     assertTrue(
-        dave_Response.getEntity() instanceof List); // instanceof is OK here because we just need to know this is a subclass of a List
-    List<?> daveEntity = (List<?>) dave_Response.getEntity();
+        daveResponse.getEntity() instanceof List); // instanceof is OK here because we just need to know this is a subclass of a List
+    List<?> daveEntity = (List<?>) daveResponse.getEntity();
     for (Object o : daveEntity) {
       assertEquals(EventBookingDTO.class.getCanonicalName(), o.getClass().getCanonicalName());
       assertEquals(UserSummaryDTO.class.getCanonicalName(),
@@ -278,19 +278,19 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
       MFARequiredButNotConfiguredException {
     // Anonymous users MUST NOT be able to get event bookings by event id and group id
-    HttpServletRequest anonymous_Request = createNiceMock(HttpServletRequest.class);
-    replay(anonymous_Request);
-    Response anonymous_Response =
-        eventsFacade.getEventBookingForGivenGroup(anonymous_Request, "_regular_test_event", "1");
-    assertNotEquals(Response.Status.OK.getStatusCode(), anonymous_Response.getStatus());
+    HttpServletRequest anonymousRequest = createNiceMock(HttpServletRequest.class);
+    replay(anonymousRequest);
+    Response anonymousResponse =
+        eventsFacade.getEventBookingForGivenGroup(anonymousRequest, "_regular_test_event", "1");
+    assertNotEquals(Response.Status.OK.getStatusCode(), anonymousResponse.getStatus());
 
     // Teachers MUST be able to get event bookings by event id and group id if and only if they own the given group
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL, ITConstants.TEST_TEACHER_PASSWORD);
-    HttpServletRequest teacher_Request = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
-    replay(teacher_Request);
-    Response teacher_Response = eventsFacade.getEventBookingForGivenGroup(teacher_Request, "_regular_test_event", "1");
-    assertEquals(Response.Status.OK.getStatusCode(), teacher_Response.getStatus());
-    List<?> teacherEntity = (List<?>) teacher_Response.getEntity();
+    HttpServletRequest teacherRequest = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
+    replay(teacherRequest);
+    Response teacherResponse = eventsFacade.getEventBookingForGivenGroup(teacherRequest, "_regular_test_event", "1");
+    assertEquals(Response.Status.OK.getStatusCode(), teacherResponse.getStatus());
+    List<?> teacherEntity = (List<?>) teacherResponse.getEntity();
     List<Long> bookedUserIds =
         teacherEntity.stream().map(booking -> ((EventBookingDTO) booking).getUserBooked().getId())
             .collect(Collectors.toList());
@@ -299,28 +299,28 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
     // Students MUST NOT be able to get event bookings by event id and group id
     LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
-    HttpServletRequest student_Request = createRequestWithCookies(new Cookie[] {studentLogin.cookie});
-    replay(student_Request);
-    Response student_Response = eventsFacade.getEventBookingForGivenGroup(student_Request, "_regular_test_event", "2");
+    HttpServletRequest studentRequest = createRequestWithCookies(new Cookie[] {studentLogin.cookie});
+    replay(studentRequest);
+    Response studentResponse = eventsFacade.getEventBookingForGivenGroup(studentRequest, "_regular_test_event", "2");
     // The student does not own the group so this should not succeed
-    assertNotEquals(Response.Status.OK.getStatusCode(), student_Response.getStatus());
+    assertNotEquals(Response.Status.OK.getStatusCode(), studentResponse.getStatus());
 
     // A student MUST NOT be able to get event bookings by event id and group id EVEN IF they belong in the group
     // Alice is part of group id 1
     LoginResult aliceLogin = loginAs(httpSession, "alice-student@test.com", ITConstants.TEST_STUDENT_PASSWORD);
-    HttpServletRequest alice_Request = createRequestWithCookies(new Cookie[] {aliceLogin.cookie});
-    replay(alice_Request);
-    Response alice_Response = eventsFacade.getEventBookingForGivenGroup(alice_Request, "_regular_test_event", "1");
+    HttpServletRequest aliceRequest = createRequestWithCookies(new Cookie[] {aliceLogin.cookie});
+    replay(aliceRequest);
+    Response aliceResponse = eventsFacade.getEventBookingForGivenGroup(aliceRequest, "_regular_test_event", "1");
     // The student does not own the group so this should not succeed
-    assertNotEquals(Response.Status.OK.getStatusCode(), alice_Response.getStatus());
+    assertNotEquals(Response.Status.OK.getStatusCode(), aliceResponse.getStatus());
 
     LoginResult eventManagerLogin =
         loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD);
-    HttpServletRequest eventManager_Request = createRequestWithCookies(new Cookie[] {eventManagerLogin.cookie});
-    replay(eventManager_Request);
-    Response eventManager_Response =
-        eventsFacade.getEventBookingForGivenGroup(eventManager_Request, "_regular_test_event", "2");
+    HttpServletRequest eventManagerRequest = createRequestWithCookies(new Cookie[] {eventManagerLogin.cookie});
+    replay(eventManagerRequest);
+    Response eventManagerResponse =
+        eventsFacade.getEventBookingForGivenGroup(eventManagerRequest, "_regular_test_event", "2");
     // The event manager does not own the group so this should not succeed
-    assertNotEquals(Response.Status.OK.getStatusCode(), eventManager_Response.getStatus());
+    assertNotEquals(Response.Status.OK.getStatusCode(), eventManagerResponse.getStatus());
   }
 }

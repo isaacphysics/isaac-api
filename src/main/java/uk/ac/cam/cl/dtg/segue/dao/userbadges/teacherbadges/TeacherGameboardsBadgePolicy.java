@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges;
+package uk.ac.cam.cl.dtg.segue.dao.userbadges.teacherbadges;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -11,7 +11,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
+import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePolicy;
 
 /**
  * Created by du220 on 01/05/2018.

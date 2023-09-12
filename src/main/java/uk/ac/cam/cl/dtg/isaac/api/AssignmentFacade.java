@@ -302,11 +302,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Allows a user to get all assignments they have set in lightweight objects.
    * <br>
-   * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be returned.
+   * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be
+   * returned.
    *
    * @param request           - so that we can identify the current user.
-   * @param groupIdOfInterest - Optional parameter - If this is specified a fully resolved assignment object will be provided
-   *                          otherwise just a lightweight one per assignment will be returned.
+   * @param groupIdOfInterest - Optional parameter - If this is specified a fully resolved assignment object will be
+   *                                provided otherwise just a lightweight one per assignment will be returned.
    * @return the assignment object.
    */
   @GET
@@ -366,9 +367,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         Map<String, Map<String, List<QuestionValidationResponse>>> fakeQuestionAttemptMap = new HashMap<>();
 
         // we want to populate gameboard details for the assignment DTO.
-        List<String> gameboardIDs =
+        List<String> gameboardIds =
             allAssignmentsSetToGroup.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toList());
-        Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIDs, fakeQuestionAttemptMap)
+        Map<String, GameboardDTO> gameboards = this.gameManager.getGameboards(gameboardIds, fakeQuestionAttemptMap)
             .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
         for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
           assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
@@ -496,7 +497,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     try {
       RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-      boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
+      boolean includeUserIds = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
       AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
       if (null == assignment) {
@@ -517,12 +518,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
       List<String[]> rows = Lists.newArrayList();
 
-      Map<String, List<String>> idLists = extractAssignmentProgressQuestionIds(includeUserIDs, gameboard);
+      Map<String, List<String>> idLists = extractAssignmentProgressQuestionIds(includeUserIds, gameboard);
       List<String> questionIds = idLists.get("questionIds");
       rows.add(idLists.get("headerRow").toArray(new String[0]));
 
       rows.addAll(
-          buildAssignmentReportBody(currentlyLoggedInUser, includeUserIDs, groupMembers, gameboard, questionIds));
+          buildAssignmentReportBody(currentlyLoggedInUser, includeUserIds, groupMembers, gameboard, questionIds));
 
       StringWriter stringWriter = new StringWriter();
       CSVWriter csvWriter = new CSVWriter(stringWriter);
@@ -553,14 +554,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   }
 
   private List<String[]> buildAssignmentReportBody(
-      final RegisteredUserDTO currentlyLoggedInUser, final boolean includeUserIDs,
+      final RegisteredUserDTO currentlyLoggedInUser, final boolean includeUserIds,
       final List<RegisteredUserDTO> groupMembers,
       final GameboardDTO gameboard, final List<String> questionIds
   ) throws SegueDatabaseException {
     List<String[]> rows = Lists.newArrayList();
 
     List<String> totalsRow = Lists.newArrayList();
-    if (includeUserIDs) {
+    if (includeUserIds) {
       totalsRow.add("");
     }
     Collections.addAll(totalsRow, ",Correct %".split(","));
@@ -581,7 +582,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
       resultRow.add(userSummary.getFamilyName());
       resultRow.add(userSummary.getGivenName());
-      if (includeUserIDs) {
+      if (includeUserIds) {
         resultRow.add(userSummary.getId().toString());
       }
       // can the user access the data?
@@ -623,7 +624,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     }
 
     rows.add(totalsRow.toArray(new String[0]));
-    String userInfoHeader = includeUserIDs ? "Last Name,First Name,User ID" : "Last Name,First Name";
+    String userInfoHeader = includeUserIds ? "Last Name,First Name,User ID" : "Last Name,First Name";
     rows.add(userInfoHeader.split(","));
     rows.addAll(resultRows);
     return rows;
@@ -641,8 +642,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     return getUserQuestionMap(questionAttemptsForAllUsersOfInterest);
   }
 
-  private Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getUserQuestionAttemptsFromPageIds(
-      final List<RegisteredUserDTO> groupMembers, final List<String> questionPageIds) throws SegueDatabaseException {
+  private Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+      getUserQuestionAttemptsFromPageIds(final List<RegisteredUserDTO> groupMembers, final List<String> questionPageIds)
+      throws SegueDatabaseException {
 
     Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
         questionAttempts = this.questionManager.getMatchingQuestionAttempts(groupMembers, questionPageIds);
@@ -655,13 +657,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     return questionAttemptsForAllUsersOfInterest;
   }
 
-  private Map<String, List<String>> extractAssignmentProgressQuestionIds(final boolean includeUserIDs,
-                                                                         final GameboardDTO gameboard)
-      throws ContentManagerException {
+  private Map<String, List<String>> extractAssignmentProgressQuestionIds(
+      final boolean includeUserIds, final GameboardDTO gameboard) throws ContentManagerException {
     List<String> questionIds = Lists.newArrayList();
     List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
 
-    if (includeUserIDs) {
+    if (includeUserIds) {
       headerRow.add("");
     }
 
@@ -723,7 +724,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     try {
       // Fetch the currently logged-in user
       RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-      boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
+      boolean includeUserIds = isUserAnAdminOrEventManager(userManager, currentlyLoggedInUser);
 
       // Fetch the requested group
       UserGroupDTO group = this.groupManager.getGroupById(groupId);
@@ -751,8 +752,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
           buildGrandTable(groupMembers, gameboards);
 
       ArrayList<String[]> rows = Lists.newArrayList();
-      rows.addAll(buildGroupAssignmentHeaderAndDueDateRows(includeUserIDs, assignments, assignmentGameboards));
-      rows.addAll(buildGroupAssignmentsReportBody(currentlyLoggedInUser, includeUserIDs, assignments, groupMembers,
+      rows.addAll(buildGroupAssignmentHeaderAndDueDateRows(includeUserIds, assignments, assignmentGameboards));
+      rows.addAll(buildGroupAssignmentsReportBody(currentlyLoggedInUser, includeUserIds, assignments, groupMembers,
           assignmentGameboards, grandTable));
 
       StringWriter stringWriter = new StringWriter();
@@ -783,9 +784,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   }
 
   private ArrayList<String[]> buildGroupAssignmentsReportBody(
-      final RegisteredUserDTO currentlyLoggedInUser, final boolean includeUserIDs,
-      final List<AssignmentDTO> assignments,
-      final List<RegisteredUserDTO> groupMembers, final Map<AssignmentDTO, GameboardDTO> assignmentGameboards,
+      final RegisteredUserDTO currentlyLoggedInUser, final boolean includeUserIds,
+      final List<AssignmentDTO> assignments, final List<RegisteredUserDTO> groupMembers,
+      final Map<AssignmentDTO, GameboardDTO> assignmentGameboards,
       final Map<RegisteredUserDTO, Map<GameboardDTO, Map<String, Integer>>> grandTable
   ) throws ContentManagerException {
     ArrayList<String[]> rows = Lists.newArrayList();
@@ -803,12 +804,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
       Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
       List<Float> assignmentPercentages = Lists.newArrayList();
       List<Integer> marks = Lists.newArrayList();
-      int totalQPartsCorrect = 0;
-      int totalQPartsCount = 0;
+      int totalQuestionPartsCorrect = 0;
+      int totalQuestionPartsCount = 0;
       for (AssignmentDTO assignment : assignments) {
         GameboardDTO gameboard = assignmentGameboards.get(assignment);
-        int assignmentQPartsCorrect = 0;
-        int assignmentQPartsCount = 0;
+        int assignmentQuestionPartsCorrect = 0;
+        int assignmentQuestionPartsCount = 0;
         List<String> questionIds = gameboardQuestionIds.get(gameboard);
         List<GameboardItem> questions = gameboard.getContents();
         Map<String, Integer> gameboardPartials = Maps.newHashMap();
@@ -826,19 +827,19 @@ public class AssignmentFacade extends AbstractIsaacFacade {
           }
         }
         for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
-          assignmentQPartsCorrect += entry.getValue();
-          assignmentQPartsCount += questionParts.get(entry.getKey());
+          assignmentQuestionPartsCorrect += entry.getValue();
+          assignmentQuestionPartsCount += questionParts.get(entry.getKey());
         }
-        totalQPartsCorrect += assignmentQPartsCorrect;
-        totalQPartsCount += assignmentQPartsCount;
-        assignmentPercentages.add((100f * assignmentQPartsCorrect) / assignmentQPartsCount);
+        totalQuestionPartsCorrect += assignmentQuestionPartsCorrect;
+        totalQuestionPartsCount += assignmentQuestionPartsCount;
+        assignmentPercentages.add((100f * assignmentQuestionPartsCorrect) / assignmentQuestionPartsCount);
       }
-      float overallTotal = (100f * totalQPartsCorrect) / totalQPartsCount;
+      float overallTotal = (100f * totalQuestionPartsCorrect) / totalQuestionPartsCount;
 
       // The next three lines could be a little better if I were not this sleepy...
       row.add(userSummary.getFamilyName());
       row.add(userSummary.getGivenName());
-      if (includeUserIDs) {
+      if (includeUserIds) {
         row.add(userSummary.getId().toString());
       }
 
@@ -909,7 +910,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   }
 
   private ArrayList<String[]> buildGroupAssignmentHeaderAndDueDateRows(
-      final boolean includeUserIDs, final List<AssignmentDTO> assignments,
+      final boolean includeUserIds, final List<AssignmentDTO> assignments,
       final Map<AssignmentDTO, GameboardDTO> assignmentGameboards
   ) throws ContentManagerException {
     // Add a header row with due dates
@@ -918,7 +919,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
 
     ArrayList<String> headerRow = Lists.newArrayList();
-    if (includeUserIDs) {
+    if (includeUserIds) {
       Collections.addAll(headerRow, "Last Name,First Name,User ID,% Correct Overall".split(","));
     } else {
       Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
@@ -1030,11 +1031,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   }
 
   /**
-   * Allows a user to assign a gameboard to one or more groups of users. We assume that each partial AssignmentDTO object has
-   * the same gameboardId, notes and dueDate to make validation easier, but this could be changed in theory, given a more
-   * flexible front-end.
+   * Allows a user to assign a gameboard to one or more groups of users. We assume that each partial AssignmentDTO
+   * object has the same gameboardId, notes and dueDate to make validation easier, but this could be changed in theory,
+   * given a more flexible front-end.
    *
-   * @param request                  - so that we can identify the current user.
+   * @param request                  so that we can identify the current user.
    * @param assignmentDTOsFromClient a list of partially completed DTO(s) for the assignment(s).
    * @return a list of ids of successful assignments, and a list of failed (an AssignmentSettingResponseDTO)
    */
@@ -1113,8 +1114,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 "The assignment cannot be scheduled to begin after it is due."));
             continue;
           }
-          // If the assignment will have started in the next hour (meaning it might miss the related emails
-          // being scheduled), then remove it so that the assignment is set immediately.
+          /* If the assignment will have started in the next hour (meaning it might miss the related emails
+             being scheduled), then remove it so that the assignment is set immediately.
+           */
           Calendar cal = Calendar.getInstance();
           cal.setTime(Date.from(Instant.now(clock)));
           cal.add(Calendar.HOUR_OF_DAY, 1);
@@ -1124,8 +1126,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         }
 
         try {
-          // Get the gameboard:
-          // The `computeIfAbsent` Map function won't work because of checked SegueDatabaseException (for getGameboard/getGroupById)
+          /* Get the gameboard:
+             The `computeIfAbsent` Map function won't work because of checked SegueDatabaseException
+             (for getGameboard/getGroupById)
+           */
           GameboardDTO gameboard = gameboardMap.get(assignmentDTO.getGameboardId());
           if (null == gameboard) {
             gameboard = this.gameManager.getGameboard(assignmentDTO.getGameboardId());
@@ -1160,22 +1164,22 @@ public class AssignmentFacade extends AbstractIsaacFacade {
           assignmentDTO.setId(null);
 
           // modifies assignment passed in to include an id.
-          AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(assignmentDTO);
+          AssignmentDTO assignmentWithId = this.assignmentManager.createAssignment(assignmentDTO);
 
           LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
-          eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId());
-          eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
-          eventDetails.put(ASSIGNMENT_FK, assignmentWithID.getId());
-          eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate());
-          eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
+          eventDetails.put(Constants.GAMEBOARD_ID_FKEY, assignmentWithId.getGameboardId());
+          eventDetails.put(GROUP_FK, assignmentWithId.getGroupId());
+          eventDetails.put(ASSIGNMENT_FK, assignmentWithId.getId());
+          eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithId.getDueDate());
+          eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithId.getScheduledStartDate());
           this.getLogManager()
               .logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
 
           this.userBadgeManager.updateBadge(currentlyLoggedInUser,
-              UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
+              UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithId.getId().toString());
 
           // Assigning to this group was a success
-          assignmentStatuses.add(new AssignmentStatusDTO(assignmentWithID.getGroupId(), assignmentWithID.getId()));
+          assignmentStatuses.add(new AssignmentStatusDTO(assignmentWithId.getGroupId(), assignmentWithId.getId()));
         } catch (DuplicateAssignmentException e) {
           assignmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), e.getMessage()));
         } catch (SegueDatabaseException e) {
@@ -1252,8 +1256,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             "You are not the owner of the group or a manager. Unable to delete it.").toResponse();
       }
 
-      // Check if user is additional manager, and if so if they are either the creator of the assignment or additional
-      // manager privileges are enabled
+      /* Check if user is additional manager and, if so, if they are either the creator of the assignment or additional
+         manager privileges are enabled
+       */
       if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())
           && !GroupManager.hasAdditionalManagerPrivileges(assigneeGroup, currentlyLoggedInUser.getId())) {
         return new SegueErrorResponse(Status.FORBIDDEN,
@@ -1275,31 +1280,35 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   }
 
   /**
-   * Transforms a three-layer mapping of Users to question responses into a two-layer mapping of Users to the correctness of their answers.
+   * Transforms a three-layer mapping of Users to question responses into a two-layer mapping of Users to the
+   * correctness of their answers.
    *
-   * @param questionAttemptsForAllUsersOfInterest a Map of Users to a Map of pageId Strings to a Map of questionId Strings to
-   *                                              Lists of responses to those questions, representing {@literal {UserDTO: {PageId: {QuestionId: List<QuestionResponse>}}}}
-   * @return a Map of Users to a Map of questionId Strings to a boolean-as-integer for whether the question has been answered
-   * correctly, representing {@literal {UserDTO: {QuestionId: Integer}}}
+   * @param questionAttemptsForAllUsersOfInterest a Map of Users to a Map of pageId Strings to a Map of questionId
+   *     Strings to Lists of responses to those questions, representing
+   *     {@literal {UserDTO: {PageId: {QuestionId: List<QuestionResponse>}}}}
+   * @return a Map of Users to a Map of questionId Strings to a boolean-as-integer for whether the question has been
+   *     answered correctly, representing {@literal {UserDTO: {QuestionId: Integer}}}
    */
   private static Map<RegisteredUserDTO, Map<String, Integer>> getUserQuestionMap(
-      final Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest
+      final Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
+          questionAttemptsForAllUsersOfInterest
   ) {
     return questionAttemptsForAllUsersOfInterest.entrySet().stream()
         .collect(Collectors.toMap(
-                Entry::getKey, // Retain user object as outer map key
-                userQuestionPagesMapEntry -> userQuestionPagesMapEntry.getValue().values()
-                    .stream() // Get the questionId/QuestionResponse maps
-                    .flatMap(questionMap -> questionMap.entrySet()
-                        .stream()) // Discard the pageIds and flatten the questions into a single map
-                    .collect(Collectors.toMap(
-                            Entry::getKey, // Use the questionId as the inner map key
-                            pageQuestionsEntry -> pageQuestionsEntry.getValue().stream() // Get list of responses
-                                .anyMatch(LightweightQuestionValidationResponse::isCorrect) // Check if any response is correct
-                                ? 1 : 0 // Convert boolean to integer
-                        )
+            Entry::getKey, // Retain user object as outer map key
+            userQuestionPagesMapEntry -> userQuestionPagesMapEntry.getValue().values()
+                .stream() // Get the questionId/QuestionResponse maps
+                .flatMap(questionMap -> questionMap.entrySet()
+                    .stream()) // Discard the pageIds and flatten the questions into a single map
+                .collect(Collectors.toMap(
+                        Entry::getKey, // Use the questionId as the inner map key
+                        pageQuestionsEntry -> pageQuestionsEntry.getValue().stream() // Get list of responses
+                            .anyMatch(LightweightQuestionValidationResponse::isCorrect)
+                            // Check if any response is correct
+                            ? 1 : 0 // Convert boolean to integer
                     )
-            )
-        );
+                )
+        )
+    );
   }
 }

@@ -59,7 +59,7 @@ public class UserAuthenticationManagerTest {
   private String dummyHostName;
 
   @BeforeEach
-  public void BeforeEach() {
+  public void beforeEach() {
     this.dummyDatabase = createMock(IUserDataManager.class);
     this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
     this.dummyProvidersMap = new HashMap<>();

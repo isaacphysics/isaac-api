@@ -46,7 +46,7 @@ public class IsaacClozeValidatorTest {
   private final Item item1 = new Item("id001", "A");
   private final Item item2 = new Item("id002", "B");
   private final Item item3 = new Item("id003", "C");
-  private final Item NULL_PLACEHOLDER = new Item(IsaacClozeValidator.NULL_CLOZE_ITEM_ID, null);
+  private final Item nullPlaceholder = new Item(IsaacClozeValidator.NULL_CLOZE_ITEM_ID, null);
 
   private final String incorrectExplanation = "INCORRECT";
   private final String subsetMatchExplanation = "SUBSET";
@@ -75,7 +75,7 @@ public class IsaacClozeValidatorTest {
     someIncorrectChoice.setCorrect(false);
     someIncorrectChoice.setAllowSubsetMatch(false);
     someIncorrectChoice.setExplanation(new Content(incorrectExplanation));
-    someSubsetChoice.setItems(ImmutableList.of(NULL_PLACEHOLDER, item3));
+    someSubsetChoice.setItems(ImmutableList.of(nullPlaceholder, item3));
     someSubsetChoice.setAllowSubsetMatch(true);
     someSubsetChoice.setExplanation(new Content(subsetMatchExplanation));
 
@@ -177,7 +177,7 @@ public class IsaacClozeValidatorTest {
   @Test
   public final void isaacClozeValidator_AllNull_IncorrectResponseShouldBeReturned() {
     ItemChoice c = new ItemChoice();
-    c.setItems(ImmutableList.of(NULL_PLACEHOLDER, NULL_PLACEHOLDER));
+    c.setItems(ImmutableList.of(nullPlaceholder, nullPlaceholder));
 
     // Test response:
     QuestionValidationResponse response = validator.validateQuestionResponse(someClozeQuestion, c);
@@ -408,13 +408,13 @@ public class IsaacClozeValidatorTest {
     clozeQuestion.setItems(ImmutableList.of(item1, item2, item3));
 
     ItemChoice someCorrectAnswer = new ItemChoice();
-    someCorrectAnswer.setItems(ImmutableList.of(item1, NULL_PLACEHOLDER));
+    someCorrectAnswer.setItems(ImmutableList.of(item1, nullPlaceholder));
     someCorrectAnswer.setCorrect(true);
     clozeQuestion.setChoices(ImmutableList.of(someCorrectAnswer));
 
     // Set up identical user answer:
     ItemChoice c = new ItemChoice();
-    c.setItems(ImmutableList.of(item1, NULL_PLACEHOLDER));
+    c.setItems(ImmutableList.of(item1, nullPlaceholder));
 
     // Test response:
     QuestionValidationResponse response = validator.validateQuestionResponse(clozeQuestion, c);

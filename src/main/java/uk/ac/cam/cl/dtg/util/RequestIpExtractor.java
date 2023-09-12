@@ -23,13 +23,13 @@ import org.slf4j.LoggerFactory;
 /**
  *  A utility class to extract IP addresses from HTTP requests.
  */
-public final class RequestIPExtractor {
-  private static final Logger log = LoggerFactory.getLogger(RequestIPExtractor.class);
+public final class RequestIpExtractor {
+  private static final Logger log = LoggerFactory.getLogger(RequestIpExtractor.class);
 
   /**
    It does not make sense to create one of these!
    */
-  private RequestIPExtractor() {
+  private RequestIpExtractor() {
   }
 
   /**

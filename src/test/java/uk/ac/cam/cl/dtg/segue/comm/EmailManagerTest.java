@@ -57,13 +57,12 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the EmailManager class.
- *
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GitContentManager.class)
 @PowerMockIgnore("javax.management.*")
 public class EmailManagerTest {
-  private final String CONTENT_VERSION = "liveVersion";
+  private static final String CONTENT_VERSION = "liveVersion";
 
   private EmailCommunicator emailCommunicator;
   private RegisteredUser user;
@@ -83,8 +82,7 @@ public class EmailManagerTest {
   /**
    * Initial configuration of tests.
    *
-   * @throws Exception
-   *             - test exception
+   * @throws Exception - test exception
    */
   @Before
   public final void setUp() throws Exception {
@@ -126,10 +124,11 @@ public class EmailManagerTest {
     userPreferenceManager = EasyMock.createMock(PgUserPreferenceManager.class);
 
     mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
-    EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaaccomputerscience.org").anyTimes();
-    EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com").anyTimes();
-    EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).andReturn("no-reply@isaaccomputerscience.org")
+    EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaaccomputerscience.org")
         .anyTimes();
+    EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com").anyTimes();
+    EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS"))
+        .andReturn("no-reply@isaaccomputerscience.org").anyTimes();
     EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Computer Science").anyTimes();
 
     EasyMock.replay(mockPropertiesLoader);
@@ -177,8 +176,7 @@ public class EmailManagerTest {
   }
 
   /**
-   * @param template
-   *            - id of the template
+   * @param template - id of the template
    * @return - SegueDTO object
    */
   public EmailTemplateDTO createDummyEmailTemplate(final String template) {
@@ -195,8 +193,7 @@ public class EmailManagerTest {
   }
 
   /**
-   * @param template
-   *            - id of the template
+   * @param template - id of the template
    * @return - SegueDTO object
    */
   public ContentDTO createDummyContentTemplate(final String template) {

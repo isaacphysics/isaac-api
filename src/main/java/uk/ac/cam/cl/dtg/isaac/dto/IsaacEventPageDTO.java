@@ -181,6 +181,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   /**
    * Sets the end date.
+   *
    * @param endDate the end date to set
    */
   public void setEndDate(final Date endDate) {
@@ -430,7 +431,8 @@ public class IsaacEventPageDTO extends ContentDTO {
   }
 
   /**
-   * getPlacesAvailable based on current bookings..
+   * getPlacesAvailable based on current bookings.
+   *
    * @return the get the places available.
    */
   public Long getPlacesAvailable() {
@@ -439,6 +441,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   /**
    * Set the places available based on current bookings.
+   *
    * @param placesAvailable - the number of places available.
    */
   public void setPlacesAvailable(final Long placesAvailable) {
@@ -447,6 +450,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   /**
    * Get information about the event that is common to all booking system emails.
+   *
    * @return emailEventDetails
    */
   @JsonIgnore
@@ -456,6 +460,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   /**
    * Set the email event details.
+   *
    * @param emailEventDetails - the text to show in the email token
    */
   public void setEmailEventDetails(final String emailEventDetails) {
@@ -475,6 +480,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   /**
    * Set the email confirmed booking text for emails.
+   *
    * @param emailConfirmedBookingText - text to show in emails
    */
   public void setEmailConfirmedBookingText(final String emailConfirmedBookingText) {
@@ -493,6 +499,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   /**
    * Set the email waiting list text for emails.
+   *
    * @param emailWaitingListBookingText - text to show in email.
    */
   public void setEmailWaitingListBookingText(final String emailWaitingListBookingText) {

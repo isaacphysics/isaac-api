@@ -113,7 +113,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
+import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
 /**
  * Admin facade for segue.
@@ -383,7 +383,7 @@ public class AdminFacade extends AbstractSegueFacade {
         return SegueErrorResponse.getBadRequestResponse("Malformed Request");
       }
 
-      String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+      String remoteIpAddress = RequestIpExtractor.getClientIpAddr(request);
       String expectedHeader = "Bearer " + endpointToken;
       if (!expectedHeader.equals(providedAuthHeader)) {
         log.warn(String.format("Request from (%s) attempted to set email delivery statuses with invalid token!",
@@ -444,12 +444,12 @@ public class AdminFacade extends AbstractSegueFacade {
 
       this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
 
-      String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+      String remoteIpAddress = RequestIpExtractor.getClientIpAddr(request);
       log.info(String.format("Request from (%s) updated the status of 1 email to DELIVERY_FAILED.", remoteIpAddress));
 
       return Response.ok().build();
-    } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException |
-             NullPointerException e) {
+    } catch (NoSuchAlgorithmException | InvalidKeyException | SegueDatabaseException | ClassCastException
+             | NullPointerException e) {
       return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to process request.").toResponse();
     }
   }
@@ -498,7 +498,7 @@ public class AdminFacade extends AbstractSegueFacade {
           this.userManager.updateUserEmailVerificationStatus(recipientEmail, EmailVerificationStatus.DELIVERY_FAILED);
         }
       }
-      String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+      String remoteIpAddress = RequestIpExtractor.getClientIpAddr(request);
       log.info(String.format("Request from (%s) updated the status of %s emails to DELIVERY_FAILED.", remoteIpAddress,
           eventDetailsList.size()));
       return Response.ok().build();
@@ -565,7 +565,7 @@ public class AdminFacade extends AbstractSegueFacade {
         }
       }
       userPreferenceManager.saveUserPreferences(userPreferencesToUpdate);
-      String remoteIpAddress = RequestIPExtractor.getClientIpAddr(request);
+      String remoteIpAddress = RequestIpExtractor.getClientIpAddr(request);
       log.info(String.format("Request from (%s) unsubscribed %s emails from NEWS_AND_UPDATES emails.", remoteIpAddress,
           userPreferencesToUpdate.size()));
       return Response.ok().build();
@@ -612,9 +612,9 @@ public class AdminFacade extends AbstractSegueFacade {
    * Rest end point to allow content editors to see the content which failed to import into segue.
    *
    * @param request           - to identify if the user is authorised.
-   * @param requestForCaching - to determine if the content is still fresh..
+   * @param requestForCaching - to determine if the content is still fresh.
    * @return a content object, such that the content object has children. The children represent each source file in
-   * error and the grand children represent each error.
+   *     error and the grand children represent each error.
    */
   @SuppressWarnings("unchecked")
   @GET
@@ -828,7 +828,7 @@ public class AdminFacade extends AbstractSegueFacade {
       Map<Long, RegisteredUserDTO> userMapById =
           foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
 
-      //  Calculate the ETag
+      // Calculate the ETag
       EntityTag etag = new EntityTag(foundUsers.size() + foundUsers.toString().hashCode()
           + userPrototype.toString().hashCode() + "");
 

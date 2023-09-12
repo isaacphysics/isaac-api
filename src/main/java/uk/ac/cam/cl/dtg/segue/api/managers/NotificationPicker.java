@@ -186,6 +186,7 @@ public class NotificationPicker {
 
   /**
    * getNotificationById.
+   *
    * @param notificationId - the id of the notification.
    * @return get the notification content dto.
    * @throws ResourceNotFoundException

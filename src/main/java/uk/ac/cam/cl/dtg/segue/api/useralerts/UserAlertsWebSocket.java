@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.api.userAlerts;
+package uk.ac.cam.cl.dtg.segue.api.useralerts;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.WEBSOCKET_LATENCY_HISTOGRAM;

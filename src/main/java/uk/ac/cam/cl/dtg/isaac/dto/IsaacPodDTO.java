@@ -72,6 +72,7 @@ public class IsaacPodDTO extends ContentDTO {
 
   /**
    * Gets the image.
+   *
    * @return the image
    */
   public ImageDTO getImage() {
@@ -80,6 +81,7 @@ public class IsaacPodDTO extends ContentDTO {
 
   /**
    * Sets the image.
+   *
    * @param image the image to set
    */
   public void setImage(final ImageDTO image) {
@@ -88,6 +90,7 @@ public class IsaacPodDTO extends ContentDTO {
 
   /**
    * Gets the link.
+   *
    * @return the link
    */
   public String getUrl() {
@@ -96,6 +99,7 @@ public class IsaacPodDTO extends ContentDTO {
 
   /**
    * Sets the link.
+   *
    * @param url the link to set
    */
   public void setUrl(final String url) {

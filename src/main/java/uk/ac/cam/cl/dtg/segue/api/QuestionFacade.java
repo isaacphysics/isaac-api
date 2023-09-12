@@ -75,7 +75,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
+import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
 /**
  * Question Facade
@@ -103,13 +103,14 @@ public class QuestionFacade extends AbstractSegueFacade {
    * @param contentManager         - The content version controller used by the api.
    * @param contentIndex           - The index string for current content version
    * @param userManager            - The manager object responsible for users.
-   * @param questionManager        - A question manager object responsible for managing questions and augmenting questions with user
-   *                               information.
+   * @param questionManager        - A question manager object responsible for managing questions and augmenting
+   *                                     questions with user information.
    * @param logManager             - An instance of the log manager used for recording usage of the CMS.
    * @param misuseMonitor          - An instance of the misuse monitor for rate limiting answer attempts
    * @param userBadgeManager       - An instance of the badge manager
    * @param userStreaksManager     - An instance of the streaks manager to notify users when their answer streak changes
-   * @param userAssociationManager - An instance of the association manager to check for teacher permissions over other users
+   * @param userAssociationManager - An instance of the association manager to check for teacher permissions over other
+   *                                     users
    */
   @Inject
   public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
@@ -324,7 +325,7 @@ public class QuestionFacade extends AbstractSegueFacade {
           // If we see serious misuse, this could be moved to *before* the attempt validation and checking,
           // to save server load. Since this occurs after the anon user notify event, that will catch most
           // misuse and this will catch misuse ignoring cookies or with repeated new anon accounts.
-          misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request),
+          misuseMonitor.notifyEvent(RequestIpExtractor.getClientIpAddr(request),
               IPQuestionAttemptMisuseHandler.class.getSimpleName());
         } catch (SegueResourceMisuseException e) {
           this.getLogManager()

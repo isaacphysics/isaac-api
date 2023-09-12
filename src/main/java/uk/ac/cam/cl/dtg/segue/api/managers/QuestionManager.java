@@ -90,7 +90,8 @@ public class QuestionManager {
   /**
    * Create a default Question manager object.
    *
-   * @param mapper                     - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs and DTOs.
+   * @param mapper                     - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs
+   *                                         and DTOs.
    * @param questionPersistenceManager - for question attempt persistence.
    */
   @Inject
@@ -204,14 +205,15 @@ public class QuestionManager {
    * <br>
    * Note: It will not do anything to related content
    *
-   * @param page                  - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
-   *                              question DTOs.
-   * @param userId                - to allow us to provide a per user experience of question configuration (random seed).
+   * @param page                  - to augment - this object may be mutated as a result of this method. i.e. BestAttempt
+   *                                    field set on question DTOs.
+   * @param userId                - to allow us to provide a per-user experience of question configuration (random seed)
    * @param usersQuestionAttempts - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
    * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
    */
-  public SeguePageDTO augmentQuestionObjects(final SeguePageDTO page, final String userId,
-                                             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+  public SeguePageDTO augmentQuestionObjects(
+      final SeguePageDTO page, final String userId,
+      final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
     List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
@@ -225,15 +227,15 @@ public class QuestionManager {
   /**
    * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
    *
-   * @param page                  - the page this object may be mutated as a result of this method. i.e BestAttempt field set on
-   *                              question DTOs.
+   * @param page                  - the page this object may be mutated as a result of this method. i.e. BestAttempt
+   *                                    field set on question DTOs.
    * @param questionsToAugment    - The flattened list of questions which should be augmented.
    * @param usersQuestionAttempts - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
    * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
    */
-  private SeguePageDTO augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
-                                                                   final List<QuestionDTO> questionsToAugment,
-                                                                   final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+  private SeguePageDTO augmentQuestionObjectWithAttemptInformation(
+      final SeguePageDTO page, final List<QuestionDTO> questionsToAugment,
+      final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
     if (null == usersQuestionAttempts) {
       return page;
@@ -491,7 +493,8 @@ public class QuestionManager {
    * Extract all of the questionObjectsRecursively.
    *
    * @param toExtract - The contentDTO which may have question objects as children.
-   * @param result    - The initially empty List which will be mutated to contain references to all of the question objects.
+   * @param result    - The initially empty List which will be mutated to contain references to all of the question
+   *                        objects.
    * @return The modified result array.
    */
   private static List<QuestionDTO> extractQuestionObjectsRecursively(final ContentDTO toExtract,
@@ -534,12 +537,12 @@ public class QuestionManager {
     for (QuestionDTO question : questions) {
       if (question instanceof ChoiceQuestionDTO) {
         ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
-        String qSeed = seed + choiceQuestion.getId();
+        String questionSeed = seed + choiceQuestion.getId();
 
         Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
         if (randomiseChoices == null || randomiseChoices) {  // Default to randomised if not set.
           if (choiceQuestion.getChoices() != null) {
-            Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
+            Collections.shuffle(choiceQuestion.getChoices(), new Random(questionSeed.hashCode()));
           }
         }
 
@@ -551,7 +554,7 @@ public class QuestionManager {
           Boolean randomiseItems = itemQuestion.getRandomiseItems();
           if (randomiseItems == null || randomiseItems) {  // Default to randomised if not set.
             if (itemQuestion.getItems() != null) {
-              Collections.shuffle(itemQuestion.getItems(), new Random(qSeed.hashCode()));
+              Collections.shuffle(itemQuestion.getItems(), new Random(questionSeed.hashCode()));
             }
           }
         }

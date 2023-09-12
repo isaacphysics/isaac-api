@@ -69,8 +69,8 @@ public interface IMisuseMonitor {
   boolean hasMisused(String agentIdentifier, String eventToCheck);
 
   /**
-   * Allows inspection of internal state such that we can give early warning as to whether user will have reached threshold
-   * before an event notification / exception takes place.
+   * Allows inspection of internal state such that we can give early warning as to whether user will have reached
+   * threshold before an event notification / exception takes place.
    *
    * @param agentIdentifier
    *            - unique identifier for user.

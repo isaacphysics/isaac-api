@@ -66,6 +66,7 @@ public class GameboardItem {
   /**
    * Static factory method for constructing a minimal Gameboard Item from a GameboardContentDescriptor.
    * Augmentation by mapping the content object to the instance will need to be done separately.
+   *
    * @param contentDescriptor
    *          a content descriptor to populate the gameboard item's fields.
    * @return A Minimal gameboard item containing all of the information from the content descriptor.
@@ -365,6 +366,7 @@ public class GameboardItem {
 
   /**
    * Gets the boardId.
+   *
    * @return the boardId
    */
   public String getBoardId() {
@@ -373,6 +375,7 @@ public class GameboardItem {
 
   /**
    * Sets the boardId.
+   *
    * @param boardId the boardId to set
    */
   public void setBoardId(final String boardId) {
@@ -381,6 +384,7 @@ public class GameboardItem {
 
   /**
    * Gets the supersededBy question.
+   *
    * @return the supersededBy question
    */
   public String getSupersededBy() {
@@ -389,6 +393,7 @@ public class GameboardItem {
 
   /**
    * Sets the supersededBy question.
+   *
    * @param supersededBy the ID of the question that supersedes this one to set
    */
   public void setSupersededBy(final String supersededBy) {

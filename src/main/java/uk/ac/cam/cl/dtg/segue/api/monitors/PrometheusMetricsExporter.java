@@ -31,6 +31,7 @@ public class PrometheusMetricsExporter implements IMetricsExporter {
 
   /**
    * Constructs a metrics exporter on the port specified for reporting custom logic in a Prometheus style.
+   *
    * @param port the port to expose the metrics.
    * @throws IOException could be thrown by the socket.
    */

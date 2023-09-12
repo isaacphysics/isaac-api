@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
+import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
 /**
  * @author sac92
@@ -91,10 +91,10 @@ public class PgLogManager implements ILogManager {
     try {
       if (user instanceof RegisteredUserDTO) {
         this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,
-            RequestIPExtractor.getClientIpAddr(httpRequest));
+            RequestIpExtractor.getClientIpAddr(httpRequest));
       } else {
         this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType.name(), eventDetails,
-            RequestIPExtractor.getClientIpAddr(httpRequest));
+            RequestIpExtractor.getClientIpAddr(httpRequest));
       }
 
     } catch (JsonProcessingException e) {
@@ -111,10 +111,10 @@ public class PgLogManager implements ILogManager {
     try {
       if (user instanceof RegisteredUserDTO) {
         this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
-            RequestIPExtractor.getClientIpAddr(httpRequest));
+            RequestIpExtractor.getClientIpAddr(httpRequest));
       } else {
         this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-            RequestIPExtractor.getClientIpAddr(httpRequest));
+            RequestIpExtractor.getClientIpAddr(httpRequest));
       }
 
     } catch (JsonProcessingException e) {
@@ -165,6 +165,19 @@ public class PgLogManager implements ILogManager {
   }
 
   @Override
+  public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
+                                            final List<RegisteredUserDTO> usersOfInterest)
+      throws SegueDatabaseException {
+
+    List<String> usersIdsList = Lists.newArrayList();
+    for (RegisteredUserDTO u : usersOfInterest) {
+      usersIdsList.add(u.getId().toString());
+    }
+
+    return this.getLogsByUserAndType(type, fromDate, toDate, usersIdsList);
+  }
+
+  @Override
   public Long getLogCountByType(final String type) throws SegueDatabaseException {
     String query = "SELECT COUNT(*) AS TOTAL FROM logged_events WHERE event_type = ?";
     try (Connection conn = database.getDatabaseConnection();
@@ -179,19 +192,6 @@ public class PgLogManager implements ILogManager {
     } catch (SQLException e) {
       throw new SegueDatabaseException("Postgres exception: Unable to count log events by type", e);
     }
-  }
-
-  @Override
-  public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
-                                            final List<RegisteredUserDTO> usersOfInterest)
-      throws SegueDatabaseException {
-
-    List<String> usersIdsList = Lists.newArrayList();
-    for (RegisteredUserDTO u : usersOfInterest) {
-      usersIdsList.add(u.getId().toString());
-    }
-
-    return this.getLogsByUserAndType(type, fromDate, toDate, usersIdsList);
   }
 
   @Override
@@ -258,7 +258,8 @@ public class PgLogManager implements ILogManager {
   public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType)
       throws SegueDatabaseException {
     String query =
-        "SELECT DISTINCT ON (user_id) user_id, \"timestamp\" FROM logged_events WHERE event_type = ? ORDER BY user_id, id DESC;";
+        "SELECT DISTINCT ON (user_id) user_id, \"timestamp\" FROM logged_events WHERE event_type = ?"
+            + " ORDER BY user_id, id DESC;";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {

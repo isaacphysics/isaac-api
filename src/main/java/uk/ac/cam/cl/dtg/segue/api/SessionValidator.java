@@ -72,17 +72,6 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     }
   }
 
-  private void invalidateSession() {
-    httpServletRequest.getSession().invalidate();
-    try {
-      userAuthenticationManager.invalidateSessionToken(httpServletRequest);
-    } catch (NoUserLoggedInException e) {
-      log.error("Auth cookie is missing a user");
-    } catch (SegueDatabaseException e) {
-      log.error("Database error while invalidating session token");
-    }
-  }
-
   @Override
   public void filter(final ContainerRequestContext containerRequestContext,
                      final ContainerResponseContext containerResponseContext)
@@ -96,6 +85,17 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
       } catch (JsonProcessingException e) {
         log.error("Unable to save cookie.", e);
       }
+    }
+  }
+
+  private void invalidateSession() {
+    httpServletRequest.getSession().invalidate();
+    try {
+      userAuthenticationManager.invalidateSessionToken(httpServletRequest);
+    } catch (NoUserLoggedInException e) {
+      log.error("Auth cookie is missing a user");
+    } catch (SegueDatabaseException e) {
+      log.error("Database error while invalidating session token");
     }
   }
 

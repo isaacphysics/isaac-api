@@ -32,17 +32,17 @@ import uk.ac.cam.cl.dtg.segue.dao.users.ITOTPDataManager;
  */
 public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
   private final ITOTPDataManager dataManager;
-  private final GoogleAuthenticator gAuth;
+  private final GoogleAuthenticator googleAuthenticator;
 
   @Inject
   public SegueTOTPAuthenticator(final ITOTPDataManager dataManager) {
     this.dataManager = dataManager;
-    gAuth = new GoogleAuthenticator();
+    googleAuthenticator = new GoogleAuthenticator();
   }
 
   @Override
   public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
-    final GoogleAuthenticatorKey key = gAuth.createCredentials();
+    final GoogleAuthenticatorKey key = googleAuthenticator.createCredentials();
 
     return new TOTPSharedSecret(user.getId(), key.getKey(), new Date(), new Date());
   }
@@ -58,7 +58,7 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
       throws SegueDatabaseException {
     TOTPSharedSecret toSave = new TOTPSharedSecret(user.getId(), sharedSecret, new Date(), new Date());
 
-    if (gAuth.authorize(sharedSecret, verificationCode)) {
+    if (googleAuthenticator.authorize(sharedSecret, verificationCode)) {
       this.dataManager.save2FASharedSecret(user.getId(), toSave);
       return true;
     }
@@ -75,7 +75,7 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
       throw new NoCredentialsAvailableException("Unable to find 2FA shared secret.");
     }
 
-    if (this.gAuth.authorize(storedSharedSecret.getSharedSecret(), verificationCode)) {
+    if (this.googleAuthenticator.authorize(storedSharedSecret.getSharedSecret(), verificationCode)) {
       return true;
     }
 

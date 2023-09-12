@@ -27,7 +27,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 
 /**
  * Utility class to provide common isaac-specific constants.
- *
  */
 public final class Constants {
   public static final String PROXY_PATH = "PROXY_PATH";

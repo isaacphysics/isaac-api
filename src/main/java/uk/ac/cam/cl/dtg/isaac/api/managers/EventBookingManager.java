@@ -103,7 +103,8 @@ public class EventBookingManager {
    * @param propertiesLoader          - Instance of properties Loader
    * @param groupManager              - Instance of Group Manager
    * @param userAccountManager        - Instance of User Account Manager, for retrieving users
-   * @param transactionManager        - Instance of Transaction Manager, used for locking database while managing bookings
+   * @param transactionManager        - Instance of Transaction Manager, used for locking database while managing
+   *                                        bookings
    */
   @Inject
   public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
@@ -886,8 +887,8 @@ public class EventBookingManager {
    * It also assumes teachers don't count on student events.
    *
    * @param event - the event we care about
-   * @return the number of places available or Null if there is no limit. If a negative number would be returned
-   * the method will only return 0. This allows for manual overbooking.
+   * @return the number of places available or Null if there is no limit. If a negative number would be returned the
+   *     method will only return 0. This allows for manual overbooking.
    * @throws SegueDatabaseException - if we cannot contact the database.
    */
   public Long getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
@@ -907,7 +908,7 @@ public class EventBookingManager {
    * @param event              - the event we care about
    * @param countOnlyConfirmed - if true only count confirmed bookings (i.e. ignore waiting list ones.
    * @return the number of places available or Null if there is no limit. If a negative number would be returned
-   * the method will only return 0. This allows for manual overbooking.
+   *     the method will only return 0. This allows for manual overbooking.
    * @throws SegueDatabaseException - if we cannot contact the database.
    */
   private Long getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
@@ -918,11 +919,9 @@ public class EventBookingManager {
       return null;
     }
 
-    // include deleted users' bookings events only if the event is in the past so it doesn't mess with ability for new users to book on future events.
-    boolean includeDeletedUsersInCounts = false;
-    if (event.getDate() != null && event.getDate().before(new Date())) {
-      includeDeletedUsersInCounts = true;
-    }
+    // include deleted users' bookings events only if the event is in the past so it doesn't mess with ability for new
+    // users to book on future events.
+    boolean includeDeletedUsersInCounts = event.getDate() != null && event.getDate().before(new Date());
 
     Map<BookingStatus, Map<Role, Long>> eventBookingStatusCounts =
         this.bookingPersistenceManager.getEventBookingStatusCounts(event.getId(), includeDeletedUsersInCounts);

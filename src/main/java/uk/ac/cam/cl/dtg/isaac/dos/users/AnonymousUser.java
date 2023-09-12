@@ -110,6 +110,7 @@ public class AnonymousUser extends AbstractSegueUser {
 
   /**
    * set the last update date.
+   *
    * @param lastUpdated last update date
    */
   public void setLastUpdated(final Date lastUpdated) {
