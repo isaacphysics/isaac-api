@@ -6,4 +6,5 @@
 
 <suppressions>
     <suppress checks="LineLength" files="src/test/.+java$"/>
+    <suppress checks="VariableDeclarationUsageDistance" files="src/test/.+java$"/>
 </suppressions>
