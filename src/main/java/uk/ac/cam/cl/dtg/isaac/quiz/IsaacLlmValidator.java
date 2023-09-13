@@ -80,11 +80,7 @@ public class IsaacLlmValidator implements IValidator {
                 String prompt = new StringBuilder()
                         .append(llmPrompt.getValue().replace(STUDENT_ANSWER_TEMPLATE_VAR, answer.getValue()))
                         .append("\n")
-                        .append("Use this JSON format:\n\n")
-                        .append("{\n")
-                        .append("  \"correct\": <true OR false>")
-                        .append("}\n\n")
-                        .append("Response:\n\n").toString();
+                        .append("#### Response:\n").toString();
 
                 Completions completions = this.openAIClient.getCompletions(
                         DEFAULT_MODEL,
