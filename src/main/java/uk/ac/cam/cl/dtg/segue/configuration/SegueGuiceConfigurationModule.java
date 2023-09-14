@@ -30,9 +30,6 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
-import jakarta.annotation.Nullable;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.Validate;
@@ -84,8 +81,27 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.*;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PrometheusMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -150,6 +166,9 @@ import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
+import jakarta.annotation.Nullable;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -829,9 +848,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private IGroupObserver getGroupObserver(EmailManager emailManager, GroupManager groupManager, UserAccountManager userManager,
-                                            AssignmentManager assignmentManager, QuizAssignmentManager quizAssignmentManager) {
+                                            UserAssociationManager associationManager, AssignmentManager assignmentManager,
+                                            QuizAssignmentManager quizAssignmentManager) {
         if (null == groupObserver) {
-            groupObserver = new GroupChangedService(emailManager, groupManager, userManager, assignmentManager, quizAssignmentManager);
+            groupObserver = new GroupChangedService(emailManager, groupManager, userManager, associationManager, assignmentManager, quizAssignmentManager);
             log.info("Creating singleton of GroupObserver");
         }
         return groupObserver;
