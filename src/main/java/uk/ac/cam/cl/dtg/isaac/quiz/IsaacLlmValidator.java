@@ -72,6 +72,7 @@ public class IsaacLlmValidator implements IValidator {
         IsaacLlmQuestion isaacLlmQuestion = (IsaacLlmQuestion) question;
 
         boolean isCorrectResponse = false;
+        String feedbackOption = null;
         Content feedback = null;
         for (Choice choice : isaacLlmQuestion.getChoices()) {
             if (choice instanceof LlmPrompt) {
@@ -95,6 +96,9 @@ public class IsaacLlmValidator implements IValidator {
                         if (response.containsKey("correct")) {
                             isCorrectResponse = (boolean) response.get("correct");
                         }
+                        if (response.containsKey("feedbackOption")) {
+                            feedbackOption = (String) response.get("feedbackOption");
+                        }
                     } catch (JsonProcessingException e) {
                         log.error("Failed to parse response from OpenAI API: " + responseString, e);
                     }
@@ -102,6 +106,11 @@ public class IsaacLlmValidator implements IValidator {
             } else {
                 log.error("QuestionId: " + question.getId() + " contains a choice which is not a LlmPrompt.");
             }
+        }
+        if (feedbackOption != null) {
+            feedback = new Content();
+            feedback.setEncoding("markdown");
+            feedback.setValue(feedbackOption);
         }
 
         // If we still have no feedback to give, use the question's default feedback if any to use:
