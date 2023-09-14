@@ -7,25 +7,26 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubPushEventPayload {
-    private String ref, after;
+  private String ref;
+  private String after;
 
-    public GithubPushEventPayload() {
+  public GithubPushEventPayload() {
 
-    }
+  }
 
-    public void setRef(final String ref) {
-        this.ref = ref;
-    }
+  public void setRef(final String ref) {
+    this.ref = ref;
+  }
 
-    public String getRef() {
-        return this.ref;
-    }
+  public String getRef() {
+    return this.ref;
+  }
 
-    public void setAfter(final String after) {
-        this.after = after;
-    }
+  public void setAfter(final String after) {
+    this.after = after;
+  }
 
-    public String getAfter() {
-        return after;
-    }
+  public String getAfter() {
+    return after;
+  }
 }

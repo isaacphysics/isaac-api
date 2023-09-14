@@ -4,32 +4,40 @@ import java.util.Date;
 
 public interface IUserAlert {
 
-    enum AlertEvents {
-        SEEN, CLICKED, DISMISSED
-    }
+  enum AlertEvents {
+    SEEN, CLICKED, DISMISSED
+  }
 
-    Long getId();
-    void setId(Long id);
+  Long getId();
 
-    Long getUserId();
-    void setUserId(Long userId);
+  void setId(Long id);
 
-    String getMessage();
-    void setMessage(String message);
+  Long getUserId();
 
-    String getLink();
-    void setLink(String link);
+  void setUserId(Long userId);
 
-    Date getCreated();
-    void setCreated(Date created);
+  String getMessage();
 
-    Date getSeen();
-    void setSeen(Date seen);
+  void setMessage(String message);
 
-    Date getClicked();
-    void setClicked(Date clicked);
+  String getLink();
 
-    Date getDismissed();
-    void setDismissed(Date dismissed);
+  void setLink(String link);
+
+  Date getCreated();
+
+  void setCreated(Date created);
+
+  Date getSeen();
+
+  void setSeen(Date seen);
+
+  Date getClicked();
+
+  void setClicked(Date clicked);
+
+  Date getDismissed();
+
+  void setDismissed(Date dismissed);
 
 }

@@ -1,24 +1,25 @@
 /**
  * Copyright 2015 Stephen Cummins
- * <p>
+ * <br>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * <p>
+ * <br>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <br>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacAnvilQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacAnvilQuestionDTO;
 
 /**
  * @author sac92
@@ -27,32 +28,32 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 @DTOMapping(IsaacAnvilQuestionDTO.class)
 @JsonContentType("isaacAnvilQuestion")
 public class IsaacAnvilQuestion extends IsaacQuestionBase {
-    private AnvilApp anvilApp;
+  private AnvilApp anvilApp;
 
-    /**
-	 * 
-	 */
-    public IsaacAnvilQuestion() {
+  /**
+   *
+   */
+  public IsaacAnvilQuestion() {
 
-    }
+  }
 
-    /**
-     * Gets the anvilApp.
-     * 
-     * @return the anvilApp
-     */
-    public AnvilApp getAnvilApp() {
-        return anvilApp;
-    }
+  /**
+   * Gets the anvilApp.
+   *
+   * @return the anvilApp
+   */
+  public AnvilApp getAnvilApp() {
+    return anvilApp;
+  }
 
-    /**
-     * Sets the anvilApp.
-     * 
-     * @param anvilApp
-     *            the anvilApp to set
-     */
-    public void setAnvilApp(final AnvilApp anvilApp) {
-        this.anvilApp = anvilApp;
-    }
+  /**
+   * Sets the anvilApp.
+   *
+   * @param anvilApp
+   *            the anvilApp to set
+   */
+  public void setAnvilApp(final AnvilApp anvilApp) {
+    this.anvilApp = anvilApp;
+  }
 
 }

@@ -1,18 +1,19 @@
 /**
  * Copyright 2014 Stephen Cummins
- * <p>
+ * <br>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * <p>
+ * <br>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <br>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import java.lang.annotation.ElementType;
@@ -22,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation used to bind a question type to an {@link IValidator}.
- * 
+ *
  * @author Stephen Cummins
  *
  */
@@ -30,10 +31,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidatesWith {
 
-    /**
-     * The {@link IValidator} class that this Question relates to.
-     * 
-     * @return the class
-     */
-    Class<? extends IValidator> value();
+  /**
+   * The {@link IValidator} class that this Question relates to.
+   *
+   * @return the class
+   */
+  Class<? extends IValidator> value();
 }

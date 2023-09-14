@@ -7,11 +7,12 @@ package uk.ac.cam.cl.dtg.segue.comm;
  */
 public class EmailMustBeVerifiedException extends Exception {
 
-	/**
-	 * EmailMustBeVerifiedException.
-	 * @param message indicating what is wrong.
-	 */
-	public EmailMustBeVerifiedException(final String message) {
-		super(message);
-	}
+  /**
+   * EmailMustBeVerifiedException.
+   *
+   * @param message indicating what is wrong.
+   */
+  public EmailMustBeVerifiedException(final String message) {
+    super(message);
+  }
 }

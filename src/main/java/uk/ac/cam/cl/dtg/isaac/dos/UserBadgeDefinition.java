@@ -1,11 +1,10 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 
 /**
  * Created by du220 on 13/04/2018.
@@ -14,6 +13,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UserBadgeDefinition {
 
-    UserBadgeManager.Badge value();
+  UserBadgeManager.Badge value();
 
 }

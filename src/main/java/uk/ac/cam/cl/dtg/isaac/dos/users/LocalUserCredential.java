@@ -1,18 +1,19 @@
-/*
+/**
  * Copyright 2017 Stephen Cummins
- *
+ * <br>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <br>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <br>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import java.util.Date;
@@ -22,91 +23,92 @@ import java.util.Date;
  * Pojo representing credentials as stored in the database.
  */
 public class LocalUserCredential {
-    private Long userId;
-    private String password;
+  private Long userId;
+  private String password;
 
-    private String secureSalt;
-    private String securityScheme;
+  private String secureSalt;
+  private String securityScheme;
 
-    private String resetToken;
-    private Date resetExpiry;
+  private String resetToken;
+  private Date resetExpiry;
 
-    private Date created;
-    private Date lastUpdated;
+  private Date created;
+  private Date lastUpdated;
 
-    public LocalUserCredential() {
+  public LocalUserCredential() {
 
-    }
+  }
 
-    public LocalUserCredential(final Long userId, final String password, final String secureSalt, final String securityScheme) {
-        this.userId = userId;
-        this.password = password;
-        this.secureSalt = secureSalt;
-        this.securityScheme = securityScheme;
-    }
+  public LocalUserCredential(final Long userId, final String password, final String secureSalt,
+                             final String securityScheme) {
+    this.userId = userId;
+    this.password = password;
+    this.secureSalt = secureSalt;
+    this.securityScheme = securityScheme;
+  }
 
 
-    public Long getUserId() {
-        return userId;
-    }
+  public Long getUserId() {
+    return userId;
+  }
 
-    public void setUserId(final Long userId) {
-        this.userId = userId;
-    }
+  public void setUserId(final Long userId) {
+    this.userId = userId;
+  }
 
-    public String getPassword() {
-        return password;
-    }
+  public String getPassword() {
+    return password;
+  }
 
-    public void setPassword(final String password) {
-        this.password = password;
-    }
+  public void setPassword(final String password) {
+    this.password = password;
+  }
 
-    public String getSecureSalt() {
-        return secureSalt;
-    }
+  public String getSecureSalt() {
+    return secureSalt;
+  }
 
-    public void setSecureSalt(final String secureSalt) {
-        this.secureSalt = secureSalt;
-    }
+  public void setSecureSalt(final String secureSalt) {
+    this.secureSalt = secureSalt;
+  }
 
-    public String getSecurityScheme() {
-        return securityScheme;
-    }
+  public String getSecurityScheme() {
+    return securityScheme;
+  }
 
-    public void setSecurityScheme(final String securityScheme) {
-        this.securityScheme = securityScheme;
-    }
+  public void setSecurityScheme(final String securityScheme) {
+    this.securityScheme = securityScheme;
+  }
 
-    public String getResetToken() {
-        return resetToken;
-    }
+  public String getResetToken() {
+    return resetToken;
+  }
 
-    public void setResetToken(final String resetToken) {
-        this.resetToken = resetToken;
-    }
+  public void setResetToken(final String resetToken) {
+    this.resetToken = resetToken;
+  }
 
-    public Date getResetExpiry() {
-        return resetExpiry;
-    }
+  public Date getResetExpiry() {
+    return resetExpiry;
+  }
 
-    public void setResetExpiry(final Date resetExpiry) {
-        this.resetExpiry = resetExpiry;
-    }
+  public void setResetExpiry(final Date resetExpiry) {
+    this.resetExpiry = resetExpiry;
+  }
 
-    public Date getCreated() {
-        return created;
-    }
+  public Date getCreated() {
+    return created;
+  }
 
-    public void setCreated(final Date created) {
-        this.created = created;
-    }
+  public void setCreated(final Date created) {
+    this.created = created;
+  }
 
-    public Date getLastUpdated() {
-        return lastUpdated;
-    }
+  public Date getLastUpdated() {
+    return lastUpdated;
+  }
 
-    public void setLastUpdated(final Date lastUpdated) {
-        this.lastUpdated = lastUpdated;
-    }
+  public void setLastUpdated(final Date lastUpdated) {
+    this.lastUpdated = lastUpdated;
+  }
 }

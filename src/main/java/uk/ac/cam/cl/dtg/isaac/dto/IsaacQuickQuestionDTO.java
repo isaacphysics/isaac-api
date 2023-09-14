@@ -1,59 +1,61 @@
 /**
  * Copyright 2014 Stephen Cummins
- * <p>
+ * <br>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * <p>
+ * <br>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <br>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 
 /**
  * Quick Question DTO.
- * 
+ *
  */
 @JsonContentType("isaacQuestion")
 public class IsaacQuickQuestionDTO extends IsaacQuestionBaseDTO {
-    private Boolean showConfidence;
+  private Boolean showConfidence;
 
-    /**
-     * Unignores getting the answer as it is.
-     * required to be shown in a quick question
-     * @return the answer
-     */
-    @Override
-    @JsonIgnore(false)
-    public ContentBaseDTO getAnswer() {
-        return super.getAnswer();
-    }
+  /**
+   * Unignores getting the answer as it is.
+   * required to be shown in a quick question
+   *
+   * @return the answer
+   */
+  @Override
+  @JsonIgnore(false)
+  public ContentBaseDTO getAnswer() {
+    return super.getAnswer();
+  }
 
-    /**
-     * Gets the showConfidence.
-     *
-     * @return the showConfidence
-     */
-    public final Boolean getShowConfidence() {
-        return showConfidence;
-    }
+  /**
+   * Gets the showConfidence.
+   *
+   * @return the showConfidence
+   */
+  public final Boolean getShowConfidence() {
+    return showConfidence;
+  }
 
-    /**
-     * Sets the showConfidence.
-     *
-     * @param showConfidence
-     *              the showConfidence to set
-     */
-    public final void setShowConfidence(final Boolean showConfidence) {
-        this.showConfidence = showConfidence;
-    }
+  /**
+   * Sets the showConfidence.
+   *
+   * @param showConfidence
+   *              the showConfidence to set
+   */
+  public final void setShowConfidence(final Boolean showConfidence) {
+    this.showConfidence = showConfidence;
+  }
 }

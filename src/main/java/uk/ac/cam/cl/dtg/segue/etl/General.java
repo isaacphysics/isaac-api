@@ -6,9 +6,9 @@ package uk.ac.cam.cl.dtg.segue.etl;
 public class General {
 
 
-    // ContentVersionController
+  // ContentVersionController
 
-    //    /**
+  //    /**
 //     * Trigger a sync job that will request a sync and subsequent index of the latest version of the content available
 //     *
 //     * This method will cause a new job to be added to the indexer queue.
@@ -90,15 +90,18 @@ public class General {
 //                    newer = contentManager.compareTo(version, this.getCurrentIndex()) > 0;
 //                } catch (NotFoundException e) {
 //                    // The current live version was not found. A rebase probably happened underneath us.
-//                    log.info("Failed to find current live version, someone probably rebased and force-pushed. Tut tut.");
+//                    log.info("Failed to find current live version, someone probably rebased and force-pushed.
+//                    Tut tut.");
 //                    newer = true;
 //                }
 //
 //                if (newer) {
 //                    this.setLiveVersion(version);
 //                } else {
-//                    log.info("Not changing live version as part of sync job as the " + "version (" + version
-//                            + ") just indexed is older than (or the same as) the current one (" + this.getCurrentIndex()
+//                    log.info("Not changing live version as part of sync job as the version ("
+//                            + version
+//                            + ") just indexed is older than (or the same as) the current one ("
+//                            + this.getCurrentIndex()
 //                            + ").");
 //                }
 //            }
@@ -245,8 +248,6 @@ public class General {
 //                    + this.indexQueue.size() + ")");
 //        }
 //    }
-
-
 
 
 }
