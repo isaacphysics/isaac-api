@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -105,7 +105,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
- * Quiz Facade
+ * Quiz Facade.
  */
 @Path("/quiz")
 @Tag(name = "/quiz")
@@ -124,28 +124,18 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     /**
      * QuizFacade. For management of quizzes
-     * @param properties
-     *            - global properties map
-     * @param logManager
-     *            - for managing logs.
-     * @param contentManager
-     *            - for the content etag
-     * @param quizManager
-     *            - for quiz interaction.
-     * @param userManager
-     *            - for user information.
-     * @param associationManager
-     *            - So that we can determine what information is allowed to be seen by other users.
-     * @param groupManager
-     *            - for group information.
-     * @param quizAssignmentManager
-     *            - for managing the assignment of quizzes.
-     * @param assignmentService
-     *            - for general assignment-related services.
-     * @param quizAttemptManager
-     *            - for managing attempts at quizzes.
-     * @param quizQuestionManager
-     *            - for parsing, validating, and persisting quiz question answers.
+     *
+     * @param properties            - global properties map
+     * @param logManager            - for managing logs.
+     * @param contentManager        - for the content etag
+     * @param quizManager           - for quiz interaction.
+     * @param userManager           - for user information.
+     * @param associationManager    - So that we can determine what information is allowed to be seen by other users.
+     * @param groupManager          - for group information.
+     * @param quizAssignmentManager - for managing the assignment of quizzes.
+     * @param assignmentService     - for general assignment-related services.
+     * @param quizAttemptManager    - for managing attempts at quizzes.
+     * @param quizQuestionManager   - for parsing, validating, and persisting quiz question answers.
      */
     @Inject
     public QuizFacade(final AbstractConfigLoader properties, final ILogManager logManager,
@@ -187,9 +177,9 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * Anonymous users can't see quizzes.
      *
-     * @param request the Request needed for ETag checking.
+     * @param request            the Request needed for ETag checking.
      * @param httpServletRequest the Request needed for Cookies for the current user.
-     * @param startIndex for pagination.
+     * @param startIndex         for pagination.
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
     @GET
@@ -212,7 +202,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             if (null != startIndex) {
                 etagValue += startIndex;
             }
-            EntityTag etag = new EntityTag(etagValue + "");
+            EntityTag etag = new EntityTag(String.valueOf(etagValue));
             Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
 
             if (cachedResponse != null) {
@@ -225,8 +215,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes, userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                .build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (ContentManagerException e) {
             String message = "ContentManagerException whilst getting available tests";
             log.error(message, e);
@@ -265,7 +255,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             this.quizAttemptManager.augmentAssignmentsFor(user, assignments);
 
             return Response.ok(assignments)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst getting available tests";
             log.error(message, e);
@@ -296,7 +286,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             quizManager.augmentWithQuizSummary(attempts);
 
             return Response.ok(attempts)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst getting available tests";
             log.error(message, e);
@@ -309,12 +299,9 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Preview a quiz. Only available to tutors and above.
      *
-     * @param request
-     *            - so we can deal with caching.
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizId
-     *            as a string
+     * @param request            - so we can deal with caching.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizId             as a string
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
     @GET
@@ -337,7 +324,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test id.").toResponse();
             }
 
-            EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + quizId.hashCode() + "");
+            EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + quizId.hashCode()));
 
             Response cachedResponse = generateCachedResponse(request, etag);
             if (cachedResponse != null) {
@@ -358,7 +345,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             return ok(quiz)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, false)).tag(etag).build();
         } catch (ContentManagerException e) {
             log.error("Content error whilst previewing a test", e);
             return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
@@ -374,13 +361,10 @@ public class QuizFacade extends AbstractIsaacFacade {
      * if they are a member of the group for the assignment.
      * If an attempt has already begun, return the already begun attempt.
      *
-     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
-     *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizAssignmentId
-     *            - the ID of the quiz assignment for this user.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizAssignmentId   - the ID of the quiz assignment for this user.
      * @return a QuizAttemptDTO
+     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}/attempt")
@@ -421,8 +405,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             quizAttempt = augmentAttempt(quizAttempt, quizAssignment, false);
 
             return Response.ok(quizAttempt)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                .build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -446,10 +430,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      * they are locked out of all previous feedback for that quiz and prevented from starting the
      * quiz freely in order to prevent some ways of cheating.)
      *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizId
-     *            - the ID of the quiz the user wishes to attempt.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizId             - the ID of the quiz the user wishes to attempt.
      * @return a QuizAttemptDTO
      */
     @POST
@@ -494,8 +476,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             quizAttempt = augmentAttempt(quizAttempt, null, false);
 
             return Response.ok(quizAttempt)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                .build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -511,10 +493,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Get the QuizDTO for a quiz attempt.
      *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizAttemptId
-     *            - the ID of the quiz the user wishes to attempt.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizAttemptId      - the ID of the quiz the user wishes to attempt.
      * @return The QuizDTO augmented with the user answers so far.
      */
     @GET
@@ -534,8 +514,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             quizAttempt = augmentAttempt(quizAttempt, quizAssignment, false);
 
             return Response.ok(quizAttempt)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                .build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -557,10 +537,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * The attempt must be completed.
      *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizAttemptId
-     *            - the ID of the quiz the user wishes to see feedback for.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizAttemptId      - the ID of the quiz the user wishes to see feedback for.
      * @return The feedback if this user is allowed to see it.
      */
     @GET
@@ -595,8 +573,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             augmentAttempt(quizAttempt, quizAssignment);
 
             return Response.ok(quizAttempt)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                .build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -619,10 +597,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * Only the user taking the quiz can mark it complete.
      *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizAttemptId
-     *            - the ID of the quiz the user wishes to attempt.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizAttemptId      - the ID of the quiz the user wishes to attempt.
      * @return The updated quiz attempt or an error.
      */
     @POST
@@ -666,12 +642,9 @@ public class QuizFacade extends AbstractIsaacFacade {
      * If it is a self-taken quiz, you cannot mark it incomplete, as that would make it easier to tweak individual
      * questions to find the right answers (also there is no assignment so you can't construct the URL anyway).
      *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizAssignmentId
-     *            - the ID of the assignment you want to mark an attempt incomplete from.
-     * @param userId
-     *            - the ID of the user whose attempt you want to mark incomplete.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizAssignmentId   - the ID of the assignment you want to mark an attempt incomplete from.
+     * @param userId             - the ID of the user whose attempt you want to mark incomplete.
      * @return The updated attempt or an error.
      */
     @POST
@@ -698,7 +671,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (assignment == null || !canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only mark assignments incomplete for groups you own or manage.").toResponse();
+                        "You can only mark assignments incomplete for groups you own or manage.").toResponse();
             }
 
             if (assignment.getDueDate() != null && !assignment.dueDateIsAfter(new Date())) {
@@ -720,10 +693,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizUserFeedbackDTO feedback;
             UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
-                userManager.convertToUserSummaryObject(student));
+                    userManager.convertToUserSummaryObject(student));
 
             feedback = new QuizUserFeedbackDTO(userSummary,
-                userSummary.isAuthorisedFullAccess() ? new QuizFeedbackDTO() : null);
+                    userSummary.isAuthorisedFullAccess() ? new QuizFeedbackDTO() : null);
 
             return Response.ok(feedback).build();
         } catch (NoUserLoggedInException e) {
@@ -769,11 +742,11 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAssignmentDTO assignment = checkQuizAssignmentNotCancelledOrOverdue(quizAttempt);
 
             Map<String, Object> eventDetails = ImmutableMap.of(
-                QUIZ_ID_FKEY, quizAttempt.getQuizId(),
-                QUIZ_ATTEMPT_FK, quizAttempt.getId(),
-                QUIZ_ASSIGNMENT_FK, assignment != null ? assignment.getId().toString() : "FREE_ATTEMPT",
-                ASSIGNMENT_DUEDATE, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
-                QUIZ_SECTION, sectionNumber
+                    QUIZ_ID_FKEY, quizAttempt.getQuizId(),
+                    QUIZ_ATTEMPT_FK, quizAttempt.getId(),
+                    QUIZ_ASSIGNMENT_FK, assignment != null ? assignment.getId().toString() : "FREE_ATTEMPT",
+                    ASSIGNMENT_DUEDATE, assignment == null || assignment.getDueDate() == null ? "NO_DUE_DATE" : assignment.getDueDate(),
+                    QUIZ_SECTION, sectionNumber
             );
 
             getLogManager().logEvent(user, httpServletRequest, Constants.IsaacServerLogType.VIEW_QUIZ_SECTION, eventDetails);
@@ -795,12 +768,9 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Record that a user has answered a question.
      *
-     * @param request
-     *            - the servlet request so we can find out if it is a known user.
-     * @param questionId
-     *            that you are attempting to answer.
-     * @param jsonAnswer
-     *            - answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
+     * @param request    - the servlet request so we can find out if it is a known user.
+     * @param questionId that you are attempting to answer.
+     * @param jsonAnswer - answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
      * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
      */
     @POST
@@ -809,7 +779,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Submit an answer to a question.",
-        description = "The answer must be the correct Choice subclass for the question with the provided ID.")
+            description = "The answer must be the correct Choice subclass for the question with the provided ID.")
     public Response answerQuestion(@Context final HttpServletRequest request,
                                    @PathParam("quizAttemptId") final Long quizAttemptId,
                                    @PathParam("question_id") final String questionId,
@@ -833,7 +803,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 contentBasedOnId = this.contentManager.getContentDOById(questionId);
             } catch (ContentManagerException e1) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
+                        e1);
                 log.error(error.getErrorMessage(), e1);
                 return error.toResponse();
             }
@@ -843,7 +813,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 question = (Question) contentBasedOnId;
             } else {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                    "No question object found for given id: " + questionId);
+                        "No question object found for given id: " + questionId);
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
             }
@@ -882,10 +852,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * This can only be done on free quiz attempts, as we don't want any startDate shenanigans on assigned quizzes.
      *
-     * @param httpServletRequest
-     *            - so that we can extract user information.
-     * @param quizAttemptId
-     *            - the ID of the quiz the user wishes to attempt.
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizAttemptId      - the ID of the quiz the user wishes to attempt.
      * @return Confirmation or an error.
      */
     @DELETE
@@ -932,9 +900,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Sends emails to the members of the group informing them of the quiz.
      * Takes a quiz id, a group id, an optional end datetime for completion, and the feedbackMode.
      *
-     * @param request so that we can extract user information.
+     * @param request              so that we can extract user information.
      * @param clientQuizAssignment the partially constructed quiz assignment
-     *
      * @return the quiz assignment that has been created, or an error.
      */
     @POST
@@ -946,9 +913,9 @@ public class QuizFacade extends AbstractIsaacFacade {
     public final Response createQuizAssignment(@Context final HttpServletRequest request,
                                                final QuizAssignmentDTO clientQuizAssignment) {
 
-        if (   clientQuizAssignment.getQuizId() == null
-            || clientQuizAssignment.getGroupId() == null
-            || clientQuizAssignment.getQuizFeedbackMode() == null) {
+        if (clientQuizAssignment.getQuizId() == null
+                || clientQuizAssignment.getGroupId() == null
+                || clientQuizAssignment.getQuizFeedbackMode() == null) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and test ids and a test feedback mode.").toResponse();
         }
 
@@ -961,13 +928,13 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only set assignments to groups you own or manage.").toResponse();
+                        "You can only set assignments to groups you own or manage.").toResponse();
             }
 
             IsaacQuizDTO quiz = this.quizManager.findQuiz(clientQuizAssignment.getQuizId());
             if (null == quiz) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The test id specified does not exist.")
-                    .toResponse();
+                        .toResponse();
             }
 
             if (null != clientQuizAssignment.getScheduledStartDate()) {
@@ -1050,7 +1017,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
                 if (null == group) {
                     return new SegueErrorResponse(Status.NOT_FOUND, "The group specified cannot be located.")
-                        .toResponse();
+                            .toResponse();
                 }
 
                 if (!canManageGroup(user, group)) {
@@ -1066,7 +1033,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             quizManager.augmentWithQuizSummary(assignments);
 
             return Response.ok(assignments)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -1077,11 +1044,10 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a teacher to see results of an assignment
+     * Allows a teacher to see results of an assignment.
      *
      * @param httpServletRequest so that we can extract user information.
-     * @param quizAssignmentId the id of the assignment to view.
-     *
+     * @param quizAssignmentId   the id of the assignment to view.
      * @return Details about the assignment.
      */
     @GET
@@ -1109,7 +1075,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only view assignments to groups you own or manage.").toResponse();
+                        "You can only view assignments to groups you own or manage.").toResponse();
             }
 
             this.assignmentService.augmentAssignerSummaries(Collections.singletonList(assignment));
@@ -1123,19 +1089,19 @@ public class QuizFacade extends AbstractIsaacFacade {
             List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
 
             for (RegisteredUserDTO groupMember : groupMembers) {
-                QuizFeedbackDTO feedback  = feedbackMap.get(groupMember);
+                QuizFeedbackDTO feedback = feedbackMap.get(groupMember);
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
-                    userManager.convertToUserSummaryObject(groupMember));
+                        userManager.convertToUserSummaryObject(groupMember));
 
                 userFeedback.add(new QuizUserFeedbackDTO(userSummary,
-                    userSummary.isAuthorisedFullAccess() ? feedback : null));
+                        userSummary.isAuthorisedFullAccess() ? feedback : null));
             }
 
             assignment.setUserFeedback(userFeedback);
             assignment.setQuiz(quiz);
 
             return Response.ok(assignment)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (AssignmentCancelledException e) {
@@ -1151,12 +1117,11 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allows a teacher to download the results of an assignment as a CSV
+     * Allows a teacher to download the results of an assignment as a CSV.
      *
      * @param httpServletRequest so that we can extract user information.
-     * @param quizAssignmentId the id of the assignment to view.
-     * @param formatMode set to "excel" for some MS Excel magic
-     *
+     * @param quizAssignmentId   the id of the assignment to view.
+     * @param formatMode         set to "excel" for some MS Excel magic
      * @return Details about the assignment.
      */
     @GET
@@ -1192,7 +1157,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
             StringBuilder headerBuilder = new StringBuilder();
-            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+            if (null != formatMode && formatMode.equalsIgnoreCase("excel")) {
                 headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
             }
             headerBuilder.append(String.format("Test (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
@@ -1205,7 +1170,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                     List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                     for (int i = 0; i < quizQuestions.size(); ++i) {
-                        questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
+                        questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
                         questionIds.add(quizQuestions.get(i).getId());
                     }
                 }
@@ -1255,7 +1220,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             csvWriter.writeAll(rows);
             csvWriter.close();
 
-            headerBuilder.append(stringWriter.toString());
+            headerBuilder.append(stringWriter);
             // get game manager completion information for this assignment.
             return Response.ok(headerBuilder.toString())
                     .header("Content-Disposition", "attachment; filename=test_results.csv")
@@ -1309,7 +1274,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
             StringBuilder headerBuilder = new StringBuilder();
-            if (null != formatMode && formatMode.toLowerCase().equals("excel")) {
+            if (null != formatMode && formatMode.equalsIgnoreCase("excel")) {
                 headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
             }
             headerBuilder.append(String.format("Quiz results for group (%s): Downloaded on %s \nGenerated by: %s %s \n\n",
@@ -1416,7 +1381,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
             csvWriter.close();
 
-            headerBuilder.append(stringWriter.toString());
+            headerBuilder.append(stringWriter);
             return Response.ok(headerBuilder.toString())
                     .header("Content-Disposition", "attachment; filename=group_test_results.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -1444,7 +1409,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                 List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                 for (int i = 0; i < quizQuestions.size(); ++i) {
-                    questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i+1));
+                    questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
                 }
             }
         }
@@ -1470,9 +1435,8 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Allows a teacher to see a specific user's attempt to an assignment.
      *
      * @param httpServletRequest so that we can extract user information.
-     * @param quizAssignmentId the id of the assignment.
-     * @param userId the id of the user to get the answers for.
-     *
+     * @param quizAssignmentId   the id of the assignment.
+     * @param userId             the id of the user to get the answers for.
      * @return Details about the user's attempt.
      */
     @GET
@@ -1501,26 +1465,26 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             if (!canManageGroup(user, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You can only view assignments to groups you own or manage.").toResponse();
+                        "You can only view assignments to groups you own or manage.").toResponse();
             }
 
             RegisteredUserDTO student = this.userManager.getUserDTOById(userId);
 
             if (!groupManager.isUserInGroup(student, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "That student is not in the group that was assigned this test.").toResponse();
+                        "That student is not in the group that was assigned this test.").toResponse();
             }
 
             if (!associationManager.hasPermission(user, student)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "You do not have access to that student's data.").toResponse();
+                        "You do not have access to that student's data.").toResponse();
             }
 
             QuizAttemptDTO quizAttempt = quizAttemptManager.getByQuizAssignmentAndUser(assignment, student);
 
             if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                    "That student has not completed this test assignment.").toResponse();
+                        "That student has not completed this test assignment.").toResponse();
             }
 
             if (!isUserAnAdmin(userManager, user) && !user.getId().equals(student.getId()) && assignment.getCreationDate().getTime() < QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP) {
@@ -1536,8 +1500,8 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptFeedbackDTO quizAttemptFeedback = new QuizAttemptFeedbackDTO(userManager.convertToUserSummaryObject(student), quizAttempt);
 
             return Response.ok(quizAttemptFeedback)
-                .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
-                .build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (AssignmentCancelledException e) {
@@ -1559,10 +1523,9 @@ public class QuizFacade extends AbstractIsaacFacade {
      *
      * Only changes to the feedbackMode and dueDate fields are accepted. A bad request error will be thrown if any other fields are set.
      *
-     * @param httpServletRequest so that we can extract user information.
-     * @param quizAssignmentId the id of the assignment to update.
+     * @param httpServletRequest   so that we can extract user information.
+     * @param quizAssignmentId     the id of the assignment to update.
      * @param clientQuizAssignment a partial object with new values for the quiz assignment (only feedbackMode and dueDate may be set.)
-     *
      * @return Confirmation or error.
      */
     @POST
@@ -1577,13 +1540,12 @@ public class QuizFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test assignment id.").toResponse();
         }
 
-        if (   clientQuizAssignment.getId() != null
-            || clientQuizAssignment.getQuizId() != null
-            || clientQuizAssignment.getGroupId() != null
-            || clientQuizAssignment.getOwnerUserId() != null
-            || clientQuizAssignment.getCreationDate() != null
-            || clientQuizAssignment.getScheduledStartDate() != null)
-        {
+        if (clientQuizAssignment.getId() != null
+                || clientQuizAssignment.getQuizId() != null
+                || clientQuizAssignment.getGroupId() != null
+                || clientQuizAssignment.getOwnerUserId() != null
+                || clientQuizAssignment.getCreationDate() != null
+                || clientQuizAssignment.getScheduledStartDate() != null) {
             log.warn("Attempt to change fields for test assignment id {} that aren't feedbackMode or dueDate: {}", quizAssignmentId, clientQuizAssignment);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Those fields are not editable.").toResponse();
         }
@@ -1597,8 +1559,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
 
-            if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
-                "You can only updates assignments to groups you own or manage.").toResponse();
+            if (!canManageAssignment(assignment, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only updates assignments to groups you own or manage.").toResponse();
+            }
 
             if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null && clientQuizAssignment.getDueDate().compareTo(assignment.getDueDate()) <= 0) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
@@ -1607,8 +1571,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quizAssignmentManager.updateAssignment(assignment, clientQuizAssignment);
 
-            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null &&
-                assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
+            if (assignment.getDueDate() != null && clientQuizAssignment.getDueDate() != null
+                    && assignment.getDueDate().compareTo(clientQuizAssignment.getDueDate()) != 0) {
                 Map<String, Object> eventDetails = ImmutableMap.of(
                         QUIZ_ID_FKEY, assignment.getQuizId(),
                         GROUP_FK, assignment.getGroupId(),
@@ -1628,8 +1592,8 @@ public class QuizFacade extends AbstractIsaacFacade {
                 this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.UPDATE_QUIZ_DEADLINE, eventDetails);
             }
 
-            if (assignment.getQuizFeedbackMode() != null && clientQuizAssignment.getQuizFeedbackMode() != null &&
-                assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
+            if (assignment.getQuizFeedbackMode() != null && clientQuizAssignment.getQuizFeedbackMode() != null
+                    && assignment.getQuizFeedbackMode().compareTo(clientQuizAssignment.getQuizFeedbackMode()) != 0) {
                 Map<String, Object> eventDetails = ImmutableMap.of(
                         QUIZ_ID_FKEY, assignment.getQuizId(),
                         GROUP_FK, assignment.getGroupId(),
@@ -1656,8 +1620,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Allows a teacher to cancel a quiz they have set.
      *
      * @param httpServletRequest so that we can extract user information.
-     * @param quizAssignmentId the id of the assignment to cancel.
-     *
+     * @param quizAssignmentId   the id of the assignment to cancel.
      * @return Confirmation or error.
      */
     @DELETE
@@ -1679,8 +1642,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
 
-            if (!canManageAssignment(assignment, user)) return new SegueErrorResponse(Status.FORBIDDEN,
-                "You can only cancel assignments to groups you own or manage.").toResponse();
+            if (!canManageAssignment(assignment, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only cancel assignments to groups you own or manage.").toResponse();
+            }
 
             quizAssignmentManager.cancelAssignment(assignment);
 
@@ -1723,7 +1688,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         return null;
     }
 
-    @SuppressWarnings( "deprecation" )
+    @SuppressWarnings("deprecation")
     private QuizAttemptDTO getIncompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
@@ -1733,7 +1698,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         return quizAttempt;
     }
 
-    @SuppressWarnings( "deprecation" )
+    @SuppressWarnings("deprecation")
     private QuizAttemptDTO getCompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
@@ -1770,7 +1735,7 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     private boolean canManageGroup(RegisteredUserDTO currentlyLoggedInUser, UserGroupDTO assigneeGroup) throws NoUserLoggedInException {
         return GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-            || isUserAnAdmin(userManager, currentlyLoggedInUser);
+                || isUserAnAdmin(userManager, currentlyLoggedInUser);
     }
 
     private QuizAttemptDTO augmentAttempt(QuizAttemptDTO quizAttempt, @Nullable QuizAssignmentDTO quizAssignment, boolean includeCorrect) throws ContentManagerException, SegueDatabaseException {
@@ -1785,7 +1750,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         Map<RegisteredUserDTO, QuizFeedbackDTO> feedbackMap = quizQuestionManager.getAssignmentTeacherFeedback(quiz, assignment, groupMembers);
         List<QuizUserFeedbackDTO> userFeedback = new ArrayList<>();
         for (RegisteredUserDTO groupMember : groupMembers) {
-            QuizFeedbackDTO feedback  = feedbackMap.get(groupMember);
+            QuizFeedbackDTO feedback = feedbackMap.get(groupMember);
             UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(user,
                     userManager.convertToUserSummaryObject(groupMember));
 

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *                 http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,9 +24,14 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.EnumUtils;
-import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.ContentEmailDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
@@ -45,12 +50,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.ContentEmailDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -63,8 +63,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,13 +76,12 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * An email facade front end.
  *
  * @author Alistair Stead
- *
  */
 @Path("/")
 @Tag(name = "/email")
 public class EmailFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
-    
+
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
     private final GitContentManager contentManager;
@@ -92,59 +89,51 @@ public class EmailFacade extends AbstractSegueFacade {
 
     /**
      * EmailFacade. This class is responsible for orchestrating e-mail operations
-     * 
-     * @param properties
-     *            - global properties loader
-     * @param logManager
-     *            - log manager
-     * @param emailManager
-     *            - class responsible for sending e-mail
-     * @param userManager
-     *            - so we can look up users and verify permissions..
-     * @param contentManager
-     *            - so we can look up email to send.
-     * @param misuseMonitor
-     *            - misuse monitor.
+     *
+     * @param properties     - global properties loader
+     * @param logManager     - log manager
+     * @param emailManager   - class responsible for sending e-mail
+     * @param userManager    - so we can look up users and verify permissions..
+     * @param contentManager - so we can look up email to send.
+     * @param misuseMonitor  - misuse monitor.
      */
     @Inject
     public EmailFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                        final EmailManager emailManager, final UserAccountManager userManager,
                        final GitContentManager contentManager, final IMisuseMonitor misuseMonitor) {
-		super(properties, logManager);
+        super(properties, logManager);
         this.contentManager = contentManager;
-		this.emailManager = emailManager;
-		this.userManager = userManager;
+        this.emailManager = emailManager;
+        this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
-	}
-    
+    }
+
     /**
      * GetEmailInBrowserById from the database.
-     * 
+     *
      * This method will return serialised html that displays an email object
      *
      * FIXME - this cannot be used for more complicated templated emails, only those using account info!
      * (i.e. events emails or assignment emails cannot be previewed like this!)
-     * 
-     * @param request
-     *            - so that we can allow only logged in users to view their own data.
-     * @param id
-     *            - the id of the content     
+     *
+     * @param request - so that we can allow only logged in users to view their own data.
+     * @param id      - the id of the content
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @GET
     @Path("/email/viewinbrowser/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get an email by ID.",
-                  description =  "The details of the current user will be used to fill in template fields.")
+            description = "The details of the current user will be used to fill in template fields.")
     public final Response getEmailInBrowserById(@Context final HttpServletRequest request,
-            @PathParam("id") final String id) {
-    	
-    	RegisteredUserDTO currentUser;
-		try {
-			currentUser = this.userManager.getCurrentRegisteredUser(request);			
-		} catch (NoUserLoggedInException e2) {
-    		return SegueErrorResponse.getNotLoggedInResponse();
-		}
+                                                @PathParam("id") final String id) {
+
+        RegisteredUserDTO currentUser;
+        try {
+            currentUser = this.userManager.getCurrentRegisteredUser(request);
+        } catch (NoUserLoggedInException e2) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
 
         ContentDTO c;
 
@@ -168,8 +157,8 @@ public class EmailFacade extends AbstractSegueFacade {
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
-        } 
-        
+        }
+
         EmailTemplateDTO emailTemplateDTO;
 
         if (c instanceof EmailTemplateDTO) {
@@ -179,8 +168,8 @@ public class EmailFacade extends AbstractSegueFacade {
             log.debug(error.getErrorMessage());
             return error.toResponse();
         }
-        
-		try {
+
+        try {
             Properties previewProperties = new Properties();
             // Add all properties in the user DTO (preserving types) so they are available to email templates.
             Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(currentUser);
@@ -200,35 +189,33 @@ public class EmailFacade extends AbstractSegueFacade {
             previewMap.put("replyTo", emailTemplateDTO.getReplyToEmailAddress());
             previewMap.put("replyToName", emailTemplateDTO.getReplyToName());
             previewMap.put("sender", emailTemplateDTO.getOverrideEnvelopeFrom());
-			previewMap.put("html", ecm.getHTMLMessage());
-			previewMap.put("plainText", ecm.getPlainTextMessage());
+            previewMap.put("html", ecm.getHTMLMessage());
+            previewMap.put("plainText", ecm.getPlainTextMessage());
 
-			return Response.ok(previewMap).build();
-		} catch (ResourceNotFoundException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
-            						"Content could not be found: " + id);
+            return Response.ok(previewMap).build();
+        } catch (ResourceNotFoundException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content could not be found: " + id);
             log.warn(error.getErrorMessage());
             return error.toResponse();
-		} catch (ContentManagerException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
-            						"Content is of incorrect type: " + id);
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content is of incorrect type: " + id);
             log.debug(error.getErrorMessage());
             return error.toResponse();
-		} catch (IllegalArgumentException e) {
-	        SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, 
-	        						"Cannot generate email with non-authorised fields: " + id);
-	        log.info(error.getErrorMessage());
-	        return error.toResponse();
-		}
+        } catch (IllegalArgumentException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Cannot generate email with non-authorised fields: " + id);
+            log.info(error.getErrorMessage());
+            return error.toResponse();
+        }
     }
-    
+
     /**
      * End point that verifies whether or not a validation token is valid.
-     * 
-     * @param userId
-     *            - the user's id.
-     * @param token
-     *            - A password reset token
+     *
+     * @param userId - the user's id.
+     * @param token  - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
     @GET
@@ -261,19 +248,17 @@ public class EmailFacade extends AbstractSegueFacade {
 
     /**
      * End point that allows a user to generate an email verification request.
-     * 
-     * @param payload
-     *            - Post request payload containing the email address requested for verification
-     * @param request
-     *            - For logging purposes.
+     *
+     * @param payload - Post request payload containing the email address requested for verification
+     * @param request - For logging purposes.
      * @return a successful response regardless of whether the email exists or an error code if there is a technical
-     *         fault
+     *      fault
      */
     @POST
     @Path("/users/verifyemail")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Initiate an email verification request.",
-                  description = "The email to verify must be provided as 'email' in the request body.")
+            description = "The email to verify must be provided as 'email' in the request body.")
     public Response generateEmailVerificationToken(@Context final HttpServletRequest request,
                                                    final Map<String, String> payload) {
         try {
@@ -315,14 +300,10 @@ public class EmailFacade extends AbstractSegueFacade {
      *
      * Send emails to all users of specified roles if their email preferences allow it.
      *
-     * @param request
-     *            - so that we can allow only logged in users to view their own data.
-     * @param contentId
-     *            - of the e-mail to send
-     * @param emailTypeString
-     *            - the type of e-mail that is being sent.
-     * @param roles
-     *            - string of user roles to boolean (i.e. whether or not to send to this type)
+     * @param request         - so that we can allow only logged in users to view their own data.
+     * @param contentId       - of the e-mail to send
+     * @param emailTypeString - the type of e-mail that is being sent.
+     * @param roles           - string of user roles to boolean (i.e. whether or not to send to this type)
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
@@ -331,9 +312,9 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Send an email to all users of a specific role.")
     public final Response sendEmails(@Context final HttpServletRequest request,
-		    		@PathParam("contentid") final String contentId, 
-		    		@PathParam("emailtype") final String emailTypeString,
-		    		final Map<String, Boolean> roles) {
+                                     @PathParam("contentid") final String contentId,
+                                     @PathParam("emailtype") final String emailTypeString,
+                                     final Map<String, Boolean> roles) {
         EmailType emailType;
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
 
@@ -343,17 +324,17 @@ public class EmailFacade extends AbstractSegueFacade {
             log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
         }
-		
-		try {
+
+        try {
             RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
             if (!isUserAnAdmin(userManager, sender)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-    		for (String key : roles.keySet()) {
-				RegisteredUserDTO prototype = new RegisteredUserDTO();
-				List<RegisteredUserDTO> selectedUsers;
-    			
+            for (String key : roles.keySet()) {
+                RegisteredUserDTO prototype = new RegisteredUserDTO();
+                List<RegisteredUserDTO> selectedUsers;
+
                 Role inferredRole = Role.valueOf(key);
                 Boolean userGroupSelected = roles.get(key);
 
@@ -365,20 +346,20 @@ public class EmailFacade extends AbstractSegueFacade {
                 selectedUsers = this.userManager.findUsers(prototype);
                 allSelectedUsers.addAll(selectedUsers);
             }
-    		
-    		if (allSelectedUsers.size() == 0) {
+
+            if (allSelectedUsers.size() == 0) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                         "There are no users in the groups you have selected!.");
-    			log.error(error.getErrorMessage());
-    			return error.toResponse();
-    		}
-    		
-			emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
-		} catch (SegueDatabaseException e) {
+                log.error(error.getErrorMessage());
+                return error.toResponse();
+            }
+
+            emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
+        } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
-			log.error(error.getErrorMessage());
-			return error.toResponse();
+            log.error(error.getErrorMessage());
+            return error.toResponse();
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "An unknown type of role was supplied.");
@@ -386,27 +367,23 @@ public class EmailFacade extends AbstractSegueFacade {
         } catch (ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error retrieving content.");
-			log.debug(error.getErrorMessage());
-		} catch (NoUserLoggedInException e2) {
+            log.debug(error.getErrorMessage());
+        } catch (NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-    	
-		return Response.ok().build();
+
+        return Response.ok().build();
     }
 
     /**
      * sendemailwithuserids allows sending an email to a given list of userids.
-     * 
+     *
      * This method will return serialised html that displays an email object
-     * 
-     * @param request
-     *            - so that we can allow only logged in users to view their own data.
-     * @param contentId
-     *            - of the e-mail to send
-     * @param emailTypeString
-     *            - the type of e-mail that is being sent.
-     * @param userIds
-     *            - list of user ids
+     *
+     * @param request         - so that we can allow only logged in users to view their own data.
+     * @param contentId       - of the e-mail to send
+     * @param emailTypeString - the type of e-mail that is being sent.
+     * @param userIds         - list of user ids
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
@@ -415,8 +392,9 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Send an email to a list of user IDs.")
     public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
-            @PathParam("contentid") final String contentId, @PathParam("emailtype") final String emailTypeString,
-            final List<Long> userIds) {
+                                              @PathParam("contentid") final String contentId,
+                                              @PathParam("emailtype") final String emailTypeString,
+                                              final List<Long> userIds) {
         EmailType emailType;
         Set<RegisteredUserDTO> allSelectedUsers = Sets.newHashSet();
 
@@ -436,9 +414,8 @@ public class EmailFacade extends AbstractSegueFacade {
             if (isUserAnEventManager(userManager, sender)) {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
-                    return SegueErrorResponse
-                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
-                                    " No emails have been sent.");
+                    return SegueErrorResponse.getRateThrottledResponse("You would have exceeded the number of emails"
+                            + " you are allowed to send per day. No emails have been sent.");
                 }
                 misuseMonitor.notifyEvent(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
@@ -483,24 +460,21 @@ public class EmailFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueResourceMisuseException e) {
-            return SegueErrorResponse
-                    .getRateThrottledResponse("You have exceeded the number of emails you are allowed to send per day.");
+            return SegueErrorResponse.getRateThrottledResponse("You have exceeded the number of emails"
+                    + " you are allowed to send per day.");
         }
 
         return Response.ok().build();
     }
 
     /**
-     * sendemailwithuserids allows sending an email to a given list of userids.
+     * Allows sending an email to a given list of userids.
      *
      * This method will return 200 ok
      *
-     * @param request
-     *            - so that we can allow only logged in users to view their own data.
-     * @param emailTypeString
-     *            - the type of e-mail that is being sent.
-     * @param providedTemplate
-     *            - ContentEmailDTO as Json.
+     * @param request          - so that we can allow only logged in users to view their own data.
+     * @param emailTypeString  - the type of e-mail that is being sent.
+     * @param providedTemplate - ContentEmailDTO as Json.
      * @return 200 ok response
      */
     @POST
@@ -509,12 +483,15 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Send an email to a list of user IDs.")
     public final Response sendProvidedEmailWithUserIds(@Context final HttpServletRequest request,
-                                              @PathParam("emailtype") final String emailTypeString,
-                                              final ContentEmailDTO providedTemplate) {
+                                                       @PathParam("emailtype") final String emailTypeString,
+                                                       final ContentEmailDTO providedTemplate) {
         final EmailTemplateDTO emailTemplate = providedTemplate.getEmailTemplate();
 
-        if (Strings.isNullOrEmpty(emailTemplate.getPlainTextContent()) || Strings.isNullOrEmpty(emailTemplate.getHtmlContent()) || Strings.isNullOrEmpty(emailTemplate.getSubject())) {
-            return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate, htmlTemplate and emailSubject");
+        if (Strings.isNullOrEmpty(emailTemplate.getPlainTextContent())
+                || Strings.isNullOrEmpty(emailTemplate.getHtmlContent())
+                || Strings.isNullOrEmpty(emailTemplate.getSubject())) {
+            return SegueErrorResponse.getBadRequestResponse("Response must include plaintextTemplate,"
+                    + " htmlTemplate and emailSubject");
         }
 
         final List<Long> userIds = providedTemplate.getUserIds();
@@ -539,8 +516,8 @@ public class EmailFacade extends AbstractSegueFacade {
                 if (misuseMonitor.willHaveMisused(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size())) {
                     return SegueErrorResponse
-                            .getRateThrottledResponse("You would have exceeded the number of emails you are allowed to send per day." +
-                                    " No emails have been sent.");
+                            .getRateThrottledResponse("You would have exceeded the number of emails"
+                                    + " you are allowed to send per day. No emails have been sent.");
                 }
                 misuseMonitor.notifyEvent(sender.getId().toString(),
                         SendEmailMisuseHandler.class.getSimpleName(), userIds.size());
@@ -586,7 +563,8 @@ public class EmailFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueResourceMisuseException e) {
             return SegueErrorResponse
-                    .getRateThrottledResponse("You have exceeded the number of emails you are allowed to send per day.");
+                    .getRateThrottledResponse("You have exceeded the number of emails"
+                            + " you are allowed to send per day.");
         }
 
         return Response.ok().build();
