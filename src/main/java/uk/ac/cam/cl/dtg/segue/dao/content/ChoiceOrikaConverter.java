@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
@@ -29,7 +28,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.RegexPattern;
 import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
@@ -65,8 +63,6 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
       return super.mapperFacade.map(source, QuantityDTO.class);
     } else if (source instanceof Formula) {
       return super.mapperFacade.map(source, FormulaDTO.class);
-    } else if (source instanceof ChemicalFormula) {
-      return super.mapperFacade.map(source, ChemicalFormulaDTO.class);
     } else if (source instanceof LogicFormula) {
       return super.mapperFacade.map(source, LogicFormulaDTO.class);
     } else if (source instanceof GraphChoice) {
@@ -82,8 +78,7 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
     } else if (source instanceof ItemChoice) {
       return super.mapperFacade.map(source, ItemChoiceDTO.class);
     } else {
-      // I would have expected this to cause an infinite loop / stack
-      // overflow but apparently it doesn't.
+      // I would have expected this to cause an infinite loop / stack overflow but apparently it doesn't.
       ChoiceDTO choiceDTO = new ChoiceDTO();
       super.mapperFacade.map(source, choiceDTO);
       return choiceDTO;
@@ -100,8 +95,6 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
       return super.mapperFacade.map(source, Quantity.class);
     } else if (source instanceof FormulaDTO) {
       return super.mapperFacade.map(source, Formula.class);
-    } else if (source instanceof ChemicalFormulaDTO) {
-      return super.mapperFacade.map(source, ChemicalFormula.class);
     } else if (source instanceof LogicFormulaDTO) {
       return super.mapperFacade.map(source, LogicFormula.class);
     } else if (source instanceof GraphChoiceDTO) {

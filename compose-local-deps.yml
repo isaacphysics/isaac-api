@@ -11,15 +11,6 @@ services:
     ports:
       - "5000:5000"
 
-  chemistry-checker:
-    network_mode: bridge
-    container_name: chemistry-checker
-    image: ucamcldtg/chemistry-checker
-    ports:
-      - "5001:5000"
-    volumes:
-      - ../.m2:/root/.m2:rw
-
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch

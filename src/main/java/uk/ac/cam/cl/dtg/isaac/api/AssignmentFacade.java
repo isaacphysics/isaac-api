@@ -26,7 +26,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.ASSIGNMENT_SCHEDULED_START_DA
 import static uk.ac.cam.cl.dtg.segue.api.Constants.GROUP_FK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAX_NOTE_CHAR_LENGTH;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 
 import com.google.api.client.util.Lists;
@@ -307,7 +306,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
    *
    * @param request           - so that we can identify the current user.
    * @param groupIdOfInterest - Optional parameter - If this is specified a fully resolved assignment object will be
-   *                                provided otherwise just a lightweight one per assignment will be returned.
+   *                          provided otherwise just a lightweight one per assignment will be returned.
    * @return the assignment object.
    */
   @GET
@@ -791,8 +790,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   ) throws ContentManagerException {
     ArrayList<String[]> rows = Lists.newArrayList();
 
-    Map<GameboardDTO, List<String>> gameboardQuestionIds =
-        extractGameboardQuestionIds(assignments, assignmentGameboards);
+    QuestionIdMaps questionIdMaps = extractGameboardQuestionIds(assignments, assignmentGameboards);
+    Map<GameboardDTO, List<String>> gameboardQuestionIds = questionIdMaps.getGameboardToQuestionIdsMap();
+    Map<String, String> questionIdToPageIdMap = questionIdMaps.getQuestionIdToPageIdMap();
 
     for (RegisteredUserDTO groupMember : groupMembers) {
       // FIXME Some room for improvement here, as we can retrieve all the users with a single query.
@@ -819,7 +819,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
         for (String s : questionIds) {
           Integer mark = userAssignments.get(gameboard).get(s);
-          String questionPageId = extractPageIdFromQuestionId(s);
+          String questionPageId = questionIdToPageIdMap.get(s);
           questionParts.put(questionPageId, questionParts.get(questionPageId) + 1);
           marks.add(mark);
           if (null != mark) {
@@ -980,10 +980,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     return rows;
   }
 
-  private Map<GameboardDTO, List<String>> extractGameboardQuestionIds(
+  private QuestionIdMaps extractGameboardQuestionIds(
       final List<AssignmentDTO> assignments, final Map<AssignmentDTO, GameboardDTO> assignmentGameboards
   ) throws ContentManagerException {
     Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
+    Map<String, String> questionIdToPageIdMap = Maps.newHashMap();
     for (AssignmentDTO assignment : assignments) {
       GameboardDTO gameboard = assignmentGameboards.get(assignment);
       for (GameboardItem questionPage : gameboard.getContents()) {
@@ -993,11 +994,31 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             questionIds = Lists.newArrayList();
           }
           questionIds.add(question.getId());
+          questionIdToPageIdMap.put(question.getId(), questionPage.getId());
           gameboardQuestionIds.put(gameboard, questionIds);
         }
       }
     }
-    return gameboardQuestionIds;
+    return new QuestionIdMaps(gameboardQuestionIds, questionIdToPageIdMap);
+  }
+
+  private static class QuestionIdMaps {
+    private final Map<GameboardDTO, List<String>> gameboardToQuestionIdsMap;
+    private final Map<String, String> questionIdToPageIdMap;
+
+    QuestionIdMaps(final Map<GameboardDTO, List<String>> gameboardToQuestionIdsMap,
+                   final Map<String, String> questionIdToPageIdMap) {
+      this.gameboardToQuestionIdsMap = gameboardToQuestionIdsMap;
+      this.questionIdToPageIdMap = questionIdToPageIdMap;
+    }
+
+    public Map<GameboardDTO, List<String>> getGameboardToQuestionIdsMap() {
+      return gameboardToQuestionIdsMap;
+    }
+
+    public Map<String, String> getQuestionIdToPageIdMap() {
+      return questionIdToPageIdMap;
+    }
   }
 
   private Map<RegisteredUserDTO, Map<String, Integer>> getQuestionDataMapFromGameboards(
@@ -1284,8 +1305,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
    * correctness of their answers.
    *
    * @param questionAttemptsForAllUsersOfInterest a Map of Users to a Map of pageId Strings to a Map of questionId
-   *     Strings to Lists of responses to those questions, representing
-   *     {@literal {UserDTO: {PageId: {QuestionId: List<QuestionResponse>}}}}
+   *                                              Strings to Lists of responses to those questions, representing
+   *                                              {@literal {UserDTO: {PageId: {QuestionId: List<QuestionResponse>}}}}
    * @return a Map of Users to a Map of questionId Strings to a boolean-as-integer for whether the question has been
    *     answered correctly, representing {@literal {UserDTO: {QuestionId: Integer}}}
    */
@@ -1295,20 +1316,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   ) {
     return questionAttemptsForAllUsersOfInterest.entrySet().stream()
         .collect(Collectors.toMap(
-            Entry::getKey, // Retain user object as outer map key
-            userQuestionPagesMapEntry -> userQuestionPagesMapEntry.getValue().values()
-                .stream() // Get the questionId/QuestionResponse maps
-                .flatMap(questionMap -> questionMap.entrySet()
-                    .stream()) // Discard the pageIds and flatten the questions into a single map
-                .collect(Collectors.toMap(
-                        Entry::getKey, // Use the questionId as the inner map key
-                        pageQuestionsEntry -> pageQuestionsEntry.getValue().stream() // Get list of responses
-                            .anyMatch(LightweightQuestionValidationResponse::isCorrect)
-                            // Check if any response is correct
-                            ? 1 : 0 // Convert boolean to integer
+                Entry::getKey, // Retain user object as outer map key
+                userQuestionPagesMapEntry -> userQuestionPagesMapEntry.getValue().values()
+                    .stream() // Get the questionId/QuestionResponse maps
+                    .flatMap(questionMap -> questionMap.entrySet()
+                        .stream()) // Discard the pageIds and flatten the questions into a single map
+                    .collect(Collectors.toMap(
+                            Entry::getKey, // Use the questionId as the inner map key
+                            pageQuestionsEntry -> pageQuestionsEntry.getValue().stream() // Get list of responses
+                                .anyMatch(LightweightQuestionValidationResponse::isCorrect)
+                                // Check if any response is correct
+                                ? 1 : 0 // Convert boolean to integer
+                        )
                     )
-                )
-        )
-    );
+            )
+        );
   }
 }

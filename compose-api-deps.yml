@@ -10,11 +10,6 @@ services:
         tag: equality-checker
     restart: unless-stopped
 
-  chemistry-checker:
-    container_name: chemistry-checker
-    image: ucamcldtg/chemistry-checker
-    restart: unless-stopped
-
 networks:
   default:
     external:

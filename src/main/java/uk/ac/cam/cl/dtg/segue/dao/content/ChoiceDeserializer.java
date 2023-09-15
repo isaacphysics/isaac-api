@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
@@ -84,8 +83,6 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
         return getSingletonChoiceMapper().readValue(root.toString(), Quantity.class);
       case "formula":
         return getSingletonChoiceMapper().readValue(root.toString(), Formula.class);
-      case "chemicalFormula":
-        return getSingletonChoiceMapper().readValue(root.toString(), ChemicalFormula.class);
       case "logicFormula":
         return getSingletonChoiceMapper().readValue(root.toString(), LogicFormula.class);
       case "graphChoice":
