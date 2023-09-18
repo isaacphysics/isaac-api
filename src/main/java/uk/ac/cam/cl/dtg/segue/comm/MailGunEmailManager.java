@@ -174,7 +174,7 @@ public class MailGunEmailManager {
                 .recipientVariables(recipientVariables)
                 .build();
 
-        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc();
+        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc(usersToSendTo.size());
 
         return executor.submit(() -> {
             try {
