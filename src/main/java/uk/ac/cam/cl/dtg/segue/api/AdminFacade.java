@@ -17,7 +17,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DEFAULT_MISUSE_STATISTICS_LIMIT;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_SECRET_KEY;
@@ -33,8 +32,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SEARCH_RESULTS_HARD_LIMIT_FAL
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.WILDCARD_SEARCH_MINIMUM_LENGTH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.WILDCARD_SEARCH_UNAUTHORISED_TOO_SHORT_MESSAGE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
@@ -65,7 +62,6 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -759,15 +755,6 @@ public class AdminFacade extends AbstractSegueFacade {
 
       misuseMonitor.notifyEvent(currentUser.getId().toString(), UserSearchMisuseHandler.class.getSimpleName());
 
-      if (!isUserAnAdmin(userManager, currentUser)
-          && (null == familyName || familyName.isEmpty())
-          && (null == schoolOther || schoolOther.isEmpty())
-          && (null == email || email.isEmpty())
-          && (null == schoolURN || schoolURN.isEmpty())) {
-        return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
-            .toResponse();
-
-      }
     } catch (NoUserLoggedInException e) {
       return SegueErrorResponse.getNotLoggedInResponse();
     } catch (SegueResourceMisuseException e) {
@@ -782,22 +769,10 @@ public class AdminFacade extends AbstractSegueFacade {
       }
 
       if (null != email && !email.isEmpty()) {
-        if (currentUser.getRole().equals(Role.EVENT_MANAGER)
-            && email.replaceAll("[^A-z0-9]", "").length() < WILDCARD_SEARCH_MINIMUM_LENGTH) {
-          return new SegueErrorResponse(Status.FORBIDDEN, WILDCARD_SEARCH_UNAUTHORISED_TOO_SHORT_MESSAGE)
-              .toResponse();
-        }
         userPrototype.setEmail(email);
       }
 
       if (null != familyName && !familyName.isEmpty()) {
-        // Event managers aren't allowed to do short wildcard searches, but need surnames less than 4 chars too.
-        if (currentUser.getRole().equals(Role.EVENT_MANAGER)
-            && familyName.replaceAll("[^A-z]", "").length() < WILDCARD_SEARCH_MINIMUM_LENGTH
-            && familyName.length() != familyName.replaceAll("[^A-z]", "").length()) {
-          return new SegueErrorResponse(Status.FORBIDDEN, WILDCARD_SEARCH_UNAUTHORISED_TOO_SHORT_MESSAGE)
-              .toResponse();
-        }
         userPrototype.setFamilyName(familyName);
       }
 
