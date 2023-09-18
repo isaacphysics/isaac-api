@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,57 +41,47 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or
  * notifications.
- * 
+ *
  * @author Stephen Cummins
  */
 public class Mailer {
     private static final Logger log = LoggerFactory.getLogger(Mailer.class);
-	private String smtpAddress;
-	private String mailAddress;
-	private String smtpPort;
-	private final static ConcurrentMap<Integer, Session> sessionCache = new ConcurrentHashMap<>();
+    private String smtpAddress;
+    private String mailAddress;
+    private String smtpPort;
+    private static final ConcurrentMap<Integer, Session> sessionCache = new ConcurrentHashMap<>();
 
-	/**
-	 * Mailer Class.
-	 * 
-	 * @param smtpAddress
-	 *            The address of the smtp server - this implementation assumes
-	 *            that the port is the default (25)
-	 * @param mailAddress
-	 *            The Envelope-From address of the sending account - used for
-	 *            authentication sometimes, and will receive bounce emails.
-	 */
-	public Mailer(final String smtpAddress, final String mailAddress) {
-		this.smtpAddress = smtpAddress;
-		this.mailAddress = mailAddress;
-	}
+    /**
+     * Mailer Class.
+     *
+     * @param smtpAddress The address of the smtp server - this implementation assumes
+     *                    that the port is the default (25)
+     * @param mailAddress The Envelope-From address of the sending account - used for
+     *                    authentication sometimes, and will receive bounce emails.
+     */
+    public Mailer(final String smtpAddress, final String mailAddress) {
+        this.smtpAddress = smtpAddress;
+        this.mailAddress = mailAddress;
+    }
 
     /**
      * SendMail Utility Method Sends e-mail to a given recipient using the hard-coded MAIL_ADDRESS and SMTP details.
-     * 
-     * @param recipient
-     *            - string array of recipients that the message should be sent to
-     * @param fromAddress
-     *            - the e-mail address that should be used as the sending address
-     * @param overrideEnvelopeFrom
-     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
-     * @param replyTo
-     *            - (nullable) the e-mail address that should be used as the reply-to address
-     * @param subject
-     *            - The message subject
-     * @param contents
-     *            - The message body
-     * @throws MessagingException
-     *             - if we cannot send the message for some reason.
-     * @throws AddressException
-     *             - if the address is not valid.
+     *
+     * @param recipient            - string array of recipients that the message should be sent to
+     * @param fromAddress          - the e-mail address that should be used as the sending address
+     * @param overrideEnvelopeFrom - (nullable) e-mail address to use as envelope from address, useful for routing
+     * @param replyTo              - (nullable) the e-mail address to use as reply-to address
+     * @param subject              - The message subject
+     * @param contents             - The message body
+     * @throws MessagingException - if we cannot send the message for some reason.
+     * @throws AddressException   - if the address is not valid.
      */
     public void sendPlainTextMail(final String[] recipient, final InternetAddress fromAddress,
                                   @Nullable final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
                                   final String subject, final String contents)
-			throws MessagingException {
+            throws MessagingException {
         Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
-        
+
         msg.setText(contents);
 
         Transport.send(msg);
@@ -100,36 +90,25 @@ public class Mailer {
     /**
      * Utility method to allow us to send multipart messages using HTML and plain text.
      *
-     * 
-     * @param recipient
-     *            - string array of recipients that the message should be sent to
-     * @param fromAddress
-     *            - the e-mail address that should be used as the sending address
-     * @param overrideEnvelopeFrom
-     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
-     * @param replyTo
-     *            - (nullable) the e-mail address that should be used as the reply-to address
-     * @param subject
-     *            - The message subject
-     * @param plainText
-     *            - The message body
-     * @param html
-     *            - The message body in html
-	 * @param attachments
-	 * 			  - list of attachment objects
-     * @throws MessagingException
-     *             - if we cannot send the message for some reason.
-     * @throws AddressException
-     *             - if the address is not valid.
+     * @param recipient            - string array of recipients that the message should be sent to
+     * @param fromAddress          - the e-mail address that should be used as the sending address
+     * @param overrideEnvelopeFrom - (nullable) the e-mail address to use as envelope from address, useful for routing
+     * @param replyTo              - (nullable) the e-mail address to use as reply-to address
+     * @param subject              - The message subject
+     * @param plainText            - The message body
+     * @param html                 - The message body in html
+     * @param attachments          - list of attachment objects
+     * @throws MessagingException - if we cannot send the message for some reason.
+     * @throws AddressException   - if the address is not valid.
      */
     public void sendMultiPartMail(final String[] recipient, final InternetAddress fromAddress,
                                   @Nullable final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
                                   final String subject, final String plainText, final String html,
                                   final List<EmailAttachment> attachments)
-			throws MessagingException, AddressException {
+            throws MessagingException, AddressException {
 
-    	Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
-        
+        Message msg = this.setupMessage(recipient, fromAddress, overrideEnvelopeFrom, replyTo, subject);
+
         // Create the text part
         MimeBodyPart textPart = new MimeBodyPart();
         textPart.setText(plainText, "utf-8");
@@ -141,94 +120,96 @@ public class Mailer {
         multiPart.addBodyPart(textPart);
         multiPart.addBodyPart(htmlPart);
 
-		if (attachments != null) {
-			for (EmailAttachment attachment : attachments) {
-				if (null == attachment) {
-					continue;
-				}
+        if (attachments != null) {
+            for (EmailAttachment attachment : attachments) {
+                if (null == attachment) {
+                    continue;
+                }
 
-				MimeBodyPart attachmentBodyPart = new MimeBodyPart();
-				DataHandler dataHandler = new DataHandler(attachment.getAttachment(), attachment.getMimeType());
-				attachmentBodyPart.setDataHandler(dataHandler);
-				attachmentBodyPart.setFileName(attachment.getFileName());
-				multiPart.addBodyPart(attachmentBodyPart);
-			}
-		}
+                MimeBodyPart attachmentBodyPart = new MimeBodyPart();
+                DataHandler dataHandler = new DataHandler(attachment.getAttachment(), attachment.getMimeType());
+                attachmentBodyPart.setDataHandler(dataHandler);
+                attachmentBodyPart.setFileName(attachment.getFileName());
+                multiPart.addBodyPart(attachmentBodyPart);
+            }
+        }
 
         msg.setContent(multiPart);
-        
+
         Transport.send(msg);
     }
 
-	/**
-	 * Gets the smtpAddress.
-	 * @return the smtpAddress
-	 */
-	public String getSmtpAddress() {
-		return smtpAddress;
-	}
-
-	/**
-	 * Sets the smtpAddress.
-	 * @param smtpAddress the smtpAddress to set
-	 */
-	public void setSmtpAddress(final String smtpAddress) {
-		this.smtpAddress = smtpAddress;
-	}
-
-	/**
-	 * Gets the mailAddress.
-	 * @return the mailAddress
-	 */
-	public String getMailAddress() {
-		return mailAddress;
-	}
-
-	/**
-	 * Sets the mailAddress.
-	 * @param mailAddress the mailAddress to set
-	 */
-	public void setMailAddress(final String mailAddress) {
-		this.mailAddress = mailAddress;
-	}
-	/**
-	 * Gets the smtpPort.
-	 * @return the smtpPort
-	 */
-	public String getSmtpPort() {
-		return smtpPort;
-	}
-
-	/**
-	 * Sets the smtpPort.
-	 * @param smtpPort the smtpPort to set
-	 */
-	public void setSmtpPort(final String smtpPort) {
-		this.smtpPort = smtpPort;
-	}
-	
     /**
-     * @param recipient
-     *            - string array of recipients that the message should be sent to
-     * @param fromAddress
-     *            - the e-mail address that should be used as the sending address
-     * @param overrideEnvelopeFrom
-     *            - (nullable) the e-mail address that should be used as the envelope from address, useful for routing
-     * @param replyTo
-     *            - the e-mail address that should be used as the reply-to address
-     * @param subject
-     *            - The message subject
+     * Gets the smtpAddress.
+     *
+     * @return the smtpAddress
+     */
+    public String getSmtpAddress() {
+        return smtpAddress;
+    }
+
+    /**
+     * Sets the smtpAddress.
+     *
+     * @param smtpAddress the smtpAddress to set
+     */
+    public void setSmtpAddress(final String smtpAddress) {
+        this.smtpAddress = smtpAddress;
+    }
+
+    /**
+     * Gets the mailAddress.
+     *
+     * @return the mailAddress
+     */
+    public String getMailAddress() {
+        return mailAddress;
+    }
+
+    /**
+     * Sets the mailAddress.
+     *
+     * @param mailAddress the mailAddress to set
+     */
+    public void setMailAddress(final String mailAddress) {
+        this.mailAddress = mailAddress;
+    }
+
+    /**
+     * Gets the smtpPort.
+     *
+     * @return the smtpPort
+     */
+    public String getSmtpPort() {
+        return smtpPort;
+    }
+
+    /**
+     * Sets the smtpPort.
+     *
+     * @param smtpPort the smtpPort to set
+     */
+    public void setSmtpPort(final String smtpPort) {
+        this.smtpPort = smtpPort;
+    }
+
+    /**
+     * @param recipient            - string array of recipients that the message should be sent to
+     * @param fromAddress          - the e-mail address that should be used as the sending address
+     * @param overrideEnvelopeFrom - (nullable) the e-mail address to use as envelope from address, useful for routing
+     * @param replyTo              - the e-mail address to use as reply-to address
+     * @param subject              - The message subject
      * @return a newly created message with all of the headers populated.
      * @throws MessagingException - if there is an error in setting up the message
      */
     private Message setupMessage(final String[] recipient, final InternetAddress fromAddress,
                                  final String overrideEnvelopeFrom, @Nullable final InternetAddress replyTo,
                                  final String subject)
-			throws MessagingException {
+            throws MessagingException {
         Validate.notEmpty(recipient);
         Validate.notBlank(recipient[0]);
         Validate.notNull(fromAddress);
-        
+
         Properties p = new Properties();
 
         // Configure the SMTP server settings:
@@ -263,13 +244,13 @@ public class Mailer {
             receivers[i] = new InternetAddress(recipient[i]);
         }
 
-		msg.setFrom(fromAddress);
-		msg.setRecipients(RecipientType.TO, receivers);
-		msg.setSubject(subject);
+        msg.setFrom(fromAddress);
+        msg.setRecipients(RecipientType.TO, receivers);
+        msg.setSubject(subject);
 
-		if (null != replyTo) {
-			msg.setReplyTo(new InternetAddress[] { replyTo });
-		}
+        if (null != replyTo) {
+            msg.setReplyTo(new InternetAddress[]{replyTo});
+        }
 
         return msg;
     }
