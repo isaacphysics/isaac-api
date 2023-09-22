@@ -79,7 +79,7 @@ public class SegueLocalAuthenticatorTest {
      * Verify that setOrChangeUsersPassword fails with bad input.
      */
     @Test
-    public final void segueLocalAuthenticator_setOrChangeUsersPasswordEmptyPassword_exceptionsShouldBeThrown() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    public final void segueLocalAuthenticator_ensureValidPasswordEmptyPassword_exceptionsShouldBeThrown() throws InvalidKeySpecException, NoSuchAlgorithmException {
         RegisteredUser someUser = new RegisteredUser();
         someUser.setEmail("test@test.com");
         someUser.setId(533L);
@@ -90,23 +90,17 @@ public class SegueLocalAuthenticatorTest {
                 pwnedPasswordChecker, propertiesLoader, possibleAlgorithms, preferredAlgorithm);
 
         try {
-            segueAuthenticator.setOrChangeUsersPassword(someUser, null);
+            segueAuthenticator.ensureValidPassword(null);
             fail("Expected InvalidPasswordException to be thrown as a null password was given.");
         } catch (InvalidPasswordException e) {
             // this is a pass
-
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
         }
 
         try {
-            segueAuthenticator.setOrChangeUsersPassword(someUser, "");
+            segueAuthenticator.ensureValidPassword("");
             fail("Expected InvalidPasswordException to be thrown as a empty password was given.");
         } catch (InvalidPasswordException e) {
             // this is a pass
-
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
         }
     }
 

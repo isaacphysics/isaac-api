@@ -95,11 +95,22 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         return "your email address and password";
     }
 
+    /**
+     * Update a users' password without validating it meets any requirements.
+     *
+     * It is the caller's responsibility to call {@link SegueLocalAuthenticator#ensureValidPassword(String)} on
+     * the password before calling this method.
+     *
+     * @param userToSetPasswordFor - user to be stored including the plain text password.
+     * @param plainTextPassword    - plain text password to be hashed.
+     * @throws InvalidPasswordException on invalid passwords.
+     * @throws SegueDatabaseException if the password cannot be persisted.
+     * @throws InvalidKeySpecException if the password fails to hash.
+     * @throws NoSuchAlgorithmException if the password fails to hash.
+     */
     @Override
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
             throws InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
-        ensureValidPassword(plainTextPassword);
-
         this.updateUsersPasswordWithoutValidation(userToSetPasswordFor, plainTextPassword);
     }
 
