@@ -48,6 +48,7 @@ public class SegueLocalAuthenticatorTest {
     private IUserDataManager userDataManager;
     private IPasswordDataManager passwordDataManager;
     private AbstractConfigLoader propertiesLoader;
+    private PwnedPasswordChecker pwnedPasswordChecker;
 
     private final ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
     private final ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
@@ -71,6 +72,7 @@ public class SegueLocalAuthenticatorTest {
         this.userDataManager = createMock(IUserDataManager.class);
         this.passwordDataManager = createMock(IPasswordDataManager.class);
         this.propertiesLoader = createMock(AbstractConfigLoader.class);
+        this.pwnedPasswordChecker = createMock(PwnedPasswordChecker.class);
     }
 
     /**
@@ -85,7 +87,7 @@ public class SegueLocalAuthenticatorTest {
         replay(userDataManager);
 
         SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.passwordDataManager,
-                this.propertiesLoader, possibleAlgorithms, preferredAlgorithm);
+                pwnedPasswordChecker, propertiesLoader, possibleAlgorithms, preferredAlgorithm);
 
         try {
             segueAuthenticator.setOrChangeUsersPassword(someUser, null);
@@ -121,7 +123,7 @@ public class SegueLocalAuthenticatorTest {
         replay(userDataManager);
 
         SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.passwordDataManager,
-                this.propertiesLoader, possibleAlgorithms, preferredAlgorithm);
+                pwnedPasswordChecker, propertiesLoader, possibleAlgorithms, preferredAlgorithm);
 
         try {
             segueAuthenticator.setOrChangeUsersPassword(someUser, somePassword);
@@ -171,7 +173,7 @@ public class SegueLocalAuthenticatorTest {
         replay(userDataManager, passwordDataManager);
 
         SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.passwordDataManager,
-                this.propertiesLoader, possibleAlgorithms, preferredAlgorithm);
+                pwnedPasswordChecker, propertiesLoader, possibleAlgorithms, preferredAlgorithm);
         try {
             RegisteredUser authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someIncorrectPassword);
             fail("This should fail as a bad password has been provided.");
@@ -211,7 +213,7 @@ public class SegueLocalAuthenticatorTest {
         replay(userDataManager);
 
         SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.passwordDataManager,
-                this.propertiesLoader, possibleAlgorithms, preferredAlgorithm);
+                pwnedPasswordChecker, propertiesLoader, possibleAlgorithms, preferredAlgorithm);
         try {
             RegisteredUser authenticatedUser = segueAuthenticator.authenticate(someBadEmail, someIncorrectPassword);
             fail("This should fail as a bad email and password has been provided.");
@@ -255,7 +257,7 @@ public class SegueLocalAuthenticatorTest {
         replay(userDataManager, passwordDataManager);
 
         SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.passwordDataManager,
-                this.propertiesLoader, possibleAlgorithms, preferredAlgorithm);
+                pwnedPasswordChecker, propertiesLoader, possibleAlgorithms, preferredAlgorithm);
         try {
             // first try and mutate the user object using the the set method.
             // this should set the password and secure hash on the user object.

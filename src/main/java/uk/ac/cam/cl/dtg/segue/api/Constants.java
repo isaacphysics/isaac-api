@@ -215,6 +215,10 @@ public final class Constants {
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
     public static final String MAILGUN_EMAILS_BETA_OPT_IN = "MAILGUN_EMAILS_BETA_OPT_IN";
 
+    // HIBP Pwned Passwords Stuff:
+    public static final String PWNED_PASSWORDS_API_URL = "PWNED_PASSWORDS_API_URL";
+    public static final String PWNED_PASSWORDS_COUNT_THRESHOLD = "PWNED_PASSWORDS_COUNT_THRESHOLD";
+
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
      * processing on (e.g. no stemming)

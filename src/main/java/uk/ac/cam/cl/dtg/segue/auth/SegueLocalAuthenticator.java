@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
 
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToValidatePasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -52,6 +54,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     private static final Integer SHORT_KEY_LENGTH = 128;
 
     private final IPasswordDataManager passwordDataManager;
+    private final PwnedPasswordChecker pwnedPasswordChecker;
     private final IUserDataManager userDataManager;
     private final AbstractConfigLoader properties;
 
@@ -71,7 +74,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      */
     @Inject
     public SegueLocalAuthenticator(final IUserDataManager userDataManager, final IPasswordDataManager passwordDataManager,
-                                   final AbstractConfigLoader properties,
+                                   final PwnedPasswordChecker pwnedPasswordChecker, final AbstractConfigLoader properties,
                                    final Map<String, ISegueHashingAlgorithm> possibleAlgorithms,
                                    final ISegueHashingAlgorithm preferredAlgorithm) {
         this.userDataManager = userDataManager;
@@ -79,6 +82,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         this.possibleAlgorithms = possibleAlgorithms;
         this.preferredAlgorithm = preferredAlgorithm;
         this.passwordDataManager = passwordDataManager;
+        this.pwnedPasswordChecker = pwnedPasswordChecker;
     }
 
     @Override
@@ -251,6 +255,18 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         if (password.length() < 6) {
             throw new InvalidPasswordException("Password must be at least 6 characters in length.");
+        }
+
+        try {
+            String pwnedPasswordThreshold = this.properties.getProperty(Constants.PWNED_PASSWORDS_COUNT_THRESHOLD);
+            int countThreshold = Integer.parseInt(Objects.requireNonNullElse(pwnedPasswordThreshold, "1000"));
+
+            Integer pwnedPasswordCount = pwnedPasswordChecker.getPasswordBreachCount(password);
+            if (null != pwnedPasswordCount && pwnedPasswordCount >= countThreshold) {
+                throw new InvalidPasswordException("This password is very common. Please choose a more secure password.");
+            }
+        } catch (FailedToValidatePasswordException e) {
+            // We've already logged this error, and we don't want a hard-dependency on external services.
         }
     }
 

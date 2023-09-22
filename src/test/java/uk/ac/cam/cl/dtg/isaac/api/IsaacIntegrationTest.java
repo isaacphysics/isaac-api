@@ -59,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.PwnedPasswordChecker;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
@@ -283,8 +284,9 @@ public abstract class IsaacIntegrationTest {
                 )
         );
 
+        PwnedPasswordChecker pwnedPasswordChecker = createMock(PwnedPasswordChecker.class);
         Map<String, ISegueHashingAlgorithm> algorithms = new HashMap<>(Map.of("SeguePBKDF2v3", new SeguePBKDF2v3(), "SegueSCryptv1", new SegueSCryptv1()));
-        providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, properties, algorithms, algorithms.get("SegueSCryptv1")));
+        providersToRegister.put(AuthenticationProvider.SEGUE, new SegueLocalAuthenticator(pgUsers, passwordDataManager, pwnedPasswordChecker, properties, algorithms, algorithms.get("SegueSCryptv1")));
 
         EmailCommunicator communicator = new EmailCommunicator("localhost", "default@localhost", "Howdy!");
         userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);

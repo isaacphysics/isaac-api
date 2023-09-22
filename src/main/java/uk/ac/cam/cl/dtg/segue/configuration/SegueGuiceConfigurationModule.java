@@ -92,6 +92,7 @@ import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.PwnedPasswordChecker;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
@@ -592,7 +593,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
-                                                                      final AbstractConfigLoader properties) {
+                                                                      final AbstractConfigLoader properties, final PwnedPasswordChecker pwnedPasswordChecker) {
         ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
         ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
         ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
@@ -605,7 +606,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3
         );
 
-        return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
+        return new SegueLocalAuthenticator(database, passwordDataManager, pwnedPasswordChecker, properties,
+                possibleAlgorithms, preferredAlgorithm);
     }
 
     /**
