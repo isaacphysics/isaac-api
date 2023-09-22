@@ -689,18 +689,12 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser resetPassword(final String token, final String newPassword)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
-        // Ensure new password is valid
-
-        if (null == newPassword || newPassword.isEmpty()) {
-            throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
-        }
-
-        if (newPassword.length() < 6) {
-            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
-        }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
+
+        // Ensure new password is valid:
+        authenticator.ensureValidPassword(newPassword);
 
         // Ensure reset token is valid
         RegisteredUser user = authenticator.getRegisteredUserByToken(token);
