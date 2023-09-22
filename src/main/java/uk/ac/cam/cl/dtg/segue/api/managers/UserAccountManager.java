@@ -990,10 +990,10 @@ public class UserAccountManager implements IUserAccountManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
-
         // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
         authenticator.ensureValidPassword(newPassword);
+
+        authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
 
         // save the user to get the userId
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
@@ -1078,7 +1078,7 @@ public class UserAccountManager implements IUserAccountManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        // Check if there is a new password and it is invalid as early as possible:
+        // Check if there is a new password and if it is invalid as early as possible:
         if (null != newPassword && !newPassword.isEmpty()) {
             authenticator.ensureValidPassword(newPassword);
         }
