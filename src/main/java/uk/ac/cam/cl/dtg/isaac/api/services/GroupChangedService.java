@@ -22,16 +22,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -54,16 +57,21 @@ public class GroupChangedService implements IGroupObserver {
     private static final Logger log = LoggerFactory.getLogger(GroupChangedService.class);
 
     private final EmailManager emailManager;
+    private final GroupManager groupManager;
     private final UserAccountManager userManager;
+    private final UserAssociationManager associationManager;
     private final AssignmentManager assignmentManager;
     private final QuizAssignmentManager quizAssignmentManager;
 
     @Inject
     public GroupChangedService(final EmailManager emailManager, final GroupManager groupManager,
-                               final UserAccountManager userManager, final AssignmentManager assignmentManager,
+                               final UserAccountManager userManager, final UserAssociationManager associationManager,
+                               final AssignmentManager assignmentManager,
                                final QuizAssignmentManager quizAssignmentManager) {
         this.emailManager = emailManager;
+        this.groupManager = groupManager;
         this.userManager = userManager;
+        this.associationManager = associationManager;
         this.assignmentManager = assignmentManager;
         this.quizAssignmentManager = quizAssignmentManager;
 
@@ -190,7 +198,7 @@ public class GroupChangedService implements IGroupObserver {
         Validate.notNull(group);
         Validate.notNull(additionalManagerUser);
 
-        // Try to email user to let them know:
+        // Try to email new manager to let them know:
         try {
             RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
 
@@ -204,15 +212,44 @@ public class GroupChangedService implements IGroupObserver {
                 groupName = group.getGroupName();
             }
 
-            Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+            Map<String, Object> welcomeEmailProperties = new ImmutableMap.Builder<String, Object>()
                 .put("ownerName", groupOwnerName)
                 .put("ownerEmail", groupOwnerEmail)
                 .put("groupName", groupName)
                 .build();
             emailManager.sendTemplatedEmailToUser(additionalManagerUser,
                 emailManager.getEmailTemplateDTO("email-template-group-additional-manager-welcome"),
-                emailProperties,
+                welcomeEmailProperties,
                 EmailType.SYSTEM);
+
+            // email students not connected to new manager
+
+            // load students from group
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
+
+            String newManagerName = getTeacherNameFromUser(additionalManagerUser);
+            String newManagerEmail = "Unknown";
+            if (additionalManagerUser.getEmail() != null && !additionalManagerUser.getEmail().isEmpty()) {
+                newManagerEmail = additionalManagerUser.getEmail();
+            }
+
+            AssociationToken token = associationManager.generateAssociationToken(groupOwner, group.getId());
+
+            // check which are connected and email those that are not
+            for (RegisteredUserDTO groupMember : groupMembers) {
+                if (!associationManager.hasPermission(additionalManagerUser, groupMember)) {
+                    Map<String, Object> permissionEmailProperties = new ImmutableMap.Builder<String, Object>()
+                            .put("managerName", newManagerName)
+                            .put("managerEmail", newManagerEmail)
+                            .put("groupName", groupName)
+                            .put("groupToken", token.getToken())
+                            .build();
+                    emailManager.sendTemplatedEmailToUser(groupMember,
+                            emailManager.getEmailTemplateDTO("email-template-new-group-additional-manager"),
+                            permissionEmailProperties,
+                            EmailType.SYSTEM);
+                }
+            }
 
         } catch (ContentManagerException e) {
             log.info("Could not send group additional manager email ", e);
@@ -220,6 +257,8 @@ public class GroupChangedService implements IGroupObserver {
             log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
+        } catch (UserGroupNotFoundException e) {
+            log.error(String.format("Changed group cannot be found %s", group.getId()));
         }
     }
 
