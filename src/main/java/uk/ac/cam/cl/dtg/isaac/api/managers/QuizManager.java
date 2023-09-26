@@ -21,6 +21,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HIDDEN_FROM_ROLES_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.VISIBLE_TO_STUDENTS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -159,7 +160,7 @@ public class QuizManager {
                 + item.getQuizId() + ") that does not exist!");
           } else if (item instanceof QuizAssignmentDTO) {
             log.warn("Assignment (" + ((QuizAssignmentDTO) item).getId() + ") exists with test ID ("
-                + item.getQuizId() + ") that does not exist!");
+                + sanitiseExternalLogValue(item.getQuizId()) + ") that does not exist!");
           }
         }
         quizCache.put(quizId, quiz);

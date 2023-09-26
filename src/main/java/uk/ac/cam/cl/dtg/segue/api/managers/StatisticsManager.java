@@ -151,6 +151,7 @@ public class StatisticsManager implements IStatisticsManager {
    * @return an ImmutableMap{@literal <String, String>} (stat name, stat value)
    * @throws SegueDatabaseException - if there is a database error.
    */
+  @Override
   public synchronized Map<String, Object> getGeneralStatistics()
       throws SegueDatabaseException {
     Map<String, Object> result = Maps.newHashMap();
@@ -200,6 +201,7 @@ public class StatisticsManager implements IStatisticsManager {
    *     numberActiveLastThirtyDays.
    * @throws UnableToIndexSchoolsException - if there is a problem getting school details.
    */
+  @Override
   public List<Map<String, Object>> getSchoolStatistics()
       throws UnableToIndexSchoolsException, SegueSearchException {
     @SuppressWarnings("unchecked")
@@ -271,6 +273,7 @@ public class StatisticsManager implements IStatisticsManager {
    * @return A map of schools to integers (representing the number of registered users)
    * @throws UnableToIndexSchoolsException as per the description
    */
+  @Override
   public Map<School, List<RegisteredUserDTO>> getUsersBySchool()
       throws UnableToIndexSchoolsException, SegueSearchException {
     List<RegisteredUserDTO> users;
@@ -344,6 +347,7 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * @return a Map of userId's to last event timestamp
    */
+  @Override
   public Map<String, Date> getLastSeenUserMap() {
     Map<String, Date> lastSeenMap = Maps.newHashMap();
 
@@ -370,6 +374,7 @@ public class StatisticsManager implements IStatisticsManager {
    * @return a map of userId's to last event timestamp
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
+  @Override
   public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
     return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
   }

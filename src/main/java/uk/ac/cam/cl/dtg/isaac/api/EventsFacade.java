@@ -36,6 +36,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_LIST_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -617,7 +618,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     } catch (SegueDatabaseException e) {
       String errorMsg = String.format(
           "Database error occurred while trying retrieve bookings for group (%s) on event (%s).",
-          groupId, eventId);
+          sanitiseExternalLogValue(groupId), sanitiseExternalLogValue(eventId));
       log.error(errorMsg, e);
       return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
     } catch (NoUserLoggedInException e) {
@@ -665,7 +666,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     } catch (SegueDatabaseException e) {
       String errorMsg = String.format(
           "Database error occurred while trying retrieve bookings for event (%s).",
-          eventId);
+          sanitiseExternalLogValue(eventId));
       log.error(errorMsg, e);
       return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
     }

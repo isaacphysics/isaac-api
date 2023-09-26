@@ -56,8 +56,8 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
   private AssignmentFacade assignmentFacade;
-  private String instantExpected = "2049-07-01T12:05:30Z";
-  private Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+  private final String instantExpected = "2049-07-01T12:05:30Z";
+  private final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -73,11 +73,12 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     reset(userBadgeManager);
 
     // reset assignments in DB, so the same assignment can be re-used across tests
-    PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-        "DELETE FROM assignments WHERE gameboard_id in (?,?);");
-    pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
-    pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
-    pst.executeUpdate();
+    try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
+        "DELETE FROM assignments WHERE gameboard_id in (?,?);")) {
+      pst.setString(1, ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+      pst.setString(2, ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
+      pst.executeUpdate();
+    }
   }
 
   @AfterAll

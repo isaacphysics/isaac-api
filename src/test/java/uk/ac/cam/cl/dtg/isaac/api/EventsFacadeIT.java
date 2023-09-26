@@ -130,10 +130,11 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     // --- Tear down
     // BEWARE: Because we don't actually remove the cancelled reservation records from the database, this would
     //         leave lingering state that may lead to unexpected behaviour in other test cases (e.g., wrong counts).
-    PreparedStatement pst =
-        postgresSqlDb.getDatabaseConnection().prepareStatement("DELETE FROM event_bookings WHERE id = ?;");
-    pst.setLong(1, ((EventBookingDTO) createBookingResponse.getEntity()).getBookingId());
-    pst.executeUpdate();
+    try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
+        "DELETE FROM event_bookings WHERE id = ?;")) {
+      pst.setLong(1, ((EventBookingDTO) createBookingResponse.getEntity()).getBookingId());
+      pst.executeUpdate();
+    }
   }
 
   // events/{event_id}/bookings

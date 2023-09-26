@@ -50,6 +50,14 @@ public final class ITConstants {
   public static final String TEST_TUTOR_PASSWORD = "test1234";
   public static final long TEST_TUTOR_ID = 12L;
 
+  public static final String TEST_UNKNOWN_USER_ONE_EMAIL = "test-student1@test.com";
+  public static final String TEST_UNKNOWN_USER_TWO_EMAIL = "test-student2@test.com";
+  public static final String TEST_UNKNOWN_USER_THREE_EMAIL = "test-student3@test.com";
+
+  public static final String TEST_WRONG_PASSWORD = "wrongPassword";
+
+  public static final String TEST_IP_ADDRESS = "0.0.0.0";
+
   // Groups
   public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
   public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
@@ -64,4 +72,7 @@ public final class ITConstants {
   public static final String QUIZ_TEST_QUIZ_ID = "_quiz_test";
   public static final String QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID = "_hidden_from_roles_student_quiz_test";
   public static final String QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID = "_hidden_from_roles_tutor_quiz_test";
+
+  private ITConstants() {
+  }
 }

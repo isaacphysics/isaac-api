@@ -132,6 +132,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
    * @param choices - the Choices from a Question
    * @return the ordered list of Choices
    */
+  @Override
   public List<Choice> getOrderedChoices(final List<Choice> choices) {
     return Lists.newArrayList(choices);
   }

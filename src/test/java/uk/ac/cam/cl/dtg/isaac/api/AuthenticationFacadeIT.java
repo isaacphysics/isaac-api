@@ -14,6 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_ADMIN_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_ADMIN_PASSWORD;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_IP_ADDRESS;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_PASSWORD;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_UNKNOWN_USER_ONE_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_UNKNOWN_USER_THREE_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_UNKNOWN_USER_TWO_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_WRONG_PASSWORD;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOGIN_2FA_REQUIRED_MESSAGE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOGIN_INCORRECT_CREDENTIALS_MESSAGE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOGIN_MISSING_CREDENTIALS_MESSAGE;
@@ -44,6 +54,7 @@ import java.util.stream.Stream;
 import org.easymock.Capture;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -75,15 +86,16 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
   @BeforeEach
   public void beforeEach() {
-    misuseMonitor.resetMisuseCount("test-student@test.com", SegueLoginByEmailMisuseHandler.class.getSimpleName());
-    misuseMonitor.resetMisuseCount("0.0.0.0", SegueLoginByIPMisuseHandler.class.getSimpleName());
+    misuseMonitor.resetMisuseCount(TEST_STUDENT_EMAIL, SegueLoginByEmailMisuseHandler.class.getSimpleName());
+    misuseMonitor.resetMisuseCount(TEST_UNKNOWN_USER_ONE_EMAIL, SegueLoginByEmailMisuseHandler.class.getSimpleName());
+    misuseMonitor.resetMisuseCount(TEST_IP_ADDRESS, SegueLoginByIPMisuseHandler.class.getSimpleName());
     this.authenticationFacade = new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);
     mockRequest = replayMockServletRequest();
     mockResponse = niceMock(HttpServletResponse.class);
   }
 
   @Test
-  public void login_cookie_samesite() throws Exception {
+  public void loginCookieSamesite() throws Exception {
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
         ITConstants.TEST_TEACHER_PASSWORD);
     assertEquals(SAME_SITE_LAX_COMMENT, teacherLogin.cookie.getComment());
@@ -92,73 +104,172 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   // See E2E for logout test - response object is mocked in IT tests, preventing retrieval of transformed logout cookie
   // Usage of actual object may be possible in future but the complexity is currently prohibitive
 
-  @Test
-  public void resetPassword_emailRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO targetUser = new LocalAuthDTO();
-    targetUser.setEmail("test-student@test.com");
-    targetUser.setPassword("123");
+  @Nested
+  class ResetPassword {
+    @Test
+    public void emailRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO targetUser = new LocalAuthDTO();
+      targetUser.setEmail(TEST_STUDENT_EMAIL);
+      targetUser.setPassword(TEST_WRONG_PASSWORD);
 
-    Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+      Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
 
-    Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+      Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
 
-    Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+      Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+    }
+
+    @Test
+    public void ipRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO targetUser = new LocalAuthDTO();
+      targetUser.setPassword(TEST_WRONG_PASSWORD);
+
+      targetUser.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
+      Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+
+      targetUser.setEmail(TEST_UNKNOWN_USER_TWO_EMAIL);
+      Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+
+      targetUser.setEmail(TEST_UNKNOWN_USER_THREE_EMAIL);
+      Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+    }
   }
 
-  @Test
-  public void resetPassword_ipRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO targetUser = new LocalAuthDTO();
-    targetUser.setPassword("123");
+  @Nested
+  class AuthenticateWithCredentialsLocalProvider {
+    @Test
+    public void success() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      RegisteredUserDTO expectedUser = new RegisteredUserDTO(
+          "Test Student", "Student", TEST_STUDENT_EMAIL, EmailVerificationStatus.VERIFIED, null, Gender.MALE,
+          Date.from(LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC)), "110158", false
+      );
+      expectedUser.setId(TEST_STUDENT_ID);
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_STUDENT_PASSWORD);
 
-    targetUser.setEmail("test-student@test.com");
-    Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+      Response response =
+          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+      assertEquals(expectedUser, response.readEntity(RegisteredUserDTO.class));
+    }
 
-    targetUser.setEmail("test-student2@test.com");
-    Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+    @Test
+    public void nullAuthDTO() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", null);
+      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
 
-    targetUser.setEmail("test-student3@test.com");
-    Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
-  }
+    @Test
+    public void incorrectCredentials() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
-  @Test
-  public void authenticateWithCredentials_local_success() throws InvalidKeySpecException, NoSuchAlgorithmException {
-    RegisteredUserDTO expectedUser =
-        new RegisteredUserDTO("Test Student", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED,
-            null, Gender.MALE, Date.from(LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC)),
-            "110158", false);
-    expectedUser.setId(6L);
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student@test.com");
-    testLocalAuthDTO.setPassword("test1234");
+      Response response =
+          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE,
+          response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
 
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-    assertEquals(expectedUser, response.readEntity(RegisteredUserDTO.class));
-  }
+    @Test
+    public void unknownUser() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
-  @Test
-  public void authenticateWithCredentials_local_nullAuthDTO() throws InvalidKeySpecException, NoSuchAlgorithmException {
-    Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", null);
-    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      Response response =
+          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE,
+          response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
+    @Test
+    public void unconfiguredRequiredMFA() throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_ADMIN_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_ADMIN_PASSWORD);
+
+      Response response =
+          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_2FA_REQUIRED_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
+    @Test
+    public void incompleteMFA() throws InvalidKeySpecException, NoSuchAlgorithmException, SegueDatabaseException {
+      reset(secondFactorManager);
+      expect(secondFactorManager.has2FAConfigured(anyObject(RegisteredUserDTO.class))).andReturn(true).atLeastOnce();
+      replay(secondFactorManager);
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_STUDENT_PASSWORD);
+
+      Response response;
+      try {
+        response =
+            authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      } finally {
+        // Make sure to restore the mfa mock afterwards!
+        reset(secondFactorManager);
+        expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
+        replay(secondFactorManager);
+      }
+
+      assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus());
+      assertEquals(Map.of("2FA_REQUIRED", true), response.getEntity());
+    }
+
+    @Test
+    public void rateThrottleByIP()
+        throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
+
+      misuseMonitor.notifyEvent(TEST_IP_ADDRESS, SegueLoginByIPMisuseHandler.class.getSimpleName());
+      misuseMonitor.notifyEvent(TEST_IP_ADDRESS, SegueLoginByIPMisuseHandler.class.getSimpleName());
+      Response response =
+          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
+    @Test
+    public void rateThrottleByEmail()
+        throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
+      testLocalAuthDTO.setPassword(TEST_STUDENT_PASSWORD);
+
+      misuseMonitor.notifyEvent(TEST_STUDENT_EMAIL, SegueLoginByEmailMisuseHandler.class.getSimpleName());
+      misuseMonitor.notifyEvent(TEST_STUDENT_EMAIL, SegueLoginByEmailMisuseHandler.class.getSimpleName());
+      Response response =
+          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
+      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
   }
 
   @ParameterizedTest
   @MethodSource("invalidAuthDTO")
-  public void authenticateWithCredentials_local_invalidAuthDTO(String email, String password)
+  public void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
       throws InvalidKeySpecException, NoSuchAlgorithmException {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
     testLocalAuthDTO.setEmail(email);
@@ -172,44 +283,18 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
   private static Stream<Arguments> invalidAuthDTO() {
     return Stream.of(
-        Arguments.of(null, "test1234"),
-        Arguments.of("", "test1234"),
-        Arguments.of("test-student@test.com", null),
-        Arguments.of("test-student@test.com", "")
+        Arguments.of(null, TEST_STUDENT_PASSWORD),
+        Arguments.of("", TEST_STUDENT_PASSWORD),
+        Arguments.of(TEST_STUDENT_EMAIL, null),
+        Arguments.of(TEST_STUDENT_EMAIL, "")
     );
   }
 
   @Test
-  public void authenticateWithCredentials_local_incorrectCredentials()
-      throws InvalidKeySpecException, NoSuchAlgorithmException {
+  public void authenticateWithCredentialsEmptyProvider() {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student@test.com");
-    testLocalAuthDTO.setPassword("wrongPassword");
-
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
-  }
-
-  @Test
-  public void authenticateWithCredentials_local_unknownUser() throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-notastudent@test.com");
-    testLocalAuthDTO.setPassword("test1234");
-
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
-  }
-
-  @Test
-  public void authenticateWithCredentials_local_emptyProvider()
-      throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student@test.com");
-    testLocalAuthDTO.setPassword("wrongPassword");
+    testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
+    testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
     Exception exception = assertThrows(IllegalArgumentException.class,
         () -> authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "", testLocalAuthDTO));
@@ -218,11 +303,10 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void authenticateWithCredentials_local_unknownProvider()
-      throws InvalidKeySpecException, NoSuchAlgorithmException {
+  public void authenticateWithCredentialsUnknownProvider() throws InvalidKeySpecException, NoSuchAlgorithmException {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student@test.com");
-    testLocalAuthDTO.setPassword("wrongPassword");
+    testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
+    testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
     Response response =
         authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "OtherProvider", testLocalAuthDTO);
@@ -230,146 +314,83 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     assertEquals(LOGIN_UNKNOWN_PROVIDER_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
   }
 
-  @Test
-  public void authenticateWithCredentials_local_unconfiguredRequiredMFA()
-      throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-admin@test.com");
-    testLocalAuthDTO.setPassword("test1234");
+  @Nested
+  class UserLogout {
+    @Test
+    public void sessionDeauthentication()
+        throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
+      LocalAuthDTO targetUser = new LocalAuthDTO();
+      targetUser.setEmail(TEST_STUDENT_EMAIL);
+      targetUser.setPassword(TEST_STUDENT_PASSWORD);
 
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_2FA_REQUIRED_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
-  }
+      Capture<Cookie> firstLoginResponseCookie = newCapture();
+      HttpServletResponse firstLoginResponse = createMock(HttpServletResponse.class);
+      firstLoginResponse.addCookie(capture(firstLoginResponseCookie));
+      replay(firstLoginResponse);
 
-  @Test
-  public void authenticateWithCredentials_local_incompleteMFA()
-      throws InvalidKeySpecException, NoSuchAlgorithmException, SegueDatabaseException {
-    reset(secondFactorManager);
-    expect(secondFactorManager.has2FAConfigured(anyObject(RegisteredUserDTO.class))).andReturn(true).atLeastOnce();
-    replay(secondFactorManager);
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student@test.com");
-    testLocalAuthDTO.setPassword("test1234");
+      authenticationFacade.authenticateWithCredentials(mockRequest, firstLoginResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      Cookie firstLoginAuthCookie = firstLoginResponseCookie.getValue();
+      Map<String, String> firstLoginSessionInformation = userAuthenticationManager.decodeCookie(firstLoginAuthCookie);
+      // Session should be valid
+      assertTrue(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
 
-    Response response;
-    try {
-      response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    } finally {
-      // Make sure to restore the mfa mock afterwards!
-      reset(secondFactorManager);
-      expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
-      replay(secondFactorManager);
+      Capture<Cookie> logoutResponseCookie = newCapture();
+      HttpServletResponse logoutResponse = createMock(HttpServletResponse.class);
+      logoutResponse.addCookie(capture(logoutResponseCookie));
+      replay(logoutResponse);
+
+      HttpSession logoutSession = createMockSession();
+      replay(logoutSession);
+      HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
+      expect(logoutRequest.getCookies()).andReturn(new Cookie[] {firstLoginAuthCookie}).anyTimes();
+      replay(logoutRequest);
+
+      authenticationFacade.userLogout(logoutRequest, logoutResponse);
+      Cookie logoutCookie = logoutResponseCookie.getValue();
+      // Should be no session associated with logout
+      assertEquals("", logoutCookie.getValue());
+      // Session should have been invalidated
+      assertFalse(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
+
+      Capture<Cookie> secondLoginResponseCookie = newCapture();
+      HttpServletResponse secondLoginResponse = createMock(HttpServletResponse.class);
+      secondLoginResponse.addCookie(capture(secondLoginResponseCookie));
+      replay(secondLoginResponse);
+
+      authenticationFacade.authenticateWithCredentials(mockRequest, secondLoginResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser);
+      Cookie secondLoginAuthCookie = secondLoginResponseCookie.getValue();
+      Map<String, String> secondLoginSessionInformation = userAuthenticationManager.decodeCookie(secondLoginAuthCookie);
+      // New session should be valid
+      assertTrue(userAuthenticationManager.isSessionValid(secondLoginSessionInformation));
+      // Previous session should still be invalid
+      assertFalse(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
+      // Sessions should have different tokens
+      assertNotEquals(firstLoginSessionInformation.get(SESSION_TOKEN),
+          secondLoginSessionInformation.get(SESSION_TOKEN));
     }
 
-    assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus());
-    assertEquals(Map.of("2FA_REQUIRED", true), response.getEntity());
-  }
+    @Test
+    public void noSession() throws SQLException {
+      HttpSession logoutSession = createMockSession();
+      replay(logoutSession);
+      HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
+      expect(logoutRequest.getCookies()).andReturn(new Cookie[] {}).anyTimes();
+      replay(logoutRequest);
 
-  @Test
-  public void authenticateWithCredentials_local_rateThrottleByIp()
-      throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student1@test.com");
-    testLocalAuthDTO.setPassword("test1234");
-
-    misuseMonitor.notifyEvent("0.0.0.0", SegueLoginByIPMisuseHandler.class.getSimpleName());
-    misuseMonitor.notifyEvent("0.0.0.0", SegueLoginByIPMisuseHandler.class.getSimpleName());
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
-  }
-
-  @Test
-  public void authenticateWithCredentials_local_rateThrottleByEmail()
-      throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail("test-student@test.com");
-    testLocalAuthDTO.setPassword("test1234");
-
-    misuseMonitor.notifyEvent("test-student@test.com", SegueLoginByEmailMisuseHandler.class.getSimpleName());
-    misuseMonitor.notifyEvent("test-student@test.com", SegueLoginByEmailMisuseHandler.class.getSimpleName());
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
-  }
-
-  @Test
-  public void userLogout_sessionDeauthentication()
-      throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, SQLException {
-    LocalAuthDTO targetUser = new LocalAuthDTO();
-    targetUser.setEmail("test-student@test.com");
-    targetUser.setPassword("test1234");
-
-    Capture<Cookie> firstLoginResponseCookie = newCapture();
-    HttpServletResponse firstLoginResponse = createMock(HttpServletResponse.class);
-    firstLoginResponse.addCookie(capture(firstLoginResponseCookie));
-    replay(firstLoginResponse);
-
-    authenticationFacade.authenticateWithCredentials(mockRequest, firstLoginResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    Cookie firstLoginAuthCookie = firstLoginResponseCookie.getValue();
-    Map<String, String> firstLoginSessionInformation = userAuthenticationManager.decodeCookie(firstLoginAuthCookie);
-    // Session should be valid
-    assertTrue(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
-
-    Capture<Cookie> logoutResponseCookie = newCapture();
-    HttpServletResponse logoutResponse = createMock(HttpServletResponse.class);
-    logoutResponse.addCookie(capture(logoutResponseCookie));
-    replay(logoutResponse);
-
-    HttpSession logoutSession = createMockSession();
-    replay(logoutSession);
-    HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
-    expect(logoutRequest.getCookies()).andReturn(new Cookie[] {firstLoginAuthCookie}).anyTimes();
-    replay(logoutRequest);
-
-    authenticationFacade.userLogout(logoutRequest, logoutResponse);
-    Cookie logoutCookie = logoutResponseCookie.getValue();
-    // Should be no session associated with logout
-    assertEquals("", logoutCookie.getValue());
-    // Session should have been invalidated
-    assertFalse(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
-
-    Capture<Cookie> secondLoginResponseCookie = newCapture();
-    HttpServletResponse secondLoginResponse = createMock(HttpServletResponse.class);
-    secondLoginResponse.addCookie(capture(secondLoginResponseCookie));
-    replay(secondLoginResponse);
-
-    authenticationFacade.authenticateWithCredentials(mockRequest, secondLoginResponse,
-        AuthenticationProvider.SEGUE.toString(), targetUser);
-    Cookie secondLoginAuthCookie = secondLoginResponseCookie.getValue();
-    Map<String, String> secondLoginSessionInformation = userAuthenticationManager.decodeCookie(secondLoginAuthCookie);
-    // New session should be valid
-    assertTrue(userAuthenticationManager.isSessionValid(secondLoginSessionInformation));
-    // Previous session should still be invalid
-    assertFalse(userAuthenticationManager.isSessionValid(firstLoginSessionInformation));
-    // Sessions should have different tokens
-    assertNotEquals(firstLoginSessionInformation.get(SESSION_TOKEN), secondLoginSessionInformation.get(SESSION_TOKEN));
-  }
-
-  @Test
-  public void userLogout_noSession() throws SQLException {
-    HttpSession logoutSession = createMockSession();
-    replay(logoutSession);
-    HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);
-    expect(logoutRequest.getCookies()).andReturn(new Cookie[] {}).anyTimes();
-    replay(logoutRequest);
-
-    Response response;
-    try {
-      response = authenticationFacade.userLogout(logoutRequest, mockResponse);
-    } finally {
-      removeAnonymousUser("sessionId");
+      Response response;
+      try {
+        response = authenticationFacade.userLogout(logoutRequest, mockResponse);
+      } finally {
+        removeAnonymousUser("sessionId");
+      }
+      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+      assertEquals(LOGOUT_NO_ACTIVE_SESSION_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
     }
-    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    assertEquals(LOGOUT_NO_ACTIVE_SESSION_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
   }
 
-  private void removeAnonymousUser(String sessionId) throws SQLException {
+  private void removeAnonymousUser(final String sessionId) throws SQLException {
     try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection()
         .prepareStatement("DELETE FROM temporary_user_store WHERE id = ?")
     ) {

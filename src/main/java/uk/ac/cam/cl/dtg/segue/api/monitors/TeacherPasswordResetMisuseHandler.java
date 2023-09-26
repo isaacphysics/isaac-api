@@ -17,10 +17,12 @@
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.util.LogUtils;
 
 /**
  * Handler to deal with teacher password reset requests.
@@ -70,12 +72,12 @@ public class TeacherPasswordResetMisuseHandler implements IMisuseHandler {
 
   @Override
   public void executeSoftThresholdAction(final String message) {
-    log.warn("Soft threshold limit: " + message);
+    log.warn("Soft threshold limit: " + sanitiseExternalLogValue(message));
   }
 
   @Override
   public void executeHardThresholdAction(final String message) {
-    log.error("Hard threshold limit: " + message);
+    log.error("Hard threshold limit: " + sanitiseExternalLogValue(message));
   }
 
 }

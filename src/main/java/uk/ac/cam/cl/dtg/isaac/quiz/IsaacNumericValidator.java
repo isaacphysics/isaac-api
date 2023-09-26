@@ -64,10 +64,10 @@ public class IsaacNumericValidator implements IValidator {
   /**
    * A class to represent the significant figures a number has, noting if it is ambiguous and the range if so.
    */
-  private class SigFigResult {
-    private boolean isAmbiguous;
-    private int sigFigsMin;
-    private int sigFigsMax;
+  private static class SigFigResult {
+    private final boolean isAmbiguous;
+    private final int sigFigsMin;
+    private final int sigFigsMax;
 
     /**
      * Default constructor.

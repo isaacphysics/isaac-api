@@ -304,12 +304,9 @@ public class GameboardPersistenceManager {
   /**
    * Save a gameboard to persistent storage.
    *
-   * @param gameboard
-   *            - gameboard to save
+   * @param gameboard - gameboard to save
    * @return internal database id for the saved gameboard.
-   * @throws SegueDatabaseException
-   *             - if there is a problem saving the gameboard in the database.
-   * @throws JsonProcessingException
+   * @throws SegueDatabaseException - if there is a problem saving the gameboard in the database.
    */
   public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
       throws SegueDatabaseException {

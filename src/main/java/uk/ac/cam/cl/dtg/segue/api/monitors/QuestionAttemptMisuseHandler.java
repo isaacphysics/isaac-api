@@ -16,10 +16,13 @@
 
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
+
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 public class QuestionAttemptMisuseHandler implements IMisuseHandler {
@@ -68,6 +71,6 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
   @Override
   public void executeHardThresholdAction(final String message) {
-    log.warn("Hard threshold limit: " + message);
+    log.warn("Hard threshold limit: " + sanitiseExternalLogValue(message));
   }
 }

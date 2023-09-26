@@ -269,6 +269,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     }
   }
 
+  @Override
   public List<AssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
     if (null == timestamp) {
       throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");

@@ -21,6 +21,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -74,6 +75,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
@@ -151,10 +153,10 @@ public class QuestionFacade extends AbstractSegueFacade {
       AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
       if (currentUser instanceof RegisteredUserDTO) {
         log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
-            ((RegisteredUserDTO) currentUser).getId(), questionId));
+            ((RegisteredUserDTO) currentUser).getId(), sanitiseExternalLogValue(questionId)));
       } else {
         log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!",
-            questionId));
+            sanitiseExternalLogValue(questionId)));
       }
       return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
     } catch (SegueDatabaseException e) {
@@ -268,7 +270,7 @@ public class QuestionFacade extends AbstractSegueFacade {
       question = (Question) contentBasedOnId;
     } else {
       SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-          "No question object found for given id: " + questionId);
+          "No question object found for given id: " + sanitiseExternalLogValue(questionId));
       log.warn(error.getErrorMessage());
       return error.toResponse();
     }

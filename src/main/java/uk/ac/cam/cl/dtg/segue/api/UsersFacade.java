@@ -23,7 +23,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_GROUP_MANAGER_INIT
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TOO_MANY_REQUESTS;
-import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -93,6 +93,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
+import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
@@ -256,9 +257,8 @@ public class UsersFacade extends AbstractSegueFacade {
         // which has not made any other authenticated/logged request to Isaac beforehand.
         // This _might_ be suspicious, and this logging will help establish that.
         if (request.getSession() == null || request.getSession().getAttribute(ANONYMOUS_USER) == null) {
-          log.error(
-              String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress,
-                  registeredUser.getEmail()));
+          log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!",
+              ipAddress, sanitiseExternalLogValue(registeredUser.getEmail())));
         }
 
         return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences,
@@ -409,10 +409,10 @@ public class UsersFacade extends AbstractSegueFacade {
               ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
 
       if (userExists) {
-        log.info("Password reset requested for email: (" + sanitiseLogValue(userObject.getEmail()) + ")");
+        log.info("Password reset requested for email: (" + sanitiseExternalLogValue(userObject.getEmail()) + ")");
       } else {
-        log.warn("Password reset requested for account that does not exist: (" + sanitiseLogValue(userObject.getEmail())
-            + ")");
+        log.warn("Password reset requested for account that does not exist: ("
+            + sanitiseExternalLogValue(userObject.getEmail()) + ")");
       }
       return Response.ok().build();
     } catch (SegueDatabaseException e) {
@@ -421,7 +421,7 @@ public class UsersFacade extends AbstractSegueFacade {
       log.error(error.getErrorMessage(), e);
       return error.toResponse();
     } catch (SegueResourceMisuseException e) {
-      log.error("Password reset request blocked for email: (" + sanitiseLogValue(userObject.getEmail()) + ")",
+      log.error("Password reset request blocked for email: (" + sanitiseExternalLogValue(userObject.getEmail()) + ")",
           e.toString());
       return SegueErrorResponse.getRateThrottledResponse(TOO_MANY_REQUESTS);
     }
@@ -453,7 +453,7 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Invalid password reset token.");
-    log.debug(String.format("Invalid password reset token: %s", token));
+    log.debug("Invalid password reset token.");
     return error.toResponse();
   }
 
@@ -487,7 +487,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     } catch (InvalidTokenException e) {
       SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");
-      log.error("Invalid password reset token supplied: " + token);
+      log.error("Invalid password reset token supplied.");
       return error.toResponse();
     } catch (InvalidPasswordException e) {
       SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());

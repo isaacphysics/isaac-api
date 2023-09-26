@@ -32,6 +32,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SEARCH_RESULTS_HARD_LIMIT_FAL
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
@@ -325,7 +326,7 @@ public class AdminFacade extends AbstractSegueFacade {
           RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
 
           if (null == user) {
-            log.error(String.format("No user could be found with email (%s)", email));
+            log.error(String.format("No user could be found with email (%s)", sanitiseInternalLogValue(email)));
             throw new NoUserException("No user found with this email.");
           }
         }
@@ -544,7 +545,7 @@ public class AdminFacade extends AbstractSegueFacade {
           unsubscribedEmailType = EmailType.EVENTS;
         } else {
           log.warn(String.format("User with email (%s) attempted to unsubscribe from unrecognised list (%s)!",
-              recipientEmail, mailjetListId));
+              sanitiseInternalLogValue(recipientEmail), mailjetListId));
         }
         // Find and unsubscribe user:
         if (recipientEmail != null && !recipientEmail.isEmpty()) {
@@ -556,7 +557,7 @@ public class AdminFacade extends AbstractSegueFacade {
             userPreferencesToUpdate.add(preferenceToSave);
           } catch (NoUserException e) {
             log.warn(String.format("User with email (%s) attempted to unsubscribe, but no Isaac account found!",
-                recipientEmail));
+                sanitiseInternalLogValue(recipientEmail)));
           }
         }
       }
@@ -1002,7 +1003,8 @@ public class AdminFacade extends AbstractSegueFacade {
         HttpEntity e = httpResponse.getEntity();
 
         if (httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
-          log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
+          log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to "
+              + sanitiseInternalLogValue(version) + ".");
           return Response.ok().build();
         } else {
           SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
@@ -1048,8 +1050,8 @@ public class AdminFacade extends AbstractSegueFacade {
       String agentIdentifier = details.get("agentIdentifier");
       String eventLabel = details.get("eventLabel");
       misuseMonitor.resetMisuseCount(agentIdentifier, eventLabel);
-      log.info(String.format("Admin user (%s) reset misuse monitor '%s' for agent id (%s)!", user.getEmail(),
-          eventLabel, agentIdentifier));
+      log.info(sanitiseInternalLogValue(String.format("Admin user (%s) reset misuse monitor '%s' for agent id (%s)!",
+          user.getEmail(), eventLabel, agentIdentifier)));
       return Response.ok().build();
     } catch (NoUserLoggedInException e) {
       return SegueErrorResponse.getNotLoggedInResponse();

@@ -256,31 +256,39 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
   @Override
   public UserGroup findGroupById(final Long groupId, final boolean includeDeletedGroups) throws SegueDatabaseException {
-    // FIXME: try-with-resources!
-    try (Connection conn = database.getDatabaseConnection()) {
-      PreparedStatement pst;
+    try {
       if (includeDeletedGroups) {
-        pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ?");
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ?")
+        ) {
+          pst.setLong(FIELD_GET_BY_ID_GROUP_ID, groupId);
+          return buildFindGroupByIdResults(pst);
+        }
       } else {
-        pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ? AND group_status <> ?");
-        pst.setString(FIELD_GET_BY_ID_GROUP_STATUS, GroupStatus.DELETED.name());
-      }
-
-      pst.setLong(FIELD_GET_BY_ID_GROUP_ID, groupId);
-
-      try (ResultSet results = pst.executeQuery()) {
-        if (results.next()) {
-          if (!results.isLast()) {
-            throw new SegueDatabaseException("Expected a single object and found more than one.");
-          }
-          return this.buildGroup(results);
-        } else {
-          // Lots of places that call this function expect null if no group was found, i.e. was probably deleted.
-          return null;
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("SELECT * FROM groups WHERE id = ? AND group_status <> ?")
+        ) {
+          pst.setLong(FIELD_GET_BY_ID_GROUP_ID, groupId);
+          pst.setString(FIELD_GET_BY_ID_GROUP_STATUS, GroupStatus.DELETED.name());
+          return buildFindGroupByIdResults(pst);
         }
       }
     } catch (SQLException e) {
       throw new SegueDatabaseException("Postgres exception", e);
+    }
+  }
+
+  private UserGroup buildFindGroupByIdResults(final PreparedStatement pst) throws SQLException, SegueDatabaseException {
+    try (ResultSet results = pst.executeQuery()) {
+      if (results.next()) {
+        if (!results.isLast()) {
+          throw new SegueDatabaseException("Expected a single object and found more than one.");
+        }
+        return this.buildGroup(results);
+      } else {
+        // Lots of places that call this function expect null if no group was found, i.e. was probably deleted.
+        return null;
+      }
     }
   }
 
@@ -295,24 +303,26 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
       throw new SegueDatabaseException("Unable to locate the group requested to delete.");
     }
 
-    // FIXME: try-with-resources!
-    try (Connection conn = database.getDatabaseConnection()) {
-      PreparedStatement pst;
+    try {
       if (markAsDeleted) {
-        pst = conn
-            .prepareStatement("UPDATE groups SET group_status=? WHERE id = ?;");
-        pst.setString(FIELD_MARK_GROUP_DELETED_GROUP_STATUS, GroupStatus.DELETED.name());
-        pst.setLong(FIELD_MARK_GROUP_DELETED_ID, groupId);
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("UPDATE groups SET group_status=? WHERE id = ?;")
+        ) {
+          pst.setString(FIELD_MARK_GROUP_DELETED_GROUP_STATUS, GroupStatus.DELETED.name());
+          pst.setLong(FIELD_MARK_GROUP_DELETED_ID, groupId);
 
-        if (pst.executeUpdate() == 0) {
-          throw new SegueDatabaseException("Unable to mark group as deleted.");
+          if (pst.executeUpdate() == 0) {
+            throw new SegueDatabaseException("Unable to mark group as deleted.");
+          }
         }
       } else {
-        pst = conn.prepareStatement("DELETE FROM groups WHERE id = ?");
-        pst.setLong(FIELD_DELETE_GROUP_GROUP_ID, groupId);
-        pst.execute();
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM groups WHERE id = ?")
+        ) {
+          pst.setLong(FIELD_DELETE_GROUP_GROUP_ID, groupId);
+          pst.execute();
+        }
       }
-
     } catch (SQLException e1) {
       throw new SegueDatabaseException("Postgres exception", e1);
     }

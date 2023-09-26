@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ELASTICSEARCH_INDEXER_REQUEST_TIMEOUT;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -166,11 +167,11 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
   boolean expungeTypedIndexFromSearchCache(final String typedIndex) {
     try {
-      log.info("Sending delete request to ElasticSearch for search index: " + typedIndex);
+      log.info("Sending delete request to ElasticSearch for search index: " + sanitiseInternalLogValue(typedIndex));
       getClient().indices().delete(new DeleteIndexRequest(typedIndex), RequestOptions.DEFAULT);
     } catch (ElasticsearchException | IOException e) {
-      log.error("ElasticSearch exception while trying to delete index " + typedIndex + ", it might not have existed.",
-          e);
+      log.error("ElasticSearch exception while trying to delete index " + sanitiseInternalLogValue(typedIndex)
+              + ", it might not have existed.", e);
       return false;
     }
 
@@ -202,7 +203,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 .getAliases());
       } catch (IOException e) {
         log.error(String.format("Failed to retrieve existing previous alias %s, not moving alias!",
-            typedAlias + "_previous"));
+            sanitiseInternalLogValue(typedAlias) + "_previous"));
         continue;
       }
 
@@ -223,7 +224,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             getClient().indices().getAlias(new GetAliasesRequest().aliases(typedAlias), RequestOptions.DEFAULT)
                 .getAliases());
       } catch (IOException e) {
-        log.error(String.format("Failed to retrieve existing alias %s, not moving alias!", typedAlias));
+        log.error(String.format("Failed to retrieve existing alias %s, not moving alias!",
+            sanitiseInternalLogValue(typedAlias)));
         continue;
       }
 
@@ -238,7 +240,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
       }
 
       if (indexWithCurrent != null && indexWithCurrent.equals(typedIndexTarget)) {
-        log.info("Not moving alias '" + typedAlias + "' - it already points to the right index.");
+        log.info("Not moving alias '" + sanitiseInternalLogValue(typedAlias)
+            + "' - it already points to the right index.");
       } else {
         IndicesAliasesRequest request = new IndicesAliasesRequest();
 
@@ -274,8 +277,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         try {
           getClient().indices().updateAliases(request, RequestOptions.DEFAULT);
         } catch (IOException e) {
-          log.error(String.format("Failed to update alias %s", typedAlias), e);
-          continue;
+          log.error(String.format("Failed to update alias %s", sanitiseInternalLogValue(typedAlias)), e);
         }
       }
 

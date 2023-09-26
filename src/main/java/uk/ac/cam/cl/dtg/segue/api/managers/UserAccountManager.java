@@ -30,6 +30,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
@@ -302,7 +303,7 @@ public class UserAccountManager implements IUserAccountManager {
     } else {
       if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty()
           && this.findUserByEmail(providerUserDO.getEmail()) != null) {
-        log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
+        log.warn("A user tried to use unknown provider '" + sanitiseExternalLogValue(capitalizeFully(provider))
             + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
         throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
             + " You may have registered using a different provider, or a username and password.");
@@ -419,14 +420,16 @@ public class UserAccountManager implements IUserAccountManager {
       return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You are missing a required field. "
           + "Please make sure you have specified all mandatory fields in your response.").toResponse();
     } catch (DuplicateAccountException e) {
-      log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
+      log.warn(String.format("Duplicate account registration attempt for (%s)",
+          sanitiseExternalLogValue(userObjectFromClient.getEmail())));
       return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
     } catch (SegueDatabaseException e) {
       String errorMsg = "Unable to set a password, due to an internal database error.";
       log.error(errorMsg, e);
       return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
     } catch (EmailMustBeVerifiedException e) {
-      log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
+      log.warn("Someone attempted to register with an Isaac email address: "
+          + sanitiseExternalLogValue(userObjectFromClient.getEmail()));
       return new SegueErrorResponse(Response.Status.BAD_REQUEST,
           "You cannot register with an Isaac email address.").toResponse();
     } catch (InvalidNameException e) {
@@ -455,7 +458,7 @@ public class UserAccountManager implements IUserAccountManager {
       // Check if the given preference type is one we support:
       if (!EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class, preferenceType)
           && !EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)) {
-        log.warn("Unknown user preference type '" + preferenceType + "' provided. Skipping.");
+        log.warn("Unknown user preference type '" + sanitiseExternalLogValue(preferenceType) + "' provided. Skipping.");
         continue;
       }
 
@@ -465,8 +468,8 @@ public class UserAccountManager implements IUserAccountManager {
         for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
           if (!EnumUtils.isValidEnum(EmailType.class, preferenceName)
               || !EmailType.valueOf(preferenceName).isValidEmailPreference()) {
-            log.warn("Invalid email preference name '" + preferenceName + "' provided for '"
-                + preferenceType + "'! Skipping.");
+            log.warn("Invalid email preference name '" + sanitiseExternalLogValue(preferenceName) + "' provided for '"
+                + sanitiseExternalLogValue(preferenceType) + "'! Skipping.");
             continue;
           }
           boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
@@ -477,22 +480,23 @@ public class UserAccountManager implements IUserAccountManager {
         // Isaac user preference names are configured in the config files:
         String acceptedPreferenceNamesProperty = properties.getProperty(preferenceType);
         if (null == acceptedPreferenceNamesProperty) {
-          log.error("Failed to find allowed user preferences names for '" + preferenceType
+          log.error("Failed to find allowed user preferences names for '" + sanitiseExternalLogValue(preferenceType)
               + "'! Has it been configured?");
           acceptedPreferenceNamesProperty = "";
         }
         List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
         for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
           if (!acceptedPreferenceNames.contains(preferenceName)) {
-            log.warn("Invalid user preference name '" + preferenceName + "' provided for type '"
-                + preferenceType + "'! Skipping.");
+            log.warn("Invalid user preference name '" + sanitiseExternalLogValue(preferenceName)
+                + "' provided for type '" + sanitiseExternalLogValue(preferenceType) + "'! Skipping.");
             continue;
           }
           boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
           userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
         }
       } else {
-        log.warn("Unexpected user preference type '" + preferenceType + "' provided. Skipping.");
+        log.warn(
+            "Unexpected user preference type '" + sanitiseExternalLogValue(preferenceType) + "' provided. Skipping.");
       }
     }
     return userPreferences;
@@ -1082,7 +1086,8 @@ public class UserAccountManager implements IUserAccountManager {
     // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them,
     // however.
     if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
-      log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
+      log.warn(
+          "User attempted to register with Isaac email address '" + sanitiseExternalLogValue(user.getEmail()) + "'!");
       throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
     }
 
@@ -1225,7 +1230,7 @@ public class UserAccountManager implements IUserAccountManager {
     if (null == userToSave) {
       log.warn(String.format(
           "Could not update email verification status of email address (%s) - does not exist",
-          email));
+          sanitiseExternalLogValue(email)));
       return;
     }
     userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
@@ -1339,7 +1344,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     } catch (NoUserLoggedInException e) {
       log.error(String.format("Verification requested for email:%s where email does not exist "
-          + "and user not logged in!", email));
+          + "and user not logged in!", sanitiseExternalLogValue(email)));
     } catch (ContentManagerException e) {
       log.debug("ContentManagerException " + e.getMessage());
     }
@@ -1568,7 +1573,7 @@ public class UserAccountManager implements IUserAccountManager {
     Map<String, Object> emailTokens =
         ImmutableMap.of("verificationURL", this.generateEmailVerificationURL(userDTO, emailVerificationToken));
 
-    log.info(String.format("Sending email verification message to %s", userDTO.getEmail()));
+    log.info(String.format("Sending email verification message to %s", sanitiseExternalLogValue(userDTO.getEmail())));
 
     emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
   }
@@ -1592,7 +1597,7 @@ public class UserAccountManager implements IUserAccountManager {
     Map<String, Object> emailTokens = ImmutableMap.of("requestedemail", newEmail);
 
     log.info(String.format("Sending email for email address change for user (%s)"
-        + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), newEmail));
+        + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), sanitiseExternalLogValue(newEmail)));
     emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate, emailTokens, EmailType.SYSTEM);
 
     // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)

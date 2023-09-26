@@ -24,6 +24,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME_POJO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolsIndexType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -38,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.BasicSearchParameters;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
+import uk.ac.cam.cl.dtg.util.LogUtils;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -148,7 +150,7 @@ public class SchoolListReader {
 
     if (matchingSchoolList.size() > 1) {
       log.error("Error occurred while trying to look a school up by id... Found more than one match for "
-          + schoolURN + " results: " + matchingSchoolList);
+          + sanitiseExternalLogValue(schoolURN) + " results: " + matchingSchoolList);
     }
 
     return mapper.readValue(matchingSchoolList.get(0), School.class);

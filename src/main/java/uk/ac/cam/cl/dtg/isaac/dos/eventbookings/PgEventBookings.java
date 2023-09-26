@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
@@ -427,8 +429,8 @@ public class PgEventBookings implements EventBookings {
           throw new ResourceNotFoundException("Unable to locate the booking you requested.");
         } else {
           String msg = String.format(
-              "Found more than one event booking that matches event id (%s) and user id (%s).", eventId,
-              userId);
+              "Found more than one event booking that matches event id (%s) and user id (%s).",
+              sanitiseExternalLogValue(eventId), userId);
           log.error(msg);
           throw new SegueDatabaseException(msg);
         }

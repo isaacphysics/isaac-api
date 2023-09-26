@@ -4,6 +4,7 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.BYTES_IN_ONE_KILOBYTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ContentIndextype;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAXIMUM_CONTENT_ID_LENGTH;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -99,7 +100,7 @@ public class ContentIndexer {
       throw new VersionLockedException(version);
     }
 
-    log.info("Acquired lock for version " + version + ". Indexing.");
+    log.info("Acquired lock for version " + sanitiseInternalLogValue(version) + ". Indexing.");
 
     try {
 
@@ -109,13 +110,13 @@ public class ContentIndexer {
       // The case where only some of the content types have been successfully indexed for this version, should
       // never happen but is covered by an expunge at the start of #buildElasticSearchIndex(...).
       if (allContentTypesAreIndexedForVersion(version)) {
-        log.info("Content already indexed: " + version);
+        log.info("Content already indexed: " + sanitiseInternalLogValue(version));
         return;
       }
 
       log.info(String.format(
           "Rebuilding content index as sha (%s) does not exist in search provider.",
-          version));
+          sanitiseInternalLogValue(version)));
 
       Map<String, Content> contentCache = new HashMap<>();
       Set<String> tagsList = new HashSet<>();
@@ -155,8 +156,8 @@ public class ContentIndexer {
         throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
       }
 
-      log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime)
-          / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+      log.info("Finished indexing version " + sanitiseInternalLogValue(version) + ", took: "
+          + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
     } finally {
       VERSION_LOCKS.remove(version);
@@ -208,7 +209,7 @@ public class ContentIndexer {
       }
 
       TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
-      log.info("Populating git content cache based on sha " + sha + " ...");
+      log.info("Populating git content cache based on sha " + sanitiseInternalLogValue(sha) + " ...");
 
       // Traverse the git repository looking for the .json files
       while (treeWalk.next()) {
@@ -256,7 +257,7 @@ public class ContentIndexer {
       repository.close();
       log.debug("Tags available " + tagsList);
       log.debug("All units: " + allUnits);
-      log.info("Git content cache population for " + sha + " completed!");
+      log.info("Git content cache population for " + sanitiseInternalLogValue(sha) + " completed!");
 
     } catch (IOException e) {
       log.error("IOException while trying to access git repository. ", e);
@@ -665,7 +666,7 @@ public class ContentIndexer {
       expungeAnyContentTypeIndicesRelatedToVersion(sha);
     }
 
-    log.info("Building search indexes for: " + sha);
+    log.info("Building search indexes for: " + sanitiseInternalLogValue(sha));
 
     // setup object mapper to use pre-configured deserializer module.
     // Required to deal with type polymorphism
@@ -741,7 +742,7 @@ public class ContentIndexer {
       es.bulkIndexWithIds(sha, ContentIndextype.CONTENT.toString(), contentToIndex);
       endTime = System.nanoTime();
       log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
-      log.info("Search index request sent for: " + sha);
+      log.info("Search index request sent for: " + sanitiseInternalLogValue(sha));
     } catch (SegueSearchException e) {
       log.error("Error whilst trying to perform bulk index operation.", e);
     } catch (ActionRequestValidationException e) {
@@ -827,8 +828,8 @@ public class ContentIndexer {
       }
     }
 
-    log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
-        indexProblemCache.size()));
+    log.info(String.format("Validation processing (%s) complete. There are %s files with content problems",
+        sanitiseInternalLogValue(sha), indexProblemCache.size()));
 
     if (indexProblemCache.size() == 0) {
       // Register a no-op style error to simplify application logic by ensuring there is always a content errors index
@@ -848,7 +849,7 @@ public class ContentIndexer {
    * @param version the commit sha of the content that we are interested in.
    */
   private void expungeAnyContentTypeIndicesRelatedToVersion(final String version) {
-    log.info("Deleting existing indexes for version " + version);
+    log.info("Deleting existing indexes for version " + sanitiseInternalLogValue(version));
     for (ContentIndextype contentIndexType : ContentIndextype.values()) {
       es.expungeIndexFromSearchCache(version, contentIndexType.toString());
     }

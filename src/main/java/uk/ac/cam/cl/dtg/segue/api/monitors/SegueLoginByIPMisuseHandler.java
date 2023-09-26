@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_LOGIN_BY_IP_DEFAULT_HARD_THRESHOLD;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_LOGIN_BY_IP_DEFAULT_SOFT_THRESHOLD;
-import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -56,11 +56,11 @@ public class SegueLoginByIPMisuseHandler implements IMisuseHandler {
 
   @Override
   public void executeSoftThresholdAction(final String message) {
-    log.warn("Soft threshold limit: " + sanitiseLogValue(message));
+    log.warn("Soft threshold limit: " + sanitiseExternalLogValue(message));
   }
 
   @Override
   public void executeHardThresholdAction(final String message) {
-    log.warn("Hard threshold limit: " + sanitiseLogValue(message));
+    log.warn("Hard threshold limit: " + sanitiseExternalLogValue(message));
   }
 }

@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -100,7 +101,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
       if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(now))) {
         log.error(String.format("Duplicated Test Assignment Exception"
                 + " - cannot assign the same work %s to a group %s when due date not passed",
-            newAssignment.getQuizId(), newAssignment.getGroupId()));
+                        sanitiseExternalLogValue(newAssignment.getQuizId()), newAssignment.getGroupId()));
         throw new DuplicateAssignmentException("You cannot reassign a test until the due date has passed.");
       }
     }

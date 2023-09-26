@@ -19,11 +19,12 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_BY_EMAIL_DEFAULT_HARD_THRESHOLD;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_BY_EMAIL_DEFAULT_SOFT_THRESHOLD;
-import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseLogValue;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.util.LogUtils;
 
 /**
  * Handler to deal with email verification requests.
@@ -77,12 +78,12 @@ public class PasswordResetByEmailMisuseHandler implements IMisuseHandler {
 
   @Override
   public void executeSoftThresholdAction(final String message) {
-    log.warn("Soft threshold limit: " + sanitiseLogValue(message));
+    log.warn("Soft threshold limit: " + sanitiseExternalLogValue(message));
   }
 
   @Override
   public void executeHardThresholdAction(final String message) {
-    log.error("Hard threshold limit: " + sanitiseLogValue(message));
+    log.error("Hard threshold limit: " + sanitiseExternalLogValue(message));
   }
 
 }

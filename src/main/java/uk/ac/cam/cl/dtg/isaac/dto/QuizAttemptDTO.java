@@ -109,6 +109,7 @@ public class QuizAttemptDTO implements IHasQuizSummary {
     this.userId = userId;
   }
 
+  @Override
   public String getQuizId() {
     return quizId;
   }

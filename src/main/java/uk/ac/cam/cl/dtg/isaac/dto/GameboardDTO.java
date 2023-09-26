@@ -103,6 +103,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    *
    * @return the id
    */
+  @Override
   public String getId() {
     return id;
   }
@@ -122,6 +123,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    *
    * @return the title
    */
+  @Override
   public String getTitle() {
     return title;
   }

@@ -126,8 +126,8 @@ public class IsaacRegexMatchValidator implements IValidator {
       return false;
     }
 
-    // The pattern is case sensitive and single line by default - the regex flags are combined with bitwise OR
-    Pattern answerPattern = Pattern.compile(trustedRegexPattern,
+    // The pattern is case-sensitive and single line by default - the regex flags are combined with bitwise OR
+    Pattern answerPattern = Pattern.compile(Pattern.quote(trustedRegexPattern),
         (null != caseInsensitive && caseInsensitive ? Pattern.CASE_INSENSITIVE : 0)
             | (null != multiLineRegex && multiLineRegex ? Pattern.MULTILINE : 0));
 

@@ -32,6 +32,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SEARCH_TEXT_CHAR_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -112,6 +113,7 @@ public class IsaacController extends AbstractIsaacFacade {
   // Question counts are slow to calculate, so cache for up to 10 minutes. We may want to move this to a more
   // reusable place (such as statsManager.getLogCount) if we find ourselves using this pattern more).
   private final Supplier<Long> questionCountCache = Suppliers.memoizeWithExpiration(new Supplier<Long>() {
+    @Override
     public Long get() {
       Executors.newSingleThreadExecutor().submit(new Runnable() {
         @Override
@@ -330,7 +332,8 @@ public class IsaacController extends AbstractIsaacFacade {
     if (null == fileContent) {
       String refererHeader = httpServletRequest.getHeader("Referer");
       SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
-      log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+      log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)",
+          sanitiseExternalLogValue(path), refererHeader));
       return error.toResponse();
     }
 
@@ -401,7 +404,8 @@ public class IsaacController extends AbstractIsaacFacade {
       if (null == fileContent) {
         String refererHeader = httpServletRequest.getHeader("Referer");
         SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
-        log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+        log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", sanitiseExternalLogValue(path),
+            refererHeader));
         return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
       }
 

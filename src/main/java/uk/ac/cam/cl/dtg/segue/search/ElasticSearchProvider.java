@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_MAX_WINDOW_SIZE;
+import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -315,7 +316,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     try {
       return client.indices().exists(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT);
     } catch (IOException e) {
-      log.error(String.format("Failed to check existence of index %s", typedIndex), e);
+      log.error(String.format("Failed to check existence of index %s", sanitiseInternalLogValue(typedIndex)), e);
       return false;
     }
   }
@@ -716,6 +717,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
   }
 
+  @Override
   public GetResponse getById(final String indexBase, final String indexType, final String id)
       throws SegueSearchException {
     String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
@@ -728,6 +730,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
   }
 
+  @Override
   public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
     String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
     SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(DEFAULT_MAX_WINDOW_SIZE).fetchSource(true);
@@ -768,7 +771,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
       }
       return Integer.parseInt(this.settingsCache.getIfPresent(maxWindowSizeKey));
-    } catch (IOException e) {
+    } catch (IOException | NumberFormatException e) {
       log.error(String.format("Failed to retrieve max window size settings for index %s - defaulting to %d",
           typedIndex, DEFAULT_MAX_WINDOW_SIZE), e);
       return DEFAULT_MAX_WINDOW_SIZE;

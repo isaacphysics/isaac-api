@@ -68,11 +68,12 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
   @AfterEach
   public void tearDown() throws SQLException {
     // reset group managers in DB, so the same groups can be re-used across test cases
-    PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
-        "DELETE FROM group_additional_managers WHERE group_id in (?, ?);");
-    pst.setInt(1, (int) TEST_TEACHERS_AB_GROUP_ID);
-    pst.setInt(2, (int) TEST_TUTORS_AB_GROUP_ID);
-    pst.executeUpdate();
+    try (PreparedStatement pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
+        "DELETE FROM group_additional_managers WHERE group_id in (?, ?);");) {
+      pst.setInt(1, (int) TEST_TEACHERS_AB_GROUP_ID);
+      pst.setInt(2, (int) TEST_TUTORS_AB_GROUP_ID);
+      pst.executeUpdate();
+    }
   }
 
   @Test

@@ -886,12 +886,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     String version = "unknown";
     try {
       Properties p = new Properties();
-      InputStream is = SegueGuiceConfigurationModule.class.getResourceAsStream("/version.properties");
-      if (is != null) {
-        p.load(is);
-        version = p.getProperty("version", "");
+      try (InputStream is = SegueGuiceConfigurationModule.class.getResourceAsStream("/version.properties")) {
+        if (is != null) {
+          p.load(is);
+          version = p.getProperty("version", "");
+        }
       }
-      is.close();
     } catch (Exception e) {
       log.error(e.getMessage());
     }
