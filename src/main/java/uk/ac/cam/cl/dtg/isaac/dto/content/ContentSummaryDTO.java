@@ -30,6 +30,7 @@ import java.util.List;
 public class ContentSummaryDTO {
     private String id;
     private String title;
+    private String subtitle;
     private String summary;
     private String type;
     private String level;
@@ -86,6 +87,25 @@ public class ContentSummaryDTO {
      */
     public void setTitle(final String title) {
         this.title = title;
+    }
+
+    /**
+     * Gets the subtitle.
+     *
+     * @return the subtitle
+     */
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    /**
+     * Sets the subtitle.
+     *
+     * @param subtitle
+     *            the subtitle to set
+     */
+    public void setSubtitle(final String subtitle) {
+        this.subtitle = subtitle;
     }
 
     /**
