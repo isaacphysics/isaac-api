@@ -1,0 +1,20 @@
+name: Checkstyle
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checkstyle:
+    name: Checkstyle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dbelyaev/action-checkstyle@v0.9.4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: error
+          checkstyle_config: src/main/resources/checkstyle-config.xml
+          fail_on_error: true
