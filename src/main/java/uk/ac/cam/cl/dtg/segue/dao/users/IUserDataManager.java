@@ -265,13 +265,14 @@ public interface IUserDataManager {
   Map<Role, Long> getRoleCount() throws SegueDatabaseException;
 
   /**
-   * Count the users by role seen over the previous time interval.
+   * Retrieves a count of users by their roles who were last seen within the specified time ranges.
    *
-   * @param timeInterval time interval over which to count
-   * @return map of counts for each role
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @param timeRanges An array of time ranges (in string format) for which to get the user counts.
+   * @return A map where the keys are the time ranges and the values are another map containing
+   *     the count of users for each role within that time range.
+   * @throws SegueDatabaseException If there is a database-related issue, such as a SQL exception.
    */
-  Map<Role, Long> getRolesLastSeenOver(TimeInterval timeInterval) throws SegueDatabaseException;
+  Map<TimeInterval, Map<Role, Long>> getRolesLastSeenOver(TimeInterval[] timeRanges) throws SegueDatabaseException;
 
   /**
    * Count users' reported genders.

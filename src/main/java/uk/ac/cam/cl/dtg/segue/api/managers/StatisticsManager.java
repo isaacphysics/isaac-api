@@ -26,11 +26,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_DAYS_IN_LONG_MONTH;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.NINETY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SEVEN_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.SIX_MONTHS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.THIRTY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.TWO_YEARS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 
 import com.google.api.client.util.Lists;
@@ -53,6 +49,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -152,10 +149,17 @@ public class StatisticsManager implements IStatisticsManager {
    * @throws SegueDatabaseException - if there is a database error.
    */
   @Override
-  public synchronized Map<String, Object> getGeneralStatistics()
-      throws SegueDatabaseException {
-    Map<String, Object> result = Maps.newHashMap();
+  public synchronized Map<String, Object> getGeneralStatistics() throws SegueDatabaseException {
+    Map<String, Object> result = new HashMap<>();
 
+    addBasicStats(result);
+    addRangedActiveUserStats(result);
+    addRangedAnsweredQuestionStats(result);
+
+    return result;
+  }
+
+  private void addBasicStats(final Map<String, Object> result) throws SegueDatabaseException {
     result.put("userGenders", userManager.getGenderCount());
     result.put("userRoles", userManager.getRoleCount());
     result.put("userSchoolInfo", userManager.getSchoolInfoStats());
@@ -164,23 +168,28 @@ public class StatisticsManager implements IStatisticsManager {
     result.put("viewQuestionEvents", logManager.getLogCountByType(IsaacServerLogType.VIEW_QUESTION.name()));
     result.put("answeredQuestionEvents", logManager.getLogCountByType(SegueServerLogType.ANSWER_QUESTION.name()));
     result.put("viewConceptEvents", logManager.getLogCountByType(IsaacServerLogType.VIEW_CONCEPT.name()));
-
-    Map<String, Map<Role, Long>> rangedActiveUserStats = Maps.newHashMap();
-    rangedActiveUserStats.put("sevenDays", userManager.getActiveRolesOverPrevious(SEVEN_DAYS));
-    rangedActiveUserStats.put("thirtyDays", userManager.getActiveRolesOverPrevious(THIRTY_DAYS));
-    rangedActiveUserStats.put("ninetyDays", userManager.getActiveRolesOverPrevious(NINETY_DAYS));
-    rangedActiveUserStats.put("sixMonths", userManager.getActiveRolesOverPrevious(SIX_MONTHS));
-    rangedActiveUserStats.put("twoYears", userManager.getActiveRolesOverPrevious(TWO_YEARS));
-    result.put("activeUsersOverPrevious", rangedActiveUserStats);
-
-    Map<String, Map<Role, Long>> rangedAnsweredQuestionStats = Maps.newHashMap();
-    rangedAnsweredQuestionStats.put("sevenDays", questionManager.getAnsweredQuestionRolesOverPrevious(SEVEN_DAYS));
-    rangedAnsweredQuestionStats.put("thirtyDays", questionManager.getAnsweredQuestionRolesOverPrevious(THIRTY_DAYS));
-    rangedAnsweredQuestionStats.put("ninetyDays", questionManager.getAnsweredQuestionRolesOverPrevious(NINETY_DAYS));
-    result.put("answeringUsersOverPrevious", rangedAnsweredQuestionStats);
-
-    return result;
   }
+
+  private void addRangedActiveUserStats(final Map<String, Object> result) throws SegueDatabaseException {
+    TimeInterval[] timeIntervals = {
+        TimeInterval.SEVEN_DAYS,
+        TimeInterval.THIRTY_DAYS,
+        TimeInterval.NINETY_DAYS,
+        TimeInterval.SIX_MONTHS,
+        TimeInterval.TWO_YEARS
+    };
+    result.put("activeUsersOverPrevious", userManager.getActiveRolesOverPrevious(timeIntervals));
+  }
+
+  private void addRangedAnsweredQuestionStats(final Map<String, Object> result) throws SegueDatabaseException {
+    TimeInterval[] timeIntervals = {
+        TimeInterval.SEVEN_DAYS,
+        TimeInterval.THIRTY_DAYS,
+        TimeInterval.NINETY_DAYS
+    };
+    result.put("answeringUsersOverPrevious", questionManager.getAnsweredQuestionRolesOverPrevious(timeIntervals));
+  }
+
 
   /**
    * LogCount.

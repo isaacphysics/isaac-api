@@ -1961,12 +1961,14 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Count the users by role seen over the previous time interval.
    *
-   * @param timeInterval time interval over which to count
+   * @param timeIntervals An array of time ranges (in string format) for which to get the user counts.
+   *                      Each time range is used in the SQL query to filter the results.
    * @return map of counts for each role
    * @throws SegueDatabaseException - if there is a problem with the database.
    */
-  public Map<Role, Long> getActiveRolesOverPrevious(final TimeInterval timeInterval) throws SegueDatabaseException {
-    return this.database.getRolesLastSeenOver(timeInterval);
+  public Map<TimeInterval, Map<Role, Long>> getActiveRolesOverPrevious(final TimeInterval[] timeIntervals)
+      throws SegueDatabaseException {
+    return this.database.getRolesLastSeenOver(timeIntervals);
   }
 
   /**
