@@ -346,6 +346,7 @@ public class GitContentManager {
                 // Fuzzy search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
