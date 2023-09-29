@@ -33,6 +33,7 @@ public class GameboardItem {
     private String id;
     private String contentType;
     private String title;
+    private String subtitle;
     private String description;
     private String uri;
     private List<String> tags;
@@ -87,6 +88,7 @@ public class GameboardItem {
         this.setId(original.getId());
         this.setContentType(original.getContentType());
         this.setTitle(original.getTitle());
+        this.setSubtitle(original.getSubtitle());
         this.setDescription(original.getDescription());
         this.setUri(original.getUri());
         this.setAudience(original.getAudience());
@@ -137,6 +139,25 @@ public class GameboardItem {
      */
     public final void setTitle(final String title) {
         this.title = title;
+    }
+
+    /**
+     * Gets the subtitle.
+     *
+     * @return the subtitle
+     */
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    /**
+     * Sets the subtitle.
+     *
+     * @param subtitle
+     *            the subtitle to set
+     */
+    public void setSubtitle(final String subtitle) {
+        this.subtitle = subtitle;
     }
 
     /**
