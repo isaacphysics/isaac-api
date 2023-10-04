@@ -38,7 +38,7 @@ public class PgExternalAccountPersistenceManager implements IExternalAccountData
 
     @Override
     public List<UserExternalAccountChanges> getRecentlyChangedRecords() throws SegueDatabaseException {
-        String query = "SELECT id, provider_user_identifier, email, role, given_name, deleted, email_verification_status, " +
+        String query = "SELECT id, provider_user_identifier, email, role, given_name, deleted, email_verification_status, country_code, " +
                 "       news_prefs.preference_value AS news_emails, events_prefs.preference_value AS events_emails " +
                 "FROM users " +
                 "    LEFT OUTER JOIN user_preferences AS news_prefs ON users.id = news_prefs.user_id AND news_prefs.preference_type='EMAIL_PREFERENCE' AND news_prefs.preference_name='NEWS_AND_UPDATES' " +
@@ -105,7 +105,8 @@ public class PgExternalAccountPersistenceManager implements IExternalAccountData
             results.getBoolean("deleted"),
             EmailVerificationStatus.valueOf(results.getString("email_verification_status")),
             results.getBoolean("news_emails"),
-            results.getBoolean("events_emails")
+            results.getBoolean("events_emails"),
+            results.getString("country_code")
         );
 
     }
