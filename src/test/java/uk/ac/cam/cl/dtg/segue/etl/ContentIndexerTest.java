@@ -182,7 +182,7 @@ public class ContentIndexerTest {
         Set<Content> contents = Whitebox.invokeMethod(
                 defaultContentIndexer, "flattenContentObjects", rootNode);
 
-        assertTrue(contents.size() == numNodes);
+        assertEquals(numNodes, contents.size());
 
         for (Content c : contents) {
             boolean containsElement = elements.contains(c);
@@ -192,14 +192,14 @@ public class ContentIndexerTest {
             }
         }
 
-        assertTrue(elements.size() == 0);
+        assertEquals(0, elements.size());
     }
 
     /**
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when neither
      * significant figure is set whilst disregardSignificantFigures is not set
      *
-     * @throws Exception
+     * @throws Exception as reflection may not find method
      */
     @Test
     public void recordContentTypeSpecificError_noSigFigSet_checkNoError()
@@ -230,7 +230,7 @@ public class ContentIndexerTest {
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCach when only one significant
      * figure is specified and the other is set to null whilst disregardSignificantFigures is not set
      *
-     * @throws Exception
+     * @throws Exception as reflection may not find method
      */
     @Test
     public void recordContentTypeSpecificError_onlyOneSigFigSet_checkErrorIsCorrect()
@@ -264,7 +264,7 @@ public class ContentIndexerTest {
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when both significant
      * figures are specified but either is less than 1 whilst disregardSignificantFigures is not set
      *
-     * @throws Exception
+     * @throws Exception as reflection may not find method
      */
     @Test
     public void recordContentTypeSpecificError_bothSigFigSetLessThan1_checkErrorIsCorrect()
@@ -299,7 +299,7 @@ public class ContentIndexerTest {
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when the maximum significant
      * figure is less than the minimum significant figure (both above 1) whilst disregardSignificantFigures is not set
      *
-     * @throws Exception
+     * @throws Exception as reflection may not find method
      */
     @Test
     public void recordContentTypeSpecificError_maxLessThanMin_checkErrorIsCorrect()
@@ -333,7 +333,7 @@ public class ContentIndexerTest {
      * significant figure is less than the maximum significant figure (both above 1) whilst disregardSignificantFigures
      * is not set
      *
-     * @throws Exception
+     * @throws Exception as reflection may not find method
      */
     @Test
     public void recordContentTypeSpecificError_minLessThanMax_checkNoError()
@@ -364,7 +364,7 @@ public class ContentIndexerTest {
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when
      * disregardSignificantFigures is not set
      *
-     * @throws Exception
+     * @throws Exception as reflection may not find method
      */
     @Test
     public void recordContentTypeSpecificError_disregardSigFigsSet_checkNoError()
