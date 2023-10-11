@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS anonymous.nspl21_postcodes(
+CREATE TABLE anonymous.nspl21_postcodes(
     pcd TEXT,
     lsoa21 TEXT
 );
@@ -8,7 +8,7 @@ COPY anonymous.nspl21_postcodes (pcd, lsoa21)
     DELIMITER ','
     CSV HEADER;
 
-CREATE TABLE IF NOT EXISTS anonymous.imd_deprivation (
+CREATE TABLE anonymous.imd_deprivation (
  lsoa_code TEXT,
  lsoa_name TEXT,
  lad_code TEXT,
@@ -73,11 +73,9 @@ COPY anonymous.imd_deprivation (lsoa_code, lsoa_name, lad_code, lad_name, imd_sc
     DELIMITER ','
     CSV HEADER;
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS anonymous.users_enhanced AS
+CREATE TABLE anonymous.users_enhanced AS
     SELECT users.*, schools.name as school_name, schools.postcode as location, imd_deprivation.imd_score as imd_deprivation_score, ncce_priority.priority_type as ncce_priority_type FROM anonymous.users as users
     left join school_csv_list as schools on schools.urn = users.school_id
     left join schools_2021_priority as ncce_priority on ncce_priority.urn = users.school_id
     left join anonymous.nspl21_postcodes as postcodes on schools.postcode = postcodes.pcd
     left join anonymous.imd_deprivation as imd_deprivation on postcodes.lsoa21 = imd_deprivation.lsoa_code;
-
-REFRESH MATERIALIZED VIEW anonymous.users_enhanced;
