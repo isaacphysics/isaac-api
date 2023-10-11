@@ -42,7 +42,8 @@ CREATE TABLE anonymous.users AS
         school_id,
         registration_date,
         last_seen,
-        country_code
+        country_code,
+        gender
     FROM public.users;
 
 CREATE TABLE anonymous.linked_accounts AS
