@@ -428,6 +428,7 @@ public final class Constants {
     // Content model specific stuff
     public static final String ID_FIELDNAME = "id";
     public static final String TITLE_FIELDNAME = "title";
+    public static final String SUBTITLE_FIELDNAME = "subtitle";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
     public static final String LEVEL_FIELDNAME = "level";
