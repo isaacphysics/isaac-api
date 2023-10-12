@@ -15,6 +15,6 @@ UPDATE users SET family_name=NULL, given_name=NULL,
                  date_of_birth=date_trunc('MONTH', date_of_birth),
                  school_other=NULL,
                  deleted=TRUE
-WHERE coalesce(last_seen, last_updated, registration_date) <= CURRENT_DATE - INTERVAL '4 YEARS' AND NOT DELETED;
+WHERE coalesce(last_seen, last_updated, registration_date) <= CURRENT_DATE - INTERVAL '4 YEARS' AND NOT deleted;
 
 COMMIT;
