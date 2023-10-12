@@ -952,6 +952,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
      * Helper function to remove PII and set tombstone flag for a Registered User.
      * Note: This function mutates the object that it was provided.
      *
+     * This method performs the same action as the script
+     *     src/main/resources/db_scripts/scheduled/expired-users-task.sql
+     * and changes here should be reflected there.
+     *
      * @return User object to be persisted that no longer has PII
      */
     private static RegisteredUser removePIIFromUserDO(RegisteredUser user) {
