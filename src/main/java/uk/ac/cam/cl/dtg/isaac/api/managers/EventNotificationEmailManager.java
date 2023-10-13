@@ -10,6 +10,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -109,6 +110,20 @@ public class EventNotificationEmailManager {
     }
   }
 
+  private void commitAndSendStatusFilteredEmail(IsaacEventPageDTO event, String emailKeyPostfix, String templateId)
+      throws SegueDatabaseException {
+    String emailKey = String.format("%s@%s", event.getId(), emailKeyPostfix);
+    /*
+    Confirmed and Attended statuses are both included for both pre- and post-event emails.
+    Pre-event emails include the attended status in case the events team have pre-emptively marked someone as attended.
+    Post-event emails include the confirmed status in case the events team don't update the status to attended in time.
+     */
+    List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
+    if (pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
+      this.sendBookingStatusFilteredEmailForEvent(event, templateId, bookingStatuses);
+    }
+  }
+
   public void sendReminderEmails() {
     // Magic number
     Integer startIndex = 0;
@@ -119,6 +134,7 @@ public class EventNotificationEmailManager {
     sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
     ZonedDateTime now = ZonedDateTime.now();
     ZonedDateTime threeDaysAhead = now.plusDays(EMAIL_EVENT_REMINDER_DAYS_AHEAD);
+    Date endOfToday = Date.from(now.with(LocalTime.MAX).toInstant());
     DateRangeFilterInstruction
         eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
     filterInstructions.put(DATE_FIELDNAME, eventsWithinThreeDays);
@@ -135,11 +151,10 @@ public class EventNotificationEmailManager {
           if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             continue;
           }
-          String emailKey = String.format("%s@pre", event.getId());
-          // Includes the attended status in case the events team have pre-emptively marked someone as attended.
-          List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
-          if (pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
-            this.sendBookingStatusFilteredEmailForEvent(event, "event_reminder", bookingStatuses);
+          if (event.getDate().after(endOfToday)) {
+            commitAndSendStatusFilteredEmail(event, "pre", "event_reminder");
+          } else {
+            commitAndSendStatusFilteredEmail(event, "presameday", "event_reminder_same_day");
           }
         }
       }
@@ -147,7 +162,6 @@ public class EventNotificationEmailManager {
       log.error("Failed to send scheduled event reminder emails: ", e);
     }
   }
-
 
   public void sendFeedbackEmails() {
     // Magic number
@@ -182,14 +196,11 @@ public class EventNotificationEmailManager {
           boolean noEndDateAndStartDateToday =
               event.getEndDate() == null && event.getDate().toInstant().isBefore(new Date().toInstant());
           if (endDateToday || noEndDateAndStartDateToday) {
-            String emailKey = String.format("%s@post", event.getId());
-            // Includes the confirmed status in case the events team don't update the status to attended in time.
-            List<BookingStatus> bookingStatuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED);
             List<ExternalReference> postResources = event.getPostResources();
             boolean postResourcesPresent =
                 postResources != null && !postResources.isEmpty() && !postResources.contains(null);
-            if (postResourcesPresent && pgScheduledEmailManager.commitToSchedulingEmail(emailKey)) {
-              this.sendBookingStatusFilteredEmailForEvent(event, "event_feedback", bookingStatuses);
+            if (postResourcesPresent) {
+              commitAndSendStatusFilteredEmail(event, "post", "event_feedback");
             }
           }
         }
