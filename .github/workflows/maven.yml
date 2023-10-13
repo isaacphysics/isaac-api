@@ -32,4 +32,16 @@ jobs:
       run: mvn -B package -DskipTests --file pom.xml
     - name: Test with Maven
       run: mvn -B verify --file pom.xml
-    - uses: codecov/codecov-action@v2
+    - name: Add coverage to PR
+      id: jacoco
+      uses: madrapps/jacoco-report@v1.6.1
+      with:
+        paths: ${{ github.workspace }}/**/target/site/jacoco-merged-test-coverage-report/jacoco.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        min-coverage-overall: 80
+        min-coverage-changed-files: 80
+        title: Coverage Report # A title is required for update-comment to work correctly
+        update-comment: true
+        pass-emoji: ':white_check_mark:'
+        fail-emoji: ':x:'
+        continue-on-error: true # The repository is currently far below the threshold, so we can't enforce this for now
