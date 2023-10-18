@@ -93,7 +93,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
@@ -208,7 +207,7 @@ public class UsersFacade extends AbstractSegueFacade {
       ObjectMapper tmpObjectMapper = new ObjectMapper();
       tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-      //TODO: We need to change the way the frontend sends passwords to reduce complexity
+      // TODO: We need to change the way the frontend sends passwords to reduce complexity
       Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
       newPassword = (String) ((Map) mapRepresentation.get("registeredUser")).get("password");
       recaptchaToken = (String) mapRepresentation.get("recaptchaToken");

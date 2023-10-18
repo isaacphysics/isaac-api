@@ -190,8 +190,6 @@ public class GitDb {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     loader.copyTo(out);
 
-    // TODO: Calling close seems to be unnecessary when not writing to the repo, and prints an error frequently.
-    //repository.close();
     return out;
   }
 

@@ -337,7 +337,6 @@ public abstract class IsaacIntegrationTest {
     misuseMonitor = new InMemoryMisuseMonitor();
     misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(),
         new GroupManagerLookupMisuseHandler(emailManager, properties));
-    // TODO: more handlers as required by different endpoints
 
     String someSegueAnonymousUserId = "9284723987anonymous83924923";
     httpSession = createNiceMock(HttpSession.class);

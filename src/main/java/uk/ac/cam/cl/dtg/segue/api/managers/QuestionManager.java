@@ -548,8 +548,8 @@ public class QuestionManager {
         }
 
         // FIXME: this is an Isaac specific thing in a segue class!
-        // Perhaps ItemQuestions could live in Segue, but then what relation should they have to
-        // the IsaacQuestionBase class?
+        //  Perhaps ItemQuestions could live in Segue, but then what relation should they have to
+        //  the IsaacQuestionBase class?
         if (question instanceof IsaacItemQuestionDTO) {
           IsaacItemQuestionDTO itemQuestion = (IsaacItemQuestionDTO) question;
           Boolean randomiseItems = itemQuestion.getRandomiseItems();

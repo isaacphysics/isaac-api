@@ -640,7 +640,7 @@
     </build>
 
     <!-- This block pins versions of indirect dependencies - useful to address security issues -->
-    <!-- TODO: When doing dependency updates, please make sure these are still necessary, and remove them if not -->
+    <!-- When doing dependency updates, please make sure these are still necessary, and remove them if not -->
     <dependencyManagement>
         <dependencies>
 

@@ -150,7 +150,6 @@ public class SegueJobService implements ServletContextListener {
       log.info(String.format("Registered job (%s) to segue job execution service. Current jobs registered (%s): ",
           jobToRegister.getJobKey(), localRegisteredJobs.size()));
     } else {
-      // FIXME - this does not update the job details, e.g. if the SQL file name changes.
       scheduler.rescheduleJob(cronTrigger.getKey(), cronTrigger);
       log.info(String.format("Re-registered job (%s) to segue job execution service. Current jobs registered (%s): ",
           jobToRegister.getJobKey(), localRegisteredJobs.size()));

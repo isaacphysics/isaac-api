@@ -317,7 +317,6 @@ public class UserAlertsWebSocket implements IAlertListener {
 
   /**
    * Method to send a payload to the connected user with details of their current stats snapshot.
-   * TODO: Currently only delivers user streak information but we can generalise it later to deliver more data
    *
    * @throws IOException - if the WebSocket is unexpectedly closed or in an invalid state
    */

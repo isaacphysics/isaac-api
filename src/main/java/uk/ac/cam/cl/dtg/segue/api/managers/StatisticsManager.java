@@ -81,7 +81,6 @@ import uk.ac.cam.cl.dtg.util.UserQuestionInformation;
 
 /**
  * StatisticsManager.
- * TODO this file is a mess... it needs refactoring.
  */
 public class StatisticsManager implements IStatisticsManager {
   private UserAccountManager userManager;
@@ -402,9 +401,6 @@ public class StatisticsManager implements IStatisticsManager {
   public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
       throws SegueDatabaseException, ContentManagerException {
     Validate.notNull(userOfInterest);
-
-    // FIXME: there was a TODO here about tidying this up and moving it elsewhere.
-    // It has been improved and tidied, but may still better belong elsewhere . . .
 
     UserQuestionInformation userQuestionInformation = new UserQuestionInformation();
 

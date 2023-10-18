@@ -143,7 +143,7 @@ public class SegueLocalAuthenticatorTest {
       try {
         segueAuthenticator.setOrChangeUsersPassword(someUser, TEST_USER_CORRECT_PASSWORD);
 
-        //TODO write test
+        // TODO write test
 
       } catch (InvalidPasswordException e) {
         fail("This should be a valid password");

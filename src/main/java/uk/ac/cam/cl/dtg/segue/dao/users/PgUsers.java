@@ -602,7 +602,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       throw new SegueDatabaseException("Unable to locate the user requested to delete.");
     }
 
-    // FIXME: try-with-resources!
     try (Connection conn = database.getDatabaseConnection()) {
       try {
         conn.setAutoCommit(false);
@@ -773,7 +772,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       }
       Array userContexts = conn.createArrayOf("jsonb", userContextsJsonb.toArray());
 
-      // TODO: Change this to annotations or something to rely exclusively on the pojo.
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_FAMILY_NAME, userToCreate.getFamilyName());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_GIVEN_NAME, userToCreate.getGivenName());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL, userToCreate.getEmail());
@@ -859,7 +857,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
         + " teacher_pending = ?, registered_contexts = ?, registered_contexts_last_confirmed = ? WHERE id = ?;";
     try (PreparedStatement pst = conn.prepareStatement(query)) {
-      // TODO: Change this to annotations or something to rely exclusively on the pojo.
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_FAMILY_NAME, userToCreate.getFamilyName());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_GIVEN_NAME, userToCreate.getGivenName());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL, userToCreate.getEmail());

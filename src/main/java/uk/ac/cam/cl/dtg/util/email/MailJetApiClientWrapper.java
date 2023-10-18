@@ -153,7 +153,6 @@ public class MailJetApiClientWrapper {
         );
     MailjetResponse response = mailjetClient.put(request);
     if (response.getTotal() != 1) {
-      // TODO: Do we want to get any of the data from this request?
       throw new MailjetException("Failed to update user!" + response.getTotal());
     }
   }
@@ -183,7 +182,6 @@ public class MailJetApiClientWrapper {
         );
     MailjetResponse response = mailjetClient.post(request);
     if (response.getTotal() != 1) {
-      // TODO: Do we want to get any of the data from this request?
       throw new MailjetException("Failed to update user subscriptions!" + response.getTotal());
     }
   }

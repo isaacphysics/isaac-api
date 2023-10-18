@@ -1911,7 +1911,6 @@ public class UserAccountManager implements IUserAccountManager {
    * @return - a String suitable for use as an anonymous identifier
    */
   private String getAnonymousUserIdFromRequest(final HttpServletRequest request) {
-    // TODO - could prepend with API segue version?
     return request.getSession().getId().replace("node0", "");
   }
 

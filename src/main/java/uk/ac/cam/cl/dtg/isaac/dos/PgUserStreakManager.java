@@ -136,8 +136,6 @@ public class PgUserStreakManager implements IUserStreaksManager {
 
   @Override
   public void notifyUserOfStreakChange(final RegisteredUserDTO user) {
-    // FIXME - it is unlikely that this is the best location for this code!
-    // It is better than in the already bloated facade method, however!
     long userId = user.getId();
     try {
       IUserAlert alert = new PgUserAlert(null, userId,

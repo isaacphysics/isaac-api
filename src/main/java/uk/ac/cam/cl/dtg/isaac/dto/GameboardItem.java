@@ -248,7 +248,7 @@ public class GameboardItem {
   }
 
   // TODO in time we should be able to remove the question part counters and just use questionPartStates instead,
-  // that will require altering some of the front end code - the assignment progress page in particular.
+  //  that will require altering some of the front end code - the assignment progress page in particular.
 
   /**
    * Gets the number of questionPartsCorrect.

@@ -341,7 +341,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             liteGameboards.stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
         // Add lightweight gameboard to each assignment
         assignments.forEach(a -> a.setGameboard(liteGameboardLookup.get(a.getGameboardId())));
-        // TODO perhaps augment the assignments with assigner information if the assigner isn't the current user
         return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
       } else {
         UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
@@ -796,7 +795,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     for (RegisteredUserDTO groupMember : groupMembers) {
       // FIXME Some room for improvement here, as we can retrieve all the users with a single query.
-      // FIXME Not urgent, as the dominating query is the one that retrieves question attempts above.
+      //  Not urgent, as the dominating query is the one that retrieves question attempts above.
       UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
           userManager.convertToUserSummaryObject(groupMember));
 

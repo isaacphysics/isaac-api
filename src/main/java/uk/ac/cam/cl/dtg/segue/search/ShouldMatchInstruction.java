@@ -6,7 +6,6 @@ public class ShouldMatchInstruction extends AbstractMatchInstruction {
   private String value;
   private boolean fuzzy;
 
-  // TODO If we need more parameters in the future we should probably follow a Builder pattern
   public ShouldMatchInstruction(final String field, final String value, final Long boost, final boolean fuzzy) {
     this.field = field;
     this.value = value;

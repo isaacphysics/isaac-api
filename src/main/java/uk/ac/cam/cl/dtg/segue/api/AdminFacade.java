@@ -534,7 +534,6 @@ public class AdminFacade extends AbstractSegueFacade {
 
       for (Map<String, Object> eventDetails : eventDetailsList) {
         String recipientEmail = (String) eventDetails.get("email");
-        // TODO: this is very MailJet specific:
         Integer mailjetListId = (Integer) eventDetails.get("mj_list_id");
         EmailType unsubscribedEmailType = EmailType.NEWS_AND_UPDATES;
         if (null != mailjetListId && getProperties().getProperty(MAILJET_NEWS_LIST_ID)
@@ -1127,7 +1126,6 @@ public class AdminFacade extends AbstractSegueFacade {
   @Path("/sync_external_accounts")
   @Operation(summary = "Trigger an update for external providers where account details have changed.")
   public Response syncExternalAccounts(@Context final HttpServletRequest httpServletRequest) {
-    //TODO - automate this with Quartz, then review if this is still necessary?
     try {
       RegisteredUserDTO user = userManager.getCurrentRegisteredUser(httpServletRequest);
       if (!isUserAnAdmin(userManager, user)) {

@@ -422,7 +422,6 @@ public class ContentIndexer {
       }
     }
 
-    // TODO: hack to get hints to apply as children
     if (content instanceof Question) {
       Question question = (Question) content;
       if (question.getHints() != null) {

@@ -18,10 +18,10 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
@@ -93,12 +93,7 @@ public class EventBookingManagerTest {
   public void requestBooking_checkTeacherAllowedOnStudentEventDespiteCapacityFull_noExceptionThrown() throws
       Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("student", "computerscience"));
-    testEvent.setEmailEventDetails("Some Details");
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDtoWithEventDetails(studentCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
@@ -110,12 +105,8 @@ public class EventBookingManagerTest {
     someStudentUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someStudentUser.setRole(Role.STUDENT);
 
-    EventBookingDTO firstBooking = new EventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setRole(Role.STUDENT);
-    firstUser.setId(someStudentUser.getId());
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
+    EventBookingDTO firstBooking = prepareEventBookingDto(BookingStatus.CONFIRMED, someStudentUser.getId(),
+        Role.STUDENT);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
@@ -152,22 +143,12 @@ public class EventBookingManagerTest {
   public void requestBooking_checkStudentNotAllowedOnStudentEventAsCapacityFull_eventFullExceptionThrown() throws
       Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("student", "computerscience"));
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.STUDENT);
-
-    EventBookingDTO firstBooking = new EventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setRole(Role.STUDENT);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
@@ -200,22 +181,12 @@ public class EventBookingManagerTest {
   public void requestBooking_checkTeacherNotAllowedOnTeacherEventAsCapacityFull_eventFullExceptionThrown() throws
       Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(teacherCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.TEACHER);
-
-    EventBookingDTO firstBooking = new EventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setRole(Role.TEACHER);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
@@ -247,10 +218,7 @@ public class EventBookingManagerTest {
   @Test
   public void requestBooking_addressNotVerified_addressNotVerifiedExceptionThrown() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("student", "computerscience"));
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
@@ -268,16 +236,12 @@ public class EventBookingManagerTest {
   @Test
   public void requestBooking_expiredBooking_EventExpiredExceptionThrown() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
 
     // old deadline
     Date old = new Date();
     old.setTime(958074310000L);
-
     testEvent.setBookingDeadline(old);
-    testEvent.setTags(ImmutableSet.of("student", "computerscience"));
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
@@ -297,36 +261,18 @@ public class EventBookingManagerTest {
   @Test
   public void requestBooking_cancelledSpaceAndWaitingList_SpaceRemainsFull() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(teacherCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.TEACHER);
 
-    EventBookingDTO firstBooking = new EventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setRole(Role.TEACHER);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.CANCELLED);
-
-    EventBookingDTO secondBooking = new EventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setRole(Role.TEACHER);
-    secondBooking.setUserBooked(firstUser);
-    secondBooking.setBookingStatus(BookingStatus.WAITING_LIST);
-
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
     placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
     expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(
         placesAvailableMap).atLeastOnce();
-
-    List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
     expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(),
         someUser.getId())).andReturn(null)
@@ -353,31 +299,19 @@ public class EventBookingManagerTest {
   @Test
   public void requestBooking_cancelledSpaceAndNoWaitingList_Success() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
-    testEvent.setEmailEventDetails("Some Details");
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDtoWithEventDetails(studentCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.TEACHER);
 
-    EventBookingDTO secondBooking = new EventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setRole(Role.TEACHER);
-    secondUser.setId(7L);
-    secondBooking.setUserBooked(secondUser);
-    secondBooking.setBookingStatus(BookingStatus.CANCELLED);
+    EventBookingDTO secondBooking = prepareEventBookingDto(BookingStatus.CANCELLED, 7L, Role.TEACHER);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
     expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(
         placesAvailableMap).atLeastOnce();
-
-    List<EventBookingDTO> currentBookings = Arrays.asList(secondBooking);
 
     expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), someUser.getId()))
         .andReturn(null).once();
@@ -412,34 +346,16 @@ public class EventBookingManagerTest {
   @Test
   public void requestBooking_cancelledSpaceAndSomeWaitingList_Success() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(2);
-    testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
-    testEvent.setEmailEventDetails("Some Details");
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDtoWithEventDetails(teacherCSTags, 2);
 
     RegisteredUserDTO firstUserFull = new RegisteredUserDTO();
     firstUserFull.setId(6L);
     firstUserFull.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     firstUserFull.setRole(Role.TEACHER);
 
-    DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setId(firstUserFull.getId());
-    firstUser.setRole(Role.TEACHER);
-
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
-
-    EventBookingDTO secondBooking = new EventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setRole(Role.TEACHER);
-    secondUser.setId(7L);
-    secondBooking.setUserBooked(firstUser);
-    secondBooking.setBookingStatus(BookingStatus.CANCELLED);
-
-    List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
+    UserSummaryDTO firstUser = prepareUserSummaryDto(firstUserFull.getId(), Role.TEACHER);
+    DetailedEventBookingDTO firstBooking = prepareDetailedEventBookingDto(firstUser, BookingStatus.WAITING_LIST);
+    EventBookingDTO secondBooking = prepareEventBookingDto(BookingStatus.CANCELLED, firstUser);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CANCELLED).put(Role.TEACHER, 1L);
@@ -484,24 +400,10 @@ public class EventBookingManagerTest {
     testCase.event.setNumberOfPlaces(1);
 
     RegisteredUserDTO reservedStudent = testCase.student1;
-    DetailedEventBookingDTO reservedStudentBooking = new DetailedEventBookingDTO() {{
-        setEventId(testCase.event.getId());
-        setBookingStatus(BookingStatus.RESERVED);
-        setUserBooked(new UserSummaryDTO() {
-          {
-            setId(reservedStudent.getId());
-          }
-        });
-      }};
-    DetailedEventBookingDTO reservedStudentBookingAfterConfirmation = new DetailedEventBookingDTO() {{
-        setEventId(testCase.event.getId());
-        setBookingStatus(BookingStatus.CONFIRMED);
-        setUserBooked(new UserSummaryDTO() {
-          {
-            setId(reservedStudent.getId());
-          }
-        });
-      }};
+    DetailedEventBookingDTO reservedStudentBooking =
+        prepareDetailedEventBookingDto(reservedStudent.getId(), BookingStatus.RESERVED, testCase.event.getId());
+    DetailedEventBookingDTO reservedStudentBookingAfterConfirmation =
+        prepareDetailedEventBookingDto(reservedStudent.getId(), BookingStatus.CONFIRMED, testCase.event.getId());
 
     // Expected external calls
     dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
@@ -535,34 +437,19 @@ public class EventBookingManagerTest {
   @Test
   public void promoteBooking_spaceDueToCancellation_Success() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
-    testEvent.setEmailEventDetails("some details");
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDtoWithEventDetails(teacherCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.TEACHER);
 
-    DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstBooking.setEventId(testEvent.getId());
-    firstUser.setId(6L);
-    firstUser.setRole(Role.TEACHER);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
+    UserSummaryDTO firstUser = prepareUserSummaryDto(6L, Role.TEACHER);
+    DetailedEventBookingDTO firstBooking =
+        prepareDetailedEventBookingDto(firstUser, BookingStatus.WAITING_LIST, testEvent.getId());
     firstBooking.setAdditionalInformation(someAdditionalInformation);
-
-    DetailedEventBookingDTO secondBooking = new DetailedEventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setId(2L);
-    secondUser.setRole(Role.TEACHER);
-    secondBooking.setEventId(testEvent.getId());
-    secondBooking.setUserBooked(firstUser);
-    secondBooking.setBookingStatus(BookingStatus.CANCELLED);
+    DetailedEventBookingDTO secondBooking =
+        prepareDetailedEventBookingDto(firstUser, BookingStatus.CANCELLED, testEvent.getId());
     secondBooking.setAdditionalInformation(someAdditionalInformation);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
@@ -570,8 +457,6 @@ public class EventBookingManagerTest {
     placesAvailableMap.get(BookingStatus.WAITING_LIST).put(Role.TEACHER, 1L);
     expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(
         placesAvailableMap).atLeastOnce();
-
-    List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
     expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(), 6L))
         .andReturn(firstBooking).once();
@@ -607,34 +492,16 @@ public class EventBookingManagerTest {
   @Test
   public void promoteBooking_NoSpace_Failure() throws Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(1);
-    testEvent.setTags(ImmutableSet.of("teacher", "computerscience"));
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(teacherCSTags);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.TEACHER);
 
-    DetailedEventBookingDTO firstBooking = new DetailedEventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstBooking.setEventId(testEvent.getId());
-    firstUser.setId(6L);
-    firstUser.setRole(Role.TEACHER);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
-
-    DetailedEventBookingDTO secondBooking = new DetailedEventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setId(2L);
-    secondUser.setRole(Role.TEACHER);
-    secondBooking.setEventId(testEvent.getId());
-    secondBooking.setUserBooked(firstUser);
-    secondBooking.setBookingStatus(BookingStatus.CONFIRMED);
-
-    List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
+    UserSummaryDTO firstUser = prepareUserSummaryDto(6L, Role.TEACHER);
+    DetailedEventBookingDTO firstBooking =
+        prepareDetailedEventBookingDto(firstUser, BookingStatus.WAITING_LIST, testEvent.getId());
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.TEACHER, 1L);
@@ -667,13 +534,8 @@ public class EventBookingManagerTest {
     // Create a future event and event booking manager
     EventBookingManager ebm = this.buildEventBookingManager();
     int initialNumberOfPlaces = 1000;
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO() {{
-        setId("someEventId");
-        setNumberOfPlaces(initialNumberOfPlaces);
-        setTags(ImmutableSet.of("student"));
-        setEventStatus(EventStatus.OPEN);
-        setDate(someFutureDate);
-      }};
+    IsaacEventPageDTO testEvent =
+        prepareIsaacEventPageDto(ImmutableSet.of("student"), initialNumberOfPlaces, EventStatus.OPEN);
 
     // Mock the event booking status count result from the event booking persistence manager
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
@@ -703,31 +565,12 @@ public class EventBookingManagerTest {
   public void getEventPage_checkWaitingListOnlyEventCapacity_capacityCalculatedCorrectly() throws
       Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(2);
-    testEvent.setTags(ImmutableSet.of("student", "computerscience"));
-    testEvent.setEventStatus(EventStatus.WAITING_LIST_ONLY);
-    testEvent.setDate(someFutureDate);
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags, 2, EventStatus.WAITING_LIST_ONLY);
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
     someUser.setId(6L);
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.STUDENT);
-
-    EventBookingDTO firstBooking = new EventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setRole(Role.STUDENT);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.CONFIRMED);
-
-    EventBookingDTO secondBooking = new EventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setRole(Role.STUDENT);
-    secondBooking.setUserBooked(secondUser);
-    secondBooking.setBookingStatus(BookingStatus.WAITING_LIST);
-
-    List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
     placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
@@ -747,16 +590,10 @@ public class EventBookingManagerTest {
   public void getEventPage_checkStudentEventReservedBookings_capacityCalculatedCorrectly() throws
       Exception {
     EventBookingManager ebm = this.buildEventBookingManager();
-    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
-    testEvent.setId("someEventId");
-    testEvent.setNumberOfPlaces(2);
-    testEvent.setTags(ImmutableSet.of("student", "computerscience"));
-    testEvent.setEventStatus(EventStatus.OPEN);
-    testEvent.setDate(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)); // future dated
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags, 2, EventStatus.OPEN);
     testEvent.setAllowGroupReservations(true);
 
     // Mocks the counts for the places available calculation from the database
-    // TODO we should make this a helper method in the test really
     Map<BookingStatus, Map<Role, Long>> placesAvailableMap = generatePlacesAvailableMap();
 
     RegisteredUserDTO someUser = new RegisteredUserDTO();
@@ -764,18 +601,7 @@ public class EventBookingManagerTest {
     someUser.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
     someUser.setRole(Role.STUDENT);
 
-    EventBookingDTO firstBooking = new EventBookingDTO();
-    UserSummaryDTO firstUser = new UserSummaryDTO();
-    firstUser.setRole(Role.STUDENT);
-    firstBooking.setUserBooked(firstUser);
-    firstBooking.setBookingStatus(BookingStatus.RESERVED);
     placesAvailableMap.get(BookingStatus.RESERVED).put(Role.STUDENT, 1L);
-
-    EventBookingDTO secondBooking = new EventBookingDTO();
-    UserSummaryDTO secondUser = new UserSummaryDTO();
-    secondUser.setRole(Role.STUDENT);
-    secondBooking.setUserBooked(secondUser);
-    secondBooking.setBookingStatus(BookingStatus.CONFIRMED);
     placesAvailableMap.get(BookingStatus.CONFIRMED).put(Role.STUDENT, 1L);
 
     expect(dummyEventBookingPersistenceManager.getEventBookingStatusCounts(testEvent.getId(), false)).andReturn(
@@ -901,15 +727,8 @@ public class EventBookingManagerTest {
     List<RegisteredUserDTO> students = ImmutableList.of(testCase.student1, testCase.student2);
 
     // Make student two have a cancelled booking
-    DetailedEventBookingDTO student2sCancelledBooking = new DetailedEventBookingDTO() {{
-        setBookingStatus(BookingStatus.CANCELLED);
-        setEventId(testCase.event.getId());
-        setUserBooked(new UserSummaryDTO() {
-          {
-            setId(testCase.student2.getId());
-          }
-        });
-      }};
+    DetailedEventBookingDTO student2sCancelledBooking =
+        prepareDetailedEventBookingDto(testCase.student2.getId(), BookingStatus.CANCELLED, testCase.event.getId());
 
     // Define expected external calls
     dummyEventBookingPersistenceManager.lockEventUntilTransactionComplete(dummyTransaction, testCase.event.getId());
@@ -1016,16 +835,9 @@ public class EventBookingManagerTest {
     RegisteredUserDTO previouslyReservedStudent = testCase.student3;
     Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
     previousBookingCounts.put(BookingStatus.CONFIRMED, ImmutableMap.of(Role.STUDENT, 1L));
-    DetailedEventBookingDTO existingEventBooking = new DetailedEventBookingDTO() {{
-        setEventId(testCase.event.getId());
-        setBookingStatus(BookingStatus.CONFIRMED);
-        setReservedById(testCase.teacher.getId());
-        setUserBooked(new UserSummaryDTO() {
-          {
-            setId(previouslyReservedStudent.getId());
-          }
-        });
-      }};
+    DetailedEventBookingDTO existingEventBooking = prepareDetailedEventBookingDto(
+        previouslyReservedStudent.getId(), BookingStatus.CONFIRMED, testCase.event.getId());
+    existingEventBooking.setReservedById(testCase.teacher.getId());
 
     // Define expected external calls
     expect(dummyTransactionManager.getTransaction()).andReturn(dummyTransaction).once();
@@ -1064,16 +876,9 @@ public class EventBookingManagerTest {
     List<RegisteredUserDTO> students = ImmutableList.of(testCase.student1);
 
     // Make student two have a cancelled booking
-    DetailedEventBookingDTO student2sCancelledReservation = new DetailedEventBookingDTO() {{
-        setBookingStatus(BookingStatus.CANCELLED);
-        setEventId(testCase.event.getId());
-        setUserBooked(new UserSummaryDTO() {
-          {
-            setId(testCase.student2.getId());
-          }
-        });
-        setReservedById(testCase.teacher.getId());
-      }};
+    DetailedEventBookingDTO student2sCancelledReservation =
+        prepareDetailedEventBookingDto(testCase.student2.getId(), BookingStatus.CANCELLED, testCase.event.getId());
+    student2sCancelledReservation.setReservedById(testCase.teacher.getId());
     Map<BookingStatus, Map<Role, Long>> previousBookingCounts = generatePlacesAvailableMap();
     previousBookingCounts.put(BookingStatus.CANCELLED, ImmutableMap.of(Role.STUDENT, 1L));
 
@@ -1142,29 +947,17 @@ public class EventBookingManagerTest {
         setEmail("student1");
         setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
       }};
-    DetailedEventBookingDTO student1Booking = new DetailedEventBookingDTO() {{
-        setBookingStatus(BookingStatus.RESERVED);
-        setEventId("SomeEventId");
-        setUserBooked(new UserSummaryDTO() {{
-            setId(1L);
-            setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-          }
-        });
-      }};
+    UserSummaryDTO student1Summary = prepareUserSummaryDto(1L, EmailVerificationStatus.VERIFIED);
+    DetailedEventBookingDTO student1Booking =
+        prepareDetailedEventBookingDto(student1Summary, BookingStatus.RESERVED, "SomeEventId");
     RegisteredUserDTO student2 = new RegisteredUserDTO() {{
         setId(2L);
         setEmail("student2");
         setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
       }};
-    DetailedEventBookingDTO student2Booking = new DetailedEventBookingDTO() {{
-        setBookingStatus(BookingStatus.RESERVED);
-        setEventId("SomeEventId");
-        setUserBooked(new UserSummaryDTO() {{
-            setId(2L);
-            setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-          }
-        });
-      }};
+    UserSummaryDTO student2Summary = prepareUserSummaryDto(2L, EmailVerificationStatus.VERIFIED);
+    DetailedEventBookingDTO student2Booking =
+        prepareDetailedEventBookingDto(student2Summary, BookingStatus.RESERVED, "SomeEventId");
     RegisteredUserDTO student3 = new RegisteredUserDTO() {{
         setId(2L);
         setEmail("student2");
@@ -1186,5 +979,92 @@ public class EventBookingManagerTest {
     placesAvailableMap.put(BookingStatus.CONFIRMED, Maps.newHashMap());
     placesAvailableMap.put(BookingStatus.RESERVED, Maps.newHashMap());
     return placesAvailableMap;
+  }
+
+  private static DetailedEventBookingDTO prepareDetailedEventBookingDto(
+      Long userId, BookingStatus bookingStatus, String eventId) {
+    UserSummaryDTO user = prepareUserSummaryDto(userId);
+    return prepareDetailedEventBookingDto(user, bookingStatus, eventId);
+  }
+
+  private static DetailedEventBookingDTO prepareDetailedEventBookingDto(
+      UserSummaryDTO user, BookingStatus bookingStatus, String eventId) {
+    DetailedEventBookingDTO booking = prepareDetailedEventBookingDto(user, bookingStatus);
+    booking.setEventId(eventId);
+    return booking;
+  }
+
+  private static DetailedEventBookingDTO prepareDetailedEventBookingDto(
+      UserSummaryDTO user, BookingStatus bookingStatus) {
+    DetailedEventBookingDTO booking = new DetailedEventBookingDTO();
+    booking.setUserBooked(user);
+    booking.setBookingStatus(bookingStatus);
+    return booking;
+  }
+
+  private static EventBookingDTO prepareEventBookingDto(BookingStatus bookingStatus, Long userId, Role userRole) {
+    UserSummaryDTO user = prepareUserSummaryDto(userId, userRole);
+    return prepareEventBookingDto(bookingStatus, user);
+  }
+
+  private static EventBookingDTO prepareEventBookingDto(BookingStatus bookingStatus, UserSummaryDTO user) {
+    EventBookingDTO booking = new EventBookingDTO();
+    booking.setUserBooked(user);
+    booking.setBookingStatus(bookingStatus);
+    return booking;
+  }
+
+  private static UserSummaryDTO prepareUserSummaryDto(Long userId) {
+    UserSummaryDTO user = new UserSummaryDTO();
+    user.setId(userId);
+    return user;
+  }
+
+  private static UserSummaryDTO prepareUserSummaryDto(Long userId, Role userRole) {
+    UserSummaryDTO user = prepareUserSummaryDto(userId);
+    user.setRole(userRole);
+    return user;
+  }
+
+  private static UserSummaryDTO prepareUserSummaryDto(Long userId, EmailVerificationStatus emailVerificationStatus) {
+    UserSummaryDTO user = prepareUserSummaryDto(userId);
+    user.setEmailVerificationStatus(emailVerificationStatus);
+    return user;
+  }
+
+  private static final Set<String> studentCSTags = ImmutableSet.of("student", "computerscience");
+  private static final Set<String> teacherCSTags = ImmutableSet.of("teacher", "computerscience");
+
+  private static IsaacEventPageDTO prepareIsaacEventPageDto(Set<String> tags) {
+    return prepareIsaacEventPageDto("someEventId", 1, tags, someFutureDate);
+  }
+
+  private static IsaacEventPageDTO prepareIsaacEventPageDto(
+      Set<String> tags, Integer numberOfPlaces, EventStatus eventStatus) {
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto("someEventId", numberOfPlaces, tags, someFutureDate);
+    testEvent.setEventStatus(eventStatus);
+    return testEvent;
+  }
+
+  private static IsaacEventPageDTO prepareIsaacEventPageDto(
+      String eventId, Integer numberOfPlaces, Set<String> tags, Date date) {
+    IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
+    testEvent.setId(eventId);
+    testEvent.setNumberOfPlaces(numberOfPlaces);
+    testEvent.setTags(tags);
+    testEvent.setDate(date);
+    return testEvent;
+  }
+
+  private static IsaacEventPageDTO prepareIsaacEventPageDtoWithEventDetails(Set<String> tags) {
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(tags);
+    testEvent.setEmailEventDetails("Some Details");
+    return testEvent;
+  }
+
+  private static IsaacEventPageDTO prepareIsaacEventPageDtoWithEventDetails(Set<String> tags, Integer numberOfPlaces) {
+    IsaacEventPageDTO testEvent = prepareIsaacEventPageDto("someEventId", numberOfPlaces, tags, someFutureDate);
+    testEvent.setEmailEventDetails("Some Details");
+    return testEvent;
   }
 }

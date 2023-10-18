@@ -424,7 +424,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
    * Currently we only support updating the title and saving the gameboard that exists in temporary storage into
    * permanent storage. No other fields can be updated at the moment.
    * <br>
-   * TODO: This will need to change if we want to change more than the board title.
    *
    * @param request           - so that we can find out the currently logged in user
    * @param gameboardId       - So that we can look up an existing gameboard to modify.
