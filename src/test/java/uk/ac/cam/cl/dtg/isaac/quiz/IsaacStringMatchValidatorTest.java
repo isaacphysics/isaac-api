@@ -26,7 +26,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacStringMatchQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -37,12 +36,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
 /**
  * Test class for the String Match Validator class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacStringMatchValidatorTest {
   private IsaacStringMatchValidator validator;
   private IsaacStringMatchQuestion someStringMatchQuestion;
-  private String caseSensitiveAnswer = "CaseSensitiveAnswer";
-  private String caseInsensitiveAnswer = "CaseInsensitiveAnswer";
+  private final String caseSensitiveAnswer = "CaseSensitiveAnswer";
+  private final String caseInsensitiveAnswer = "CaseInsensitiveAnswer";
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();

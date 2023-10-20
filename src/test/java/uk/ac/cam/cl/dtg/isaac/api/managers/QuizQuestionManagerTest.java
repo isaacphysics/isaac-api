@@ -18,14 +18,14 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replay;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

@@ -1,10 +1,10 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replayAll;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class QuizManagerTest extends AbstractManagerTest {
     brokenQuiz = new IsaacQuizDTO();
     brokenQuiz.setChildren(ImmutableList.of(quizSection1, new ContentDTO(), quizSection2));
 
-    replayAll();
+    replay(properties);
   }
 
   @Test

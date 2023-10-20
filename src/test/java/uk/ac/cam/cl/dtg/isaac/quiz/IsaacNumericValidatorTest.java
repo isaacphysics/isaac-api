@@ -29,7 +29,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -42,7 +41,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 /**
  * Test class for the user manager class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacNumericValidatorTest {
   private IsaacNumericValidator validator;
   private IsaacNumericQuestion numericQuestionNoUnits;

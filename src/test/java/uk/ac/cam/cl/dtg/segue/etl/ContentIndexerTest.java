@@ -40,7 +40,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
@@ -52,7 +51,6 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 /**
  * Test class for the GitContentManager class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class ContentIndexerTest {
   private GitDb database;
   private ElasticSearchIndexer searchProvider;

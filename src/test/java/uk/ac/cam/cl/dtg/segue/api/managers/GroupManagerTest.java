@@ -24,12 +24,12 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -37,15 +37,12 @@ import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
-import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -54,14 +51,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Test class for the user manager class.
  *
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class GroupManagerTest {
-
-  private PropertiesLoader dummyPropertiesLoader;
-
   private MapperFacade dummyMapper;
-  private ICommunicator<EmailCommunicationMessage> dummyCommunicator;
-  private SimpleDateFormat sdf;
 
   private IUserGroupPersistenceManager groupDataManager;
   private UserAccountManager userManager;
@@ -76,17 +67,13 @@ public class GroupManagerTest {
   @Before
   public final void setUp() throws Exception {
     this.dummyMapper = createMock(MapperFacade.class);
-    this.dummyCommunicator = createMock(ICommunicator.class);
-    this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
-    this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-
     this.groupDataManager = createMock(IUserGroupPersistenceManager.class);
     this.userManager = createMock(UserAccountManager.class);
     this.gameManager = createMock(GameManager.class);
 
-    expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60")
-        .anyTimes();
-    replay(this.dummyPropertiesLoader);
+    PropertiesLoader dummyPropertiesLoader = createMock(PropertiesLoader.class);
+    expect(dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60").anyTimes();
+    replay(dummyPropertiesLoader);
   }
 
   /**
@@ -126,8 +113,8 @@ public class GroupManagerTest {
       UserGroupDTO createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
 
       // check that what goes into the database is what we passed it.
-      assertTrue(capturedGroup.getValue().getOwnerId().equals(someGroupOwner.getId()));
-      assertTrue(capturedGroup.getValue().getGroupName().equals(someGroupName));
+      assertEquals(capturedGroup.getValue().getOwnerId(), someGroupOwner.getId());
+      assertEquals(capturedGroup.getValue().getGroupName(), someGroupName);
       assertTrue(capturedGroup.getValue().getCreated() instanceof Date);
 
     } catch (SegueDatabaseException e) {

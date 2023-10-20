@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.Response.Status;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
@@ -46,7 +45,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
   private QuestionFacade questionFacade;

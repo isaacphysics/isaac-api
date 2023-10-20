@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -41,11 +40,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 /**
  * Test class for the Parsons Question Validator class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacParsonsValidatorTest {
   private IsaacParsonsValidator validator;
   private IsaacParsonsQuestion someParsonsQuestion;
-  private String incorrectExplanation = "EXPLANATION";
+  private final String incorrectExplanation = "EXPLANATION";
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();

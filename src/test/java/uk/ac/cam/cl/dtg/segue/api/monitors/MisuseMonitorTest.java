@@ -26,7 +26,6 @@ import static org.junit.Assert.fail;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -39,7 +38,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Test class for the user manager class.
  *
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
   private PropertiesLoader dummyPropertiesLoader;
   private EmailManager dummyCommunicator;

@@ -16,15 +16,16 @@
 
 package uk.ac.cam.cl.dtg.segue.database;
 
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
 
 public class GitDbTest {
 
@@ -32,10 +33,10 @@ public class GitDbTest {
   public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
     // Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
 
-    PowerMock.replay(Git.class);
+    GitDb gitDb = null;
 
     try {
-      new GitDb("", null, null);
+      gitDb = new GitDb("", null, null);
       fail("GitDb constructor was given an empty string, but didn't throw an exception");
     } catch (IllegalArgumentException e) {
       // Exception correctly thrown.
@@ -44,7 +45,7 @@ public class GitDbTest {
     }
 
     try {
-      new GitDb(null, null, null);
+      gitDb = new GitDb(null, null, null);
       fail("GitDb constructor was given null, but didn't throw an exception");
     } catch (NullPointerException e) {
       // Exception correctly thrown.
@@ -52,12 +53,13 @@ public class GitDbTest {
       fail("GitDb constructor threw wrong exception type: " + e);
     }
 
+    assertNull(gitDb);
   }
 
   @Test
   public void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
 
-    Git git = EasyMock.createMock(Git.class);
+    Git git = createMock(Git.class);
 
     GitDb db = new GitDb(git);
 
@@ -88,13 +90,13 @@ public class GitDbTest {
       fail("Wrong type of exception thrown on null path");
     }
 
-    Repository repo = EasyMock.createMock(Repository.class);
+    Repository repo = createMock(Repository.class);
 
-    EasyMock.expect(git.getRepository()).andReturn(repo);
-    EasyMock.expect(repo.resolve("sha")).andReturn(null);
+    expect(git.getRepository()).andReturn(repo);
+    expect(repo.resolve("sha")).andReturn(null);
 
-    EasyMock.replay(git);
-    EasyMock.replay(repo);
+    replay(git);
+    replay(repo);
 
     assertNull(db.getTreeWalk("sha",
         "")); // Blank path is explicitly allowed. This should not throw an exception. But in this case we've passed an invalid sha, so we should get null back.

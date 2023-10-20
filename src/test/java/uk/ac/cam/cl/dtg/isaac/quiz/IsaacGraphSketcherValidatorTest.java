@@ -23,7 +23,6 @@ import com.google.api.client.util.Lists;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -32,7 +31,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 /**
  * Test class for the Graph Sketcher Validator class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacGraphSketcherValidatorTest {
   private IsaacGraphSketcherValidator validator;
 

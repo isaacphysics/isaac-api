@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.Response.Status;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
@@ -88,7 +87,6 @@ public class GameboardsFacadeTest {
    * @throws ContentManagerException
    */
   @Test
-  @PowerMockIgnore({"jakarta.ws.*"})
   public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
       throws NoWildcardException, SegueDatabaseException, ContentManagerException {
     GameboardsFacade gameboardFacade = new GameboardsFacade(
