@@ -511,7 +511,7 @@ public class GitContentManager {
     return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
   }
 
-  public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+  public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
       final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
       final Integer limit, @Nullable final Long randomSeed
   ) throws ContentManagerException {

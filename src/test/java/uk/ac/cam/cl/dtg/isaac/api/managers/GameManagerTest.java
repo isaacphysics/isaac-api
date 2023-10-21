@@ -16,9 +16,14 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static org.easymock.EasyMock.anyInt;
+import static org.easymock.EasyMock.anyLong;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.powermock.api.easymock.PowerMock.replay;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,13 +31,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -42,11 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager.BooleanSearchClause;
 
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
 public class GameManagerTest {
-
   private GitContentManager dummyContentManager;
   private GameboardPersistenceManager dummyGameboardPersistenceManager;
   private MapperFacade dummyMapper;
@@ -54,10 +50,10 @@ public class GameManagerTest {
 
   @Before
   public void setUp() {
-    this.dummyContentManager = PowerMock.createMock(GitContentManager.class);
-    this.dummyGameboardPersistenceManager = PowerMock.createMock(GameboardPersistenceManager.class);
-    this.dummyMapper = PowerMock.createMock(MapperFacade.class);
-    this.dummyQuestionManager = PowerMock.createMock(QuestionManager.class);
+    this.dummyContentManager = createMock(GitContentManager.class);
+    this.dummyGameboardPersistenceManager = createMock(GameboardPersistenceManager.class);
+    this.dummyMapper = createMock(MapperFacade.class);
+    this.dummyQuestionManager = createMock(QuestionManager.class);
   }
 
   @Test
@@ -75,11 +71,11 @@ public class GameManagerTest {
 
     // configure the mock GitContentManager to record the filters that are sent to it by getNextQuestionsForFilter()
     Capture<List<BooleanSearchClause>> capturedFilters = Capture.newInstance();
-    EasyMock.expect(dummyContentManager.findByFieldNamesRandomOrder(
-        EasyMock.capture(capturedFilters),
-        EasyMock.anyInt(),
-        EasyMock.anyInt(),
-        EasyMock.anyLong())
+    expect(dummyContentManager.findByFieldNamesRandomOrder(
+        capture(capturedFilters),
+        anyInt(),
+        anyInt(),
+        anyLong())
     ).andStubReturn(new ResultsWrapper<>());
     replay(dummyContentManager);
 
