@@ -37,10 +37,6 @@ import org.easymock.Capture;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
@@ -62,8 +58,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Test class for the EmailManager class.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
 public class EmailManagerTest {
   private static final String CONTENT_VERSION = "liveVersion";
 
@@ -137,7 +131,7 @@ public class EmailManagerTest {
 
 
     // Create content manager
-    mockContentManager = PowerMock.createMock(GitContentManager.class);
+    mockContentManager = createMock(GitContentManager.class);
 
     // Create log manager
     logManager = createMock(ILogManager.class);
@@ -471,7 +465,7 @@ public class EmailManagerTest {
     EmailTemplateDTO template = createDummyEmailTemplate("this is a template with no tags");
 
     // Create content manager
-    GitContentManager mockContentManager = PowerMock.createMock(GitContentManager.class);
+    GitContentManager mockContentManager = createMock(GitContentManager.class);
 
     ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
     try {

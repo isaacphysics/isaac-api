@@ -196,7 +196,7 @@ public class GitContentManager {
    * @return the content DTO object.
    * @throws ContentManagerException on failure to return the object or null.
    */
-  public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
+  public ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
     String k = "getContentById~" + getCurrentContentSHA() + "~" + id;
     if (!cache.asMap().containsKey(k)) {
       ContentDTO c = this.mapper.getDTOByDO(this.getContentDOById(id, failQuietly));
