@@ -20,7 +20,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import java.io.IOException;
 import org.eclipse.jgit.api.Git;
@@ -31,64 +31,20 @@ public class GitDbTest {
 
   @Test
   public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
-    // Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
+    assertThrows(IllegalArgumentException.class, () -> new GitDb("", null, null));
 
-    GitDb gitDb = null;
-
-    try {
-      gitDb = new GitDb("", null, null);
-      fail("GitDb constructor was given an empty string, but didn't throw an exception");
-    } catch (IllegalArgumentException e) {
-      // Exception correctly thrown.
-    } catch (Exception e) {
-      fail("GitDb constructor threw wrong exception type: " + e);
-    }
-
-    try {
-      gitDb = new GitDb(null, null, null);
-      fail("GitDb constructor was given null, but didn't throw an exception");
-    } catch (NullPointerException e) {
-      // Exception correctly thrown.
-    } catch (Exception e) {
-      fail("GitDb constructor threw wrong exception type: " + e);
-    }
-
-    assertNull(gitDb);
+    assertThrows(NullPointerException.class, () -> new GitDb(null, null, null));
   }
 
   @Test
   public void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
-
     Git git = createMock(Git.class);
 
     GitDb db = new GitDb(git);
 
-    try {
-      db.getTreeWalk("", "");
-      fail("Failed to throw required exception on blank sha.");
-    } catch (IllegalArgumentException e) {
-      // Exception correctly thrown.
-    } catch (Exception e) {
-      fail("Wrong type of exception thrown on blank sha");
-    }
-
-    try {
-      db.getTreeWalk(null, "");
-      fail("Failed to throw required exception on null sha.");
-    } catch (NullPointerException e) {
-      // Exception correctly thrown.
-    } catch (Exception e) {
-      fail("Wrong type of exception thrown on null sha");
-    }
-
-    try {
-      db.getTreeWalk("sha", null);
-      fail("Failed to throw required exception on null path.");
-    } catch (NullPointerException e) {
-      // Exception correctly thrown.
-    } catch (Exception e) {
-      fail("Wrong type of exception thrown on null path");
-    }
+    assertThrows(IllegalArgumentException.class, () -> db.getTreeWalk("", ""));
+    assertThrows(NullPointerException.class, () -> db.getTreeWalk(null, ""));
+    assertThrows(NullPointerException.class, () -> db.getTreeWalk("sha", null));
 
     Repository repo = createMock(Repository.class);
 
