@@ -56,4 +56,53 @@ public class AssignmentStatusDTO {
     public void setAssignmentId(final Long assignmentId) {
         this.assignmentId = assignmentId;
     }
+
+    public String toString() {
+        return "AssignmentStatusDTO ["
+                + "groupId=" + groupId
+                + ", assignmentId=" + assignmentId
+                + ", errorMessage=" + errorMessage
+                + ']';
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof AssignmentStatusDTO)) {
+            return false;
+        }
+
+        AssignmentStatusDTO other = (AssignmentStatusDTO) obj;
+
+        if (null == groupId) {
+            if (null != other.groupId) {
+                return false;
+            }
+        } else if (!groupId.equals(other.groupId)) {
+            return false;
+        }
+
+        if (null == assignmentId) {
+            if (null != other.assignmentId) {
+                return false;
+            }
+        } else if (!assignmentId.equals(other.assignmentId)) {
+            return false;
+        }
+
+        if (null == errorMessage) {
+            if (null != other.errorMessage) {
+                return false;
+            }
+        } else if (!errorMessage.equals(other.errorMessage)) {
+            return false;
+        }
+
+        return true;
+    }
 }

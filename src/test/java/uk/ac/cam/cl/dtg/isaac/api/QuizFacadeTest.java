@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -58,8 +59,10 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -337,28 +340,49 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void createQuizAssignment() {
         QuizAssignmentDTO newAssignment = new QuizAssignmentDTO(0xB8003111799L, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK);
-        QuizAssignmentDTO assignmentRequest = new QuizAssignmentDTO(null, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK);
-        forEndpoint((QuizAssignmentDTO assignment) -> () -> quizFacade.createQuizAssignment(httpServletRequest, assignment),
+        List<AssignmentStatusDTO> newAssignments = new ArrayList<>();
+        newAssignments.add(
+                new AssignmentStatusDTO(newAssignment.getGroupId(), newAssignment.getId())
+        );
+
+        List<AssignmentStatusDTO> dueBeforeAssignments = new ArrayList<>();
+        dueBeforeAssignments.add(
+                new AssignmentStatusDTO(newAssignment.getGroupId(), "You cannot set a quiz with a due date in the past.")
+        );
+
+        List<AssignmentStatusDTO> duplicateAssignments = new ArrayList<>();
+        duplicateAssignments.add(
+                new AssignmentStatusDTO(newAssignment.getGroupId(), "Test")
+        );
+
+        List<QuizAssignmentDTO> assignmentRequest = new ArrayList<>();
+        assignmentRequest.add(
+                new QuizAssignmentDTO(null, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK)
+        );
+
+        forEndpoint((List<QuizAssignmentDTO> assignments) -> () -> quizFacade.createQuizAssignments(httpServletRequest, assignments),
             with(assignmentRequest,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest)).andReturn(newAssignment)),
+                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andReturn(newAssignment)),
                     prepare(quizManager, m -> m.augmentWithQuizSummary(Collections.singletonList(newAssignment))),
-                    respondsWith(newAssignment),
-                    check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.getOwnerUserId()))
-                ),
-                forbiddenForEveryoneElse()
+                    respondsWith(newAssignments),
+                    check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.get(0).getOwnerUserId()))
+                )
+                // FIXME forbiddenForEveryoneElse does not handle the multiple requests and the fact that
+                //  the a request may return 400 or may return a status list
+//                forbiddenForEveryoneElse(forbiddenAssignments)
             ),
             with(assignmentRequest,
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest)).andThrow(new DueBeforeNowException())),
-                    failsWith(Status.BAD_REQUEST)
+                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andThrow(new DueBeforeNowException())),
+                    respondsWith(dueBeforeAssignments)
                 )
             ),
             with(assignmentRequest,
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest)).andThrow(new DuplicateAssignmentException("Test"))),
-                    failsWith(Status.BAD_REQUEST)
+                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andThrow(new DuplicateAssignmentException("Test"))),
+                    respondsWith(duplicateAssignments)
                 )
             )
         );
