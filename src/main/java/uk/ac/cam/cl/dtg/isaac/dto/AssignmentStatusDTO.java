@@ -57,12 +57,23 @@ public class AssignmentStatusDTO {
         this.assignmentId = assignmentId;
     }
 
+    @Override
     public String toString() {
         return "AssignmentStatusDTO ["
                 + "groupId=" + groupId
                 + ", assignmentId=" + assignmentId
                 + ", errorMessage=" + errorMessage
                 + ']';
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 37;
+        int result = 1;
+        result = prime * result + (null == groupId ? 0 : groupId.hashCode());
+        result = prime * result + (null == assignmentId ? 0 : assignmentId.hashCode());
+        result = prime * result + (null == errorMessage ? 0 : errorMessage.hashCode());
+        return result;
     }
 
     @Override

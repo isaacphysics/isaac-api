@@ -24,6 +24,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -88,8 +89,9 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
 
         // check the quiz was assigned successfully
-        QuizAssignmentDTO responseBody = (QuizAssignmentDTO) createQuizResponse.getEntity();
-        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) responseBody.getGroupId());
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
     }
 
     @Test
