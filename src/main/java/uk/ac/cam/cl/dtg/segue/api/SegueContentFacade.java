@@ -54,8 +54,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Segue Content Facade
  * <br>
- * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
- * the Segue api for use only on the Rutherford site.
+ * This class specifically caters for the Rutherford Computer Science server and is expected to provide extended
+ * functionality to the Segue api for use only on the Rutherford site.
  */
 @Path("/content")
 @Tag(name = "/content")
@@ -67,6 +67,9 @@ public class SegueContentFacade extends AbstractSegueFacade {
   private final ContentService contentService;
 
   /**
+   * SegueContentFacade serves as a facade for handling content management and
+   * retrieval functionalities.
+   *
    * @param properties     - the fully configured properties loader for the api.
    * @param contentManager - The content version controller used by the api.
    * @param contentIndex   - The index string for current content version

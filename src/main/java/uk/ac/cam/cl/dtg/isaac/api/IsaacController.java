@@ -88,8 +88,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Isaac Controller
  * <br>
- * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
- * the Segue api for use only on the Isaac site.
+ * This class specifically caters for the Rutherford Computer Science server and is expected to provide extended
+ * functionality to the Segue api for use only on the Isaac site.
  * <br>
  * TODO: This class should be refactored, as it is just a random collection of endpoints.
  */
