@@ -436,27 +436,25 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
   @Override
   public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-    StringBuilder inParams = new StringBuilder();
-    inParams.append("?");
-    for (int i = 1; i < usersToLocate.size(); i++) {
-      inParams.append(",?");
+    if (usersToLocate.isEmpty()) {
+      return new ArrayList<>();
     }
-    String query =
-        String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name",
-            inParams.toString());
+
+    String inParams = String.join(",", Collections.nCopies(usersToLocate.size(), "?"));
+    String query = String.format(
+            "SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name", inParams);
 
     try (Connection conn = database.getDatabaseConnection();
-         PreparedStatement pst = conn.prepareStatement(query)
-    ) {
-      int index = FIELD_FIND_USERS_PARAMETERS_INITIAL_INDEX;
-      for (Long userId : usersToLocate) {
-        pst.setLong(index, userId);
-        index++;
+         PreparedStatement pst = conn.prepareStatement(query)) {
+
+      for (int i = 0; i < usersToLocate.size(); i++) {
+        pst.setLong(i + 1, usersToLocate.get(i));
       }
 
       try (ResultSet results = pst.executeQuery()) {
         return this.findAllUsers(results);
       }
+
     } catch (SQLException e) {
       throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
     } catch (JsonProcessingException e) {
