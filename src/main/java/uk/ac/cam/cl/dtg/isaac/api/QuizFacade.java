@@ -924,7 +924,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            if (quizAssignmentDTOsFromClient.isEmpty()) {
+            if (quizAssignmentDTOsFromClient == null || quizAssignmentDTOsFromClient.isEmpty()) {
                 return SegueErrorResponse.getBadRequestResponse("You need to specify at least one quiz to set.");
             }
 
@@ -1012,15 +1012,6 @@ public class QuizFacade extends AbstractIsaacFacade {
                         groupMap.put(assigneeGroup.getId(), assigneeGroup);
                     }
 
-                    if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
-                        && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
-                        quizStatuses.add(new AssignmentStatusDTO(
-                                quizAssignmentDTO.getGroupId(),
-                                "You can only set assignments to groups you own or manage"
-                        ));
-                        continue;
-                    }
-
                     quizAssignmentDTO.setOwnerUserId(currentlyLoggedInUser.getId());
                     quizAssignmentDTO.setCreationDate(null);
                     quizAssignmentDTO.setId(null);
@@ -1036,9 +1027,6 @@ public class QuizFacade extends AbstractIsaacFacade {
                     eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
 
                     this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
-
-                    List<QuizAssignmentDTO> assignments = Collections.singletonList(assignmentWithID);
-                    quizManager.augmentWithQuizSummary(assignments);
 
                     quizStatuses.add(new AssignmentStatusDTO(
                             assignmentWithID.getGroupId(), assignmentWithID.getId())
