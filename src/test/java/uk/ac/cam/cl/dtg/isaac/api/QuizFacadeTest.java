@@ -62,7 +62,6 @@ import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -365,7 +364,6 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
                     prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andReturn(newAssignment)),
-                    prepare(quizManager, m -> m.augmentWithQuizSummary(Collections.singletonList(newAssignment))),
                     respondsWith(newAssignments),
                     check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.get(0).getOwnerUserId()))
                 )
