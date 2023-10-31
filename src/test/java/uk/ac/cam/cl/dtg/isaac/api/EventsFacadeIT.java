@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.google.common.collect.ImmutableMap;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
@@ -74,6 +75,10 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     // NOTE: We may end up having more events in the dataset than the limit specified in the call.
     //       In this case, we need to check for the limit up here and then check if the response object tells us
     //       that there are more, and how many there are.
+    Long numberOfPublicEventsInResults = results.stream().filter(event -> event.isPrivateEvent() == null || !event.isPrivateEvent()).count();
+    Long numberOfPrivateEventsInResults = results.stream().filter(event -> event.isPrivateEvent() != null && event.isPrivateEvent()).count();
+    assertEquals(8, numberOfPublicEventsInResults);
+    assertEquals(0, numberOfPrivateEventsInResults);
   }
 
   @Test
@@ -323,5 +328,30 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         eventsFacade.getEventBookingForGivenGroup(eventManagerRequest, "_regular_test_event", "2");
     // The event manager does not own the group so this should not succeed
     assertNotEquals(Response.Status.OK.getStatusCode(), eventManagerResponse.getStatus());
+  }
+
+  @Test
+  public void getEventOverviewsTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+      AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
+      AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
+      MFARequiredButNotConfiguredException {
+    LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD);
+
+    HttpServletRequest mockRequest = createRequestWithCookies(new Cookie[] {eventManagerLogin.cookie});
+    replay(mockRequest);
+
+    Response response = eventsFacade.getEventOverviews(mockRequest, 0, 10, null);
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    Object entityObject = response.getEntity();
+    assertNotNull(entityObject);
+    @SuppressWarnings("unchecked") ResultsWrapper<ImmutableMap<String, Object>> entity = (ResultsWrapper<ImmutableMap<String, Object>>) entityObject;
+    assertNotNull(entity);
+    List<ImmutableMap<String, Object>> results = entity.getResults();
+    assertEquals(9, results.size());
+    Long numberOfPublicEventsInResults = results.stream().filter(overview -> !(Boolean) overview.get("privateEvent")).count();
+    Long numberOfPrivateEventsInResults = results.stream().filter(overview -> (Boolean) overview.get("privateEvent")).count();
+    assertEquals(8, numberOfPublicEventsInResults);
+    assertEquals(1, numberOfPrivateEventsInResults);
   }
 }

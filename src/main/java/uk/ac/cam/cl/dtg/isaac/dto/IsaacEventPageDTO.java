@@ -72,6 +72,8 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   private Boolean allowGroupReservations;
 
+  private Boolean privateEvent;
+
   /**
    * @param id
    * @param title
@@ -98,6 +100,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param eventStatus
    * @param groupReservationLimit
    * @param allowGroupReservations
+   * @param privateEvent if an event should be publicly visible or hidden
    */
   @JsonCreator
   public IsaacEventPageDTO(
@@ -125,7 +128,8 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
       @JsonProperty("EventStatus") final EventStatus eventStatus,
       @JsonProperty("groupReservationLimit") final Integer groupReservationLimit,
-      @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations) {
+      @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations,
+      @JsonProperty("privateEvent") final Boolean privateEvent) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
         relatedContent, published, deprecated, tags, null);
 
@@ -142,6 +146,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     this.groupReservationLimit =
         groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
     this.allowGroupReservations = allowGroupReservations;
+    this.privateEvent = privateEvent;
   }
 
   /**
@@ -536,4 +541,11 @@ public class IsaacEventPageDTO extends ContentDTO {
     return super.getCanonicalSourceFile();
   }
 
+  public Boolean isPrivateEvent() {
+    return privateEvent;
+  }
+
+  public void setPrivateEvent(Boolean privateEvent) {
+    this.privateEvent = privateEvent;
+  }
 }
