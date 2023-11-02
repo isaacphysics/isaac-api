@@ -24,6 +24,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -40,6 +41,8 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
@@ -60,7 +63,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void createQuizAssignmentEndpoint_assignQuizAsTeacher_succeeds() throws NoCredentialsAvailableException,
+    public void createQuizAssignmentsEndpoint_assignQuizAsTeacher_succeeds() throws NoCredentialsAvailableException,
             NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
             IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
             NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
@@ -70,25 +73,29 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
         replay(assignQuizRequest);
 
-        QuizAssignmentDTO quizAssignmentDTO = new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
-                TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
-                QuizFeedbackMode.DETAILED_FEEDBACK);
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK)
+        );
 
         // Act
         // make request
-        Response createQuizResponse = quizFacade.createQuizAssignment(assignQuizRequest, quizAssignmentDTO);
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
 
         // Assert
         // check status code is OK
         assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
 
         // check the quiz was assigned successfully
-        QuizAssignmentDTO responseBody = (QuizAssignmentDTO) createQuizResponse.getEntity();
-        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) responseBody.getGroupId());
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
     }
 
     @Test
-    public void createQuizAssignmentEndpoint_assignQuizAsTutor_fails() throws NoCredentialsAvailableException,
+    public void createQuizAssignmentsEndpoint_assignQuizAsTutor_fails() throws NoCredentialsAvailableException,
             NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
             IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
             NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
@@ -98,13 +105,16 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
         replay(assignQuizRequest);
 
-        QuizAssignmentDTO quizAssignmentDTO = new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                 TEST_TUTOR_ID, TEST_TUTORS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
-                QuizFeedbackMode.DETAILED_FEEDBACK);
+                QuizFeedbackMode.DETAILED_FEEDBACK)
+        );
 
         // Act
         // make request
-        Response createQuizResponse = quizFacade.createQuizAssignment(assignQuizRequest, quizAssignmentDTO);
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
 
         // Assert
         // check status code is FORBIDDEN
