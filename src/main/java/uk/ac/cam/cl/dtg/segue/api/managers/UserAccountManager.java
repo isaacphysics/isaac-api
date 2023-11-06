@@ -87,15 +87,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -349,7 +341,7 @@ public class UserAccountManager implements IUserAccountManager {
         // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
         if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
             // we can't just log them in we have to set a caveat cookie
-            this.partialLogInForMFA(request, response, user, rememberMe);
+            this.partialLogIn(request, response, user, rememberMe);
             throw new AdditionalAuthenticationRequiredException();
         } else if (Role.ADMIN.equals(user.getRole())) {
             // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
@@ -375,11 +367,30 @@ public class UserAccountManager implements IUserAccountManager {
     public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
                                              final RegisteredUser userObjectFromClient, final String newPassword,
                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                             final boolean rememberMe)
+                                             final boolean rememberMe) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        return createUserObjectAndLogIn(request, response, userObjectFromClient, newPassword, userPreferenceObject, rememberMe, false);
+    }
+
+    /**
+     * Create a user object. This method allows new user objects to be created.
+     *
+     * @param request              - so that we can identify the user
+     * @param response             to tell the browser to store the session in our own segue cookie.
+     * @param userObjectFromClient - the new user object from the clients perspective.
+     * @param newPassword          - the new password for the user.
+     * @param userPreferenceObject - the new preferences for this user
+     * @param rememberMe           - Boolean to indicate whether or not this cookie expiry duration should be long or short
+     * @param partialLoginUntilEmailVerified - Whether to restrict login until email address is verified
+     * @return the updated user object.
+     */
+    public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
+                                             final RegisteredUser userObjectFromClient, final String newPassword,
+                                             final Map<String, Map<String, Boolean>> userPreferenceObject,
+                                             final boolean rememberMe, final boolean partialLoginUntilEmailVerified)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             RegisteredUserDTO savedUser = this.createUserObjectAndSession(request, response,
-                    userObjectFromClient, newPassword, rememberMe);
+                    userObjectFromClient, newPassword, rememberMe, partialLoginUntilEmailVerified);
 
             if (userPreferenceObject != null) {
                 List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
@@ -637,7 +648,7 @@ public class UserAccountManager implements IUserAccountManager {
     public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
                                              final Integer TOTPCode, final boolean rememberMe)
             throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException {
-        RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
+        RegisteredUser registeredUser = this.retrieveCaveatLogin(request, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
 
         if (registeredUser == null) {
             throw new NoUserLoggedInException();
@@ -936,7 +947,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
                                                         final HttpServletResponse response, final RegisteredUser user, final String newPassword,
-                                                        final boolean rememberMe) throws InvalidPasswordException,
+                                                        final boolean rememberMe, final boolean partialLoginUntilEmailVerified) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
             EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.isTrue(user.getId() == null,
@@ -963,7 +974,15 @@ public class UserAccountManager implements IUserAccountManager {
         userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
 
         // Set defaults
-        userToSave.setRole(Role.STUDENT);
+        // keep teacher role if requested and direct teacher signup allowed
+        // todo: this is not great - relying on the boolean arg has the same effect but relies on the caller doing these checks (possible source of bugs)
+        if ((Boolean.parseBoolean(properties.getProperty(DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION)) && userToSave.getRole() == Role.TEACHER && partialLoginUntilEmailVerified)) {
+            userToSave.setTeacherAccountPending(true);
+        } else {
+            // otherwise, always set to default role
+            userToSave.setRole(Role.STUDENT);
+            userToSave.setTeacherAccountPending(false);
+        }
         userToSave.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
@@ -1026,7 +1045,11 @@ public class UserAccountManager implements IUserAccountManager {
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         // return it to the caller.
-        return this.logUserIn(request, response, userToReturn, rememberMe);
+        if (partialLoginUntilEmailVerified) {
+            return this.partialLogIn(request, response, userToReturn, rememberMe);
+        } else {
+            return this.logUserIn(request, response, userToReturn, rememberMe);
+        }
     }
 
     /**
@@ -1499,7 +1522,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws NoUserLoggedInException if they haven't started the flow.
      */
     public UserSummaryWithEmailAddressDTO getPartiallyIdentifiedUser(HttpServletRequest request) throws NoUserLoggedInException {
-        RegisteredUser registeredUser = this.retrievePartialLogInForMFA(request);
+        RegisteredUser registeredUser = this.retrieveCaveatLogin(request, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
         if (null == registeredUser) {
             throw new NoUserLoggedInException();
         }
@@ -1590,9 +1613,9 @@ public class UserAccountManager implements IUserAccountManager {
      * @param user       - user of interest
      * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
-    private void partialLogInForMFA(final HttpServletRequest request, final HttpServletResponse response,
-                                    final RegisteredUser user, final boolean rememberMe) {
-        this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user, rememberMe);
+    private RegisteredUserDTO partialLogIn(final HttpServletRequest request, final HttpServletResponse response,
+                              final RegisteredUser user, final boolean rememberMe) {
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE), rememberMe));
     }
 
     /**
@@ -1602,8 +1625,9 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * @param request - http request containing the cookie
      */
-    private RegisteredUser retrievePartialLogInForMFA(final HttpServletRequest request) {
-        return this.userAuthenticationManager.getUserFromSession(request, true);
+    //todo: is there any reason this DO -> DTO is converted after return?
+    private RegisteredUser retrieveCaveatLogin(final HttpServletRequest request, Set<AuthenticationCaveat> acceptableCaveats) {
+        return this.userAuthenticationManager.getUserFromSession(request, acceptableCaveats);
     }
 
     /**
@@ -1786,10 +1810,12 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * @param request - to retrieve session information from
      * @return Returns the current UserDTO if we can get it or null if user is not currently logged in / there is an
-     *       invalid session
+     *       invalid session.
+     *
+     *       Rejects attempts to retrieve a user if the session has any caveats.
      */
     private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
-        return this.userAuthenticationManager.getUserFromSession(request, false);
+        return this.userAuthenticationManager.getUserFromSession(request);
     }
 
     /**

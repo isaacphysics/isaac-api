@@ -51,48 +51,40 @@ public class RegisteredUser extends AbstractSegueUser {
 
     private Integer sessionToken;
 
+    private Boolean teacherAccountPending;
+
     /**
      * Full constructor for the User object.
-     * 
-     * @param id
-     *            - Our database Unique ID
-     * @param givenName
-     *            - Equivalent to firstname
-     * @param familyName
-     *            - Equivalent to second name
-     * @param email
-     *            - primary e-mail address
-     * @param role
-     *            - role description
-     * @param dateOfBirth
-     *            - date of birth to help with monitoring
-     * @param gender
-     *            - gender of the user
-     * @param registrationDate
-     *            - date of registration
-     * @param lastUpdated
-     *            - the date this user was last updated.
-     * @param emailToVerify
-     *            - the most recent email for which a token has been generated
-     * @param emailVerificationToken
-     *            - the most recent token generated to verify email addresses
-     * @param emailVerificationStatus
-     *            - whether the user has verified their email or not
+     *
+     * @param id                      - Our database Unique ID
+     * @param givenName               - Equivalent to firstname
+     * @param familyName              - Equivalent to second name
+     * @param email                   - primary e-mail address
+     * @param role                    - role description
+     * @param dateOfBirth             - date of birth to help with monitoring
+     * @param gender                  - gender of the user
+     * @param registrationDate        - date of registration
+     * @param lastUpdated             - the date this user was last updated.
+     * @param emailToVerify           - the most recent email for which a token has been generated
+     * @param emailVerificationToken  - the most recent token generated to verify email addresses
+     * @param emailVerificationStatus - whether the user has verified their email or not
+     * @param teacherAccountPending
      */
     @JsonCreator
     public RegisteredUser(@JsonProperty("id") final Long id,
-            @JsonProperty("givenName") final String givenName,
-            @JsonProperty("familyName") final String familyName,
-            @JsonProperty("email") final String email,
-            @JsonProperty("role") final Role role,
-            @JsonProperty("dateOfBirth") final Date dateOfBirth,
-            @JsonProperty("gender") final Gender gender,
-            @JsonProperty("countryCode") final String countryCode,
-            @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("lastUpdated") final Date lastUpdated,
-            @JsonProperty("emailToVerify") final String emailToVerify,
-            @JsonProperty("emailVerificationToken") final String emailVerificationToken,
-            @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
+                          @JsonProperty("givenName") final String givenName,
+                          @JsonProperty("familyName") final String familyName,
+                          @JsonProperty("email") final String email,
+                          @JsonProperty("role") final Role role,
+                          @JsonProperty("dateOfBirth") final Date dateOfBirth,
+                          @JsonProperty("gender") final Gender gender,
+                          @JsonProperty("countryCode") final String countryCode,
+                          @JsonProperty("registrationDate") final Date registrationDate,
+                          @JsonProperty("lastUpdated") final Date lastUpdated,
+                          @JsonProperty("emailToVerify") final String emailToVerify,
+                          @JsonProperty("emailVerificationToken") final String emailVerificationToken,
+                          @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus,
+                          @JsonProperty("teacherAccountPending") final Boolean teacherAccountPending) {
         this.id = id;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -106,6 +98,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.emailToVerify = emailToVerify;
         this.emailVerificationToken = emailVerificationToken;
         this.emailVerificationStatus = emailVerificationStatus;
+        this.teacherAccountPending = teacherAccountPending;
     }
 
     /**
@@ -468,6 +461,14 @@ public class RegisteredUser extends AbstractSegueUser {
 
     public void setRegisteredContextsLastConfirmed(Date registeredContextsLastConfirmed) {
         this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
+    }
+
+    public boolean isTeacherAccountPending() {
+        return teacherAccountPending;
+    }
+
+    public void setTeacherAccountPending(Boolean teacherAccountPending) {
+        this.teacherAccountPending = teacherAccountPending;
     }
 
     @Override

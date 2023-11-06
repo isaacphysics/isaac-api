@@ -151,6 +151,14 @@ public final class Constants {
     public static final String PARTIAL_LOGIN_FLAG = "partial";
 
     /**
+     * Representing caveats saved to session cookies, allowing the API to check whether the cookie should be considered
+     * sufficient authentication for different flows.
+     */
+    public enum AuthenticationCaveat {
+        INCOMPLETE_MFA_CHALLENGE, INCOMPLETE_MANDATORY_EMAIL_VERIFICATION
+    };
+
+    /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
      */
     public static final String HMAC = "HMAC";
@@ -571,6 +579,8 @@ public final class Constants {
     public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
 
     public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
+
+    public static final String DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION = "DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION";
 
     /**
      * Private constructor to prevent this class being created.

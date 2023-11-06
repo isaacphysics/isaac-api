@@ -253,8 +253,14 @@ public class UsersFacade extends AbstractSegueFacade {
                     log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
                 }
 
-                // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
-                return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                if (registeredUser.getRole() == Role.TEACHER && Boolean.parseBoolean(getProperties().getProperty(DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION))) {
+                    // For teacher sign-ups where teachers should not default to student role, use a "partial" login until email is verified.
+                    userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, true);
+                    return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
+                } else {
+                    // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
+                    return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                }
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");

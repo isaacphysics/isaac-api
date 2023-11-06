@@ -74,12 +74,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_STRICT_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -333,12 +328,17 @@ public class UserAuthenticationManager {
         return passwordAuthenticator.hasPasswordRegistered(user);
     }
 
+    public RegisteredUser getUserFromSession(final HttpServletRequest request) {
+        return getUserFromSession(request, Set.of());
+    }
+
     /**
      * This method will look up a userDO based on the session information provided.
      * @param request containing session information
+     * @param acceptableCaveats return a user object even if the session indicates their authentication isn't fully complete for one of these reasons.
      * @return either a user or null if we couldn't find the user for whatever reason.
      */
-    public RegisteredUser getUserFromSession(final HttpServletRequest request, final boolean allowIncompleteLoginsToReturnUser) {
+    public RegisteredUser getUserFromSession(final HttpServletRequest request, final Set<AuthenticationCaveat> acceptableCaveats) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
         Validate.notNull(request);
 
@@ -374,11 +374,11 @@ public class UserAuthenticationManager {
             }
         }
 
-        return getUserFromSessionInformationMap(currentSessionInformation, allowIncompleteLoginsToReturnUser);
+        return getUserFromSessionInformationMap(currentSessionInformation, acceptableCaveats);
     }
 
     /**
-     * @see #getUserFromSession(HttpServletRequest,boolean) - the two types of "request" have identical methods but are not
+     * @see #getUserFromSession(HttpServletRequest,Set) - the two types of "request" have identical methods but are not
      *           related by interfaces or inheritance and so require duplicated methods!
      */
     public RegisteredUser getUserFromSession(final UpgradeRequest request) {
@@ -398,7 +398,7 @@ public class UserAuthenticationManager {
         }
 
         // WebSocket UpgradeRequests should never use a partial login:
-        return getUserFromSessionInformationMap(currentSessionInformation, false);
+        return getUserFromSessionInformationMap(currentSessionInformation, Set.of());
     }
 
     /**
@@ -432,25 +432,26 @@ public class UserAuthenticationManager {
      * as per normal users but will have an additional status flag that indicates they haven't completed MFA.
      * This method will act upon that by refusing to return the user if the boolean parameter is set to false.
      *
-     * @see #getUserFromSession(HttpServletRequest, boolean) - there are two types of "request" and they have identical methods
+     * @see #getUserFromSession(HttpServletRequest, Set) - there are two types of "request" and they have identical methods
      * @see #getUserFromSession(UpgradeRequest) -     but unrelated by interfaces/inheritance, so require duplication!
      *
      * @param currentSessionInformation - the session information map extracted from the cookie.
-     * @param allowIncompleteLoginsToReturnUser - boolean if true will allow users that haven't completed MFA to be returned,
-     *                                          false will be stricter and return null if user hasn't completed MFA.
+     * @param expectedCaveats - return a user object even if the session indicates their authentication isn't fully complete for one of these reasons
      * @return either the valid user from the cookie, or null if no valid user
      */
     private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation,
-                                                            final boolean allowIncompleteLoginsToReturnUser) {
-        if (!allowIncompleteLoginsToReturnUser) {
-            // check if the session has a caveat about incomplete MFA Login
-            if (!Strings.isNullOrEmpty(currentSessionInformation.get(PARTIAL_LOGIN_FLAG))
-                    && Boolean.parseBoolean(currentSessionInformation.get(PARTIAL_LOGIN_FLAG))) {
-                // login is incomplete we cannot proceed.
-                log.debug("Incomplete MFA flow - no user object to be provided");
+                                                            final Set<AuthenticationCaveat> expectedCaveats) {
+
+        // Check for authentication caveats, and return null if any present are unexpected
+        for (AuthenticationCaveat possibleCaveat : AuthenticationCaveat.values()) {
+            if (!Strings.isNullOrEmpty(currentSessionInformation.get(possibleCaveat.toString()))
+                    && Boolean.parseBoolean(currentSessionInformation.get(possibleCaveat.toString()))
+                    && !expectedCaveats.contains(possibleCaveat)) {
+                log.debug(String.format("Declining to return user object due to unacceptable caveat %s", possibleCaveat));
                 return null;
             }
         }
+
         // Retrieve the user from database.
         try {
             // Get the user the cookie claims to belong to from the session information:
@@ -483,7 +484,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user, final boolean rememberMe) {
-        this.createSession(request, response, user, false, rememberMe);
+        this.createSession(request, response, user, Set.of(), rememberMe);
         return user;
     }
 
@@ -497,8 +498,8 @@ public class UserAuthenticationManager {
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
     public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                            final RegisteredUser user, final boolean rememberMe) {
-        this.createSession(request, response, user, true, rememberMe);
+                                            final RegisteredUser user, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
+        this.createSession(request, response, user, authenticationCaveats, rememberMe);
         return user;
     }
 
@@ -867,15 +868,15 @@ public class UserAuthenticationManager {
      *            to store the session in our own segue cookie.
      * @param user
      *            account to associate the session with.
-     * @param partialLoginFlag
+     * @param authenticationCaveats
      *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
      * @param rememberMe
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-                               final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
+                               final RegisteredUser user, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
         int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
-        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag, rememberMe);
+        createSession(request, response, user, sessionExpiryTimeInSeconds, authenticationCaveats, rememberMe);
     }
 
     /**
@@ -889,13 +890,13 @@ public class UserAuthenticationManager {
      *            account to associate the session with.
      * @param sessionExpiryTimeInSeconds
      *            max age of the cookie if not a partial login.
-     * @param partialLoginFlag
+     * @param authenticationCaveats
      *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
      * @param rememberMe
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag, final boolean rememberMe) {
+            final RegisteredUser user, int sessionExpiryTimeInSeconds, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
         Validate.notNull(response);
         Validate.notNull(user);
         Validate.notNull(user.getId());
@@ -905,11 +906,11 @@ public class UserAuthenticationManager {
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
-        String partialLoginFlagString = null;
+        ArrayList<String> caveatFlagStrings = new ArrayList<>();
 
         try {
-            if (partialLoginFlag) {
-                // use shortened expiry time if partial login
+            if (!authenticationCaveats.isEmpty()) {
+                // use shortened expiry time if there are any caveats
                 sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
             }
 
@@ -922,12 +923,12 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(SESSION_TOKEN, userSessionToken);
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
 
-            if (partialLoginFlag) {
-                partialLoginFlagString = String.valueOf(true);
-                sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
+            for (AuthenticationCaveat c : authenticationCaveats) {
+                sessionInformationBuilder.put(c.toString(), String.valueOf(true));
             }
 
-            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
+            // todo: fix
+            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, caveatFlagStrings);
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
@@ -1020,19 +1021,21 @@ public class UserAuthenticationManager {
      *            - Current date
      * @param sessionToken
      *            - a token allowing session invalidation
-     * @param partialLoginFlag
+     * @param caveatFlags
      *            - Boolean data to encode in the cookie - true if a partial login
      * @return HMAC signature.
      */
     private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken,
-                                        @Nullable final String partialLoginFlag) {
+                                        @Nullable final ArrayList<String> caveatFlags) {
         StringBuilder sb = new StringBuilder();
         sb.append(userId);
         sb.append("|").append(currentDate);
         sb.append("|").append(sessionToken);
 
-        if (partialLoginFlag != null) {
-            sb.append("|").append(partialLoginFlag);
+        if (null != caveatFlags) {
+            for (String c : caveatFlags) {
+                sb.append("|").append(c);
+            }
         }
 
         return UserAuthenticationManager.calculateHMAC(key, sb.toString());
