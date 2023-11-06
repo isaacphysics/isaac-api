@@ -22,6 +22,8 @@ import org.isaacphysics.graphchecker.settings.SettingsWrapper;
 /**
  * This class defines some Isaac-specific settings for the Graph Checker. If you are thinking of changing any
  * settings, you should run the tuner (Bluefin) to evaluate them on the sample set first.
+ *
+ * These are copied into a file in the front-end and **should be kept consistent**
  */
 public class IsaacGraphSketcherSettings implements SettingsWrapper {
 
