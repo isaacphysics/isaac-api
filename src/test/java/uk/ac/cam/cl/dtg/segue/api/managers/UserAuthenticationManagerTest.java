@@ -93,11 +93,7 @@ public class UserAuthenticationManagerTest {
     expect(mockRequest.getCookies()).andReturn(new Cookie[] {segueAuthCookie}).anyTimes();
     replay(mockRequest);
 
-    RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
-    expect(mockUser.getSessionToken()).andReturn(1).times(2);
-    replay(mockUser);
-
-    expect(dummyDatabase.getById(1L)).andReturn(mockUser);
+    expect(dummyDatabase.getSessionToken(1L)).andReturn(1).times(2);
     replay(dummyDatabase);
 
     assertTrue(userAuthenticationManager.isSessionValid(mockRequest));
@@ -109,11 +105,7 @@ public class UserAuthenticationManagerTest {
     expect(mockRequest.getCookies()).andReturn(null).anyTimes();
     replay(mockRequest);
 
-    RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
-    expect(mockUser.getSessionToken()).andReturn(1);
-    replay(mockUser);
-
-    expect(dummyDatabase.getById(1L)).andReturn(mockUser);
+    expect(dummyDatabase.getSessionToken(1L)).andReturn(1);
     replay(dummyDatabase);
 
     assertFalse(userAuthenticationManager.isSessionValid(mockRequest));
@@ -126,11 +118,7 @@ public class UserAuthenticationManagerTest {
     expect(mockRequest.getCookies()).andReturn(new Cookie[] {notAuthCookie}).anyTimes();
     replay(mockRequest);
 
-    RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
-    expect(mockUser.getSessionToken()).andReturn(1);
-    replay(mockUser);
-
-    expect(dummyDatabase.getById(1L)).andReturn(mockUser);
+    expect(dummyDatabase.getSessionToken(1L)).andReturn(1);
     replay(dummyDatabase);
 
     assertFalse(userAuthenticationManager.isSessionValid(mockRequest));
@@ -168,10 +156,10 @@ public class UserAuthenticationManagerTest {
   @Test
   public void destroyUserSession() throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
     RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
-    expect(mockUser.getSessionToken()).andReturn(1).times(2);
     replay(mockUser);
 
     expect(dummyDatabase.getById(1L)).andReturn(mockUser);
+    expect(dummyDatabase.getSessionToken(1L)).andReturn(1);
     dummyDatabase.invalidateSessionToken(mockUser);
     expectLastCall();
     replay(dummyDatabase);

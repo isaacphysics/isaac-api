@@ -586,6 +586,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     if (null == u) {
       // create a new one
       u = this.createUser(user);
+      this.createSessionToken(u);
     } else {
       // update
       u = this.updateUser(user);
@@ -695,9 +696,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
   @Override
   public Integer regenerateSessionToken(final RegisteredUser user) throws SegueDatabaseException {
-    Integer newSessionToken = generateRandomTokenInteger();
-    this.updateSessionToken(user, newSessionToken);
-    return newSessionToken;
+    Integer newSessionTokenValue = generateRandomTokenInteger();
+    this.updateSessionToken(user, newSessionTokenValue);
+    return newSessionTokenValue;
   }
 
   private static Integer generateRandomTokenInteger() {
@@ -712,25 +713,92 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   }
 
   @Override
+  public Integer createSessionToken(final RegisteredUser user) throws SegueDatabaseException {
+    Integer sessionTokenValue = generateRandomTokenInteger();
+    this.createSessionToken(user, sessionTokenValue);
+    return sessionTokenValue;
+  }
+
+  @Override
+  public void createSessionToken(final RegisteredUser user, final Integer sessionTokenValue)
+      throws SegueDatabaseException {
+    Validate.notNull(user);
+
+    String query = "INSERT INTO user_session_token(user_id, session_token) VALUES (?, ?);";
+    try (Connection conn = database.getDatabaseConnection();
+         PreparedStatement pst = conn.prepareStatement(query)
+    ) {
+      pst.setLong(FIELD_CREATE_SESSION_TOKEN_USER_ID, user.getId());
+      pst.setInt(FIELD_CREATE_SESSION_TOKEN_VALUE, sessionTokenValue);
+      pst.execute();
+    } catch (SQLException e) {
+      throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+    }
+  }
+
+  @Override
   public void invalidateSessionToken(final RegisteredUser user) throws SegueDatabaseException {
     // -1 is reserved for 'no assigned token', used for when a user is logged out for example
     this.updateSessionToken(user, NO_SESSION_TOKEN_RESERVED_VALUE);
   }
 
   @Override
-  public void updateSessionToken(final RegisteredUser user, final Integer newTokenValue) throws SegueDatabaseException {
+  public void updateSessionToken(final RegisteredUser user, final Integer newSessionTokenValue)
+      throws SegueDatabaseException {
     Validate.notNull(user);
 
-    String query = "UPDATE users SET session_token = ? WHERE id = ?";
+    String query = "UPDATE user_session_token SET session_token = ? WHERE user_id = ?";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {
-      pst.setInt(FIELD_UPDATE_SESSION_TOKEN_NEW_VALUE, newTokenValue);
+      pst.setInt(FIELD_UPDATE_SESSION_TOKEN_NEW_VALUE, newSessionTokenValue);
       pst.setLong(FIELD_UPDATE_SESSION_TOKEN_USER_ID, user.getId());
       pst.execute();
     } catch (SQLException e) {
       throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
     }
+  }
+
+  @Override
+  public Integer getSessionToken(final Long userId) throws SegueDatabaseException {
+    String query = "SELECT session_token FROM user_session_token WHERE user_id = ?;";
+    try (Connection conn = database.getDatabaseConnection();
+         PreparedStatement pst = conn.prepareStatement(query)
+    ) {
+      pst.setLong(FIELD_GET_SESSION_TOKEN_USER_ID, userId);
+      try (ResultSet results = pst.executeQuery()) {
+        return findOneToken(results);
+      }
+    } catch (SQLException e) {
+      throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+    }
+  }
+
+  /**
+   * findOne helper method to ensure that only one result matches the search criteria.
+   *
+   * @param results ResultSet from a database search
+   * @return a single Integer session token or null of no matches found.
+   * @throws SQLException           if there is an internal database error
+   * @throws SegueDatabaseException if more than one result is returned
+   */
+  private static Integer findOneToken(ResultSet results) throws SQLException, SegueDatabaseException {
+    // are there any results
+    if (!results.isBeforeFirst()) {
+      return null;
+    }
+
+    List<Integer> listOfResults = Lists.newArrayList();
+    while (results.next()) {
+      listOfResults.add(results.getInt("session_token"));
+    }
+
+    if (listOfResults.size() > 1) {
+      throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
+          + listOfResults);
+    }
+
+    return listOfResults.get(0);
   }
 
   /**
@@ -751,14 +819,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
     }
 
-    Integer newSessionToken = generateRandomTokenInteger();
-    userToCreate.setSessionToken(newSessionToken);
-
     String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender,"
         + " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen,"
-        + " email_verification_token, email_to_verify, teacher_pending, session_token, registered_contexts,"
+        + " email_verification_token, email_to_verify, teacher_pending, registered_contexts,"
         + " registered_contexts_last_confirmed)"
-        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
     ) {
@@ -786,9 +851,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_VERIFICATION_TOKEN, userToCreate.getEmailVerificationToken());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_TO_VERIFY, userToCreate.getEmailToVerify());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_TEACHER_PENDING, userToCreate.getTeacherPending());
-      setValueHelper(pst, FIELD_CREATE_USER_SESSION_TOKEN, userToCreate.getSessionToken());
-      pst.setArray(FIELD_CREATE_USER_REGISTERED_CONTEXTS, userContexts);
-      setValueHelper(pst, FIELD_CREATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED,
+      pst.setArray(FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS, userContexts);
+      setValueHelper(pst, FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED,
           userToCreate.getRegisteredContextsLastConfirmed());
 
       if (pst.executeUpdate() == 0) {
@@ -877,8 +941,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
           userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
         }
       }
-      pst.setArray(FIELD_UPDATE_USER_REGISTERED_CONTEXTS, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
-      setValueHelper(pst, FIELD_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED,
+      pst.setArray(FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS, conn.createArrayOf(
+          "jsonb", userContextsJsonb.toArray()));
+      setValueHelper(pst, FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED,
           userToCreate.getRegisteredContextsLastConfirmed());
 
       setValueHelper(pst, FIELD_UPDATE_USER_USER_ID, userToCreate.getId());
@@ -949,7 +1014,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
         .valueOf(results.getString("email_verification_status")) : null);
     u.setTeacherPending(results.getBoolean("teacher_pending"));
-    u.setSessionToken(results.getInt("session_token"));
 
     return u;
   }
@@ -1077,9 +1141,16 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   private static final int FIELD_UPDATE_LAST_SEEN_LAST_SEEN = 1;
   private static final int FIELD_UPDATE_LAST_SEEN_USER_ID = 2;
 
+  // createSessionToken
+  private static final int FIELD_CREATE_SESSION_TOKEN_USER_ID = 1;
+  private static final int FIELD_CREATE_SESSION_TOKEN_VALUE = 2;
+
   // updateSessionToken
   private static final int FIELD_UPDATE_SESSION_TOKEN_NEW_VALUE = 1;
   private static final int FIELD_UPDATE_SESSION_TOKEN_USER_ID = 2;
+
+  // getSessionToken
+  private static final int FIELD_GET_SESSION_TOKEN_USER_ID = 1;
 
   // createUser || updateUser
   private static final int FIELD_CREATE_UPDATE_USER_FAMILY_NAME = 1;
@@ -1097,10 +1168,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   private static final int FIELD_CREATE_UPDATE_USER_EMAIL_VERIFICATION_TOKEN = 13;
   private static final int FIELD_CREATE_UPDATE_USER_EMAIL_TO_VERIFY = 14;
   private static final int FIELD_CREATE_UPDATE_USER_TEACHER_PENDING = 15;
-  private static final int FIELD_CREATE_USER_SESSION_TOKEN = 16;
-  private static final int FIELD_CREATE_USER_REGISTERED_CONTEXTS = 17;
-  private static final int FIELD_CREATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 18;
-  private static final int FIELD_UPDATE_USER_REGISTERED_CONTEXTS = 16;
-  private static final int FIELD_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 17;
+  private static final int FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS = 16;
+  private static final int FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 17;
   private static final int FIELD_UPDATE_USER_USER_ID = 18;
 }

@@ -454,17 +454,15 @@ public class UserAuthenticationManager {
     }
     // Retrieve the user from database.
     try {
-      // Get the user the cookie claims to belong to from the session information:
-      long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
-      RegisteredUser userToReturn = database.getById(currentUserId);
-
       // Check that the user's session is indeed valid:
-      if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
+      if (!isSessionValid(currentSessionInformation)) {
         log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
         return null;
       }
 
-      return userToReturn;
+      // Get the user the cookie claims to belong to from the session information:
+      long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
+      return database.getById(currentUserId);
     } catch (SegueDatabaseException e) {
       log.error("Internal Database error. Failed to resolve current user.", e);
       return null;
@@ -921,14 +919,14 @@ public class UserAuthenticationManager {
    * Verifies the HMAC for userId, expiry date, session token and partial login status; but DOES NOT enforce
    * partial login as invalid! I.e. this method will return true for partial logins.
    *
-   * @param sessionInformation - map containing session information retrieved from the cookie.
-   * @param userFromDatabase   - the real user we are to validate this cookie against.
+   * @param sessionInformation map containing session information retrieved from the cookie
+   * @param sessionTokenFromDatabase the real session token to validate this cookie against
    * @return true if it is still valid, false if not.
    */
   private boolean isValidUsersSession(final Map<String, String> sessionInformation,
-                                      final RegisteredUser userFromDatabase) {
+                                      final Integer sessionTokenFromDatabase) {
     Validate.notNull(sessionInformation);
-    Validate.notNull(userFromDatabase);
+    Validate.notNull(sessionTokenFromDatabase);
 
     SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
@@ -965,8 +963,8 @@ public class UserAuthenticationManager {
     }
 
     // Check that the session token is still valid:
-    if (userFromDatabase.getSessionToken() == NO_SESSION_TOKEN_RESERVED_VALUE
-        || !userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
+    if (sessionTokenFromDatabase == NO_SESSION_TOKEN_RESERVED_VALUE
+        || !sessionTokenFromDatabase.toString().equals(userSessionToken)) {
       log.debug("Invalid session token detected for user id " + userId);
       return false;
     }
@@ -1146,8 +1144,8 @@ public class UserAuthenticationManager {
   public boolean isSessionValid(final Map<String, String> currentSessionInformation) {
     try {
       long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
-      RegisteredUser userToReturn = database.getById(currentUserId);
-      if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
+      Integer databaseSessionToken = database.getSessionToken(currentUserId);
+      if (null == databaseSessionToken || !this.isValidUsersSession(currentSessionInformation, databaseSessionToken)) {
         log.warn("User session has failed validation. Validation checks did not pass.");
         return false;
       }

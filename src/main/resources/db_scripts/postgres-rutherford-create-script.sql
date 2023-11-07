@@ -652,6 +652,18 @@ CREATE TABLE public.user_preferences (
 ALTER TABLE public.user_preferences OWNER TO rutherford;
 
 --
+-- Name: user_session_token; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.user_session_token (
+    user_id integer NOT NULL,
+    session_token integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.user_session_token OWNER TO rutherford;
+
+--
 -- Name: user_streak_freezes; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -717,7 +729,6 @@ CREATE TABLE public.users (
     last_seen timestamp without time zone,
     email_to_verify text,
     email_verification_token text,
-    session_token integer DEFAULT 0 NOT NULL,
     deleted boolean DEFAULT false NOT NULL,
     teacher_pending boolean DEFAULT false
 );
@@ -1057,6 +1068,14 @@ ALTER TABLE ONLY public.user_preferences
 
 
 --
+-- Name: user_session_token user_id_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_session_token
+    ADD CONSTRAINT user_id_pk PRIMARY KEY (user_id);
+
+
+--
 -- Name: user_streak_freezes user_streak_freeze_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1252,6 +1271,13 @@ CREATE INDEX user_credentials_reset_tokens ON public.user_credentials USING btre
 --
 
 CREATE UNIQUE INDEX user_email ON public.users USING btree (email);
+
+
+--
+-- Name: user_session_token_by_user_id; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX user_session_token_by_user_id ON public.user_session_token USING btree (user_id);
 
 
 --
@@ -1489,6 +1515,14 @@ ALTER TABLE ONLY public.user_preferences
 
 ALTER TABLE ONLY public.user_associations
     ADD CONSTRAINT user_receiving_permissions_key FOREIGN KEY (user_id_receiving_permission) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_session_token user_session_token_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_session_token
+    ADD CONSTRAINT user_session_token_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

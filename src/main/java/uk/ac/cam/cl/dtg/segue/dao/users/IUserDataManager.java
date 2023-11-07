@@ -142,7 +142,7 @@ public interface IUserDataManager {
 
   /**
    * This function will also include tombstoned results back to the caller.
-   * WARNING- Do not expect complete RegisteredUser Objects as data may be missing.
+   * WARNING - Do not expect complete RegisteredUser Objects as data may be missing.
    *
    * @param id                  user id.
    * @param includeDeletedUsers true will allow inclusion of tombstoned users false will filter them out.
@@ -231,30 +231,57 @@ public interface IUserDataManager {
   void updateUserLastSeen(RegisteredUser user, Date date) throws SegueDatabaseException;
 
   /**
+   * Create a session token record for a user object in the data store with a randomly generated value.
+   *
+   * @param user the user object to create the session token for
+   * @return the value of the newly generated session token
+   * @throws SegueDatabaseException If there is an internal database error
+   */
+  Integer createSessionToken(RegisteredUser user) throws SegueDatabaseException;
+
+  /**
+   * Create a session token record for a user object in the data store with a specified value.
+   *
+   * @param user          the user object to create the session token for
+   * @param newTokenValue the new value to set as the session token
+   * @throws SegueDatabaseException if there is an internal database error
+   */
+  void createSessionToken(RegisteredUser user, Integer newTokenValue) throws SegueDatabaseException;
+
+  /**
    * Update the session token of a user object in the data store to a randomly generated value.
    *
-   * @param user - the user object to update the session token of.
+   * @param user the user object to update the session token of
    * @return the value of the newly generated session token
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException if there is an internal database error
    */
   Integer regenerateSessionToken(RegisteredUser user) throws SegueDatabaseException;
 
   /**
    * Update the session token of a user object in the data store to null.
    *
-   * @param user - the user object to update the session token of.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param user the user object to update the session token of
+   * @throws SegueDatabaseException if there is an internal database error
    */
   void invalidateSessionToken(RegisteredUser user) throws SegueDatabaseException;
 
   /**
    * Update the session token of a user object in the data store to a specified value.
    *
-   * @param user          - the user object to update the session token of.
-   * @param newTokenValue - the new value to set as the session token
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param user          the user object to update the session token of
+   * @param newTokenValue the new value to set as the session token
+   * @throws SegueDatabaseException if there is an internal database error
    */
   void updateSessionToken(RegisteredUser user, Integer newTokenValue) throws SegueDatabaseException;
+
+  /**
+   * Retrieve the currently valid session token stored in the database for the specified user id.
+   *
+   * @param userId the userId to retrieve the session token for
+   * @return the Integer sessionToken if found or null if not
+   * @throws SegueDatabaseException if there is an internal database error
+   */
+  Integer getSessionToken(Long userId) throws  SegueDatabaseException;
 
   /**
    * Count all the users by role and return a map.
