@@ -720,11 +720,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                              final ILogManager logManager, final MapperFacade mapperFacade,
                                              final UserAuthenticationManager userAuthenticationManager,
                                              final ISecondFactorAuthenticator secondFactorManager,
-                                             final AbstractUserPreferenceManager userPreferenceManager) {
+                                             final AbstractUserPreferenceManager userPreferenceManager,
+                                             final SchoolListReader schoolListReader) {
     if (null == userManager) {
       userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
           mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
-          secondFactorManager, userPreferenceManager);
+          secondFactorManager, userPreferenceManager, schoolListReader);
       log.info("Creating singleton of UserManager");
     }
 

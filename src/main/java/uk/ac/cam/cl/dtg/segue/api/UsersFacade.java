@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,11 +86,13 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -701,6 +704,51 @@ public class UsersFacade extends AbstractSegueFacade {
     } catch (IOException | UnableToIndexSchoolsException | SegueSearchException e) {
       return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
           .toResponse();
+    }
+  }
+
+
+  @POST
+  @Path("/users/request_role_change")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Submit a contact form request.")
+  public Response requestRoleChange(
+      @Context final HttpServletRequest request, final Map<String, String> requestDetails) {
+    if (requestDetails == null || StringUtils.isEmpty(requestDetails.get("verificationDetails"))) {
+      return new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.").toResponse();
+    }
+
+    try {
+      RegisteredUserDTO currentUserDto = this.userManager.getCurrentRegisteredUser(request);
+
+      if (currentUserDto.getTeacherPending()) {
+        return new SegueErrorResponse(
+            Status.BAD_REQUEST, "You have already submitted a teacher upgrade request.").toResponse();
+      }
+      if (currentUserDto.getRole() == Role.TEACHER) {
+        return new SegueErrorResponse(
+            Status.BAD_REQUEST, "You already have a teacher role.").toResponse();
+      }
+
+      userManager.sendRoleChangeRequestEmail(request, currentUserDto, Role.TEACHER, requestDetails);
+      RegisteredUserDTO updatedUser = userManager.updateTeacherPendingFlag(currentUserDto.getId(), true);
+      return Response.ok(updatedUser).build();
+    } catch (NoUserLoggedInException | NoUserException e) {
+      return new SegueErrorResponse(Status.UNAUTHORIZED,
+          "You must be logged in to request a role change.").toResponse();
+    } catch (SegueDatabaseException e) {
+      String errorMsg = "A database error has occurred while handling a role change request";
+      log.error(errorMsg, e);
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+    } catch (ContentManagerException e) {
+      String errorMsg = "An error occurred while retrieving the email template";
+      log.error(errorMsg, e);
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+    } catch (MissingRequiredFieldException e) {
+      String errorMsg = "Required user information or verification details could not be found";
+      log.error(errorMsg, e);
+      return new SegueErrorResponse(Status.BAD_REQUEST, errorMsg).toResponse();
     }
   }
 }

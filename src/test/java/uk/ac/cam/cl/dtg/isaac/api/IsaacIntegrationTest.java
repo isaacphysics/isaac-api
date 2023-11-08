@@ -134,6 +134,8 @@ public abstract class IsaacIntegrationTest {
   protected static ISecondFactorAuthenticator secondFactorManager;
   protected static UserAccountManager userAccountManager;
   protected static RecaptchaManager recaptchaManager;
+  protected static PgUsers pgUsers;
+  protected static PgAnonymousUsers pgAnonymousUsers;
   protected static GameManager gameManager;
   protected static GroupManager groupManager;
   protected static EventBookingManager eventBookingManager;
@@ -253,8 +255,8 @@ public abstract class IsaacIntegrationTest {
     recaptchaManager = new RecaptchaManager(properties);
 
     JsonMapper jsonMapper = new JsonMapper();
-    PgUsers pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
-    PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
+    pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
+    pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
     PgPasswordDataManager passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
     ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
@@ -293,9 +295,12 @@ public abstract class IsaacIntegrationTest {
     }
     replay(secondFactorManager);
 
+    schoolListReader = new SchoolListReader(elasticSearchProvider);
+
     userAccountManager =
         new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager,
-            pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
+            pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager,
+            schoolListReader);
 
     ObjectMapper objectMapper = new ObjectMapper();
     EventBookingPersistenceManager bookingPersistanceManager =
@@ -319,7 +324,6 @@ public abstract class IsaacIntegrationTest {
     replay(userBadgeManager);
     assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager,
         new EmailService(emailManager, groupManager, userAccountManager), gameManager, properties);
-    schoolListReader = createNiceMock(SchoolListReader.class);
 
     quizManager = new QuizManager(properties, new ContentService(contentManager, "latest"), contentManager,
         new ContentSummarizerService(mapperFacade, new URIManager(properties)), contentMapper);

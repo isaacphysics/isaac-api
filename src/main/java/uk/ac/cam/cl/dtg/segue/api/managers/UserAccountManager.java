@@ -59,6 +59,7 @@ import java.util.stream.Collectors;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -72,6 +73,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dos.users.TOTPSharedSecret;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
@@ -113,8 +115,11 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -139,6 +144,7 @@ public class UserAccountManager implements IUserAccountManager {
   private final ISecondFactorAuthenticator secondFactorManager;
 
   private final AbstractUserPreferenceManager userPreferenceManager;
+  private final SchoolListReader schoolListReader;
 
   private final Pattern restrictedSignupEmailRegex;
   private static final int USER_NAME_MAX_LENGTH = 255;
@@ -164,6 +170,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @param userAuthenticationManager - for managing sessions, passwords and third-party provider links
    * @param secondFactorManager       - for configuring 2FA
    * @param userPreferenceManager     - Allows user preferences to be managed.
+   * @param schoolListReader          - to look up a users school.
    */
   @Inject
   public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
@@ -173,7 +180,8 @@ public class UserAccountManager implements IUserAccountManager {
                             final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                             final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
                             final ISecondFactorAuthenticator secondFactorManager,
-                            final AbstractUserPreferenceManager userPreferenceManager) {
+                            final AbstractUserPreferenceManager userPreferenceManager,
+                            final SchoolListReader schoolListReader) {
 
     Validate.notNull(properties.getProperty(HMAC_SALT));
     Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
@@ -194,6 +202,7 @@ public class UserAccountManager implements IUserAccountManager {
     this.userAuthenticationManager = userAuthenticationManager;
     this.secondFactorManager = secondFactorManager;
     this.userPreferenceManager = userPreferenceManager;
+    this.schoolListReader = schoolListReader;
 
     String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
     if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
@@ -1998,5 +2007,85 @@ public class UserAccountManager implements IUserAccountManager {
    */
   public Long getNumberOfAnonymousUsers() throws SegueDatabaseException {
     return temporaryUserCache.getCountOfAnonymousUsers();
+  }
+
+  public RegisteredUserDTO updateTeacherPendingFlag(final Long userId, boolean newFlagValue)
+      throws SegueDatabaseException, NoUserException {
+    RegisteredUser user = findUserById(userId);
+    if (user == null) {
+      throw new NoUserException(String.format("No user found with ID: %s", userId));
+    }
+    user.setTeacherPending(newFlagValue);
+    RegisteredUser updatedUser = database.createOrUpdateUser(user);
+    return dtoMapper.map(updatedUser, RegisteredUserDTO.class);
+  }
+
+  public void sendRoleChangeRequestEmail(final HttpServletRequest request, final RegisteredUserDTO user,
+                                         final Role requestedRole, final Map<String, String> requestDetails)
+      throws SegueDatabaseException, ContentManagerException, MissingRequiredFieldException {
+    String userSchool = getSchoolNameWithPostcode(user);
+    if (userSchool == null) {
+      throw new MissingRequiredFieldException(
+          String.format("School information could not be found for user with ID: %s", user.getId()));
+    }
+
+    String verificationDetails = requestDetails.get("verificationDetails");
+    if (verificationDetails == null || verificationDetails.isEmpty()) {
+      throw new MissingRequiredFieldException("No verification details provided");
+    }
+
+    String otherDetails = requestDetails.get("otherDetails");
+    String otherDetailsLine;
+    if (otherDetails == null || otherDetails.isEmpty()) {
+      otherDetailsLine = "";
+    } else {
+      otherDetailsLine = String.format("Any other information: %s\n<br>\n<br>", otherDetails);
+    }
+
+    String roleName = requestedRole.toString();
+    String emailSubject = String.format("%s Account Request", StringUtils.capitalize(roleName.toLowerCase()));
+    String emailMessage = String.format(
+        "Hello,\n<br>\n<br>"
+            + "Please could you convert my Isaac account into a teacher account.\n<br>\n<br>"
+            + "My school is: %s\n<br>"
+            + "A link to my school website with a staff list showing my name and email"
+            + " (or a phone number to contact the school) is: %s\n<br>\n<br>\n<br>"
+            + "%s"
+            + "Thanks, \n<br>\n<br>%s %s",
+        userSchool, verificationDetails, otherDetailsLine, user.getGivenName(), user.getFamilyName());
+    Map<String, Object> emailValues = new ImmutableMap.Builder<String, Object>()
+        .put("contactGivenName", user.getGivenName())
+        .put("contactFamilyName", user.getFamilyName())
+        .put("contactUserId", user.getId())
+        .put("contactUserRole", user.getRole())
+        .put("contactEmail", user.getEmail())
+        .put("contactSubject", emailSubject)
+        .put("contactMessage", emailMessage)
+        .put("replyToName", String.format("%s %s", user.getGivenName(), user.getFamilyName()))
+        .build();
+    emailManager.sendContactUsFormEmail(properties.getProperty(Constants.MAIL_RECEIVERS), emailValues);
+
+    logManager.logEvent(user, request, SegueServerLogType.CONTACT_US_FORM_USED,
+        ImmutableMap.of("message", String.format("%s %s (%s) - %s", user.getGivenName(),
+            user.getFamilyName(), user.getEmail(), emailMessage)));
+  }
+
+  public String getSchoolNameWithPostcode(final RegisteredUserDTO user) {
+    if (user.getSchoolId() != null && !user.getSchoolId().isEmpty()) {
+      try {
+        School school = schoolListReader.findSchoolById(user.getSchoolId());
+        if (school != null) {
+          return String.format("%s, %s", school.getName(), school.getPostcode());
+        }
+        log.error(String.format("Could not find school matching URN: %s", user.getSchoolId()));
+      } catch (UnableToIndexSchoolsException | IOException | SegueSearchException e) {
+        log.error(String.format("Could not find school matching URN: %s", user.getSchoolId()));
+      }
+    }
+    if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {
+      return user.getSchoolOther();
+    }
+    log.warn(String.format("User with ID: %s has no defined school information", user.getId()));
+    return null;
   }
 }

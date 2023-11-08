@@ -74,6 +74,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -101,6 +102,7 @@ public class UserManagerTest {
   private ISecondFactorAuthenticator dummySecondFactorAuthenticator;
 
   private AbstractUserPreferenceManager dummyUserPreferenceManager;
+  private SchoolListReader dummySchoolListReader;
 
   /**
    * Initial configuration of tests.
@@ -130,6 +132,7 @@ public class UserManagerTest {
     this.dummySecondFactorAuthenticator = createMock(ISecondFactorAuthenticator.class);
 
     this.dummyUserPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+    this.dummySchoolListReader = createMock(SchoolListReader.class);
 
     expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt).anyTimes();
     expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
@@ -776,7 +779,7 @@ public class UserManagerTest {
     return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
         providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
         buildTestAuthenticationManager(provider, authenticator), dummySecondFactorAuthenticator,
-        dummyUserPreferenceManager);
+        dummyUserPreferenceManager, dummySchoolListReader);
   }
 
   private UserAuthenticationManager buildTestAuthenticationManager() {

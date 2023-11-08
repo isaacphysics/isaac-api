@@ -33,6 +33,7 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-08-09 10:56:12.965	bob-student@test.com	\N	f	f
 5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	f	f
 12	\N	Tutor	Test Tutor	test-tutor@test.com	TUTOR	\N	\N	2022-12-12 14:42:02.974	\N	\N	{}	\N	2022-12-12 14:42:02.974	NOT_VERIFIED	2022-12-12 14:48:40.236	test-tutor@test.com	4V115j6oH0YctCgBYXclb3WUT8D2Bz4nIaoJCasCJs	f	f
+13	\N	Student	Pending Teacher	pending-teacher@test.com	STUDENT	\N	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-08-09 10:55:06.592	pending-teacher@test.com	\N	f	t
 \.
 
 
@@ -281,6 +282,7 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 7	gOOQ4j/Ioy2BSS8AUOb1DWUkKnEGL9p8/k9je1FrKkoje48xpE762L7C/VoEjsWo0s4nrk+xE/Uo2+/EgYaygA==	nR+oCwVdXVBykk04RfzTJA==	SegueSCryptv1	\N	\N	2019-08-01 12:51:05.940811+00	2022-08-09 08:56:00+00
 8	U7s5oE17P649t7pDrB9biUsV8vdHLiAIHP/74PiiVY/Ma+RL0lnEKdCcnQtuhlxhvZWRaLr8kz0JubC/qNa0NA==	qHoZcgNTNdilJSp5k3WLrg==	SegueSCryptv1	\N	\N	2019-08-01 12:51:05.940811+00	2022-08-09 08:56:12.918+00
 12	dbPapTuZ+jEHYN3ZzS2yJfEZ4OFN4PenY53a2vgCB5E3jtQgR4A3cMQs3rgowD6ZtLRZS2pZLP3fq/bo9nRsZg==	1E4RZF4KVPhmci10DG8A4w==	SegueSCryptv1	\N	\N	2022-12-12 14:42:03.618265+00	2022-12-12 14:42:03.615+00
+13	BXYZVzNOWvNR2MF+L/2uR9VizoQuw8l87oGGDfcEIgIkD2tIj47T9VGeg1V52vpb2TKssGlxcwFo+MyhxTQbsg==	KfqNV1CJOcPrbTg0/qTI9g==	SegueSCryptv1	\N	\N	2022-12-12 14:42:03.618265+00	2022-12-12 14:42:03.615+00
 \.
 
 
@@ -349,6 +351,7 @@ COPY public.user_session_token (user_id, session_token) FROM stdin;
 10	0
 11	0
 12	0
+13	0
 \.
 
 
@@ -539,7 +542,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 12, true);
+SELECT pg_catalog.setval('public.users_id_seq', 13, true);
 
 
 --
