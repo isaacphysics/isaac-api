@@ -559,7 +559,7 @@ public class GroupManager {
 
     try {
       dtoToReturn.setOwnerSummary(
-          userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(group.getOwnerId()),
+          userManager.convertToUserSummary(userManager.getUserDTOById(group.getOwnerId()),
               UserSummaryWithEmailAddressDTO.class));
     } catch (NoUserException e) {
       // This should never happen!
@@ -611,7 +611,7 @@ public class GroupManager {
           }
 
           dtoToReturn.setOwnerSummary(
-              userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
+              userManager.convertToUserSummary(ownerUser, UserSummaryWithEmailAddressDTO.class));
         } catch (NoUserException e) {
           // This should never happen!
           log.error(
