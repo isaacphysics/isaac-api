@@ -463,7 +463,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
       // add owner
       List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
-      usersLinkedToToken.add(userManager.convertToUserSummary(
+      usersLinkedToToken.add(userManager.convertToDetailedUserSummaryObject(
           userManager.getUserDTOById(associationToken.getOwnerUserId()),
           UserSummaryWithEmailAddressDTO.class
       ));

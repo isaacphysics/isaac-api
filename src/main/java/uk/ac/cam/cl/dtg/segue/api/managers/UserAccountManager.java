@@ -1503,15 +1503,13 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Helper method to convert a user object into a more detailed summary object depending on the dto provided.
    *
-   * @param <T>             - The type parameter representing the detailed DTO class
-   * @param userToConvert   - Full user object.
-   * @param detailedDtoClass - The DTO class type into which the user object is to be converted
-   * @return a summarised DTO object with details as per the specified detailedDTOClass
+   * @param userToConvert    - full user object.
+   * @param detailedDTOClass - The level of detail required for the conversion
+   * @return a summarised object with reduced personal information
    */
-  public <T extends UserSummaryDTO> T convertToUserSummary(
-          final RegisteredUserDTO userToConvert,
-          final Class<T> detailedDtoClass) {
-    return this.dtoMapper.map(userToConvert, detailedDtoClass);
+  public UserSummaryWithEmailAddressDTO convertToDetailedUserSummaryObject(
+      final RegisteredUserDTO userToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTOClass) {
+    return this.dtoMapper.map(userToConvert, detailedDTOClass);
   }
 
   /**
@@ -1542,7 +1540,7 @@ public class UserAccountManager implements IUserAccountManager {
     Validate.notNull(userListToConvert);
     List<UserSummaryWithEmailAddressDTO> resultList = Lists.newArrayList();
     for (RegisteredUserDTO user : userListToConvert) {
-      resultList.add(this.convertToUserSummary(user, detailedDTO));
+      resultList.add(this.convertToDetailedUserSummaryObject(user, detailedDTO));
     }
     return resultList;
   }
@@ -1563,7 +1561,7 @@ public class UserAccountManager implements IUserAccountManager {
     if (null == registeredUser) {
       throw new NoUserLoggedInException();
     }
-    return this.convertToUserSummary(this.convertUserDOToUserDTO(registeredUser),
+    return this.convertToDetailedUserSummaryObject(this.convertUserDOToUserDTO(registeredUser),
         UserSummaryWithEmailAddressDTO.class);
   }
 
