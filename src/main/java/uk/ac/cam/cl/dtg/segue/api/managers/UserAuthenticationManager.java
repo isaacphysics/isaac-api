@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -397,7 +399,7 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        // WebSocket UpgradeRequests should never use a partial login:
+        // WebSocket UpgradeRequests should never accept a session with caveats
         return getUserFromSessionInformationMap(currentSessionInformation, Set.of());
     }
 
@@ -443,11 +445,16 @@ public class UserAuthenticationManager {
                                                             final Set<AuthenticationCaveat> expectedCaveats) {
 
         // Check for authentication caveats, and return null if any present are unexpected
-        for (AuthenticationCaveat possibleCaveat : AuthenticationCaveat.values()) {
-            if (!Strings.isNullOrEmpty(currentSessionInformation.get(possibleCaveat.toString()))
-                    && Boolean.parseBoolean(currentSessionInformation.get(possibleCaveat.toString()))
-                    && !expectedCaveats.contains(possibleCaveat)) {
-                log.debug(String.format("Declining to return user object due to unacceptable caveat %s", possibleCaveat));
+        if (null != currentSessionInformation.get(SESSION_CAVEATS)) {
+            try {
+                ArrayList<String> caveatFlags = serializationMapper.readValue(currentSessionInformation.get(SESSION_CAVEATS), new TypeReference<ArrayList<String>>(){});
+                for (String caveatFlag : caveatFlags) {
+                    if (!expectedCaveats.contains(AuthenticationCaveat.valueOf(caveatFlag))) {
+                        return null;
+                    }
+                }
+            } catch (JsonProcessingException | IllegalArgumentException e) {
+                log.debug("Failed to deserialize session caveats!");
                 return null;
             }
         }
@@ -869,7 +876,8 @@ public class UserAuthenticationManager {
      * @param user
      *            account to associate the session with.
      * @param authenticationCaveats
-     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     *            to indicate if authentication is not fully complete for some reason. Endpoints (e.g. MFA) must decide
+     *            which caveats are acceptable, if any.
      * @param rememberMe
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
@@ -891,7 +899,8 @@ public class UserAuthenticationManager {
      * @param sessionExpiryTimeInSeconds
      *            max age of the cookie if not a partial login.
      * @param authenticationCaveats
-     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     *            to indicate if authentication is not fully complete for some reason. Endpoints (e.g. MFA) must decide
+     *            which caveats are acceptable, if any.
      * @param rememberMe
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
@@ -901,17 +910,17 @@ public class UserAuthenticationManager {
         Validate.notNull(user);
         Validate.notNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
+        final int CAVEAT_SESSION_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
-        ArrayList<String> caveatFlagStrings = new ArrayList<>();
+        ArrayList<String> caveatFlags = new ArrayList<>();
 
         try {
             if (!authenticationCaveats.isEmpty()) {
                 // use shortened expiry time if there are any caveats
-                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
+                sessionExpiryTimeInSeconds = CAVEAT_SESSION_EXPIRY_TIME_IN_SECONDS;
             }
 
             Calendar calendar = Calendar.getInstance();
@@ -924,11 +933,11 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
 
             for (AuthenticationCaveat c : authenticationCaveats) {
-                sessionInformationBuilder.put(c.toString(), String.valueOf(true));
+                caveatFlags.add(c.toString());
             }
+            sessionInformationBuilder.put(SESSION_CAVEATS, serializationMapper.writeValueAsString(caveatFlags));
 
-            // todo: fix
-            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, caveatFlagStrings);
+            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, caveatFlags);
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
@@ -1055,10 +1064,21 @@ public class UserAuthenticationManager {
         String supposedUserId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate = sessionInformation.get(DATE_EXPIRES);
-        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
+
+        ArrayList<String> caveatFlags = new ArrayList<>();
+
+        if (null != sessionInformation.get(SESSION_CAVEATS)) {
+            try {
+                caveatFlags = serializationMapper.readValue(sessionInformation.get(SESSION_CAVEATS), new TypeReference<ArrayList<String>>(){});
+            } catch (JsonProcessingException e) {
+                log.debug("Failed to deserialize session caveats!");
+                caveatFlags = null;
+            }
+        }
+
         String sessionHMAC = sessionInformation.get(HMAC);
 
-        String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, partialLoginFlag);
+        String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, caveatFlags);
         return ourHMAC.equals(sessionHMAC);
     }
 

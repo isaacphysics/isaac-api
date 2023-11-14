@@ -146,9 +146,9 @@ public final class Constants {
     public static final String DATE_EXPIRES = "expires";
 
     /**
-     * Constant representing the key for the additional date property - used in HMAC calculations.
+     * Constant representing the key for cookie caveats - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "partial";
+    public static final String SESSION_CAVEATS = "caveats";
 
     /**
      * Representing caveats saved to session cookies, allowing the API to check whether the cookie should be considered
@@ -580,7 +580,7 @@ public final class Constants {
 
     public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
 
-    public static final String DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION = "DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION";
+    public static final String ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION = "ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION";
 
     /**
      * Private constructor to prevent this class being created.

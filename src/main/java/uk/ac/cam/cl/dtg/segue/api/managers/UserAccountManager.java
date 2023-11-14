@@ -341,7 +341,7 @@ public class UserAccountManager implements IUserAccountManager {
         // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
         if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
             // we can't just log them in we have to set a caveat cookie
-            this.partialLogIn(request, response, user, rememberMe);
+            this.logUserInWithCaveats(request, response, user, rememberMe, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
             throw new AdditionalAuthenticationRequiredException();
         } else if (Role.ADMIN.equals(user.getRole())) {
             // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
@@ -368,7 +368,7 @@ public class UserAccountManager implements IUserAccountManager {
                                              final RegisteredUser userObjectFromClient, final String newPassword,
                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
                                              final boolean rememberMe) throws InvalidKeySpecException, NoSuchAlgorithmException {
-        return createUserObjectAndLogIn(request, response, userObjectFromClient, newPassword, userPreferenceObject, rememberMe, false);
+        return createUserObjectAndLogIn(request, response, userObjectFromClient, newPassword, userPreferenceObject, rememberMe, Set.of());
     }
 
     /**
@@ -386,11 +386,11 @@ public class UserAccountManager implements IUserAccountManager {
     public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
                                              final RegisteredUser userObjectFromClient, final String newPassword,
                                              final Map<String, Map<String, Boolean>> userPreferenceObject,
-                                             final boolean rememberMe, final boolean partialLoginUntilEmailVerified)
+                                             final boolean rememberMe, final Set<AuthenticationCaveat> sessionCaveats)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
             RegisteredUserDTO savedUser = this.createUserObjectAndSession(request, response,
-                    userObjectFromClient, newPassword, rememberMe, partialLoginUntilEmailVerified);
+                    userObjectFromClient, newPassword, rememberMe, sessionCaveats);
 
             if (userPreferenceObject != null) {
                 List<UserPreference> userPreferences = userPreferenceObjectToList(userPreferenceObject, savedUser.getId());
@@ -938,6 +938,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param user        - the user DO to use for updates - must not contain a user id.
      * @param newPassword - new password for the account being created.
      * @param rememberMe  - Boolean to indicate whether or not this cookie expiry duration should be long or short
+     * @param sessionCaveats - caveats for the session cookie indicating authentication isn't fully complete
      * @return the user object as was saved.
      * @throws InvalidPasswordException      - the password provided does not meet our requirements.
      * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
@@ -947,7 +948,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
                                                         final HttpServletResponse response, final RegisteredUser user, final String newPassword,
-                                                        final boolean rememberMe, final boolean partialLoginUntilEmailVerified) throws InvalidPasswordException,
+                                                        final boolean rememberMe, final Set<AuthenticationCaveat> sessionCaveats) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException,
             EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
         Validate.isTrue(user.getId() == null,
@@ -975,8 +976,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         // Set defaults
         // keep teacher role if requested and direct teacher signup allowed
-        // todo: this is not great - relying on the boolean arg has the same effect but relies on the caller doing these checks (possible source of bugs)
-        if ((Boolean.parseBoolean(properties.getProperty(DIRECT_TEACHER_SIGNUP_WITH_FORCED_VERIFICATION)) && userToSave.getRole() == Role.TEACHER && partialLoginUntilEmailVerified)) {
+        if ((Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION)) && userToSave.getRole() == Role.TEACHER)) {
             userToSave.setTeacherAccountPending(true);
         } else {
             // otherwise, always set to default role
@@ -1045,8 +1045,8 @@ public class UserAccountManager implements IUserAccountManager {
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         // return it to the caller.
-        if (partialLoginUntilEmailVerified) {
-            return this.partialLogIn(request, response, userToReturn, rememberMe);
+        if (!sessionCaveats.isEmpty()) {
+            return this.logUserInWithCaveats(request, response, userToReturn, rememberMe, sessionCaveats);
         } else {
             return this.logUserIn(request, response, userToReturn, rememberMe);
         }
@@ -1604,18 +1604,18 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Generate a partially logged in session for the user based on successful password authentication.
+     * Generate a partially logged-in session for the user.
      *
-     * <p>To complete this the user must also complete MFA authentication.
+     * The session will contain caveats which will only be accepted by some endpoints (e.g. for MFA).
      *
      * @param request    - http request containing the cookie
      * @param response   - response to update cookie information
      * @param user       - user of interest
      * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
-    private RegisteredUserDTO partialLogIn(final HttpServletRequest request, final HttpServletResponse response,
-                              final RegisteredUser user, final boolean rememberMe) {
-        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE), rememberMe));
+    private RegisteredUserDTO logUserInWithCaveats(final HttpServletRequest request, final HttpServletResponse response,
+                                                   final RegisteredUser user, final boolean rememberMe, final Set<AuthenticationCaveat> caveats) {
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user, caveats, rememberMe));
     }
 
     /**
