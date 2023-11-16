@@ -60,10 +60,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void createQuizAssignmentEndpoint_assignQuizAsTeacher_succeeds() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void createQuizAssignmentEndpoint_assignQuizAsTeacher_succeeds() throws Exception {
         // Arrange
         // log in as Teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
@@ -88,10 +85,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void createQuizAssignmentEndpoint_assignQuizAsTutor_fails() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void createQuizAssignmentEndpoint_assignQuizAsTutor_fails() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
@@ -116,10 +110,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void getAvailableQuizzesEndpoint_getQuizzesAsTeacher_returnsAll() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getAvailableQuizzesEndpoint_getQuizzesAsTeacher_returnsAll() throws Exception {
         // Arrange
         // log in as Teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
@@ -146,10 +137,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
      * Tests that quizzes with visibleToStudents=false and hiddenFromRoles=[TUTOR] are not considered available to a tutor.
      */
     @Test
-    public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNonInvisibleToStudentOrHiddenFromRoleQuizzes() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNonInvisibleToStudentOrHiddenFromRoleQuizzes() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult teacherLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
@@ -173,10 +161,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void previewQuizEndpoint_previewInvisibleToStudentQuizAsTeacher_succeeds() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void previewQuizEndpoint_previewInvisibleToStudentQuizAsTeacher_succeeds() throws Exception {
         // Arrange
         // log in as Teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
@@ -198,10 +183,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void previewQuizEndpoint_previewHiddenFromRoleStudentQuizAsTutor_fails() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void previewQuizEndpoint_previewHiddenFromRoleStudentQuizAsTutor_fails() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
@@ -223,10 +205,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void previewQuizEndpoint_previewHiddenFromRoleTutorQuizAsTutor_fails() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void previewQuizEndpoint_previewHiddenFromRoleTutorQuizAsTutor_fails() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);

@@ -898,6 +898,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         u.setSessionToken(results.getInt("session_token"));
 
         u.setCountryCode(results.getString("country_code"));
+        u.setTeacherAccountPending(results.getBoolean("teacher_account_pending"));
 
         return u;
     }

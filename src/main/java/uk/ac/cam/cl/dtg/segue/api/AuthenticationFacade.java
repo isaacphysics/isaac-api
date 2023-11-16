@@ -19,6 +19,7 @@ import com.google.api.client.util.Maps;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.mailjet.client.resource.Email;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.QueryParam;
@@ -43,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dto.LocalAuthDTO;
@@ -72,6 +74,7 @@ import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -404,6 +407,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             // in this case the users account has been configured to require a second factor
             // The password challenge has completed successfully but they must complete the second step of the flow
             return Response.accepted(ImmutableMap.of("2FA_REQUIRED", true)).build();
+        } catch (EmailMustBeVerifiedException e) {
+            // the user's account requires a verified email
+            return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
             log.error(errorMsg, e);
@@ -514,7 +520,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         final String rateThrottleMessage = "There have been too many attempts to login to this account. Try again later.";
         try {
             final Integer verificationCode = Integer.parseInt(mfaResponse.getMfaVerificationCode());
-            partiallyLoggedInUser = this.userManager.getPartiallyIdentifiedUser(request);
+            partiallyLoggedInUser = this.userManager.convertToDetailedUserSummaryObject(this.userManager.getCurrentPartiallyIdentifiedUser(request, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE)), UserSummaryWithEmailAddressDTO.class);
 
             if (misuseMonitor.hasMisused(partiallyLoggedInUser.getEmail().toLowerCase(),
                     SegueLoginMisuseHandler.class.getSimpleName())) {

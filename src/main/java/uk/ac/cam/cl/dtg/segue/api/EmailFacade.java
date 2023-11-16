@@ -230,6 +230,12 @@ public class EmailFacade extends AbstractSegueFacade {
             misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.getSimpleName());
             userManager.processEmailVerification(userId, token);
 
+            // todo: if direct teacher signup enabled:
+            //  - we need to make any sure new cookies are issued without verification caveats
+            //  - we need to be *very* careful not to clear unrelated (e.g. 2FA) caveats
+            //  - we can't just issue a new cookie here, because the user might not be logged in (note this is not a
+            //  current user endpoint)
+
             // assume that if there are no exceptions that it worked.
             return Response.ok().build();
         } catch (SegueResourceMisuseException e) {

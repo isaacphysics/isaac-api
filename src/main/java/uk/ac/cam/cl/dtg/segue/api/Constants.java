@@ -151,8 +151,8 @@ public final class Constants {
     public static final String SESSION_CAVEATS = "caveats";
 
     /**
-     * Representing caveats saved to session cookies, allowing the API to check whether the cookie should be considered
-     * sufficient authentication for different flows.
+     * Representing caveats saved to session cookies, allowing endpoints to decide whether the cookie should be
+     * considered sufficient authentication for their purposes. In most cases, cookies with any caveats are rejected.
      */
     public enum AuthenticationCaveat {
         INCOMPLETE_MFA_CHALLENGE, INCOMPLETE_MANDATORY_EMAIL_VERIFICATION

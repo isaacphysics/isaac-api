@@ -323,7 +323,7 @@ public class UserAccountManager implements IUserAccountManager {
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
                                                                final HttpServletResponse response, final String provider, final String email, final String password, final boolean rememberMe)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
-            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException {
+            NoCredentialsAvailableException, SegueDatabaseException, AdditionalAuthenticationRequiredException, MFARequiredButNotConfiguredException, InvalidKeySpecException, NoSuchAlgorithmException, EmailMustBeVerifiedException {
         Validate.notBlank(email);
         Validate.notBlank(password);
 
@@ -348,6 +348,9 @@ public class UserAccountManager implements IUserAccountManager {
             String message = "Your account type requires 2FA, but none has been configured! "
                     + "Please ask an admin to demote your account to regain access.";
             throw new MFARequiredButNotConfiguredException(message);
+        } else if (user.getRole() == Role.TEACHER && user.isTeacherAccountPending()) {
+            this.logUserInWithCaveats(request, response, user, rememberMe, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+            throw new EmailMustBeVerifiedException();
         } else {
             return this.logUserIn(request, response, user, rememberMe);
         }
@@ -380,7 +383,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param newPassword          - the new password for the user.
      * @param userPreferenceObject - the new preferences for this user
      * @param rememberMe           - Boolean to indicate whether or not this cookie expiry duration should be long or short
-     * @param partialLoginUntilEmailVerified - Whether to restrict login until email address is verified
+     * @param sessionCaveats       - any caveats to include in the returned session cookie
      * @return the updated user object.
      */
     public Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
@@ -1301,7 +1304,13 @@ public class UserAccountManager implements IUserAccountManager {
             throws SegueDatabaseException {
 
         try {
-            RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
+            RegisteredUserDTO userDTO;
+            if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                // allow users who are required to verify but haven't yet done so to use this endpoint
+                userDTO = getCurrentPartiallyIdentifiedUser(request, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+            } else {
+                userDTO = getCurrentRegisteredUser(request);
+            }
             RegisteredUser user = this.findUserById(userDTO.getId());
 
             // TODO: Email verification stuff does not belong in the password authenticator... It should be moved.
@@ -1386,6 +1395,7 @@ public class UserAccountManager implements IUserAccountManager {
             user.setEmailVerificationToken(null);
             user.setEmailToVerify(null);
             user.setLastUpdated(new Date());
+            user.setTeacherAccountPending(false);
 
             // Save user
             RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
@@ -1512,21 +1522,23 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Get the user object from the partially completed cookie.
+     * Get the user object from the session cookie, overlooking the specified caveats if present (but not others).
      *
-     * <p>WARNING: Do not use this method to determine if a user has successfully logged in or not
-     * as they could have omitted the 2FA step.
+     * <p>WARNING: Do not use this method to determine if a user has successfully logged in or not in the general case.
+     * {@link #getCurrentRegisteredUser} should almost always be preferred.
+     * <p>To be used in limited circumstances where the user has authenticated to a degree acceptable for
+     * specific purposes, e.g. responding to MFA challenge after a correct email/password login.
      *
      * @param request to pull back the user
-     * @return UserSummaryDTO of the partially logged in user or will throw an exception if cannot be found.
+     * @return UserSummaryDTO of the partially logged-in user or will throw an exception if not found or the session has unacceptable caveats.
      * @throws NoUserLoggedInException if they haven't started the flow.
      */
-    public UserSummaryWithEmailAddressDTO getPartiallyIdentifiedUser(HttpServletRequest request) throws NoUserLoggedInException {
-        RegisteredUser registeredUser = this.retrieveCaveatLogin(request, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
+    public RegisteredUserDTO getCurrentPartiallyIdentifiedUser(HttpServletRequest request, Set<AuthenticationCaveat> acceptableCaveats) throws NoUserLoggedInException {
+        RegisteredUser registeredUser = this.retrieveCaveatLogin(request, acceptableCaveats);
         if (null == registeredUser) {
             throw new NoUserLoggedInException();
         }
-        return this.convertToDetailedUserSummaryObject(this.convertUserDOToUserDTO(registeredUser), UserSummaryWithEmailAddressDTO.class);
+        return this.convertUserDOToUserDTO(registeredUser);
     }
 
     /**
@@ -1606,7 +1618,7 @@ public class UserAccountManager implements IUserAccountManager {
     /**
      * Generate a partially logged-in session for the user.
      *
-     * The session will contain caveats which will only be accepted by some endpoints (e.g. for MFA).
+     * <p>The session will contain caveats which will only be accepted by some endpoints (e.g. for MFA).
      *
      * @param request    - http request containing the cookie
      * @param response   - response to update cookie information
@@ -1619,7 +1631,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Retrieve a partially logged in session for the user based on successful password authentication.
+     * Retrieve a partially logged-in session for the user based on successful password authentication.
      *
      * <p>NOTE: You should not treat users has having logged in using this method as they haven't completed login.
      *
@@ -1929,7 +1941,7 @@ public class UserAccountManager implements IUserAccountManager {
                 new BasicNameValuePair("token", emailVerificationToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH)));
         String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
 
-        return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
+        return String.format("https://%s/register/verify?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
     /**

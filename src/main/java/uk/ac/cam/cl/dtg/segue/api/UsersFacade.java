@@ -152,7 +152,14 @@ public class UsersFacade extends AbstractSegueFacade {
                                            @Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse response) {
         try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            RegisteredUserDTO currentUser;
+
+            if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                // allow users who are required to verify but haven't yet done so to use this endpoint
+                currentUser = userManager.getCurrentPartiallyIdentifiedUser(httpServletRequest, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+            } else {
+                currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            }
 
             Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
             int sessionExpiryHashCode = 0;

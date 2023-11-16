@@ -58,10 +58,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchSpecificIDAsStudent_returnsOnlyQuestionWithID() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchSpecificIDAsStudent_returnsOnlyQuestionWithID() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -87,10 +84,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchByIDOfNonQuestionPageAsStudent_doesNotReturnPage() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchByIDOfNonQuestionPageAsStudent_doesNotReturnPage() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -116,10 +110,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchByIDOfNonFastTrackQuestionPageAsStudentWhenFastTrackOnly_doesNotReturnPage() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchByIDOfNonFastTrackQuestionPageAsStudentWhenFastTrackOnly_doesNotReturnPage() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -145,10 +136,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchSpecificIDsAsStudent_returnsOnlyQuestionsWithIDs() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchSpecificIDsAsStudent_returnsOnlyQuestionsWithIDs() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -175,10 +163,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchByStringAsStudent_returnsQuestionsWithSimilarTitlesInOrder() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchByStringAsStudent_returnsQuestionsWithSimilarTitlesInOrder() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -204,10 +189,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_limitedSearchByStringAsStudent_returnsLimitedNumberOfQuestions() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_limitedSearchByStringAsStudent_returnsLimitedNumberOfQuestions() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,

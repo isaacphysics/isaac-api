@@ -374,7 +374,7 @@ public abstract class IsaacIntegrationTest {
         postgres.stop();
     }
 
-    protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws Exception {
         Capture<Cookie> capturedUserCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
         HttpServletRequest userLoginRequest = createNiceMock(HttpServletRequest.class);
