@@ -679,7 +679,7 @@ public class EventBookingManager {
     }
 
     final Date now = new Date();
-    this.ensureValidEventAndUser(event, user, false);
+    this.ensureValidEventAndUser(event, user, true);
 
     EventBookingDTO booking;
     try (ITransaction transaction = transactionManager.getTransaction()) {
