@@ -19,6 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.annotation.Nullable;
+import java.util.Set;
+
 /**
  * Glossary Term object The glossary term object is a specialized form of content and allows the storage of data
  * relating to glossary terms.
@@ -28,11 +31,15 @@ public class GlossaryTermDTO extends ContentDTO {
     protected ContentDTO explanation;
     protected boolean autoId;
     protected String examBoard;
+    protected Set<String> stages;
 
     @JsonCreator
-    public GlossaryTermDTO(@JsonProperty("explanation") ContentDTO explanation, @JsonProperty("examBoard") String examBoard) {
+    public GlossaryTermDTO(@JsonProperty("explanation") ContentDTO explanation,
+                           @JsonProperty("examBoard") String examBoard,
+                           @Nullable @JsonProperty("stage") Set<String> stages) {
         this.explanation = explanation;
         this.examBoard = examBoard != null ? examBoard : "";
+        this.stages = stages;
     }
 
     public ContentDTO getExplanation() {
@@ -51,7 +58,20 @@ public class GlossaryTermDTO extends ContentDTO {
         this.examBoard = examBoard;
     }
 
+    public Set<String> getStages() {
+        return stages;
+    }
+
+    public void setStages(Set<String> stages) {
+        this.stages = stages;
+    }
+
     @JsonIgnore
-    public final boolean getAutoId() { return autoId; }
-    public final void setAutoId(final boolean autoId) { this.autoId = autoId; }
+    public final boolean getAutoId() {
+        return autoId;
+    }
+
+    public final void setAutoId(final boolean autoId) {
+        this.autoId = autoId;
+    }
 }
