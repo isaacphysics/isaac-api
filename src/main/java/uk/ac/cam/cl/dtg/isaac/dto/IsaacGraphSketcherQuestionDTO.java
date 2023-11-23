@@ -27,4 +27,22 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @JsonContentType("isaacGraphSketcherQuestion")
 @ValidatesWith(IsaacGraphSketcherValidator.class)
 public class IsaacGraphSketcherQuestionDTO extends IsaacSymbolicQuestionDTO {
+    private String axisLabelX;
+    private String axisLabelY;
+
+    public String getAxisLabelX() {
+        return axisLabelX;
+    }
+
+    public String getAxisLabelY() {
+        return axisLabelY;
+    }
+
+    public void setAxisLabelX(String axisLabelX) {
+        this.axisLabelX = axisLabelX;
+    }
+
+    public void setAxisLabelY(String axisLabelY) {
+        this.axisLabelY = axisLabelY;
+    }
 }
