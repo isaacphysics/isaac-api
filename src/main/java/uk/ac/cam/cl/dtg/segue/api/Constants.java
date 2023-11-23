@@ -600,6 +600,7 @@ public final class Constants {
   public static final int NUMBER_SECONDS_IN_FIVE_MINUTES = NUMBER_SECONDS_IN_MINUTE * 5;
   public static final int NUMBER_SECONDS_IN_TEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 10;
   public static final int NUMBER_SECONDS_IN_FIFTEEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 15;
+  public static final int NUMBER_SECONDS_IN_THIRTY_MINUTES = NUMBER_SECONDS_IN_MINUTE * 30;
   public static final int NUMBER_SECONDS_IN_ONE_HOUR = NUMBER_SECONDS_IN_MINUTE * 60;
   public static final int NUMBER_SECONDS_IN_ONE_DAY = NUMBER_SECONDS_IN_ONE_HOUR * 24;
   public static final int NUMBER_SECONDS_IN_ONE_WEEK = NUMBER_SECONDS_IN_ONE_DAY * 7;
@@ -638,6 +639,8 @@ public final class Constants {
   public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
 
   public static final String QUESTION_MISUSE_THRESHOLD_OVERRIDE = "QUESTION_MISUSE_THRESHOLD_OVERRIDE";
+
+  public static final String SEGUE_LOGIN_EMAIL_MISUSE_INTERVAL = "SEGUE_LOGIN_EMAIL_MISUSE_INTERVAL";
 
   // User Preferences:
   public enum SegueUserPreferences {
