@@ -59,7 +59,9 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N	f
 2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N	f
 4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245	f
-7	AssignmentFacade IT Group	5	2023-01-01 12:00:00	f	ACTIVE	\N	f
+5	AssignmentFacade IT Group	5	2023-01-01 12:00:00	f	ACTIVE	\N	f
+6	QuizFacade IT Group	5	2023-01-01 12:00:00	f	ACTIVE	\N	f
+7	QuizFacade IT Group 2	5	2023-01-01 12:00:00	f	ACTIVE	\N	f
 \.
 
 
@@ -70,7 +72,7 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creation_date, due_date, scheduled_start_date) FROM stdin;
 2	9313cadd-d4ce-420f-9331-300e3067b45f	1	5	\N	2022-08-03 12:14:50.134	\N	\N
 3	43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	2	10	\N	2023-01-27 12:14:50.134	\N	\N
-4	assignmentfacade-it-gameboard-id	7	5	\N	2023-01-01 12:00:00.000	\N	\N
+4	assignmentfacade-it-gameboard-id	5	5	\N	2023-01-01 12:00:00.000	\N	\N
 \.
 
 
@@ -113,7 +115,13 @@ COPY public.group_memberships (group_id, user_id, created, updated, status) FROM
 2	9	\N	2022-07-06 14:38:36.064903+00	ACTIVE
 4	7	2022-12-12 14:48:52.043	2022-12-12 14:48:52.043+00	ACTIVE
 4	8	2022-12-12 14:49:25.081	2022-12-12 14:49:25.082+00	ACTIVE
-7	6	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+5	6	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+5	7	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+5	8	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+5	9	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+6	7	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+6	8	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
+6	9	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
 7	7	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
 7	8	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
 7	9	2023-01-01 12:00:00.000	2023-01-01 12:00:00.000+00	ACTIVE
@@ -179,6 +187,14 @@ COPY public.question_attempts (id, user_id, question_id, question_attempt, corre
 --
 
 COPY public.quiz_assignments (id, quiz_id, group_id, owner_user_id, creation_date, due_date, quiz_feedback_mode, deleted) FROM stdin;
+1	_quiz_test	6	5	2023-01-01 12:00:00.000	\N	NONE	f
+2	_hidden_from_roles_student_quiz_test	6	5	2023-01-01 12:00:00.000	\N	NONE	f
+3	_hidden_from_roles_tutor_quiz_test	6	5	2023-01-01 12:00:00.000	\N	NONE	f
+4	_quiz_test	7	5	2023-01-01 12:00:00.000	\N	NONE	f
+5	_quiz_test	6	5	2023-01-01 12:00:00.000	\N	NONE	t
+6	_quiz_test	6	5	2023-01-01 12:00:00.000	2023-01-08 12:00:00.000	NONE	f
+7	_quiz_test	6	5	2023-01-01 12:00:00.000	\N	DETAILED_FEEDBACK	f
+8	_hidden_from_roles_tutor_quiz_test	6	5	2023-01-01 12:00:00.000	\N	NONE	f
 \.
 
 
@@ -187,6 +203,19 @@ COPY public.quiz_assignments (id, quiz_id, group_id, owner_user_id, creation_dat
 --
 
 COPY public.quiz_attempts (id, user_id, quiz_id, quiz_assignment_id, start_date, completed_date) FROM stdin;
+1	7	_quiz_test	1	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+2	8	_quiz_test	\N	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+3	7	_quiz_test	4	2023-01-01 13:00:00.000	\N
+4	7	_quiz_test	5	2023-01-01 13:00:00.000	\N
+5	7	_quiz_test	6	2023-01-01 13:00:00.000	\N
+6	8	_quiz_test	6	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+7	7	_quiz_test	7	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+8	8	_quiz_test	7	2023-01-01 13:00:00.000	\N
+9	7	_hidden_from_roles_tutor_quiz_test	8	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+10	9	_hidden_from_roles_tutor_quiz_test	8	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+11	9	_quiz_test	1	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
+12	7	_quiz_test	\N	2023-01-01 13:00:00.000	\N
+13	9	_quiz_test	7	2023-01-01 13:00:00.000	2023-01-01 14:00:00.000
 \.
 
 
@@ -472,7 +501,7 @@ COPY quartz_cluster.qrtz_simprop_triggers (sched_name, trigger_name, trigger_gro
 -- Name: assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.assignments_id_seq', 2, true);
+SELECT pg_catalog.setval('public.assignments_id_seq', 4, true);
 
 
 --
@@ -486,7 +515,7 @@ SELECT pg_catalog.setval('public.event_bookings_id_seq', 4, true);
 -- Name: groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.groups_id_seq', 4, true);
+SELECT pg_catalog.setval('public.groups_id_seq', 7, true);
 
 
 --
@@ -507,28 +536,28 @@ SELECT pg_catalog.setval('public.logged_events_id_seq', 1, true);
 -- Name: question_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.question_attempts_id_seq', 1, true);
+SELECT pg_catalog.setval('public.question_attempts_id_seq', 22, true);
 
 
 --
 -- Name: quiz_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.quiz_assignments_id_seq', 2, true);
+SELECT pg_catalog.setval('public.quiz_assignments_id_seq', 8, true);
 
 
 --
 -- Name: quiz_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.quiz_attempts_id_seq', 1, true);
+SELECT pg_catalog.setval('public.quiz_attempts_id_seq', 13, true);
 
 
 --
 -- Name: quiz_question_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.quiz_question_attempts_id_seq', 3, true);
+SELECT pg_catalog.setval('public.quiz_question_attempts_id_seq', 1, true);
 
 
 --

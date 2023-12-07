@@ -733,7 +733,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
   }
 
-  /*
+  /**
    * Log that a student viewed a particular section of a quiz.
    *
    * @param httpServletRequest

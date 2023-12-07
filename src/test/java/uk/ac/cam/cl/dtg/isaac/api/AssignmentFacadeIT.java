@@ -20,6 +20,7 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.reset;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ASSIGNMENT_FACADE_TEST_GROUP_ID;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -468,7 +469,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     replay(downloadAssignmentRequest);
 
     Response downloadAssignmentResponse =
-        assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest, 7L, "excel");
+        assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest,
+            ASSIGNMENT_FACADE_TEST_GROUP_ID, "excel");
     String downloadAssignmentContents = downloadAssignmentResponse.getEntity().toString();
 
     String expectedContents;
@@ -487,7 +489,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     replay(downloadAssignmentRequest);
 
     Response downloadAssignmentResponse =
-        assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest, 7L, "excel");
+        assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest,
+            ASSIGNMENT_FACADE_TEST_GROUP_ID, "excel");
 
     assertEquals(403, downloadAssignmentResponse.getStatus());
   }

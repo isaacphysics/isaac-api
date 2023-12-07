@@ -596,6 +596,7 @@ public final class Constants {
   // cache settings
   public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
 
+  public static final int NUMBER_MILLISECONDS_IN_SECOND = 1000;
   public static final int NUMBER_SECONDS_IN_MINUTE = 60;
   public static final int NUMBER_SECONDS_IN_FIVE_MINUTES = NUMBER_SECONDS_IN_MINUTE * 5;
   public static final int NUMBER_SECONDS_IN_TEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 10;

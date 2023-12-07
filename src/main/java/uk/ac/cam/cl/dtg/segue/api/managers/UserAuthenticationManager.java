@@ -887,20 +887,8 @@ public class UserAuthenticationManager {
       calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
       String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
 
-      ImmutableMap.Builder<String, String> sessionInformationBuilder = new ImmutableMap.Builder<>();
-      sessionInformationBuilder.put(SESSION_USER_ID, userId);
-      sessionInformationBuilder.put(SESSION_TOKEN, newUserSessionToken);
-      sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
-
-      if (partialLoginFlagString != null) {
-        sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
-      }
-
-      String sessionHMAC =
-          calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, newUserSessionToken, partialLoginFlagString);
-      sessionInformationBuilder.put(HMAC, sessionHMAC);
-
-      Map<String, String> sessionInformation = sessionInformationBuilder.build();
+      Map<String, String> sessionInformation =
+          prepareSessionInformation(userId, newUserSessionToken, sessionExpiryDate, hmacKey, partialLoginFlagString);
 
       Cookie authCookie = createAuthCookie(sessionInformation, sessionExpiryTimeInSeconds);
 
@@ -1130,6 +1118,25 @@ public class UserAuthenticationManager {
     }
   }
 
+  public Map<String, String> prepareSessionInformation(String userId, String newUserSessionToken,
+                                                       String sessionExpiryDate, String hmacKey,
+                                                       String partialLoginFlagString) {
+    ImmutableMap.Builder<String, String> sessionInformationBuilder = new ImmutableMap.Builder<>();
+    sessionInformationBuilder.put(SESSION_USER_ID, userId);
+    sessionInformationBuilder.put(SESSION_TOKEN, newUserSessionToken);
+    sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
+
+    if (partialLoginFlagString != null) {
+      sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
+    }
+
+    String sessionHmac =
+        calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, newUserSessionToken, partialLoginFlagString);
+    sessionInformationBuilder.put(HMAC, sessionHmac);
+
+    return sessionInformationBuilder.build();
+  }
+
   public boolean isSessionValid(final HttpServletRequest request) {
     Map<String, String> currentSessionInformation;
     try {
@@ -1174,9 +1181,7 @@ public class UserAuthenticationManager {
     String userSessionToken = sessionInformation.get(SESSION_TOKEN);
     String partialLoginFlagString = sessionInformation.get(PARTIAL_LOGIN_FLAG);
 
-    String sessionHMAC =
-        calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
-    return sessionHMAC;
+    return calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
   }
 
   public Cookie createAuthCookie(final Map<String, String> sessionInformation, final int sessionExpiryTimeInSeconds)
