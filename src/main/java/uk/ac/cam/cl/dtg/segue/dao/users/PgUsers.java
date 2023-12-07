@@ -819,6 +819,11 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
     }
 
+    // make sure teacher_pending flag is default value of false if not set
+    if (null == userToCreate.getTeacherPending()) {
+      userToCreate.setTeacherPending(false);
+    }
+
     String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender,"
         + " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen,"
         + " email_verification_token, email_to_verify, teacher_pending, registered_contexts,"
