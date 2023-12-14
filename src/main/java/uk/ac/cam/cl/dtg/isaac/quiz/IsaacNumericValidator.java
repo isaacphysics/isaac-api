@@ -94,7 +94,7 @@ public class IsaacNumericValidator implements IValidator {
 
     if (!(answer instanceof Quantity)) {
       throw new IllegalArgumentException(String.format(
-          "Expected Quantity for IsaacNumericQuestion: %s. Received (%s) ", question.getId(),
+          "Expected Quantity for IsaacNumericQuestion: %s. Received (%s)", question.getId(),
           answer.getClass()));
     }
 
@@ -350,7 +350,7 @@ public class IsaacNumericValidator implements IValidator {
    * @return true when the numbers match
    * @throws NumberFormatException - when one of the values cannot be parsed
    */
-  private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
+  public boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
                                      final Integer significantFiguresRequired) throws NumberFormatException {
     log.debug("\t[numericValuesMatch]");
     double trustedDouble;
@@ -380,7 +380,7 @@ public class IsaacNumericValidator implements IValidator {
    * @param sigFigs - number of significant figures required
    * @return the rounded number.
    */
-  private double roundStringValueToSigFigs(final String value, final int sigFigs) {
+  public double roundStringValueToSigFigs(final String value, final int sigFigs) {
     log.debug("\t[roundStringValueToSigFigs]");
 
     // To prevent floating point arithmetic errors when rounding the value, use a BigDecimal and pass the string
@@ -456,7 +456,7 @@ public class IsaacNumericValidator implements IValidator {
    * @param maxAllowedSigFigs - the maximum number of significant figures the question allows
    * @return the number of significant figures that should be used when checking the question
    */
-  private int numberOfSignificantFiguresToValidateWith(final String valueToCheck, final int minAllowedSigFigs,
+  public int numberOfSignificantFiguresToValidateWith(final String valueToCheck, final int minAllowedSigFigs,
                                                        final int maxAllowedSigFigs) {
     log.debug("\t[numberOfSignificantFiguresToValidateWith]");
     int untrustedValueSigFigs;
@@ -485,7 +485,7 @@ public class IsaacNumericValidator implements IValidator {
    * @param minAllowedSigFigs - the minimum number of significant figures that is expected for the answer to be correct.
    * @return true if too few, false if not.
    */
-  private boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs) {
+  public boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs) {
     log.debug("\t[tooFewSignificantFigures]");
 
     SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);
@@ -500,7 +500,7 @@ public class IsaacNumericValidator implements IValidator {
    * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
    * @return true if too many, false if not.
    */
-  private boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs) {
+  public boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs) {
     log.debug("\t[tooManySignificantFigures]");
 
     SigFigResult sigFigsFromUser = extractSignificantFigures(valueToCheck);

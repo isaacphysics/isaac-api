@@ -24,21 +24,29 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_MILLISECONDS_IN_SECOND;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_WEEK;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
@@ -49,7 +57,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the user manager class.
- *
  */
 public class GroupManagerTest {
   private MapperFacade dummyMapper;
@@ -58,18 +65,24 @@ public class GroupManagerTest {
   private UserAccountManager userManager;
   private GameManager gameManager;
 
+  private GroupManager groupManager;
+
+  private static final Date somePastDate =
+      new Date(System.currentTimeMillis() - NUMBER_SECONDS_IN_ONE_WEEK * NUMBER_MILLISECONDS_IN_SECOND);
+
   /**
    * Initial configuration of tests.
    *
-   * @throws Exception
-   *             - test exception
+   * @throws Exception - test exception
    */
-  @Before
+  @BeforeEach
   public final void setUp() throws Exception {
     this.dummyMapper = createMock(MapperFacade.class);
     this.groupDataManager = createMock(IUserGroupPersistenceManager.class);
     this.userManager = createMock(UserAccountManager.class);
     this.gameManager = createMock(GameManager.class);
+
+    this.groupManager = new GroupManager(this.groupDataManager, this.userManager, this.gameManager, this.dummyMapper);
 
     PropertiesLoader dummyPropertiesLoader = createMock(PropertiesLoader.class);
     expect(dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS_DEFAULT)).andReturn("60").anyTimes();
@@ -96,7 +109,6 @@ public class GroupManagerTest {
     UserGroupDTO mappedGroup = new UserGroupDTO();
     resultFromDB.setId(2L);
 
-    GroupManager gm = new GroupManager(this.groupDataManager, this.userManager, this.gameManager, this.dummyMapper);
     try {
       expect(this.groupDataManager.createGroup(and(capture(capturedGroup), isA(UserGroup.class))))
           .andReturn(resultFromDB);
@@ -110,17 +122,47 @@ public class GroupManagerTest {
       replay(this.userManager, this.groupDataManager, this.dummyMapper);
 
       // check that the result of the method is whatever comes out of the database
-      UserGroupDTO createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
+      UserGroupDTO createUserGroup = this.groupManager.createUserGroup(someGroupName, someGroupOwner);
+      assertEquals(mappedGroup, createUserGroup);
 
       // check that what goes into the database is what we passed it.
-      assertEquals(capturedGroup.getValue().getOwnerId(), someGroupOwner.getId());
-      assertEquals(capturedGroup.getValue().getGroupName(), someGroupName);
-      assertTrue(capturedGroup.getValue().getCreated() instanceof Date);
+      assertEquals(someGroupOwner.getId(), capturedGroup.getValue().getOwnerId());
+      assertEquals(someGroupName, capturedGroup.getValue().getGroupName());
+      assertInstanceOf(Date.class, capturedGroup.getValue().getCreated());
 
     } catch (SegueDatabaseException e) {
       fail("No exception expected");
       e.printStackTrace();
     }
     verify(this.groupDataManager);
+  }
+
+  @Test
+  public void orderUsersByName_ordersBySurnamePrimarily() {
+    List<RegisteredUserDTO> users = Stream.of(
+            new RegisteredUserDTO("A", "Ab", "aab@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE,
+                somePastDate, "", false),
+            new RegisteredUserDTO("B", "Ar", "bar@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE,
+                somePastDate, "", false),
+            new RegisteredUserDTO("C", "Ax", "caz@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE,
+                somePastDate, "", false),
+            new RegisteredUserDTO(null, "Ax", "NONEax@test.com", EmailVerificationStatus.VERIFIED, somePastDate,
+                Gender.FEMALE, somePastDate, "", false),
+            new RegisteredUserDTO("A", "Ba", "dba@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE,
+                somePastDate, "", false),
+            new RegisteredUserDTO("B", "Bb", "ebb@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE,
+                somePastDate, "", false),
+            new RegisteredUserDTO("C", "Bf", "fbf@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE,
+                somePastDate, "", false),
+            new RegisteredUserDTO("A", null, "aNONE@test.com", EmailVerificationStatus.VERIFIED, somePastDate,
+                Gender.FEMALE, somePastDate, "", false))
+        .peek(user -> user.setId((long) (user.getGivenName() + user.getFamilyName()).hashCode()))
+        .collect(Collectors.toList());
+
+    List<RegisteredUserDTO> shuffledUsers = new ArrayList<>(users);
+    Collections.shuffle(shuffledUsers);
+
+    List<RegisteredUserDTO> sortedUsers = this.groupManager.orderUsersByName(shuffledUsers);
+    assertEquals(users, sortedUsers);
   }
 }

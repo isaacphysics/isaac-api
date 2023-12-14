@@ -22,9 +22,12 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_FALLBACK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,9 +51,8 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -74,6 +76,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -109,7 +112,7 @@ public class UserManagerTest {
    *
    * @throws Exception - test exception
    */
-  @Before
+  @BeforeEach
   public final void setUp() throws Exception {
     this.dummyQuestionDatabase = createMock(QuestionManager.class);
     this.dummyDatabase = createMock(IUserDataManager.class);
@@ -179,10 +182,13 @@ public class UserManagerTest {
   /**
    * Test that get current user with valid HMAC works correctly.
    *
-   * @throws Exception
+   * @throws JsonProcessingException if an error occurs during object mapping
+   * @throws SegueDatabaseException if an error occurs while accessing the database
+   * @throws NoUserLoggedInException if a user cannot be retrieved from the request
    */
   @Test
-  public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() throws Exception {
+  public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned()
+      throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
     UserAccountManager userManager = buildTestUserManager();
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
     HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -222,7 +228,7 @@ public class UserManagerTest {
     RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
     // Assert
-    assertTrue(user != null);
+    assertNotNull(user);
 
     verify(dummyQuestionDatabase, request, dummyMapper);
   }
@@ -230,10 +236,10 @@ public class UserManagerTest {
   /**
    * Test that requesting authentication with a bad provider behaves as expected.
    *
-   * @throws Exception
+   * @throws IOException if data cannot be retrieved from the auth provider
    */
   @Test
-  public final void authenticate_badProviderGiven_authenticationProviderException() throws Exception {
+  public final void authenticate_badProviderGiven_authenticationProviderException() throws IOException {
     UserAccountManager userManager = buildTestUserManager();
 
     HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -258,7 +264,7 @@ public class UserManagerTest {
    * Test that a valid OAuth provider (Facebook) provides a redirect response.
    *
    * @throws IOException                            - test exception
-   * @throws AuthenticationProviderMappingException
+   * @throws AuthenticationProviderMappingException - when a string cannot be mapped to a provider
    */
   @Test
   public final void authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
@@ -296,7 +302,7 @@ public class UserManagerTest {
     // Assert
     verify(dummyQuestionDatabase, request);
 
-    assertTrue(redirectURI.toString().equals(exampleRedirectUrl));
+    assertEquals(exampleRedirectUrl, redirectURI.toString());
   }
 
   /**
@@ -440,7 +446,7 @@ public class UserManagerTest {
 
     // Assert
     verify(dummySession, request, dummyAuth, dummyQuestionDatabase);
-    assertTrue(u instanceof RegisteredUserDTO);
+    assertInstanceOf(RegisteredUserDTO.class, u);
   }
 
   /**
@@ -533,11 +539,9 @@ public class UserManagerTest {
    * Verify that a correct HMAC response works correctly.
    * <br>
    * This method is dependent on the crypto algorithm used.
-   *
-   * @throws Exception
    */
   @Test
-  public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() throws Exception {
+  public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -558,7 +562,7 @@ public class UserManagerTest {
     replay(dummyQuestionDatabase);
 
     // Act
-    boolean valid = Whitebox.<Boolean>invokeMethod(authManager, "isValidUsersSession", sessionInformation, sessionToken);
+    boolean valid = authManager.isValidUsersSession(sessionInformation, sessionToken);
 
     // Assert
     verify(dummyQuestionDatabase, dummySession, request);
@@ -567,11 +571,9 @@ public class UserManagerTest {
 
   /**
    * Verify that a user session which has been tampered with is detected as invalid.
-   *
-   * @throws Exception
    */
   @Test
-  public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() throws Exception {
+  public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -599,8 +601,7 @@ public class UserManagerTest {
     replay(dummyQuestionDatabase);
 
     // Act
-    boolean valid =
-        Whitebox.<Boolean>invokeMethod(authManager, "isValidUsersSession", tamperedSessionInformation, sessionToken);
+    boolean valid = authManager.isValidUsersSession(tamperedSessionInformation, sessionToken);
 
     // Assert
     verify(dummyQuestionDatabase, dummySession, request);
@@ -609,11 +610,9 @@ public class UserManagerTest {
 
   /**
    * Verify that an expired user session is detected as invalid.
-   *
-   * @throws Exception
    */
   @Test
-  public final void validateUsersSession_expiredUsersSession_shouldReturnAsIncorrect() throws Exception {
+  public final void validateUsersSession_expiredUsersSession_shouldReturnAsIncorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -634,8 +633,7 @@ public class UserManagerTest {
     replay(dummyQuestionDatabase);
 
     // Act
-    boolean valid =
-        Whitebox.<Boolean>invokeMethod(authManager, "isValidUsersSession", validSessionInformation, sessionToken);
+    boolean valid = authManager.isValidUsersSession(validSessionInformation, sessionToken);
 
     // Assert
     verify(dummyQuestionDatabase, dummySession, request);
@@ -644,11 +642,9 @@ public class UserManagerTest {
 
   /**
    * Verify that a changed session token is detected.
-   *
-   * @throws Exception
    */
   @Test
-  public final void validateUsersSession_incorrectSessionToken_shouldReturnAsIncorrect() throws Exception {
+  public final void validateUsersSession_incorrectSessionToken_shouldReturnAsIncorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -670,9 +666,7 @@ public class UserManagerTest {
     replay(dummyQuestionDatabase);
 
     // Act
-    boolean valid =
-        Whitebox.<Boolean>invokeMethod(authManager, "isValidUsersSession", sessionInformationWithTokenMismatch,
-            correctSessionToken);
+    boolean valid = authManager.isValidUsersSession(sessionInformationWithTokenMismatch, correctSessionToken);
 
     // Assert
     verify(dummyQuestionDatabase, dummySession, request);
@@ -774,7 +768,7 @@ public class UserManagerTest {
    */
   private UserAccountManager buildTestUserManager(final AuthenticationProvider provider,
                                                   final IFederatedAuthenticator authenticator) {
-    HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
+    HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<>();
     providerMap.put(provider, authenticator);
     return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
         providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
@@ -788,17 +782,16 @@ public class UserManagerTest {
 
   private UserAuthenticationManager buildTestAuthenticationManager(AuthenticationProvider provider,
                                                                    IAuthenticator authenticator) {
-    HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
+    HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<>();
     providerMap.put(provider, authenticator);
     providerMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
     return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyQueue);
   }
 
   private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId,
-                                                          String dateExpires, Integer sessionToken)
-      throws Exception {
-    String validHMAC = Whitebox.<String>invokeMethod(userAuthManager, "calculateSessionHMAC", dummyHMACSalt, userId,
-        dateExpires, sessionToken.toString(), null);
+                                                          String dateExpires, Integer sessionToken) {
+    String validHMAC =
+        userAuthManager.calculateSessionHMAC(dummyHMACSalt, userId, dateExpires, sessionToken.toString(), null);
     return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_EXPIRES, dateExpires, Constants.HMAC,
         validHMAC, Constants.SESSION_TOKEN, sessionToken.toString());
   }

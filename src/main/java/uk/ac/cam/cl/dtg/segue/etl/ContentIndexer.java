@@ -541,7 +541,7 @@ public class ContentIndexer {
    * @param content content object to flatten
    * @return Set of content objects comprised of all children and the parent.
    */
-  private Set<Content> flattenContentObjects(final Content content) {
+  public Set<Content> flattenContentObjects(final Content content) {
     Set<Content> setOfContentObjects = new HashSet<>();
     if (!content.getChildren().isEmpty()) {
 
@@ -655,7 +655,7 @@ public class ContentIndexer {
    * @param publishedUnits    - a map of units used in published numeric questions
    * @param indexProblemCache - a map of problems found in the indexed content
    */
-  private synchronized void buildElasticSearchIndex(final String sha,
+  public synchronized void buildElasticSearchIndex(final String sha,
                                                     final Map<String, Content> gitCache,
                                                     final Set<String> tagsList,
                                                     final Map<String, String> allUnits,

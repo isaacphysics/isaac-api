@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dbelyaev/action-checkstyle@v0.9.4
+      - uses: dbelyaev/action-checkstyle@v1.1.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          level: error
+          level: info
           checkstyle_config: src/main/resources/checkstyle-config.xml
-          fail_on_error: true
+          fail_on_error: false

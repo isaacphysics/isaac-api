@@ -204,7 +204,7 @@ public class GroupManager {
    * @param users - list of users.
    * @return the List of RegisteredUserDTOs ordered by name
    */
-  private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
+  public List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
     // Replaces apostrophes with tildes so that string containing them are ordered in the same way as in
     // Excel. i.e. we want that "O'Sully" > "Ogbobby"
     Comparator<String> excelStringOrder = Comparator.nullsLast((String a, String b) ->

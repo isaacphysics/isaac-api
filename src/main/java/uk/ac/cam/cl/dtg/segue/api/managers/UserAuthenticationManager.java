@@ -126,7 +126,7 @@ public class UserAuthenticationManager {
    * @param database            - an IUserDataManager that will support persistence.
    * @param properties          - A property loader
    * @param providersToRegister - A map of known authentication providers.
-   * @param emailQueue
+   * @param emailQueue          - A communications queue for managing emails
    */
   @Inject
   public UserAuthenticationManager(final IUserDataManager database,
@@ -911,7 +911,7 @@ public class UserAuthenticationManager {
    * @param sessionTokenFromDatabase the real session token to validate this cookie against
    * @return true if it is still valid, false if not.
    */
-  private boolean isValidUsersSession(final Map<String, String> sessionInformation,
+  public boolean isValidUsersSession(final Map<String, String> sessionInformation,
                                       final Integer sessionTokenFromDatabase) {
     Validate.notNull(sessionInformation);
     Validate.notNull(sessionTokenFromDatabase);
@@ -970,7 +970,7 @@ public class UserAuthenticationManager {
    * @param partialLoginFlag - Boolean data to encode in the cookie - true if a partial login
    * @return HMAC signature.
    */
-  private String calculateSessionHMAC(final String key, final String userId, final String currentDate,
+  public String calculateSessionHMAC(final String key, final String userId, final String currentDate,
                                       final String sessionToken,
                                       @Nullable final String partialLoginFlag) {
     StringBuilder sb = new StringBuilder();

@@ -24,13 +24,13 @@ import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.reset;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
-import com.google.common.collect.ImmutableMap;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,15 +38,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 /**
  * Test class for the GitContentManager class.
@@ -65,7 +64,7 @@ public class ContentIndexerTest {
    *
    * @throws Exception - test exception
    */
-  @Before
+  @BeforeEach
   public final void setUp() throws Exception {
     this.database = createMock(GitDb.class);
     this.searchProvider = createMock(ElasticSearchIndexer.class);
@@ -78,11 +77,12 @@ public class ContentIndexerTest {
    * Test that the buildSearchIndex sends all of the various different segue data
    * to the searchProvider and we haven't forgotten anything.
    *
-   * @throws Exception
+   * @throws JsonProcessingException if an error occurs during object mapping
+   * @throws SegueSearchException if an error occurs during content indexing
    */
   @Test
   public void buildSearchIndexes_sendContentToSearchProvider_checkSearchProviderIsSentAllImportantObject()
-      throws Exception {
+      throws JsonProcessingException, SegueSearchException {
     reset(database, searchProvider);
     String uniqueObjectId = UUID.randomUUID().toString();
     String uniqueObjectHash = UUID.randomUUID().toString();
@@ -92,20 +92,20 @@ public class ContentIndexerTest {
     content.setId(uniqueObjectId);
     contents.put(uniqueObjectId, content);
 
-    Set<String> someTagsList = Sets.newHashSet();
+    Set<String> someTagsList = new HashSet<>();
 
-    Map<String, String> someUnitsMap = ImmutableMap.of("N", "N", "km", "km");
-    Map<String, String> publishedUnitsMap = ImmutableMap.of("N", "N", "km", "km");
+    Map<String, String> someUnitsMap = Map.of("N", "N", "km", "km");
+    Map<String, String> publishedUnitsMap = Map.of("N", "N", "km", "km");
 
     // This is what is sent to the search provider so needs to be mocked
-    Map<String, String> someUnitsMapRaw = ImmutableMap.of("cleanKey", "N", "unit", "N");
-    Map<String, String> someUnitsMapRaw2 = ImmutableMap.of("cleanKey", "km", "unit", "km");
+    Map<String, String> someUnitsMapRaw = Map.of("cleanKey", "N", "unit", "N");
+    Map<String, String> someUnitsMapRaw2 = Map.of("cleanKey", "km", "unit", "km");
 
     Date someCreatedDate = new Date();
-    Map versionMeta = ImmutableMap.of("version", INITIAL_VERSION, "created", someCreatedDate.toString());
-    Map tagsMeta = ImmutableMap.of("tags", someTagsList);
+    Map<String, String> versionMeta = Map.of("version", INITIAL_VERSION, "created", someCreatedDate.toString());
+    Map<String, Set<String>> tagsMeta = Map.of("tags", someTagsList);
 
-    Map<Content, List<String>> someContentProblemsMap = Maps.newHashMap();
+    Map<Content, List<String>> someContentProblemsMap = new HashMap<>();
 
     // assume in this case that there are no pre-existing indexes for this version
     for (Constants.ContentIndextype contentIndexType : Constants.ContentIndextype.values()) {
@@ -165,9 +165,8 @@ public class ContentIndexerTest {
         searchProvider, contentMapper);
 
     // Method under test
-    Whitebox.invokeMethod(contentIndexer,
-        "buildElasticSearchIndex",
-        INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap, someContentProblemsMap);
+    contentIndexer.buildElasticSearchIndex(INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap,
+        someContentProblemsMap);
 
     verify(searchProvider, contentMapper, objectMapper);
   }
@@ -175,22 +174,18 @@ public class ContentIndexerTest {
   /**
    * Test the flattenContentObjects method and ensure the expected output is
    * generated.
-   *
-   * @throws Exception
    */
   @Test
-  public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned()
-      throws Exception {
+  public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned() {
     final int numChildLevels = 5;
     final int numNodes = numChildLevels + 1;
 
     Set<Content> elements = new HashSet<>();
     Content rootNode = createContentHierarchy(numChildLevels, elements);
 
-    Set<Content> contents = Whitebox.invokeMethod(
-        defaultContentIndexer, "flattenContentObjects", rootNode);
+    Set<Content> contents = defaultContentIndexer.flattenContentObjects(rootNode);
 
-    assertTrue(contents.size() == numNodes);
+    assertEquals(numNodes, contents.size());
 
     for (Content c : contents) {
       boolean containsElement = elements.contains(c);
@@ -200,12 +195,12 @@ public class ContentIndexerTest {
       }
     }
 
-    assertTrue(elements.size() == 0);
+    assertEquals(0, elements.size());
   }
 
   private Content createContentHierarchy(final int numLevels,
                                          final Set<Content> flatSet) {
-    List<ContentBase> children = new LinkedList<ContentBase>();
+    List<ContentBase> children = new LinkedList<>();
 
     if (numLevels > 0) {
       Content child = createContentHierarchy(numLevels - 1, flatSet);
@@ -233,20 +228,4 @@ public class ContentIndexerTest {
         "", new LinkedList<>(), false, false, new HashSet<>(), 1);
   }
 
-  /**
-   * Helper method to construct the tests for the validateReferentialIntegrity
-   * method.
-   *
-   * @param content - Content object to be tested
-   * @return An instance of GitContentManager
-   */
-  private GitContentManager validateReferentialIntegrity_setUpTest(
-      Content content) {
-    reset(database, searchProvider);
-
-    Map<String, Content> contents = new TreeMap<String, Content>();
-    contents.put(INITIAL_VERSION, content);
-
-    return new GitContentManager(database, searchProvider, contentMapper);
-  }
 }
