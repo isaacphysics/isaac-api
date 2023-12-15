@@ -2,7 +2,7 @@
 -- Merge and Delete Users
 --
 -- Authors: Stephen Cummins, James Sharkey
--- Last Modified: 2020-08-12
+-- Last Modified: 2023-11-01
 --
 
 CREATE OR REPLACE FUNCTION mergeuser(targetuseridtokeep bigint, targetuseridtodelete bigint) RETURNS boolean
