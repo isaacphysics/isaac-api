@@ -17,9 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -77,6 +75,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_STRICT_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -504,13 +503,32 @@ public class UserAuthenticationManager {
      * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
-    public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                            final RegisteredUser user, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
+    public RegisteredUser createUserSessionWithCaveats(final HttpServletRequest request, final HttpServletResponse response,
+                                                       final RegisteredUser user, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
         this.createSession(request, response, user, authenticationCaveats, rememberMe);
         return user;
     }
 
-    /**
+    public RegisteredUser removeCaveatFromUserSession(final HttpServletRequest request, final HttpServletResponse response,
+                                            final RegisteredUser user,
+                                            final AuthenticationCaveat caveatToRemove) throws InvalidSessionException,
+            IOException {
+        Map<String, String> session = getSegueSessionFromRequest(request);
+        String caveats = session.get(SESSION_CAVEATS);
+
+        if (null == caveats) {
+            return null;
+        }
+
+        ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<ArrayList<String>>(){});
+        caveatFlags.remove(caveatToRemove.toString());
+        Set<AuthenticationCaveat> remainingCaveats = caveatFlags.stream().map(AuthenticationCaveat::valueOf).collect(Collectors.toSet());
+
+        // todo: check rememberMe behaviour
+        return this.createUserSessionWithCaveats(request, response, user, remainingCaveats, true);
+    }
+
+    /**;
      * Destroy a session attached to the request.
      * 
      * @param request

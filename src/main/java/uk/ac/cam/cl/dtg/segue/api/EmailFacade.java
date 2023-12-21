@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -223,12 +224,14 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Verify an email verification token is valid for use.")
-    public Response validateEmailVerificationRequest(@PathParam("userid") final Long userId,
+    public Response validateEmailVerificationRequest(@Context final HttpServletRequest request,
+                                                     @Context final HttpServletResponse response,
+                                                     @PathParam("userid") final Long userId,
                                                      @PathParam("token") final String token) {
 
         try {
             misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.getSimpleName());
-            userManager.processEmailVerification(userId, token);
+            userManager.processEmailVerification(request, response, userId, token);
 
             // todo: if direct teacher signup enabled:
             //  - we need to make any sure new cookies are issued without verification caveats

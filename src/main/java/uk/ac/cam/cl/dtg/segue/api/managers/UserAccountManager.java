@@ -51,24 +51,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidNameException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.UnknownCountryCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -647,11 +630,13 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws NoCredentialsAvailableException       - If the account exists but does not have a local password
      * @throws NoUserLoggedInException               - If the user hasn't completed the first step of the authentication process.
      * @throws SegueDatabaseException                - if there is a problem with the database.
+     * @throws IOException                           - if there is a problem updating the session caveats.
      */
     public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
                                              final Integer TOTPCode, final boolean rememberMe)
-            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException {
-        RegisteredUser registeredUser = this.retrieveCaveatLogin(request, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
+            throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, SegueDatabaseException, NoUserLoggedInException, IOException, InvalidSessionException {
+        RegisteredUser registeredUser = this.retrieveCaveatLogin(request,
+                Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
 
         if (registeredUser == null) {
             throw new NoUserLoggedInException();
@@ -660,8 +645,8 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUserDTO userToReturn = convertUserDOToUserDTO(registeredUser);
         this.secondFactorManager.authenticate2ndFactor(userToReturn, TOTPCode);
 
-        // replace cookie to no longer have caveat
-        return this.logUserIn(request, response, registeredUser, rememberMe);
+        return this.convertUserDOToUserDTO(userAuthenticationManager.removeCaveatFromUserSession(request, response, registeredUser,
+                AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
     }
 
     /**
@@ -1114,11 +1099,12 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser userToSave = new RegisteredUser();
         mergeMapper.map(existingUser, userToSave);
         mergeMapper.map(userDTOContainingUpdates, userToSave);
-        // Don't modify email verification status, registration date, or role
+        // Don't modify email verification status, registration date, role, or teacher account pending status
         userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
         userToSave.setRole(existingUser.getRole());
         userToSave.setLastUpdated(new Date());
+        userToSave.setTeacherAccountPending(existingUser.isTeacherAccountPending());
 
         if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
             userToSave.setSchoolId(null);
@@ -1363,7 +1349,8 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws InvalidTokenException  - if something is wrong with the token provided
      * @throws NoUserException        - if the user does not exist.
      */
-    public RegisteredUserDTO processEmailVerification(final Long userId, final String token)
+    public RegisteredUserDTO processEmailVerification(final HttpServletRequest request, final HttpServletResponse response,
+                                                      final Long userId, final String token)
             throws SegueDatabaseException, InvalidTokenException, NoUserException {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
@@ -1390,6 +1377,31 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         if (authenticator.isValidEmailVerificationToken(user, token)) {
+            // todo: this could potentially be it's own endpoint, which would match what we do for MFA but would make
+            //  things more complicated on the front-end
+            // If a direct-sign-up teacher user has just verified themselves, remove the caveat from their session
+            if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
+                    && user.getRole() == Role.TEACHER && user.isTeacherAccountPending()) {
+                try {
+                    RegisteredUserDTO currentUser = this.getCurrentPartiallyIdentifiedUser(request,
+                            Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+
+                    if (Objects.equals(currentUser.getId(), userId)) {
+                        // The logged-in user has verified themselves - update their session caveats
+                        userAuthenticationManager.removeCaveatFromUserSession(request, response, user,
+                                AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION);
+                    } else {
+                        log.debug("Logged-in user doesn't match user to verify, session caveats for logged-in user will" +
+                                "not be updated.");
+                    }
+                } catch (NoUserLoggedInException | InvalidSessionException e) {
+                    log.debug("No logged-in user for whom to update caveats.");
+                } catch (IOException e) {
+                    log.debug("Failed to update session caveats due to malformed session cookie.");
+                }
+            }
+
+            // Update and save user
             user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
             user.setEmail(user.getEmailToVerify());
             user.setEmailVerificationToken(null);
@@ -1397,10 +1409,10 @@ public class UserAccountManager implements IUserAccountManager {
             user.setLastUpdated(new Date());
             user.setTeacherAccountPending(false);
 
-            // Save user
             RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
             log.info(String.format("Email verification for user (%s) has completed successfully.",
                     createOrUpdateUser.getId()));
+
             return this.convertUserDOToUserDTO(createOrUpdateUser);
         } else {
             log.warn(String.format("Received an invalid email verification token for (%s) - invalid token", userId));
@@ -1627,7 +1639,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     private RegisteredUserDTO logUserInWithCaveats(final HttpServletRequest request, final HttpServletResponse response,
                                                    final RegisteredUser user, final boolean rememberMe, final Set<AuthenticationCaveat> caveats) {
-        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createIncompleteLoginUserSession(request, response, user, caveats, rememberMe));
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSessionWithCaveats(request, response, user, caveats, rememberMe));
     }
 
     /**

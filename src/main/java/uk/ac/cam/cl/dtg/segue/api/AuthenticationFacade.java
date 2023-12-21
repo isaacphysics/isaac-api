@@ -30,20 +30,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -555,11 +542,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             String errorMsg = "Internal Database error has occurred during mfa challenge.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (NoUserLoggedInException e) {
-            log.error("Unable to retrieve partial session information for MFA flow. "
-                    + "Maybe users' partial session expired?");
-            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login. "
-                    + "Your login session may have expired. Please enter your password again.");
+        } catch (IOException e) {
+            log.error("Unable to retrieve caveat session for 2FA login, failed to read malformed caveat information.");
+            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login - failed to read session " +
+                    "information. Please enter your password again.");
+        } catch (NoUserLoggedInException | InvalidSessionException e) {
+            log.error("Unable to retrieve caveat session for 2FA login, it may have expired.");
+            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login - your login session may " +
+                    "have expired. Please enter your password again.");
         }
     }
 }
