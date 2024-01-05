@@ -383,7 +383,11 @@ public class UserAccountManager implements IUserAccountManager {
                 userPreferenceManager.saveUserPreferences(userPreferences);
             }
 
-            return Response.ok(savedUser).build();
+            if (savedUser.getRole() == Role.TEACHER && Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
+            } else {
+                return Response.ok(savedUser).build();
+            }
         } catch (InvalidPasswordException e) {
             log.warn("Invalid password exception occurred during registration!");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();

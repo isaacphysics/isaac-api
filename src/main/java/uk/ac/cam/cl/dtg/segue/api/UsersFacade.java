@@ -258,8 +258,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
                 if (registeredUser.getRole() == Role.TEACHER && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
                     // For teacher sign-ups where teachers should not default to student role, use a caveat login until email is verified.
-                    userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
-                    return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
+                    return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
                 } else {
                     // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
                     return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
