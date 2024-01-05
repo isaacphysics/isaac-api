@@ -894,7 +894,8 @@ public class UserAccountManager implements IUserAccountManager {
    * This method will validate the session and will throw a NoUserLoggedInException if invalid.
    *
    * @param request - to retrieve session information from
-   * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
+   * @return Returns the current UserDTO if we can get it or throw a NoUserLoggedInException
+   *         if user is not currently logged in
    * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
    */
   public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)

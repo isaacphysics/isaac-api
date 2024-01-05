@@ -159,16 +159,6 @@ public abstract class IsaacIntegrationTest {
   // Services
   protected static AssignmentService assignmentService;
 
-  protected static class LoginResult {
-    public RegisteredUserDTO user;
-    public Cookie cookie;
-
-    public LoginResult(final RegisteredUserDTO user, final Cookie cookie) {
-      this.user = user;
-      this.cookie = cookie;
-    }
-  }
-
   @BeforeAll
   public static void setUpClass() {
     postgres = new PostgreSQLContainer<>("postgres:12")
@@ -202,7 +192,7 @@ public abstract class IsaacIntegrationTest {
             .withEnv("xpack.security.enabled", "true")
             .withEnv("ELASTIC_PASSWORD", "elastic")
             .withEnv("ingest.geoip.downloader.enabled", "false")
-                .withStartupTimeout(Duration.ofSeconds(120));
+            .withStartupTimeout(Duration.ofSeconds(120));
 
     postgres.start();
     elasticsearch.start();
@@ -262,7 +252,7 @@ public abstract class IsaacIntegrationTest {
 
     contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
     PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
-    questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
+    questionManager = new QuestionManager(contentMapper, pgQuestionAttempts, userPreferenceManager);
 
     mapperFacade = contentMapper.getAutoMapper();
 
@@ -393,5 +383,15 @@ public abstract class IsaacIntegrationTest {
     HttpServletRequest request = createNiceMock(HttpServletRequest.class);
     expect(request.getCookies()).andReturn(cookies).anyTimes();
     return request;
+  }
+
+  protected static class LoginResult {
+    public RegisteredUserDTO user;
+    public Cookie cookie;
+
+    public LoginResult(final RegisteredUserDTO user, final Cookie cookie) {
+      this.user = user;
+      this.cookie = cookie;
+    }
   }
 }

@@ -138,6 +138,219 @@ public class GameManager {
   }
 
   /**
+   * Get all questions in a piece of content. This method will conduct a DFS traversal and
+   * ensure the collection is ordered as per the DFS. Quick questions will be filtered out.
+   *
+   * @param content - results depend on each question having an id prefixed with the question page id.
+   * @return collection of markable question parts (questions).
+   */
+  public static List<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(final ContentDTO content) {
+    List<ContentDTO> dfs = Lists.newArrayList();
+    dfs = depthFirstQuestionSearch(content, dfs);
+
+    return filterQuestionParts(dfs);
+  }
+
+  /**
+   * Utility method to extract a list of questionDTOs only.
+   *
+   * @param contentToFilter list of content.
+   * @return list of question dtos.
+   */
+  private static List<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
+    List<QuestionDTO> results = Lists.newArrayList();
+    for (ContentDTO possibleQuestion : contentToFilter) {
+
+      if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
+        // we are not interested if this is not a question or if it is a quick question.
+        continue;
+      }
+      QuestionDTO question = (QuestionDTO) possibleQuestion;
+      results.add(question);
+    }
+
+    return results;
+  }
+
+  /**
+   * We want to list the questions in the order they are seen.
+   *
+   * @param c      - content to search
+   * @param result - the list of questions
+   * @return a list of questions ordered by DFS.
+   */
+  private static List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
+    if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
+      return result;
+    }
+
+    for (ContentBaseDTO child : c.getChildren()) {
+      if (child instanceof QuestionDTO) {
+        result.add((QuestionDTO) child);
+        // assume that we can't have nested questions
+      } else {
+        depthFirstQuestionSearch((ContentDTO) child, result);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
+   * <br>
+   * This method will decide what should be AND and what should be OR based on the field names used.
+   *
+   * @param gameFilter - filter object containing all the filter information used to make this board.
+   * @return A map ready to be passed to a content provider
+   */
+  private static List<GitContentManager.BooleanSearchClause> generateFieldToMatchForQuestionFilter(
+      final GameFilter gameFilter) {
+
+    // Validate that the field sizes are as we expect for tags
+    // Check that the query provided adheres to the rules we expect
+    if (!validateFilterQuery(gameFilter)) {
+      throw new IllegalArgumentException("Error validating filter query.");
+    }
+
+    List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+
+    // handle question categories
+    if (null != gameFilter.getQuestionCategories()) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+          TAGS_FIELDNAME, BooleanOperator.OR, gameFilter.getQuestionCategories()));
+    }
+
+    // Filter on content tags
+    List<String> tagAnds = Lists.newArrayList();
+    List<String> tagOrs = Lists.newArrayList();
+
+    // deal with tags which represent subjects, fields and topics
+    if (null != gameFilter.getSubjects()) {
+      if (gameFilter.getSubjects().size() > 1) {
+        tagOrs.addAll(gameFilter.getSubjects());
+      } else { // should be exactly 1
+        tagAnds.addAll(gameFilter.getSubjects());
+
+        // ok now we are allowed to look at the fields
+        if (null != gameFilter.getFields()) {
+          // If multiple fields are chosen, don't filter by field at all, unless there are no topics
+          // /!\ This was changed for the CS question finder, and doesn't break the PHY question finder
+          if (gameFilter.getFields().size() == 1) {
+            tagAnds.addAll(gameFilter.getFields());
+          } else if (null == gameFilter.getTopics()) {
+            tagOrs.addAll(gameFilter.getFields());
+          }
+          // Now we look at topics
+          if (null != gameFilter.getTopics()) {
+            if (gameFilter.getTopics().size() > 1) {
+              tagOrs.addAll(gameFilter.getTopics());
+            } else {
+              tagAnds.addAll(gameFilter.getTopics());
+            }
+          }
+        }
+      }
+    }
+
+    // deal with adding overloaded tags field for subjects, fields and topics
+    if (tagAnds.size() > 0) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.AND, tagAnds));
+    }
+    if (tagOrs.size() > 0) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.OR, tagOrs));
+    }
+
+    // now deal with levels
+    if (null != gameFilter.getLevels()) {
+      List<String> levelsAsStrings = Lists.newArrayList();
+      for (Integer levelInt : gameFilter.getLevels()) {
+        levelsAsStrings.add(levelInt.toString());
+      }
+      fieldsToMatch.add(
+          new GitContentManager.BooleanSearchClause(LEVEL_FIELDNAME, BooleanOperator.OR, levelsAsStrings));
+    }
+
+    // Handle the nested audience fields: stage, difficulty and examBoard
+    if (null != gameFilter.getStages()) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+          STAGE_FIELDNAME, BooleanOperator.OR, gameFilter.getStages()));
+    }
+    if (null != gameFilter.getDifficulties()) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+          DIFFICULTY_FIELDNAME, BooleanOperator.OR, gameFilter.getDifficulties()));
+    }
+    if (null != gameFilter.getExamBoards()) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+          EXAM_BOARD_FIELDNAME, BooleanOperator.OR, gameFilter.getExamBoards()));
+    }
+
+    // handle concepts
+    if (null != gameFilter.getConcepts()) {
+      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+          RELATED_CONTENT_FIELDNAME, BooleanOperator.OR, gameFilter.getConcepts()));
+    }
+
+    // handle exclusions
+    // exclude questions with no-filter tag
+    fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
+        Collections.singletonList(HIDE_FROM_FILTER_TAG)));
+
+    // exclude questions marked deprecated
+    fieldsToMatch.add(new GitContentManager.BooleanSearchClause(DEPRECATED_FIELDNAME, BooleanOperator.NOT,
+        Collections.singletonList("true")));
+
+    return fieldsToMatch;
+  }
+
+  /**
+   * Currently only validates subjects, fields and topics.
+   *
+   * @param gameFilter containing the following data: (1) subjects - multiple subjects are only ok if there are not any
+   *                   fields or topics (2) fields - you can have multiple fields if there is precisely one subject.
+   *                   (3) topics - you can have multiple topics if there is precisely one subject. (4) levels -
+   *                   currently not used for validation (5) concepts - currently not used for validation
+   * @return true if the query adheres to the rules specified, false if not.
+   */
+  private static boolean validateFilterQuery(final GameFilter gameFilter) {
+    if (null == gameFilter.getSubjects() && null == gameFilter.getFields() && null == gameFilter.getTopics()) {
+      return true;
+    } else if (null == gameFilter.getSubjects()
+        && (null != gameFilter.getFields() || null != gameFilter.getTopics())) {
+      log.warn("Error validating query: You cannot have a " + "null subject and still specify fields or topics.");
+      return false;
+    } else if (null != gameFilter.getSubjects()
+        && null == gameFilter.getFields() && null != gameFilter.getTopics()) {
+      log.warn("Error validating query: You cannot have a null field" + " and still specify subject and topics.");
+      return false;
+    }
+
+    // this variable indicates whether we have found a multiple term query
+    // already.
+    boolean foundMultipleTerms = false;
+
+    // Now check that the subjects are of the correct size
+    if (null != gameFilter.getSubjects() && !gameFilter.getSubjects().isEmpty()) {
+      if (gameFilter.getSubjects().size() > 1) {
+        foundMultipleTerms = true;
+      }
+    }
+
+    if (null != gameFilter.getFields() && !gameFilter.getFields().isEmpty()) {
+      if (foundMultipleTerms) {
+        log.warn("Error validating query: multiple subjects and fields specified.");
+        return false;
+      }
+    }
+
+    /* We don't check topics since it no longer matters if multiple fields are specified
+       (after CS question finder addition).
+       This doesn't change how the PHY question finder works, unless the user uses the URL to specify multiple fields
+     */
+
+    return true;
+  }
+
+  /**
    * This method expects only one of its 3 subject tag filter parameters to have more than one element due to
    * restrictions on the question filter interface.
    *
@@ -145,7 +358,7 @@ public class GameManager {
    * @param gameFilter Object representing the group of filters to use
    * @param boardOwner The user that should be marked as the creator of the gameBoard.
    * @return a gameboard if possible that satisfies the conditions provided by the parameters. Will return null if no
-   *     questions can be provided.
+   *         questions can be provided.
    * @throws NoWildcardException     - when we are unable to provide you with a wildcard object.
    * @throws SegueDatabaseException  - if there is an error contacting the database.
    * @throws ContentManagerException - if there is an error retrieving the content requested.
@@ -229,7 +442,7 @@ public class GameManager {
    * @param gameboardId - to look up.
    * @return the gameboard or null.
    * @throws SegueDatabaseException - if there is a problem retrieving the gameboard in the database or updating the
-   *                                      users gameboard link table.
+   *                                users gameboard link table.
    */
   public final GameboardDTO getGameboard(final String gameboardId) throws SegueDatabaseException {
     if (null == gameboardId || gameboardId.isEmpty()) {
@@ -247,7 +460,7 @@ public class GameManager {
    * @param userQuestionAttempts - so that we can augment the gameboard.
    * @return the gameboard or null.
    * @throws SegueDatabaseException  - if there is a problem retrieving the gameboard in the database or updating the
-   *                                       users gameboard link table.
+   *                                 users gameboard link table.
    * @throws ContentManagerException - if there is an error retrieving the content requested.
    */
   public final GameboardDTO getGameboard(
@@ -268,7 +481,7 @@ public class GameManager {
    * @param gameboardIds - to look up.
    * @return the gameboards or null.
    * @throws SegueDatabaseException - if there is a problem retrieving the gameboards in the database or updating the
-   *                                      users gameboards link table.
+   *                                users gameboards link table.
    */
   public final List<GameboardDTO> getGameboards(final List<String> gameboardIds) throws SegueDatabaseException {
     return this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
@@ -622,7 +835,6 @@ public class GameManager {
     return result;
   }
 
-
   /**
    * Find all wildcards.
    *
@@ -673,20 +885,6 @@ public class GameManager {
   }
 
   /**
-   * Get all questions in a piece of content. This method will conduct a DFS traversal and
-   * ensure the collection is ordered as per the DFS. Quick questions will be filtered out.
-   *
-   * @param content - results depend on each question having an id prefixed with the question page id.
-   * @return collection of markable question parts (questions).
-   */
-  public static List<QuestionDTO> getAllMarkableQuestionPartsDFSOrder(final ContentDTO content) {
-    List<ContentDTO> dfs = Lists.newArrayList();
-    dfs = depthFirstQuestionSearch(content, dfs);
-
-    return filterQuestionParts(dfs);
-  }
-
-  /**
    * Augments the gameboards with question attempt information AND whether or not the user has it in their boards.
    *
    * @param gameboardDTO             - the DTO of the gameboard.
@@ -710,7 +908,6 @@ public class GameManager {
 
     return gameboardDTO;
   }
-
 
   /**
    * Augments the gameboards with question attempt information NOT whether the user has it in their my board page.
@@ -785,50 +982,6 @@ public class GameManager {
           }
           return questionItem;
         }).collect(Collectors.toList());
-  }
-
-  /**
-   * Utility method to extract a list of questionDTOs only.
-   *
-   * @param contentToFilter list of content.
-   * @return list of question dtos.
-   */
-  private static List<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
-    List<QuestionDTO> results = Lists.newArrayList();
-    for (ContentDTO possibleQuestion : contentToFilter) {
-
-      if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
-        // we are not interested if this is not a question or if it is a quick question.
-        continue;
-      }
-      QuestionDTO question = (QuestionDTO) possibleQuestion;
-      results.add(question);
-    }
-
-    return results;
-  }
-
-  /**
-   * We want to list the questions in the order they are seen.
-   *
-   * @param c      - content to search
-   * @param result - the list of questions
-   * @return a list of questions ordered by DFS.
-   */
-  private static List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
-    if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
-      return result;
-    }
-
-    for (ContentBaseDTO child : c.getChildren()) {
-      if (child instanceof QuestionDTO) {
-        result.add((QuestionDTO) child);
-        // assume that we can't have nested questions
-      } else {
-        depthFirstQuestionSearch((ContentDTO) child, result);
-      }
-    }
-    return result;
   }
 
   /**
@@ -978,6 +1131,47 @@ public class GameManager {
     }
 
     return selectionOfGameboardQuestions;
+  }
+
+  /**
+   * This generates a set of question in random.
+   *
+   * @param gameFilter - to enable search
+   * @param limit      - to provide a limit of questions
+   * @return a list of questions
+   * @throws ContentManagerException - if there is a problem accessing the content repository.
+   */
+  public List<IsaacQuestionPageDTO> generateRandomQuestions(final GameFilter gameFilter, final int limit)
+      throws ContentManagerException {
+    // 4 is the number that limit is multiplied to make sure we have enough questions to return
+    // after filtering out superseded questions
+    final int limitMultiplier = 4;
+
+    List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+
+    fieldsToMap.add(new GitContentManager.BooleanSearchClause(TYPE_FIELDNAME, BooleanOperator.AND,
+        Collections.singletonList(QUESTION_TYPE)));
+
+    // exclude questions marked deprecated
+    fieldsToMap.add(new GitContentManager.BooleanSearchClause(DEPRECATED_FIELDNAME, BooleanOperator.NOT,
+        Collections.singletonList("true")));
+
+    fieldsToMap.addAll(generateFieldToMatchForQuestionFilter(gameFilter));
+
+    ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNamesRandomOrder(
+        fieldsToMap, 0, (limit * limitMultiplier));
+
+    List<ContentDTO> generatedQuestions = results.getResults();
+    List<IsaacQuestionPageDTO> questionsToReturn = generatedQuestions.stream()
+        .map(question -> (IsaacQuestionPageDTO) question)
+        .filter(qp -> qp.getSupersededBy() == null || qp.getSupersededBy().isEmpty())
+        .collect(Collectors.toList());
+
+    if (questionsToReturn.size() > limit) {
+      return questionsToReturn.subList(0, limit);
+    } else {
+      return questionsToReturn;
+    }
   }
 
   /**
@@ -1154,161 +1348,6 @@ public class GameManager {
     Content wildcardResults = this.contentManager.getContentDOById(id);
 
     return mapper.map(wildcardResults, IsaacWildcard.class);
-  }
-
-  /**
-   * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
-   * <br>
-   * This method will decide what should be AND and what should be OR based on the field names used.
-   *
-   * @param gameFilter - filter object containing all the filter information used to make this board.
-   * @return A map ready to be passed to a content provider
-   */
-  private static List<GitContentManager.BooleanSearchClause> generateFieldToMatchForQuestionFilter(
-      final GameFilter gameFilter) {
-
-    // Validate that the field sizes are as we expect for tags
-    // Check that the query provided adheres to the rules we expect
-    if (!validateFilterQuery(gameFilter)) {
-      throw new IllegalArgumentException("Error validating filter query.");
-    }
-
-    List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-
-    // handle question categories
-    if (null != gameFilter.getQuestionCategories()) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-          TAGS_FIELDNAME, BooleanOperator.OR, gameFilter.getQuestionCategories()));
-    }
-
-    // Filter on content tags
-    List<String> tagAnds = Lists.newArrayList();
-    List<String> tagOrs = Lists.newArrayList();
-
-    // deal with tags which represent subjects, fields and topics
-    if (null != gameFilter.getSubjects()) {
-      if (gameFilter.getSubjects().size() > 1) {
-        tagOrs.addAll(gameFilter.getSubjects());
-      } else { // should be exactly 1
-        tagAnds.addAll(gameFilter.getSubjects());
-
-        // ok now we are allowed to look at the fields
-        if (null != gameFilter.getFields()) {
-          // If multiple fields are chosen, don't filter by field at all, unless there are no topics
-          // /!\ This was changed for the CS question finder, and doesn't break the PHY question finder
-          if (gameFilter.getFields().size() == 1) {
-            tagAnds.addAll(gameFilter.getFields());
-          } else if (null == gameFilter.getTopics()) {
-            tagOrs.addAll(gameFilter.getFields());
-          }
-          // Now we look at topics
-          if (null != gameFilter.getTopics()) {
-            if (gameFilter.getTopics().size() > 1) {
-              tagOrs.addAll(gameFilter.getTopics());
-            } else {
-              tagAnds.addAll(gameFilter.getTopics());
-            }
-          }
-        }
-      }
-    }
-
-    // deal with adding overloaded tags field for subjects, fields and topics
-    if (tagAnds.size() > 0) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.AND, tagAnds));
-    }
-    if (tagOrs.size() > 0) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.OR, tagOrs));
-    }
-
-    // now deal with levels
-    if (null != gameFilter.getLevels()) {
-      List<String> levelsAsStrings = Lists.newArrayList();
-      for (Integer levelInt : gameFilter.getLevels()) {
-        levelsAsStrings.add(levelInt.toString());
-      }
-      fieldsToMatch.add(
-          new GitContentManager.BooleanSearchClause(LEVEL_FIELDNAME, BooleanOperator.OR, levelsAsStrings));
-    }
-
-    // Handle the nested audience fields: stage, difficulty and examBoard
-    if (null != gameFilter.getStages()) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-          STAGE_FIELDNAME, BooleanOperator.OR, gameFilter.getStages()));
-    }
-    if (null != gameFilter.getDifficulties()) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-          DIFFICULTY_FIELDNAME, BooleanOperator.OR, gameFilter.getDifficulties()));
-    }
-    if (null != gameFilter.getExamBoards()) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-          EXAM_BOARD_FIELDNAME, BooleanOperator.OR, gameFilter.getExamBoards()));
-    }
-
-    // handle concepts
-    if (null != gameFilter.getConcepts()) {
-      fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-          RELATED_CONTENT_FIELDNAME, BooleanOperator.OR, gameFilter.getConcepts()));
-    }
-
-    // handle exclusions
-    // exclude questions with no-filter tag
-    fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
-        Collections.singletonList(HIDE_FROM_FILTER_TAG)));
-
-    // exclude questions marked deprecated
-    fieldsToMatch.add(new GitContentManager.BooleanSearchClause(DEPRECATED_FIELDNAME, BooleanOperator.NOT,
-        Collections.singletonList("true")));
-
-    return fieldsToMatch;
-  }
-
-  /**
-   * Currently only validates subjects, fields and topics.
-   *
-   * @param gameFilter containing the following data: (1) subjects - multiple subjects are only ok if there are not any
-   *                   fields or topics (2) fields - you can have multiple fields if there is precisely one subject.
-   *                   (3) topics - you can have multiple topics if there is precisely one subject. (4) levels -
-   *                   currently not used for validation (5) concepts - currently not used for validation
-   * @return true if the query adheres to the rules specified, false if not.
-   */
-  private static boolean validateFilterQuery(final GameFilter gameFilter) {
-    if (null == gameFilter.getSubjects() && null == gameFilter.getFields() && null == gameFilter.getTopics()) {
-      return true;
-    } else if (null == gameFilter.getSubjects()
-        && (null != gameFilter.getFields() || null != gameFilter.getTopics())) {
-      log.warn("Error validating query: You cannot have a " + "null subject and still specify fields or topics.");
-      return false;
-    } else if (null != gameFilter.getSubjects()
-        && null == gameFilter.getFields() && null != gameFilter.getTopics()) {
-      log.warn("Error validating query: You cannot have a null field" + " and still specify subject and topics.");
-      return false;
-    }
-
-    // this variable indicates whether we have found a multiple term query
-    // already.
-    boolean foundMultipleTerms = false;
-
-    // Now check that the subjects are of the correct size
-    if (null != gameFilter.getSubjects() && !gameFilter.getSubjects().isEmpty()) {
-      if (gameFilter.getSubjects().size() > 1) {
-        foundMultipleTerms = true;
-      }
-    }
-
-    if (null != gameFilter.getFields() && !gameFilter.getFields().isEmpty()) {
-      if (foundMultipleTerms) {
-        log.warn("Error validating query: multiple subjects and fields specified.");
-        return false;
-      }
-    }
-
-    /* We don't check topics since it no longer matters if multiple fields are specified
-       (after CS question finder addition).
-       This doesn't change how the PHY question finder works, unless the user uses the URL to specify multiple fields
-     */
-
-    return true;
   }
 
   /**

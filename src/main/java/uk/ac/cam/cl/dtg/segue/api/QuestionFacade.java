@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.api;
 
+
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
@@ -45,12 +46,14 @@ import java.util.List;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
@@ -75,7 +78,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
@@ -88,35 +90,37 @@ import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 @Tag(name = "/questions")
 public class QuestionFacade extends AbstractSegueFacade {
   private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
-
   private final ContentMapper mapper;
+  private final GameManager gameManager;
   private final GitContentManager contentManager;
   private final String contentIndex;
   private final UserAccountManager userManager;
   private final QuestionManager questionManager;
   private final UserBadgeManager userBadgeManager;
   private final UserAssociationManager userAssociationManager;
-  private IMisuseMonitor misuseMonitor;
-  private IUserStreaksManager userStreaksManager;
+  private final IMisuseMonitor misuseMonitor;
+  private final IUserStreaksManager userStreaksManager;
 
   /**
    * @param properties             - the fully configured properties loader for the api.
    * @param mapper                 - The Content mapper object used for polymorphic mapping of content objects.
    * @param contentManager         - The content version controller used by the api.
+   * @param gameManager            - The manager object responsible for games.
    * @param contentIndex           - The index string for current content version
    * @param userManager            - The manager object responsible for users.
    * @param questionManager        - A question manager object responsible for managing questions and augmenting
-   *                                     questions with user information.
+   *                               questions with user information.
    * @param logManager             - An instance of the log manager used for recording usage of the CMS.
    * @param misuseMonitor          - An instance of the misuse monitor for rate limiting answer attempts
    * @param userBadgeManager       - An instance of the badge manager
    * @param userStreaksManager     - An instance of the streaks manager to notify users when their answer streak changes
    * @param userAssociationManager - An instance of the association manager to check for teacher permissions over other
-   *                                     users
+   *                               users
    */
   @Inject
   public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
-                        final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                        final GitContentManager contentManager, final GameManager gameManager,
+                        @Named(CONTENT_INDEX) final String contentIndex,
                         final UserAccountManager userManager, final QuestionManager questionManager,
                         final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                         final UserBadgeManager userBadgeManager, final IUserStreaksManager userStreaksManager,
@@ -126,6 +130,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     this.questionManager = questionManager;
     this.mapper = mapper;
     this.contentManager = contentManager;
+    this.gameManager = gameManager;
     this.contentIndex = contentIndex;
     this.userManager = userManager;
     this.misuseMonitor = misuseMonitor;
@@ -230,6 +235,41 @@ public class QuestionFacade extends AbstractSegueFacade {
       return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
           .toResponse();
     }
+  }
+
+  /**
+   * REST end point to provide five random questions.
+   *
+   * @param request  - this allows us to check to see if a user is currently logged in.
+   * @param subjects - a comma separated list of subjects
+   * @return a Response containing a gameboard object or containing a SegueErrorResponse.
+   */
+  @GET
+  @Path("/random")
+  @Produces(MediaType.APPLICATION_JSON)
+  @GZIP
+  public final Response getRandomQuestions(@Context final HttpServletRequest request,
+                                           @QueryParam("subjects") final String subjects) {
+    RegisteredUserDTO currentUser;
+
+    try {
+      currentUser = this.userManager.getCurrentRegisteredUser(request);
+    } catch (NoUserLoggedInException e) {
+      return SegueErrorResponse.getNotLoggedInResponse();
+    }
+
+    var filter = this.questionManager.createGameFilterForRandomQuestions(currentUser, subjects);
+
+    List<IsaacQuestionPageDTO> questions;
+    try {
+      questions = this.gameManager.generateRandomQuestions(filter, 5);
+    } catch (ContentManagerException e) {
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to generate questions")
+          .toResponse();
+    }
+
+    // Return the list of random questions as JSON
+    return Response.ok(questions).build();
   }
 
 

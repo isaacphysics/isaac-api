@@ -89,8 +89,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -108,17 +106,23 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizUserFeedbackDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 public class QuizFacadeIT extends IsaacIntegrationTest {
 
+  Date someFutureDate =
+      new Date(System.currentTimeMillis() + NUMBER_SECONDS_IN_ONE_DAY * NUMBER_MILLISECONDS_IN_SECOND);
+  Date somePastDate = new Date(System.currentTimeMillis() - NUMBER_SECONDS_IN_ONE_DAY * NUMBER_MILLISECONDS_IN_SECOND);
   private QuizFacade quizFacade;
+
+  private static String readSegueErrorMessage(Response errorResponse) {
+    return errorResponse.readEntity(SegueErrorResponse.class).getErrorMessage();
+  }
+
+  private static HttpServletRequest prepareAnonymousRequest() {
+    HttpServletRequest getQuizAssignmentRequest = createNiceMock(HttpServletRequest.class);
+    replay(getQuizAssignmentRequest);
+    return getQuizAssignmentRequest;
+  }
 
   @BeforeEach
   public void setUp() {
@@ -128,10 +132,82 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
             groupManager, quizAssignmentManager, assignmentService, quizAttemptManager, quizQuestionManager);
   }
 
-  Date someFutureDate =
-      new Date(System.currentTimeMillis() + NUMBER_SECONDS_IN_ONE_DAY * NUMBER_MILLISECONDS_IN_SECOND);
-  Date somePastDate = new Date(System.currentTimeMillis() - NUMBER_SECONDS_IN_ONE_DAY * NUMBER_MILLISECONDS_IN_SECOND);
+  /**
+   * As the integration tests do not currently support MFA login, we cannot use the normal login process and have to
+   * create cookies manually when testing admin accounts.
+   *
+   * @return a Cookie loaded with session information for the test admin user.
+   * @throws JsonProcessingException if the cookie serialisation fails
+   */
+  private Cookie createManualCookieForAdmin() throws JsonProcessingException {
+    SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+    String userId = String.valueOf(TEST_ADMIN_ID);
+    String hmacKey = properties.getProperty(HMAC_SALT);
+    int sessionExpiryTimeInSeconds = NUMBER_SECONDS_IN_FIVE_MINUTES;
 
+    Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
+    String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
+
+    Map<String, String> sessionInformation =
+        userAuthenticationManager.prepareSessionInformation(userId, "0", sessionExpiryDate, hmacKey, null);
+    return userAuthenticationManager.createAuthCookie(sessionInformation, sessionExpiryTimeInSeconds);
+  }
+
+  private HttpServletRequest prepareAdminRequest() {
+    try {
+      Cookie adminSessionCookie = createManualCookieForAdmin();
+      HttpServletRequest adminRequest = createRequestWithCookies(new Cookie[] {adminSessionCookie});
+      replay(adminRequest);
+      return adminRequest;
+    } catch (JsonProcessingException e) {
+      fail(e);
+      return null;
+    }
+  }
+
+  protected HttpServletRequest prepareUserRequest(String userEmail, String userPassword) {
+    try {
+      LoginResult userLogin = loginAs(httpSession, userEmail, userPassword);
+      HttpServletRequest userRequest = createRequestWithCookies(new Cookie[] {userLogin.cookie});
+      replay(userRequest);
+      return userRequest;
+    } catch (Exception e) {
+      fail(e);
+      return null;
+    }
+  }
+
+  private HttpServletRequest prepareTeacherRequest() {
+    return prepareUserRequest(TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+  }
+
+  private HttpServletRequest prepareStudentRequest() {
+    return prepareUserRequest(TEST_STUDENT_EMAIL, TEST_STUDENT_PASSWORD);
+  }
+
+  private HttpServletRequest prepareTeacherWhoIsNotGroupManagerRequest() {
+    return prepareUserRequest(DAVE_TEACHER_EMAIL, DAVE_TEACHER_PASSWORD);
+  }
+
+  private HttpServletRequest prepareTutorRequest() {
+    return prepareUserRequest(TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
+  }
+
+  private HttpServletRequest prepareStudentWithAssignmentsRequest() {
+    return prepareUserRequest(QUIZ_FACADE_TEST_STUDENT_2_WITH_ASSIGNMENTS_EMAIL,
+        QUIZ_FACADE_TEST_STUDENT_2_WITH_ASSIGNMENTS_PASSWORD);
+  }
+
+  private HttpServletRequest prepareStudentWithFreeAttemptRequest() {
+    return prepareUserRequest(QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_EMAIL,
+        QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_PASSWORD);
+  }
+
+  private HttpServletRequest prepareStudentWithNoExistingAttemptsRequest() {
+    return prepareUserRequest(QUIZ_FACADE_TEST_STUDENT_5_WITH_NO_EXISTING_ATTEMPTS_EMAIL,
+        QUIZ_FACADE_TEST_STUDENT_5_WITH_NO_EXISTING_ATTEMPTS_PASSWORD);
+  }
 
   @Nested
   class GetAvailableQuizzesEndpoint {
@@ -1413,6 +1489,24 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
   @Nested
   class StartQuizAttempt {
+    @Test
+    public void asStudent_withValidRequest_returnsQuizAttempt() {
+      HttpServletRequest startQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
+
+      try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
+          startQuizAttemptRequest, QUIZ_ASSIGNMENT_ID)) {
+
+        assertEquals(Response.Status.OK.getStatusCode(), startQuizAttemptResponse.getStatus());
+
+        QuizAttemptDTO responseBody = (QuizAttemptDTO) startQuizAttemptResponse.getEntity();
+        assertEquals(QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_ID, responseBody.getUserId());
+        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
+        assertEquals(QUIZ_ASSIGNMENT_ID, responseBody.getQuizAssignmentId());
+        assertNotNull(responseBody.getQuiz());
+        assertNotNull(responseBody.getQuizAssignment());
+      }
+    }
+
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
@@ -1502,28 +1596,28 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         }
       }
     }
-
-    @Test
-    public void asStudent_withValidRequest_returnsQuizAttempt() {
-      HttpServletRequest startQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
-
-      try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
-          startQuizAttemptRequest, QUIZ_ASSIGNMENT_ID)) {
-
-        assertEquals(Response.Status.OK.getStatusCode(), startQuizAttemptResponse.getStatus());
-
-        QuizAttemptDTO responseBody = (QuizAttemptDTO) startQuizAttemptResponse.getEntity();
-        assertEquals(QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_ID, responseBody.getUserId());
-        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
-        assertEquals(QUIZ_ASSIGNMENT_ID, responseBody.getQuizAssignmentId());
-        assertNotNull(responseBody.getQuiz());
-        assertNotNull(responseBody.getQuizAssignment());
-      }
-    }
   }
 
   @Nested
   class StartFreeQuizAttempt {
+    @Test
+    public void asStudent_withValidRequest_returnsQuizAttempt() {
+      HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
+
+      try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
+          startFreeQuizAttemptRequest, QUIZ_TEST_QUIZ_ID)) {
+
+        assertEquals(Response.Status.OK.getStatusCode(), startFreeQuizAttemptResponse.getStatus());
+
+        QuizAttemptDTO responseBody = (QuizAttemptDTO) startFreeQuizAttemptResponse.getEntity();
+        assertEquals(QUIZ_FACADE_TEST_STUDENT_5_WITH_NO_EXISTING_ATTEMPTS_ID, responseBody.getUserId());
+        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
+        assertNull(responseBody.getQuizAssignmentId());
+        assertNotNull(responseBody.getQuiz());
+        assertNull(responseBody.getQuizAssignment());
+      }
+    }
+
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
@@ -1616,28 +1710,28 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         }
       }
     }
-
-    @Test
-    public void asStudent_withValidRequest_returnsQuizAttempt() {
-      HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
-
-      try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
-          startFreeQuizAttemptRequest, QUIZ_TEST_QUIZ_ID)) {
-
-        assertEquals(Response.Status.OK.getStatusCode(), startFreeQuizAttemptResponse.getStatus());
-
-        QuizAttemptDTO responseBody = (QuizAttemptDTO) startFreeQuizAttemptResponse.getEntity();
-        assertEquals(QUIZ_FACADE_TEST_STUDENT_5_WITH_NO_EXISTING_ATTEMPTS_ID, responseBody.getUserId());
-        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
-        assertNull(responseBody.getQuizAssignmentId());
-        assertNotNull(responseBody.getQuiz());
-        assertNull(responseBody.getQuizAssignment());
-      }
-    }
   }
 
   @Nested
   class GetQuizAttempt {
+    @Test
+    public void validRequest_returnsQuizAttempt() {
+      HttpServletRequest getQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
+
+      try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
+          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_INCOMPLETE_ID)) {
+
+        assertEquals(Response.Status.OK.getStatusCode(), getQuizAttemptResponse.getStatus());
+
+        QuizAttemptDTO responseBody = (QuizAttemptDTO) getQuizAttemptResponse.getEntity();
+        assertEquals(QUIZ_FACADE_TEST_STUDENT_2_WITH_ASSIGNMENTS_ID, responseBody.getUserId());
+        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
+        assertEquals(QUIZ_ASSIGNMENT_SECOND_ID, responseBody.getQuizAssignmentId());
+        assertNotNull(responseBody.getQuiz());
+        assertNotNull(responseBody.getQuizAssignment());
+      }
+    }
+
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
@@ -1711,24 +1805,6 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
           String actualErrorMessage = readSegueErrorMessage(getQuizAttemptResponse);
           assertEquals("You have completed this test.", actualErrorMessage);
         }
-      }
-    }
-
-    @Test
-    public void validRequest_returnsQuizAttempt() {
-      HttpServletRequest getQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
-
-      try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
-          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_INCOMPLETE_ID)) {
-
-        assertEquals(Response.Status.OK.getStatusCode(), getQuizAttemptResponse.getStatus());
-
-        QuizAttemptDTO responseBody = (QuizAttemptDTO) getQuizAttemptResponse.getEntity();
-        assertEquals(QUIZ_FACADE_TEST_STUDENT_2_WITH_ASSIGNMENTS_ID, responseBody.getUserId());
-        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
-        assertEquals(QUIZ_ASSIGNMENT_SECOND_ID, responseBody.getQuizAssignmentId());
-        assertNotNull(responseBody.getQuiz());
-        assertNotNull(responseBody.getQuizAssignment());
       }
     }
   }
@@ -1907,6 +1983,38 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
   @Nested
   class CompleteQuizAttempt {
+    @Test
+    public void alreadyCompletedAttempt_isForbidden() {
+      HttpServletRequest completeQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
+
+      try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
+          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_COMPLETE_ID)) {
+
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), completeQuizAttemptResponse.getStatus());
+
+        String actualErrorMessage = readSegueErrorMessage(completeQuizAttemptResponse);
+        assertEquals("That test is already complete.", actualErrorMessage);
+      }
+    }
+
+    @Test
+    public void validRequest_returnsQuizAttempt() {
+      HttpServletRequest completeQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
+
+      try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
+          QUIZ_ASSIGNMENT_ATTEMPT_BOB_FOR_SET_COMPLETE_TEST_ID)) {
+
+        assertEquals(Response.Status.OK.getStatusCode(), completeQuizAttemptResponse.getStatus());
+
+        QuizAttemptDTO responseBody = (QuizAttemptDTO) completeQuizAttemptResponse.getEntity();
+        assertEquals(QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_ID, responseBody.getUserId());
+        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
+        assertEquals(QUIZ_ASSIGNMENT_FEEDBACK_MODE_ID, responseBody.getQuizAssignmentId());
+        assertNull(responseBody.getQuiz());
+        assertNull(responseBody.getQuizAssignment());
+      }
+    }
+
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
@@ -1963,38 +2071,6 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
           String actualErrorMessage = readSegueErrorMessage(completeQuizAttemptResponse);
           assertEquals("You cannot complete someone else's test.", actualErrorMessage);
         }
-      }
-    }
-
-    @Test
-    public void alreadyCompletedAttempt_isForbidden() {
-      HttpServletRequest completeQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
-
-      try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
-          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_COMPLETE_ID)) {
-
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), completeQuizAttemptResponse.getStatus());
-
-        String actualErrorMessage = readSegueErrorMessage(completeQuizAttemptResponse);
-        assertEquals("That test is already complete.", actualErrorMessage);
-      }
-    }
-
-    @Test
-    public void validRequest_returnsQuizAttempt() {
-      HttpServletRequest completeQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
-
-      try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
-          QUIZ_ASSIGNMENT_ATTEMPT_BOB_FOR_SET_COMPLETE_TEST_ID)) {
-
-        assertEquals(Response.Status.OK.getStatusCode(), completeQuizAttemptResponse.getStatus());
-
-        QuizAttemptDTO responseBody = (QuizAttemptDTO) completeQuizAttemptResponse.getEntity();
-        assertEquals(QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_ID, responseBody.getUserId());
-        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getQuizId());
-        assertEquals(QUIZ_ASSIGNMENT_FEEDBACK_MODE_ID, responseBody.getQuizAssignmentId());
-        assertNull(responseBody.getQuiz());
-        assertNull(responseBody.getQuizAssignment());
       }
     }
   }
@@ -2414,6 +2490,19 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
   @Nested
   class AbandonQuizAttempt {
+    @Test
+    public void validRequest_returnsNoContent() {
+      HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
+
+      try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
+          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_FREE_ID)) {
+
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), cancelQuizAttemptResponse.getStatus());
+
+        assertNull(cancelQuizAttemptResponse.getEntity());
+      }
+    }
+
     @Nested
     class MissingOrInvalidData {
       @Test
@@ -2488,23 +2577,23 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         }
       }
     }
-
-    @Test
-    public void validRequest_returnsNoContent() {
-      HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
-
-      try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
-          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_FREE_ID)) {
-
-        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), cancelQuizAttemptResponse.getStatus());
-
-        assertNull(cancelQuizAttemptResponse.getEntity());
-      }
-    }
   }
 
   @Nested
   class LogQuizSectionView {
+    @Test
+    public void validRequest_returnsNoContent() {
+      HttpServletRequest logQuizSectionViewRequest = prepareStudentWithAssignmentsRequest();
+
+      try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
+          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_INCOMPLETE_ID, 1)) {
+
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), logQuizSectionViewResponse.getStatus());
+
+        assertNull(logQuizSectionViewResponse.getEntity());
+      }
+    }
+
     @Nested
     class MissingOrInvalidData {
       @Test
@@ -2592,19 +2681,6 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
           String actualErrorMessage = readSegueErrorMessage(logQuizSectionViewResponse);
           assertEquals("This is not your test attempt.", actualErrorMessage);
         }
-      }
-    }
-
-    @Test
-    public void validRequest_returnsNoContent() {
-      HttpServletRequest logQuizSectionViewRequest = prepareStudentWithAssignmentsRequest();
-
-      try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
-          QUIZ_ASSIGNMENT_ATTEMPT_ALICE_INCOMPLETE_ID, 1)) {
-
-        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), logQuizSectionViewResponse.getStatus());
-
-        assertNull(logQuizSectionViewResponse.getEntity());
       }
     }
   }
@@ -2794,95 +2870,5 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         assertEquals(6, responseBody.size());
       }
     }
-  }
-
-  private static String readSegueErrorMessage(Response errorResponse) {
-    return errorResponse.readEntity(SegueErrorResponse.class).getErrorMessage();
-  }
-
-  private HttpServletRequest prepareUserRequest(String userEmail, String userPassword) {
-    try {
-      LoginResult userLogin = loginAs(httpSession, userEmail, userPassword);
-      HttpServletRequest userRequest = createRequestWithCookies(new Cookie[] {userLogin.cookie});
-      replay(userRequest);
-      return userRequest;
-    } catch (NoCredentialsAvailableException | NoUserException | SegueDatabaseException
-             | AuthenticationProviderMappingException | IncorrectCredentialsProvidedException
-             | AdditionalAuthenticationRequiredException | InvalidKeySpecException | NoSuchAlgorithmException
-             | MFARequiredButNotConfiguredException e) {
-      fail(e);
-      return null;
-    }
-  }
-
-  /**
-   * As the integration tests do not currently support MFA login, we cannot use the normal login process and have to
-   * create cookies manually when testing admin accounts.
-   *
-   * @return a Cookie loaded with session information for the test admin user.
-   * @throws JsonProcessingException if the cookie serialisation fails
-   */
-  private Cookie createManualCookieForAdmin() throws JsonProcessingException {
-    SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-    String userId = String.valueOf(TEST_ADMIN_ID);
-    String hmacKey = properties.getProperty(HMAC_SALT);
-    int sessionExpiryTimeInSeconds = NUMBER_SECONDS_IN_FIVE_MINUTES;
-
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
-    String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
-
-    Map<String, String> sessionInformation =
-        userAuthenticationManager.prepareSessionInformation(userId, "0", sessionExpiryDate, hmacKey, null);
-    return userAuthenticationManager.createAuthCookie(sessionInformation, sessionExpiryTimeInSeconds);
-  }
-
-  private HttpServletRequest prepareAdminRequest() {
-    try {
-      Cookie adminSessionCookie = createManualCookieForAdmin();
-      HttpServletRequest adminRequest = createRequestWithCookies(new Cookie[] {adminSessionCookie});
-      replay(adminRequest);
-      return adminRequest;
-    } catch (JsonProcessingException e) {
-      fail(e);
-      return null;
-    }
-  }
-
-  private HttpServletRequest prepareTeacherRequest() {
-    return prepareUserRequest(TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
-  }
-
-  private HttpServletRequest prepareTeacherWhoIsNotGroupManagerRequest() {
-    return prepareUserRequest(DAVE_TEACHER_EMAIL, DAVE_TEACHER_PASSWORD);
-  }
-
-  private HttpServletRequest prepareTutorRequest() {
-    return prepareUserRequest(TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
-  }
-
-  private HttpServletRequest prepareStudentRequest() {
-    return prepareUserRequest(TEST_STUDENT_EMAIL, TEST_STUDENT_PASSWORD);
-  }
-
-  private HttpServletRequest prepareStudentWithAssignmentsRequest() {
-    return prepareUserRequest(QUIZ_FACADE_TEST_STUDENT_2_WITH_ASSIGNMENTS_EMAIL,
-        QUIZ_FACADE_TEST_STUDENT_2_WITH_ASSIGNMENTS_PASSWORD);
-  }
-
-  private HttpServletRequest prepareStudentWithFreeAttemptRequest() {
-    return prepareUserRequest(QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_EMAIL,
-        QUIZ_FACADE_TEST_STUDENT_3_WITH_FREE_ATTEMPT_PASSWORD);
-  }
-
-  private HttpServletRequest prepareStudentWithNoExistingAttemptsRequest() {
-    return prepareUserRequest(QUIZ_FACADE_TEST_STUDENT_5_WITH_NO_EXISTING_ATTEMPTS_EMAIL,
-        QUIZ_FACADE_TEST_STUDENT_5_WITH_NO_EXISTING_ATTEMPTS_PASSWORD);
-  }
-
-  private static HttpServletRequest prepareAnonymousRequest() {
-    HttpServletRequest getQuizAssignmentRequest = createNiceMock(HttpServletRequest.class);
-    replay(getQuizAssignmentRequest);
-    return getQuizAssignmentRequest;
   }
 }

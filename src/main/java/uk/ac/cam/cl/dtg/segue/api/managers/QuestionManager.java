@@ -29,6 +29,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -39,16 +40,20 @@ import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -74,6 +79,7 @@ import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.util.QueryUtils;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -86,18 +92,101 @@ public class QuestionManager {
 
   private final ContentMapper mapper;
   private final IQuestionAttemptManager questionAttemptPersistenceManager;
+  private final AbstractUserPreferenceManager userPreferenceManager;
 
   /**
    * Create a default Question manager object.
    *
    * @param mapper                     - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs
-   *                                         and DTOs.
+   *                                   and DTOs.
    * @param questionPersistenceManager - for question attempt persistence.
+   * @param userPreferenceManager      - An instance of the Abstract User preference manager to check for user
+   *                                   preferences
    */
   @Inject
-  public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+  public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager,
+                         final AbstractUserPreferenceManager userPreferenceManager) {
     this.mapper = mapper;
     this.questionAttemptPersistenceManager = questionPersistenceManager;
+    this.userPreferenceManager = userPreferenceManager;
+  }
+
+  /**
+   * Reflection to try and determine the associated validator for the question being answered.
+   *
+   * @param questionType - the type of question being answered.
+   * @return a Validator
+   */
+  @SuppressWarnings("unchecked")
+  private static IValidator locateValidator(final Class<? extends Question> questionType) {
+    // check we haven't gone too high up the superclass tree
+    if (!Question.class.isAssignableFrom(questionType)) {
+      return null;
+    }
+
+    // Does this class have the correct annotation?
+    if (questionType.isAnnotationPresent(ValidatesWith.class)) {
+
+      log.debug("Validator for question validation found. Using : "
+          + questionType.getAnnotation(ValidatesWith.class).value());
+      Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
+      return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
+
+    } else if (questionType.equals(Question.class)) {
+      // so if we get here then we haven't found a ValidatesWith class, so
+      // we should just give up and return null.
+      return null;
+    }
+
+    // we will continue our search of the superclasses for the annotation
+    return locateValidator((Class<? extends Question>) questionType.getSuperclass());
+  }
+
+  /**
+   * Extract all of the question objects, recursively, from some content.
+   *
+   * @param content - The contentDTO which may have question objects as children.
+   * @return A list of QuestionDTO found in the content.
+   */
+  public static List<QuestionDTO> extractQuestionObjects(final ContentDTO content) {
+    return QuestionManager.extractQuestionObjectsRecursively(content,
+        new ArrayList<>());
+  }
+
+  /**
+   * Extract all of the questionObjectsRecursively.
+   *
+   * @param toExtract - The contentDTO which may have question objects as children.
+   * @param result    - The initially empty List which will be mutated to contain references to all of the question
+   *                  objects.
+   * @return The modified result array.
+   */
+  private static List<QuestionDTO> extractQuestionObjectsRecursively(final ContentDTO toExtract,
+                                                                     final List<QuestionDTO> result) {
+    if (toExtract instanceof QuestionDTO) {
+      // we found a question so add it to the list.
+      result.add((QuestionDTO) toExtract);
+    }
+
+    if (toExtract.getChildren() != null) {
+      // Go through each child in the content object.
+      for (ContentBaseDTO child : toExtract.getChildren()) {
+        if (child instanceof ContentDTO) {
+          // if it is not a question but it can have children then
+          // continue recursing.
+          ContentDTO childContent = (ContentDTO) child;
+          if (childContent.getChildren() != null) {
+            QuestionManager.extractQuestionObjectsRecursively(childContent, result);
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  public static String extractPageIdFromQuestionId(final String questionId) {
+    return questionId.split(Constants.ESCAPED_ID_SEPARATOR)[0];
   }
 
   /**
@@ -136,37 +225,6 @@ public class QuestionManager {
   }
 
   /**
-   * Reflection to try and determine the associated validator for the question being answered.
-   *
-   * @param questionType - the type of question being answered.
-   * @return a Validator
-   */
-  @SuppressWarnings("unchecked")
-  private static IValidator locateValidator(final Class<? extends Question> questionType) {
-    // check we haven't gone too high up the superclass tree
-    if (!Question.class.isAssignableFrom(questionType)) {
-      return null;
-    }
-
-    // Does this class have the correct annotation?
-    if (questionType.isAnnotationPresent(ValidatesWith.class)) {
-
-      log.debug("Validator for question validation found. Using : "
-          + questionType.getAnnotation(ValidatesWith.class).value());
-      Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-      return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
-
-    } else if (questionType.equals(Question.class)) {
-      // so if we get here then we haven't found a ValidatesWith class, so
-      // we should just give up and return null.
-      return null;
-    }
-
-    // we will continue our search of the superclasses for the annotation
-    return locateValidator((Class<? extends Question>) questionType.getSuperclass());
-  }
-
-  /**
    * Reflection to try and determine the associated specifier for the choice given.
    *
    * @param choiceClass - the type of choice given.
@@ -197,7 +255,6 @@ public class QuestionManager {
     return locateSpecifier((Class<? extends ChoiceDTO>) choiceClass.getSuperclass());
   }
 
-
   /**
    * This method will ensure any user question attempt information available is used to augment this question object.
    * <br>
@@ -206,7 +263,7 @@ public class QuestionManager {
    * Note: It will not do anything to related content
    *
    * @param page                  - to augment - this object may be mutated as a result of this method. i.e. BestAttempt
-   *                                    field set on question DTOs.
+   *                              field set on question DTOs.
    * @param userId                - to allow us to provide a per-user experience of question configuration (random seed)
    * @param usersQuestionAttempts - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
    * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
@@ -228,7 +285,7 @@ public class QuestionManager {
    * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
    *
    * @param page                  - the page this object may be mutated as a result of this method. i.e. BestAttempt
-   *                                    field set on question DTOs.
+   *                              field set on question DTOs.
    * @param questionsToAugment    - The flattened list of questions which should be augmented.
    * @param usersQuestionAttempts - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
    * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
@@ -272,7 +329,6 @@ public class QuestionManager {
     }
     return page;
   }
-
 
   /**
    * Converts a QuestionValidationResponse into a QuestionValidationResponseDTO.
@@ -480,49 +536,6 @@ public class QuestionManager {
   }
 
   /**
-   * Extract all of the question objects, recursively, from some content.
-   *
-   * @param content - The contentDTO which may have question objects as children.
-   * @return A list of QuestionDTO found in the content.
-   */
-  public static List<QuestionDTO> extractQuestionObjects(final ContentDTO content) {
-    return QuestionManager.extractQuestionObjectsRecursively(content,
-        new ArrayList<>());
-  }
-
-  /**
-   * Extract all of the questionObjectsRecursively.
-   *
-   * @param toExtract - The contentDTO which may have question objects as children.
-   * @param result    - The initially empty List which will be mutated to contain references to all of the question
-   *                        objects.
-   * @return The modified result array.
-   */
-  private static List<QuestionDTO> extractQuestionObjectsRecursively(final ContentDTO toExtract,
-                                                                     final List<QuestionDTO> result) {
-    if (toExtract instanceof QuestionDTO) {
-      // we found a question so add it to the list.
-      result.add((QuestionDTO) toExtract);
-    }
-
-    if (toExtract.getChildren() != null) {
-      // Go through each child in the content object.
-      for (ContentBaseDTO child : toExtract.getChildren()) {
-        if (child instanceof ContentDTO) {
-          // if it is not a question but it can have children then
-          // continue recursing.
-          ContentDTO childContent = (ContentDTO) child;
-          if (childContent.getChildren() != null) {
-            QuestionManager.extractQuestionObjectsRecursively(childContent, result);
-          }
-        }
-      }
-    }
-
-    return result;
-  }
-
-  /**
    * This is a helper method that will shuffle multiple choice questions and item questions
    * based on a user specified seed.
    *
@@ -595,10 +608,6 @@ public class QuestionManager {
         mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
   }
 
-  public static String extractPageIdFromQuestionId(final String questionId) {
-    return questionId.split(Constants.ESCAPED_ID_SEPARATOR)[0];
-  }
-
   public ChoiceDTO convertJsonAnswerToChoice(final String jsonAnswer) throws ErrorResponseWrapper {
     ChoiceDTO answerFromClientDTO;
     try {
@@ -618,5 +627,44 @@ public class QuestionManager {
       throw new ErrorResponseWrapper(error);
     }
     return answerFromClientDTO;
+  }
+
+  public GameFilter createGameFilterForRandomQuestions(final RegisteredUserDTO currentUser, final String subjects) {
+    GameFilter gameFilter = new GameFilter();
+
+    UserPreference filterQuestionsPreference = null;
+    try {
+      filterQuestionsPreference = this.userPreferenceManager.getUserPreference(
+          "DISPLAY_SETTING",
+          "HIDE_NON_AUDIENCE_CONTENT",
+          currentUser.getId());
+    } catch (SegueDatabaseException e) {
+      log.error("Error while getting user preferences", e);
+    }
+
+    if (filterQuestionsPreference != null && filterQuestionsPreference.getPreferenceValue()) {
+      var userContexts = currentUser.getRegisteredContexts();
+
+      List<String> subjectsList = QueryUtils.splitCsvStringQueryParam(subjects);
+      List<String> stagesList = new ArrayList<>();
+      List<String> examBoardsList = new ArrayList<>();
+
+      for (UserContext uc : userContexts) {
+        stagesList.add(uc.getStage().name());
+        examBoardsList.add(uc.getExamBoard().name());
+      }
+
+      gameFilter = new GameFilter(
+          subjectsList,
+          null,
+          null,
+          null,
+          null,
+          null,
+          stagesList,
+          null,
+          examBoardsList);
+    }
+    return gameFilter;
   }
 }

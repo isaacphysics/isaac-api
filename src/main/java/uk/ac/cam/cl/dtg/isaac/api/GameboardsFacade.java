@@ -82,6 +82,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.QueryUtils;
 
 /**
  * Games boards Facade.
@@ -93,21 +94,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
   private UserAccountManager userManager;
   private UserAssociationManager associationManager;
   private UserBadgeManager userBadgeManager;
-
   private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
   private final QuestionManager questionManager;
 
   private final FastTrackManger fastTrackManger;
 
   private static final String VALID_GAMEBOARD_ID_REGEX = "^[a-z0-9_-]+$";
-
-  private static List<String> splitCsvStringQueryParam(final String queryParamCsv) {
-    if (null != queryParamCsv && !queryParamCsv.isEmpty()) {
-      return Arrays.asList(queryParamCsv.split(","));
-    } else {
-      return null;
-    }
-  }
 
   /**
    * GamesFacade. For management of gameboards etc.
@@ -169,15 +161,15 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                                                    @QueryParam("levels") final String levels,
                                                    @QueryParam("concepts") final String concepts,
                                                    @QueryParam("questionCategories") final String questionCategories) {
-    List<String> subjectsList = splitCsvStringQueryParam(subjects);
-    List<String> fieldsList = splitCsvStringQueryParam(fields);
-    List<String> topicsList = splitCsvStringQueryParam(topics);
+    List<String> subjectsList = QueryUtils.splitCsvStringQueryParam(subjects);
+    List<String> fieldsList = QueryUtils.splitCsvStringQueryParam(fields);
+    List<String> topicsList = QueryUtils.splitCsvStringQueryParam(topics);
     List<Integer> levelsList = null;
-    List<String> stagesList = splitCsvStringQueryParam(stages);
-    List<String> difficultiesList = splitCsvStringQueryParam(difficulties);
-    List<String> examBoardsList = splitCsvStringQueryParam(examBoards);
-    List<String> conceptsList = splitCsvStringQueryParam(concepts);
-    List<String> questionCategoriesList = splitCsvStringQueryParam(questionCategories);
+    List<String> stagesList = QueryUtils.splitCsvStringQueryParam(stages);
+    List<String> difficultiesList = QueryUtils.splitCsvStringQueryParam(difficulties);
+    List<String> examBoardsList = QueryUtils.splitCsvStringQueryParam(examBoards);
+    List<String> conceptsList = QueryUtils.splitCsvStringQueryParam(concepts);
+    List<String> questionCategoriesList = QueryUtils.splitCsvStringQueryParam(questionCategories);
 
     if (null != levels && !levels.isEmpty()) {
       String[] levelsAsString = levels.split(",");
