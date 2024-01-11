@@ -36,7 +36,9 @@ public class PrometheusMetricsExporter implements IMetricsExporter {
    * @throws IOException could be thrown by the socket.
    */
   public PrometheusMetricsExporter(final int port) throws IOException {
-    HTTPServer server = new HTTPServer(port);
+    try (HTTPServer ignored = new HTTPServer(port)) {
+      log.info("Prometheus Metrics Exporter has been initialised on port {}", port);
+    }
   }
 
   @Override
