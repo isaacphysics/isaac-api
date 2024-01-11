@@ -32,6 +32,8 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.TutorManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import java.io.IOException;
+
 import static jakarta.ws.rs.core.Response.ok;
 
 
@@ -67,10 +69,13 @@ public class TutorFacade extends AbstractIsaacFacade {
     public final Response createNewTutorThread(
             @Context final Request request, @Context final HttpServletRequest httpServletRequest
     ) {
-        // TODO check the user is signed in
-
-        String threadId = tutorManager.createNewThread();
-        return ok(threadId).build();
+        try {
+            // TODO check the user is signed in
+            return ok(tutorManager.createNewThread()).build();
+        } catch (IOException e) {
+            log.error("Failed to create new tutor thread", e);
+            return Response.serverError().build();
+        }
     }
 
 }

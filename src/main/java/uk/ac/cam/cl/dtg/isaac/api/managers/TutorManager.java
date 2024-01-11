@@ -20,6 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.tutor.TutorExternalService;
 
+import java.io.IOException;
+import java.util.Map;
+
 public class TutorManager {
     private static final Logger log = LoggerFactory.getLogger(QuizManager.class);
 
@@ -30,7 +33,7 @@ public class TutorManager {
         this.tutorExternalService = tutorExternalService;
     }
 
-    public String createNewThread() {
+    public Map<String, Object> createNewThread() throws IOException {
         return tutorExternalService.createNewThread();
     }
 }
