@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.BYTES_IN_ONE_KILOBYTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ContentIndextype;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAXIMUM_CONTENT_ID_LENGTH;
@@ -34,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -569,7 +569,7 @@ public class ContentIndexer {
    */
   private synchronized void registerContentProblem(final Content c, final String message,
                                                    final Map<Content, List<String>> indexProblemCache) {
-    Validate.notNull(c);
+    requireNonNull(c);
 
     // try and make sure each dummy content object has a title
     if (c.getTitle() == null) {

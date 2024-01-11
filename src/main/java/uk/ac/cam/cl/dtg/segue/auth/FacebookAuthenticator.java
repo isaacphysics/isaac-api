@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
@@ -44,7 +46,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -262,7 +263,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
    * @return true if the token passes our validation false if not.
    */
   private boolean verifyAccessTokenIsValid(final Credential credentials) {
-    Validate.notNull(credentials, "Credentials cannot be null");
+    requireNonNull(credentials, "Credentials cannot be null");
 
     try {
       GenericUrl urlBuilder = new GenericUrl(TOKEN_VERIFICATION_URL);
@@ -273,8 +274,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
           FacebookTokenInfo.class, true);
       return info.getData().getAppId().equals(clientId) && info.getData().isValid();
     } catch (IOException e) {
-      log.error("IO error while trying to validate oauth2 security token.");
-      e.printStackTrace();
+      log.error("IO error while trying to validate oauth2 security token.", e);
     }
     return false;
   }

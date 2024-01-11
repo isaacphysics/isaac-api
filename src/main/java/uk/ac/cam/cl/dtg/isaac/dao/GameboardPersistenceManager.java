@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
@@ -53,7 +54,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import ma.glasnost.orika.MapperFacade;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
@@ -743,7 +743,7 @@ public class GameboardPersistenceManager {
    */
   private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
                                                     final boolean populateGameboardItems) {
-    Validate.notNull(gameboardDOs);
+    requireNonNull(gameboardDOs);
 
     List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
 

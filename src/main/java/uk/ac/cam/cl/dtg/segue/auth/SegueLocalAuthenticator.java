@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOGIN_INCORRECT_CREDENTIALS_MESSAGE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_REQUIREMENTS_ERROR_MESSAGE;
@@ -28,7 +29,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
@@ -156,8 +156,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
   @Override
   public RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken,
                                                             final String email) {
-    Validate.notNull(userToAttachVerificationToken);
-    Validate.notNull(email, "Email used for verification cannot be null");
+    requireNonNull(userToAttachVerificationToken);
+    requireNonNull(email, "Email used for verification cannot be null");
 
     // Generate HMAC
     String key = properties.getProperty(HMAC_SALT);
@@ -171,8 +171,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
   @Override
   public boolean isValidEmailVerificationToken(final RegisteredUser user, final String token) {
-    Validate.notNull(user);
-    Validate.notNull(token);
+    requireNonNull(user);
+    requireNonNull(token);
 
     String userToken = user.getEmailVerificationToken();
     if (userToken != null && userToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH).equals(token)) {
@@ -190,7 +190,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
   @Override
   public String createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
       throws SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
-    Validate.notNull(userToAttachToken);
+    requireNonNull(userToAttachToken);
 
     LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
     if (null == luc) {

@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NO_SESSION_TOKEN_RESERVED_VALUE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolInfoStatus;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
@@ -58,9 +59,6 @@ import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
-/**
- * @author Stephen Cummins
- */
 public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   private static final String POSTGRES_EXCEPTION_MESSAGE = "Postgres exception";
   private static final String JSONB_PROCESSING_ERROR_MESSAGE = "Postgres JSONb processing exception";
@@ -680,7 +678,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
   @Override
   public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
 
     String query = "UPDATE users SET last_seen = ? WHERE id = ?";
     try (Connection conn = database.getDatabaseConnection();
@@ -722,7 +720,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   @Override
   public void createSessionToken(final RegisteredUser user, final Integer sessionTokenValue)
       throws SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
 
     String query = "INSERT INTO user_session_token(user_id, session_token) VALUES (?, ?);";
     try (Connection conn = database.getDatabaseConnection();
@@ -745,7 +743,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   @Override
   public void updateSessionToken(final RegisteredUser user, final Integer newSessionTokenValue)
       throws SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
 
     String query = "UPDATE user_session_token SET session_token = ? WHERE user_id = ?";
     try (Connection conn = database.getDatabaseConnection();

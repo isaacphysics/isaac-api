@@ -1,11 +1,12 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import org.apache.commons.lang3.Validate;
 import org.isaacphysics.graphchecker.data.Input;
 import org.isaacphysics.graphchecker.dos.GraphAnswer;
 import org.isaacphysics.graphchecker.features.Features;
@@ -37,8 +38,8 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
 
   @Override
   public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-    Validate.notNull(question);
-    Validate.notNull(answer);
+    requireNonNull(question);
+    requireNonNull(answer);
 
     if (!(question instanceof IsaacGraphSketcherQuestion)) {
       throw new IllegalArgumentException(String.format(

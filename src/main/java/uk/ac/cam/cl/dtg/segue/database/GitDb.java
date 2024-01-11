@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.database;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 
@@ -111,7 +112,7 @@ public class GitDb {
    *            - The (probably mocked) Git object to use.
    */
   public GitDb(final Git gitHandle) {
-    Validate.notNull(gitHandle);
+    requireNonNull(gitHandle);
 
     this.privateKey = null;
     this.sshFetchUrl = null;
@@ -209,7 +210,7 @@ public class GitDb {
   public TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
       UnsupportedOperationException {
     Validate.notBlank(sha);
-    Validate.notNull(searchString);
+    requireNonNull(searchString);
 
     ObjectId commitId = gitHandle.getRepository().resolve(sha);
     if (null == commitId) {

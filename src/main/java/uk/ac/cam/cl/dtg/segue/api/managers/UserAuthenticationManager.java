@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static java.util.Objects.requireNonNull;
 import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_LAX_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_EXPIRES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
@@ -133,9 +134,9 @@ public class UserAuthenticationManager {
                                    final PropertiesLoader properties,
                                    final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                    final EmailManager emailQueue) {
-    Validate.notNull(properties.getProperty(HMAC_SALT));
-    Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-    Validate.notNull(properties.getProperty(HOST_NAME));
+    requireNonNull(properties.getProperty(HMAC_SALT));
+    requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+    requireNonNull(properties.getProperty(HOST_NAME));
 
     this.database = database;
 
@@ -272,7 +273,7 @@ public class UserAuthenticationManager {
    */
   public RegisteredUser getSegueUserFromLinkedAccount(final AuthenticationProvider provider, final String providerId)
       throws SegueDatabaseException {
-    Validate.notNull(provider);
+    requireNonNull(provider);
     Validate.notBlank(providerId);
 
     RegisteredUser user = database.getByLinkedAccount(provider, providerId);
@@ -300,7 +301,7 @@ public class UserAuthenticationManager {
       SegueDatabaseException, IncorrectCredentialsProvidedException,
       NoCredentialsAvailableException, InvalidKeySpecException, NoSuchAlgorithmException {
     Validate.notBlank(email);
-    Validate.notNull(plainTextPassword);
+    requireNonNull(plainTextPassword);
     IAuthenticator authenticator = mapToProvider(provider);
 
     if (authenticator instanceof IPasswordAuthenticator) {
@@ -338,7 +339,7 @@ public class UserAuthenticationManager {
   public RegisteredUser getUserFromSession(final HttpServletRequest request,
                                            final boolean allowIncompleteLoginsToReturnUser) {
     // WARNING: There are two public getUserFromSession methods: ensure you check both!
-    Validate.notNull(request);
+    requireNonNull(request);
 
     Map<String, String> currentSessionInformation;
     try {
@@ -383,7 +384,7 @@ public class UserAuthenticationManager {
    */
   public RegisteredUser getUserFromSession(final UpgradeRequest request) {
     // WARNING: There are two public getUserFromSession methods: ensure you check both!
-    Validate.notNull(request);
+    requireNonNull(request);
 
     Map<String, String> currentSessionInformation;
     try {
@@ -511,7 +512,7 @@ public class UserAuthenticationManager {
    */
   public void destroyUserSession(final HttpServletRequest request, final HttpServletResponse response)
       throws NoUserLoggedInException, SegueDatabaseException {
-    Validate.notNull(request);
+    requireNonNull(request);
     try {
       request.getSession().invalidate();
       invalidateSessionToken(request);
@@ -533,7 +534,7 @@ public class UserAuthenticationManager {
    */
   public void invalidateSessionToken(final HttpServletRequest request)
       throws NoUserLoggedInException, SegueDatabaseException {
-    Validate.notNull(request);
+    requireNonNull(request);
     RegisteredUser currentUser = this.getUserFromSession(request, false);
     if (null == currentUser) {
       throw new NoUserLoggedInException();
@@ -585,9 +586,9 @@ public class UserAuthenticationManager {
                                             final AuthenticationProvider federatedAuthenticator,
                                             final UserFromAuthProvider providerUserObject)
       throws SegueDatabaseException {
-    Validate.notNull(currentUser);
-    Validate.notNull(federatedAuthenticator);
-    Validate.notNull(providerUserObject);
+    requireNonNull(currentUser);
+    requireNonNull(federatedAuthenticator);
+    requireNonNull(providerUserObject);
 
     this.database.linkAuthProviderToAccount(currentUser, federatedAuthenticator,
         providerUserObject.getProviderUserId());
@@ -716,7 +717,7 @@ public class UserAuthenticationManager {
                                                       final Map<String, Object> additionalEmailValues)
       throws
       SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
 
     // Get the user's federated authenticators
     List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
@@ -814,7 +815,7 @@ public class UserAuthenticationManager {
    */
   private boolean ensureNoCSRF(final HttpServletRequest request, final IOAuthAuthenticator oauthProvider)
       throws CrossSiteRequestForgeryException {
-    Validate.notNull(request);
+    requireNonNull(request);
 
     String key;
     if (oauthProvider instanceof IOAuth2Authenticator) {
@@ -851,9 +852,9 @@ public class UserAuthenticationManager {
    */
   private void createSession(final HttpServletRequest request, final HttpServletResponse response,
                              final RegisteredUser user, final boolean partialLoginFlag) throws SegueDatabaseException {
-    Validate.notNull(response);
-    Validate.notNull(user);
-    Validate.notNull(user.getId());
+    requireNonNull(response);
+    requireNonNull(user);
+    requireNonNull(user.getId());
     int sessionExpiryTimeInSeconds =
         properties.getIntegerPropertyOrFallback(SESSION_EXPIRY_SECONDS_DEFAULT, SESSION_EXPIRY_SECONDS_FALLBACK);
 
@@ -913,8 +914,8 @@ public class UserAuthenticationManager {
    */
   public boolean isValidUsersSession(final Map<String, String> sessionInformation,
                                       final Integer sessionTokenFromDatabase) {
-    Validate.notNull(sessionInformation);
-    Validate.notNull(sessionTokenFromDatabase);
+    requireNonNull(sessionInformation);
+    requireNonNull(sessionTokenFromDatabase);
 
     SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 

@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAIL_FROM_ADDRESS;
@@ -228,8 +229,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                               final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType)
       throws SegueDatabaseException,
       ContentManagerException {
-    Validate.notNull(allSelectedUsers);
-    Validate.notNull(contentObjectId);
+    requireNonNull(allSelectedUsers);
+    requireNonNull(contentObjectId);
 
     EmailTemplateDTO emailContent = getEmailTemplateDTO(contentObjectId);
 
@@ -281,7 +282,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate,
                                      final List<RegisteredUserDTO> allSelectedUsers,
                                      final EmailType emailType) throws SegueDatabaseException, ContentManagerException {
-    Validate.notNull(allSelectedUsers);
+    requireNonNull(allSelectedUsers);
 
 
     int numberOfFilteredUsers = 0;
@@ -336,8 +337,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   private boolean filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
                                                    final EmailCommunicationMessage email)
       throws SegueDatabaseException {
-    Validate.notNull(email);
-    Validate.notNull(userDTO);
+    requireNonNull(email);
+    requireNonNull(userDTO);
 
     ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
         .put("userId", userDTO.getId())
@@ -596,7 +597,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
       final EmailTemplateDTO emailContent, final Properties contentProperties,
       final EmailType emailType, @Nullable final List<EmailAttachment> attachments)
       throws ContentManagerException, ResourceNotFoundException {
-    Validate.notNull(userEmail);
+    requireNonNull(userEmail);
     Validate.notEmpty(userEmail);
 
     // Ensure global properties are included, but in a safe manner (allow contentProperties to override globals!)

@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.inject.Inject;
 import java.security.SecureRandom;
 import java.util.List;
@@ -89,7 +91,7 @@ public class UserAssociationManager {
   public AssociationToken generateAssociationToken(final RegisteredUserDTO registeredUser,
                                                    final Long associatedGroupId)
       throws SegueDatabaseException, UserGroupNotFoundException {
-    Validate.notNull(registeredUser);
+    requireNonNull(registeredUser);
 
     if (associatedGroupId != null) {
       if (!userGroupManager.isValidGroup(associatedGroupId)) {
@@ -183,7 +185,7 @@ public class UserAssociationManager {
    */
   public AssociationToken lookupTokenDetails(final RegisteredUserDTO userMakingRequest, final String token)
       throws InvalidUserAssociationTokenException, SegueDatabaseException {
-    Validate.notNull(userMakingRequest);
+    requireNonNull(userMakingRequest);
     Validate.notBlank(token);
     AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 
@@ -236,7 +238,7 @@ public class UserAssociationManager {
   public AssociationToken createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
       throws SegueDatabaseException, InvalidUserAssociationTokenException {
     Validate.notBlank(token);
-    Validate.notNull(userGrantingPermission);
+    requireNonNull(userGrantingPermission);
 
     AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 
@@ -280,8 +282,8 @@ public class UserAssociationManager {
    */
   public void revokeAssociation(final RegisteredUserDTO ownerUser, final RegisteredUserDTO userToRevoke)
       throws SegueDatabaseException {
-    Validate.notNull(ownerUser);
-    Validate.notNull(userToRevoke);
+    requireNonNull(ownerUser);
+    requireNonNull(userToRevoke);
 
     associationDatabase.deleteAssociation(ownerUser.getId(), userToRevoke.getId());
   }
@@ -296,7 +298,7 @@ public class UserAssociationManager {
    */
   public void revokeAllAssociationsByOwnerUser(final RegisteredUserDTO ownerUser)
       throws SegueDatabaseException {
-    Validate.notNull(ownerUser);
+    requireNonNull(ownerUser);
 
     associationDatabase.deleteAssociationsByOwner(ownerUser.getId());
   }
@@ -311,7 +313,7 @@ public class UserAssociationManager {
    */
   public void revokeAllAssociationsByRecipientUser(final RegisteredUserDTO recipientUser)
       throws SegueDatabaseException {
-    Validate.notNull(recipientUser);
+    requireNonNull(recipientUser);
 
     associationDatabase.deleteAssociationsByRecipient(recipientUser.getId());
   }

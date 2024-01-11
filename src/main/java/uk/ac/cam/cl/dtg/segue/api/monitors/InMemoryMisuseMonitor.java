@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -76,11 +77,11 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
                                        final Integer adjustmentValue) throws SegueResourceMisuseException {
     Validate.notBlank(agentIdentifier);
     Validate.notBlank(eventLabel);
-    Validate.notNull(adjustmentValue);
+    requireNonNull(adjustmentValue);
     Validate.isTrue(adjustmentValue >= 0, "Expected positive integer value.");
 
     IMisuseHandler handler = handlerMap.get(eventLabel);
-    Validate.notNull(handler, "No handler has been registered for " + eventLabel);
+    requireNonNull(handler, "No handler has been registered for " + eventLabel);
 
     Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 

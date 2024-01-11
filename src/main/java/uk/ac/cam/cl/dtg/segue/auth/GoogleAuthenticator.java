@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -278,7 +280,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
    * @return true if the token passes our validation false if not.
    */
   private boolean verifyAccessTokenIsValid(final Credential credentials) {
-    Validate.notNull(credentials, "Credentials cannot be null");
+    requireNonNull(credentials, "Credentials cannot be null");
 
     Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credentials).setApplicationName(
         Constants.APPLICATION_NAME).build();
@@ -289,8 +291,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         return true;
       }
     } catch (IOException e) {
-      log.error("IO error while trying to validate oauth2 security token.");
-      e.printStackTrace();
+      log.error("IO error while trying to validate oauth2 security token.", e);
     }
     return false;
   }

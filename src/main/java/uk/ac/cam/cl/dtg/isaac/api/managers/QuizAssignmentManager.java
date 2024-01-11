@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
@@ -84,8 +85,8 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
   public QuizAssignmentDTO createAssignment(final QuizAssignmentDTO newAssignment)
       throws SegueDatabaseException, ContentManagerException {
     Validate.isTrue(newAssignment.getId() == null, "The id field must be empty.");
-    Validate.notNull(newAssignment.getQuizId());
-    Validate.notNull(newAssignment.getGroupId());
+    requireNonNull(newAssignment.getQuizId());
+    requireNonNull(newAssignment.getGroupId());
 
     Date now = new Date();
 

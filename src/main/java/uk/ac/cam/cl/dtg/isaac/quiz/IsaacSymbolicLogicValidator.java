@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.api.client.util.Maps;
@@ -25,7 +26,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.FormulaValidationResponse;
@@ -97,8 +97,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
   @Override
   public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer)
       throws ValidatorUnavailableException {
-    Validate.notNull(question);
-    Validate.notNull(answer);
+    requireNonNull(question);
+    requireNonNull(answer);
 
     validateQuestionType(question, answer);
 

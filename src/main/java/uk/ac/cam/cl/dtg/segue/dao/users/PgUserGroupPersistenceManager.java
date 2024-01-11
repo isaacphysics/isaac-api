@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
@@ -32,7 +34,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
@@ -105,7 +106,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
   @Override
   public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
-    Validate.notNull(group.getId());
+    requireNonNull(group.getId());
     if (group.getStatus() == null) {
       group.setStatus(GroupStatus.ACTIVE);
     }

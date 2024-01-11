@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
@@ -29,7 +30,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
@@ -79,8 +79,8 @@ public class GroupChangedService implements IGroupObserver {
 
   @Override
   public void onMemberAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO user) {
-    Validate.notNull(group);
-    Validate.notNull(user);
+    requireNonNull(group);
+    requireNonNull(user);
 
     // Try to email user to let them know
     try {
@@ -106,7 +106,7 @@ public class GroupChangedService implements IGroupObserver {
   private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO,
                                                                final UserGroupDTO userGroup)
       throws SegueDatabaseException, ContentManagerException {
-    Validate.notNull(userDTO);
+    requireNonNull(userDTO);
 
     UserSummaryWithEmailAddressDTO groupOwner = userGroup.getOwnerSummary();
     String groupOwnerName = getTeacherNameFromUser(groupOwner);
@@ -200,8 +200,8 @@ public class GroupChangedService implements IGroupObserver {
 
   @Override
   public void onAdditionalManagerAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO additionalManagerUser) {
-    Validate.notNull(group);
-    Validate.notNull(additionalManagerUser);
+    requireNonNull(group);
+    requireNonNull(additionalManagerUser);
 
     // Try to email user to let them know:
     try {
@@ -238,8 +238,8 @@ public class GroupChangedService implements IGroupObserver {
 
   @Override
   public void onAdditionalManagerPromotedToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner) {
-    Validate.notNull(group);
-    Validate.notNull(newOwner);
+    requireNonNull(group);
+    requireNonNull(newOwner);
 
     String groupName = "Unknown";
     if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
@@ -265,7 +265,7 @@ public class GroupChangedService implements IGroupObserver {
 
   @Override
   public void onAdditionalManagerPrivilegesChanged(final UserGroupDTO group) {
-    Validate.notNull(group);
+    requireNonNull(group);
 
     try {
       RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());

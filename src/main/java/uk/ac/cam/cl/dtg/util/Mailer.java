@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.util;
 
+import static java.util.Objects.requireNonNull;
+
 import jakarta.activation.DataHandler;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -149,7 +151,7 @@ public class Mailer {
   private Message setupMessage(final EmailCommonParameters emailCommonParameters) throws MessagingException {
     Validate.notEmpty(emailCommonParameters.getRecipient());
     Validate.notBlank(emailCommonParameters.getRecipient()[0]);
-    Validate.notNull(emailCommonParameters.getFromAddress());
+    requireNonNull(emailCommonParameters.getFromAddress());
 
     Properties p = new Properties();
 

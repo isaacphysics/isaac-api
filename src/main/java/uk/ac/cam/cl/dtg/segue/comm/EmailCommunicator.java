@@ -16,12 +16,13 @@
 
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import java.io.UnsupportedEncodingException;
-import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.EmailCommonParameters;
 import uk.ac.cam.cl.dtg.util.Mailer;
@@ -52,8 +53,8 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
                            @Named(Constants.MAILER_SMTP_PASSWORD) final String smtpPassword,
                            @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
                            @Named(Constants.MAIL_NAME) final String mailName) {
-    Validate.notNull(smtpAddress);
-    Validate.notNull(defaultFromAddress);
+    requireNonNull(smtpAddress);
+    requireNonNull(defaultFromAddress);
 
     this.defaultFromAddress = defaultFromAddress;
     this.mailName = mailName;

@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
@@ -128,8 +129,8 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
    */
   public AssignmentDTO createAssignment(final AssignmentDTO newAssignment) throws SegueDatabaseException {
     Validate.isTrue(newAssignment.getId() == null, "The id field must be empty.");
-    Validate.notNull(newAssignment.getGameboardId());
-    Validate.notNull(newAssignment.getGroupId());
+    requireNonNull(newAssignment.getGameboardId());
+    requireNonNull(newAssignment.getGroupId());
 
     if (assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(newAssignment.getGameboardId(),
         newAssignment.getGroupId()).size() != 0) {
@@ -165,7 +166,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
    * @throws SegueDatabaseException - if we cannot complete a required database operation.
    */
   public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
     return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getId());
   }
 
@@ -180,7 +181,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(
       final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture)
       throws SegueDatabaseException {
-    Validate.notNull(groups);
+    requireNonNull(groups);
     if (groups.isEmpty()) {
       return new ArrayList<>();
     }
@@ -204,8 +205,8 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
    * @throws SegueDatabaseException - if we cannot complete a required database operation.
    */
   public void deleteAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
-    Validate.notNull(assignment);
-    Validate.notNull(assignment.getId());
+    requireNonNull(assignment);
+    requireNonNull(assignment.getId());
     this.assignmentPersistenceManager.deleteAssignment(assignment.getId());
   }
 

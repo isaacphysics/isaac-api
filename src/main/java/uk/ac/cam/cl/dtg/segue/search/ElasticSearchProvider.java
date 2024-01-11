@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.search;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.SEARCH_MAX_WINDOW_SIZE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_MAX_WINDOW_SIZE;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
@@ -41,7 +42,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -310,8 +310,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 
   @Override
   public boolean hasIndex(final String indexBase, final String indexType) {
-    Validate.notNull(indexBase);
-    Validate.notNull(indexType);
+    requireNonNull(indexBase);
+    requireNonNull(indexType);
     String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
     try {
       return client.indices().exists(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT);

@@ -1,9 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.GOOGLE_RECAPTCHA_SECRET;
 
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ public class RecaptchaManager {
 
   @Inject
   public RecaptchaManager(final PropertiesLoader properties) {
-    Validate.notNull(properties.getProperty(GOOGLE_RECAPTCHA_SECRET));
+    requireNonNull(properties.getProperty(GOOGLE_RECAPTCHA_SECRET));
     this.properties = properties;
   }
 

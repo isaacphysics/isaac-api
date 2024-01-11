@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -367,7 +368,7 @@ public class PgEventBookings implements EventBookings {
 
   @Override
   public EventBooking findBookingById(final Long bookingId) throws SegueDatabaseException {
-    Validate.notNull(bookingId);
+    requireNonNull(bookingId);
 
     String query = "SELECT * FROM event_bookings WHERE id = ?";
     try (Connection conn = ds.getDatabaseConnection();
@@ -550,7 +551,7 @@ public class PgEventBookings implements EventBookings {
 
   @Override
   public Iterable<EventBooking> findAllByUserId(final Long userId) throws SegueDatabaseException {
-    Validate.notNull(userId);
+    requireNonNull(userId);
 
     String query = "SELECT * FROM event_bookings WHERE user_id = ?";
     try (Connection conn = ds.getDatabaseConnection();
@@ -572,7 +573,7 @@ public class PgEventBookings implements EventBookings {
 
   @Override
   public Iterable<EventBooking> findAllReservationsByUserId(final Long userId) throws SegueDatabaseException {
-    Validate.notNull(userId);
+    requireNonNull(userId);
 
     String query =
         "SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ? AND status != 'CANCELLED'";

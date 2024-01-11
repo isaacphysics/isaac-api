@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_USER;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
@@ -183,9 +184,9 @@ public class UserAccountManager implements IUserAccountManager {
                             final AbstractUserPreferenceManager userPreferenceManager,
                             final SchoolListReader schoolListReader) {
 
-    Validate.notNull(properties.getProperty(HMAC_SALT));
-    Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-    Validate.notNull(properties.getProperty(HOST_NAME));
+    requireNonNull(properties.getProperty(HMAC_SALT));
+    requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+    requireNonNull(properties.getProperty(HOST_NAME));
 
     this.properties = properties;
 
@@ -536,7 +537,7 @@ public class UserAccountManager implements IUserAccountManager {
                                    final List<UserContext> registeredUserContexts)
       throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
       NoSuchAlgorithmException {
-    Validate.notNull(userObjectFromClient.getId());
+    requireNonNull(userObjectFromClient.getId());
 
     // this is an update as the user has an id
     // security checks
@@ -668,7 +669,7 @@ public class UserAccountManager implements IUserAccountManager {
   public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
       throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
       InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException {
-    Validate.notNull(updatedUser.getId());
+    requireNonNull(updatedUser.getId());
 
     // We want to map to DTO first to make sure that the user cannot
     // change fields that aren't exposed to them
@@ -900,7 +901,7 @@ public class UserAccountManager implements IUserAccountManager {
    */
   public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
       throws NoUserLoggedInException {
-    Validate.notNull(request);
+    requireNonNull(request);
 
     RegisteredUser user = this.getCurrentRegisteredUserDO(request);
 
@@ -938,7 +939,7 @@ public class UserAccountManager implements IUserAccountManager {
    */
   public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
       throws SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
 
     UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
     if (userAuthenticationSettings != null) {
@@ -970,7 +971,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws SegueDatabaseException - if there is a database error.
    */
   public List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
-    Validate.notNull(userIds);
+    requireNonNull(userIds);
     if (userIds.isEmpty()) {
       return Lists.newArrayList();
     }
@@ -1064,7 +1065,7 @@ public class UserAccountManager implements IUserAccountManager {
    */
   public void logUserOut(final HttpServletRequest request, final HttpServletResponse response)
       throws NoUserLoggedInException, SegueDatabaseException {
-    Validate.notNull(request);
+    requireNonNull(request);
     this.userAuthenticationManager.destroyUserSession(request, response);
   }
 
@@ -1194,7 +1195,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws SegueDatabaseException - an exception when accessing the database
    */
   public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
-    Validate.notNull(requestedRole);
+    requireNonNull(requestedRole);
     RegisteredUser userToSave = this.findUserById(id);
 
     // Send welcome email if user has become teacher or tutor, otherwise, role change notification
@@ -1235,7 +1236,7 @@ public class UserAccountManager implements IUserAccountManager {
   public void updateUserEmailVerificationStatus(final String email,
                                                 final EmailVerificationStatus requestedEmailVerificationStatus)
       throws SegueDatabaseException {
-    Validate.notNull(requestedEmailVerificationStatus);
+    requireNonNull(requestedEmailVerificationStatus);
     RegisteredUser userToSave = this.findUserByEmail(email);
     if (null == userToSave) {
       log.warn(String.format(
@@ -1522,7 +1523,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @return a list of summarised objects with minimal personal information
    */
   public List<UserSummaryDTO> convertToUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
-    Validate.notNull(userListToConvert);
+    requireNonNull(userListToConvert);
     List<UserSummaryDTO> resultList = Lists.newArrayList();
     for (RegisteredUserDTO user : userListToConvert) {
       resultList.add(this.convertToUserSummaryObject(user));
@@ -1540,7 +1541,7 @@ public class UserAccountManager implements IUserAccountManager {
   public List<UserSummaryWithEmailAddressDTO> convertToDetailedUserSummaryObjectList(
       final List<RegisteredUserDTO> userListToConvert,
       final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTO) {
-    Validate.notNull(userListToConvert);
+    requireNonNull(userListToConvert);
     List<UserSummaryWithEmailAddressDTO> resultList = Lists.newArrayList();
     for (RegisteredUserDTO user : userListToConvert) {
       resultList.add(this.convertToUserSummary(user, detailedDTO));

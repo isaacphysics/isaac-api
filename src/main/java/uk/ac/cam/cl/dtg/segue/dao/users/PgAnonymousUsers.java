@@ -16,21 +16,19 @@
 
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
-import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
-/**
- * @author Stephen Cummins
- */
 public class PgAnonymousUsers implements IAnonymousUserDataManager {
   private final PostgresSqlDb database;
 
@@ -131,7 +129,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
    * @return user;
    */
   private AnonymousUser updateLastUpdatedDate(final AnonymousUser user) throws SegueDatabaseException {
-    Validate.notNull(user);
+    requireNonNull(user);
 
     String query = "UPDATE temporary_user_store SET last_updated = ? WHERE id = ?";
     try (Connection conn = database.getDatabaseConnection();

@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,7 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -375,8 +375,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
   public void mergeAnonymousQuestionInformationWithRegisteredUserRecord(final String anonymousUserId,
                                                                         final Long registeredUserId)
       throws SegueDatabaseException {
-    Validate.notNull(anonymousUserId, "Anonymous user must not be null when merging anonymousQuestion info");
-    Validate.notNull(registeredUserId, "Registered user must not be null when merging anonymousQuestion info");
+    requireNonNull(anonymousUserId, "Anonymous user must not be null when merging anonymousQuestion info");
+    requireNonNull(registeredUserId, "Registered user must not be null when merging anonymousQuestion info");
 
     Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = this
         .getAnonymousQuestionAttempts(anonymousUserId);
@@ -435,8 +435,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
   public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate, final Date toDate,
                                                                    final Long userId, final Boolean perDay)
       throws SegueDatabaseException {
-    Validate.notNull(fromDate);
-    Validate.notNull(toDate);
+    requireNonNull(fromDate);
+    requireNonNull(toDate);
 
     StringBuilder queryToBuild = new StringBuilder();
     queryToBuild.append("WITH filtered_attempts AS (SELECT * FROM question_attempts WHERE user_id = ?) ");

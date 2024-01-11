@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ALL_ACCEPTED_LOG_TYPES;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.LOG_EVENT;
 
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,10 +54,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 
-/**
- * @author sac92
- *
- */
 public class PgLogManager implements ILogManager {
   private static final Logger log = LoggerFactory.getLogger(PgLogManager.class);
 
@@ -87,7 +83,7 @@ public class PgLogManager implements ILogManager {
   @Override
   public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType,
                        final Object eventDetails) {
-    Validate.notNull(user);
+    requireNonNull(user);
     try {
       if (user instanceof RegisteredUserDTO) {
         this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,
@@ -107,7 +103,7 @@ public class PgLogManager implements ILogManager {
   @Override
   public void logExternalEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
                                final String eventType, final Object eventDetails) {
-    Validate.notNull(user);
+    requireNonNull(user);
     try {
       if (user instanceof RegisteredUserDTO) {
         this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
@@ -126,7 +122,7 @@ public class PgLogManager implements ILogManager {
 
   @Override
   public void logInternalEvent(final AbstractSegueUserDTO user, final LogType eventType, final Object eventDetails) {
-    Validate.notNull(user);
+    requireNonNull(user);
     try {
       if (user instanceof RegisteredUserDTO) {
         this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,
@@ -200,7 +196,7 @@ public class PgLogManager implements ILogManager {
                                                              final List<RegisteredUserDTO> usersOfInterest,
                                                              final boolean binDataByMonth)
       throws SegueDatabaseException {
-    Validate.notNull(eventTypes);
+    requireNonNull(eventTypes);
 
     List<String> usersIdsList = Lists.newArrayList();
     if (usersOfInterest != null) {
@@ -334,8 +330,8 @@ public class PgLogManager implements ILogManager {
   private Map<Date, Long> getLogsCountByMonthFilteredByUserAndType(final String type, final Date fromDate,
                                                                    final Date toDate, final Collection<String> userIds)
       throws SegueDatabaseException {
-    Validate.notNull(fromDate);
-    Validate.notNull(toDate);
+    requireNonNull(fromDate);
+    requireNonNull(toDate);
 
     StringBuilder queryToBuild = new StringBuilder();
     queryToBuild.append("WITH filtered_logs AS (SELECT * FROM logged_events WHERE event_type=?");

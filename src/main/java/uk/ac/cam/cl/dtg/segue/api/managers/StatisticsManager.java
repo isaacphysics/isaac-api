@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
@@ -55,7 +56,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -328,7 +328,7 @@ public class StatisticsManager implements IStatisticsManager {
   @Override
   public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
       SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
-    Validate.notNull(schoolId);
+    requireNonNull(schoolId);
 
     List<RegisteredUserDTO> users;
 
@@ -400,7 +400,7 @@ public class StatisticsManager implements IStatisticsManager {
   @Override
   public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
       throws SegueDatabaseException, ContentManagerException {
-    Validate.notNull(userOfInterest);
+    requireNonNull(userOfInterest);
 
     UserQuestionInformation userQuestionInformation = new UserQuestionInformation();
 
@@ -566,7 +566,7 @@ public class StatisticsManager implements IStatisticsManager {
       final Collection<String> eventTypes,
       final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
       final boolean binDataByMonth) throws SegueDatabaseException {
-    Validate.notNull(eventTypes);
+    requireNonNull(eventTypes);
 
     return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, userList, binDataByMonth);
   }

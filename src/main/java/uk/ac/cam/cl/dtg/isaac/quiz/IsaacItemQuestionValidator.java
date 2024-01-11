@@ -16,13 +16,14 @@
 
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
@@ -41,8 +42,8 @@ public class IsaacItemQuestionValidator implements IValidator {
 
   @Override
   public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-    Validate.notNull(question);
-    Validate.notNull(answer);
+    requireNonNull(question);
+    requireNonNull(answer);
 
     if (!(question instanceof IsaacItemQuestion)) {
       throw new IllegalArgumentException(String.format(
