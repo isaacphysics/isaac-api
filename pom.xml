@@ -29,7 +29,7 @@
         <netty.version>4.1.97.Final</netty.version>
         <dependency-check.version>8.4.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <jgit.version>6.6.1.202309021850-r</jgit.version>
+        <jgit.version>6.8.0.202311291450-r</jgit.version>
     </properties>
 
     <repositories>
