@@ -28,8 +28,11 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.TutorManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
+import static jakarta.ws.rs.core.Response.ok;
 
 
 /**
@@ -40,6 +43,8 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 public class TutorFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(QuizFacade.class);
 
+    private final TutorManager tutorManager;
+
     /**
      * TutorFacade.
      *
@@ -49,16 +54,23 @@ public class TutorFacade extends AbstractIsaacFacade {
      *            - the log manager.
      */
     @Inject
-    public TutorFacade(final AbstractConfigLoader properties, final ILogManager logManager) {
+    public TutorFacade(final AbstractConfigLoader properties, final ILogManager logManager,
+                       final TutorManager tutorManager) {
         super(properties, logManager);
+        this.tutorManager = tutorManager;
     }
 
     @POST
     @Path("/threads")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new tutor thread")
-    public final Response createATutorThread(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+    public final Response createNewTutorThread(
+            @Context final Request request, @Context final HttpServletRequest httpServletRequest
+    ) {
+        // TODO check the user is signed in
+
+        String threadId = tutorManager.createNewThread();
+        return ok(threadId).build();
     }
 
 }

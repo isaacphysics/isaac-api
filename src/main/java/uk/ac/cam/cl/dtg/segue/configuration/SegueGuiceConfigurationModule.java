@@ -67,6 +67,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
+import uk.ac.cam.cl.dtg.isaac.tutor.TutorExternalService;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.CountryLookupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountManager;
@@ -1266,6 +1267,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             log.info("Creating Singleton AssignmentManager");
         }
         return assignmentManager;
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    private static TutorExternalService getTutorExternalService(AbstractConfigLoader properties) {
+        return new TutorExternalService(
+                properties.getProperty(Constants.TUTOR_SERVICE_HOST),
+                properties.getProperty(Constants.TUTOR_SERVICE_PORT)
+        );
     }
 
     /**
