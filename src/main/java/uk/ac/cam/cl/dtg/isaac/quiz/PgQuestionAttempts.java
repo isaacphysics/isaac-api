@@ -464,6 +464,25 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         }
     }
 
+    @Override
+    public ArrayList<String> getQuestionIdsForUser(final Long userId) throws SegueDatabaseException {
+        String query = "SELECT question_id FROM question_attempts WHERE user_id = ? AND correct = TRUE;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query)
+        ) {
+            pst.setLong(1, userId);
+            try (ResultSet results = pst.executeQuery()) {
+                ArrayList<String> arrayToReturn = new ArrayList<>();
+                while (results.next()) {
+                    arrayToReturn.add(results.getString(1));
+                }
+                return arrayToReturn;
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
     private LightweightQuestionValidationResponse resultsToLightweightValidationResponse(final ResultSet results) throws SQLException {
         LightweightQuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
 

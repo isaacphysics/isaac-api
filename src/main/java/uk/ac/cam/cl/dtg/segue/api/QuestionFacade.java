@@ -178,10 +178,10 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Return a count of question attempts per month.")
     public Response getQuestionsAnswered(@Context final HttpServletRequest request,
-                                      @PathParam("user_id") final Long userIdOfInterest,
-                                      @QueryParam("from_date") final Long fromDate,
-                                      @QueryParam("to_date") final Long toDate,
-                                      @QueryParam("per_day") final Boolean perDay) {
+                                         @PathParam("user_id") final Long userIdOfInterest,
+                                         @QueryParam("from_date") final Long fromDate,
+                                         @QueryParam("to_date") final Long toDate,
+                                         @QueryParam("per_day") final Boolean perDay) {
         try {
 
             if (null == fromDate || null == toDate) {
@@ -226,6 +226,44 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * Get the IDs of all questions attempted by a user
+     *
+     * @param request - the incoming request
+     * @param userIdOfInterest - The user id that the query is focused on
+     * @return a list of strings containing question ids
+     */
+    @GET
+    @Path("answered_question_ids/{user_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Return a list of IDs of all questions attempted by a user.")
+    public Response getQuestionsAnswered(@Context final HttpServletRequest request,
+                                         @PathParam("user_id") final Long userIdOfInterest) {
+        try {
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+
+            RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userIdOfInterest);
+            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+
+            // decide if the user is allowed to view this data. If user isn't viewing their own data, user viewing
+            // must have a valid connection with the user of interest and be at least a teacher.
+            if (!currentUser.getId().equals(userIdOfInterest)
+                    && !userAssociationManager.hasTeacherPermission(currentUser, userOfInterestSummaryObject)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            return Response.ok(this.questionManager.getUserQuestionAttemptIds(userOfInterest))
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.").toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to look up user event history for user " + userIdOfInterest, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
+                    .toResponse();
+        }
+    }
 
     /**
      * Record that a user has answered a question.

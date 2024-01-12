@@ -491,6 +491,10 @@ public class QuestionManager {
         return result;
     }
 
+    public ArrayList<String> getUserQuestionAttemptIds(final RegisteredUserDTO user) throws SegueDatabaseException {
+        return this.questionAttemptPersistenceManager.getQuestionIdsForUser(user.getId());
+    }
+
     /**
      * Extract all of the question objects, recursively, from some content.
      *

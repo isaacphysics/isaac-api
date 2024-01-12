@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -141,4 +142,6 @@ public interface IQuestionAttemptManager {
      */
     Map<Date, Long> getQuestionAttemptCountForUserByDateRange(Date fromDate, Date toDate,
                                                               Long userId, Boolean perDay) throws SegueDatabaseException;
+
+    ArrayList<String> getQuestionIdsForUser(Long userId) throws SegueDatabaseException;
 }
