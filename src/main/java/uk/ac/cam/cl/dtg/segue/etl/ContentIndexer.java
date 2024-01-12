@@ -215,7 +215,8 @@ public class ContentIndexer {
                     content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 
                     // check if we only want to index published content
-                    if (!includeUnpublished && !content.getPublished()) {
+                    boolean contentPublished = content.getPublished() != null && content.getPublished();
+                    if (!includeUnpublished && !contentPublished) {
                         log.debug("Skipping unpublished content: " + content.getId());
                         continue;
                     }
@@ -357,7 +358,7 @@ public class ContentIndexer {
      * @return Content object with new reference
      */
     private Content augmentChildContent(final Content content, final String canonicalSourceFile,
-            @Nullable final String parentId, final boolean parentPublished) {
+            @Nullable final String parentId, final Boolean parentPublished) {
         if (null == content) {
             return null;
         }
@@ -625,7 +626,7 @@ public class ContentIndexer {
         }
 
         allUnits.putAll(newUnits);
-        if (q.getPublished()) {
+        if (q.getPublished() != null && q.getPublished()) {
             publishedUnits.putAll(newUnits);
         }
     }
@@ -701,7 +702,7 @@ public class ContentIndexer {
                             "id", e.getKey().getId() == null ? "" : e.getKey().getId(),
                             "title", e.getKey().getTitle() == null ? "" : e.getKey().getTitle(),
                             // "tags", c.getTags(), // TODO: Add tags
-                            "published", e.getKey().getPublished() == null ? "" : e.getKey().getPublished(),
+                            "published", e.getKey().getPublished() != null && e.getKey().getPublished(),
                             "errors", e.getValue().toArray()));
                 } catch (JsonProcessingException jsonProcessingException) {
                     log.error("Unable to serialise content error entry from file: " + e.getKey().getCanonicalSourceFile());
@@ -800,7 +801,9 @@ public class ContentIndexer {
             Content refTarget = contentById.get(refTargetId);
             if (refTarget != null) {
                 for (Content refSrc : incomingReferences.get(refTargetId)) {
-                    if (refSrc.getPublished() && !refTarget.getPublished()) {
+                    boolean srcPublished = refSrc.getPublished() != null && refSrc.getPublished();
+                    boolean targetPublished = refTarget.getPublished() != null && refTarget.getPublished();
+                    if (srcPublished && !targetPublished) {
                         this.registerContentProblem(refSrc, "Content is published, "
                                 + "but references unpublished content '" + refTargetId + "'.", indexProblemCache);
                     }
