@@ -19,9 +19,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.isaac.tutor.TutorExternalService;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class TutorManager {
@@ -39,8 +41,8 @@ public class TutorManager {
         return mapper.readValue(json, Map.class);
     }
 
-    public Map<String, Object> createNewThread() throws IOException {
-        return tutorExternalService.createNewThread();
+    public Map<String, Object> createNewThread(final List<UserContext> registeredContexts) throws IOException {
+        return tutorExternalService.createNewThread(registeredContexts);
     }
 
     public Map<String, Object> getThreadMessages(final String threadId) throws IOException {

@@ -34,6 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.TutorManager;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
@@ -52,6 +55,7 @@ public class TutorFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(QuizFacade.class);
 
     private final TutorManager tutorManager;
+    private final UserAccountManager userManager;
 
     /**
      * TutorFacade.
@@ -63,9 +67,10 @@ public class TutorFacade extends AbstractIsaacFacade {
      */
     @Inject
     public TutorFacade(final AbstractConfigLoader properties, final ILogManager logManager,
-                       final TutorManager tutorManager) {
+                       final TutorManager tutorManager, final UserAccountManager userManager) {
         super(properties, logManager);
         this.tutorManager = tutorManager;
+        this.userManager = userManager;
     }
 
     @POST
@@ -73,11 +78,14 @@ public class TutorFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Create a new tutor thread")
-    public final Response createNewTutorThread() {
+    public final Response createNewTutorThread(@Context final HttpServletRequest request) {
         try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             // TODO check the user is signed in
-            return ok(tutorManager.createNewThread()).build();
-        } catch (IOException e) {
+            return ok(tutorManager.createNewThread(user.getRegisteredContexts())).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }  catch (IOException e) {
             log.error("Failed to create new tutor thread", e);
             return Response.serverError().build();
         }

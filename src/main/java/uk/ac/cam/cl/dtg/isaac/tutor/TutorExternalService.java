@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.tutor;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -27,10 +28,12 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TutorExternalService {
@@ -91,8 +94,12 @@ public class TutorExternalService {
         this.externalTutorUrl = "http://" + this.hostname + ":" + this.port;
     }
 
-    public Map<String, Object> createNewThread() throws IOException {
-        return getResponseFromExternalService(this.externalTutorUrl + "/threads", "POST");
+    public Map<String, Object> createNewThread(final List<UserContext> registeredContexts) throws IOException {
+        UserContext preferredUserContext = registeredContexts.get(0);
+        Map<String, String> requestBody = ImmutableMap.of(
+                "stage", preferredUserContext != null ? preferredUserContext.getStage().toString() : (String) null);
+
+        return getResponseFromExternalService(this.externalTutorUrl + "/threads", "POST", requestBody);
     }
 
     public Map<String, Object> getThreadMessages(final String threadId) throws IOException {
