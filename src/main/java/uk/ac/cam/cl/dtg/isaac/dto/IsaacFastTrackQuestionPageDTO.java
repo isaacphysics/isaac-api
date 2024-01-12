@@ -16,10 +16,13 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+
 /**
  * IsaacFastTrackQuestion Page DTO.
  *
  */
+@JsonContentType("isaacFastTrackQuestionPage")
 public class IsaacFastTrackQuestionPageDTO extends IsaacQuestionPageDTO {
 
 }

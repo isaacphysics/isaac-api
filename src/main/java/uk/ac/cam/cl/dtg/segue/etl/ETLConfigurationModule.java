@@ -4,6 +4,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONFIG_LOCATION_SYSTEM_PROPER
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_CONFIG_LOCATION_ENVIRONMENT_PROPERTY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_CONFIG_LOCATION_NOT_SPECIFIED_MESSAGE;
+import static uk.ac.cam.cl.dtg.util.ReflectionUtils.getClasses;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -16,9 +17,9 @@ import com.google.inject.name.Names;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Set;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -116,8 +117,8 @@ class ETLConfigurationModule extends AbstractModule {
   @Singleton
   private static ContentMapper getContentMapper() {
     if (null == mapper) {
-      Reflections r = new Reflections("uk.ac.cam.cl.dtg");
-      mapper = new ContentMapper(r);
+      Set<Class<?>> c = getClasses("uk.ac.cam.cl.dtg");
+      mapper = new ContentMapper(c);
     }
     return mapper;
   }

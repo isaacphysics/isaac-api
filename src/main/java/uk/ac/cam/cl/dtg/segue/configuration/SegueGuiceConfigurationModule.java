@@ -37,6 +37,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.RASPBERRYPI_OAUTH_SCOPES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_CONFIG_LOCATION_ENVIRONMENT_PROPERTY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_CONFIG_LOCATION_NOT_SPECIFIED_MESSAGE;
+import static uk.ac.cam.cl.dtg.util.ReflectionUtils.getClasses;
+import static uk.ac.cam.cl.dtg.util.ReflectionUtils.getSubTypes;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,6 +64,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -70,7 +73,6 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.quartz.SchedulerException;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
@@ -224,7 +226,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   private static IGroupObserver groupObserver = null;
 
   private static Collection<Class<? extends ServletContextListener>> contextListeners;
-  private static final Map<String, Reflections> REFLECTIONS = com.google.common.collect.Maps.newHashMap();
+  private static final Map<String, Set<Class<?>>> classesByPackage = new HashMap<>();
 
   /**
    * A setter method that is mostly useful for testing. It populates the global properties static value if it has not
@@ -582,7 +584,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   @Singleton
   private static ContentMapper getContentMapper() {
     if (null == mapper) {
-      mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg"));
+      Set<Class<?>> c = getClasses("uk.ac.cam.cl.dtg");
+      mapper = new ContentMapper(c);
       log.info("Creating Singleton of the Content Mapper");
     }
 
@@ -1228,12 +1231,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
    * @param pkg - class name to use as key
    * @return reflections.
    */
-  public static Reflections getReflectionsClass(final String pkg) {
-    if (!REFLECTIONS.containsKey(pkg)) {
-      log.info(String.format("Caching reflections scan on '%s'", pkg));
-      REFLECTIONS.put(pkg, new Reflections(pkg));
-    }
-    return REFLECTIONS.get(pkg);
+  public static Set<Class<?>> getPackageClasses(final String pkg) {
+    return classesByPackage.computeIfAbsent(pkg, key -> {
+      log.info(String.format("Caching reflections scan on '%s'", key));
+      return getClasses(key);
+    });
   }
 
   /**
@@ -1246,11 +1248,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     if (null == contextListeners) {
       contextListeners = Lists.newArrayList();
 
-      Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue")
-          .getSubTypesOf(ServletContextListener.class);
+      Set<Class<? extends ServletContextListener>> subTypes =
+          getSubTypes(getPackageClasses("uk.ac.cam.cl.dtg.segue"), ServletContextListener.class);
 
-      Set<Class<? extends ServletContextListener>> etlSubTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue.etl")
-          .getSubTypesOf(ServletContextListener.class);
+      Set<Class<? extends ServletContextListener>> etlSubTypes =
+          getSubTypes(getPackageClasses("uk.ac.cam.cl.dtg.segue.etl"), ServletContextListener.class);
 
       subTypes.removeAll(etlSubTypes);
 

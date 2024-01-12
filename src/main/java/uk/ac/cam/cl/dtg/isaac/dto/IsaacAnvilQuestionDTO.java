@@ -16,12 +16,14 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.AnvilAppDTO;
 
 /**
  * @author sac92
  *
  */
+@JsonContentType("isaacAnvilQuestion")
 public class IsaacAnvilQuestionDTO extends IsaacQuestionBaseDTO {
   private AnvilAppDTO anvilApp;
 

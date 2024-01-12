@@ -26,14 +26,16 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import org.reflections.Reflections;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -82,17 +84,17 @@ public class ContentMapper {
   /**
    * Alternative constructor that will attempt to search for valid types to pre-register.
    *
-   * @param configuredReflectionClass - string representing the parent package to search for content classes.
-   *                                        e.g. uk.ac.cam.cl.dtg.segue
+   * @param classes - series of classes contained within the parent package to search for content classes.
    */
-  @SuppressWarnings("unchecked")
-  public ContentMapper(final Reflections configuredReflectionClass) {
+  public ContentMapper(final Collection<Class<?>> classes) {
     this();
-    requireNonNull(configuredReflectionClass);
+    requireNonNull(classes);
+    Validate.notEmpty(classes);
 
     // We need to pre-register different content objects here for the
     // auto-mapping to work
-    Set<Class<?>> annotated = configuredReflectionClass.getTypesAnnotatedWith(JsonContentType.class);
+    Set<Class<?>> annotated = classes.stream().filter(c -> c.isAnnotationPresent(JsonContentType.class)).collect(
+        Collectors.toSet());
 
     for (Class<?> classToAdd : annotated) {
       if (Content.class.isAssignableFrom(classToAdd)) {
