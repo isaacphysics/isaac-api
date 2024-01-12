@@ -26,23 +26,11 @@
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <netty.version>4.1.97.Final</netty.version>
         <dependency-check.version>8.4.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
         <jgit.version>6.8.0.202311291450-r</jgit.version>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>jgit-repository</id>
-            <url>https://repo.eclipse.org/content/groups/releases/</url>
-        </repository>
-        <repository>
-            <id>central</id>
-            <name>Maven Central</name>
-            <url>https://repo1.maven.org/maven2/</url>
-        </repository>
-    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.isaacphysics.thirdparty</groupId>
@@ -155,12 +143,6 @@
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-oauth2</artifactId>
             <version>v2-rev20200213-2.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -383,8 +365,8 @@
 
         <!-- Graph checker code -->
         <dependency>
-            <artifactId>isaac-graph-checker-library</artifactId>
             <groupId>org.isaacphysics</groupId>
+            <artifactId>isaac-graph-checker-library</artifactId>
             <version>1.1.2</version>
             <exclusions>
                 <exclusion>
@@ -415,13 +397,6 @@
             <version>${ossindex.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>${netty.version}</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -445,18 +420,6 @@
                     <scope>runtime</scope>
                 </configuration>
             </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -625,13 +588,6 @@
     <!-- When doing dependency updates, please make sure these are still necessary, and remove them if not -->
     <dependencyManagement>
         <dependencies>
-
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-core</artifactId>
-                <version>3.8.8</version>
-            </dependency>
-
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-smile</artifactId>
