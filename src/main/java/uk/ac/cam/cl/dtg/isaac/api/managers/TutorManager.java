@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,25 @@ public class TutorManager {
         this.tutorExternalService = tutorExternalService;
     }
 
+    private Map<String, String> deserialiseSimpleJSON(final String json) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, Map.class);
+    }
+
     public Map<String, Object> createNewThread() throws IOException {
         return tutorExternalService.createNewThread();
+    }
+
+    public Map<String, Object> getThreadMessages(final String threadId) throws IOException {
+        return tutorExternalService.getThreadMessages(threadId);
+    }
+
+    public Map<String, Object> addMessageToThread(final String threadId, final String jsonMessage) throws IOException {
+        Map<String, String> message = deserialiseSimpleJSON(jsonMessage);
+        return tutorExternalService.addMessageToThread(threadId, message);
+    }
+
+    public Map<String, Object> getRun(final String threadId, final String runId) throws IOException {
+        return tutorExternalService.getRun(threadId, runId);
     }
 }

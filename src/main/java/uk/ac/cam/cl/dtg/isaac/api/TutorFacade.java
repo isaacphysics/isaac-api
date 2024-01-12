@@ -19,20 +19,26 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.TutorManager;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static jakarta.ws.rs.core.Response.ok;
 
@@ -65,15 +71,67 @@ public class TutorFacade extends AbstractIsaacFacade {
     @POST
     @Path("/threads")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
     @Operation(summary = "Create a new tutor thread")
-    public final Response createNewTutorThread(
-            @Context final Request request, @Context final HttpServletRequest httpServletRequest
-    ) {
+    public final Response createNewTutorThread() {
         try {
             // TODO check the user is signed in
             return ok(tutorManager.createNewThread()).build();
         } catch (IOException e) {
             log.error("Failed to create new tutor thread", e);
+            return Response.serverError().build();
+        }
+    }
+
+    @GET
+    @Path("/threads/{threadId}/messages")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Retrieve thread's messages")
+    public final Response retrieveMessages(@PathParam("threadId") final String threadId) {
+        try {
+            // TODO check the user is signed in and owns the thread
+            return ok(tutorManager.getThreadMessages(threadId)).build();
+        } catch (IOException e) {
+            log.error("Failed to retrieve tutor messages", e);
+            return Response.serverError().build();
+        }
+    }
+
+    @POST
+    @Path("/threads/{threadId}/messages")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Add a message to a thread")
+    public final Response addMessageToThread(@PathParam("threadId") final String threadId, final String jsonMessage) {
+        try {
+            if (null == jsonMessage || jsonMessage.isEmpty()) {
+                return new SegueErrorResponse(Response.Status.BAD_REQUEST, "No message received.").toResponse();
+            }
+
+            // TODO check the user is signed in and owns the thread
+
+            return ok(tutorManager.addMessageToThread(threadId, jsonMessage)).build();
+        } catch (IOException e) {
+            log.error("Failed to send message to tutor", e);
+            return Response.serverError().build();
+        }
+    }
+
+    @GET
+    @Path("/threads/{threadId}/runs/{runId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Retrieve a thread's run status")
+    public final Response retrieveRun(
+            @PathParam("threadId") final String threadId, @PathParam("runId") final String runId
+    ) {
+        try {
+            // TODO check the user is signed in and owns the thread
+            return ok(tutorManager.getRun(threadId, runId)).build();
+        } catch (IOException e) {
+            log.error("Failed to check assistant status", e);
             return Response.serverError().build();
         }
     }

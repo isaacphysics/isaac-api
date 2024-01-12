@@ -78,6 +78,11 @@ public class TutorExternalService {
 
         return response;
     }
+    private HashMap<String, Object> getResponseFromExternalService(final String externalServiceUrl, final String method)
+            throws IOException
+    {
+        return getResponseFromExternalService(externalServiceUrl, method, null);
+    }
 
 
     public TutorExternalService(final String hostname, final String port) {
@@ -87,7 +92,19 @@ public class TutorExternalService {
     }
 
     public Map<String, Object> createNewThread() throws IOException {
-        return getResponseFromExternalService(this.externalTutorUrl + "/threads", "POST", null);
+        return getResponseFromExternalService(this.externalTutorUrl + "/threads", "POST");
+    }
+
+    public Map<String, Object> getThreadMessages(final String threadId) throws IOException {
+        return getResponseFromExternalService(this.externalTutorUrl + "/threads/" + threadId + "/messages", "GET");
+    }
+
+    public Map<String, Object> addMessageToThread(final String threadId, final Map<String, String> message) throws IOException {
+        return getResponseFromExternalService(this.externalTutorUrl + "/threads/" + threadId + "/messages", "POST", message);
+    }
+
+    public Map<String, Object> getRun(final String threadId, final String runId) throws IOException {
+        return getResponseFromExternalService(this.externalTutorUrl + "/threads/" + threadId + "/runs/" + runId, "GET");
     }
 
 }
