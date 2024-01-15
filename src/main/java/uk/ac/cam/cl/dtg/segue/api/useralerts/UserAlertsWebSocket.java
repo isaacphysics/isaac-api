@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -57,22 +56,21 @@ public class UserAlertsWebSocket implements IAlertListener {
     static final Set<String> ACCEPTED_MESSAGES = Sets.newHashSet(HEARTBEAT, USER_SNAPSHOT_NUDGE);
   }
 
-  private UserAccountManager userManager;
-  private UserAuthenticationManager userAuthenticationManager;
+  private final UserAccountManager userManager;
+  private final UserAuthenticationManager userAuthenticationManager;
   private RegisteredUserDTO connectedUser;
   private final IUserAlerts userAlerts;
-  private final ILogManager logManager;
   private final IStatisticsManager statisticsManager;
   private final PropertiesLoader properties;
   private Session session;
-  private static ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
   // operations on the user sets of websockets are unsafe unless used with the matching user lock.
-  private static Map<Long, Set<UserAlertsWebSocket>> unsafeConnectedSockets = Maps.newConcurrentMap();
+  private static final Map<Long, Set<UserAlertsWebSocket>> unsafeConnectedSockets = Maps.newConcurrentMap();
   private static final int MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS = 200;
   // If we move to supporting connections across multiple APIs, we could use postgres for a distributed lock.
-  private static Striped<Lock> userLocks = Striped.lazyWeakLock(MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS);
+  private static final Striped<Lock> userLocks = Striped.lazyWeakLock(MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS);
 
   private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
 
@@ -102,7 +100,6 @@ public class UserAlertsWebSocket implements IAlertListener {
    * @param userManager               - to get user information for the connected socket
    * @param userAuthenticationManager - to get the user from the session
    * @param userAlerts                - to get/update persisted user alerts
-   * @param logManager                - so that we can log events for users
    * @param statisticsManager         - to get user statistics
    * @param properties                - instance of properties loader
    */
@@ -110,14 +107,12 @@ public class UserAlertsWebSocket implements IAlertListener {
   public UserAlertsWebSocket(final UserAccountManager userManager,
                              final UserAuthenticationManager userAuthenticationManager,
                              final IUserAlerts userAlerts,
-                             final ILogManager logManager,
                              final IStatisticsManager statisticsManager,
                              final PropertiesLoader properties) {
 
     this.userManager = userManager;
     this.userAuthenticationManager = userAuthenticationManager;
     this.userAlerts = userAlerts;
-    this.logManager = logManager;
     this.statisticsManager = statisticsManager;
     this.properties = properties;
   }

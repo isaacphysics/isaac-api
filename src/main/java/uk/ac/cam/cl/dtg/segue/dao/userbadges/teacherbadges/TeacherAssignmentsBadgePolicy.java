@@ -4,26 +4,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.util.Iterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePolicy;
 
-/**
- * Created by du220 on 01/05/2018.
- */
 public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
+  private static final Logger log = LoggerFactory.getLogger(TeacherAssignmentsBadgePolicy.class);
 
   private final AssignmentManager assignmentManager;
-  private final GameManager gameManager;
 
-  public TeacherAssignmentsBadgePolicy(final AssignmentManager assignmentManager,
-                                       final GameManager gameManager) {
+  public TeacherAssignmentsBadgePolicy(final AssignmentManager assignmentManager) {
     this.assignmentManager = assignmentManager;
-    this.gameManager = gameManager;
   }
 
   @Override
@@ -32,7 +27,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
   }
 
   @Override
-  public JsonNode initialiseState(final RegisteredUserDTO user, final ITransaction transaction) {
+  public JsonNode initialiseState(final RegisteredUserDTO user) {
 
     ArrayNode assignments = JsonNodeFactory.instance.arrayNode();
 
@@ -41,16 +36,16 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
         assignments = updateAssignments(assignments, assignment.getId().toString());
       }
     } catch (SegueDatabaseException e) {
-      e.printStackTrace();
+      log.error("Error initialising state", e);
     }
 
     return JsonNodeFactory.instance.objectNode().set("assignments", assignments);
   }
 
   @Override
-  public JsonNode updateState(final RegisteredUserDTO user, final JsonNode state, final String event) {
+  public JsonNode updateState(final JsonNode state, final String event) {
 
-    Iterator<JsonNode> iter = ((ArrayNode) state.get("assignments")).elements();
+    Iterator<JsonNode> iter = state.get("assignments").elements();
 
     while (iter.hasNext()) {
       if (iter.next().asText().equals(event)) {

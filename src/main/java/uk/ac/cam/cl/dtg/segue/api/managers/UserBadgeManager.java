@@ -1,11 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
@@ -50,7 +47,6 @@ public class UserBadgeManager {
    * @param assignmentManager           assignment manager object for badge policy dependencies
    * @param gameManager                 game manager object for badge policy dependencies
    * @param contentManager              content manager object for badge policy dependencies
-   * @param contentIndex                specifies content version
    * @param transactionManager          manages transactions for atomicity of badge state updates
    */
   @Inject
@@ -58,17 +54,15 @@ public class UserBadgeManager {
                           final GroupManager groupManager,
                           final EventBookingManager bookingManager, final AssignmentManager assignmentManager,
                           final GameManager gameManager, final GitContentManager contentManager,
-                          @Named(CONTENT_INDEX) final String contentIndex,
                           final ITransactionManager transactionManager) {
 
     this.userBadgePersistenceManager = userBadgePersistenceManager;
     this.transactionManager = transactionManager;
 
     badgePolicies.put(Badge.TEACHER_GROUPS_CREATED, new TeacherGroupsBadgePolicy(groupManager));
-    badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager, gameManager));
+    badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager));
     badgePolicies.put(Badge.TEACHER_GAMEBOARDS_CREATED, new TeacherGameboardsBadgePolicy(gameManager));
-    badgePolicies.put(Badge.TEACHER_CPD_EVENTS_ATTENDED,
-        new TeacherCpdBadgePolicy(bookingManager, contentManager, contentIndex));
+    badgePolicies.put(Badge.TEACHER_CPD_EVENTS_ATTENDED, new TeacherCpdBadgePolicy(bookingManager, contentManager));
   }
 
   /**
@@ -87,7 +81,7 @@ public class UserBadgeManager {
       UserBadge badge = userBadgePersistenceManager.getBadge(user, badgeName, transaction);
 
       if (null == badge.getState()) {
-        badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+        badge.setState(badgePolicies.get(badgeName).initialiseState(user));
         userBadgePersistenceManager.updateBadge(badge, transaction);
       }
 
@@ -119,7 +113,7 @@ public class UserBadgeManager {
         JsonNode state = badge.getState();
         int oldLevel = badgePolicies.get(badgeName).getLevel(state);
 
-        JsonNode newState = badgePolicies.get(badgeName).updateState(user, state, event);
+        JsonNode newState = badgePolicies.get(badgeName).updateState(state, event);
         int newLevel = badgePolicies.get(badgeName).getLevel(newState);
 
         if (newLevel != oldLevel) {
@@ -129,7 +123,7 @@ public class UserBadgeManager {
         badge.setState(newState);
 
       } else {
-        badge.setState(badgePolicies.get(badgeName).initialiseState(user, transaction));
+        badge.setState(badgePolicies.get(badgeName).initialiseState(user));
       }
 
       userBadgePersistenceManager.updateBadge(badge, transaction);

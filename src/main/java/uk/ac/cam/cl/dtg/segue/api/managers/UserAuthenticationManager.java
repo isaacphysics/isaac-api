@@ -476,29 +476,26 @@ public class UserAuthenticationManager {
   /**
    * Create a signed session based on the user DO provided and the http request and response.
    *
-   * @param request  - for creating the session
    * @param response - for creating the session
    * @param user     - the user who should be logged in.
    * @return the request and response will be modified and the original userDO will be returned for convenience.
    */
-  public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                          final RegisteredUser user) throws SegueDatabaseException {
-    this.createSession(request, response, user, false);
+  public RegisteredUser createUserSession(final HttpServletResponse response, final RegisteredUser user)
+      throws SegueDatabaseException {
+    this.createSession(response, user, false);
     return user;
   }
 
   /**
    * Create a signed session based on the user DO provided and the http request and response.
    *
-   * @param request  - for creating the session
    * @param response - for creating the session
    * @param user     - the user who should be logged in.
    * @return the request and response will be modified and the original userDO will be returned for convenience.
    */
-  public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request,
-                                                         final HttpServletResponse response,
-                                                         final RegisteredUser user) throws SegueDatabaseException {
-    this.createSession(request, response, user, true);
+  public RegisteredUser createIncompleteLoginUserSession(final HttpServletResponse response, final RegisteredUser user)
+      throws SegueDatabaseException {
+    this.createSession(response, user, true);
     return user;
   }
 
@@ -844,14 +841,16 @@ public class UserAuthenticationManager {
   /**
    * Create a session and attach it to the request provided.
    *
-   * @param request          to enable access to anonymous user information.
    * @param response         to store the session in our own segue cookie.
    * @param user             account to associate the session with.
    * @param partialLoginFlag Boolean to indicate whether or not this cookie represents a partial login (true) or full
    *                             (false)
    */
-  private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-                             final RegisteredUser user, final boolean partialLoginFlag) throws SegueDatabaseException {
+  private void createSession(
+      final HttpServletResponse response,
+      final RegisteredUser user,
+      final boolean partialLoginFlag
+  ) throws SegueDatabaseException {
     requireNonNull(response);
     requireNonNull(user);
     requireNonNull(user.getId());

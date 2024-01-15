@@ -739,7 +739,6 @@ public class UserManagerTest {
   @Test
   public final void isUserNameValid_nullNameProvided_returnsFalse() {
     // Arrange
-    UserAccountManager userManager = buildTestUserManager();
     String name = null;
 
     // Act

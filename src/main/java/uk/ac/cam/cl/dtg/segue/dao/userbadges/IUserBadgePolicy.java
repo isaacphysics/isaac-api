@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dao.userbadges;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 /**
@@ -24,18 +23,16 @@ public interface IUserBadgePolicy {
    * Initialises a partial state for a particular badge.
    *
    * @param user        the user for which state should be calculated
-   * @param transaction object which carries database transaction across multiple functions
    * @return an object describing the current partial state aggregated from the current user activity record
    */
-  JsonNode initialiseState(RegisteredUserDTO user, ITransaction transaction);
+  JsonNode initialiseState(RegisteredUserDTO user);
 
   /**
    * Updates the partial state based on an event trigger.
    *
-   * @param user  the user for which state should be updated
    * @param state the current state
    * @param event the triggering event description (should be unique)
    * @return an updated partial state
    */
-  JsonNode updateState(RegisteredUserDTO user, JsonNode state, String event);
+  JsonNode updateState(JsonNode state, String event);
 }

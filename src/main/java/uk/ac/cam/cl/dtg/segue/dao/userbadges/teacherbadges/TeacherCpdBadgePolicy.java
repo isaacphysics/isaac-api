@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.util.Iterator;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -16,21 +17,15 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePolicy;
 
-/**
- * Created by du220 on 02/05/2018.
- */
 public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
+  private static final Logger log = LoggerFactory.getLogger(TeacherCpdBadgePolicy.class);
 
   private final EventBookingManager bookingManager;
   private final GitContentManager contentManager;
-  private final String contentIndex;
 
-  public TeacherCpdBadgePolicy(final EventBookingManager bookingManager,
-                               final GitContentManager contentManager,
-                               final String contentIndex) {
+  public TeacherCpdBadgePolicy(final EventBookingManager bookingManager, final GitContentManager contentManager) {
     this.bookingManager = bookingManager;
     this.contentManager = contentManager;
-    this.contentIndex = contentIndex;
   }
 
   @Override
@@ -39,7 +34,7 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
   }
 
   @Override
-  public JsonNode initialiseState(final RegisteredUserDTO user, final ITransaction transaction) {
+  public JsonNode initialiseState(final RegisteredUserDTO user) {
 
     ArrayNode events = JsonNodeFactory.instance.arrayNode();
 
@@ -62,16 +57,16 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
       }
 
     } catch (SegueDatabaseException | ContentManagerException e) {
-      e.printStackTrace();
+      log.error("Error initialising state", e);
     }
 
     return JsonNodeFactory.instance.objectNode().set("cpdEvents", events);
   }
 
   @Override
-  public JsonNode updateState(final RegisteredUserDTO user, final JsonNode state, final String event) {
+  public JsonNode updateState(final JsonNode state, final String event) {
 
-    Iterator<JsonNode> iter = ((ArrayNode) state.get("cpdEvents")).elements();
+    Iterator<JsonNode> iter = state.get("cpdEvents").elements();
 
     while (iter.hasNext()) {
       if (iter.next().asText().equals(event)) {

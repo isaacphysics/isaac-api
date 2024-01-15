@@ -234,7 +234,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
     if (null != registeredUser.getId()) {
       try {
-        return userManager.updateUserObject(request, response, registeredUser,
+        return userManager.updateUserObject(request, registeredUser,
             userSettingsObjectFromClient.getPasswordCurrent(), newPassword,
             userPreferences, registeredUserContexts);
       } catch (IncorrectCredentialsProvidedException e) {

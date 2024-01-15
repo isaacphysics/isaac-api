@@ -4,20 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.util.Iterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePolicy;
 
-/**
- * Created by du220 on 01/05/2018.
- */
 public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
-
+  private static final Logger log = LoggerFactory.getLogger(TeacherGameboardsBadgePolicy.class);
   private final GameManager gameManager;
 
   public TeacherGameboardsBadgePolicy(final GameManager gameManager) {
@@ -30,7 +28,7 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
   }
 
   @Override
-  public JsonNode initialiseState(final RegisteredUserDTO user, final ITransaction transaction) {
+  public JsonNode initialiseState(final RegisteredUserDTO user) {
 
     ArrayNode gameboards = JsonNodeFactory.instance.arrayNode();
 
@@ -44,7 +42,7 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
         }
       }
     } catch (ContentManagerException | SegueDatabaseException e) {
-      e.printStackTrace();
+      log.error("Error initialising state", e);
     }
 
     return JsonNodeFactory.instance.objectNode().set("gameboards", gameboards);
@@ -52,9 +50,9 @@ public class TeacherGameboardsBadgePolicy implements IUserBadgePolicy {
   }
 
   @Override
-  public JsonNode updateState(final RegisteredUserDTO user, final JsonNode state, final String event) {
+  public JsonNode updateState(final JsonNode state, final String event) {
 
-    Iterator<JsonNode> iter = ((ArrayNode) state.get("gameboards")).elements();
+    Iterator<JsonNode> iter = state.get("gameboards").elements();
 
     while (iter.hasNext()) {
       if (iter.next().asText().equals(event)) {

@@ -532,7 +532,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
       // Augment related questions with attempt information:
       userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
-      this.augmentContentWithRelatedContent(this.contentIndex, topicSummaryDTO, userQuestionAttempts);
+      this.augmentContentWithRelatedContent(topicSummaryDTO, userQuestionAttempts);
 
       // Augment linked gameboards using the list in the DO:
       // FIXME: this requires loading both the DO and DTO separately, since augmenting things is hard right now.
@@ -728,14 +728,13 @@ public class PagesFacade extends AbstractIsaacFacade {
    * <br>
    * By default content summary objects may just have ids.
    *
-   * @param version               - version of the content to use for augmentation.
    * @param contentToAugment      - the content to augment.
    * @param usersQuestionAttempts - nullable question attempt information to support augmentation of content.
    * @return content which has been augmented
    * @throws ContentManagerException - an exception when the content is not found
    */
   private ContentDTO augmentContentWithRelatedContent(
-      final String version, final ContentDTO contentToAugment,
+      final ContentDTO contentToAugment,
       @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts
   ) throws ContentManagerException {
 
@@ -879,7 +878,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         c = resultList.getResults().get(0);
       }
 
-      return Response.ok(this.augmentContentWithRelatedContent(this.contentIndex, c, usersQuestionAttempts)).build();
+      return Response.ok(this.augmentContentWithRelatedContent(c, usersQuestionAttempts)).build();
     } catch (ContentManagerException e1) {
       SegueErrorResponse error =
           new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested",
