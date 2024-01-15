@@ -47,12 +47,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -82,15 +86,11 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-/**
- * Test class for the user manager class.
- */
-public class UserManagerTest {
+class UserManagerTest {
   private QuestionManager dummyQuestionDatabase;
   private IUserDataManager dummyDatabase;
   private String dummyHMACSalt;
   private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
-  private String dummyHostName;
   private PropertiesLoader dummyPropertiesLoader;
   private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
@@ -107,13 +107,8 @@ public class UserManagerTest {
   private AbstractUserPreferenceManager dummyUserPreferenceManager;
   private SchoolListReader dummySchoolListReader;
 
-  /**
-   * Initial configuration of tests.
-   *
-   * @throws Exception - test exception
-   */
   @BeforeEach
-  public final void setUp() throws Exception {
+  void setUp() {
     this.dummyQuestionDatabase = createMock(QuestionManager.class);
     this.dummyDatabase = createMock(IUserDataManager.class);
     this.dummyHMACSalt = "BOB";
@@ -122,7 +117,7 @@ public class UserManagerTest {
     this.dummyLocalAuth = createMock(SegueLocalAuthenticator.class);
     this.dummyProvidersMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
 
-    this.dummyHostName = "bob";
+    String dummyHostName = "bob";
     this.dummyMapper = createMock(MapperFacade.class);
     this.dummyQueue = createMock(EmailManager.class);
     this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
@@ -153,7 +148,7 @@ public class UserManagerTest {
    * Test that the get current user method behaves correctly when not logged in.
    */
   @Test
-  public final void getCurrentUser_isNotLoggedIn_NoUserLoggedInExceptionThrown() {
+  void getCurrentUser_isNotLoggedIn_NoUserLoggedInExceptionThrown() {
     UserAccountManager userManager = buildTestUserManager();
 
     HttpSession dummySession = createMock(HttpSession.class);
@@ -187,7 +182,7 @@ public class UserManagerTest {
    * @throws NoUserLoggedInException if a user cannot be retrieved from the request
    */
   @Test
-  public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned()
+  void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned()
       throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
     UserAccountManager userManager = buildTestUserManager();
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
@@ -239,7 +234,7 @@ public class UserManagerTest {
    * @throws IOException if data cannot be retrieved from the auth provider
    */
   @Test
-  public final void authenticate_badProviderGiven_authenticationProviderException() throws IOException {
+  void authenticate_badProviderGiven_authenticationProviderException() throws IOException {
     UserAccountManager userManager = buildTestUserManager();
 
     HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -267,7 +262,7 @@ public class UserManagerTest {
    * @throws AuthenticationProviderMappingException - when a string cannot be mapped to a provider
    */
   @Test
-  public final void authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
+  void authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
       throws IOException, AuthenticationProviderMappingException {
     // Arrange
     IOAuth2Authenticator dummyAuth = createMock(IOAuth2Authenticator.class);
@@ -311,7 +306,7 @@ public class UserManagerTest {
    * @throws Exception -
    */
   @Test
-  public final void authenticateCallback_checkNewUserIsAuthenticated_createInternalUserAccount() throws Exception {
+  void authenticateCallback_checkNewUserIsAuthenticated_createInternalUserAccount() throws Exception {
     IOAuth2Authenticator dummyAuth = createMock(FacebookAuthenticator.class);
     UserAccountManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
     UserAuthenticationManager authManager = buildTestAuthenticationManager(AuthenticationProvider.TEST, dummyAuth);
@@ -321,7 +316,7 @@ public class UserManagerTest {
     HttpServletRequest request = createMock(HttpServletRequest.class);
     HttpServletResponse response = createMock(HttpServletResponse.class);
 
-    String someDomain = "http://www.somedomain.com/";
+    String someDomain = "https://www.somedomain.com/";
     String someClientId = "someClientId";
     String someAuthCode = "someAuthCode";
     String someState = "someState";
@@ -453,7 +448,7 @@ public class UserManagerTest {
    * Verify that a bad CSRF response from the authentication provider causes an error response.
    */
   @Test
-  public final void authenticateCallback_checkInvalidCSRF_throwsCSRFException() {
+  void authenticateCallback_checkInvalidCSRF_throwsCSRFException() {
     UserAccountManager userManager = buildTestUserManager();
 
     HttpSession dummySession = createMock(HttpSession.class);
@@ -496,7 +491,7 @@ public class UserManagerTest {
    * Verify that a bad (null) CSRF response from the authentication provider causes an error response.
    */
   @Test
-  public final void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() {
+  void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() {
     UserAccountManager userManager = buildTestUserManager();
 
     // method param setup for method under test
@@ -541,7 +536,7 @@ public class UserManagerTest {
    * This method is dependent on the crypto algorithm used.
    */
   @Test
-  public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
+  void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -573,7 +568,7 @@ public class UserManagerTest {
    * Verify that a user session which has been tampered with is detected as invalid.
    */
   @Test
-  public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
+  void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -612,7 +607,7 @@ public class UserManagerTest {
    * Verify that an expired user session is detected as invalid.
    */
   @Test
-  public final void validateUsersSession_expiredUsersSession_shouldReturnAsIncorrect() {
+  void validateUsersSession_expiredUsersSession_shouldReturnAsIncorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -644,7 +639,7 @@ public class UserManagerTest {
    * Verify that a changed session token is detected.
    */
   @Test
-  public final void validateUsersSession_incorrectSessionToken_shouldReturnAsIncorrect() {
+  void validateUsersSession_incorrectSessionToken_shouldReturnAsIncorrect() {
     UserAuthenticationManager authManager = buildTestAuthenticationManager();
 
     // method param setup for method under test
@@ -673,81 +668,13 @@ public class UserManagerTest {
     assertFalse(valid);
   }
 
-  /**
-   * Ensure isUserNameValid returns false when an excessively long name is provided.
-   */
-  @Test
-  public final void isUserNameValid_longNameProvided_returnsFalse() {
-    // Arrange
-    String name = StringUtils.repeat("a", 256);
+  @ParameterizedTest
+  @MethodSource("userNameProvider")
+  void isUserNameValid(String name, boolean expected) {
+    boolean isValid = UserAccountManager.isUserNameValid(name);
 
-    // Act
-    boolean valid = UserAccountManager.isUserNameValid(name);
-
-    // Assert
-    assertFalse(valid);
+    assertEquals(expected, isValid);
   }
-
-  /**
-   * Ensure isUserNameValid returns true when a name of acceptable length and no illegal characters is provided.
-   */
-  @Test
-  public final void isUserNameValid_acceptableNameProvided_returnsTrue() {
-    // Arrange
-    String name = StringUtils.repeat("a", 255);
-
-    // Act
-    boolean valid = UserAccountManager.isUserNameValid(name);
-
-    // Assert
-    assertTrue(valid);
-  }
-
-  /**
-   * Ensure isUserNameValid returns false when a name with illegal characters is provided.
-   */
-  @Test
-  public final void isUserNameValid_nameWithIllegalCharactersProvided_returnsFalse() {
-    // Arrange
-    String name = "Matthew*";
-
-    // Act
-    boolean valid = UserAccountManager.isUserNameValid(name);
-
-    // Assert
-    assertFalse(valid);
-  }
-
-  /**
-   * Ensure isUserNameValid returns false when an empty name is provided.
-   */
-  @Test
-  public final void isUserNameValid_emptyNameProvided_returnsFalse() {
-    // Arrange
-    String name = "";
-
-    // Act
-    boolean valid = UserAccountManager.isUserNameValid(name);
-
-    // Assert
-    assertFalse(valid);
-  }
-
-  /**
-   * Ensure isUserNameValid returns false when a null string is provided.
-   */
-  @Test
-  public final void isUserNameValid_nullNameProvided_returnsFalse() {
-    // Arrange
-    String name = null;
-
-    // Act
-    boolean valid = UserAccountManager.isUserNameValid(name);
-
-    // Assert
-    assertFalse(valid);
-  }
-
 
   /**
    * Helper method to construct a UserManager with the default TEST provider.
@@ -800,5 +727,15 @@ public class UserManagerTest {
     Cookie[] cookieWithSessionInfo = {new Cookie(Constants.SEGUE_AUTH_COOKIE,
         Base64.encodeBase64String(om.writeValueAsString(sessionInformation).getBytes()))};
     return cookieWithSessionInfo;
+  }
+
+  private static Stream<Arguments> userNameProvider() {
+    return Stream.of(
+        Arguments.of(null, false),
+        Arguments.of("", false),
+        Arguments.of("Matthew*", false),
+        Arguments.of(StringUtils.repeat("a", 256), false),
+        Arguments.of(StringUtils.repeat("a", 255), true)
+    );
   }
 }
