@@ -75,7 +75,7 @@ public class GitDb {
   private final String privateKey;
   private final String sshFetchUrl;
 
-  private Git gitHandle;
+  private final Git gitHandle;
 
   /**
    * Create a new instance of a GitDb object
@@ -267,17 +267,14 @@ public class GitDb {
       }
 
     } catch (NoHeadException e) {
-      log.error("Git returned a no head exception. Unable to list all commits.");
-      e.printStackTrace();
+      log.error("Git returned a no head exception. Unable to verify commit exists.", e);
     } catch (GitAPIException e) {
-      log.error("Git returned an API exception. Unable to list all commits.");
-      e.printStackTrace();
+      log.error("Git returned an API exception. Unable to verify commit exists.", e);
     } catch (IOException e) {
-      log.error("Git returned an IO exception. Unable to list all commits.");
-      e.printStackTrace();
+      log.error("Git returned an IO exception. Unable to verify commit exists.", e);
     }
 
-    log.debug("Commit " + sha + " does not exist");
+    log.debug("Commit {} does not exist", sha);
     return false;
   }
 
@@ -303,17 +300,14 @@ public class GitDb {
       }
 
     } catch (NoHeadException e) {
-      log.error("Git returned a no head exception. Unable to list all commits.");
-      e.printStackTrace();
+      log.error("Git returned a no head exception. Unable to list all commits.", e);
     } catch (GitAPIException e) {
-      log.error("Git returned an API exception. Unable to list all commits.");
-      e.printStackTrace();
+      log.error("Git returned an API exception. Unable to list all commits.", e);
     } catch (IOException e) {
-      log.error("Git returned an IO exception. Unable to list all commits.");
-      e.printStackTrace();
+      log.error("Git returned an IO exception. Unable to list all commits.", e);
     }
 
-    log.warn("Commit " + sha + " does not exist");
+    log.warn("Commit {} does not exist", sha);
     throw new NotFoundException("Commit " + sha + " does not exist");
   }
 
@@ -328,7 +322,7 @@ public class GitDb {
     List<RevCommit> logList = null;
     try {
       Iterable<RevCommit> logs = gitHandle.log().add(ObjectId.fromString(this.getHeadSha())).call();
-      logList = new ArrayList<RevCommit>();
+      logList = new ArrayList<>();
 
       for (RevCommit rev : logs) {
         logList.add(rev);
@@ -356,10 +350,9 @@ public class GitDb {
       TrackingRefUpdate refUpdate = result.getTrackingRefUpdate("refs/remotes/origin/master");
       if (refUpdate != null) {
         if (refUpdate.getResult() == RefUpdate.Result.LOCK_FAILURE) {
-          log.error("Failed to fetch. The git repository may be corrupted. "
-              + "Hopefully, this will not be a problem.");
+          log.error("Failed to fetch. The git repository may be corrupted. Hopefully, this will not be a problem.");
         } else {
-          log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+          log.info("Fetched latest from git. Latest version is: {}", this.getHeadSha());
         }
       }
     } catch (TransportException e) {
@@ -381,7 +374,7 @@ public class GitDb {
    *
    * @return String of sha id
    */
-  public synchronized String getHeadSha() {
+  private synchronized String getHeadSha() {
     String result = null;
 
     try {
