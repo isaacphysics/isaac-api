@@ -30,12 +30,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * PostgresSqlDb adapter.
  */
 public class PostgresSqlDb implements Closeable {
+  private static final Logger log = LoggerFactory.getLogger(PostgresSqlDb.class);
 
   private final BasicDataSource dataSource;
 
@@ -58,23 +62,23 @@ public class PostgresSqlDb implements Closeable {
     dataSource.setTestOnBorrow(true);
     dataSource.setValidationQuery("SELECT 1");
     dataSource.setTestOnReturn(false);
-    dataSource.setTimeBetweenEvictionRunsMillis(CONNECTION_POOL_EVICTION_RUN_PERIOD_MILLISECONDS);
+    dataSource.setDurationBetweenEvictionRuns(Duration.ofMillis(CONNECTION_POOL_EVICTION_RUN_PERIOD_MILLISECONDS));
     dataSource.setMaxTotal(CONNECTION_POOL_MAX_TOTAL);
     dataSource.setInitialSize(CONNECTION_POOL_INITIAL_SIZE);
-    dataSource.setMaxWaitMillis(CONNECTION_POOL_MAX_WAIT_MILLISECONDS);
-    dataSource.setRemoveAbandonedTimeout(CONNECTION_POOL_REMOVE_ABANDONED_TIMEOUT);
-    dataSource.setMinEvictableIdleTimeMillis(CONNECTION_POOL_MIN_EVICTABLE_IDLE_TIMEOUT_MILLISECONDS);
+    dataSource.setMaxWait(Duration.ofMillis(CONNECTION_POOL_MAX_WAIT_MILLISECONDS));
+    dataSource.setRemoveAbandonedTimeout(Duration.ofSeconds(CONNECTION_POOL_REMOVE_ABANDONED_TIMEOUT));
+    dataSource.setMinEvictableIdle(Duration.ofMillis(CONNECTION_POOL_MIN_EVICTABLE_IDLE_TIMEOUT_MILLISECONDS));
     dataSource.setMinIdle(CONNECTION_POOL_MIN_MIN_IDLE);
     dataSource.setLogAbandoned(true);
     dataSource.setRemoveAbandonedOnBorrow(true);
-    dataSource.setEnableAutoCommitOnReturn(true);
+    dataSource.setAutoCommitOnReturn(true);
   }
 
   /**
    * Get a handle to the database.
    *
    * @return database connection.
-   * @throws SQLException
+   * @throws SQLException if a database access error occurs
    */
   public Connection getDatabaseConnection() throws SQLException {
     return dataSource.getConnection();
@@ -82,13 +86,11 @@ public class PostgresSqlDb implements Closeable {
 
   @Override
   public void close() {
-
     try {
       this.dataSource.close();
     } catch (SQLException e) {
-      e.printStackTrace();
+      log.error("Error closing the database connection", e);
     }
-
   }
 
   /**
