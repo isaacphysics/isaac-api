@@ -168,7 +168,7 @@ public class InfoFacade extends AbstractSegueFacade {
     try {
       httpResponse = httpClient.execute(httpGet);
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Unexpected network error", e);
     }
 
     if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {

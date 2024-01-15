@@ -281,8 +281,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
       this.configureApplicationManagers();
 
     } catch (IOException e) {
-      e.printStackTrace();
-      log.error("IOException during setup process.");
+      log.error("IOException during setup process.", e);
     }
   }
 

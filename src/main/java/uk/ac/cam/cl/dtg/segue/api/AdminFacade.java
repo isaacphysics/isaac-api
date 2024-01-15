@@ -107,7 +107,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
@@ -128,8 +127,6 @@ public class AdminFacade extends AbstractSegueFacade {
 
   private final StatisticsManager statsManager;
 
-  private final SchoolListReader schoolReader;
-
   private final AbstractUserPreferenceManager userPreferenceManager;
   private final EventBookingManager eventBookingManager;
   private final IExternalAccountManager externalAccountManager;
@@ -145,7 +142,6 @@ public class AdminFacade extends AbstractSegueFacade {
    * @param contentIndex           - The index string for the target content version
    * @param logManager             - So we can log events of interest.
    * @param statsManager           - So we can report high level stats.
-   * @param schoolReader           - for looking up school information
    * @param userPreferenceManager  - Manager for retrieving and updating user preferences
    * @param eventBookingManager    - for using the event booking system
    * @param segueJobService        - Service for scheduling and managing segue jobs
@@ -156,7 +152,7 @@ public class AdminFacade extends AbstractSegueFacade {
   public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                      final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
                      final ILogManager logManager, final StatisticsManager statsManager,
-                     final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                     final AbstractUserPreferenceManager userPreferenceManager,
                      final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
                      final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
     super(properties, logManager);
@@ -164,7 +160,6 @@ public class AdminFacade extends AbstractSegueFacade {
     this.contentManager = contentManager;
     this.contentIndex = contentIndex;
     this.statsManager = statsManager;
-    this.schoolReader = schoolReader;
     this.userPreferenceManager = userPreferenceManager;
     this.eventBookingManager = eventBookingManager;
     this.externalAccountManager = externalAccountManager;
@@ -676,7 +671,7 @@ public class AdminFacade extends AbstractSegueFacade {
           }
 
         } catch (ContentManagerException e) {
-          e.printStackTrace();
+          log.error("Error getting content", e);
         }
       }
 

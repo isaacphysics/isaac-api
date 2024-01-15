@@ -37,26 +37,22 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
   /**
    * Comparator that tells the priority queue which email should be sent first.
    */
-  private Comparator<ICommunicationMessage> emailPriorityComparator = new Comparator<ICommunicationMessage>() {
-    @Override
-    public int compare(final ICommunicationMessage first, final ICommunicationMessage second) {
-      if (first.getPriority() == second.getPriority()) {
-        return 0;
-      } else if (first.getPriority() <= second.getPriority()) {
-        return -1;
-      } else {
-        return 1;
-      }
+  private final Comparator<ICommunicationMessage> emailPriorityComparator = (first, second) -> {
+    if (first.getPriority() == second.getPriority()) {
+      return 0;
+    } else if (first.getPriority() <= second.getPriority()) {
+      return -1;
+    } else {
+      return 1;
     }
-
   };
 
-  private PriorityBlockingQueue<T> messageSenderRunnableQueue =
-      new PriorityBlockingQueue<T>(100, emailPriorityComparator);
+  private final PriorityBlockingQueue<T> messageSenderRunnableQueue =
+      new PriorityBlockingQueue<>(100, emailPriorityComparator);
 
   private static final Logger log = LoggerFactory.getLogger(AbstractCommunicationQueue.class);
 
-  private ICommunicator<T> communicator;
+  private final ICommunicator<T> communicator;
 
   private final ExecutorService executorService;
 
@@ -67,34 +63,15 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
    * @param communicator
    *            A class to send messages
    */
-  public AbstractCommunicationQueue(final ICommunicator<T> communicator) {
+  protected AbstractCommunicationQueue(final ICommunicator<T> communicator) {
     this.communicator = communicator;
     this.executorService = Executors.newFixedThreadPool(2);
   }
 
-  /**
-   * @param queueObject
-   *            object of type S that can be added to the queue
-   */
   protected void addToQueue(final T queueObject) {
     messageSenderRunnableQueue.add(queueObject);
     executorService.submit(new MessageSenderRunnable());
-    log.debug("Added to the email queue. Current size: " + messageSenderRunnableQueue.size());
-  }
-
-
-  /**
-   * @return an object from the head of the queue
-   */
-  private T getLatestQueueItem() {
-    return messageSenderRunnableQueue.poll();
-  }
-
-  /**
-   * @return current queue length
-   */
-  public int getQueueLength() {
-    return messageSenderRunnableQueue.size();
+    log.debug("Added to the email queue. Current size: {}", messageSenderRunnableQueue.size());
   }
 
   /**
@@ -104,20 +81,22 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
    *
    */
   class MessageSenderRunnable implements Runnable {
-
     @Override
     public void run() {
       // Send the actual message
       try {
         T queueItem = getLatestQueueItem();
         communicator.sendMessage(queueItem);
-        log.info("Sent message. Current size: " + messageSenderRunnableQueue.size());
+        log.info("Sent message. Current size: {}", messageSenderRunnableQueue.size());
       } catch (CommunicationException e) {
-        log.warn("Communication Exception:" + e.getMessage());
+        log.warn("Communication Exception", e);
       } catch (Exception e) {
-        log.warn("Generic Exception:" + e.getMessage());
-        e.printStackTrace();
+        log.warn("Generic Exception", e);
       }
+    }
+
+    private T getLatestQueueItem() {
+      return messageSenderRunnableQueue.poll();
     }
   }
 }

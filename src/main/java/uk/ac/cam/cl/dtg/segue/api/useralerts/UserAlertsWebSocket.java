@@ -305,7 +305,7 @@ public class UserAlertsWebSocket implements IAlertListener {
           Protocol.HEARTBEAT, System.currentTimeMillis()
       )));
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Error sending alert", e);
     }
   }
 

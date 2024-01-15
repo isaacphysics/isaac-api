@@ -17,11 +17,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.useralerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
-/**
- * Created by du220 on 16/04/2018.
- */
 public class PgUserStreakManager implements IUserStreaksManager {
   private static final Logger log = LoggerFactory.getLogger(PgUserStreakManager.class);
+  private static final String DATABASE_ERROR_MESSAGE = "Database error";
 
   private final PostgresSqlDb database;
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -60,7 +58,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      log.error(DATABASE_ERROR_MESSAGE, e);
     }
     return streakRecord;
   }
@@ -80,7 +78,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      log.error(DATABASE_ERROR_MESSAGE, e);
     }
 
     return 0;
@@ -109,7 +107,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      log.error(DATABASE_ERROR_MESSAGE, e);
     }
     return streakRecord;
   }
@@ -129,7 +127,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      log.error(DATABASE_ERROR_MESSAGE, e);
     }
     return 0;
   }

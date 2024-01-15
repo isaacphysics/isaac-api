@@ -99,8 +99,7 @@ class ETLConfigurationModule extends AbstractModule {
               .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
 
     } catch (IOException e) {
-      e.printStackTrace();
-      log.error("IOException during setup process.");
+      log.error("IOException during setup process.", e);
     }
 
 

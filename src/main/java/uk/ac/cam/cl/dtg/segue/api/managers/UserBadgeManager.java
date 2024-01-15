@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -25,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dao.userbadges.teacherbadges.TeacherGroupsBadgePol
  * Created by du220 on 27/04/2018.
  */
 public class UserBadgeManager {
+  private static final Logger log = LoggerFactory.getLogger(UserBadgeManager.class);
 
   public enum Badge {
     // teacher specific badges
@@ -152,7 +155,7 @@ public class UserBadgeManager {
             badgePolicies.get(badge.getBadgeName()).getLevel(badge.getState()));
       }
     } catch (SegueDatabaseException e) {
-      e.printStackTrace();
+      log.error("Error getting all user badges", e);
     }
 
     return badges;
