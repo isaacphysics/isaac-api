@@ -393,7 +393,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (AdditionalAuthenticationRequiredException e) {
             // in this case the users account has been configured to require a second factor
             // The password challenge has completed successfully but they must complete the second step of the flow
-            return Response.accepted(ImmutableMap.of("2FA_REQUIRED", true)).build();
+            return Response.accepted(ImmutableMap.of("MFA_REQUIRED", true)).build();
         } catch (EmailMustBeVerifiedException e) {
             // the user's account requires a verified email
             return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
