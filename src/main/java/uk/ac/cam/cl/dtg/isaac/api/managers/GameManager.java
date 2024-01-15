@@ -1120,7 +1120,7 @@ public class GameManager {
       // Yes, this should probably be done in the fieldsToMap filter above, but this is simpler.
       if (c instanceof IsaacQuestionPageDTO) {
         IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO) c;
-        if (qp.getSupersededBy() != null && !qp.getSupersededBy().equals("")) {
+        if (qp.getSupersededBy() != null && !qp.getSupersededBy().isEmpty()) {
           // This question has been superseded. Don't include it.
           continue;
         }
@@ -1164,7 +1164,7 @@ public class GameManager {
 
     List<ContentDTO> generatedQuestions = results.getResults();
     List<IsaacQuestionPageDTO> questionsToReturn = generatedQuestions.stream()
-        .map(question -> (IsaacQuestionPageDTO) question)
+        .map(IsaacQuestionPageDTO.class::cast)
         .filter(qp -> qp.getSupersededBy() == null || qp.getSupersededBy().isEmpty())
         .collect(Collectors.toList());
 

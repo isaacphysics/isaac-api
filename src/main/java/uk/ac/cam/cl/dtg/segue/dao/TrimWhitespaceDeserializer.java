@@ -17,10 +17,8 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.IOException;
 
 /**
@@ -35,7 +33,7 @@ public class TrimWhitespaceDeserializer extends JsonDeserializer<String> {
 
   @Override
   public String deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
-      throws IOException, JsonProcessingException, JsonMappingException {
+      throws IOException {
     return jsonParser.getText().trim();
   }
 }

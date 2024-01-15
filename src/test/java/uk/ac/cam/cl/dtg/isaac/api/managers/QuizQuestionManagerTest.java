@@ -289,7 +289,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
 
     assertFalse(feedback.get(secondStudent).isComplete());
     assertStudentMarks(feedback.get(student));
-    assertEquals(new Integer(3), studentQuiz.getTotal());
+    assertEquals(Integer.valueOf(3), studentQuiz.getTotal());
   }
 
 

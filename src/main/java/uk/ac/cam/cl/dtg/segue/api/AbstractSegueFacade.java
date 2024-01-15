@@ -137,7 +137,7 @@ public abstract class AbstractSegueFacade {
     Long maxAgeToSend = null;
 
     if (maxAge != null) {
-      maxAgeToSend = new Long(maxAge);
+      maxAgeToSend = Long.valueOf(maxAge);
     }
 
     return getCacheControl(maxAgeToSend, isPublicData);
