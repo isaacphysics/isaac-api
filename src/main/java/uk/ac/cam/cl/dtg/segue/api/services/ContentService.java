@@ -16,14 +16,12 @@
 
 package uk.ac.cam.cl.dtg.segue.api.services;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NESTED_FIELDS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
@@ -35,35 +33,28 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
 public class ContentService {
   private final GitContentManager contentManager;
-  private final String contentIndex;
 
   @Inject
-  public ContentService(final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex) {
+  public ContentService(final GitContentManager contentManager) {
     this.contentManager = contentManager;
-    this.contentIndex = contentIndex;
   }
 
   /**
    * This method will return a ResultsWrapper{@literal <ContentDTO>} based on the parameters supplied.
    *
-   * @param version       - the version of the content to search. If null it will default to the current live version.
    * @param fieldsToMatch - List of Boolean search clauses that must be true for the returned content.
    * @param startIndex    - the start index for the search results.
    * @param limit         - the max number of results to return.
    * @return Response containing a ResultsWrapper{@literal <ContentDTO>} or a Response containing null if none found.
    */
   public final ResultsWrapper<ContentDTO> findMatchingContent(
-      final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+      final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
       @Nullable final Integer startIndex, @Nullable final Integer limit
   ) throws ContentManagerException {
 
-    String newVersion = this.contentIndex;
     Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;
     Integer newStartIndex = 0;
 
-    if (version != null) {
-      newVersion = version;
-    }
     if (limit != null) {
       newLimit = limit;
     }
@@ -79,24 +70,18 @@ public class ContentService {
    * match.
    *
    * @param searchString        - to pass to the search engine.
-   * @param version             - of the content to search.
    * @param fieldsThatMustMatch - a map of fieldName to list of possible matches.
    * @param startIndex          - the start index for the search results.
    * @param limit               - the max number of results to return.
    * @return a response containing the search results (results wrapper) or an empty list.
    * @throws ContentManagerException - an exception when the content is not found
    */
-  public final ResultsWrapper<ContentDTO> segueSearch(final String searchString, @Nullable final String version,
+  public final ResultsWrapper<ContentDTO> segueSearch(final String searchString,
                                                       @Nullable final Map<String, List<String>> fieldsThatMustMatch,
                                                       @Nullable final Integer startIndex, @Nullable final Integer limit)
       throws ContentManagerException {
-    String newVersion = this.contentIndex;
     int newLimit = Constants.DEFAULT_RESULTS_LIMIT;
     int newStartIndex = 0;
-
-    if (version != null) {
-      newVersion = version;
-    }
 
     if (limit != null) {
       newLimit = limit;

@@ -30,7 +30,6 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTIONS_PAGE_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_ID_LOG_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
@@ -51,7 +50,6 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
@@ -122,7 +120,6 @@ public class PagesFacade extends AbstractIsaacFacade {
   private final GitContentManager contentManager;
 
   private final GameManager gameManager;
-  private final String contentIndex;
 
   /**
    * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
@@ -136,14 +133,13 @@ public class PagesFacade extends AbstractIsaacFacade {
    * @param uriManager       - URI manager so we can augment uris
    * @param questionManager  - So we can look up attempt information.
    * @param gameManager      - For looking up gameboard information.
-   * @param contentIndex     - Index for the content to serve
    */
   @Inject
   public PagesFacade(final ContentService api, final PropertiesLoader propertiesLoader,
                      final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
                      final UserAccountManager userManager, final URIManager uriManager,
                      final QuestionManager questionManager,
-                     final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                     final GameManager gameManager) {
     super(propertiesLoader, logManager);
     this.api = api;
     this.mapper = mapper;
@@ -152,7 +148,6 @@ public class PagesFacade extends AbstractIsaacFacade {
     this.uriManager = uriManager;
     this.questionManager = questionManager;
     this.gameManager = gameManager;
-    this.contentIndex = contentIndex;
   }
 
   /**
@@ -179,7 +174,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                        @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit")
                                        final Integer limit) {
     Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-    fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+    fieldsToMatch.put(TYPE_FIELDNAME, List.of(CONCEPT_TYPE));
 
     StringBuilder etagCodeBuilder = new StringBuilder();
 
@@ -202,7 +197,7 @@ public class PagesFacade extends AbstractIsaacFacade {
       fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
       etagCodeBuilder.append(tags);
     }
-    Map<String, BooleanOperator> booleanOperatorOverrideMap = ImmutableMap.of(TAGS_FIELDNAME, BooleanOperator.OR);
+    Map<String, BooleanOperator> booleanOperatorOverrideMap = Map.of(TAGS_FIELDNAME, BooleanOperator.OR);
 
     // Calculate the ETag on last modified date of tags list
     // NOTE: Assumes that the latest version of the content is being used.
@@ -256,10 +251,10 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-    fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+    fieldsToMatch.put(TYPE_FIELDNAME, List.of(CONCEPT_TYPE));
 
     // options
-    fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
+    fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, List.of(conceptId));
 
     Response result = this.findSingleResult(fieldsToMatch);
     try {
@@ -325,10 +320,10 @@ public class PagesFacade extends AbstractIsaacFacade {
     Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
     if (fasttrack) {
-      fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
+      fieldsToMatch.put(TYPE_FIELDNAME, List.of(FAST_TRACK_QUESTION_TYPE));
       etagCodeBuilder.append(FAST_TRACK_QUESTION_TYPE);
     } else {
-      fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
+      fieldsToMatch.put(TYPE_FIELDNAME, List.of(QUESTION_TYPE));
       etagCodeBuilder.append(QUESTION_TYPE);
     }
 
@@ -352,15 +347,13 @@ public class PagesFacade extends AbstractIsaacFacade {
       etagCodeBuilder.append(ids);
     }
 
-    Map<String, String> fieldNameToValues = new HashMap<String, String>() {
-      {
-        this.put(TAGS_FIELDNAME, tags);
-        this.put(LEVEL_FIELDNAME, level);
-        this.put(STAGE_FIELDNAME, stages);
-        this.put(DIFFICULTY_FIELDNAME, difficulties);
-        this.put(EXAM_BOARD_FIELDNAME, examBoards);
-      }
-    };
+    Map<String, String> fieldNameToValues = new HashMap<>();
+    fieldNameToValues.put(TAGS_FIELDNAME, tags);
+    fieldNameToValues.put(LEVEL_FIELDNAME, level);
+    fieldNameToValues.put(STAGE_FIELDNAME, stages);
+    fieldNameToValues.put(DIFFICULTY_FIELDNAME, difficulties);
+    fieldNameToValues.put(EXAM_BOARD_FIELDNAME, examBoards);
+
     for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
       String fieldName = entry.getKey();
       String queryStringValue = entry.getValue();
@@ -387,9 +380,9 @@ public class PagesFacade extends AbstractIsaacFacade {
       if (searchString != null && !searchString.isEmpty()) {
         ResultsWrapper<ContentDTO> c;
 
-        c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex, newLimit);
+        c = api.segueSearch(searchString, fieldsToMatch, newStartIndex, newLimit);
 
-        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
             this.extractContentSummaryFromList(c.getResults()),
             c.getTotalResults());
 
@@ -433,7 +426,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     // options
-    fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
+    fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, List.of(questionId));
 
     try {
       AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
@@ -606,7 +599,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
 
     // options
-    fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
+    fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, List.of(pageId));
 
     try {
       Response result = this.findSingleResult(fieldsToMatch);
@@ -661,8 +654,8 @@ public class PagesFacade extends AbstractIsaacFacade {
       }
 
       Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-      fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
-      fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
+      fieldsToMatch.put(TYPE_FIELDNAME, List.of(PAGE_FRAGMENT_TYPE));
+      fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, List.of(fragmentId));
 
       Response result = this.findSingleResult(fieldsToMatch);
 
@@ -707,11 +700,14 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     try {
       Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-      fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
-      fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
+      fieldsToMatch.put(TYPE_FIELDNAME, List.of(POD_FRAGMENT_TYPE));
+      fieldsToMatch.put(TAGS_FIELDNAME, List.of(subject));
 
-      ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-          ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+      ResultsWrapper<ContentDTO> pods = api.findMatchingContent(
+          ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+          0,
+          MAX_PODS_TO_RETURN
+      );
 
       return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
           .tag(etag)
@@ -828,7 +824,7 @@ public class PagesFacade extends AbstractIsaacFacade {
       return null;
     }
 
-    List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
+    List<ContentSummaryDTO> listOfContentInfo = new ArrayList<>();
 
     for (ContentDTO content : contentList) {
       ContentSummaryDTO contentInfo = extractContentSummary(content);
@@ -862,11 +858,12 @@ public class PagesFacade extends AbstractIsaacFacade {
       final Map<String, List<String>> fieldsToMatch,
       @Nullable final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
     try {
-      ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-          ContentService.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
-      // type
-      // checking.
-      ContentDTO c = null;
+      ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(
+          ContentService.generateDefaultFieldToMatch(fieldsToMatch),
+          null,
+          null
+      );
+      ContentDTO c;
       if (resultList.getResults().size() > 1) {
         return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
             + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
@@ -908,10 +905,13 @@ public class PagesFacade extends AbstractIsaacFacade {
       throws ContentManagerException {
     ResultsWrapper<ContentDTO> c;
 
-    c = api.findMatchingContent(this.contentIndex,
-        ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
+    c = api.findMatchingContent(
+        ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap),
+        startIndex,
+        limit
+    );
 
-    ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+    ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
         this.extractContentSummaryFromList(c.getResults()),
         c.getTotalResults());
 

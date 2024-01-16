@@ -108,7 +108,7 @@ public class QuizManager {
     }
 
     ResultsWrapper<ContentDTO> content =
-        this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
+        this.contentService.findMatchingContent(fieldsToMatch, startIndex, limit);
 
     return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content, QuizSummaryDTO.class);
   }
