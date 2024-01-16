@@ -44,7 +44,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -60,13 +59,12 @@ public class ContactFacade extends AbstractSegueFacade {
 
   /**
    * @param properties   - the fully configured properties loader for the api.
-   * @param mapper       - The Content mapper object used for polymorphic mapping of content objects.
    * @param userManager  - The manager object responsible for users.
    * @param emailManager - An implementation of ICommunicator for sending communiques
    * @param logManager   - An instance of the log manager used for recording usage of the CMS.
    */
   @Inject
-  public ContactFacade(final PropertiesLoader properties, final ContentMapper mapper,
+  public ContactFacade(final PropertiesLoader properties,
                        final UserAccountManager userManager, final EmailManager emailManager,
                        final ILogManager logManager) {
     super(properties, logManager);
@@ -126,7 +124,7 @@ public class ContactFacade extends AbstractSegueFacade {
               .build());
 
       getLogManager().logEvent(userManager.getCurrentUser(request), request, SegueServerLogType.CONTACT_US_FORM_USED,
-          ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
+          Map.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
               form.get("emailAddress"), form.get("message"))));
 
       return Response.ok().build();
