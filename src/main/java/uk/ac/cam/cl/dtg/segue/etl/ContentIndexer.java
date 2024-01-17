@@ -644,7 +644,7 @@ public class ContentIndexer {
                                                       final Set<String> tagsList,
                                                       final Map<String, String> allUnits,
                                                       final Map<String, String> publishedUnits,
-                                                      final Map<Content, List<String>> indexProblemCache) {
+                                                      final Map<Content, List<String>> indexProblemCache) throws Exception {
         if (anyContentTypesAreIndexedForVersion(sha)) {
             expungeAnyContentTypeIndicesRelatedToVersion(sha);
         }
@@ -713,8 +713,10 @@ public class ContentIndexer {
             log.info("Bulk content error indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha or tags");
+            throw new Exception("Unable to serialise sha or tags");
         } catch (SegueSearchException e) {
             log.error("Unable to index sha, tags, units or content errors.");
+            throw new Exception("Unable to index sha, tags, units or content errors.", e);
         }
 
 
@@ -726,8 +728,10 @@ public class ContentIndexer {
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
+            throw new Exception("Error whilst trying to perform bulk index operation.", e);
         } catch (ActionRequestValidationException e) {
-            log.error("Error validating content during index",e);
+            log.error("Error validating content during index", e);
+            throw new Exception("Error validating content during index", e);
         }
     }
 
