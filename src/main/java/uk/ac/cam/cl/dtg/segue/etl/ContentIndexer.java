@@ -140,7 +140,13 @@ public class ContentIndexer {
             log.info("Finished recording content errors, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             startTime = System.nanoTime();
-            buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
+            try {
+                buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
+            } catch (Exception e) {
+                log.warn("Exception during indexing, cleaning up partial indices!");
+                expungeAnyContentTypeIndicesRelatedToVersion(version);  // This may itself fail if ElasticSearch is broken!
+                throw e;
+            }
             endTime = System.nanoTime();
             log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
