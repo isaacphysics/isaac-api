@@ -72,7 +72,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Created by Ian on 17/10/2016.
  */
 public class ContentIndexer {
-    private static final Logger log = LoggerFactory.getLogger(Content.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentIndexer.class);
 
     private static ConcurrentHashMap<String, Boolean> versionLocks = new ConcurrentHashMap<>();
 
