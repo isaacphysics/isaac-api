@@ -72,7 +72,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Created by Ian on 17/10/2016.
  */
 public class ContentIndexer {
-    private static final Logger log = LoggerFactory.getLogger(Content.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentIndexer.class);
 
     private static ConcurrentHashMap<String, Boolean> versionLocks = new ConcurrentHashMap<>();
 
@@ -140,7 +140,13 @@ public class ContentIndexer {
             log.info("Finished recording content errors, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             startTime = System.nanoTime();
-            buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
+            try {
+                buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
+            } catch (Exception e) {
+                log.warn("Exception during indexing, cleaning up partial indices!");
+                expungeAnyContentTypeIndicesRelatedToVersion(version);  // This may itself fail if ElasticSearch is broken!
+                throw e;
+            }
             endTime = System.nanoTime();
             log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
@@ -644,7 +650,7 @@ public class ContentIndexer {
                                                       final Set<String> tagsList,
                                                       final Map<String, String> allUnits,
                                                       final Map<String, String> publishedUnits,
-                                                      final Map<Content, List<String>> indexProblemCache) {
+                                                      final Map<Content, List<String>> indexProblemCache) throws Exception {
         if (anyContentTypesAreIndexedForVersion(sha)) {
             expungeAnyContentTypeIndicesRelatedToVersion(sha);
         }
@@ -713,8 +719,10 @@ public class ContentIndexer {
             log.info("Bulk content error indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha or tags");
+            throw new Exception("Unable to serialise sha or tags");
         } catch (SegueSearchException e) {
             log.error("Unable to index sha, tags, units or content errors.");
+            throw new Exception("Unable to index sha, tags, units or content errors.", e);
         }
 
 
@@ -726,8 +734,10 @@ public class ContentIndexer {
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
+            throw new Exception("Error whilst trying to perform bulk index operation.", e);
         } catch (ActionRequestValidationException e) {
-            log.error("Error validating content during index",e);
+            log.error("Error validating content during index", e);
+            throw new Exception("Error validating content during index", e);
         }
     }
 
