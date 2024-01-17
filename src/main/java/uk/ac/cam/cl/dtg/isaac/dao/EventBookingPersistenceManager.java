@@ -27,13 +27,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
-/**
- * EventBookingPersistenceManager.
- */
 public class EventBookingPersistenceManager {
   private static final Logger log = LoggerFactory.getLogger(EventBookingPersistenceManager.class);
 
-  private final PostgresSqlDb database;
   private final EventBookings dao;
   private final UserAccountManager userManager;
   private final GitContentManager contentManager;
@@ -49,7 +45,6 @@ public class EventBookingPersistenceManager {
   @Inject
   public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
                                         final GitContentManager contentManager, final ObjectMapper objectMapper) {
-    this.database = database;
     this.userManager = userManager;
     this.contentManager = contentManager;
     this.dao = new PgEventBookings(database, objectMapper);

@@ -44,7 +44,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -136,7 +135,6 @@ public class EventsFacade extends AbstractIsaacFacade {
   private final GroupManager groupManager;
 
   private final GitContentManager contentManager;
-  private final String contentIndex;
   private final UserBadgeManager userBadgeManager;
   private final UserAssociationManager userAssociationManager;
   private final UserAccountManager userAccountManager;
@@ -152,7 +150,6 @@ public class EventsFacade extends AbstractIsaacFacade {
    * @param bookingManager         - Instance of Booking Manager
    * @param userManager            - Instance of User Manager
    * @param contentManager         - for retrieving event content
-   * @param contentIndex           - Index for the content to serve
    * @param userBadgeManager       - for updating badge information
    * @param userAssociationManager - for checking permissions and filtering records
    * @param groupManager           - Instance of Group Manager
@@ -163,7 +160,7 @@ public class EventsFacade extends AbstractIsaacFacade {
   @Inject
   public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
                       final EventBookingManager bookingManager, final UserAccountManager userManager,
-                      final GitContentManager contentManager, @Named(Constants.CONTENT_INDEX) final String contentIndex,
+                      final GitContentManager contentManager,
                       final UserBadgeManager userBadgeManager, final UserAssociationManager userAssociationManager,
                       final GroupManager groupManager, final UserAccountManager userAccountManager,
                       final SchoolListReader schoolListReader, final MapperFacade mapper) {
@@ -171,7 +168,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     this.bookingManager = bookingManager;
     this.userManager = userManager;
     this.contentManager = contentManager;
-    this.contentIndex = contentIndex;
     this.userBadgeManager = userBadgeManager;
     this.userAssociationManager = userAssociationManager;
     this.groupManager = groupManager;

@@ -38,7 +38,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -55,7 +54,6 @@ public class GameboardsFacadeTest {
   private GameManager dummyGameManager = null;
   private ILogManager dummyLogManager = null;
   private UserAccountManager userManager;
-  private UserAssociationManager userAssociationManager;
   private QuestionManager questionManager;
   private UserBadgeManager userBadgeManager;
   private FastTrackManger fastTrackManager;
@@ -73,7 +71,6 @@ public class GameboardsFacadeTest {
     this.dummyLogManager = createMock(ILogManager.class);
     this.userManager = createMock(UserAccountManager.class);
     this.questionManager = createMock(QuestionManager.class);
-    this.userAssociationManager = createMock(UserAssociationManager.class);
     this.userBadgeManager = createMock(UserBadgeManager.class);
     this.fastTrackManager = createMock(FastTrackManger.class);
     expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
@@ -91,7 +88,7 @@ public class GameboardsFacadeTest {
       throws NoWildcardException, SegueDatabaseException, ContentManagerException {
     GameboardsFacade gameboardFacade = new GameboardsFacade(
         dummyPropertiesLoader, dummyLogManager, dummyGameManager, questionManager,
-        userManager, userAssociationManager, userBadgeManager, fastTrackManager);
+        userManager, userBadgeManager, fastTrackManager);
 
     HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
     String subjects = "computerscience";

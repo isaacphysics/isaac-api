@@ -303,8 +303,8 @@ public abstract class IsaacIntegrationTest {
 
     GameboardPersistenceManager gameboardPersistenceManager =
         new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, objectMapper,
-            new URIManager(properties), "latest");
-    gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager, "latest");
+            new URIManager(properties));
+    gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager);
     groupManager = new GroupManager(pgUserGroupPersistenceManager, userAccountManager, gameManager, mapperFacade);
     userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
     PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);

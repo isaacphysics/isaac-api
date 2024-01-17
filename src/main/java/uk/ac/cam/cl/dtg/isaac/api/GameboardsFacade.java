@@ -75,7 +75,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -90,10 +89,9 @@ import uk.ac.cam.cl.dtg.util.QueryUtils;
 @Path("/")
 @Tag(name = "/gameboards")
 public class GameboardsFacade extends AbstractIsaacFacade {
-  private GameManager gameManager;
-  private UserAccountManager userManager;
-  private UserAssociationManager associationManager;
-  private UserBadgeManager userBadgeManager;
+  private final GameManager gameManager;
+  private final UserAccountManager userManager;
+  private final UserBadgeManager userBadgeManager;
   private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
   private final QuestionManager questionManager;
 
@@ -109,14 +107,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
    * @param gameManager        - for games interaction
    * @param questionManager    - for question content
    * @param userManager        - to get user details
-   * @param associationManager - to enforce privacy policies.
    * @param userBadgeManager   - for updating badge information.
    * @param fastTrackManger    - for game management of fasttrack questions and concepts
    */
   @Inject
   public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
                           final GameManager gameManager, final QuestionManager questionManager,
-                          final UserAccountManager userManager, final UserAssociationManager associationManager,
+                          final UserAccountManager userManager,
                           final UserBadgeManager userBadgeManager, final FastTrackManger fastTrackManger) {
     super(properties, logManager);
 
@@ -124,7 +121,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     this.gameManager = gameManager;
     this.questionManager = questionManager;
     this.userManager = userManager;
-    this.associationManager = associationManager;
     this.fastTrackManger = fastTrackManger;
   }
 

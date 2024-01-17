@@ -1116,22 +1116,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
    * @param mapper         - an instance of an auto mapper for translating gameboard DOs and DTOs efficiently.
    * @param objectMapper   - a mapper to allow content to be resolved.
    * @param uriManager     - so that we can create content that is aware of its own location
-   * @param contentIndex   - index string for the target content version
    * @return Game persistence manager object.
    */
   @Inject
   @Provides
   @Singleton
-  private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-                                                                            final GitContentManager contentManager,
-                                                                            final MapperFacade mapper,
-                                                                            final ObjectMapper objectMapper,
-                                                                            final URIManager uriManager,
-                                                                            @Named(CONTENT_INDEX)
-                                                                            final String contentIndex) {
+  private static GameboardPersistenceManager getGameboardPersistenceManager(
+      final PostgresSqlDb database,
+      final GitContentManager contentManager,
+      final MapperFacade mapper,
+      final ObjectMapper objectMapper,
+      final URIManager uriManager
+  ) {
     if (null == gameboardPersistenceManager) {
       gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-          objectMapper, uriManager, contentIndex);
+          objectMapper, uriManager);
       log.info("Creating Singleton of GameboardPersistenceManager");
     }
 

@@ -63,8 +63,7 @@ public class GameManagerTest {
         this.dummyContentManager,
         this.dummyGameboardPersistenceManager,
         this.dummyMapper,
-        this.dummyQuestionManager,
-        "latest"
+        this.dummyQuestionManager
     );
   }
 

@@ -19,7 +19,6 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -32,7 +31,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Array;
@@ -89,7 +87,6 @@ public class GameboardPersistenceManager {
   private final ObjectMapper objectMapper; // used for json serialisation
 
   private final GitContentManager contentManager;
-  private final String contentIndex;
 
   private final URIManager uriManager;
 
@@ -106,17 +103,14 @@ public class GameboardPersistenceManager {
    *            - An instance of an automapper that can be used for converting objects to and from json.
    * @param uriManager
    *            - so we can generate appropriate content URIs.
-   * @param contentIndex
-   *            - index string for current content version
    */
   @Inject
   public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
                                      final MapperFacade mapper, final ObjectMapper objectMapper,
-                                     final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                     final URIManager uriManager) {
     this.database = database;
     this.mapper = mapper;
     this.contentManager = contentManager;
-    this.contentIndex = contentIndex;
     this.objectMapper = objectMapper;
     this.uriManager = uriManager;
     this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()

@@ -40,12 +40,10 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 public class EventNotificationEmailManager {
   private static final Logger log = LoggerFactory.getLogger(EventNotificationEmailManager.class);
 
-  private final PropertiesLoader properties;
   private final GitContentManager contentManager;
   private final EventBookingManager bookingManager;
   private final UserAccountManager userAccountManager;
@@ -57,7 +55,6 @@ public class EventNotificationEmailManager {
    * This class is required by quartz and must be executable by any instance of the segue api relying only on the
    * jobdata context provided.
    *
-   * @param properties              - Instance of properties Loader
    * @param contentManager          - for retrieving content
    * @param bookingManager          - Instance of Booking Manager
    * @param userAccountManager      - Instance of User Account Manager, for retrieving users
@@ -65,13 +62,13 @@ public class EventNotificationEmailManager {
    * @param pgScheduledEmailManager - for scheduling the sending of emails
    */
   @Inject
-  public EventNotificationEmailManager(final PropertiesLoader properties,
-                                       final GitContentManager contentManager,
-                                       final EventBookingManager bookingManager,
-                                       final UserAccountManager userAccountManager,
-                                       final EmailManager emailManager,
-                                       final PgScheduledEmailManager pgScheduledEmailManager) {
-    this.properties = properties;
+  public EventNotificationEmailManager(
+      final GitContentManager contentManager,
+      final EventBookingManager bookingManager,
+      final UserAccountManager userAccountManager,
+      final EmailManager emailManager,
+      final PgScheduledEmailManager pgScheduledEmailManager
+  ) {
     this.contentManager = contentManager;
     this.bookingManager = bookingManager;
     this.userAccountManager = userAccountManager;
@@ -100,8 +97,7 @@ public class EventNotificationEmailManager {
                 .put("event", event)
                 .build(),
             EmailType.SYSTEM);
-        log.debug(String.format("Sent email to user: %s %s, at: %s", user.getGivenName(), user.getFamilyName(),
-            user.getEmail()));
+        log.debug("Sent email to user: {} {}, at: {}", user.getGivenName(), user.getFamilyName(), user.getEmail());
       } catch (NoUserException e) {
         log.error(String.format("No user found with ID: %s", id));
       } catch (ContentManagerException e) {
@@ -209,5 +205,4 @@ public class EventNotificationEmailManager {
       log.error("Failed to send scheduled event feedback emails: ", e);
     }
   }
-
 }

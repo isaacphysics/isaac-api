@@ -32,7 +32,6 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.RELATED_CONTENT_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VISITED_DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.WILDCARD_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEPRECATED_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DIFFICULTY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EXAM_BOARD_FIELDNAME;
@@ -49,7 +48,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -111,7 +109,6 @@ public class GameManager {
   private final MapperFacade mapper;
 
   private final GitContentManager contentManager;
-  private final String contentIndex;
 
   private final QuestionManager questionManager;
 
@@ -122,16 +119,14 @@ public class GameManager {
    * @param contentManager              - so we can augment game objects with actual detailed content
    * @param gameboardPersistenceManager - a persistence manager that deals with storing and retrieving gameboards.
    * @param mapper                      - allows mapping between DO and DTO object types.
-   * @param contentIndex                - the current content index of interest.
    */
   @Inject
   public GameManager(final GitContentManager contentManager,
                      final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
-                     final QuestionManager questionManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                     final QuestionManager questionManager) {
     this.contentManager = contentManager;
     this.gameboardPersistenceManager = gameboardPersistenceManager;
     this.questionManager = questionManager;
-    this.contentIndex = contentIndex;
 
     this.randomGenerator = new Random();
 
@@ -181,7 +176,7 @@ public class GameManager {
    * @return a list of questions ordered by DFS.
    */
   private static List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
-    if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
+    if (c == null || c.getChildren() == null || c.getChildren().isEmpty()) {
       return result;
     }
 

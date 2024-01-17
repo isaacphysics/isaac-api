@@ -16,13 +16,11 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 
 import com.google.inject.Inject;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ImageDTO;
@@ -34,7 +32,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * @author Stephen Cummins
  */
 public class URIManager {
-  private static final Logger log = LoggerFactory.getLogger(URIManager.class);
   private final String proxyPath;
 
   /**
@@ -53,29 +50,22 @@ public class URIManager {
    *
    * @param content
    *            the content object of interest
-   * @return null if we are unable to generate the URL or a string that represents the url combined with any proxypath
-   *         information required.
+   * @return a string that represents the URL combined with any proxypath
    */
   public String generateApiUrl(final ContentDTO content) {
-    String resourceUrl = null;
-    try {
-      String base;
-      if (content instanceof IsaacQuizDTO) {
-        base = "quiz";
-      } else if (content instanceof ImageDTO) {
-        base = "images";
-      } else if (content.getType().toLowerCase().contains("question")) {
-        base = "pages/questions";
-      } else if (content.getType().toLowerCase().contains("concept")) {
-        base = "pages/concepts";
-      } else {
-        base = "pages";
-      }
-      resourceUrl = proxyPath + "/api/" + base + "/" + URLEncoder.encode(content.getId(), "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      log.error("Url generation for resource id " + content.getId() + " failed. ", e);
+    String base;
+    if (content instanceof IsaacQuizDTO) {
+      base = "quiz";
+    } else if (content instanceof ImageDTO) {
+      base = "images";
+    } else if (content.getType().toLowerCase().contains("question")) {
+      base = "pages/questions";
+    } else if (content.getType().toLowerCase().contains("concept")) {
+      base = "pages/concepts";
+    } else {
+      base = "pages";
     }
 
-    return resourceUrl;
+    return proxyPath + "/api/" + base + "/" + URLEncoder.encode(content.getId(), UTF_8);
   }
 }

@@ -29,16 +29,12 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAttemptPersistenceManager {
-  private static final Logger log = LoggerFactory.getLogger(PgQuizQuestionAttemptPersistenceManager.class);
-
   private final ObjectMapper objectMapper;
   private final PostgresSqlDb database;
 
