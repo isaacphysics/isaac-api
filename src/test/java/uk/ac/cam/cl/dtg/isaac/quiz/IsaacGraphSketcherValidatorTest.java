@@ -16,13 +16,13 @@
 
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.api.client.util.Lists;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -31,13 +31,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 /**
  * Test class for the Graph Sketcher Validator class.
  */
-public class IsaacGraphSketcherValidatorTest {
+class IsaacGraphSketcherValidatorTest {
   private IsaacGraphSketcherValidator validator;
 
   /**
    * Initial configuration of tests.
    */
-  @Before
+  @BeforeEach
   public final void setUp() {
     validator = new IsaacGraphSketcherValidator();
   }
@@ -46,7 +46,7 @@ public class IsaacGraphSketcherValidatorTest {
       Test that the "did not provide an answer" response is returned for empty input.
    */
   @Test
-  public final void emptyValue_InvalidResponseShouldBeReturned() {
+  final void emptyValue_InvalidResponseShouldBeReturned() {
     // Set up the question object:
     IsaacGraphSketcherQuestion someGraphSketcherQuestion = new IsaacGraphSketcherQuestion();
 
@@ -71,7 +71,7 @@ public class IsaacGraphSketcherValidatorTest {
   }
 
   @Test
-  public final void correctAnswerPasses() {
+  final void correctAnswerPasses() {
     // Set up the question object:
     IsaacGraphSketcherQuestion someGraphSketcherQuestion = new IsaacGraphSketcherQuestion();
 
@@ -95,7 +95,7 @@ public class IsaacGraphSketcherValidatorTest {
   }
 
   @Test
-  public final void incorrectAnswerFails() {
+  final void incorrectAnswerFails() {
     // Set up the question object:
     IsaacGraphSketcherQuestion someGraphSketcherQuestion = new IsaacGraphSketcherQuestion();
 

@@ -26,8 +26,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
@@ -48,7 +48,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Test class for the user manager class.
  *
  */
-public class GameboardsFacadeTest {
+class GameboardsFacadeTest {
 
   private PropertiesLoader dummyPropertiesLoader = null;
   private GameManager dummyGameManager = null;
@@ -64,7 +64,7 @@ public class GameboardsFacadeTest {
    * @throws Exception
    *             - test exception
    */
-  @Before
+  @BeforeEach
   public final void setUp() throws Exception {
     this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
     this.dummyGameManager = createMock(GameManager.class);
@@ -80,11 +80,9 @@ public class GameboardsFacadeTest {
 
   /**
    * Verify that when an empty gameboard is noticed a 204 is returned.
-   *
-   * @throws ContentManagerException
    */
   @Test
-  public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
+  void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
       throws NoWildcardException, SegueDatabaseException, ContentManagerException {
     GameboardsFacade gameboardFacade = new GameboardsFacade(
         dummyPropertiesLoader, dummyLogManager, dummyGameManager, questionManager,
@@ -111,10 +109,11 @@ public class GameboardsFacadeTest {
 
     replay(dummyGameManager);
 
-    Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
-        stages, difficulties, examBoards, levels, concepts, questionCategory);
+    try (Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, title, subjects, fields, topics,
+        stages, difficulties, examBoards, levels, concepts, questionCategory)) {
 
-    assertEquals(r.getStatus(), Status.NO_CONTENT.getStatusCode());
+      assertEquals(r.getStatus(), Status.NO_CONTENT.getStatusCode());
+    }
     verify(dummyGameManager);
   }
 }

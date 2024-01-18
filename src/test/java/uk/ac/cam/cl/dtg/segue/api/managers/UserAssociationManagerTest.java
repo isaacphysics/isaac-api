@@ -24,14 +24,15 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.api.client.util.Sets;
 import org.easymock.Capture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
@@ -46,7 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
  * Test class for the user Association class.
  *
  */
-public class UserAssociationManagerTest {
+class UserAssociationManagerTest {
   private IAssociationDataManager dummyAssociationDataManager;
   private GroupManager dummyGroupDataManager;
   private UserAccountManager dummyUserManager;
@@ -54,10 +55,9 @@ public class UserAssociationManagerTest {
   /**
    * Initial configuration of tests.
    *
-   * @throws Exception
-   *             - test exception
+   * @throws Exception test exception
    */
-  @Before
+  @BeforeEach
   public final void setUp() throws Exception {
     dummyAssociationDataManager = createMock(IAssociationDataManager.class);
     dummyGroupDataManager = createMock(GroupManager.class);
@@ -66,11 +66,12 @@ public class UserAssociationManagerTest {
   /**
    * Verify that the constructor responds correctly to bad input.
    *
-   * @throws SegueDatabaseException
-   * @throws UserGroupNotFoundException
+   * @throws SegueDatabaseException test exception
+   * @throws UserGroupNotFoundException test exception
    */
+
   @Test
-  public final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
+  final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
       throws SegueDatabaseException, UserGroupNotFoundException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
@@ -97,14 +98,14 @@ public class UserAssociationManagerTest {
     AssociationToken someGeneratedToken = managerUnderTest.generateAssociationToken(someRegisteredUser,
         someAssociatedGroupId);
 
-    assertTrue(someGeneratedToken != null);
+    assertNotNull(someGeneratedToken);
 
     verify(someRegisteredUser, dummyAssociationDataManager);
   }
 
   @Test
-  public final void userAssociationManager_createAssociationWithTokenAndAddToGroup_associationShouldBeCreatedAndUserAddedToGroup()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_createAssociationWithTokenAndAddToGroup_associationShouldBeCreatedAndUserAddedToGroup()
+      throws SegueDatabaseException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -152,8 +153,8 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_DuplicateAssociationButAddToGroupAnyway_associationShouldNotBeCreatedButUserShouldBeAddedToGroup()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_DuplicateAssociationButAddToGroupAnyway_associationShouldNotBeCreatedButUserShouldBeAddedToGroup()
+      throws SegueDatabaseException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -197,8 +198,8 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
+      throws SegueDatabaseException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -238,8 +239,8 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_createAssociationWithBadToken_exceptionShouldBeThrown()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_createAssociationWithBadToken_exceptionShouldBeThrown()
+      throws SegueDatabaseException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -271,8 +272,7 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_hasPermissionUserIsTheOwner_trueShouldBeRetured()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_hasPermissionUserIsTheOwner_trueShouldBeReturned() {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -294,8 +294,7 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_hasPermissionUserIsAdmin_trueShouldBeRetured()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_hasPermissionUserIsAdmin_trueShouldBeReturned() {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -321,8 +320,8 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_hasPermissionUserHasValidAssociation_trueShouldBeRetured()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_hasPermissionUserHasValidAssociation_trueShouldBeReturned()
+      throws SegueDatabaseException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -352,8 +351,8 @@ public class UserAssociationManagerTest {
   }
 
   @Test
-  public final void userAssociationManager_NoPermissionUserHasNoValidAssociation_falseShouldBeRetured()
-      throws SegueDatabaseException, UserGroupNotFoundException {
+  final void userAssociationManager_NoPermissionUserHasNoValidAssociation_falseShouldBeReturned()
+      throws SegueDatabaseException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
 
@@ -383,8 +382,9 @@ public class UserAssociationManagerTest {
     verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
   }
 
+  @SuppressWarnings("checkstyle:Indentation")
   @Test
-  public final void userAssociationManager_TokenMustBeSixCharactersAndRandom()
+  final void userAssociationManager_TokenMustBeSixCharactersAndRandom()
       throws SegueDatabaseException, UserGroupNotFoundException {
     UserAssociationManager managerUnderTest = new UserAssociationManager(
         dummyAssociationDataManager, dummyUserManager, dummyGroupDataManager);
@@ -414,7 +414,7 @@ public class UserAssociationManagerTest {
 
       AssociationToken token =
           managerUnderTest.generateAssociationToken(someUserRequestingAccess, someAssociatedGroupId);
-      assertTrue(token.getToken().length() == tokenLength);
+      assertEquals(tokenLength, token.getToken().length());
       String t = token.getToken();
       for (int j = 0; j < t.length(); j++) {
         char c = t.charAt(j);
@@ -433,9 +433,9 @@ public class UserAssociationManagerTest {
           continue;
         }
         assertFalse(
-            "Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y]
-                + "!",
-            (occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
+            (occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta),
+            "Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!"
+                );
       }
     }
   }

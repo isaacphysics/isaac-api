@@ -16,18 +16,17 @@
 
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -39,18 +38,15 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 /**
  * Test class for the Item Question Validator class.
  */
-public class IsaacItemQuestionValidatorTest {
+class IsaacItemQuestionValidatorTest {
   private IsaacItemQuestionValidator validator;
   private IsaacItemQuestion someItemQuestion;
   private String incorrectExplanation = "EXPLANATION";
 
-  @Rule
-  public ExpectedException expectedException = ExpectedException.none();
-
   /**
    * Initial configuration of tests.
    */
-  @Before
+  @BeforeEach
   public final void setUp() {
     validator = new IsaacItemQuestionValidator();
 
@@ -82,7 +78,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that correct answers are recognised.
   */
   @Test
-  public final void isaacItemQuestionValidator_CorrectItems_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_CorrectItems_CorrectResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     Item submittedItem1 = new Item("id001", null);
@@ -98,7 +94,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that exact correct answers are recognised even if the choice is subset match.
   */
   @Test
-  public final void isaacItemQuestionValidator_CorrectItemsSubsetMatchEnabled_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_CorrectItemsSubsetMatchEnabled_CorrectResponseShouldBeReturned() {
 
     // Enable subset matching on the second choice in the list (the correct one)
     ((ItemChoice) someItemQuestion.getChoices().get(1)).setAllowSubsetMatch(true);
@@ -118,7 +114,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that correct answers are recognised in any order.
   */
   @Test
-  public final void isaacItemQuestionValidator_CorrectItemsUnordered_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_CorrectItemsUnordered_CorrectResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     Item submittedItem1 = new Item("id001", null);
@@ -134,7 +130,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that correct choices take precedence over incorrect choices.
   */
   @Test
-  public final void isaacItemQuestionValidator_CorrectChoicePrecedence_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_CorrectChoicePrecedence_CorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
@@ -173,7 +169,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that correct subset choices take precedence over incorrect subset ones.
   */
   @Test
-  public final void isaacItemQuestionValidator_CorrectChoiceSubsetPrecedence_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_CorrectChoiceSubsetPrecedence_CorrectResponseShouldBeReturned() {
 
     // Enable subset matching on both of the choices in the list
     ((ItemChoice) someItemQuestion.getChoices().get(0)).setAllowSubsetMatch(true);
@@ -196,7 +192,7 @@ public class IsaacItemQuestionValidatorTest {
      if the correct choice is marked as subset match.
   */
   @Test
-  public final void isaacItemQuestionValidator_CorrectChoiceSubsetOfSubmitted_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_CorrectChoiceSubsetOfSubmitted_CorrectResponseShouldBeReturned() {
 
     // Enable subset matching on the correct choice
     ((ItemChoice) someItemQuestion.getChoices().get(1)).setAllowSubsetMatch(true);
@@ -217,7 +213,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that incorrect strict choices take precedence over correct subset ones.
   */
   @Test
-  public final void isaacItemQuestionValidator_IncorrectOverCorrectSubsetPrecedence_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_IncorrectOverCorrectSubsetPrecedence_IncorrectResponseShouldBeReturned() {
 
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
@@ -259,7 +255,7 @@ public class IsaacItemQuestionValidatorTest {
      if the correct choice is marked as subset match.
   */
   @Test
-  public final void isaacItemQuestionValidator_SubmittedSubsetOfCorrectChoice_CorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_SubmittedSubsetOfCorrectChoice_CorrectResponseShouldBeReturned() {
 
     // Set up the question object:
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
@@ -292,7 +288,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that invalid answers are recognised.
   */
   @Test
-  public final void isaacItemQuestionValidator_InvalidItems_ErrorResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_InvalidItems_ErrorResponseShouldBeReturned() {
     // Set up invalid user answer:
     ItemChoice c = new ItemChoice();
     Item submittedItem1 = new Item("id005", null);
@@ -308,7 +304,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that no items being submitted gets custom feedback.
   */
   @Test
-  public final void isaacItemQuestionValidator_NoItemsSubmitted_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_NoItemsSubmitted_IncorrectResponseShouldBeReturned() {
     // Set up invalid user answer:
     ItemChoice c = new ItemChoice();
     c.setItems(null);
@@ -323,7 +319,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that incorrect answers are incorrect.
   */
   @Test
-  public final void isaacItemQuestionValidator_IncorrectAnswer_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_IncorrectAnswer_IncorrectResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     Item submittedItem1 = new Item("id001", null);
@@ -339,7 +335,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that incorrect choices can be matched.
   */
   @Test
-  public final void isaacItemQuestionValidator_IncorrectChoiceMatch_MatchedResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_IncorrectChoiceMatch_MatchedResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     Item submittedItem1 = new Item("id001", null);
@@ -356,7 +352,7 @@ public class IsaacItemQuestionValidatorTest {
      Test that duplicate items in an otherwise correct answer make it invalid.
   */
   @Test
-  public final void isaacItemQuestionValidator_DuplicateItems_ErrorMessageShown() {
+  final void isaacItemQuestionValidator_DuplicateItems_ErrorMessageShown() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     Item submittedItem1 = new Item("id001", null);
@@ -375,7 +371,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that missing choices are detected.
   */
   @Test
-  public final void isaacItemQuestionValidator_NoChoices_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_NoChoices_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
@@ -401,7 +397,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that missing items are detected.
   */
   @Test
-  public final void isaacItemQuestionValidator_NoItems_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_NoItems_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
@@ -431,7 +427,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that choices missing items are detected.
   */
   @Test
-  public final void isaacItemQuestionValidator_NoItemsInChoice_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_NoItemsInChoice_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
@@ -460,7 +456,7 @@ public class IsaacItemQuestionValidatorTest {
    Test that incorrect choice types in question are detected.
   */
   @Test
-  public final void isaacItemQuestionValidator_WrongChoiceType_IncorrectResponseShouldBeReturned() {
+  final void isaacItemQuestionValidator_WrongChoiceType_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
 
@@ -489,29 +485,29 @@ public class IsaacItemQuestionValidatorTest {
    Test that incorrect question types are detected.
   */
   @Test
-  public final void isaacItemQuestionValidator_WrongQuestionType_ExceptionShouldBeThrown() {
+  final void isaacItemQuestionValidator_WrongQuestionType_ExceptionShouldBeThrown() {
     IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
     invalidQuestionType.setId("invalidQuestionType");
+    Choice choice = new Choice();
 
-    expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("only works with IsaacItemQuestions");
-
-    // This should throw an exception:
-    validator.validateQuestionResponse(invalidQuestionType, new ItemChoice());
+    Exception exception = assertThrows(IllegalArgumentException.class, () ->
+        validator.validateQuestionResponse(invalidQuestionType, choice));
+    assertEquals("This validator only works with IsaacItemQuestions (invalidQuestionType is not ItemQuestion)",
+        exception.getMessage());
   }
 
   /*
    Test that incorrect submitted choice types are detected.
   */
   @Test
-  public final void isaacItemQuestionValidator_WrongChoiceType_ExceptionShouldBeThrown() {
+  final void isaacItemQuestionValidator_WrongChoiceType_ExceptionShouldBeThrown() {
     IsaacItemQuestion itemQuestion = new IsaacItemQuestion();
     itemQuestion.setId("invalidQuestionType");
+    Choice choice = new Choice();
 
-    expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("Expected ItemChoice for IsaacItemQuestion");
-
-    // This should throw an exception:
-    validator.validateQuestionResponse(itemQuestion, new Choice());
+    Exception exception = assertThrows(IllegalArgumentException.class, () ->
+        validator.validateQuestionResponse(itemQuestion, choice));
+    assertEquals("Expected ItemChoice for IsaacItemQuestion: invalidQuestionType. "
+        + "Received (class uk.ac.cam.cl.dtg.isaac.dos.content.Choice) ", exception.getMessage());
   }
 }

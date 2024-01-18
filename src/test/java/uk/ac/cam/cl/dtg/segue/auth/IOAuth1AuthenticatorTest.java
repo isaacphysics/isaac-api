@@ -16,11 +16,11 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.net.URL;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for the facebook authenticator class.
@@ -29,20 +29,19 @@ import org.junit.Test;
 public abstract class IOAuth1AuthenticatorTest extends IOAuthAuthenticatorTest {
   protected IOAuth1Authenticator oauth1Authenticator;
 
-  private final String someToken = "someToken";
-  private final String someTokenSecret = "someTokenSecret";
-
   /**
    * Verify that the authenticator returns a valid authorization URL.
    *
-   * @throws IOException
+   * @throws IOException test exception
    */
   @Test
   public final void getAuthorizationUrl_returnsNonNullUrl() throws IOException {
+    String someToken = "someToken";
+    String someTokenSecret = "someTokenSecret";
     String urlString = oauth1Authenticator
         .getAuthorizationUrl(new OAuth1Token(someToken, someTokenSecret));
-    assertTrue(urlString != null);
+    assertNotNull(urlString);
     URL url = new URL(urlString);
-    assertTrue(url.getAuthority() != null);
+    assertNotNull(url.getAuthority());
   }
 }

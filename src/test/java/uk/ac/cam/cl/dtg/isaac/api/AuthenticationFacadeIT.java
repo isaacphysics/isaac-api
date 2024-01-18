@@ -95,7 +95,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void loginCookieSamesite() throws Exception {
+  void loginCookieSamesite() throws Exception {
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
         ITConstants.TEST_TEACHER_PASSWORD);
     assertEquals(SAME_SITE_LAX_COMMENT, teacherLogin.cookie.getComment());
@@ -107,7 +107,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   @Nested
   class ResetPassword {
     @Test
-    public void emailRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void emailRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
       LocalAuthDTO targetUser = new LocalAuthDTO();
       targetUser.setEmail(TEST_STUDENT_EMAIL);
       targetUser.setPassword(TEST_WRONG_PASSWORD);
@@ -126,7 +126,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void ipRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void ipRateLimits() throws InvalidKeySpecException, NoSuchAlgorithmException {
       LocalAuthDTO targetUser = new LocalAuthDTO();
       targetUser.setPassword(TEST_WRONG_PASSWORD);
 
@@ -150,7 +150,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   @Nested
   class AuthenticateWithCredentialsLocalProvider {
     @Test
-    public void success() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void success() throws InvalidKeySpecException, NoSuchAlgorithmException {
       RegisteredUserDTO expectedUser = new RegisteredUserDTO(
           "Test Student", "Student", TEST_STUDENT_EMAIL, EmailVerificationStatus.VERIFIED, null, Gender.MALE,
           Date.from(LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC)), "110158", false
@@ -167,14 +167,14 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void nullAuthDTO() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void nullAuthDTO() throws InvalidKeySpecException, NoSuchAlgorithmException {
       Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", null);
       assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
       assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
     }
 
     @Test
-    public void incorrectCredentials() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void incorrectCredentials() throws InvalidKeySpecException, NoSuchAlgorithmException {
       LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
       testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
       testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
@@ -187,7 +187,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void unknownUser() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void unknownUser() throws InvalidKeySpecException, NoSuchAlgorithmException {
       LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
       testLocalAuthDTO.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
       testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
@@ -200,7 +200,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void unconfiguredRequiredMFA() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    void unconfiguredRequiredMFA() throws InvalidKeySpecException, NoSuchAlgorithmException {
       LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
       testLocalAuthDTO.setEmail(TEST_ADMIN_EMAIL);
       testLocalAuthDTO.setPassword(TEST_ADMIN_PASSWORD);
@@ -212,7 +212,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void incompleteMFA() throws InvalidKeySpecException, NoSuchAlgorithmException, SegueDatabaseException {
+    void incompleteMFA() throws InvalidKeySpecException, NoSuchAlgorithmException, SegueDatabaseException {
       reset(secondFactorManager);
       expect(secondFactorManager.has2FAConfigured(anyObject(RegisteredUserDTO.class))).andReturn(true).atLeastOnce();
       replay(secondFactorManager);
@@ -236,7 +236,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void rateThrottleByIP()
+    void rateThrottleByIP()
         throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
       LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
       testLocalAuthDTO.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
@@ -251,7 +251,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void rateThrottleByEmail()
+    void rateThrottleByEmail()
         throws InvalidKeySpecException, NoSuchAlgorithmException, SegueResourceMisuseException {
       LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
       testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
@@ -269,7 +269,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("invalidAuthDTO")
-  public void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
+  void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
       throws InvalidKeySpecException, NoSuchAlgorithmException {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
     testLocalAuthDTO.setEmail(email);
@@ -291,7 +291,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void authenticateWithCredentialsEmptyProvider() {
+  void authenticateWithCredentialsEmptyProvider() {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
     testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
     testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
@@ -303,7 +303,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void authenticateWithCredentialsUnknownProvider() throws InvalidKeySpecException, NoSuchAlgorithmException {
+  void authenticateWithCredentialsUnknownProvider() throws InvalidKeySpecException, NoSuchAlgorithmException {
     LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
     testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
     testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
@@ -317,7 +317,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   @Nested
   class UserLogout {
     @Test
-    public void sessionDeauthentication()
+    void sessionDeauthentication()
         throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
       LocalAuthDTO targetUser = new LocalAuthDTO();
       targetUser.setEmail(TEST_STUDENT_EMAIL);
@@ -372,7 +372,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void noSession() throws SQLException {
+    void noSession() throws SQLException {
       HttpSession logoutSession = createMockSession();
       replay(logoutSession);
       HttpServletRequest logoutRequest = createMockServletRequest(logoutSession);

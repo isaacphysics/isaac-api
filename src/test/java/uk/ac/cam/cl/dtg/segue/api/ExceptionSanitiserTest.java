@@ -19,12 +19,12 @@ import org.jboss.resteasy.core.interception.jaxrs.ResponseContainerRequestContex
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 
-public class ExceptionSanitiserTest {
+class ExceptionSanitiserTest {
 
   ExceptionSanitiser exceptionSanitiser = new ExceptionSanitiser();
 
   @Test
-  public void filter_sanitiseError() throws IOException {
+  void filter_sanitiseError() throws IOException {
     SegueErrorResponse preFilterError =
         new SegueErrorResponse(Response.Status.BAD_REQUEST, "Test message", new Exception("Extra detail"));
 
@@ -52,7 +52,7 @@ public class ExceptionSanitiserTest {
   }
 
   @Test
-  public void filter_cleanError() throws IOException {
+  void filter_cleanError() throws IOException {
     SegueErrorResponse preFilterError = new SegueErrorResponse(Response.Status.BAD_REQUEST, "Test message");
 
     ContainerRequestContext mockRequestContext = createMock(ResponseContainerRequestContext.class);

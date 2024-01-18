@@ -19,25 +19,25 @@ package uk.ac.cam.cl.dtg.segue.database;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class GitDbTest {
+class GitDbTest {
 
   @Test
-  public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
+  void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
     assertThrows(IllegalArgumentException.class, () -> new GitDb("", null, null));
 
     assertThrows(NullPointerException.class, () -> new GitDb(null, null, null));
   }
 
   @Test
-  public void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
+  void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
     Git git = createMock(Git.class);
 
     GitDb db = new GitDb(git);
@@ -54,7 +54,9 @@ public class GitDbTest {
     replay(git);
     replay(repo);
 
-    assertNull(db.getTreeWalk("sha",
-        "")); // Blank path is explicitly allowed. This should not throw an exception. But in this case we've passed an invalid sha, so we should get null back.
+    assertNull(
+        db.getTreeWalk("sha", ""),
+        "When passing an invalid sha and a blank path, null should be returned as blank path is explicitly allowed."
+    );
   }
 }

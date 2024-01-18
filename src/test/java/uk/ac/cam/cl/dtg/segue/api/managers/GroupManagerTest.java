@@ -58,7 +58,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Test class for the user manager class.
  */
-public class GroupManagerTest {
+class GroupManagerTest {
   private MapperFacade dummyMapper;
 
   private IUserGroupPersistenceManager groupDataManager;
@@ -93,7 +93,7 @@ public class GroupManagerTest {
    * Verify that the constructor responds correctly to bad input.
    */
   @Test
-  public final void groupManager_createValidGroup_aGroupShouldBeCreated() {
+  final void groupManager_createValidGroup_aGroupShouldBeCreated() {
     String someGroupName = "Group Name";
     RegisteredUserDTO someGroupOwner = new RegisteredUserDTO();
     someGroupOwner.setId(5339L);
@@ -138,7 +138,7 @@ public class GroupManagerTest {
   }
 
   @Test
-  public void orderUsersByName_ordersBySurnamePrimarily() {
+  void orderUsersByName_ordersBySurnamePrimarily() {
     List<RegisteredUserDTO> users = Stream.of(
             new RegisteredUserDTO("A", "Ab", "aab@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE,
                 somePastDate, "", false),

@@ -16,19 +16,19 @@
 
 package uk.ac.cam.cl.dtg.segue.search;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ElasticSearchProviderTest {
+class ElasticSearchProviderTest {
 
   @Test
-  public void generateFilterQuery_simpleFilterInstruction_returnsFilteredQuery() {
+  void generateFilterQuery_simpleFilterInstruction_returnsFilteredQuery() {
     // Arrange
     ElasticSearchProvider provider = new ElasticSearchProvider(null);
 
@@ -48,7 +48,7 @@ public class ElasticSearchProviderTest {
   }
 
   @Test
-  public void generateFilterQuery_simpleExclusionInstruction_returnsExclusionQuery() {
+  void generateFilterQuery_simpleExclusionInstruction_returnsExclusionQuery() {
     // Arrange
     ElasticSearchProvider provider = new ElasticSearchProvider(null);
 
@@ -68,7 +68,7 @@ public class ElasticSearchProviderTest {
   }
 
   @Test
-  public void generateFilterQuery_simpleFilterInstructionAndExclusionInstruction_returnsFilteredAndExcludedQuery() {
+  void generateFilterQuery_simpleFilterInstructionAndExclusionInstruction_returnsFilteredAndExcludedQuery() {
     // Arrange
     ElasticSearchProvider provider = new ElasticSearchProvider(null);
 

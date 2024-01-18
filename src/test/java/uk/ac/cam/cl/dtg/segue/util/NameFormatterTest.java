@@ -1,23 +1,23 @@
 package uk.ac.cam.cl.dtg.segue.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Date;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.NameFormatter;
 
-public class NameFormatterTest {
+class NameFormatterTest {
 
 
   /**
    * Test teacher user name extraction.
    */
   @Test
-  public final void testGetTeacherNameFromUser() throws Exception {
+  final void testGetTeacherNameFromUser() {
     // Check case with both first and last name:
     RegisteredUserDTO dummyUserFirstLast = new RegisteredUserDTO();
     dummyUserFirstLast.setGivenName("FirstName");
@@ -43,7 +43,7 @@ public class NameFormatterTest {
    * Test teacher user name extraction.
    */
   @Test
-  public final void testGetFilteredGroupNameFromGroup() throws Exception {
+  final void testGetFilteredGroupNameFromGroup() {
     String groupName = "Group Name";
 
     // Check case with shared group name:

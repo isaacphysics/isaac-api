@@ -17,11 +17,11 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import static org.easymock.EasyMock.createMock;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -31,10 +31,10 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 /**
  * Test class for the GitContentManager class.
  */
-public class GitContentManagerTest {
+class GitContentManagerTest {
   private GitContentManager defaultGCM;
 
-  @Before
+  @BeforeEach
   public final void setUp() {
     GitDb database = createMock(GitDb.class);
     ISearchProvider searchProvider = createMock(ISearchProvider.class);
@@ -47,7 +47,7 @@ public class GitContentManagerTest {
    * Test that the getById method returns null if it is passed a null id.
    */
   @Test
-  public void getById_invalidId_checkNullReturned() {
+  void getById_invalidId_checkNullReturned() {
     String id = null;
     try {
       assertNull(defaultGCM.getContentDOById(id));

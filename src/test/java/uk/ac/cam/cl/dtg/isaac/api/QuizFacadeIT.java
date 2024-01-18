@@ -212,7 +212,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class GetAvailableQuizzesEndpoint {
     @Test
-    public void asAnonymousUser_isUnauthorised() {
+    void asAnonymousUser_isUnauthorised() {
       HttpServletRequest getQuizzesRequest = prepareAnonymousRequest();
 
       Response getQuizzesResponse = quizFacade.getAvailableQuizzes(createNiceMock(Request.class), getQuizzesRequest);
@@ -224,7 +224,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asTeacher_returnsAllQuizzes() {
+    void asTeacher_returnsAllQuizzes() {
       HttpServletRequest getQuizzesRequest = prepareTeacherRequest();
 
       Response getQuizzesResponse = quizFacade.getAvailableQuizzes(createNiceMock(Request.class), getQuizzesRequest);
@@ -245,7 +245,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
      * Tests that quizzes with visibleToStudents=false and hiddenFromRoles=[TUTOR] are not considered available to a tutor.
      */
     @Test
-    public void asTutor_returnsQuizzesNotHiddenFromStudentOrTutorRole() {
+    void asTutor_returnsQuizzesNotHiddenFromStudentOrTutorRole() {
       HttpServletRequest getQuizzesRequest = prepareTutorRequest();
 
       Response getQuizzesResponse = quizFacade.getAvailableQuizzes(createNiceMock(Request.class), getQuizzesRequest);
@@ -263,7 +263,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asStudent_returnsQuizzesNotHiddenFromStudentRole() {
+    void asStudent_returnsQuizzesNotHiddenFromStudentRole() {
       HttpServletRequest getQuizzesRequest = prepareStudentRequest();
 
       Response getQuizzesResponse = quizFacade.getAvailableQuizzes(createNiceMock(Request.class), getQuizzesRequest);
@@ -288,7 +288,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class GetAssignedQuizzes {
     @Test
-    public void asAnonymousUser_isUnauthorised() {
+    void asAnonymousUser_isUnauthorised() {
       HttpServletRequest assignedQuizRequest = prepareAnonymousRequest();
 
       Response getAssignedQuizzesResponse = quizFacade.getAssignedQuizzes(assignedQuizRequest);
@@ -300,7 +300,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asStudent_withNoAssignments_returnsEmptyList() {
+    void asStudent_withNoAssignments_returnsEmptyList() {
       HttpServletRequest assignedQuizRequest = prepareStudentRequest();
 
       Response getAssignedQuizzesResponse = quizFacade.getAssignedQuizzes(assignedQuizRequest);
@@ -313,7 +313,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asStudent_withAssignments_returnsListOfAssignments() {
+    void asStudent_withAssignments_returnsListOfAssignments() {
       HttpServletRequest assignedQuizRequest = prepareStudentWithAssignmentsRequest();
 
       Response getAssignedQuizzesResponse = quizFacade.getAssignedQuizzes(assignedQuizRequest);
@@ -328,7 +328,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asTeacher_withNoAssignments_returnsEmptyList() {
+    void asTeacher_withNoAssignments_returnsEmptyList() {
       HttpServletRequest assignedQuizRequest = prepareTeacherRequest();
 
       Response getAssignedQuizzesResponse = quizFacade.getAssignedQuizzes(assignedQuizRequest);
@@ -344,7 +344,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class GetFreeAttempts {
     @Test
-    public void asAnonymousUser_isUnauthorised() {
+    void asAnonymousUser_isUnauthorised() {
       HttpServletRequest getFreeAttemptsRequest = prepareAnonymousRequest();
 
       Response getFreeAttemptsResponse = quizFacade.getFreeAttempts(getFreeAttemptsRequest);
@@ -356,7 +356,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asStudent_withNoAttempts_returnsEmptyList() {
+    void asStudent_withNoAttempts_returnsEmptyList() {
       HttpServletRequest getFreeAttemptsRequest = prepareStudentRequest();
 
       Response getFreeAttemptsResponse = quizFacade.getFreeAttempts(getFreeAttemptsRequest);
@@ -369,7 +369,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asStudent_withOnlyAssignedAttempts_returnsEmptyList() {
+    void asStudent_withOnlyAssignedAttempts_returnsEmptyList() {
       HttpServletRequest getFreeAttemptsRequest = prepareStudentWithAssignmentsRequest();
 
       Response getFreeAttemptsResponse = quizFacade.getFreeAttempts(getFreeAttemptsRequest);
@@ -382,7 +382,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void asStudent_withFreeAttempts_returnsListOnlyOfFreeAttempts() {
+    void asStudent_withFreeAttempts_returnsListOnlyOfFreeAttempts() {
       HttpServletRequest getFreeAttemptsRequest = prepareStudentWithFreeAttemptRequest();
 
       Response getFreeAttemptsResponse = quizFacade.getFreeAttempts(getFreeAttemptsRequest);
@@ -403,7 +403,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizId_isBadRequest() {
+      void missingQuizId_isBadRequest() {
         HttpServletRequest getQuizAssignmentRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, null);
@@ -415,7 +415,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isBadRequest() {
+      void cancelledAssignment_isBadRequest() {
         HttpServletRequest getQuizAssignmentRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentResponse =
@@ -431,7 +431,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest getQuizAssignmentRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, QUIZ_ASSIGNMENT_ID);
@@ -443,7 +443,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest getQuizAssignmentRequest = prepareStudentRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, QUIZ_ASSIGNMENT_ID);
@@ -455,7 +455,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_isForbidden() {
+      void asTutor_isForbidden() {
         HttpServletRequest getQuizAssignmentRequest = prepareTutorRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, QUIZ_ASSIGNMENT_ID);
@@ -467,7 +467,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsNotGroupManager_isForbidden() {
+      void asTeacher_whoIsNotGroupManager_isForbidden() {
         HttpServletRequest getQuizAssignmentRequest = prepareTeacherWhoIsNotGroupManagerRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, QUIZ_ASSIGNMENT_ID);
@@ -482,7 +482,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class ValidUser {
       @Test
-      public void asTeacher_whoIsGroupManager_returnsListOfAssignments_withFeedbackOnlyForStudentsAllowingAccess() {
+      void asTeacher_whoIsGroupManager_returnsListOfAssignments_withFeedbackOnlyForStudentsAllowingAccess() {
         HttpServletRequest getQuizAssignmentRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, QUIZ_ASSIGNMENT_ID);
@@ -506,7 +506,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_returnsListOfAssignments_withFeedbackForAllStudents() {
+      void asAdmin_returnsListOfAssignments_withFeedbackForAllStudents() {
         HttpServletRequest getQuizAssignmentRequest = prepareAdminRequest();
 
         Response getQuizAssignmentResponse = quizFacade.getQuizAssignment(getQuizAssignmentRequest, QUIZ_ASSIGNMENT_ID);
@@ -536,7 +536,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizAssignmentId_isBadRequest() {
+      void missingQuizAssignmentId_isBadRequest() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -550,7 +550,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void missingUserId_isBadRequest() {
+      void missingUserId_isBadRequest() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -563,7 +563,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isBadRequest() {
+      void cancelledAssignment_isBadRequest() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -580,7 +580,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -594,7 +594,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareStudentRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -608,7 +608,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_isForbidden() {
+      void asTutor_isForbidden() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTutorRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -622,7 +622,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsNotGroupManager_isForbidden() {
+      void asTeacher_whoIsNotGroupManager_isForbidden() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTeacherWhoIsNotGroupManagerRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -639,7 +639,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class CorrectGroupOwnerButInvalidTarget {
       @Test
-      public void asTeacher_withTargetStudent_whoIsNotInGroup_isForbidden() {
+      void asTeacher_withTargetStudent_whoIsNotInGroup_isForbidden() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -652,7 +652,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_withTargetStudentWhoDoesNotGrantViewingPermissions_isForbidden() {
+      void asTeacher_withTargetStudentWhoDoesNotGrantViewingPermissions_isForbidden() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -666,7 +666,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_withTargetStudent_whoHasNotCompletedAssignment_isForbidden() {
+      void asTeacher_withTargetStudent_whoHasNotCompletedAssignment_isForbidden() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -683,7 +683,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class ValidRequest {
       @Test
-      public void asTeacher_withTargetStudent_whoHasCompletedAssignment_returnsQuizAttemptFeedback() {
+      void asTeacher_withTargetStudent_whoHasCompletedAssignment_returnsQuizAttemptFeedback() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -700,7 +700,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
 
       @Test
-      public void asAdmin_overridesNoViewingPermissions_returnsQuizAttemptFeedback() {
+      void asAdmin_overridesNoViewingPermissions_returnsQuizAttemptFeedback() {
         HttpServletRequest getQuizAssignmentAttemptRequest = prepareAdminRequest();
 
         Response getQuizAssignmentAttemptResponse =
@@ -723,7 +723,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizId_isBadRequest() {
+      void missingQuizId_isBadRequest() {
         HttpServletRequest createQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, null, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -741,7 +741,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void missingGroupId_isBadRequest() {
+      void missingGroupId_isBadRequest() {
         HttpServletRequest createQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, null, null, someFutureDate,
@@ -759,7 +759,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void missingFeedbackMode_isBadRequest() {
+      void missingFeedbackMode_isBadRequest() {
         HttpServletRequest createQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate, null);
@@ -776,7 +776,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownQuizId_isNotFound() {
+      void unknownQuizId_isNotFound() {
         HttpServletRequest createQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, UNKNOWN_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -793,7 +793,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void dueDateInPast_isBadRequest() {
+      void dueDateInPast_isBadRequest() {
         HttpServletRequest createQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, somePastDate,
@@ -810,7 +810,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void duplicateActiveAssignment_isBadRequest() {
+      void duplicateActiveAssignment_isBadRequest() {
         HttpServletRequest createQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, QUIZ_FACADE_IT_TEST_GROUP_ID, null, someFutureDate,
@@ -830,7 +830,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest createQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -847,7 +847,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest createQuizAssignmentRequest = prepareStudentRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -864,7 +864,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_isForbidden() {
+      void asTutor_isForbidden() {
         HttpServletRequest createQuizAssignmentRequest = prepareTutorRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -881,7 +881,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsNotGroupManager_isForbidden() {
+      void asTeacher_whoIsNotGroupManager_isForbidden() {
         HttpServletRequest createQuizAssignmentRequest = prepareTeacherWhoIsNotGroupManagerRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -901,7 +901,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class ValidUser {
       @Test
-      public void asTeacher_whoIsGroupManager_returnsQuizAssignment() {
+      void asTeacher_whoIsGroupManager_returnsQuizAssignment() {
         HttpServletRequest createQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, TEST_TEACHERS_AB_GROUP_ID, null, someFutureDate,
@@ -923,7 +923,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_returnsQuizAssignment() {
+      void asAdmin_returnsQuizAssignment() {
         HttpServletRequest createQuizAssignmentRequest = prepareAdminRequest();
         QuizAssignmentDTO assignmentRequest =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, DAVE_TEACHERS_BC_GROUP_ID, null, someFutureDate,
@@ -951,7 +951,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizAssignmentId_isBadRequest() {
+      void missingQuizAssignmentId_isBadRequest() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareAnonymousRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -965,7 +965,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isBadRequest() {
+      void cancelledAssignment_isBadRequest() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareTeacherRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -983,7 +983,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareAnonymousRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -997,7 +997,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareStudentRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -1011,7 +1011,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_isForbidden() {
+      void asTutor_isForbidden() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareTutorRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -1025,7 +1025,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsNotGroupManager_isForbidden() {
+      void asTeacher_whoIsNotGroupManager_isForbidden() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareTeacherWhoIsNotGroupManagerRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -1042,7 +1042,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class ValidUser {
       @Test
-      public void asTeacher_whoIsGroupManager_returnsNoContent() {
+      void asTeacher_whoIsGroupManager_returnsNoContent() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareTeacherRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -1055,7 +1055,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_returnsNoContent() {
+      void asAdmin_returnsNoContent() {
         HttpServletRequest cancelQuizAssignmentRequest = prepareTeacherRequest();
 
         try (Response cancelQuizAssignmentResponse = quizFacade.cancelQuizAssignment(cancelQuizAssignmentRequest,
@@ -1074,7 +1074,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizAssignmentId_isBadRequest() {
+      void missingQuizAssignmentId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, null, null);
 
@@ -1089,7 +1089,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void changingQuizAssignmentId_isBadRequest() {
+      void changingQuizAssignmentId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto =
             new QuizAssignmentDTO(QUIZ_ASSIGNMENT_ID, null, null, null, null, null, null);
@@ -1105,7 +1105,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void changingQuizId_isBadRequest() {
+      void changingQuizId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto =
             new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, null, null, null, null, null);
@@ -1121,7 +1121,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void changingGroupId_isBadRequest() {
+      void changingGroupId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, 1L, null, null, null);
 
@@ -1136,7 +1136,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void changingOwnerId_isBadRequest() {
+      void changingOwnerId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, 1L, null, null, null, null);
 
@@ -1151,7 +1151,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void changingCreationDateId_isBadRequest() {
+      void changingCreationDateId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, new Date(), null, null);
 
@@ -1166,7 +1166,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void settingDueDate_withDateInThePast_isForbidden() {
+      void settingDueDate_withDateInThePast_isForbidden() {
         HttpServletRequest updateQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, somePastDate, null);
 
@@ -1181,7 +1181,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isBadRequest() {
+      void cancelledAssignment_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, someFutureDate, null);
 
@@ -1199,7 +1199,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, null, null);
 
@@ -1214,7 +1214,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest updateQuizAssignmentRequest = prepareStudentRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, null, null);
 
@@ -1229,7 +1229,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_isForbidden() {
+      void asTutor_isForbidden() {
         HttpServletRequest updateQuizAssignmentRequest = prepareTutorRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, null, null);
 
@@ -1244,7 +1244,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoisNotGroupManager_isForbidden() {
+      void asTeacher_whoisNotGroupManager_isForbidden() {
         HttpServletRequest updateQuizAssignmentRequest = prepareTeacherWhoIsNotGroupManagerRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, null, null);
 
@@ -1262,7 +1262,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class ValidUser {
       @Test
-      public void asTeacher_whoIs_groupManager_settingDueDate_withValidDate_returnsNoContent() {
+      void asTeacher_whoIs_groupManager_settingDueDate_withValidDate_returnsNoContent() {
         HttpServletRequest updateQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, someFutureDate, null);
 
@@ -1276,7 +1276,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIs_groupManager_settingFeedbackMode_returnsNoContent() {
+      void asTeacher_whoIs_groupManager_settingFeedbackMode_returnsNoContent() {
         HttpServletRequest updateQuizAssignmentRequest = prepareTeacherRequest();
         QuizAssignmentDTO quizAssignmentDto =
             new QuizAssignmentDTO(null, null, null, null, null, null, QuizFeedbackMode.OVERALL_MARK);
@@ -1291,7 +1291,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_settingDueDate_withValidDate_returnsNoContent() {
+      void asAdmin_settingDueDate_withValidDate_returnsNoContent() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAdminRequest();
         QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, null, someFutureDate, null);
 
@@ -1305,7 +1305,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_settingFeedbackMode_returnsNoContent() {
+      void asAdmin_settingFeedbackMode_returnsNoContent() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAdminRequest();
         QuizAssignmentDTO quizAssignmentDto =
             new QuizAssignmentDTO(null, null, null, null, null, null, QuizFeedbackMode.OVERALL_MARK);
@@ -1326,7 +1326,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void nullQuizId_isBadRequest() {
+      void nullQuizId_isBadRequest() {
         HttpServletRequest previewQuizRequest = prepareTeacherRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1340,7 +1340,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void emptyQuizId_isBadRequest() {
+      void emptyQuizId_isBadRequest() {
         HttpServletRequest previewQuizRequest = prepareTeacherRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1354,7 +1354,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownQuizId_isNotFound() {
+      void unknownQuizId_isNotFound() {
         HttpServletRequest previewQuizRequest = prepareTeacherRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1371,7 +1371,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class StandardQuizPermissions {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest previewQuizRequest = prepareAnonymousRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1385,7 +1385,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest previewQuizRequest = prepareStudentRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1399,7 +1399,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_returnsQuiz() {
+      void asTutor_returnsQuiz() {
         HttpServletRequest previewQuizRequest = prepareTutorRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1413,7 +1413,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_returnsQuiz() {
+      void asTeacher_returnsQuiz() {
         HttpServletRequest previewQuizRequest = prepareTeacherRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1430,7 +1430,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class RestrictedQuizPermissions {
       @Test
-      public void asTutor_withQuizThatIsHiddenFromStudentRole_isForbidden() {
+      void asTutor_withQuizThatIsHiddenFromStudentRole_isForbidden() {
         HttpServletRequest previewQuizRequest = prepareTutorRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1444,7 +1444,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_withQuizThatIsHiddenFromTutorRole_isForbidden() {
+      void asTutor_withQuizThatIsHiddenFromTutorRole_isForbidden() {
         HttpServletRequest previewQuizRequest = prepareTutorRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1458,7 +1458,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_withQuizThatIsHiddenFromStudentRole_returnsQuiz() {
+      void asTeacher_withQuizThatIsHiddenFromStudentRole_returnsQuiz() {
         HttpServletRequest previewQuizRequest = prepareTeacherRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1472,7 +1472,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_withQuizThatIsHiddenFromTutorRole_returnsQuiz() {
+      void asTeacher_withQuizThatIsHiddenFromTutorRole_returnsQuiz() {
         HttpServletRequest previewQuizRequest = prepareTeacherRequest();
 
         try (Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
@@ -1490,7 +1490,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class StartQuizAttempt {
     @Test
-    public void asStudent_withValidRequest_returnsQuizAttempt() {
+    void asStudent_withValidRequest_returnsQuizAttempt() {
       HttpServletRequest startQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
 
       try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1510,7 +1510,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest startQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1524,7 +1524,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotInGroup_isForbidden() {
+      void asStudent_whoIsNotInGroup_isForbidden() {
         HttpServletRequest startQuizAttemptRequest = prepareStudentRequest();
 
         try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1541,7 +1541,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizAssignmentId_isBadRequest() {
+      void missingQuizAssignmentId_isBadRequest() {
         HttpServletRequest startQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1555,7 +1555,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isGone() {
+      void cancelledAssignment_isGone() {
         HttpServletRequest startQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1569,7 +1569,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void expiredAssignment_isForbidden() {
+      void expiredAssignment_isForbidden() {
         HttpServletRequest startQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1583,7 +1583,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void alreadyAttemptedAssignment_isForbidden() {
+      void alreadyAttemptedAssignment_isForbidden() {
         HttpServletRequest startQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class),
@@ -1601,7 +1601,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class StartFreeQuizAttempt {
     @Test
-    public void asStudent_withValidRequest_returnsQuizAttempt() {
+    void asStudent_withValidRequest_returnsQuizAttempt() {
       HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
 
       try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1621,7 +1621,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest startFreeQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1635,7 +1635,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_withQuizThatIsHiddenFromStudentRole() {
+      void asStudent_withQuizThatIsHiddenFromStudentRole() {
         HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
 
         try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1649,7 +1649,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_withQuizThatHasBeenAssigned_isForbidden() {
+      void asStudent_withQuizThatHasBeenAssigned_isForbidden() {
         HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1669,7 +1669,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizId_isBadRequest() {
+      void missingQuizId_isBadRequest() {
         HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
 
         try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1683,7 +1683,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void emptyQuizId_isBadRequest() {
+      void emptyQuizId_isBadRequest() {
         HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
 
         try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1697,7 +1697,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownQuizId_isNotFound() {
+      void unknownQuizId_isNotFound() {
         HttpServletRequest startFreeQuizAttemptRequest = prepareStudentWithNoExistingAttemptsRequest();
 
         try (Response startFreeQuizAttemptResponse = quizFacade.startFreeQuizAttempt(createNiceMock(Request.class),
@@ -1715,7 +1715,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class GetQuizAttempt {
     @Test
-    public void validRequest_returnsQuizAttempt() {
+    void validRequest_returnsQuizAttempt() {
       HttpServletRequest getQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
       try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
@@ -1735,7 +1735,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest getQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
@@ -1749,7 +1749,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotAttemptCreator_isForbidden() {
+      void asStudent_whoIsNotAttemptCreator_isForbidden() {
         HttpServletRequest getQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
@@ -1766,7 +1766,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void cancelledAssignment_isForbidden() {
+      void cancelledAssignment_isForbidden() {
         HttpServletRequest getQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
@@ -1780,7 +1780,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void expiredAssignment_isForbidden() {
+      void expiredAssignment_isForbidden() {
         HttpServletRequest getQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
@@ -1794,7 +1794,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void alreadyCompletedAttempt_isForbidden() {
+      void alreadyCompletedAttempt_isForbidden() {
         HttpServletRequest getQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptResponse = quizFacade.getQuizAttempt(getQuizAttemptRequest,
@@ -1814,7 +1814,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareAnonymousRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1828,7 +1828,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotAttemptCreator_isForbidden() {
+      void asStudent_whoIsNotAttemptCreator_isForbidden() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1842,7 +1842,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_isForbidden() {
+      void asTeacher_isForbidden() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareTeacherRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1856,7 +1856,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_isForbidden() {
+      void asAdmin_isForbidden() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareAdminRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1873,7 +1873,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class IncompleteAttempt {
       @Test
-      public void expiredAssignment_isForbidden() {
+      void expiredAssignment_isForbidden() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1887,7 +1887,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void incompleteAttempt_isForbidden() {
+      void incompleteAttempt_isForbidden() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1904,7 +1904,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class CompletedAttempt {
       @Test
-      public void completedAttempt_withAssignmentWithNoDueDate_returnsQuizAttempt() {
+      void completedAttempt_withAssignmentWithNoDueDate_returnsQuizAttempt() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1923,7 +1923,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void completedAttempt_withAssignmentWithDueDate_returnsQuizAttempt() {
+      void completedAttempt_withAssignmentWithDueDate_returnsQuizAttempt() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1942,7 +1942,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void completedAttempt_returnsQuizAttempt_withAppropriateFeedbackMode() {
+      void completedAttempt_returnsQuizAttempt_withAppropriateFeedbackMode() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1961,7 +1961,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void completedAttempt_withNoAssignment_returnsQuizAttempt() {
+      void completedAttempt_withNoAssignment_returnsQuizAttempt() {
         HttpServletRequest getQuizAttemptFeedbackRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response getQuizAttemptFeedbackResponse = quizFacade.getQuizAttemptFeedback(getQuizAttemptFeedbackRequest,
@@ -1984,7 +1984,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class CompleteQuizAttempt {
     @Test
-    public void alreadyCompletedAttempt_isForbidden() {
+    void alreadyCompletedAttempt_isForbidden() {
       HttpServletRequest completeQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
       try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
@@ -1998,7 +1998,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void validRequest_returnsQuizAttempt() {
+    void validRequest_returnsQuizAttempt() {
       HttpServletRequest completeQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
 
       try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
@@ -2018,7 +2018,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest completeQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
@@ -2032,7 +2032,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotAttemptCreator_isForbidden() {
+      void asStudent_whoIsNotAttemptCreator_isForbidden() {
         HttpServletRequest completeQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
@@ -2046,7 +2046,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_isForbidden() {
+      void asTeacher_isForbidden() {
         HttpServletRequest completeQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
@@ -2060,7 +2060,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_isForbidden() {
+      void asAdmin_isForbidden() {
         HttpServletRequest completeQuizAttemptRequest = prepareAdminRequest();
 
         try (Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(completeQuizAttemptRequest,
@@ -2080,7 +2080,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizAssignmentId_isBadRequest() {
+      void missingQuizAssignmentId_isBadRequest() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2094,7 +2094,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void missingUserId_isBadRequest() {
+      void missingUserId_isBadRequest() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2108,7 +2108,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownUserId_isBadRequest() {
+      void unknownUserId_isBadRequest() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2122,7 +2122,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isForbidden() {
+      void cancelledAssignment_isForbidden() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2137,7 +2137,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void expiredAssignment_isForbidden() {
+      void expiredAssignment_isForbidden() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2152,7 +2152,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void targetUserIsNotInAssignmentGroup_isBadRequest() {
+      void targetUserIsNotInAssignmentGroup_isBadRequest() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2166,7 +2166,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void attemptIsAlreadyIncomplete_isBadRequest() {
+      void attemptIsAlreadyIncomplete_isBadRequest() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2181,7 +2181,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownQuizAssignmentId_isInternalServerError() {
+      void unknownQuizAssignmentId_isInternalServerError() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2200,7 +2200,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2214,7 +2214,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_isForbidden() {
+      void asStudent_isForbidden() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareStudentRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2228,7 +2228,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutorIsForbidden() {
+      void asTutorIsForbidden() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTutorRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2242,7 +2242,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsNotGroupManager_IsForbidden() {
+      void asTeacher_whoIsNotGroupManager_IsForbidden() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherWhoIsNotGroupManagerRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2259,7 +2259,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class ValidRequest {
       @Test
-      public void asTeacher_whoIsGroupManager_returnsQuizUserFeedback() {
+      void asTeacher_whoIsGroupManager_returnsQuizUserFeedback() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2275,7 +2275,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_withTargetStudentWhoDoesNotGrantViewingPermissions_returnsQuizUserFeedback_withNullFeedback() {
+      void asTeacher_withTargetStudentWhoDoesNotGrantViewingPermissions_returnsQuizUserFeedback_withNullFeedback() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareTeacherRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2292,7 +2292,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_overridesNoViewingPermissions_returnsQuizUserFeedback() {
+      void asAdmin_overridesNoViewingPermissions_returnsQuizUserFeedback() {
         HttpServletRequest markIncompleteQuizAttemptRequest = prepareAdminRequest();
 
         try (Response markIncompleteQuizAttemptResponse = quizFacade.markIncompleteQuizAttempt(
@@ -2315,7 +2315,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void nullAnswer_isBadRequest() {
+      void nullAnswer_isBadRequest() {
         HttpServletRequest answerQuestionRequest = prepareAnonymousRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2329,7 +2329,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void emptyAnswer_isBadRequest() {
+      void emptyAnswer_isBadRequest() {
         HttpServletRequest answerQuestionRequest = prepareAnonymousRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2343,7 +2343,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void nullQuestionId_isBadRequest() {
+      void nullQuestionId_isBadRequest() {
         HttpServletRequest answerQuestionRequest = prepareAnonymousRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2357,7 +2357,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void emptyQuestionId_isBadRequest() {
+      void emptyQuestionId_isBadRequest() {
         HttpServletRequest answerQuestionRequest = prepareAnonymousRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2371,7 +2371,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownQuestionId_isNotFound() {
+      void unknownQuestionId_isNotFound() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2386,7 +2386,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void questionIdIsNotInQuiz_isBadRequest() {
+      void questionIdIsNotInQuiz_isBadRequest() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2400,7 +2400,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void completedAttempt_isForbidden() {
+      void completedAttempt_isForbidden() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2414,7 +2414,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isForbidden() {
+      void cancelledAssignment_isForbidden() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2428,7 +2428,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void expiredAssignment_isForbidden() {
+      void expiredAssignment_isForbidden() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2442,7 +2442,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void unknownAssignmentId_isInternalServerError() {
+      void unknownAssignmentId_isInternalServerError() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2459,7 +2459,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest answerQuestionRequest = prepareAnonymousRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2473,7 +2473,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotAttemptCreator_isForbidden() {
+      void asStudent_whoIsNotAttemptCreator_isForbidden() {
         HttpServletRequest answerQuestionRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response answerQuestionResponse = quizFacade.answerQuestion(answerQuestionRequest,
@@ -2491,7 +2491,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class AbandonQuizAttempt {
     @Test
-    public void validRequest_returnsNoContent() {
+    void validRequest_returnsNoContent() {
       HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
       try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
@@ -2506,7 +2506,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingQuizAttemptId_isBadRequest() {
+      void missingQuizAttemptId_isBadRequest() {
         HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest, null)) {
@@ -2519,7 +2519,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void assignedAttempt_isForbidden() {
+      void assignedAttempt_isForbidden() {
         HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
@@ -2533,7 +2533,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void completedAttempt_isForbidden() {
+      void completedAttempt_isForbidden() {
         HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
@@ -2550,7 +2550,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest cancelQuizAttemptRequest = prepareAnonymousRequest();
 
         try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
@@ -2564,7 +2564,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotAttemptCreator_isForbidden() {
+      void asStudent_whoIsNotAttemptCreator_isForbidden() {
         HttpServletRequest cancelQuizAttemptRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response cancelQuizAttemptResponse = quizFacade.abandonQuizAttempt(cancelQuizAttemptRequest,
@@ -2582,7 +2582,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
   @Nested
   class LogQuizSectionView {
     @Test
-    public void validRequest_returnsNoContent() {
+    void validRequest_returnsNoContent() {
       HttpServletRequest logQuizSectionViewRequest = prepareStudentWithAssignmentsRequest();
 
       try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2597,7 +2597,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void missingSectionNumber_isBadRequest() {
+      void missingSectionNumber_isBadRequest() {
         HttpServletRequest logQuizSectionViewRequest = prepareAnonymousRequest();
 
         try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2611,7 +2611,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void cancelledAssignment_isForbidden() {
+      void cancelledAssignment_isForbidden() {
         HttpServletRequest logQuizSectionViewRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2625,7 +2625,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void expiredAssignment_isForbidden() {
+      void expiredAssignment_isForbidden() {
         HttpServletRequest logQuizSectionViewRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2639,7 +2639,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void alreadyCompletedAttempt_isForbidden() {
+      void alreadyCompletedAttempt_isForbidden() {
         HttpServletRequest logQuizSectionViewRequest = prepareStudentWithAssignmentsRequest();
 
         try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2656,7 +2656,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_isUnauthorised() {
+      void asAnonymousUser_isUnauthorised() {
         HttpServletRequest logQuizSectionViewRequest = prepareAnonymousRequest();
 
         try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2670,7 +2670,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_whoIsNotAttemptCreator_isForbidden() {
+      void asStudent_whoIsNotAttemptCreator_isForbidden() {
         HttpServletRequest logQuizSectionViewRequest = prepareStudentWithFreeAttemptRequest();
 
         try (Response logQuizSectionViewResponse = quizFacade.logQuizSectionView(logQuizSectionViewRequest,
@@ -2690,7 +2690,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class MissingOrInvalidData {
       @Test
-      public void unknownGroupId_isInternalServerError() {
+      void unknownGroupId_isInternalServerError() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentsResponse =
@@ -2706,7 +2706,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnspecifiedGroupUnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_withNullGroupId_isUnauthorised() {
+      void asAnonymousUser_withNullGroupId_isUnauthorised() {
         HttpServletRequest getQuizAssignmentsRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentsResponse = quizFacade.getQuizAssignments(getQuizAssignmentsRequest, null);
@@ -2718,7 +2718,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_withNullGroupId_isForbidden() {
+      void asStudent_withNullGroupId_isForbidden() {
         HttpServletRequest getQuizAssignmentsRequest = prepareStudentRequest();
 
         Response getQuizAssignmentsResponse = quizFacade.getQuizAssignments(getQuizAssignmentsRequest, null);
@@ -2730,7 +2730,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_withNullGroupId_isForbidden() {
+      void asTutor_withNullGroupId_isForbidden() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTutorRequest();
 
         Response getQuizAssignmentsResponse = quizFacade.getQuizAssignments(getQuizAssignmentsRequest, null);
@@ -2745,7 +2745,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class SpecifiedGroupUnauthorisedOrForbiddenUser {
       @Test
-      public void asAnonymousUser_withNonNullGroupId_isUnauthorised() {
+      void asAnonymousUser_withNonNullGroupId_isUnauthorised() {
         HttpServletRequest getQuizAssignmentsRequest = prepareAnonymousRequest();
 
         Response getQuizAssignmentsResponse =
@@ -2758,7 +2758,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asStudent_withNonNullGroupId_isForbidden() {
+      void asStudent_withNonNullGroupId_isForbidden() {
         HttpServletRequest getQuizAssignmentsRequest = prepareStudentRequest();
 
         Response getQuizAssignmentsResponse =
@@ -2771,7 +2771,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTutor_withNonNullGroupId_isForbidden() {
+      void asTutor_withNonNullGroupId_isForbidden() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTutorRequest();
 
         Response getQuizAssignmentsResponse =
@@ -2784,7 +2784,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsNotGroupManager_withNonNullGroupId_isForbidden() {
+      void asTeacher_whoIsNotGroupManager_withNonNullGroupId_isForbidden() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTeacherWhoIsNotGroupManagerRequest();
 
         Response getQuizAssignmentsResponse =
@@ -2800,7 +2800,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class UnspecifiedGroupValidRequest {
       @Test
-      public void asTeacher_withNullGroupId_withAssignments_returnsListOfQuizAssignmentsForAllManagedGroups() {
+      void asTeacher_withNullGroupId_withAssignments_returnsListOfQuizAssignmentsForAllManagedGroups() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentsResponse = quizFacade.getQuizAssignments(getQuizAssignmentsRequest, null);
@@ -2813,7 +2813,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_withNullGroupId_withoutAssignments_returnsEmptyList() {
+      void asTeacher_withNullGroupId_withoutAssignments_returnsEmptyList() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTeacherWhoIsNotGroupManagerRequest();
 
         Response getQuizAssignmentsResponse = quizFacade.getQuizAssignments(getQuizAssignmentsRequest, null);
@@ -2829,7 +2829,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     @Nested
     class SpecifiedGroupValidRequest {
       @Test
-      public void asTeacher_whoIsGroupManager_withNonNullGroupId_returnsListOfQuizAssignmentsForGroup() {
+      void asTeacher_whoIsGroupManager_withNonNullGroupId_returnsListOfQuizAssignmentsForGroup() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentsResponse =
@@ -2843,7 +2843,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asTeacher_whoIsGroupManager_withOtherNonNullGroupId_returnsListOfQuizAssignmentsForOtherGroup() {
+      void asTeacher_whoIsGroupManager_withOtherNonNullGroupId_returnsListOfQuizAssignmentsForOtherGroup() {
         HttpServletRequest getQuizAssignmentsRequest = prepareTeacherRequest();
 
         Response getQuizAssignmentResponse =
@@ -2857,7 +2857,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       }
 
       @Test
-      public void asAdmin_withNonNullGroupId_returnsListOfQuizAssignmentsForGroup() {
+      void asAdmin_withNonNullGroupId_returnsListOfQuizAssignmentsForGroup() {
         HttpServletRequest getQuizAssignmentsRequest = prepareAdminRequest();
 
         Response getQuizAssignmentResponse =

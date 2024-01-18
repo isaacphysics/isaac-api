@@ -1171,7 +1171,7 @@ public class ContentIndexer {
       ByteArrayOutputStream fileData = null;
       try {
         // This will return null if the file is not found:
-        fileData = database.getFileByCommitSHA(sha, media.getSrc());
+        fileData = database.getFileByCommitSha(sha, media.getSrc());
       } catch (IOException | UnsupportedOperationException e) {
         // Leave fileData = null;
       }

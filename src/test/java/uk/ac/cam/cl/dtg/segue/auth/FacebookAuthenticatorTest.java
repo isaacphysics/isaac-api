@@ -16,16 +16,15 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class FacebookAuthenticatorTest extends IOAuth2AuthenticatorTest {
   /**
    * Initial configuration of tests.
    *
-   * @throws Exception
-   *             - test exception
+   * @throws Exception test exception
    */
-  @Before
+  @BeforeEach
   public final void setUp() throws Exception {
     this.oauth2Authenticator =
         new FacebookAuthenticator(clientId, clientSecret, callbackUri, requestedScopes, "someRequestedFields");

@@ -1,20 +1,20 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore.InMemoryHostConfig;
 
-public class ETLInMemorySshConfigStoreTest {
+class ETLInMemorySshConfigStoreTest {
 
   @Test
-  public void inMemoryHostConfigGetValue_ExistingKey_ReturnsValue() {
+  void inMemoryHostConfigGetValue_ExistingKey_ReturnsValue() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
     sshConfig.put("StrictHostKeyChecking", Collections.singletonList("no"));
@@ -26,7 +26,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValue_NonExistingKey_ReturnsNull() {
+  void inMemoryHostConfigGetValue_NonExistingKey_ReturnsNull() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
 
@@ -37,7 +37,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValue_ExistingKeyListValue_ReturnsFirstValueOfList() {
+  void inMemoryHostConfigGetValue_ExistingKeyListValue_ReturnsFirstValueOfList() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
     sshConfig.put("StrictHostKeyChecking", Arrays.asList("no", "host", "checking", "please"));
@@ -49,7 +49,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValue_NullKey_ReturnsNull() {
+  void inMemoryHostConfigGetValue_NullKey_ReturnsNull() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
 
@@ -60,7 +60,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValue_ExistingKeyEmptyListValue_ReturnsNull() {
+  void inMemoryHostConfigGetValue_ExistingKeyEmptyListValue_ReturnsNull() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
     sshConfig.put("StrictHostKeyChecking", Collections.emptyList());
@@ -72,7 +72,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValues_ExistingKey_ReturnsValues() {
+  void inMemoryHostConfigGetValues_ExistingKey_ReturnsValues() {
     // Arrange
     List<String> options = Arrays.asList("no", "host", "checking", "please");
 
@@ -86,7 +86,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValues_NonExistingKey_ReturnsNull() {
+  void inMemoryHostConfigGetValues_NonExistingKey_ReturnsNull() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
 
@@ -97,7 +97,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValues_ExistingKeySingleValue_ReturnsValueAsList() {
+  void inMemoryHostConfigGetValues_ExistingKeySingleValue_ReturnsValueAsList() {
     // Arrange
     List<String> option = Collections.singletonList("no");
 
@@ -111,7 +111,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValues_NullKey_ReturnsNull() {
+  void inMemoryHostConfigGetValues_NullKey_ReturnsNull() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
 
@@ -122,7 +122,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetValues_ExistingEmptyListValue_ReturnsNull() {
+  void inMemoryHostConfigGetValues_ExistingEmptyListValue_ReturnsNull() {
     // Arrange
     Map<String, List<String>> sshConfig = new HashMap<>();
     sshConfig.put("StrictHostKeyChecking", Collections.emptyList());
@@ -134,7 +134,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetOptions_MixedSingleAndMultiValue_ReturnsSingleOptionsOnly() {
+  void inMemoryHostConfigGetOptions_MixedSingleAndMultiValue_ReturnsSingleOptionsOnly() {
     // Arrange
     InMemoryHostConfig hostConfig = new InMemoryHostConfig(getMixedTestData());
 
@@ -147,7 +147,7 @@ public class ETLInMemorySshConfigStoreTest {
   }
 
   @Test
-  public void inMemoryHostConfigGetMultiValuedOptions_MixedSingleAndMultiValue_ReturnsMultiValuedOptionsOnly() {
+  void inMemoryHostConfigGetMultiValuedOptions_MixedSingleAndMultiValue_ReturnsMultiValuedOptionsOnly() {
     // Arrange
     InMemoryHostConfig hostConfig = new InMemoryHostConfig(getMixedTestData());
 

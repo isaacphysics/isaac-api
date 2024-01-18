@@ -23,8 +23,8 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,8 +33,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -46,14 +46,14 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager.BooleanSearchClause;
 
-public class GameManagerTest {
+class GameManagerTest {
   private GitContentManager dummyContentManager;
   private GameboardPersistenceManager dummyGameboardPersistenceManager;
   private MapperFacade dummyMapper;
   private QuestionManager dummyQuestionManager;
   private GameManager gameManager;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     this.dummyContentManager = createMock(GitContentManager.class);
     this.dummyGameboardPersistenceManager = createMock(GameboardPersistenceManager.class);
@@ -68,7 +68,7 @@ public class GameManagerTest {
   }
 
   @Test
-  public void getNextQuestionsForFilter_appliesExclusionFilterForDeprecatedQuestions() throws
+  void getNextQuestionsForFilter_appliesExclusionFilterForDeprecatedQuestions() throws
       ContentManagerException {
 
     // configure the mock GitContentManager to record the filters that are sent to it by getNextQuestionsForFilter()
@@ -91,12 +91,12 @@ public class GameManagerTest {
         .filter(f -> Objects.equals(f.getField(), "deprecated")).collect(Collectors.toList()).get(0);
 
     assertNotNull(deprecatedFilter);
-    assertEquals(deprecatedFilter.getOperator(), Constants.BooleanOperator.NOT);
-    assertEquals(deprecatedFilter.getValues(), Collections.singletonList("true"));
+    assertEquals(Constants.BooleanOperator.NOT, deprecatedFilter.getOperator());
+    assertEquals(Collections.singletonList("true"), deprecatedFilter.getValues());
   }
 
   @Test
-  public void generateRandomQuestions_returnsCorrectNumberOfQuestions() throws ContentManagerException {
+  void generateRandomQuestions_returnsCorrectNumberOfQuestions() throws ContentManagerException {
 
     // Arrange
     int limit = 5;
@@ -129,7 +129,7 @@ public class GameManagerTest {
   }
 
   @Test
-  public void generateRandomQuestions_appliesExclusionFilterForDeprecatedQuestions() throws
+  void generateRandomQuestions_appliesExclusionFilterForDeprecatedQuestions() throws
       ContentManagerException {
 
     // configure the mock GitContentManager to record the filters that are sent to it by generateRandomQuestions()
@@ -152,7 +152,7 @@ public class GameManagerTest {
         .filter(f -> Objects.equals(f.getField(), "deprecated")).collect(Collectors.toList()).get(0);
 
     assertNotNull(deprecatedFilter);
-    assertEquals(deprecatedFilter.getOperator(), Constants.BooleanOperator.NOT);
-    assertEquals(deprecatedFilter.getValues(), Collections.singletonList("true"));
+    assertEquals(Constants.BooleanOperator.NOT, deprecatedFilter.getOperator());
+    assertEquals(Collections.singletonList("true"), deprecatedFilter.getValues());
   }
 }

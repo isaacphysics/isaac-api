@@ -13,7 +13,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 
-public class QuestionFacadeIT extends IsaacIntegrationTest {
+class QuestionFacadeIT extends IsaacIntegrationTest {
 
   private QuestionFacade questionFacade;
   private static final String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
@@ -27,7 +27,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void answerQuestionNotAvailableForQuizQuestions() {
+  void answerQuestionNotAvailableForQuizQuestions() {
     HttpServletRequest mockRequest = createMock(HttpServletRequest.class);
 
     try (Response response = questionFacade.answerQuestion(mockRequest, QUIZ_TEST_HIDDEN_FROM_TUTORS_QUESTION_FIRST_ID,

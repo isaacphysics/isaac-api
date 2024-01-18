@@ -16,36 +16,37 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
-public class RaspberryPiOidcAuthenticatorTest {
+class RaspberryPiOidcAuthenticatorTest {
 
   RaspberryPiOidcAuthenticator authenticator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     // Set up an authenticator with local OIDC IdP metadata
     URL res = getClass().getClassLoader().getResource("test-rpf-idp-metadata.json");
     String idpMetadataPath = Paths.get(res.toURI()).toFile().getAbsolutePath();
-
-    authenticator = new RaspberryPiOidcAuthenticator(
-        "test_client_id",
-        "test_client_secret",
-        "http://localhost:9001",
-        "openid",
-        idpMetadataPath
-    );
+    authenticator =
+        new RaspberryPiOidcAuthenticator(
+            "test_client_id",
+            "test_client_secret",
+            "http://localhost:9001",
+            "openid",
+            idpMetadataPath
+        );
   }
 
   @Test
-  public void getAuthenticator_withOnDiskIdpMetadataDefined_UsesOnDiskMetadata() throws Exception {
+  void getAuthenticator_withOnDiskIdpMetadataDefined_UsesOnDiskMetadata() {
     // Arrange & Act - done in setUp()
 
     // Assert
@@ -64,7 +65,7 @@ public class RaspberryPiOidcAuthenticatorTest {
    * @throws Exception not expected under test.
    */
   @Test
-  public void getGivenNameFamilyName_emptyTokenisedNameProvided_returnsSensibleName() throws Exception {
+  void getGivenNameFamilyName_emptyTokenisedNameProvided_returnsSensibleName() throws Exception {
     // Arrange
     String idpNickname = "John";
     String idpFullName = "";
@@ -77,21 +78,18 @@ public class RaspberryPiOidcAuthenticatorTest {
     assertEquals("John", givenNameFamilyName.get(1));
   }
 
-  @Test(expected = NoUserException.class)
-  public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() throws Exception {
+  @Test
+  void getGivenNameFamilyName_invalidNicknameProvided_throwsException() {
     // Arrange
     String idpNickname = "*";
     String idpFullName = "John Smith";
 
-    // Act
-    authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
-
-    // Assert
-    // See signature
+    // Act & Assert
+    assertThrows(NoUserException.class, () -> authenticator.getGivenNameFamilyName(idpNickname, idpFullName));
   }
 
   @Test
-  public void getGivenNameFamilyName_nicknameAndTokenisedNameProvided_returnsSensibleName() throws Exception {
+  void getGivenNameFamilyName_nicknameAndTokenisedNameProvided_returnsSensibleName() throws Exception {
     // Arrange
     String idpNickname = "John";
     String idpFullName = "John Smith";
@@ -105,7 +103,7 @@ public class RaspberryPiOidcAuthenticatorTest {
   }
 
   @Test
-  public void getGivenNameFamilyName_nicknameAndTokenisedNamesProvided_returnsSensibleName() throws Exception {
+  void getGivenNameFamilyName_nicknameAndTokenisedNamesProvided_returnsSensibleName() throws Exception {
     // Arrange
     String idpNickname = "John";
     String idpFullName = "John Angus Smith";
@@ -124,7 +122,7 @@ public class RaspberryPiOidcAuthenticatorTest {
    * @throws Exception not expected under test.
    */
   @Test
-  public void getGivenNameFamilyName_nickNameAndUnorderedTokenisedNamesProvided_returnsSensibleName() throws Exception {
+  void getGivenNameFamilyName_nickNameAndUnorderedTokenisedNamesProvided_returnsSensibleName() throws Exception {
     // Arrange
     String idpNickname = "Otto";
     String idpFullName = "Arnold Stewart Otto Westland";

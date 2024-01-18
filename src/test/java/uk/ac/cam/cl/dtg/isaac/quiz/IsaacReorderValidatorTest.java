@@ -16,18 +16,18 @@
 
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacReorderQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -38,7 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 
-public class IsaacReorderValidatorTest {
+class IsaacReorderValidatorTest {
   private IsaacReorderValidator validator;
   private IsaacReorderQuestion someReorderQuestion;
   // Some items:
@@ -53,7 +53,7 @@ public class IsaacReorderValidatorTest {
   /**
    * Initial configuration of tests.
    */
-  @Before
+  @BeforeEach
   public final void setUp() {
     validator = new IsaacReorderValidator();
 
@@ -88,7 +88,7 @@ public class IsaacReorderValidatorTest {
       Test that correct answers are recognised.
   */
   @Test
-  public final void isaacReorderValidator_CorrectItems_CorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_CorrectItems_CorrectResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(item1, item2, item3));
@@ -102,7 +102,7 @@ public class IsaacReorderValidatorTest {
       Test that incorrect answers are not recognised.
   */
   @Test
-  public final void isaacReorderValidator_IncorrectItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_IncorrectItems_IncorrectResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(item2, item1, item3));
@@ -116,7 +116,7 @@ public class IsaacReorderValidatorTest {
       Test that subset match answers can be matched.
   */
   @Test
-  public final void isaacReorderValidator_UserSubsetMatch_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_UserSubsetMatch_IncorrectResponseShouldBeReturned() {
     // Set up user answer with subset at end of match:
     ItemChoice c1 = new ItemChoice();
     c1.setItems(ImmutableList.of(item2, item1, item3));
@@ -140,7 +140,7 @@ public class IsaacReorderValidatorTest {
       Test that known incorrect answers can be matched.
   */
   @Test
-  public final void isaacReorderValidator_KnownIncorrect_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_KnownIncorrect_IncorrectResponseShouldBeReturned() {
     // Set up user answer:
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(item3, item2, item1));
@@ -155,7 +155,7 @@ public class IsaacReorderValidatorTest {
       Test that answers which are too short get feedback.
   */
   @Test
-  public final void isaacReorderValidator_NotEnoughItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_NotEnoughItems_IncorrectResponseShouldBeReturned() {
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(item1));
 
@@ -169,7 +169,7 @@ public class IsaacReorderValidatorTest {
       Test that answers which are too short get feedback.
    */
   @Test
-  public final void isaacReorderValidator_TooManyItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_TooManyItems_IncorrectResponseShouldBeReturned() {
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(item1, item2, item3, item1));
 
@@ -183,7 +183,7 @@ public class IsaacReorderValidatorTest {
       Test that answers with unknown items are rejected.
   */
   @Test
-  public final void isaacReorderValidator_UnknownItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_UnknownItems_IncorrectResponseShouldBeReturned() {
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(item1, new Item("unknown", null)));
 
@@ -197,7 +197,7 @@ public class IsaacReorderValidatorTest {
       Test that answers with no items are rejected.
   */
   @Test
-  public final void isaacReorderValidator_NoUserItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_NoUserItems_IncorrectResponseShouldBeReturned() {
     ItemChoice c = new ItemChoice();
 
     // Test response:
@@ -210,7 +210,7 @@ public class IsaacReorderValidatorTest {
       Test that answers with incorrect type items are rejected.
   */
   @Test
-  public final void isaacReorderValidator_IncorrectTypeUserItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_IncorrectTypeUserItems_IncorrectResponseShouldBeReturned() {
     ItemChoice c = new ItemChoice();
     c.setItems(ImmutableList.of(new ParsonsItem("id001", null, null)));
 
@@ -224,7 +224,7 @@ public class IsaacReorderValidatorTest {
       Test that default feedback works.
   */
   @Test
-  public final void isaacReorderValidator_DefaultFeedbackReturned() {
+  final void isaacReorderValidator_DefaultFeedbackReturned() {
     // Set up the question object:
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
     reorderQuestion.setDefaultFeedback(new Content(defaultExplanation));
@@ -251,7 +251,7 @@ public class IsaacReorderValidatorTest {
    Test that missing choices are detected.
   */
   @Test
-  public final void isaacReorderValidator_NoChoices_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_NoChoices_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
     reorderQuestion.setItems(ImmutableList.of(item1, item2, item3));
@@ -272,7 +272,7 @@ public class IsaacReorderValidatorTest {
       Test that wrong choice types are detected.
   */
   @Test
-  public final void isaacReorderValidator_WrongTypeChoices_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_WrongTypeChoices_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
     ParsonsItem parsonsItem = new ParsonsItem("id001", null, null);
@@ -297,7 +297,7 @@ public class IsaacReorderValidatorTest {
    Test that missing items are detected.
   */
   @Test
-  public final void isaacReorderValidator_NoItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_NoItems_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
     reorderQuestion.setItems(ImmutableList.of(item1, item2, item3));
@@ -321,7 +321,7 @@ public class IsaacReorderValidatorTest {
    Test that missing items are detected.
   */
   @Test
-  public final void isaacReorderValidator_NoItemsInQuestion_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_NoItemsInQuestion_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
 
@@ -344,7 +344,7 @@ public class IsaacReorderValidatorTest {
    Test that incorrect item types are detected.
   */
   @Test
-  public final void isaacReorderValidator_ParsonsItems_IncorrectResponseShouldBeReturned() {
+  final void isaacReorderValidator_ParsonsItems_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
     reorderQuestion.setItems(ImmutableList.of(item1, item2, item3));
@@ -368,14 +368,14 @@ public class IsaacReorderValidatorTest {
    Test that incorrect question types are detected.
   */
   @Test
-  public final void isaacReorderValidator_WrongQuestionType_ExceptionShouldBeThrown() {
+  final void isaacReorderValidator_WrongQuestionType_ExceptionShouldBeThrown() {
     IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
     invalidQuestionType.setId("invalidQuestionType");
+    ItemChoice choice = new ItemChoice();
 
     // This should throw an exception:
-    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-      validator.validateQuestionResponse(invalidQuestionType, new ItemChoice());
-    });
+    Exception exception = assertThrows(IllegalArgumentException.class,
+        () -> validator.validateQuestionResponse(invalidQuestionType, choice));
     assertTrue(exception.getMessage().contains("only works with IsaacReorderQuestions"));
   }
 
@@ -383,13 +383,13 @@ public class IsaacReorderValidatorTest {
    Test that incorrect submitted choice types are detected.
   */
   @Test
-  public final void isaacReorderValidator_WrongChoiceType_ExceptionShouldBeThrown() {
+  final void isaacReorderValidator_WrongChoiceType_ExceptionShouldBeThrown() {
     IsaacReorderQuestion reorderQuestion = new IsaacReorderQuestion();
+    Choice choice = new Choice();
 
     // This should throw an exception:
-    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-      validator.validateQuestionResponse(reorderQuestion, new Choice());
-    });
+    Exception exception =
+        assertThrows(IllegalArgumentException.class, () -> validator.validateQuestionResponse(reorderQuestion, choice));
     assertTrue(exception.getMessage().contains("Expected ItemChoice for IsaacReorderQuestion"));
   }
 }

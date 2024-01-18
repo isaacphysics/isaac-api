@@ -137,7 +137,7 @@ public class GitDb {
    *             - This method is intended to only locate one file at a time. If your search matches multiple files
    *             then this exception will be thrown.
    */
-  public ByteArrayOutputStream getFileByCommitSHA(final String sha, final String fullFilePath) throws IOException,
+  public ByteArrayOutputStream getFileByCommitSha(final String sha, final String fullFilePath) throws IOException,
       UnsupportedOperationException {
     if (null == sha || null == fullFilePath) {
       return null;

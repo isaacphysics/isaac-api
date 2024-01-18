@@ -95,7 +95,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
   @Nested
   class GeneratePasswordResetToken {
     @Test
-    public void emailRateLimits() {
+    void emailRateLimits() {
       HttpServletRequest mockResetRequest =
           replayMultiSessionServletRequest(List.of("sessionIdEmail1", "sessionIdEmail2", "sessionIdEmail3"));
 
@@ -113,7 +113,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void ipRateLimits() {
+    void ipRateLimits() {
       HttpServletRequest mockResetRequest =
           replayMultiSessionServletRequest(List.of("sessionIdIp1", "sessionIdIp2", "sessionIdIp3"));
 
@@ -135,7 +135,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("validEmailProviders")
-  public void createUser_validRegistrationParameters(String email) {
+  void createUser_validRegistrationParameters(String email) {
     String userObjectString = String.format(
         "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"%1$s\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
         email);
@@ -161,7 +161,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void createUser_existingAccount() {
+  void createUser_existingAccount() {
     String userObjectString =
         "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"test-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}";
 
@@ -178,7 +178,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("invalidEmails")
-  public void createUser_invalidEmail(String email) {
+  void createUser_invalidEmail(String email) {
     String userObjectString = String.format(
         "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"%1$s\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
         email);
@@ -196,7 +196,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("invalidPasswords")
-  public void createUser_invalidPassword(String password) {
+  void createUser_invalidPassword(String password) {
     String userObjectString = String.format(
         "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"%1$s\",\"familyName\":\"Test\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
         password);
@@ -214,7 +214,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("invalidNames")
-  public void createUser_invalidFamilyName(String familyName) {
+  void createUser_invalidFamilyName(String familyName) {
     String userObjectString = String.format(
         "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"%1$s\",\"givenName\":\"Test\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
         familyName);
@@ -232,7 +232,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("invalidNames")
-  public void createUser_invalidGivenName(String givenName) {
+  void createUser_invalidGivenName(String givenName) {
     String userObjectString = String.format(
         "{\"registeredUser\":{\"loggedIn\":true,\"email\":\"new-student@test.com\",\"dateOfBirth\":\"2000-01-01T00:00:00.000Z\",\"password\":\"Password123!\",\"familyName\":\"Test\",\"givenName\":\"%1$s\"},\"userPreferences\":{},\"passwordCurrent\":null,\"recaptchaToken\":\"test-token\"}",
         givenName);
@@ -286,7 +286,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
   @Nested
   class RequestRoleChange {
     @Test
-    public void valid()
+    void valid()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -312,7 +312,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void verifyEmailValues()
+    void verifyEmailValues()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -366,7 +366,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void missingDetails()
+    void missingDetails()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -386,7 +386,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void emptyDetails()
+    void emptyDetails()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -404,7 +404,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void notLoggedIn() {
+    void notLoggedIn() {
       HttpServletRequest upgradeRequest = createRequestWithCookies(new Cookie[] {});
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
@@ -420,7 +420,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void duplicateRequest()
+    void duplicateRequest()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -442,7 +442,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void alreadyTeacher()
+    void alreadyTeacher()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,

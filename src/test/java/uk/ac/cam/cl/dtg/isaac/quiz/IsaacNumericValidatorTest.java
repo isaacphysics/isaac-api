@@ -44,7 +44,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 /**
  * Test class for the user manager class.
  */
-public class IsaacNumericValidatorTest {
+class IsaacNumericValidatorTest {
   private IsaacNumericValidator validator;
   private IsaacNumericQuestion numericQuestionNoUnits;
   private IsaacNumericQuestion numericQuestionWithUnits;
@@ -90,7 +90,7 @@ public class IsaacNumericValidatorTest {
       Test that the "not a valid number" response is returned for non-numeric input.
    */
   @Test
-  public final void isaacNumericValidator_NonNumericValue_InvalidResponseShouldBeReturned() {
+  final void isaacNumericValidator_NonNumericValue_InvalidResponseShouldBeReturned() {
     // Set up user answer:
     Quantity q = new Quantity("NOT_A_NUMBER");
 
@@ -104,7 +104,7 @@ public class IsaacNumericValidatorTest {
       Test a correct answer with an exponent in it gets recognised as correct.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWithExponent_CorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWithExponent_CorrectResponseShouldHappen() {
     // Set up user answer:
     Quantity q = new Quantity(correctDecimalExponentAnswer);
 
@@ -117,7 +117,7 @@ public class IsaacNumericValidatorTest {
       Test a correct integer answer without units gets recognised as correct.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectIntegerAnswer_CorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectIntegerAnswer_CorrectResponseShouldHappen() {
     // Set up user answer:
     Quantity q = new Quantity(correctIntegerAnswer);
 
@@ -130,7 +130,7 @@ public class IsaacNumericValidatorTest {
       Test a correct integer answer with correct units gets recognised as correct.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWithCorrectUnits_CorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWithCorrectUnits_CorrectResponseShouldHappen() {
     // Set up user answer:
     Quantity q = new Quantity(correctIntegerAnswer, correctUnits);
 
@@ -145,7 +145,7 @@ public class IsaacNumericValidatorTest {
       Test an incorrect integer answer with correct units gets recognised as incorrect, but with correct units.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectValue_IncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectValue_IncorrectResponseShouldHappen() {
     // Set up user answer:
     Quantity q = new Quantity("43", correctUnits);
 
@@ -164,7 +164,7 @@ public class IsaacNumericValidatorTest {
   Test an incorrect sig fig answer with correct units gets recognised as incorrect, but with correct units.
 */
   @Test
-  public final void isaacNumericValidator_IncorrectSigFigsCorrectUnit_IncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_IncorrectSigFigsCorrectUnit_IncorrectResponseShouldHappen() {
     // Set up user answer:
     Quantity quantityTooFew = new Quantity("4", correctUnits);
 
@@ -196,7 +196,7 @@ public class IsaacNumericValidatorTest {
       Test a correct integer answer with incorrect units gets recognised as incorrect, but with correct value.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectUnits_IncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectUnits_IncorrectResponseShouldHappen() {
     // Set up user answer:
     Quantity q = new Quantity(correctIntegerAnswer, "m\\,h^{-1}");
 
@@ -215,7 +215,7 @@ public class IsaacNumericValidatorTest {
       Test a correct answer with missing units gets recognised as incorrect.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWithNoUnits_IncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWithNoUnits_IncorrectResponseShouldHappen() {
     // Set up user answer without units:
     Quantity q = new Quantity(correctIntegerAnswer);
 
@@ -234,7 +234,7 @@ public class IsaacNumericValidatorTest {
   Test a correct answer with missing value gets recognised as incorrect.
 */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWithNoValue_IncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWithNoValue_IncorrectResponseShouldHappen() {
     // Set up user answer without units:
     Quantity q = new Quantity("", correctUnits);
 
@@ -253,7 +253,7 @@ public class IsaacNumericValidatorTest {
       Test that the "invalid negative standard form" response is returned for poorly formed input.
    */
   @Test
-  public final void isaacNumericValidator_InvalidStandardForm_WarningShouldBeReturned() {
+  final void isaacNumericValidator_InvalidStandardForm_WarningShouldBeReturned() {
     // Set up user answer:
     Quantity q = new Quantity("4.2x10-3");
 
@@ -268,7 +268,7 @@ public class IsaacNumericValidatorTest {
       Test known wrong answers take precedence over sig fig warning.
    */
   @Test
-  public final void isaacNumericValidator_CheckExactIncorrectAnswerWithIncorrectSigFigs_KnownIncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckExactIncorrectAnswerWithIncorrectSigFigs_KnownIncorrectResponseShouldHappen() {
     // Set up the question object:
     String someExplanation = "some explanation";
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
@@ -296,7 +296,7 @@ public class IsaacNumericValidatorTest {
   Test known wrong answers take precedence over sig fig warning, even when match is not exact.
 */
   @Test
-  public final void isaacNumericValidator_CheckKnownIncorrectAnswerWithIncorrectSigFigs_KnownIncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckKnownIncorrectAnswerWithIncorrectSigFigs_KnownIncorrectResponseShouldHappen() {
     // Set up the question object:
     String someExplanation = "some explanation";
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
@@ -324,7 +324,7 @@ public class IsaacNumericValidatorTest {
       Test significant figure warning in answer without an exponent.
    */
   @Test
-  public final void isaacNumericValidator_CheckCorrectAnswerWrongSigFigs_IncorrectResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectAnswerWrongSigFigs_IncorrectResponseShouldHappen() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(false);
@@ -350,7 +350,7 @@ public class IsaacNumericValidatorTest {
       Test incorrect answers with correct sig figs to questions allowing a range of significant figures.
    */
   @Test
-  public final void isaacNumericValidator_TestQuestionWithSigFigRange_IncorrectAnswers() {
+  final void isaacNumericValidator_TestQuestionWithSigFigRange_IncorrectAnswers() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(false);
@@ -383,7 +383,7 @@ public class IsaacNumericValidatorTest {
       Test correct but incorrect sig fig answers to questions allowing a range of significant figures.
    */
   @Test
-  public final void isaacNumericValidator_TestQuestionWithSigFigRange_IncorrectSigFigAnswers() {
+  final void isaacNumericValidator_TestQuestionWithSigFigRange_IncorrectSigFigAnswers() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(false);
@@ -416,7 +416,7 @@ public class IsaacNumericValidatorTest {
   Test incorrect sig fig answers to questions allowing a range of significant figures.
 */
   @Test
-  public final void isaacNumericValidator_TestQuestionWithSigFigRange_SigFigResponses() {
+  final void isaacNumericValidator_TestQuestionWithSigFigRange_SigFigResponses() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(false);
@@ -461,7 +461,7 @@ public class IsaacNumericValidatorTest {
       Test default feedback is used when a known answer is matched and no explanation given.
   */
   @Test
-  public final void isaacNumericValidator_DefaultFeedbackAndCorrectNoExplanation_DefaultFeedbackReturned() {
+  final void isaacNumericValidator_DefaultFeedbackAndCorrectNoExplanation_DefaultFeedbackReturned() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(false);
@@ -492,7 +492,7 @@ public class IsaacNumericValidatorTest {
        to decide if the units are correct or not).
   */
   @Test
-  public final void isaacNumericValidator_CheckCorrectUnitsIncorrectChoiceMatch_CorrectUnitsResponseShouldHappen() {
+  final void isaacNumericValidator_CheckCorrectUnitsIncorrectChoiceMatch_CorrectUnitsResponseShouldHappen() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(true);
@@ -526,7 +526,7 @@ public class IsaacNumericValidatorTest {
    Test that missing choices are detected.
   */
   @Test
-  public final void isaacNumericValidator_NoChoices_IncorrectResponseShouldBeReturned() {
+  final void isaacNumericValidator_NoChoices_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacNumericQuestion numericQuestion = new IsaacNumericQuestion();
     numericQuestion.setChoices(Lists.newArrayList());
@@ -544,7 +544,7 @@ public class IsaacNumericValidatorTest {
    Test choices missing units required by question are detected.
   */
   @Test
-  public final void isaacNumericValidator_TestChoiceMissingRequiredUnits_IncorrectResponse() {
+  final void isaacNumericValidator_TestChoiceMissingRequiredUnits_IncorrectResponse() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(true);
@@ -566,7 +566,7 @@ public class IsaacNumericValidatorTest {
    Test that incorrect choice types in question are detected.
   */
   @Test
-  public final void isaacNumericValidator_WrongChoiceType_IncorrectResponseShouldBeReturned() {
+  final void isaacNumericValidator_WrongChoiceType_IncorrectResponseShouldBeReturned() {
     // Set up the question object:
     IsaacNumericQuestion numericQuestion = new IsaacNumericQuestion();
     numericQuestion.setRequireUnits(false);
@@ -598,7 +598,7 @@ public class IsaacNumericValidatorTest {
    Test invalid sig figs rules are detected.
   */
   @Test
-  public final void isaacNumericValidator_TestInvalidSigFigRange_IncorrectResponse() {
+  final void isaacNumericValidator_TestInvalidSigFigRange_IncorrectResponse() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(false);
@@ -622,12 +622,13 @@ public class IsaacNumericValidatorTest {
    Test that incorrect question types are detected.
   */
   @Test
-  public final void isaacNumericValidator_WrongQuestionType_ExceptionShouldBeThrown() {
+  final void isaacNumericValidator_WrongQuestionType_ExceptionShouldBeThrown() {
     IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
     invalidQuestionType.setId("invalidQuestionType");
+    Quantity quantity = new Quantity();
 
     Exception exception = assertThrows(IllegalArgumentException.class,
-        () -> validator.validateQuestionResponse(invalidQuestionType, new Quantity()));
+        () -> validator.validateQuestionResponse(invalidQuestionType, quantity));
     assertEquals("This validator only works with Isaac Numeric Questions... (invalidQuestionType is not numeric)",
         exception.getMessage());
   }
@@ -636,12 +637,13 @@ public class IsaacNumericValidatorTest {
    Test that incorrect submitted choice types are detected.
   */
   @Test
-  public final void isaacNumericValidator_WrongChoiceType_ExceptionShouldBeThrown() {
+  final void isaacNumericValidator_WrongChoiceType_ExceptionShouldBeThrown() {
     IsaacNumericQuestion numericQuestion = new IsaacNumericQuestion();
     numericQuestion.setId("invalidQuestionType");
+    Choice choice = new Choice();
 
     Exception exception = assertThrows(IllegalArgumentException.class,
-        () -> validator.validateQuestionResponse(numericQuestion, new Choice()));
+        () -> validator.validateQuestionResponse(numericQuestion, choice));
     assertEquals(
         "Expected Quantity for IsaacNumericQuestion: invalidQuestionType. Received (class uk.ac.cam.cl.dtg.isaac.dos.content.Choice)",
         exception.getMessage());
@@ -651,7 +653,7 @@ public class IsaacNumericValidatorTest {
    Test displayUnit overrides requiresUnits.
   */
   @Test
-  public final void isaacNumericValidator_TestInconsistentDisplayUnitsOverride_UnitsIgnored() {
+  final void isaacNumericValidator_TestInconsistentDisplayUnitsOverride_UnitsIgnored() {
     // Set up the question object:
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setRequireUnits(true);
@@ -682,13 +684,13 @@ public class IsaacNumericValidatorTest {
    */
   @ParameterizedTest
   @ValueSource(strings = {"42", "4.2e1", "4.2E1", "4.2x10^1", "4.2*10**1", "4.2×10^(1)", "4.2 \\times 10^{1}"})
-  public void isaacNumericValidator_CheckParsingAsNumberWorks_baseValue(String input) {
+  void isaacNumericValidator_CheckParsingAsNumberWorks_baseValue(String input) {
     assertTrue(validator.numericValuesMatch("42", input, 2));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"10000", "1x10^4", "1e4", "1E4", "1 x 10**4", "10^4", "10**(4)", "10^{4}", "100x10^2"})
-  public void isaacNumericValidator_CheckParsingAsNumberWorks_exponentValue(String input) {
+  void isaacNumericValidator_CheckParsingAsNumberWorks_exponentValue(String input) {
     assertTrue(validator.numericValuesMatch("10000", input, 1));
   }
 
@@ -697,7 +699,7 @@ public class IsaacNumericValidatorTest {
    */
   @ParameterizedTest
   @MethodSource
-  public void isaacNumericValidator_CheckSignificantFiguresNoRangeCalculationWorks_multipleTests(
+  void isaacNumericValidator_CheckSignificantFiguresNoRangeCalculationWorks_multipleTests(
       List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) {
     for (String number : numbersToTest) {
       for (Integer sigFig : sigFigsToPass) {
@@ -741,7 +743,7 @@ public class IsaacNumericValidatorTest {
    */
   @ParameterizedTest
   @MethodSource
-  public void isaacNumericValidator_CheckSignificantFiguresRoundingWorks(String inputValue, int sigFigsToRoundTo,
+  void isaacNumericValidator_CheckSignificantFiguresRoundingWorks(String inputValue, int sigFigsToRoundTo,
                                                                          double expectedResult) {
     double actualResult = validator.roundStringValueToSigFigs(inputValue, sigFigsToRoundTo);
     String onFailedAssertionMessage =
@@ -780,7 +782,7 @@ public class IsaacNumericValidatorTest {
 */
   @ParameterizedTest
   @MethodSource
-  public void isaacNumericValidator_CheckSignificantFiguresExtractionWorks(String inputValue, int minAllowedSigFigs,
+  void isaacNumericValidator_CheckSignificantFiguresExtractionWorks(String inputValue, int minAllowedSigFigs,
                                                                            int maxAllowedSigFigs, int expectedResult) {
     int actualResult =
         validator.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs);
@@ -813,7 +815,7 @@ public class IsaacNumericValidatorTest {
       an equivalent but excessively precise answer is provided
   */
   @Test
-  public final void isaacNumericValidator_DisregardSigFigsEnabledAndExactAnswerProvided_ResponseIsCorrect() {
+  final void isaacNumericValidator_DisregardSigFigsEnabledAndExactAnswerProvided_ResponseIsCorrect() {
     // Arrange
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setDisregardSignificantFigures(true);
@@ -840,7 +842,7 @@ public class IsaacNumericValidatorTest {
       an equivalent but excessively precise answer is provided
   */
   @Test
-  public final void isaacNumericValidator_DisregardSigFigsDisabledAndExactAnswerProvided_ResponseIsIncorrect() {
+  final void isaacNumericValidator_DisregardSigFigsDisabledAndExactAnswerProvided_ResponseIsIncorrect() {
     // Arrange
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setDisregardSignificantFigures(false);
@@ -867,7 +869,7 @@ public class IsaacNumericValidatorTest {
   the user submitted answer is incorrect at a significant figure the correct answer is not specified to.
   */
   @Test
-  public final void isaacNumericValidator_DisregardSigFigsEnabledAndAnswerIncorrectAt3SF_ResponseIsIncorrect() {
+  final void isaacNumericValidator_DisregardSigFigsEnabledAndAnswerIncorrectAt3SF_ResponseIsIncorrect() {
     // Arrange
     IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
     someNumericQuestion.setDisregardSignificantFigures(true);

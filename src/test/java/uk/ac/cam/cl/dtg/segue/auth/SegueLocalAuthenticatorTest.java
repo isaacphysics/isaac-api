@@ -52,7 +52,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Test class for the SegueLocalAuthenticator class.
  */
-public class SegueLocalAuthenticatorTest {
+class SegueLocalAuthenticatorTest {
 
   private IUserDataManager userDataManager;
   private IPasswordDataManager passwordDataManager;
@@ -86,12 +86,12 @@ public class SegueLocalAuthenticatorTest {
   class SegueLocalAuthenticatorSetOrChangeUsersPassword {
     /**
      * Verify that setOrChangeUsersPassword fails with bad input.
-     * * @throws InvalidKeySpecException
      *
-     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException test exception
+     * @throws NoSuchAlgorithmException test exception
      */
     @Test
-    public final void emptyPasswordExceptionsShouldBeThrown() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    final void emptyPasswordExceptionsShouldBeThrown() throws InvalidKeySpecException, NoSuchAlgorithmException {
       RegisteredUser someUser = new RegisteredUser();
       someUser.setEmail(TEST_USER_EMAIL);
       someUser.setId(TEST_USER_ID);
@@ -125,12 +125,12 @@ public class SegueLocalAuthenticatorTest {
     /**
      * Verify that setOrChangeUsersPassword works with correct input and the
      * result is a user object with base64 encoded passwords and a secure salt.
-     * * @throws InvalidKeySpecException
      *
-     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException test exception
+     * @throws NoSuchAlgorithmException test exception
      */
     @Test
-    public final void validPasswordPasswordAndHashShouldBePopulatedAsBase64()
+    final void validPasswordPasswordAndHashShouldBePopulatedAsBase64()
         throws InvalidKeySpecException, NoSuchAlgorithmException {
       RegisteredUser someUser = new RegisteredUser();
       someUser.setEmail(TEST_USER_EMAIL);
@@ -157,10 +157,11 @@ public class SegueLocalAuthenticatorTest {
   class SegueLocalAuthenticatorAuthenticate {
     /**
      * Verify that setOrChangeUsersPassword fails on a bad password.
-     * * @throws SegueDatabaseException
+     *
+     * @throws SegueDatabaseException test exception
      */
     @Test
-    public final void correctEmailAndIncorrectPasswordProvided()
+    final void correctEmailAndIncorrectPasswordProvided()
         throws SegueDatabaseException {
       String usersEmailAddress = TEST_USER_EMAIL;
 
@@ -192,10 +193,11 @@ public class SegueLocalAuthenticatorTest {
 
     /**
      * Verify that setOrChangeUsersPassword fails on a bad e-mail and password.
-     * * @throws SegueDatabaseException
+     *
+     * @throws SegueDatabaseException test exception
      */
     @Test
-    public final void badEmailAndIncorrectPasswordProvided()
+    final void badEmailAndIncorrectPasswordProvided()
         throws SegueDatabaseException {
 
       RegisteredUser userFromDatabase = new RegisteredUser();
@@ -218,16 +220,16 @@ public class SegueLocalAuthenticatorTest {
   }
 
   /**
-   * Verify that the authenticator creates and authenticates correctly..
+   * Verify that the authenticator creates and authenticates correctly.
    *
-   * @throws SegueDatabaseException
-   * @throws NoCredentialsAvailableException
-   * @throws InvalidPasswordException
-   * @throws InvalidKeySpecException
-   * @throws NoSuchAlgorithmException
+   * @throws SegueDatabaseException test exception
+   * @throws NoCredentialsAvailableException test exception
+   * @throws InvalidPasswordException test exception
+   * @throws InvalidKeySpecException test exception
+   * @throws NoSuchAlgorithmException test exception
    */
   @Test
-  public final void segueLocalAuthenticatorSetPasswordAndImmediateAuthenticateCorrectEmailAndPasswordProvided()
+  final void segueLocalAuthenticatorSetPasswordAndImmediateAuthenticateCorrectEmailAndPasswordProvided()
       throws SegueDatabaseException,
       NoCredentialsAvailableException, InvalidPasswordException, InvalidKeySpecException, NoSuchAlgorithmException {
     String someCorrectPasswordPlainText = TEST_USER_CORRECT_PASSWORD;
@@ -269,7 +271,7 @@ public class SegueLocalAuthenticatorTest {
   @Nested
   class EnsureValidPasswordValidStrings {
     @Test
-    public void validString() {
+    void validString() {
       SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(userDataManager, passwordDataManager,
           propertiesLoader, possibleAlgorithms, preferredAlgorithm);
       try {
@@ -280,7 +282,7 @@ public class SegueLocalAuthenticatorTest {
     }
 
     @Test
-    public void validSpecialCharacters() {
+    void validSpecialCharacters() {
       SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(userDataManager, passwordDataManager,
           propertiesLoader, possibleAlgorithms, preferredAlgorithm);
       try {
@@ -294,7 +296,7 @@ public class SegueLocalAuthenticatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   @MethodSource("ensureValidPasswordInvalidStrings")
-  public void ensureValidPasswordInvalidStrings(final String password) {
+  void ensureValidPasswordInvalidStrings(final String password) {
     SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(userDataManager, passwordDataManager,
         propertiesLoader, possibleAlgorithms, preferredAlgorithm);
     Exception exception =

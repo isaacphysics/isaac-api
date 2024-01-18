@@ -34,7 +34,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -57,7 +57,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-public class IsaacTest {
+public abstract class IsaacTest {
   protected static Date somePastDate = new Date(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000);
   protected static Date someFurtherPastDate = new Date(System.currentTimeMillis() - 14 * 24 * 60 * 60 * 1000);
   protected static Date someFutureDate = new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000);
@@ -112,7 +112,7 @@ public class IsaacTest {
 
   protected Map<Object, MockConfigurer> defaultsMap = new HashMap<>();
 
-  @Before
+  @BeforeEach
   public final void initializeIsaacTest() throws SegueDatabaseException {
     initializeIsaacObjects();
     initializeMocks();

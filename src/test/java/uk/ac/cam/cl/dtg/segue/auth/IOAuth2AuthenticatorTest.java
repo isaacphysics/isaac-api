@@ -16,12 +16,14 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.api.client.http.GenericUrl;
 import java.io.IOException;
 import java.net.URL;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for the facebook authenticator class.
@@ -29,19 +31,19 @@ import org.junit.Test;
  */
 public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
   protected IOAuth2Authenticator oauth2Authenticator;
-  private final String someAntiForgeryToken = "someAntiForgeryToken";
 
   /**
    * Verify that the authenticator returns a valid authorization URL.
    *
-   * @throws IOException
+   * @throws IOException test exception
    */
   @Test
   public final void getAuthorizationUrl_returnsNonNullUrl() throws IOException {
+    String someAntiForgeryToken = "someAntiForgeryToken";
     String urlString = oauth2Authenticator.getAuthorizationUrl(someAntiForgeryToken);
-    assertTrue(urlString != null);
+    assertNotNull(urlString);
     URL url = new URL(urlString);
-    assertTrue(url.getAuthority() != null);
+    assertNotNull(url.getAuthority());
   }
 
   /**
@@ -55,14 +57,12 @@ public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
 
   /**
    * Verify that the extractAuthCode method returns the correct value.
-   *
-   * @throws IOException
    */
   @Test
-  public final void extractAuthCode_givenValidUrl_returnsCorrectCode() throws IOException {
+  public final void extractAuthCode_givenValidUrl_returnsCorrectCode() {
     GenericUrl url = new GenericUrl(someDomain);
     url.set("code", someAuthCode);
     String code = authenticator.extractAuthCode(url.build());
-    assertTrue(code != null && code.equals(someAuthCode));
+    assertEquals(someAuthCode, code);
   }
 }

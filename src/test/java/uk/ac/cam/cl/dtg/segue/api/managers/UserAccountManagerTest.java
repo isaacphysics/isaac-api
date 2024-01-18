@@ -47,7 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-public class UserAccountManagerTest {
+class UserAccountManagerTest {
 
   private PgUsers database;
   private EmailManager emailManager;
@@ -83,7 +83,7 @@ public class UserAccountManagerTest {
 
   @ParameterizedTest
   @MethodSource("namesToTest")
-  public void nameValidation(boolean expectedIsValid, String name) {
+  void nameValidation(boolean expectedIsValid, String name) {
     boolean actualIsValid = isUserNameValid(name);
     assertEquals(expectedIsValid, actualIsValid);
   }
@@ -122,7 +122,7 @@ public class UserAccountManagerTest {
 
   @ParameterizedTest
   @MethodSource("emailsToTest")
-  public void emailValidation(boolean expectedIsValid, String email) {
+  void emailValidation(boolean expectedIsValid, String email) {
     boolean actualIsValid = isEmailValid(email);
     assertEquals(expectedIsValid, actualIsValid);
   }
@@ -161,7 +161,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void updateTeacherPendingFlag_success() throws SegueDatabaseException, NoUserException {
+  void updateTeacherPendingFlag_success() throws SegueDatabaseException, NoUserException {
     RegisteredUser initialUserState = new RegisteredUser();
     initialUserState.setId(1L);
     initialUserState.setTeacherPending(false);
@@ -180,7 +180,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void updateTeacherPendingFlag_missingUser() throws SegueDatabaseException {
+  void updateTeacherPendingFlag_missingUser() throws SegueDatabaseException {
     expect(database.getById(1L)).andReturn(null);
     replay(database);
 
@@ -190,7 +190,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void sendRoleChangeRequestEmail_success()
+  void sendRoleChangeRequestEmail_success()
       throws UnableToIndexSchoolsException, ContentManagerException, IOException, SegueDatabaseException,
       MissingRequiredFieldException {
     School school = prepareSchoolWithUrn();
@@ -232,7 +232,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void sendRoleChangeRequestEmail_successNoOtherDetails()
+  void sendRoleChangeRequestEmail_successNoOtherDetails()
       throws UnableToIndexSchoolsException, ContentManagerException, IOException, SegueDatabaseException,
       MissingRequiredFieldException {
     School school = prepareSchoolWithUrn();
@@ -272,7 +272,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void sendRoleChangeRequestEmail_missingSchool()
+  void sendRoleChangeRequestEmail_missingSchool()
       throws UnableToIndexSchoolsException, SegueSearchException, IOException {
     expect(schoolListReader.findSchoolById("1")).andReturn(null);
     replay(schoolListReader);
@@ -293,7 +293,7 @@ public class UserAccountManagerTest {
 
   @ParameterizedTest(name = "{index} {0}")
   @MethodSource("sendRoleChangeRequestEmail_invalidVerificationDetails")
-  public void sendRoleChangeRequestEmail_invalidVerificationDetails(String ignoredTestLabel, Map<String, String> requestDetails)
+  void sendRoleChangeRequestEmail_invalidVerificationDetails(String ignoredTestLabel, Map<String, String> requestDetails)
       throws UnableToIndexSchoolsException, SegueSearchException, IOException {
     School school = prepareSchoolWithUrn();
     expect(schoolListReader.findSchoolById("1")).andReturn(school);
@@ -347,7 +347,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void getSchoolNameWithPostcode_validUrn()
+  void getSchoolNameWithPostcode_validUrn()
       throws UnableToIndexSchoolsException, SegueSearchException, IOException {
     School school = prepareSchoolWithUrn();
     expect(schoolListReader.findSchoolById("1")).andReturn(school);
@@ -363,7 +363,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void getSchoolNameWithPostcode_unknownUrn()
+  void getSchoolNameWithPostcode_unknownUrn()
       throws UnableToIndexSchoolsException, SegueSearchException, IOException {
     expect(schoolListReader.findSchoolById("1")).andReturn(null);
     replay(schoolListReader);
@@ -378,7 +378,7 @@ public class UserAccountManagerTest {
   }
 
   @Test
-  public void getSchoolNameWithPostcode_errorOnUrn()
+  void getSchoolNameWithPostcode_errorOnUrn()
       throws UnableToIndexSchoolsException, SegueSearchException, IOException {
     expect(schoolListReader.findSchoolById("1")).andThrow(new SegueSearchException("Error"));
     replay(schoolListReader);
@@ -401,7 +401,7 @@ public class UserAccountManagerTest {
 
   @ParameterizedTest
   @MethodSource("getSchoolNameWithPostcode_urnlessUsers")
-  public void getSchoolNameWithPostcode_urnlessUsers(String expectedResult, RegisteredUserDTO user) {
+  void getSchoolNameWithPostcode_urnlessUsers(String expectedResult, RegisteredUserDTO user) {
     replay(schoolListReader);
 
     String result = userAccountManager.getSchoolNameWithPostcode(user);

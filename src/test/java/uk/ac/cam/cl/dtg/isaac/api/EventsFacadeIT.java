@@ -37,7 +37,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-public class EventsFacadeIT extends IsaacIntegrationTest {
+class EventsFacadeIT extends IsaacIntegrationTest {
 
   private EventsFacade eventsFacade;
 
@@ -51,7 +51,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
   @Test
   // GET /events -> EventFacade::getEvents(request, tags, startIndex, limit, sortOrder, showActiveOnly, showInactiveOnly, showMyBookingsOnly, showReservationsOnly, showStageOnly)
-  public void getEventsTest() {
+  void getEventsTest() {
     // Create an anonymous request (this is a mocked object)
     HttpServletRequest request = createRequestWithCookies(new Cookie[] {});
     replay(request);
@@ -85,7 +85,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
   // GET    /events/bookings/{booking_id}      -> EventsFacade::getEventBookingsById(request, bookingId)
   // POST   /events/{event_id}/booking         -> EventsFacade::createBookingForMe(request, eventId, additionalInformation)
   // DELETE /events/{event_id}/bookings/cancel -> EventsFacade::cancelBooking(request, eventId)
-  public void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+  void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
       MFARequiredButNotConfiguredException, SQLException {
@@ -145,7 +145,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
   // events/{event_id}/bookings
   @Test
   // GET /events/{event_id}/bookings -> EventsFacade::adminGetEventBookingByEventId(request, eventId)
-  public void getEventBookingsByEventIdTest()
+  void getEventBookingsByEventIdTest()
       throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -205,7 +205,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
   @Test
   // GET /events/{event_id}/groups_bookings
-  public void getEventBookingForAllGroupsTest()
+  void getEventBookingForAllGroupsTest()
       throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -278,7 +278,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
   @Test
   // GET /events/{event_id}/bookings/for_group/{group_id} -> EventFacade::getEventBookingForGivenGroup(request, eventId, groupId)
-  public void getEventBookingsByEventIdForGroup()
+  void getEventBookingsByEventIdForGroup()
       throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -331,7 +331,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getEventOverviewsTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+  void getEventOverviewsTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
       MFARequiredButNotConfiguredException {

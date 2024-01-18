@@ -91,7 +91,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void assignBulkEndpoint_setValidAssignmentAsTeacher_assignsSuccessfully() throws
+  void assignBulkEndpoint_setValidAssignmentAsTeacher_assignsSuccessfully() throws
       NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException,
@@ -160,7 +160,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   // }
 
   @Test
-  public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTeacher_assignsSuccessfully() throws
+  void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTeacher_assignsSuccessfully() throws
       NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException,
@@ -243,7 +243,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   // }
 
   @Test
-  public void assignBulkEndpoint_scheduleAssignmentWithDueDateInPastAsTeacher_failsToAssign() throws
+  void assignBulkEndpoint_scheduleAssignmentWithDueDateInPastAsTeacher_failsToAssign() throws
       NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
       AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
       AdditionalAuthenticationRequiredException, InvalidKeySpecException,
@@ -284,7 +284,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void assignBulkEndpoint_scheduleSingleAssignmentWithDistantScheduledDateAsTeacher_failsToAssign() throws
+  void assignBulkEndpoint_scheduleSingleAssignmentWithDistantScheduledDateAsTeacher_failsToAssign() throws
       Exception {
 
     // Arrange
@@ -323,7 +323,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void assignBulkEndpoint_scheduleSingleAssignmentWithScheduledDateAfterDueDateAsTeacher_failsToAssign() throws
+  void assignBulkEndpoint_scheduleSingleAssignmentWithScheduledDateAfterDueDateAsTeacher_failsToAssign() throws
       Exception {
 
     // Arrange
@@ -400,7 +400,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   // }
 
   @Test
-  public void deleteAssignmentEndpoint_attemptToDeleteOwnersAssignmentAsAdditionalManagerWithAdditionManagerPrivilegesOn_succeeds()
+  void deleteAssignmentEndpoint_attemptToDeleteOwnersAssignmentAsAdditionalManagerWithAdditionManagerPrivilegesOn_succeeds()
       throws Exception {
     // Test Teacher (5) is additional manager of group 5, which is owned by dave teacher (10)
 
@@ -427,7 +427,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getAssignmentProgressDownloadCSV_succeeds() throws Exception {
+  void getAssignmentProgressDownloadCSV_succeeds() throws Exception {
     // log in as Test teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
         ITConstants.TEST_TEACHER_PASSWORD);
@@ -447,7 +447,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getAssignmentProgressDownloadCSV_permissionDenied() throws Exception {
+  void getAssignmentProgressDownloadCSV_permissionDenied() throws Exception {
     // log in as Test teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
         ITConstants.TEST_TUTOR_PASSWORD);
@@ -461,7 +461,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getGroupAssignmentsProgressDownloadCSV_succeeds() throws Exception {
+  void getGroupAssignmentsProgressDownloadCSV_succeeds() throws Exception {
     // log in as Test teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
         ITConstants.TEST_TEACHER_PASSWORD);
@@ -481,7 +481,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getGroupAssignmentsProgressDownloadCSV_permissionDenied() throws Exception {
+  void getGroupAssignmentsProgressDownloadCSV_permissionDenied() throws Exception {
     // log in as Test teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
         ITConstants.TEST_TUTOR_PASSWORD);

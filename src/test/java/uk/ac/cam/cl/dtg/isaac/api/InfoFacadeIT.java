@@ -14,7 +14,7 @@ import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 
 // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
-public class InfoFacadeIT extends IsaacIntegrationTest {
+class InfoFacadeIT extends IsaacIntegrationTest {
 
   public InfoFacade infoFacade;
 
@@ -26,14 +26,14 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getSegueAppVersion_respondsOk() {
+  void getSegueAppVersion_respondsOk() {
     // /info/segue_version
     Response response = infoFacade.getSegueAppVersion();
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 
   @Test
-  public void getSegueEnvironment_respondsOk() {
+  void getSegueEnvironment_respondsOk() {
     // /info/segue_environment
     Request request = createNiceMock(Request.class);
     Response response = infoFacade.getSegueEnvironment(request);
@@ -41,7 +41,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getSegueEnvironment_respondsWithDEV() {
+  void getSegueEnvironment_respondsWithDEV() {
     // /info/segue_environment
     Request request = createNiceMock(Request.class);
     Response response = infoFacade.getSegueEnvironment(request);
@@ -54,14 +54,14 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void getLiveVersion_respondsOk() {
+  void getLiveVersion_respondsOk() {
     // /info/content_version/live_version
     Response response = infoFacade.getLiveVersionInfo();
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 
   @Test
-  public void getLiveVersion_respondsWithCorrectVersion() {
+  void getLiveVersion_respondsWithCorrectVersion() {
     // /info/content_version/live_version
     Response response = infoFacade.getLiveVersionInfo();
     if (response.getEntity() instanceof ImmutableMap) {
@@ -72,14 +72,14 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  public void etlPing_respondsOk() {
+  void etlPing_respondsOk() {
     // /info/etl/ping
     Response response = infoFacade.pingETLServer();
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 
   @Test
-  public void elasticsearchPing_respondsOk() {
+  void elasticsearchPing_respondsOk() {
     // /info/elasticsearch/ping
     Response response = infoFacade.pingElasticSearch();
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());

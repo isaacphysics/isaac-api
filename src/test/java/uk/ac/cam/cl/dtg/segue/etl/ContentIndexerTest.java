@@ -50,7 +50,7 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 /**
  * Test class for the GitContentManager class.
  */
-public class ContentIndexerTest {
+class ContentIndexerTest {
   private GitDb database;
   private ElasticSearchIndexer searchProvider;
   private ContentMapper contentMapper;
@@ -81,7 +81,7 @@ public class ContentIndexerTest {
    * @throws SegueSearchException if an error occurs during content indexing
    */
   @Test
-  public void buildSearchIndexes_sendContentToSearchProvider_checkSearchProviderIsSentAllImportantObject()
+  void buildSearchIndexes_sendContentToSearchProvider_checkSearchProviderIsSentAllImportantObject()
       throws JsonProcessingException, SegueSearchException {
     reset(database, searchProvider);
     String uniqueObjectId = UUID.randomUUID().toString();
@@ -176,7 +176,7 @@ public class ContentIndexerTest {
    * generated.
    */
   @Test
-  public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned() {
+  void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned() {
     final int numChildLevels = 5;
     final int numNodes = numChildLevels + 1;
 

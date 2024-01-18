@@ -49,7 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-public class UserAuthenticationManagerTest {
+class UserAuthenticationManagerTest {
   private UserAuthenticationManager userAuthenticationManager;
   private IUserDataManager dummyDatabase;
   private PropertiesLoader dummyPropertiesLoader;
@@ -79,7 +79,7 @@ public class UserAuthenticationManagerTest {
   }
 
   @Test
-  public void isSessionValid_valid() throws JsonProcessingException, SegueDatabaseException {
+  void isSessionValid_valid() throws JsonProcessingException, SegueDatabaseException {
     Date cookieExpiryDate = Date.from(Instant.now().plus(300, SECONDS));
     String cookieExpiryDateString = new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(cookieExpiryDate);
     Map<String, String> sessionInformation = new HashMap<>(4);
@@ -100,7 +100,7 @@ public class UserAuthenticationManagerTest {
   }
 
   @Test
-  public void isSessionValid_noCookies() throws SegueDatabaseException {
+  void isSessionValid_noCookies() throws SegueDatabaseException {
     HttpServletRequest mockRequest = createNiceMock(HttpServletRequest.class);
     expect(mockRequest.getCookies()).andReturn(null).anyTimes();
     replay(mockRequest);
@@ -112,7 +112,7 @@ public class UserAuthenticationManagerTest {
   }
 
   @Test
-  public void isSessionValid_noAuthCookie() throws SegueDatabaseException {
+  void isSessionValid_noAuthCookie() throws SegueDatabaseException {
     Cookie notAuthCookie = new Cookie("NOT_AUTH_COOKIE", "");
     HttpServletRequest mockRequest = createNiceMock(HttpServletRequest.class);
     expect(mockRequest.getCookies()).andReturn(new Cookie[] {notAuthCookie}).anyTimes();
@@ -125,7 +125,7 @@ public class UserAuthenticationManagerTest {
   }
 
   @Test
-  public void calculateUpdatedHMAC_noPartialLogin() {
+  void calculateUpdatedHMAC_noPartialLogin() {
     String expectedHMAC = "dwHtgxiiU7r7xH/BNet7bZb4PQMK0CrOfSVnn+ctWXQ=";
     Date cookieExpiryDate = Date.from(LocalDateTime.of(2020, 1, 1, 0, 0, 0).toInstant(UTC));
     String cookieExpiryDateString = new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(cookieExpiryDate);
@@ -139,7 +139,7 @@ public class UserAuthenticationManagerTest {
   }
 
   @Test
-  public void calculateUpdatedHMAC_PartialLogin() {
+  void calculateUpdatedHMAC_PartialLogin() {
     String expectedHMAC = "/reauAoeghGgfvoMxC+zpQTVlOytSKncUpOrgzwjomw=";
     Date cookieExpiryDate = Date.from(LocalDateTime.of(2020, 1, 1, 0, 0, 0).toInstant(UTC));
     String cookieExpiryDateString = new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(cookieExpiryDate);
@@ -154,7 +154,7 @@ public class UserAuthenticationManagerTest {
   }
 
   @Test
-  public void destroyUserSession() throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
+  void destroyUserSession() throws JsonProcessingException, SegueDatabaseException, NoUserLoggedInException {
     RegisteredUser mockUser = createNiceMock(RegisteredUser.class);
     replay(mockUser);
 
@@ -164,7 +164,7 @@ public class UserAuthenticationManagerTest {
     expectLastCall();
     replay(dummyDatabase);
 
-    Map<String, String> sessionInformation = new HashMap(Map.of(
+    Map<String, String> sessionInformation = new HashMap<>(Map.of(
         SESSION_USER_ID, "1",
         SESSION_TOKEN, "1",
         DATE_EXPIRES, new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(Date.from(Instant.now().plus(3600, SECONDS)))

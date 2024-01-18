@@ -19,7 +19,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.Date;
@@ -27,19 +28,19 @@ import java.util.List;
 import java.util.Objects;
 import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-public class QuizAttemptManagerTest extends AbstractManagerTest {
+class QuizAttemptManagerTest extends AbstractManagerTest {
   private static final Long TEST_ID = 0xC0000000000L;
   private QuizAttemptManager quizAttemptManager;
 
   private IQuizAttemptPersistenceManager quizAttemptPersistenceManager;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     quizAttemptPersistenceManager = createMock(IQuizAttemptPersistenceManager.class);
 
@@ -49,23 +50,22 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void fetchOrCreateWithExistingAttempt() throws AttemptCompletedException, SegueDatabaseException {
+  void fetchOrCreateWithExistingAttempt() throws AttemptCompletedException, SegueDatabaseException {
     withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(studentAttempt));
 
     QuizAttemptDTO attempt = quizAttemptManager.fetchOrCreate(studentAssignment, student);
     assertEquals(studentAttempt, attempt);
   }
 
-  @Test(expected = AttemptCompletedException.class)
-  public void fetchOrCreateWithExistingCompletedAttemptFails()
-      throws AttemptCompletedException, SegueDatabaseException {
+  @Test
+  void fetchOrCreateWithExistingCompletedAttemptFails() {
     withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(completedAttempt));
 
-    quizAttemptManager.fetchOrCreate(studentAssignment, student);
+    assertThrows(AttemptCompletedException.class, () -> quizAttemptManager.fetchOrCreate(studentAssignment, student));
   }
 
   @Test
-  public void fetchOrCreateCreatesNewAttempt() throws AttemptCompletedException, SegueDatabaseException {
+  void fetchOrCreateCreatesNewAttempt() throws AttemptCompletedException, SegueDatabaseException {
     withMock(quizAttemptPersistenceManager,
         forStudentAssignmentReturn(null),
         m -> expect(
@@ -77,7 +77,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void fetchOrCreateFreeQuizWithExistingAttempt() throws SegueDatabaseException {
+  void fetchOrCreateFreeQuizWithExistingAttempt() throws SegueDatabaseException {
     withMock(quizAttemptPersistenceManager, forStudentQuizReturn(Collections.singletonList(this.ownAttempt)));
 
     QuizAttemptDTO attempt = quizAttemptManager.fetchOrCreateFreeQuiz(studentQuiz, student);
@@ -85,7 +85,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void fetchOrCreateFreeQuizWithExistingCompletedAttemptCreatesNewAttempt() throws SegueDatabaseException {
+  void fetchOrCreateFreeQuizWithExistingCompletedAttemptCreatesNewAttempt() throws SegueDatabaseException {
     withMock(quizAttemptPersistenceManager,
         forStudentQuizReturn(Collections.singletonList(completedAttempt)),
         returnTestIdForSaveAttempt());
@@ -95,7 +95,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void fetchOrCreateFreeQuizCreatesNewAttempt() throws SegueDatabaseException {
+  void fetchOrCreateFreeQuizCreatesNewAttempt() throws SegueDatabaseException {
     withMock(quizAttemptPersistenceManager,
         forStudentQuizReturn(Collections.emptyList()),
         returnTestIdForSaveAttempt());
@@ -105,7 +105,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void augmentAssignmentsFor() throws SegueDatabaseException {
+  void augmentAssignmentsFor() throws SegueDatabaseException {
     withMock(quizAttemptPersistenceManager,
         m -> expect(
             m.getByQuizAssignmentIdsAndUserId(Collections.singletonList(studentAssignment.getId()), student.getId()))

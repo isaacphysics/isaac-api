@@ -534,7 +534,7 @@ public class GitContentManager {
   }
 
   public final ByteArrayOutputStream getFileBytes(final String filename) throws IOException {
-    return database.getFileByCommitSHA(getCurrentContentSHA(), filename);
+    return database.getFileByCommitSha(getCurrentContentSHA(), filename);
   }
 
   public final String getLatestContentSHA() {

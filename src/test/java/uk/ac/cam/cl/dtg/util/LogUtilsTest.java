@@ -12,17 +12,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class LogUtilsTest {
+class LogUtilsTest {
 
   @ParameterizedTest
   @MethodSource("stringValuesToTest")
-  public void testSanitiseInternalLogValue(String initialValue, String expectedSanitisedValue) {
+  void testSanitiseInternalLogValue(String initialValue, String expectedSanitisedValue) {
     assertEquals(expectedSanitisedValue, sanitiseInternalLogValue(initialValue));
   }
 
   @ParameterizedTest
   @MethodSource("stringValuesToTest")
-  public void testSanitiseUserLogValue(String initialValue, String expectedSanitisedValue) {
+  void testSanitiseUserLogValue(String initialValue, String expectedSanitisedValue) {
     assertEquals(expectedSanitisedValue, sanitiseExternalLogValue(initialValue));
   }
 
@@ -43,7 +43,7 @@ public class LogUtilsTest {
 
   @ParameterizedTest
   @MethodSource("mapValuesToTest")
-  public void testSanitiseUserLogValueMap(Map<String, Object> initialValue, String expectedSanitisedValue) {
+  void testSanitiseUserLogValueMap(Map<String, Object> initialValue, String expectedSanitisedValue) {
     assertEquals(expectedSanitisedValue, sanitiseExternalLogValue(initialValue));
   }
 

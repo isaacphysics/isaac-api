@@ -16,14 +16,11 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.IOException;
-import org.junit.Test;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 /**
  * Test class for the facebook authenticator class.
@@ -45,42 +42,23 @@ public abstract class IOAuthAuthenticatorTest {
    */
   @Test
   public final void getAuthenticationProvider_returnsNonNullProvider() {
-    assertTrue(authenticator.getAuthenticationProvider() != null);
+    assertNotNull(authenticator.getAuthenticationProvider());
   }
 
 
   /**
    * Verify that the extractAuthCode method returns the correct value.
-   *
-   * @throws NoUserException
-   * @throws IOException
    */
   @Test
-  public final void exchangeCode_invalidToken_throwsException() throws IOException, NoUserException {
-    try {
-      authenticator.exchangeCode(someAuthCode);
-      fail("Exception should have been thrown.");
-    } catch (CodeExchangeException e) {
-      // fine
-    }
+  public final void exchangeCode_invalidToken_throwsException() {
+    assertThrows(CodeExchangeException.class, () -> authenticator.exchangeCode(someAuthCode));
   }
 
   /**
    * Verify that the getAntiForgeryStateToken returns some non-null non-empty string.
-   *
-   * @throws IOException
-   * @throws NoUserException
-   * @throws AuthenticatorSecurityException
    */
   @Test
-  public final void getUserInfo_nullReference_throwsException()
-      throws NoUserException, IOException, AuthenticatorSecurityException {
-    try {
-      authenticator.getUserInfo(null);
-      fail("Exception should have been thrown.");
-    } catch (NullPointerException e) {
-      // fine
-    }
+  public final void getUserInfo_nullReference_throwsException() {
+    assertThrows(NullPointerException.class, () -> authenticator.getUserInfo(null));
   }
-
 }

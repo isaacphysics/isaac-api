@@ -3,13 +3,13 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -21,13 +21,13 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-public class QuizManagerTest extends AbstractManagerTest {
+class QuizManagerTest extends AbstractManagerTest {
 
   private QuizManager quizManager;
   private PropertiesLoader properties;
   private IsaacQuizDTO brokenQuiz;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     properties = createMock(PropertiesLoader.class);
 
@@ -44,7 +44,7 @@ public class QuizManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void extractSectionObjectsInDev() throws ContentManagerException {
+  void extractSectionObjectsInDev() throws ContentManagerException {
     withMock(properties, m ->
         expect(m.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name())
     );
@@ -56,7 +56,7 @@ public class QuizManagerTest extends AbstractManagerTest {
   }
 
   @Test
-  public void extractSectionObjectsInProd() throws ContentManagerException {
+  void extractSectionObjectsInProd() throws ContentManagerException {
     withMock(properties, m ->
         expect(m.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.PROD.name())
     );
