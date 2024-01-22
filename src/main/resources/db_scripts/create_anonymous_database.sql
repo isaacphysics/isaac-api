@@ -272,6 +272,12 @@ UPDATE anonymous.logged_events
 SET event_details=jsonb_strip_nulls(event_details - 'newSchoolOther')
 WHERE event_details->>'newSchoolOther' IS NOT NULL;
 
+
+-- School data, no PII:
+
+CREATE TABLE anonymous.schools_2022 AS
+SELECT * FROM public.schools_2022;
+
 RETURN true;
 END;
 $$
