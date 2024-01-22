@@ -182,10 +182,6 @@ public class Content extends ContentBase {
     }
 
     public Boolean getPublished() {
-        if (null == published) {
-            return false;
-        }
-
         return published;
     }
 
