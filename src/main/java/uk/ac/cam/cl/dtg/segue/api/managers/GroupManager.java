@@ -259,22 +259,6 @@ public class GroupManager {
     }
 
     /**
-     * getGroupsByOwner.
-     * 
-     * @param ownerUser
-     *            - the owner of the groups to search for.
-     * @param archivedGroupsOnly
-     *            if true then only archived groups will be returned,
-     *            if false then only unarchived groups will be returned.
-     * @return List of groups or empty list.
-     * @throws SegueDatabaseException if there is a db error
-     */
-    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
-        Validate.notNull(ownerUser);
-        return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
-    }
-
-    /**
      * getGroupMembershipList. Gets the groups a user is a member of.
      * 
      * @param userToLookup
