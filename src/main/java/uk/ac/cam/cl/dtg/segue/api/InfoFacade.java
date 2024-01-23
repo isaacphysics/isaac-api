@@ -33,11 +33,12 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,24 +160,12 @@ public class InfoFacade extends AbstractSegueFacade {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Check whether the symbolic question checker is running.")
   public Response pingEqualityChecker() {
+    String host = getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST);
+    String port = getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT);
+    String url = String.format("http://%s:%s/", host, port);
+    String errorMessage = "Unexpected network error";
 
-    HttpClient httpClient = new DefaultHttpClient();
-    HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
-        + ":" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT) + "/");
-
-    HttpResponse httpResponse = null;
-    try {
-      httpResponse = httpClient.execute(httpGet);
-    } catch (IOException e) {
-      log.error("Unexpected network error", e);
-    }
-
-    if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
-      return Response.ok(ImmutableMap.of("success", true)).build();
-    } else {
-      return Response.ok(ImmutableMap.of("success", false)).build();
-    }
-
+    return ping(url, errorMessage);
   }
 
   /**
@@ -189,23 +178,12 @@ public class InfoFacade extends AbstractSegueFacade {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Check whether the content indexer is running.")
   public Response pingETLServer() {
-    HttpClient httpClient = new DefaultHttpClient();
-    HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
-        + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/ping");
+    String host = getProperties().getProperty("ETL_HOSTNAME");
+    String port = getProperties().getProperty("ETL_PORT");
+    String url = String.format("http://%s:%s/isaac-api/api/etl/ping", host, port);
+    String errorMessage = "Error when checking status of ETL server";
 
-    HttpResponse httpResponse = null;
-    try {
-      httpResponse = httpClient.execute(httpGet);
-    } catch (IOException e) {
-      log.warn("Error when checking status of ETL server: " + e.toString());
-    }
-
-    if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
-      return Response.ok(ImmutableMap.of("success", true)).build();
-    } else {
-      return Response.ok(ImmutableMap.of("success", false)).build();
-    }
-
+    return ping(url, errorMessage);
   }
 
   /**
@@ -218,26 +196,12 @@ public class InfoFacade extends AbstractSegueFacade {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Check whether elasticsearch is running.")
   public Response pingElasticSearch() {
+    String host = getProperties().getProperty(Constants.SEARCH_CLUSTER_ADDRESS);
+    String port = getProperties().getProperty(Constants.SEARCH_CLUSTER_INFO_PORT);
+    String url = String.format("http://%s:%s/_cat/health", host, port);
+    String errorMessage = "Error when checking status of elasticsearch";
 
-    HttpClient httpClient = new DefaultHttpClient();
-    HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("SEARCH_CLUSTER_ADDRESS") + ":"
-        + getProperties().getProperty("SEARCH_CLUSTER_INFO_PORT") + "/_cat/health");
-
-    HttpResponse httpResponse = null;
-    try {
-      httpResponse = httpClient.execute(httpGet);
-    } catch (IOException e) {
-      log.warn("Error when checking status of elasticsearch: " + e.toString());
-    }
-
-    // FIXME - this assumes a 200 means all is ok.
-    // It's likely that a real problem with clustering would also lead to a 200!
-    if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
-      return Response.ok(ImmutableMap.of("success", true)).build();
-    } else {
-      return Response.ok(ImmutableMap.of("success", false)).build();
-    }
-
+    return ping(url, errorMessage);
   }
 
   /**
@@ -250,10 +214,25 @@ public class InfoFacade extends AbstractSegueFacade {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Check whether Quartz job scheduler is running.")
   public Response pingQuartzScheduler() {
-    if (segueJobService.isStarted()) {
-      return Response.ok(ImmutableMap.of("success", true)).build();
-    } else {
-      return Response.ok(ImmutableMap.of("success", false)).build();
+    Boolean success = segueJobService.isStarted();
+    return Response.ok(Map.of("success", success)).build();
+  }
+
+  private Response ping(String url, String errorMessage) {
+    HttpResponse httpResponse = null;
+
+    try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+      HttpGet httpGet = new HttpGet(url);
+      httpResponse = httpClient.execute(httpGet);
+    } catch (IOException e) {
+      log.error(errorMessage, e);
     }
+
+    Boolean success = httpResponse != null
+        && httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode();
+
+    // FIXME - this assumes a 200 means all is ok.
+    // For instance, when pinging Elasticsearch, it's likely that a real clustering problem would also lead to a 200
+    return Response.ok(Map.of("success", success)).build();
   }
 }

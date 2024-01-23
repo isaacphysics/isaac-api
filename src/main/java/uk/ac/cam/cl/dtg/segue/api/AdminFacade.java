@@ -75,9 +75,9 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -984,15 +984,18 @@ public class AdminFacade extends AbstractSegueFacade {
 
         String oldLiveVersion = contentManager.getCurrentContentSHA();
 
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpResponse httpResponse;
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          String host = getProperties().getProperty("ETL_HOSTNAME");
+          String port = getProperties().getProperty("ETL_PORT");
+          String urlWithPlaceholders = "http://%s:%s/isaac-api/api/etl/set_version_alias/%s/%s";
+          String url = String.format(urlWithPlaceholders, host, port, contentIndex, version);
+          HttpPost httpPost = new HttpPost(url);
 
-        HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
-            + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/"
-            + this.contentIndex + "/" + version);
+          httpPost.addHeader("Content-Type", "application/json");
 
-        httpPost.addHeader("Content-Type", "application/json");
-
-        HttpResponse httpResponse = httpClient.execute(httpPost);
+          httpResponse = httpClient.execute(httpPost);
+        }
 
         HttpEntity e = httpResponse.getEntity();
 

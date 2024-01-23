@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -101,13 +101,16 @@ public interface IValidator {
     g.close();
     String requestString = sw.toString();
 
-    HttpClient httpClient = new DefaultHttpClient();
-    HttpPost httpPost = new HttpPost(externalValidatorUrl);
+    HttpResponse httpResponse;
+    try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+      HttpPost httpPost = new HttpPost(externalValidatorUrl);
 
-    httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
-    httpPost.addHeader("Content-Type", "application/json");
+      httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
+      httpPost.addHeader("Content-Type", "application/json");
 
-    HttpResponse httpResponse = httpClient.execute(httpPost);
+      httpResponse = httpClient.execute(httpPost);
+    }
+
     HttpEntity responseEntity = httpResponse.getEntity();
     String responseString = EntityUtils.toString(responseEntity);
     HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
