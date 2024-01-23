@@ -205,7 +205,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
+            List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, true);
 
             List<Map<String, Object>> results = Lists.newArrayList();
             for(UserGroupDTO group : groups) {

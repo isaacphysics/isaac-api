@@ -291,18 +291,6 @@ public class GroupManager {
 
         return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), augmentGroups);
     }
-    /**
-     * getGroupMembershipList. Gets the groups a user is a member of.
-     *
-     * @param userToLookup
-     *            - the user to search for group membership details for.
-     * @return the list of groups the user belongs to.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup) throws SegueDatabaseException {
-        return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), true);
-    }
 
     /**
      * Adds a user to a group.
