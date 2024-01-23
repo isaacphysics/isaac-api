@@ -295,6 +295,8 @@ CREATE TABLE public.logged_events (
 
 ALTER TABLE public.logged_events OWNER TO rutherford;
 
+ALTER TABLE public.logged_events SET (autovacuum_analyze_threshold = 350000, autovacuum_analyze_scale_factor = 0);
+
 --
 -- Name: logged_events_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
 --
