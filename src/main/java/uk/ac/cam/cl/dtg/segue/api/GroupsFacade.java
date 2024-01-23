@@ -301,7 +301,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
 
-            List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
+            List<UserGroupDTO> groups = groupManager.getAllGroupsOwnedAndManagedByUser(userOfInterest, false);
             return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
