@@ -20,19 +20,24 @@ public class AudienceContext {
     if (gameFilter == null) {
       return null;
     }
-    return new AudienceContext() {
-      {
-        if (gameFilter.getStages() != null) {
-          setStage(gameFilter.getStages().stream().map(Stage::valueOf).collect(Collectors.toList()));
-        }
-        if (gameFilter.getExamBoards() != null) {
-          setExamBoard(gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).collect(Collectors.toList()));
-        }
-        if (gameFilter.getDifficulties() != null) {
-          setDifficulty(gameFilter.getDifficulties().stream().map(Difficulty::valueOf).collect(Collectors.toList()));
-        }
-      }
-    };
+
+    AudienceContext audienceContext = new AudienceContext();
+
+    if (gameFilter.getStages() != null) {
+      audienceContext.setStage(gameFilter.getStages().stream().map(Stage::valueOf).collect(Collectors.toList()));
+    }
+    if (gameFilter.getExamBoards() != null) {
+      audienceContext.setExamBoard(
+          gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).collect(Collectors.toList())
+      );
+    }
+    if (gameFilter.getDifficulties() != null) {
+      audienceContext.setDifficulty(
+          gameFilter.getDifficulties().stream().map(Difficulty::valueOf).collect(Collectors.toList())
+      );
+    }
+
+    return audienceContext;
   }
 
   public AudienceContext() {

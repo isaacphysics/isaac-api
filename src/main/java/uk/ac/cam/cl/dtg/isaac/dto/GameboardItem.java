@@ -73,13 +73,13 @@ public class GameboardItem {
    */
   public static GameboardItem buildLightweightItemFromContentDescriptor(
       final GameboardContentDescriptor contentDescriptor) {
-    return new GameboardItem() {
-      {
-        this.setId(contentDescriptor.getId());
-        this.setContentType(contentDescriptor.getContentType());
-        this.setCreationContext(contentDescriptor.getContext());
-      }
-    };
+    GameboardItem gameboardItem = new GameboardItem();
+
+    gameboardItem.setId(contentDescriptor.getId());
+    gameboardItem.setContentType(contentDescriptor.getContentType());
+    gameboardItem.setCreationContext(contentDescriptor.getContext());
+
+    return gameboardItem;
   }
 
   /**
