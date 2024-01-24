@@ -207,7 +207,7 @@ CREATE TABLE anonymous.logged_events AS
     SELECT
         id,
         anonymise(user_id, hash_salt) AS user_id,
-        anonymous_user,
+        length(user_id) < 7 AS registered_user,  -- a quick proxy, since "anonymous_user" is not what it seems!
         event_type,
         event_details,
         timestamp
