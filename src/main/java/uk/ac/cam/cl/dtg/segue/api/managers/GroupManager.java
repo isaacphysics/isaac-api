@@ -26,37 +26,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithGroupMembershipDTO;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Comparator;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -585,44 +586,51 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *      *            - if there is a database problem.
      */
-    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups, final boolean augmentGroups)
+    private List<UserGroupDTO> convertGroupsToDTOs(final Collection<UserGroup> groups, final boolean augmentGroups)
             throws SegueDatabaseException {
-        // FIXME - this duplicates much of the behaviour of the single-group convertGroupToDTO(...) method.
-        // If refactored so additional managers uses lookup cache, then the single-group method should use this code!
         List<UserGroupDTO> result = Lists.newArrayList();
-
-        // add temporary cache so we don't have to look up the same user each time.
-        Map<Long, RegisteredUserDTO> userLookupCache = Maps.newHashMap();
 
         // go through each group and get the related user information in the correct format
         for (UserGroup group : groups) {
             UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+            result.add(dtoToReturn);
+        }
 
-            if (augmentGroups) {
-                // convert the owner of the group into a DTO
-                try {
-                    RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
-                    if (null == ownerUser) {
-                        ownerUser = userManager.getUserDTOById(group.getOwnerId());
-                        userLookupCache.put(ownerUser.getId(), ownerUser);
-                    }
+        if (augmentGroups) {
 
-                    dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
-                } catch (NoUserException e) {
-                    // This should never happen!
-                    log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+            Set<Long> groupIds = groups.stream().map(UserGroup::getId).collect(Collectors.toSet());
+            Map<Long, Set<Long>> groupAdditionalManagers = groupDatabase.getAdditionalManagerSetsByGroupIds(groupIds);
+            Set<Long> ownerManagerIds = groups.stream().map(UserGroup::getOwnerId).collect(Collectors.toSet());
+            ownerManagerIds.addAll(groupAdditionalManagers.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()));
+
+            List<RegisteredUserDTO> userLookup = userManager.findUsers(ownerManagerIds);
+            Map<Long, RegisteredUserDTO> userLookupCache = userLookup.stream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
+
+            for (UserGroupDTO groupDTO : result) {
+                // set owner summary:
+                RegisteredUserDTO ownerUser = userLookupCache.get(groupDTO.getOwnerId());
+                if (null != ownerUser) {
+                    groupDTO.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
+                } else {
+                    log.debug(String.format("Group (%s) has owner ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
                 }
 
                 // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
-                Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
+                Set<Long> additionalManagers = groupAdditionalManagers.get(groupDTO.getId());
                 Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
                 if (additionalManagers != null) {
-                    setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers), UserSummaryWithEmailAddressDTO.class));
+                    for (Long additionalManagerId : additionalManagers) {
+                        RegisteredUserDTO managerUser = userLookupCache.get(additionalManagerId);
+                        if (managerUser != null) {
+                            setOfUsers.add(userManager.convertToDetailedUserSummaryObject(managerUser, UserSummaryWithEmailAddressDTO.class));
+                        } else {
+                            log.debug(String.format("Group (%s) has manager ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
+                        }
+                    }
                 }
 
-                dtoToReturn.setAdditionalManagers(setOfUsers);
+                groupDTO.setAdditionalManagers(setOfUsers);
             }
-            result.add(dtoToReturn);
         }
 
         return result;
@@ -635,7 +643,7 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *      *            - if there is a database problem.
      */
-    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
+    private List<UserGroupDTO> convertGroupsToDTOs(final Collection<UserGroup> groups) throws SegueDatabaseException {
         return convertGroupsToDTOs(groups, true);
     }
 
