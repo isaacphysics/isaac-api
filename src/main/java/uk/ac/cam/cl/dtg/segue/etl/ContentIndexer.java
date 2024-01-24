@@ -10,7 +10,6 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -68,11 +67,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
-/**
- * Created by Ian on 17/10/2016.
- */
 public class ContentIndexer {
-  private static final Logger log = LoggerFactory.getLogger(Content.class);
+  private static final Logger log = LoggerFactory.getLogger(ContentIndexer.class);
 
   private static final ConcurrentHashMap<String, Boolean> VERSION_LOCKS = new ConcurrentHashMap<>();
 
@@ -504,10 +500,10 @@ public class ContentIndexer {
     if (null != content) {
       // Add the fields of interest to the string builder
       if (null != content.getTitle()) {
-        searchableContentBuilder.append(content.getTitle() + "\n");
+        searchableContentBuilder.append(content.getTitle()).append("\n");
       }
       if (null != content.getValue()) {
-        searchableContentBuilder.append(content.getValue() + "\n");
+        searchableContentBuilder.append(content.getValue()).append("\n");
       }
 
       // Repeat the process for each child
@@ -577,7 +573,7 @@ public class ContentIndexer {
     }
 
     if (!indexProblemCache.containsKey(c)) {
-      indexProblemCache.put(c, new ArrayList<String>());
+      indexProblemCache.put(c, new ArrayList<>());
     }
 
     log.debug(message);
@@ -687,25 +683,24 @@ public class ContentIndexer {
 
     try {
       es.indexObject(sha, ContentIndextype.METADATA.toString(),
-          objectMapper.writeValueAsString(ImmutableMap.of("version", sha, "created", new Date().toString())),
-          "general");
+          objectMapper.writeValueAsString(Map.of("version", sha, "created", new Date().toString())), "general");
       es.indexObject(sha, ContentIndextype.METADATA.toString(),
-          objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
+          objectMapper.writeValueAsString(Map.of("tags", tagsList)), "tags");
 
       startTime = System.nanoTime();
       es.bulkIndex(sha, ContentIndextype.UNIT.toString(), allUnits.entrySet().stream().map(entry -> {
         try {
-          return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
+          return objectMapper.writeValueAsString(Map.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
         } catch (JsonProcessingException jsonProcessingException) {
-          log.error("Unable to serialise unit entry for unit: " + entry.getValue());
+          log.error("Unable to serialise unit entry for unit: {}", entry.getValue());
           return null;
         }
       }).filter(Objects::nonNull).collect(Collectors.toList()));
       es.bulkIndex(sha, ContentIndextype.PUBLISHED_UNIT.toString(), publishedUnits.entrySet().stream().map(entry -> {
         try {
-          return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
+          return objectMapper.writeValueAsString(Map.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
         } catch (JsonProcessingException jsonProcessingException) {
-          log.error("Unable to serialise published unit entry for unit: " + entry.getValue());
+          log.error("Unable to serialise published unit entry for unit: {}", entry.getValue());
           return null;
         }
       }).filter(Objects::nonNull).collect(Collectors.toList()));
@@ -715,7 +710,7 @@ public class ContentIndexer {
       startTime = System.nanoTime();
       es.bulkIndex(sha, ContentIndextype.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
         try {
-          return objectMapper.writeValueAsString(ImmutableMap.of(
+          return objectMapper.writeValueAsString(Map.of(
               "canonicalSourceFile", e.getKey().getCanonicalSourceFile(),
               "id", e.getKey().getId() == null ? "" : e.getKey().getId(),
               "title", e.getKey().getTitle() == null ? "" : e.getKey().getTitle(),
@@ -723,12 +718,12 @@ public class ContentIndexer {
               "published", e.getKey().getPublished() == null ? "" : e.getKey().getPublished(),
               "errors", e.getValue().toArray()));
         } catch (JsonProcessingException jsonProcessingException) {
-          log.error("Unable to serialise content error entry from file: " + e.getKey().getCanonicalSourceFile());
+          log.error("Unable to serialise content error entry from file: {}", e.getKey().getCanonicalSourceFile());
           return null;
         }
       }).filter(Objects::nonNull).collect(Collectors.toList()));
       endTime = System.nanoTime();
-      log.info("Bulk content error indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+      log.info("Bulk content error indexing took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
     } catch (JsonProcessingException e) {
       log.error("Unable to serialise sha or tags");
     } catch (SegueSearchException e) {
@@ -794,7 +789,7 @@ public class ContentIndexer {
       try {
         this.recordContentTypeSpecificError(sha, c, indexProblemCache);
       } catch (NullPointerException e) {
-        log.warn("Failed processing content errors in file: " + c.getCanonicalSourceFile());
+        log.warn("Failed processing content errors in file: {}", c.getCanonicalSourceFile());
       }
     }
 
@@ -809,9 +804,9 @@ public class ContentIndexer {
             + "ID cannot be found.", indexProblemCache);
       }
     }
-    if (missingContent.size() > 0) {
-      log.debug("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
-          + "The following ids are referenced but do not exist: " + expectedIds.toString());
+    if (!missingContent.isEmpty()) {
+      log.debug("Referential integrity broken for ({}) related Content items. "
+          + "The following ids are referenced but do not exist: {}", missingContent.size(), expectedIds);
     }
 
     // Find all references from published content to unpublished content.
@@ -830,12 +825,12 @@ public class ContentIndexer {
     log.info(String.format("Validation processing (%s) complete. There are %s files with content problems",
         sanitiseInternalLogValue(sha), indexProblemCache.size()));
 
-    if (indexProblemCache.size() == 0) {
+    if (indexProblemCache.isEmpty()) {
       // Register a no-op style error to simplify application logic by ensuring there is always a content errors index
-      Content dummyContentRecord = new Content() {{
-          // "\uD83D\uDE0E"
-          setCanonicalSourceFile("😎");
-        }};
+      Content dummyContentRecord = new Content();
+      // "\uD83D\uDE0E"
+      dummyContentRecord.setCanonicalSourceFile("😎");
+
       this.registerContentProblem(dummyContentRecord, "No content errors!", indexProblemCache);
     }
   }
@@ -876,14 +871,6 @@ public class ContentIndexer {
     return Arrays.stream(ContentIndextype.values())
         .anyMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
   }
-
-  /*
-      @Override
-      public void setIndexRestriction(final boolean loadOnlyPublishedContent) {
-          this.indexOnlyPublishedParentContent = loadOnlyPublishedContent;
-      }*/
-
-  // GitContentManager ensureCache
 
   private String collateExpandableChildren(final Content content) {
     StringBuilder ret = new StringBuilder();
@@ -1066,7 +1053,7 @@ public class ContentIndexer {
       final Quantity quantity) {
     // Check valid number by parsing in the same way as IsaacNumericValidator::stringValueToDouble:
     try {
-      new BigDecimal(quantity.getValue()).doubleValue();
+      new BigDecimal(quantity.getValue());
     } catch (NumberFormatException e) {
       this.registerContentProblem(content,
           "Numeric Question: " + question.getId() + " has Quantity (" + quantity.getValue()
@@ -1168,12 +1155,12 @@ public class ContentIndexer {
   private void registerContentProblemMediaNotFoundOrTooLarge(
       final String sha, final Content content, final Map<Content, List<String>> indexProblemCache, final Media media) {
     if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
-      ByteArrayOutputStream fileData = null;
+      ByteArrayOutputStream fileData;
       try {
         // This will return null if the file is not found:
         fileData = database.getFileByCommitSha(sha, media.getSrc());
       } catch (IOException | UnsupportedOperationException e) {
-        // Leave fileData = null;
+        fileData = null;
       }
       if (null == fileData) {
         this.registerContentProblem(content, "Unable to find Image: " + media.getSrc()
@@ -1228,9 +1215,10 @@ public class ContentIndexer {
           + " found with both children and a value. "
           + "Content objects are only allowed to have one or the other.", indexProblemCache);
 
-      log.error("Invalid content item detected: The object with ID (" + content.getCanonicalSourceFile()
-          + ") has both children and a value.");
+      log.error(
+          "Invalid content item detected: The object with ID ({}) has both children and a value.",
+          content.getCanonicalSourceFile()
+      );
     }
   }
-
 }
