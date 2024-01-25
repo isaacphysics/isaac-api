@@ -1957,7 +1957,7 @@ public class UserAccountManager implements IUserAccountManager {
                 new BasicNameValuePair("token", emailVerificationToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH)));
         String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
 
-        return String.format("https://%s/register/verify?%s", properties.getProperty(HOST_NAME), urlParams);
+        return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
     /**
