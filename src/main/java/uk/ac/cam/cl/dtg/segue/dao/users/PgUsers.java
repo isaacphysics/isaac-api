@@ -677,7 +677,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     private RegisteredUser createUser(final RegisteredUser userToCreate) throws SegueDatabaseException {    
         // make sure student is default role if none set
         if (null == userToCreate.getRole()) {
-        	userToCreate.setRole(Role.STUDENT);
+            userToCreate.setRole(Role.STUDENT);
         }
         
         // make sure NOT_VERIFIED is default email verification status if none set
