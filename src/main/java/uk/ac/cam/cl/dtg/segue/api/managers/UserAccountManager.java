@@ -1381,8 +1381,6 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         if (authenticator.isValidEmailVerificationToken(user, token)) {
-            // todo: this could potentially be it's own endpoint, which would match what we do for MFA but would make
-            //  things more complicated on the front-end
             // If a direct-sign-up teacher user has just verified themselves, remove the caveat from their session
             if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
                     && user.getRole() == Role.TEACHER && user.isTeacherAccountPending()) {
@@ -1653,7 +1651,6 @@ public class UserAccountManager implements IUserAccountManager {
      *
      * @param request - http request containing the cookie
      */
-    //todo: is there any reason this DO -> DTO is converted after return?
     private RegisteredUser retrieveCaveatLogin(final HttpServletRequest request, Set<AuthenticationCaveat> acceptableCaveats) {
         return this.userAuthenticationManager.getUserFromSession(request, acceptableCaveats);
     }

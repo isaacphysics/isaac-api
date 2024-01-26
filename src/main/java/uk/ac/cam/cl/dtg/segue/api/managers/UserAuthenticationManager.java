@@ -524,7 +524,6 @@ public class UserAuthenticationManager {
         caveatFlags.remove(caveatToRemove.toString());
         Set<AuthenticationCaveat> remainingCaveats = caveatFlags.stream().map(AuthenticationCaveat::valueOf).collect(Collectors.toSet());
 
-        // todo: check rememberMe behaviour
         return this.createUserSessionWithCaveats(request, response, user, remainingCaveats, true);
     }
 
