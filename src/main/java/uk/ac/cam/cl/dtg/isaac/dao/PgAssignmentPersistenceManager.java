@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -239,22 +240,13 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
     @Override
     public List<AssignmentDTO> getAssignmentsByGroupList(Collection<Long> groupIds) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM assignments WHERE group_id IN (");
-
-        for (int i = 0; i < groupIds.size(); i++) {
-            sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
-        }
-        sb.append(") ORDER BY creation_date");
+        String query = "SELECT * FROM assignments WHERE group_id = ANY (?) ORDER BY creation_date";
 
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int i = 1;
-            for (Long id : groupIds) {
-                pst.setLong(i, id);
-                i++;
-            }
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 List<AssignmentDTO> listOfResults = Lists.newArrayList();
@@ -264,6 +256,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 }
 
                 return listOfResults;
+            } finally {
+                groupIdsArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by group list", e);
