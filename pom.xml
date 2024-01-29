@@ -362,19 +362,6 @@
             <version>2.1.1</version>
         </dependency>
 
-        <!-- Graph checker code -->
-        <dependency>
-            <groupId>org.isaacphysics</groupId>
-            <artifactId>isaac-graph-checker-library</artifactId>
-            <version>1.1.2</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-jaxrs</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>

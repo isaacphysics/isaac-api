@@ -28,7 +28,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
-import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LogicFormula;
@@ -85,8 +84,6 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
         return getSingletonChoiceMapper().readValue(root.toString(), Formula.class);
       case "logicFormula":
         return getSingletonChoiceMapper().readValue(root.toString(), LogicFormula.class);
-      case "graphChoice":
-        return getSingletonChoiceMapper().readValue(root.toString(), GraphChoice.class);
       case "stringChoice":
         return getSingletonChoiceMapper().readValue(root.toString(), StringChoice.class);
       case "regexPattern":
