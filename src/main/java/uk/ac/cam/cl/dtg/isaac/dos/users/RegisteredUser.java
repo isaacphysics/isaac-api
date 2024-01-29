@@ -68,7 +68,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * @param emailToVerify           - the most recent email for which a token has been generated
      * @param emailVerificationToken  - the most recent token generated to verify email addresses
      * @param emailVerificationStatus - whether the user has verified their email or not
-     * @param teacherAccountPending
+     * @param teacherAccountPending   - whether the user is pending upgrade to a teacher account
      */
     @JsonCreator
     public RegisteredUser(@JsonProperty("id") final Long id,
@@ -463,7 +463,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
     }
 
-    public boolean isTeacherAccountPending() {
+    public Boolean getTeacherAccountPending() {
         return teacherAccountPending;
     }
 

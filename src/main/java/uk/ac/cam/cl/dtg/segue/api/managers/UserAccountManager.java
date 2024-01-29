@@ -331,7 +331,7 @@ public class UserAccountManager implements IUserAccountManager {
             String message = "Your account type requires 2FA, but none has been configured! "
                     + "Please ask an admin to demote your account to regain access.";
             throw new MFARequiredButNotConfiguredException(message);
-        } else if (user.getRole() == Role.TEACHER && user.isTeacherAccountPending()) {
+        } else if (user.getRole() == Role.TEACHER && user.getTeacherAccountPending()) {
             this.logUserInWithCaveats(request, response, user, rememberMe, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
             throw new EmailMustBeVerifiedException();
         } else {
@@ -1108,7 +1108,7 @@ public class UserAccountManager implements IUserAccountManager {
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
         userToSave.setRole(existingUser.getRole());
         userToSave.setLastUpdated(new Date());
-        userToSave.setTeacherAccountPending(existingUser.isTeacherAccountPending());
+        userToSave.setTeacherAccountPending(existingUser.getTeacherAccountPending());
 
         if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
             userToSave.setSchoolId(null);
@@ -1383,7 +1383,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (authenticator.isValidEmailVerificationToken(user, token)) {
             // If a direct-sign-up teacher user has just verified themselves, remove the caveat from their session
             if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
-                    && user.getRole() == Role.TEACHER && user.isTeacherAccountPending()) {
+                    && user.getRole() == Role.TEACHER && user.getTeacherAccountPending()) {
                 try {
                     RegisteredUserDTO currentUser = this.getCurrentPartiallyIdentifiedUser(request,
                             Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));

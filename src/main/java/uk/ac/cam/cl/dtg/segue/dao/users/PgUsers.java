@@ -741,7 +741,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
-            setValueHelper(pst, 18, userToCreate.isTeacherAccountPending());
+            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -829,7 +829,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
-            setValueHelper(pst, 18, userToCreate.isTeacherAccountPending());
+            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
             setValueHelper(pst, 19, userToCreate.getId());
 
 
