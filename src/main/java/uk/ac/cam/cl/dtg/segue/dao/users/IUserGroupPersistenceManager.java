@@ -228,6 +228,15 @@ public interface IUserGroupPersistenceManager {
     Set<Long> getAdditionalManagerSetByGroupId(final Long groupId) throws SegueDatabaseException;
 
     /**
+     * Get the additional manager user IDs in bulk for a list of groups.
+     *
+     * @param groupIds - the groups IDs of interest
+     * @return map of group ID to set of manager user ids.
+     * @throws SegueDatabaseException on database failure
+     */
+    Map<Long, Set<Long>> getAdditionalManagerSetsByGroupIds(final Collection<Long> groupIds) throws SegueDatabaseException;
+
+    /**
      * Get groups by additional manager id.
      *
      * @param additionalManagerId

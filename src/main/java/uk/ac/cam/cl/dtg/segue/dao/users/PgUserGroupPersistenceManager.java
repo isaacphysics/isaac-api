@@ -470,6 +470,39 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     }
 
     @Override
+    public Map<Long, Set<Long>> getAdditionalManagerSetsByGroupIds(final Collection<Long> groupIds) throws SegueDatabaseException {
+        String query = "SELECT group_id, user_id FROM group_additional_managers WHERE group_id = ANY(?)";
+        // this includes deleted groups, as getAdditionalManagerSetByGroupId does.
+
+        Map<Long, Set<Long>> mapOfResults = Maps.newHashMap();
+        if (groupIds.isEmpty()) {
+            return mapOfResults;
+        }
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            // Use a single Array, rather than many parameters; cf. the many params approach in findGroupsByIds.
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
+
+            try (ResultSet results = pst.executeQuery()) {
+                while (results.next()) {
+                    Long groupId = results.getLong("group_id");
+                    Long userId = results.getLong("user_id");
+                    Set<Long> groupManagers = mapOfResults.computeIfAbsent(groupId, g -> Sets.newHashSet());
+                    groupManagers.add(userId);
+                }
+                return mapOfResults;
+            } finally {
+                groupIdsArray.free();  // maybe unnecessary?
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
     public void addUserAdditionalManagerList(final Long userId, final Long groupId) throws SegueDatabaseException {
         String query = "INSERT INTO group_additional_managers(group_id, user_id, created) VALUES (?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();

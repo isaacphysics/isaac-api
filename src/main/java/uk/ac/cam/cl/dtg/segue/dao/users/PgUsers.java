@@ -110,40 +110,17 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     }
 
     @Override
-    public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
-            throws SegueDatabaseException {
-        return this.getAuthenticationProvidersByUsers(Collections.singletonList(user)).get(user);
-    }
-
-    @Override
-    public Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder("SELECT * FROM linked_accounts WHERE user_id IN (");
-        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-        sb.append(String.join(",", questionMarks)).append(");");
+    public List<AuthenticationProvider> getAuthenticationProvidersByUser(RegisteredUser user) throws SegueDatabaseException {
+        String query = "SELECT * FROM linked_accounts WHERE user_id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int userParamIndex = 1;
-            // These will come in handy later...
-            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
-            Map<RegisteredUser, List<AuthenticationProvider>> authenticationProviders = new HashMap<>();
-            // Add the parameters into the query
-            for (RegisteredUser user : users) {
-                pst.setLong(userParamIndex++, user.getId());
-                authenticationProviders.put(userMap.get(user.getId()), new ArrayList<>());
-            }
+            pst.setLong(1, user.getId());
 
-            // There appears to be a hard limit of 32767 parameters (source: the Internet) while using a prepared
-            // statement over JDBC. However, one can circumvent that by running the query from a string. This is
-            // generally a bad idea, unless a prepared statement is used to construct the query first, which is probably
-            // still a bad idea, only slightly less so.
-            // TL;DR: Sorry...
-            try (Statement statement = conn.createStatement();
-                 ResultSet queryResults = statement.executeQuery(pst.toString());
-            ) {
+            List<AuthenticationProvider> authenticationProviders = Lists.newArrayList();
+            try (ResultSet queryResults = pst.executeQuery()) {
                 while (queryResults.next()) {
-                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                    authenticationProviders.get(user).add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
+                    authenticationProviders.add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
                 }
                 return authenticationProviders;
             }
@@ -424,24 +401,18 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-        StringBuilder inParams = new StringBuilder();
-        inParams.append("?");
-        for (int i = 1; i < usersToLocate.size(); i++) {
-            inParams.append(",?");
-        }
-        String query = String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name", inParams.toString());
+        String query = "SELECT * FROM users WHERE id = ANY(?) AND NOT deleted ORDER BY family_name, given_name";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int index = 1;
-            for (Long userId : usersToLocate) {
-                pst.setLong(index, userId);
-                index++;
-            }
+            Array idArray = conn.createArrayOf("INTEGER", usersToLocate.toArray());
+            pst.setArray(1, idArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 return this.findAllUsers(results);
+            } finally {
+                idArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);

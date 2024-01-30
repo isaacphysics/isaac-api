@@ -201,8 +201,8 @@ public class UserManagerTest {
         replay(request);
 
         expect(dummyDatabase.getById(validUserId)).andReturn(returnUser);
-        expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(returnUser)))
-                .andReturn(ImmutableMap.of(returnUser, Lists.newArrayList(AuthenticationProvider.GOOGLE))).once();
+        expect(dummyDatabase.getAuthenticationProvidersByUser(returnUser))
+                .andReturn(Lists.newArrayList(AuthenticationProvider.GOOGLE)).once();
         expect(dummyDatabase.getSegueAccountExistenceByUsers(Collections.singletonList(returnUser)))
                 .andReturn(ImmutableMap.of(returnUser, false)).atLeastOnce();
         replay(dummyQuestionDatabase);
@@ -381,10 +381,8 @@ public class UserManagerTest {
                 new Date(), Gender.MALE, null, new Date(), null, null, null, null);
         mappedUser.setSessionToken(0);
 
-        expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
-                .andReturn(new HashMap<RegisteredUser, List<AuthenticationProvider>>() {{
-                    put(mappedUser, Lists.newArrayList(AuthenticationProvider.GOOGLE));
-                }}).atLeastOnce();
+        expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser))
+                .andReturn(Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();
         expect(dummyDatabase.getSegueAccountExistenceByUsers(Collections.singletonList(mappedUser)))
                 .andReturn(ImmutableMap.of(mappedUser, false)).atLeastOnce();
 
