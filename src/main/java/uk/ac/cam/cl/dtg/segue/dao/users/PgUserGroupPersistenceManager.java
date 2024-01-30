@@ -482,7 +482,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            // Use a single Array, rather than many parameters; cf. the many params approach in findGroupsByIds.
             Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
             pst.setArray(1, groupIdsArray);
 
