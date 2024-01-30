@@ -615,7 +615,7 @@ public class GroupManager {
                     log.debug(String.format("Group (%s) has owner ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
                 }
 
-                // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
+                // set additional manager summary:
                 Set<Long> additionalManagers = groupAdditionalManagers.get(groupDTO.getId());
                 Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
                 if (additionalManagers != null) {
