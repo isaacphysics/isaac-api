@@ -424,24 +424,18 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-        StringBuilder inParams = new StringBuilder();
-        inParams.append("?");
-        for (int i = 1; i < usersToLocate.size(); i++) {
-            inParams.append(",?");
-        }
-        String query = String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name", inParams.toString());
+        String query = "SELECT * FROM users WHERE id = ANY(?) AND NOT deleted ORDER BY family_name, given_name";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int index = 1;
-            for (Long userId : usersToLocate) {
-                pst.setLong(index, userId);
-                index++;
-            }
+            Array idArray = conn.createArrayOf("INTEGER", usersToLocate.toArray());
+            pst.setArray(1, idArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 return this.findAllUsers(results);
+            } finally {
+                idArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);

@@ -1164,10 +1164,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             if (null == assignmentToDelete) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "The assignment does not exist.").toResponse();
             }
-            if (!assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId()) &&
-                    !GroupManager.isInAdditionalManagerList(assigneeGroup, currentlyLoggedInUser.getId())) {
+            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not the owner of the group or a manager. Unable to delete it.").toResponse();
+                        "You are not the owner of the group or a manager. Unable to delete assignment.").toResponse();
             }
 
             // Check if user is additional manager, and if so if they are either the creator of the assignment or additional
