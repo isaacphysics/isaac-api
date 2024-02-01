@@ -1010,8 +1010,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param logManager
      *            - dependency
-     * @param schoolManager
-     *            - dependency
      * @param contentManager
      *            - dependency
      * @param locationHistoryManager
@@ -1025,16 +1023,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static StatisticsManager getStatsManager(final UserAccountManager userManager,
-                                                     final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+    private static StatisticsManager getStatsManager(final UserAccountManager userManager, final ILogManager logManager,
+                                                     final GitContentManager contentManager, final LocationManager locationHistoryManager,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
+            statsManager = new StatisticsManager(userManager, logManager, contentManager, locationHistoryManager,
+                    groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
