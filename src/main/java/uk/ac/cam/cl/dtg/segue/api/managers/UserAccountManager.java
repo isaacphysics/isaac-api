@@ -358,7 +358,7 @@ public class UserAccountManager implements IUserAccountManager {
             String message = "Your account type requires 2FA, but none has been configured! "
                     + "Please ask an admin to demote your account to regain access.";
             throw new MFARequiredButNotConfiguredException(message);
-        } else if (user.getRole() == Role.TEACHER && user.getTeacherAccountPending()) {
+        } else if (Role.TEACHER.equals(user.getRole()) && user.getTeacherAccountPending()) {
             this.logUserInWithCaveats(request, response, user, rememberMe, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
             throw new EmailMustBeVerifiedException();
         } else {
@@ -410,7 +410,7 @@ public class UserAccountManager implements IUserAccountManager {
                 userPreferenceManager.saveUserPreferences(userPreferences);
             }
 
-            if (savedUser.getRole() == Role.TEACHER && Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+            if (Role.TEACHER.equals(savedUser.getRole()) && Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
                 return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
             } else {
                 return Response.ok(savedUser).build();
@@ -995,7 +995,8 @@ public class UserAccountManager implements IUserAccountManager {
 
         // Set defaults
         // keep teacher role if requested and direct teacher signup allowed
-        if ((Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION)) && userToSave.getRole() == Role.TEACHER)) {
+        if ((Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
+                && Role.TEACHER.equals(userToSave.getRole()))) {
             userToSave.setTeacherAccountPending(true);
         } else {
             // otherwise, always set to default role
@@ -1410,7 +1411,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (authenticator.isValidEmailVerificationToken(user, token)) {
             // If a direct-sign-up teacher user has just verified themselves, remove the caveat from their session
             if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
-                    && user.getRole() == Role.TEACHER && user.getTeacherAccountPending()) {
+                    && Role.TEACHER.equals(user.getRole()) && user.getTeacherAccountPending()) {
                 try {
                     RegisteredUserDTO currentUser = this.getCurrentPartiallyIdentifiedUser(request,
                             Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));

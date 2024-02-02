@@ -261,7 +261,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
                 }
 
-                if (registeredUser.getRole() == Role.TEACHER && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                if (Role.TEACHER.equals(registeredUser.getRole()) && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
                     // For teacher sign-ups where teachers should not default to student role, use a caveat login until email is verified.
                     return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
                 } else {
