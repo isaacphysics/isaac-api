@@ -938,7 +938,8 @@ public class UserAuthenticationManager {
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
-        ArrayList<String> caveatFlags = new ArrayList<>();
+        Set<String> caveatFlags = authenticationCaveats.stream().map(AuthenticationCaveat::toString)
+                .collect(Collectors.toSet());
 
         try {
             if (!authenticationCaveats.isEmpty()) {
@@ -955,9 +956,6 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(SESSION_TOKEN, userSessionToken);
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
 
-            for (AuthenticationCaveat c : authenticationCaveats) {
-                caveatFlags.add(c.toString());
-            }
             sessionInformationBuilder.put(SESSION_CAVEATS, serializationMapper.writeValueAsString(caveatFlags));
 
             String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, caveatFlags);
@@ -1058,14 +1056,15 @@ public class UserAuthenticationManager {
      * @return HMAC signature.
      */
     private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken,
-                                        @Nullable final ArrayList<String> caveatFlags) {
+                                        @Nullable final Set<String> caveatFlags) {
         StringBuilder sb = new StringBuilder();
         sb.append(userId);
         sb.append("|").append(currentDate);
         sb.append("|").append(sessionToken);
 
         if (null != caveatFlags) {
-            for (String c : caveatFlags) {
+            List<String> sortedCaveatFlags = caveatFlags.stream().sorted().collect(Collectors.toList());
+            for (String c : sortedCaveatFlags) {
                 sb.append("|").append(c);
             }
         }
@@ -1087,12 +1086,11 @@ public class UserAuthenticationManager {
         String supposedUserId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate = sessionInformation.get(DATE_EXPIRES);
-
-        ArrayList<String> caveatFlags = new ArrayList<>();
+        Set<String> caveatFlags = Set.of();
 
         if (null != sessionInformation.get(SESSION_CAVEATS)) {
             try {
-                caveatFlags = serializationMapper.readValue(sessionInformation.get(SESSION_CAVEATS), new TypeReference<ArrayList<String>>(){});
+                caveatFlags = serializationMapper.readValue(sessionInformation.get(SESSION_CAVEATS), new TypeReference<Set<String>>(){});
             } catch (JsonProcessingException e) {
                 log.debug("Failed to deserialize session caveats!");
                 caveatFlags = null;
