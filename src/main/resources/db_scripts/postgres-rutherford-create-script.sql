@@ -720,7 +720,8 @@ CREATE TABLE public.users (
     email_verification_token text,
     session_token integer DEFAULT 0 NOT NULL,
     deleted boolean DEFAULT false NOT NULL,
-    country_code character varying(255) DEFAULT NULL
+    country_code character varying(255) DEFAULT NULL,
+    teacher_account_pending boolean DEFAULT false NOT NULL
 );
 
 
