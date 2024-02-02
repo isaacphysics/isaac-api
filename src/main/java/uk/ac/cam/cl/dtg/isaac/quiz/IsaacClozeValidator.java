@@ -75,12 +75,11 @@ public class IsaacClozeValidator implements IValidator {
     // STEP 0: Is it even possible to answer this question?
 
     if (null == clozeQuestion.getChoices() || clozeQuestion.getChoices().isEmpty()) {
-      log.error("Question does not have any answers. " + question.getId() + " src: "
-          + question.getCanonicalSourceFile());
+      log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
       feedback = new Content("This question does not have any correct answers!");
     } else if (null == clozeQuestion.getItems() || clozeQuestion.getItems().isEmpty()) {
-      log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
-          + question.getCanonicalSourceFile());
+      log.error("ItemQuestion does not have any items. {} src: {}", question.getId(),
+          question.getCanonicalSourceFile());
       feedback = new Content("This question does not have any items to choose from!");
     }
 

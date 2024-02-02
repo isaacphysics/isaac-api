@@ -612,8 +612,9 @@ public class GameboardPersistenceManager {
         if (item != null) {
           game.getContents().add(item);
         } else {
-          log.warn("The gameboard: " + game.getId() + " has a reference to a question (" + questionId
-              + ") that we cannot find. Removing it from the DTO.");
+          log.warn(
+              "The gameboard: {} has a reference to a question ({}) that we cannot find. Removing it from the DTO.",
+              game.getId(), questionId);
         }
       }
     }
@@ -717,7 +718,7 @@ public class GameboardPersistenceManager {
         throw new SegueDatabaseException("Unable to save assignment.");
       }
 
-      log.debug("Saving gameboard... Gameboard ID: " + gameboardToSave.getId());
+      log.debug("Saving gameboard... Gameboard ID: {}", gameboardToSave.getId());
 
       return gameboardToSave;
     } catch (SQLException e) {

@@ -236,7 +236,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
       log.debug("Retrieved User info from Facebook");
     } catch (IOException e) {
-      log.error("An IO error occurred while trying to retrieve user information: " + e);
+      log.error("An IO error occurred while trying to retrieve user information", e);
     }
 
     if (userInfo != null && userInfo.getId() != null) {
@@ -246,7 +246,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
       if (null == email) {
         email = userInfo.getId() + "-facebook";
         emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
-        log.warn("No email address provided by Facebook! Using (" + email + ") instead");
+        log.warn("No email address provided by Facebook! Using ({}) instead", email);
       }
 
       return new UserFromAuthProvider(userInfo.getId(), userInfo.getFirstName(),

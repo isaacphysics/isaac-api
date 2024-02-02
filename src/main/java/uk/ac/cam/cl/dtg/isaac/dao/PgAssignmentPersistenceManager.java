@@ -111,7 +111,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
           throw new SQLException("Creating assignment failed, no ID obtained.");
         }
 
-        log.debug("Saving Assignment... Assignment ID: " + assignment.getId() + " Db id : " + assignmentId);
+        log.debug("Saving Assignment... Assignment ID: {} Db id : {}", assignment.getId(), assignmentId);
         return assignmentId;
       }
 

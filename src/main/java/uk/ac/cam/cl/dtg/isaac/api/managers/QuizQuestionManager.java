@@ -352,8 +352,8 @@ public class QuizQuestionManager {
       QuizFeedbackDTO.Mark sectionMark = sectionMarks.get(sectionId);
       QuizFeedbackDTO.Mark questionMark = questionMarks.get(question.getId());
       if (sectionMark == null) {
-        log.error("Missing test section id: " + sectionId + " in question " + question + " but not in section map "
-            + sections);
+        log.error("Missing test section id: {} in question {} but not in section map {}", sectionId, question,
+            sections);
         continue;
       }
       QuestionValidationResponse response = answerMap.get(question);

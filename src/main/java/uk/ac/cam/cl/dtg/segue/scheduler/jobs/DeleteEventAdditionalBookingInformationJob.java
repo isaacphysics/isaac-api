@@ -104,8 +104,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
 
               int affectedRows = pst.executeUpdate();
               if (affectedRows > 0) {
-                log.info(
-                    "Event " + page.getId() + " had " + affectedRows + " bookings which have been scrubbed of PII");
+                log.info("Event {} had {} bookings which have been scrubbed of PII", page.getId(), affectedRows);
               }
             }
           }

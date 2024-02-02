@@ -49,8 +49,7 @@ public class ChoiceQuestionValidator implements IValidator {
       choiceQuestion = (ChoiceQuestion) question;
 
       if (null == choiceQuestion.getChoices() || choiceQuestion.getChoices().isEmpty()) {
-        log.warn("Question does not have any answers. " + question.getId() + " src: "
-            + question.getCanonicalSourceFile());
+        log.warn("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
         return new QuestionValidationResponse(question.getId(), answer, false, null, new Date());
       }
 
@@ -64,8 +63,8 @@ public class ChoiceQuestionValidator implements IValidator {
 
       if (null == feedback) {
         // This should not happen for multiple choice questions.
-        log.warn("Unable to find choice for question ( " + question.getId() + " ) matching the answer supplied ("
-            + answer.getValue() + ")!");
+        log.warn("Unable to find choice for question ({}) matching the answer supplied ({})!", question.getId(),
+            answer.getValue());
       }
 
       // If we still have no feedback to give, use the question's default feedback if any to use:

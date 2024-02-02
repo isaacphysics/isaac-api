@@ -67,7 +67,7 @@ public class GroupChangedService implements IGroupObserver {
     this.assignmentManager = assignmentManager;
     this.quizAssignmentManager = quizAssignmentManager;
 
-    log.info("Registering GroupChangeService (" + this + ")");
+    log.info("Registering GroupChangeService ({})", this);
 
     groupManager.registerInterestInGroups(this);
   }

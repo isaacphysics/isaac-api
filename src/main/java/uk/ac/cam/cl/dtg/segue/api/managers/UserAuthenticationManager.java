@@ -358,18 +358,16 @@ public class UserAuthenticationManager {
       // correct CORS headers. This code will merely print warnings if something doesn't look right:
       String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
       if (null == referrer) {
-        log.warn("Authenticated request has no 'Referer' information set! Accessing: "
-            + request.getPathInfo());
+        log.warn("Authenticated request has no 'Referer' information set! Accessing: {}", request.getPathInfo());
       } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
-        log.warn("Authenticated request has unexpected Referer: '" + referrer + "'. Accessing: "
-            + request.getPathInfo());
+        log.warn("Authenticated request has unexpected Referer: '{}'. Accessing: {}", referrer, request.getPathInfo());
       }
       // If the client sends an Origin header, we can check its value. If they do not send the header,
       // we can draw no conclusions.
       String origin = request.getHeader("Origin");
       if (null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
-        log.warn("Authenticated request has unexpected Origin: '" + origin + "'. Accessing: "
-            + request.getMethod() + " " + request.getPathInfo());
+        log.warn("Authenticated request has unexpected Origin: '{}'. Accessing: {} {}", origin, request.getMethod(),
+            request.getPathInfo());
       }
     }
 
@@ -457,7 +455,7 @@ public class UserAuthenticationManager {
     try {
       // Check that the user's session is indeed valid:
       if (!isSessionValid(currentSessionInformation)) {
-        log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
+        log.debug("User session has failed validation. Treating as logged out. Session: {}", currentSessionInformation);
         return null;
       }
 
@@ -468,7 +466,7 @@ public class UserAuthenticationManager {
       log.error("Internal Database error. Failed to resolve current user.", e);
       return null;
     } catch (NumberFormatException e) {
-      log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
+      log.info("Invalid user id detected in session. {}", currentSessionInformation.get(SESSION_USER_ID));
       return null;
     }
   }
@@ -650,7 +648,7 @@ public class UserAuthenticationManager {
 
       // Generate reset token, whether or not they have a local password set up:
       String token = authenticator.createPasswordResetTokenForUser(userDO);
-      log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
+      log.info("Sending password reset message to {}", userDO.getEmail());
 
       Map<String, Object> emailValues = ImmutableMap.of("resetURL",
           String.format("https://%s/resetpassword/%s",
@@ -667,7 +665,7 @@ public class UserAuthenticationManager {
       }
 
     } catch (ContentManagerException e) {
-      log.error("ContentManagerException " + e.getMessage());
+      log.error("ContentManagerException", e);
     }
   }
 
@@ -953,7 +951,7 @@ public class UserAuthenticationManager {
     // Check that the session token is still valid:
     if (sessionTokenFromDatabase == NO_SESSION_TOKEN_RESERVED_VALUE
         || !sessionTokenFromDatabase.toString().equals(userSessionToken)) {
-      log.debug("Invalid session token detected for user id " + userId);
+      log.debug("Invalid session token detected for user id {}", userId);
       return false;
     }
 
@@ -1113,7 +1111,7 @@ public class UserAuthenticationManager {
       String result = new String(Base64.encodeBase64(rawHmac));
       return result;
     } catch (GeneralSecurityException e) {
-      log.warn("Unexpected error while creating hash: " + e.getMessage(), e);
+      log.warn("Unexpected error while creating hash", e);
       throw new IllegalArgumentException();
     }
   }

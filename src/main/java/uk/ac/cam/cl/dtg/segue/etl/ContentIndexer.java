@@ -129,22 +129,21 @@ public class ContentIndexer {
       endTime = System.nanoTime();
 
       log.info(
-          "Finished populating Git content cache, took: " + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND)
-              + "ms");
+          "Finished populating Git content cache, took: {}ms",
+          (endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND
+      );
       log.info("Beginning to record content errors");
 
       startTime = System.nanoTime();
       recordContentErrors(version, contentCache, indexProblemCache);
       endTime = System.nanoTime();
 
-      log.info(
-          "Finished recording content errors, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+      log.info("Finished recording content errors, took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
 
       startTime = System.nanoTime();
       buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
       endTime = System.nanoTime();
-      log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND)
-          + "ms");
+      log.info("Finished indexing git content cache, took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
 
       // Verify the version requested is now available
       if (!allContentTypesAreIndexedForVersion(version)) {
@@ -223,7 +222,7 @@ public class ContentIndexer {
 
           // check if we only want to index published content
           if (!includeUnpublished && !content.getPublished()) {
-            log.debug("Skipping unpublished content: " + content.getId());
+            log.debug("Skipping unpublished content: {}", content.getId());
             continue;
           }
 
@@ -241,7 +240,7 @@ public class ContentIndexer {
           this.registerContentProblem(dummyContent, "Index failure - Unable to parse json file found - "
               + treeWalk.getPathString() + ". The following error occurred: " + e.getMessage(), indexProblemCache);
         } catch (IOException e) {
-          log.error("IOException while trying to parse " + treeWalk.getPathString(), e);
+          log.error("IOException while trying to parse {}", treeWalk.getPathString(), e);
           Content dummyContent = new Content();
           dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
           this.registerContentProblem(dummyContent,
@@ -251,8 +250,8 @@ public class ContentIndexer {
       }
 
       repository.close();
-      log.debug("Tags available " + tagsList);
-      log.debug("All units: " + allUnits);
+      log.debug("Tags available {}", tagsList);
+      log.debug("All units: {}", allUnits);
       log.info("Git content cache population for " + sanitiseInternalLogValue(sha) + " completed!");
 
     } catch (IOException e) {
@@ -285,8 +284,7 @@ public class ContentIndexer {
       if (flattenedContent instanceof IsaacQuiz) {
         List<ContentBase> children = flattenedContent.getChildren();
         if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
-          log.debug("IsaacQuiz (" + flattenedContent.getId()
-              + ") contains top-level non-quiz sections. Skipping.");
+          log.debug("IsaacQuiz ({}) contains top-level non-quiz sections. Skipping.", flattenedContent.getId());
           this.registerContentProblem(flattenedContent, "Index failure - Invalid "
               + "content type among quiz sections. Quizzes can only contain quiz sections "
               + "in the top-level children array.", indexProblemCache);
@@ -295,7 +293,7 @@ public class ContentIndexer {
       }
 
       if (flattenedContent.getId().length() > MAXIMUM_CONTENT_ID_LENGTH) {
-        log.debug("Content ID too long: " + flattenedContent.getId());
+        log.debug("Content ID too long: {}", flattenedContent.getId());
         this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(),
             indexProblemCache);
         continue;
@@ -304,8 +302,7 @@ public class ContentIndexer {
       if (flattenedContent.getId().contains(".")) {
         // Otherwise, duplicate IDs with different content,
         // therefore log an error
-        log.debug("Resource with invalid ID (" + content.getId()
-            + ") detected in cache. Skipping " + treeWalkPath);
+        log.debug("Resource with invalid ID ({}) detected in cache. Skipping {}", content.getId(), treeWalkPath);
 
         this.registerContentProblem(flattenedContent, "Index failure - Invalid ID "
             + flattenedContent.getId() + " found in file " + treeWalkPath
@@ -318,8 +315,8 @@ public class ContentIndexer {
       // again
       if (!contentCache.containsKey(flattenedContent.getId())) {
         // It must be new so we can add it
-        log.debug("Loading into cache: " + flattenedContent.getId() + "("
-            + flattenedContent.getType() + ")" + " from " + treeWalkPath);
+        log.debug("Loading into cache: {} ({}) from {}", flattenedContent.getId(), flattenedContent.getType(),
+            treeWalkPath);
         contentCache.put(flattenedContent.getId(), flattenedContent);
         registerTags(flattenedContent.getTags(), tagsList);
 
@@ -339,15 +336,13 @@ public class ContentIndexer {
         // content is the same therefore it is just
         // reuse of a content object so that is
         // fine.
-        log.debug("Resource (" + content.getId() + ") already seen in cache. Skipping "
-            + treeWalkPath);
+        log.debug("Resource ({}) already seen in cache. Skipping {}", content.getId(), treeWalkPath);
         continue;
       }
 
       // Otherwise, duplicate IDs with different content,
       // therefore log an error
-      log.debug("Resource with duplicate ID (" + content.getId()
-          + ") detected in cache. Skipping " + treeWalkPath);
+      log.debug("Resource with duplicate ID ({}) detected in cache. Skipping {}", content.getId(), treeWalkPath);
       this.registerContentProblem(flattenedContent, String.format(
               "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
               content.getId(), treeWalkPath, contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
@@ -378,7 +373,7 @@ public class ContentIndexer {
     // If this object is of type question then we need to give it a random
     // id if it doesn't have one.
     if (content instanceof Question && content.getId() == null) {
-      log.debug("Found question without id " + content.getTitle() + " " + canonicalSourceFile);
+      log.debug("Found question without id {} {}", content.getTitle(), canonicalSourceFile);
     }
 
     // Try to figure out the parent ids.
@@ -671,8 +666,7 @@ public class ContentIndexer {
       try {
         contentToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
       } catch (JsonProcessingException e) {
-        log.error("Unable to serialize content object: " + content.getId()
-            + " for indexing with the search provider.", e);
+        log.error("Unable to serialize content object: {} for indexing with the search provider.", content.getId(), e);
         this.registerContentProblem(content, "Search Index Error: " + content.getId()
             + content.getCanonicalSourceFile() + " Exception: " + e.toString(), indexProblemCache);
       }
@@ -705,7 +699,7 @@ public class ContentIndexer {
         }
       }).filter(Objects::nonNull).collect(Collectors.toList()));
       endTime = System.nanoTime();
-      log.info("Bulk unit indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+      log.info("Bulk unit indexing took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
 
       startTime = System.nanoTime();
       es.bulkIndex(sha, ContentIndextype.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
@@ -735,7 +729,7 @@ public class ContentIndexer {
       startTime = System.nanoTime();
       es.bulkIndexWithIds(sha, ContentIndextype.CONTENT.toString(), contentToIndex);
       endTime = System.nanoTime();
-      log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+      log.info("Bulk indexing content took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
       log.info("Search index request sent for: " + sanitiseInternalLogValue(sha));
     } catch (SegueSearchException e) {
       log.error("Error whilst trying to perform bulk index operation.", e);

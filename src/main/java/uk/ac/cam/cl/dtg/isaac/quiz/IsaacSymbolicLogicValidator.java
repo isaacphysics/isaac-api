@@ -210,8 +210,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
             feedback.setTags(new HashSet<>(Collections.singletonList("syntax_error")));
             return new ValidationResult(feedback, INITIAL_MATCH_TYPE, false);
           } else {
-            log.warn("Problem checking logic formula \"" + submittedLogicFormula.getPythonExpression()
-                + "\" for (" + question.getId() + ") with symbolic checker: " + response.get("error"));
+            log.warn("Problem checking logic formula \"{}\" for ({}) with symbolic checker: {}",
+                submittedLogicFormula.getPythonExpression(), question.getId(), response.get("error"));
           }
         } else {
           if (response.get("equal").equals("true")) {
@@ -274,8 +274,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
       // ... that are of the LogicFormula type, ...
       if (!(c instanceof LogicFormula)) {
-        log.error("Validator for questionId: " + question.getId()
-            + " expected there to be a LogicFormula. Instead it found a Choice.");
+        log.error("Validator for questionId: {} expected there to be a LogicFormula. Instead it found a Choice.",
+            question.getId());
         continue;
       }
 
@@ -283,8 +283,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
       // ... and that have a python expression ...
       if (null == logicFormulaChoice.getPythonExpression() || logicFormulaChoice.getPythonExpression().isEmpty()) {
-        log.error("Expected python expression, but none found in choice for question id: "
-            + question.getId());
+        log.error("Expected python expression, but none found in choice for question id: {}", question.getId());
         continue;
       }
 
@@ -310,8 +309,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
   private static Content checkQuestionHasAnswer(final IsaacSymbolicLogicQuestion question) {
     if (null == question.getChoices() || question.getChoices().isEmpty()) {
-      log.error("Question does not have any answers. " + question.getId() + " src: "
-          + question.getCanonicalSourceFile());
+      log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
 
       return new Content("This question does not have any correct answers");
     }

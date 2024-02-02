@@ -381,7 +381,7 @@ public class GameManager {
       String uuid = UUID.randomUUID().toString();
 
       // filter game board ready questions to make up a decent gameboard.
-      log.debug("Created gameboard " + uuid);
+      log.debug("Created gameboard {}", uuid);
 
       GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
           getRandomWildcard(mapper, gameFilter.getSubjects()), generateRandomWildCardPosition(),
@@ -974,7 +974,7 @@ public class GameManager {
           try {
             this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
           } catch (ContentManagerException | ResourceNotFoundException e) {
-            log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
+            log.error("Unable to augment '{}' with user attempt information", questionItem.getId());
           }
           return questionItem;
         }).collect(Collectors.toList());

@@ -263,7 +263,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         globalProperties = new PropertiesLoader(configLocation);
 
-        log.info(String.format("Segue using configuration file: %s", configLocation));
+        log.info("Segue using configuration file: {}", configLocation);
 
       } catch (IOException e) {
         log.error("Error loading properties file.", e);
@@ -460,12 +460,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
       @Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
     if (null == metricsExporter) {
       try {
-        log.info("Creating MetricsExporter on port (" + port + ")");
+        log.info("Creating MetricsExporter on port ({})", port);
         metricsExporter = new PrometheusMetricsExporter(port);
         log.info("Exporting default JVM metrics.");
         metricsExporter.exposeJvmMetrics();
       } catch (IOException e) {
-        log.error("Could not create MetricsExporter on port (" + port + ")");
+        log.error("Could not create MetricsExporter on port ({})", port);
         return null;
       }
     }
@@ -1256,7 +1256,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
       for (Class<? extends ServletContextListener> contextListener : subTypes) {
         contextListeners.add(contextListener);
-        log.info("Registering context listener class " + contextListener.getCanonicalName());
+        log.info("Registering context listener class {}", contextListener.getCanonicalName());
       }
     }
 

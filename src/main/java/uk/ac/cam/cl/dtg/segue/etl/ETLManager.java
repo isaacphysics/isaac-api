@@ -16,7 +16,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesManager;
  * Created by Ian on 01/11/2016.
  */
 class ETLManager {
-  private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
+  private static final Logger log = LoggerFactory.getLogger(ETLManager.class);
   private static final String LATEST_INDEX_ALIAS = "latest";
   private static final String TASK_PERIOD_SECONDS = "TASK_PERIOD_SECONDS";
   private static final long TASK_PERIOD_SECONDS_FALLBACK = 300;
@@ -55,10 +55,10 @@ class ETLManager {
   }
 
   void setNamedVersion(final String alias, final String version) throws Exception {
-    log.info("Requested aliased version: " + alias + " - " + version);
+    log.info("Requested aliased version: {} - {}", alias, version);
     indexer.loadAndIndexContent(version);
     indexer.setNamedVersion(alias, version);
-    log.info("Version " + version + " with alias '" + alias + "' is successfully indexed.");
+    log.info("Version {} with alias '{}' is successfully indexed.", version, alias);
   }
 
   // Indexes all content in idempotent fashion. If the content is already indexed no action is taken.
@@ -79,7 +79,7 @@ class ETLManager {
       } catch (VersionLockedException e) {
         log.warn("Could not index new version, lock is already held by another thread.");
       } catch (Exception e) {
-        log.error("Indexing version " + entry.getKey() + " failed.", e);
+        log.error("Indexing version {} failed.", entry.getKey(), e);
       }
     }
 

@@ -102,7 +102,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
           throw new SQLException("Creating assignment failed, no ID obtained.");
         }
 
-        log.debug("Saving Quiz Assignment... Quiz Assignment ID: " + assignment.getId() + " Db id : " + assignmentId);
+        log.debug("Saving Quiz Assignment... Quiz Assignment ID: {} Db id : {}", assignment.getId(), assignmentId);
         return assignmentId;
       }
 

@@ -231,7 +231,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     } catch (NoUserException e) {
       return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.").toResponse();
     } catch (SegueDatabaseException e) {
-      log.error("Unable to look up user event history for user " + userIdOfInterest, e);
+      log.error("Unable to look up user event history for user {}", userIdOfInterest, e);
       return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
           .toResponse();
     }

@@ -133,14 +133,14 @@ class SchoolIndexer {
               source);
 
           if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
-            log.warn("School with missing postcode! URN:" + schoolToSave.getUrn());
+            log.warn("School with missing postcode! URN:{}", schoolToSave.getUrn());
           }
 
           schools.add(schoolToSave);
         } catch (IndexOutOfBoundsException e) {
           // This happens when the school does not have the required data
-          log.warn("Unable to load the following school into the school list due to missing required fields. "
-              + Arrays.toString(schoolArray));
+          log.warn("Unable to load the following school into the school list due to missing required fields. {}",
+              Arrays.toString(schoolArray));
         }
       }
     } catch (FileNotFoundException e) {

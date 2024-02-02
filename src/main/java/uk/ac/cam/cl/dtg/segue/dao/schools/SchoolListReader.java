@@ -39,7 +39,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.BasicSearchParameters;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.util.LogUtils;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -111,9 +110,9 @@ public class SchoolListReader {
         }
         resultList.add(school);
       } catch (JsonParseException | JsonMappingException e) {
-        log.error("Unable to parse the school " + schoolString, e);
+        log.error("Unable to parse the school {}", schoolString, e);
       } catch (IOException e) {
-        log.error("IOException " + schoolString, e);
+        log.error("IOException {}", schoolString, e);
       }
     }
     return resultList;

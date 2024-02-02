@@ -64,8 +64,8 @@ public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
     if (!hostName.contains("localhost") && (null == origin || !origin.equals("https://" + hostName))) {
       // If we have no origin, or an origin not matching the current hostname; abort the Upgrade request with
       // a HTTP Forbidden. Allow an API running on localhost to bypass these origin checks.
-      log.warn("WebSocket Upgrade request has unexpected Origin: '" + origin + "'. Blocking access to: "
-          + request.getServletPath());
+      log.warn("WebSocket Upgrade request has unexpected Origin: '{}'. Blocking access to: {}", origin,
+          request.getServletPath());
       response.setStatus(FORBIDDEN);
       return;
     }

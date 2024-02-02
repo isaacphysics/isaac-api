@@ -357,10 +357,10 @@ public class UsersFacade extends AbstractSegueFacade {
                   LOCAL_AUTH_GROUP_MANAGER_EMAIL_FIELDNAME, currentUser.getEmail(),
                   LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME, true));
 
-      log.info("Password reset requested for account: " + userIdOfInterest);
+      log.info("Password reset requested for account: {}", userIdOfInterest);
       return Response.ok().build();
     } catch (NoUserException e) {
-      log.warn("Password reset requested for account that does not exist: " + userIdOfInterest);
+      log.warn("Password reset requested for account that does not exist: {}", userIdOfInterest);
       // Return OK so we don't leak account existence.
       return Response.ok().build();
     } catch (NoUserLoggedInException e) {

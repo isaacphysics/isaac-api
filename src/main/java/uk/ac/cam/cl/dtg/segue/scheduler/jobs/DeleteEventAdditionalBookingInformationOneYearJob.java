@@ -56,8 +56,8 @@ public class DeleteEventAdditionalBookingInformationOneYearJob implements Job {
 
         int affectedRows = pst.executeUpdate();
         if (affectedRows > 0) {
-          log.info(affectedRows
-              + " bookings older than a year had additional booking information which have been scrubbed of PII");
+          log.info("{} bookings older than a year had additional booking information which have been scrubbed of PII",
+              affectedRows);
         }
       }
       log.info("Ran DeleteEventAdditionalBookingInformationOneYearJob");

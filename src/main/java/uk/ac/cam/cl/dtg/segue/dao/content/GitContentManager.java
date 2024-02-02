@@ -661,7 +661,7 @@ public class GitContentManager {
         GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
         relatedContentDTOs.add(summary);
       } else {
-        log.error("Related content with ID '" + contentId + "' not returned by elasticsearch query");
+        log.error("Related content with ID '{}' not returned by elasticsearch query", contentId);
       }
     }
 

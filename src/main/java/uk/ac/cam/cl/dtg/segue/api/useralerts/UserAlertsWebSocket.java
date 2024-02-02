@@ -72,6 +72,8 @@ public class UserAlertsWebSocket implements IAlertListener {
   // If we move to supporting connections across multiple APIs, we could use postgres for a distributed lock.
   private static final Striped<Lock> userLocks = Striped.lazyWeakLock(MAX_NUMBER_OF_CONCURRENT_USER_TAB_OPERATIONS);
 
+  private static final String CONNECTION_FAILED_MESSAGE = "WebSocket connection failed!";
+
   private static final Logger log = LoggerFactory.getLogger(UserAlertsWebSocket.class);
 
   /**
@@ -142,7 +144,7 @@ public class UserAlertsWebSocket implements IAlertListener {
         session.close(StatusCode.POLICY_VIOLATION, "Invalid message!");
       }
     } catch (IOException e) {
-      log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+      log.warn(CONNECTION_FAILED_MESSAGE, e);
       session.close(StatusCode.SERVER_ERROR, "onText IOException");
     } finally {
       if (latencyTimer != null) {
@@ -193,18 +195,18 @@ public class UserAlertsWebSocket implements IAlertListener {
 
         // Report on state change
         if (addedUser) {
-          log.debug("User " + connectedUserId + " started a new websocket session.");
+          log.debug("User {} started a new websocket session.", connectedUserId);
           SegueMetrics.CURRENT_WEBSOCKET_USERS.inc();
         }
 
         // A websocket must be created for this object to be instantiated - we close it early if they have too many
         SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
         if (addedSocket) {
-          log.debug("User " + connectedUserId + " opened new websocket. Total open: " + numberOfUserSockets);
+          log.debug("User {} opened new websocket. Total open: {}", connectedUserId, numberOfUserSockets);
           SegueMetrics.WEBSOCKETS_OPENED_SUCCESSFULLY.inc();
         } else {
-          log.debug("User " + connectedUserId
-              + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
+          log.debug("User {} attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.",
+              connectedUserId);
           session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER");
           return;
         }
@@ -224,13 +226,13 @@ public class UserAlertsWebSocket implements IAlertListener {
       }
 
     } catch (IOException e) {
-      log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+      log.warn(CONNECTION_FAILED_MESSAGE, e);
       session.close(StatusCode.SERVER_ERROR, "onConnect IOException");
     } catch (NoUserException e) {
-      log.debug("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+      log.debug(CONNECTION_FAILED_MESSAGE, e);
       session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName());
     } catch (SegueDatabaseException e) {
-      log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+      log.warn(CONNECTION_FAILED_MESSAGE, e);
       session.close(StatusCode.SERVER_ERROR, "onConnect Database Error");
     }
   }
@@ -269,10 +271,10 @@ public class UserAlertsWebSocket implements IAlertListener {
     SegueMetrics.WEBSOCKETS_CLOSED.inc();
 
     if (removeUser) {
-      log.debug("User " + connectedUserId + " closed all of its open websockets");
+      log.debug("User {} closed all of its open websockets", connectedUserId);
       SegueMetrics.CURRENT_WEBSOCKET_USERS.dec();
     } else {
-      log.debug("User " + connectedUserId + " closed a websocket. Total still open: " + numberOfUserSockets);
+      log.debug("User {} closed a websocket. Total still open: {}", connectedUserId, numberOfUserSockets);
     }
   }
 
@@ -289,7 +291,7 @@ public class UserAlertsWebSocket implements IAlertListener {
   public void onError(final Session session, final Throwable error) {
     long connectedUserId = connectedUser.getId();
     if (!(error instanceof WebSocketTimeoutException || error instanceof ClosedChannelException)) {
-      log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
+      log.warn("Error in WebSocket for user ({}): {}", connectedUserId, error);
     }
   }
 

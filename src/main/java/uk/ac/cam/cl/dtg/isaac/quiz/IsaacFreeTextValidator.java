@@ -134,7 +134,7 @@ public class IsaacFreeTextValidator implements IValidator {
           break; // on first matching rule
         }
       } else {
-        log.error("QuestionId: " + question.getId() + " contains a choice which is not a FreeTextRule.");
+        log.error("QuestionId: {} contains a choice which is not a FreeTextRule.", question.getId());
       }
     }
 

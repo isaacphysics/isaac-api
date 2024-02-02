@@ -552,7 +552,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     if (unknownTags.size() != 0) {
-      log.error("Email template contains tags that were not resolved! - " + unknownTags);
+      log.error("Email template contains tags that were not resolved! - {}", unknownTags);
       throw new IllegalArgumentException("Email template contains tag that was not provided! - " + unknownTags);
     }
 

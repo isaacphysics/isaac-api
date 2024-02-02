@@ -101,13 +101,12 @@ public class IsaacNumericValidator implements IValidator {
     IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
     Quantity answerFromUser = (Quantity) answer;
 
-    log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
-        + isaacNumericQuestion.getId() + "'");
+    log.debug("Starting validation of '{} {}' for '{}'", answerFromUser.getValue(), answerFromUser.getUnits(),
+        isaacNumericQuestion.getId());
 
     // check there are no obvious issues with the question (e.g. no correct answers, nonsensical sig fig requirements)
     if (null == isaacNumericQuestion.getChoices() || isaacNumericQuestion.getChoices().isEmpty()) {
-      log.error("Question does not have any answers. " + question.getId() + " src: "
-          + question.getCanonicalSourceFile());
+      log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
 
       return new QuantityValidationResponse(question.getId(), answerFromUser, false,
           new Content("This question does not have any correct answers"),
@@ -116,8 +115,8 @@ public class IsaacNumericValidator implements IValidator {
 
     if (isaacNumericQuestion.getSignificantFiguresMin() < 1 || isaacNumericQuestion.getSignificantFiguresMax() < 1
         || isaacNumericQuestion.getSignificantFiguresMax() < isaacNumericQuestion.getSignificantFiguresMin()) {
-      log.error("Question has broken significant figure rules! " + question.getId() + " src: "
-          + question.getCanonicalSourceFile());
+      log.error("Question has broken significant figure rules! {} src: {}", question.getId(),
+          question.getCanonicalSourceFile());
 
       return new QuantityValidationResponse(question.getId(), answerFromUser, false,
           new Content("This question cannot be answered correctly."),
@@ -129,8 +128,8 @@ public class IsaacNumericValidator implements IValidator {
       boolean shouldValidateWithUnits = isaacNumericQuestion.getRequireUnits();
       if (shouldValidateWithUnits && null != isaacNumericQuestion.getDisplayUnit()
           && !isaacNumericQuestion.getDisplayUnit().isEmpty()) {
-        log.warn(String.format("Question has inconsistent units settings, overriding requiresUnits: %s! src: %s",
-            question.getId(), question.getCanonicalSourceFile()));
+        log.warn("Question has inconsistent units settings, overriding requiresUnits: {}! src: {}", question.getId(),
+            question.getCanonicalSourceFile());
         shouldValidateWithUnits = false;
       }
 
@@ -206,12 +205,12 @@ public class IsaacNumericValidator implements IValidator {
       }
 
       // And then return the bestResponse:
-      log.debug("Finished validation: correct=" + bestResponse.isCorrect() + ", correctValue="
-          + bestResponse.getCorrectValue() + ", correctUnits=" + bestResponse.getCorrectUnits());
+      log.debug("Finished validation: correct={}, correctValue={}, correctUnits={}", bestResponse.isCorrect(),
+          bestResponse.getCorrectValue(), bestResponse.getCorrectUnits());
       return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
     } catch (NumberFormatException e) {
-      log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
-          + "cannot parse as number!");
+      log.debug("Validation failed for '{} {}': cannot parse as number!", answerFromUser.getValue(),
+          answerFromUser.getUnits());
       HashSet<String> responseTags = new HashSet<>(ImmutableList.of("unrecognised_format"));
       if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
         responseTags.add("invalid_std_form");
@@ -250,7 +249,7 @@ public class IsaacNumericValidator implements IValidator {
         Quantity quantityFromQuestion = (Quantity) c;
 
         if (quantityFromQuestion.getUnits() == null) {
-          log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
+          log.error("Expected units and no units can be found for question id: {}", isaacNumericQuestion.getId());
           continue;
         }
 
@@ -279,8 +278,9 @@ public class IsaacNumericValidator implements IValidator {
               false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
         }
       } else {
-        log.error("Isaac Numeric Validator for questionId: " + isaacNumericQuestion.getId()
-            + " expected there to be a Quantity. Instead it found a Choice.");
+        log.error(
+            "Isaac Numeric Validator for questionId: {} expected there to be a Quantity. Instead it found a Choice.",
+            isaacNumericQuestion.getId());
       }
     }
 
@@ -325,8 +325,8 @@ public class IsaacNumericValidator implements IValidator {
           break;
         }
       } else {
-        log.error("Isaac Numeric Validator expected there to be a Quantity in ("
-            + isaacNumericQuestion.getCanonicalSourceFile() + ") Instead it found a Choice.");
+        log.error("Isaac Numeric Validator expected there to be a Quantity in ({}) Instead it found a Choice.",
+            isaacNumericQuestion.getCanonicalSourceFile());
       }
     }
 

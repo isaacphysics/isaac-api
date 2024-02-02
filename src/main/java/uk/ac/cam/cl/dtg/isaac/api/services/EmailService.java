@@ -123,7 +123,7 @@ public class EmailService {
             tokenToValueMapping, emailType);
       }
     } catch (ContentManagerException e) {
-      log.error("Could not send " + templateName + " emails due to content issue", e);
+      log.error("Could not send {} emails due to content issue", templateName, e);
     }
   }
 }

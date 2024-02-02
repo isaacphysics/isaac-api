@@ -94,7 +94,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
       Entry<Date, Integer> entry = existingHistory.get(eventLabel);
       if (null == entry) {
         existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
-        log.debug("New Event " + existingHistory.get(eventLabel));
+        log.debug("New Event {}", existingHistory.get(eventLabel));
       } else {
 
         // deal with expired events
@@ -104,7 +104,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         } else {
           // last events not expired yet so add them.
           existingHistory.put(eventLabel, immutableEntry(entry.getKey(), entry.getValue() + adjustmentValue));
-          log.debug("Event NOT expired so adding one " + existingHistory.get(eventLabel));
+          log.debug("Event NOT expired so adding one {}", existingHistory.get(eventLabel));
         }
 
         entry = existingHistory.get(eventLabel);

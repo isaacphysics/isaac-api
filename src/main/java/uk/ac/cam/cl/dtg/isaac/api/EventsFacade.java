@@ -1648,7 +1648,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
         if (e.getLocation().getLatitude().equals(0.0) && e.getLocation().getLongitude().equals(0.0)) {
           // Ignore events with locations that haven't been set properly.
-          log.info("Event with 0.0 lat/long:  " + e.getId());
+          log.info("Event with 0.0 lat/long:  {}", e.getId());
           continue;
         }
 

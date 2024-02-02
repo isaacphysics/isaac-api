@@ -134,7 +134,7 @@ public class ContentMapper {
     if (jt != null) {
       jsonTypes.put(jt.value(), cls);
     } else {
-      log.error("The jsonType annotation type provided cannot be null. For the class " + cls);
+      log.error("The jsonType annotation type provided cannot be null. For the class {}", cls);
     }
   }
 

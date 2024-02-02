@@ -64,7 +64,7 @@ public class PropertiesManager extends PropertiesLoader {
     OutputStream out = new FileOutputStream(file);
     this.getLoadedProperties().store(out, "");
 
-    log.debug("Writing out properties file " + this.getPropertiesFile());
+    log.debug("Writing out properties file {}", this.getPropertiesFile());
     out.close();
   }
 }

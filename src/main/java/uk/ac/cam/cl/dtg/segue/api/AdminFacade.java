@@ -900,8 +900,8 @@ public class AdminFacade extends AbstractSegueFacade {
       getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueServerLogType.DELETE_USER_ACCOUNT,
           ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
 
-      log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
-          + userId);
+      log.info("Admin User: {} has just deleted the user account with id: {}", currentlyLoggedInUser.getEmail(),
+          userId);
 
       return Response.noContent().build();
     } catch (NoUserLoggedInException e) {
@@ -948,9 +948,10 @@ public class AdminFacade extends AbstractSegueFacade {
       getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, SegueServerLogType.ADMIN_MERGE_USER,
           ImmutableMap.of(USER_ID_FKEY_FIELDNAME, targetUser.getId(), OLD_USER_ID_FKEY_FIELDNAME, sourceUser.getId()));
 
-      log.info("Admin User: " + currentlyLoggedInUser.getEmail()
-          + " has just merged the target user account with id: " + userIdMergeDTO.getTargetId()
-          + " with the source user account with id: " + userIdMergeDTO.getSourceId());
+      log.info(
+          "Admin User: {} has just merged the target user account with id: {} with the source user account with id: {}",
+          currentlyLoggedInUser.getEmail(), userIdMergeDTO.getTargetId(), userIdMergeDTO.getSourceId()
+      );
 
       return Response.noContent().build();
     } catch (NoUserLoggedInException e) {

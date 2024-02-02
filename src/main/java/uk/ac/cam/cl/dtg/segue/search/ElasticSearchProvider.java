@@ -160,7 +160,7 @@ public class ElasticSearchProvider implements ISearchProvider {
       query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
     }
 
-    log.debug("Randomised Query, to be sent to elasticsearch is : " + query);
+    log.debug("Randomised Query, to be sent to elasticsearch is : {}", query);
 
     return this.executeBasicQuery(basicSearchParameters, query);
   }
@@ -300,7 +300,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             )
     );
 
-    log.info("Elastic Search client created: " + address + ":" + port);
+    log.info("Elastic Search client created: {}:{}", address, port);
     return client;
   }
 
@@ -593,7 +593,7 @@ public class ElasticSearchProvider implements ISearchProvider {
       this.addSortInstructions(sourceBuilder, sortInstructions);
     }
 
-    log.debug("Building Query: " + sourceBuilder);
+    log.debug("Building Query: {}", sourceBuilder);
     ResultsWrapper<String> results = executeQuery(typedIndex, sourceBuilder);
 
     // execute another query to get all results as this is an unlimited
@@ -631,8 +631,8 @@ public class ElasticSearchProvider implements ISearchProvider {
       List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
       List<String> resultList = new ArrayList<>();
 
-      log.debug("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
-      log.debug("Search Request: " + searchSourceBuilder);
+      log.debug("TOTAL SEARCH HITS {}", response.getHits().getTotalHits());
+      log.debug("Search Request: {}", searchSourceBuilder);
       for (SearchHit item : hitAsList) {
         resultList.add(item.getSourceAsString());
       }

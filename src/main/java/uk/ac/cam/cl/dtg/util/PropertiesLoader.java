@@ -70,7 +70,7 @@ public class PropertiesLoader {
     String value = loadedProperties.getProperty(key);
 
     if (null == value) {
-      log.warn("Failed to resolve requested property with key: " + key + ", " + propertiesFile);
+      log.warn("Failed to resolve requested property with key: {}, {}", key, propertiesFile);
     }
 
     return value;
@@ -135,7 +135,7 @@ public class PropertiesLoader {
       loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.propertiesFile));
     }
     lastRefreshed = new Date();
-    log.debug("Properties file read successfully " + propertiesFile);
+    log.debug("Properties file read successfully {}", propertiesFile);
   }
 
   /**

@@ -211,8 +211,8 @@ public class IsaacSymbolicValidator implements IValidator {
             feedback.setTags(new HashSet<>(Collections.singletonList("syntax_error")));
             return new ValidationResult(feedback, INITIAL_MATCH_TYPE, false);
           } else {
-            log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
-                + "\" for (" + question.getId() + ") with symbolic checker: " + response.get("error"));
+            log.warn("Problem checking formula \"{}\" for ({}) with symbolic checker: {}",
+                submittedFormula.getPythonExpression(), question.getId(), response.get("error"));
           }
         } else {
           if (response.get("equal").equals("true")) {
@@ -286,8 +286,8 @@ public class IsaacSymbolicValidator implements IValidator {
 
       // ... that are of the Formula type, ...
       if (!(c instanceof Formula)) {
-        log.error("Validator for questionId: " + question.getId()
-            + " expected there to be a Formula. Instead it found a Choice.");
+        log.error("Validator for questionId: {} expected there to be a Formula. Instead it found a Choice.",
+            question.getId());
         continue;
       }
 
@@ -295,8 +295,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
       // ... and that have a python expression ...
       if (null == formulaChoice.getPythonExpression() || formulaChoice.getPythonExpression().isEmpty()) {
-        log.error("Expected python expression, but none found in choice for question id: "
-            + question.getId());
+        log.error("Expected python expression, but none found in choice for question id: {}", question.getId());
         continue;
       }
 
@@ -322,8 +321,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
   private static Content checkQuestionHasAnswer(final IsaacSymbolicQuestion question) {
     if (null == question.getChoices() || question.getChoices().isEmpty()) {
-      log.error("Question does not have any answers. " + question.getId() + " src: "
-          + question.getCanonicalSourceFile());
+      log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
 
       return new Content("This question does not have any correct answers");
     }
