@@ -149,7 +149,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         // check we have an auth cookie with INCOMPLETE_MANDATORY_EMAIL_VERIFICATION caveat only
         assertEquals("SEGUE_AUTH_COOKIE", cookieToCapture.getValue().getName());
         assertEquals(List.of(Constants.AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION.name()),
-                getCaveatsFromCapturedCookie(cookieToCapture));
+                getCaveatsFromCookie(cookieToCapture.getValue()));
 
         // check the user record has role of teacher and the pending flag set
         assertEquals(Role.TEACHER, pgUsers.getByEmail(ITConstants.TEST_SIGNUP_EMAIL).getRole());

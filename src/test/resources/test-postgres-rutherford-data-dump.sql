@@ -35,6 +35,7 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 13	\N	Editor	Freddie	freddie-editor@test.com	CONTENT_EDITOR	\N	\N	2023-07-10 09:39:05.76	\N	\N	{}	\N	2023-07-10 09:39:05.76	VERIFIED	2023-07-10 09:39:06.28	freddie-editor@test.com	cBDgCe6EGrOICL86FTYdTkHCpTxhQ4G6kDwnlzWUOQ	0	f	\N	f
 14	\N	Eventmanager	Gary	gary-event@test.com	EVENT_MANAGER	\N	\N	2023-07-10 09:57:03.121	\N	\N	{}	\N	2023-07-10 09:57:03.121	VERIFIED	2023-07-10 09:57:03.698	gary-event@test.com	JypFx7bjIJnSVwuuLGEnk1teOl3dzQWNaEe9x0g	0	f	\N	f
 9	\N	Student	Charlie	charlie-student@test.com	STUDENT	\N	MALE	2022-07-05 17:34:07	130615	\N	{}	\N	2022-07-05 17:34:31	NOT_VERIFIED	2022-08-09 10:54:15.741	charlie-student@test.com	\N	0	f	\N	f
+15	\N	Teacher	Test Unverified Caveat	test-unverified-caveat@test.com	TEACHER	\N	\N	2024-02-05 09:44:51.249	\N	N/A	{}	\N	2024-02-05 09:44:51.249	NOT_VERIFIED	\N	test-unverified-caveat@test.com	QAHQQS01ZLCj1iCFlGWyh7GS00kzVpi1mfZBRGNdsQ	0	f	GB	t
 \.
 
 
@@ -255,6 +256,7 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 12	dbPapTuZ+jEHYN3ZzS2yJfEZ4OFN4PenY53a2vgCB5E3jtQgR4A3cMQs3rgowD6ZtLRZS2pZLP3fq/bo9nRsZg==	1E4RZF4KVPhmci10DG8A4w==	SegueSCryptv1	\N	\N	2022-12-12 14:42:03.618265+00	2022-12-12 14:42:03.615+00
 13	fI3OzX0PbXWJPJGWN7d6GgXIxqDd8DNisGyF0cFWxhuS6uIBk2HvhRcAdjh/kadD4LIlYroD9Crd9zMT6TsfSQ==	VSpsq1+V48pHiZV/5lv4uw==	SegueSCryptv1	\N	\N	2023-07-10 08:39:06.107684+00	2023-07-10 08:39:06.107+00
 14	IzlHJX0RyCeY/k7YLQR27VZowm9SxTUVZbkLgZRi2Q6hnGzrEQUwh9fewOo73pyt+WAQJ5URPZ7azUhHu1RXWA==	7S8zRdqDuVK9E7KQj58TmA==	SegueSCryptv1	\N	\N	2023-07-10 08:57:03.393026+00	2023-07-10 08:57:03.391+00
+15	1OJ/FMVDtXI7gcC/t575nqtjDlzZLHvdEA3zgTGPdRzss2aK2B8o/HaQPy3OkjaAt5XWHA307g69G20qMYKRVQ==	yCg4zei908HorrK7y5orHg==	SegueSCryptv1	\N	\N	2024-02-05 09:44:51.738573+00	2024-02-05 09:44:51.737+00
 \.
 
 
@@ -493,7 +495,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 14, true);
+SELECT pg_catalog.setval('public.users_id_seq', 16, true);
 
 
 --

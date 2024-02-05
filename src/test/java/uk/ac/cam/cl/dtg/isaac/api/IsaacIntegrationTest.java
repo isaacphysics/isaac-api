@@ -57,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
@@ -71,8 +72,10 @@ import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -340,6 +343,7 @@ public abstract class IsaacIntegrationTest {
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
         misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(), new RegistrationMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(), new EmailVerificationMisuseHandler());
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
@@ -388,7 +392,13 @@ public abstract class IsaacIntegrationTest {
         expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
         replay(userLoginResponse);
 
-        RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
+        RegisteredUserDTO user;
+        try {
+            user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
+        } catch (AdditionalAuthenticationRequiredException | EmailMustBeVerifiedException e) {
+            // In this case, we won't get a user object but the cookies have still been set.
+            user = null;
+        }
 
         return new LoginResult(user, capturedUserCookie.getValue());
     }
@@ -412,13 +422,13 @@ public abstract class IsaacIntegrationTest {
         return response;
     }
 
-    protected HashMap<String, String> getSessionInformationFromCapturedCookie(Capture<Cookie> cookie) throws Exception {
-        return this.serializationMapper.readValue(Base64.decodeBase64(cookie.getValue().getValue()), HashMap.class);
+    protected HashMap<String, String> getSessionInformationFromCookie(Cookie cookie) throws Exception {
+        return this.serializationMapper.readValue(Base64.decodeBase64(cookie.getValue()), HashMap.class);
     }
 
-    protected List<String> getCaveatsFromCapturedCookie(Capture<Cookie> cookie) throws Exception {
-        return serializationMapper.readValue(getSessionInformationFromCapturedCookie(cookie).get(SESSION_CAVEATS),
-                new TypeReference<ArrayList<String>>(){});
+    protected List<String> getCaveatsFromCookie(Cookie cookie) throws Exception {
+        return serializationMapper.readValue(getSessionInformationFromCookie(cookie)
+                        .get(SESSION_CAVEATS), new TypeReference<ArrayList<String>>(){});
     }
 
     static Set<RegisteredUser> allTestUsersProvider() {

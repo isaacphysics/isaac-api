@@ -17,6 +17,7 @@ public class ITUsers {
     public final RegisteredUser ERIKA_STUDENT;
     public final RegisteredUser TEST_TEACHER;
     public final RegisteredUser DAVE_TEACHER;
+    public final RegisteredUser TEST_UNVERIFIED_CAVEAT;
     public final RegisteredUser TEST_ADMIN;
     public final RegisteredUser TEST_TUTOR;
     public final RegisteredUser TEST_EVENTMANAGER;
@@ -44,6 +45,7 @@ public class ITUsers {
         TEST_TUTOR = userDataManager.getById(ITConstants.TEST_TUTOR_ID);
         TEST_TEACHER = userDataManager.getById(ITConstants.TEST_TEACHER_ID);
         DAVE_TEACHER = userDataManager.getById(ITConstants.DAVE_TEACHER_ID);
+        TEST_UNVERIFIED_CAVEAT = userDataManager.getById(ITConstants.TEST_UNVERIFIED_CAVEAT_ID);
         TEST_EVENTMANAGER = userDataManager.getById(ITConstants.TEST_EVENTMANAGER_ID);
         GARY_EVENTMANAGER = userDataManager.getById(ITConstants.GARY_EVENTMANAGER_ID);
         TEST_EDITOR = userDataManager.getById(ITConstants.TEST_EDITOR_ID);
