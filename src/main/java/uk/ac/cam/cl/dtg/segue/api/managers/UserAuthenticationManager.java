@@ -515,6 +515,18 @@ public class UserAuthenticationManager {
         return user;
     }
 
+    /**
+     * Remove a session caveat from a user's session. Typically used once the user has completed some additional step
+     * required for login e.g. MFA.
+     *
+     * @param request to identify the session
+     * @param response to update the session cookie
+     * @param user the user who should be logged in
+     * @param caveatToRemove the caveat to remove
+     * @return the request and response will be modified and the original userDO will be returned for convenience
+     * @throws InvalidSessionException if there is no valid session
+     * @throws IOException if we are unable to read the session caveats from the cookie
+     */
     public RegisteredUser removeCaveatFromUserSession(final HttpServletRequest request, final HttpServletResponse response,
                                             final RegisteredUser user,
                                             final AuthenticationCaveat caveatToRemove) throws InvalidSessionException,
@@ -527,7 +539,10 @@ public class UserAuthenticationManager {
         }
 
         ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<ArrayList<String>>(){});
-        caveatFlags.remove(caveatToRemove.toString());
+        if (!caveatFlags.remove(caveatToRemove.toString())) {
+            log.warn(String.format("Attempted to remove caveat '%s' from user (%s) session, but no such caveat was present!",
+                    caveatToRemove, user.getId()));
+        }
         Set<AuthenticationCaveat> remainingCaveats = caveatFlags.stream().map(AuthenticationCaveat::valueOf).collect(Collectors.toSet());
 
         return this.createUserSessionWithCaveats(request, response, user, remainingCaveats, true);
