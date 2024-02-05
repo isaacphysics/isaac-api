@@ -285,22 +285,18 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     @Override
     public List<UserGroup> findGroupsByIds(final List<Long> groupIds) throws SegueDatabaseException {
 
-        if (null == groupIds || groupIds.size() == 0) {
+        if (null == groupIds || groupIds.isEmpty()) {
             return Collections.emptyList();
         }
 
-        String query = "SELECT * FROM groups WHERE id IN ("
-                + groupIds.stream().map(g -> "?").collect(Collectors.joining(", "))
-                + ") AND group_status <> ?;";
+        String query = "SELECT * FROM groups WHERE id = ANY(?) AND group_status <> ?;";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            int index = 1;
-            for (Long groupId : groupIds) {
-                pst.setLong(index++, groupId);
-            }
-            pst.setString(index, GroupStatus.DELETED.name());
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
+            pst.setString(2, GroupStatus.DELETED.name());
 
             try (ResultSet results = pst.executeQuery()) {
                 List<UserGroup> listOfResults = Lists.newArrayList();
@@ -309,6 +305,8 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
                 }
 
                 return listOfResults;
+            } finally {
+                groupIdsArray.free();
             }
 
         } catch (SQLException e) {
@@ -484,7 +482,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            // Use a single Array, rather than many parameters; cf. the many params approach in findGroupsByIds.
             Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
             pst.setArray(1, groupIdsArray);
 

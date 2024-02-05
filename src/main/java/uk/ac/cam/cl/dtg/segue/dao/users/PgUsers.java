@@ -725,6 +725,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 } else {
                     throw new SQLException("Creating user failed, no ID obtained.");
                 }
+            } finally {
+                userContexts.free();
             }
 
         } catch (SQLException e) {
@@ -770,10 +772,19 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             throw new SegueDatabaseException("The user you have tried to update does not exist.");
         }
 
-        String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?," +
-                " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?," +
-                " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?," +
-                " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ? WHERE id = ?;";
+        String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
+                + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
+                + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
+                + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ? WHERE id = ?;";
+
+        List<String> userContextsJsonb = Lists.newArrayList();
+        if (userToCreate.getRegisteredContexts() != null) {
+            for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
+                userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+            }
+        }
+        Array userContexts = conn.createArrayOf("jsonb", userContextsJsonb.toArray());
+
         try (PreparedStatement pst = conn.prepareStatement(query)) {
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -790,13 +801,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, 14, userToCreate.getEmailToVerify());
-            List<String> userContextsJsonb = Lists.newArrayList();
-            if (userToCreate.getRegisteredContexts() != null) {
-                for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
-                    userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
-                }
-            }
-            pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
+            pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
             setValueHelper(pst, 18, userToCreate.getId());
@@ -807,6 +812,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
 
             return this.getById(existingUserRecord.getId());
+        } finally {
+            userContexts.free();
         }
     }
     

@@ -114,7 +114,7 @@ public class GameboardPersistenceManager {
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.objectMapper = objectMapper;
-        this.uriManager = uriManager;		
+        this.uriManager = uriManager;
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
                 .expireAfterAccess(GAMEBOARD_TTL_MINUTES, TimeUnit.MINUTES).<String, GameboardDO> build();
     }
@@ -578,32 +578,35 @@ public class GameboardPersistenceManager {
         String query = "INSERT INTO gameboards(id, title, contents, wildcard, wildcard_position, "
                 + "game_filter, owner_user_id, creation_method, tags, creation_date)"
                 + " VALUES (?, ?, ?::text::jsonb[], ?::text::jsonb, ?, ?::text::jsonb, ?, ?, ?::text::jsonb, ?);";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
+        try (Connection conn = database.getDatabaseConnection()) {
+
             List<String> contentsJsonb = Lists.newArrayList();
-            for (GameboardContentDescriptor content: gameboardToSave.getContents()) {
+            for (GameboardContentDescriptor content : gameboardToSave.getContents()) {
                 contentsJsonb.add(objectMapper.writeValueAsString(content));
             }
             Array contents = conn.createArrayOf("jsonb", contentsJsonb.toArray());
 
-            pst.setObject(1, gameboardToSave.getId());
-            pst.setString(2, gameboardToSave.getTitle());
-            pst.setArray(3, contents);
-            pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
-            pst.setInt(5, gameboardToSave.getWildCardPosition());
-            pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
-            pst.setLong(7, gameboardToSave.getOwnerUserId());
-            pst.setString(8, gameboardToSave.getCreationMethod().toString());
-            pst.setString(9, objectMapper.writeValueAsString(gameboardToSave.getTags()));
-            if (gameboardToSave.getCreationDate() != null) {
-                pst.setTimestamp(10, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
-            } else {
-                pst.setTimestamp(10, new java.sql.Timestamp(new Date().getTime()));
-            }
+            try (PreparedStatement pst = conn.prepareStatement(query)) {
+                pst.setObject(1, gameboardToSave.getId());
+                pst.setString(2, gameboardToSave.getTitle());
+                pst.setArray(3, contents);
+                pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
+                pst.setInt(5, gameboardToSave.getWildCardPosition());
+                pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
+                pst.setLong(7, gameboardToSave.getOwnerUserId());
+                pst.setString(8, gameboardToSave.getCreationMethod().toString());
+                pst.setString(9, objectMapper.writeValueAsString(gameboardToSave.getTags()));
+                if (gameboardToSave.getCreationDate() != null) {
+                    pst.setTimestamp(10, new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
+                } else {
+                    pst.setTimestamp(10, new java.sql.Timestamp(new Date().getTime()));
+                }
 
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save assignment.");
+                if (pst.executeUpdate() == 0) {
+                    throw new SegueDatabaseException("Unable to save assignment.");
+                }
+            } finally {
+                contents.free();
             }
             
             log.debug("Saving gameboard... Gameboard ID: " + gameboardToSave.getId());

@@ -770,8 +770,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final String schoolURN,
-            @QueryParam("subjectOfInterest") @Nullable final String subjectOfInterest) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -909,23 +908,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 }
             }
 
-            // FIXME - this shouldn't really be in a segue class!
-            if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
-                List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
-                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(IsaacUserPreferences.SUBJECT_INTEREST.name(), foundUsers);
-
-                for (RegisteredUserDTO userToFilter: foundUsers) {
-                    if (userPreferences.containsKey(userToFilter.getId())) {
-                        for (UserPreference pref : userPreferences.get(userToFilter.getId())) {
-                            if (pref.getPreferenceName().equals(subjectOfInterest) && pref.getPreferenceValue()) {
-                                subjectFilteredUsers.add(userToFilter);
-                            }
-                        }
-                    }
-                }
-                foundUsers = subjectFilteredUsers;
-            }
-
             // Calculate the ETag
             EntityTag etag = new EntityTag(foundUsers.size() + foundUsers.toString().hashCode()
                     + userPrototype.toString().hashCode() + "");
@@ -938,7 +920,7 @@ public class AdminFacade extends AbstractSegueFacade {
             int searchResultsLimit;
             try {
                 searchResultsLimit = Integer.parseInt(this.getProperties().getProperty(Constants.SEARCH_RESULTS_HARD_LIMIT));
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 searchResultsLimit = 2000; // Hard-coded, but only as a fail-safe.
             }
 
