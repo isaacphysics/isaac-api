@@ -16,8 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.Null;
-
 import java.util.Date;
 
 /**
@@ -33,33 +31,28 @@ public class UserFromAuthProvider {
     private Gender gender;
     private EmailVerificationStatus emailVerificationStatus;
     private String countryCode;
+    private Boolean teacherAccountPending;
+
 
     /**
      * Full constructor for the User object.
-     * 
-     * @param providerUserId
-     *            - Our database Unique ID
-     * @param givenName
-     *            - Equivalent to firstname
-     * @param familyName
-     *            - Equivalent to second name
-     * @param email
-     *            - primary e-mail address
-     * @param emailVerificationStatus
-     *            - email verification status of user
-     * @param role
-     *            - role description
-     * @param dateOfBirth
-     *            - date of birth to help with monitoring
-     * @param gender
-     *            - gender of the user
-     * @param country
-     *            - country of the user (as ISO 3166 alpha-2 country code)
+     *
+     * @param providerUserId          - Our database Unique ID
+     * @param givenName               - Equivalent to firstname
+     * @param familyName              - Equivalent to second name
+     * @param email                   - primary e-mail address
+     * @param emailVerificationStatus - email verification status of user
+     * @param role                    - role description
+     * @param dateOfBirth             - date of birth to help with monitoring
+     * @param gender                  - gender of the user
+     * @param country                 - country of the user (as ISO 3166 alpha-2 country code)
+     * @param teacherAccountPending   - whether an upgrade to teacher role is pending
      */
     public UserFromAuthProvider(final String providerUserId, final String givenName, final String familyName,
-            final String email, final EmailVerificationStatus emailVerificationStatus, @Nullable final Role role,
-                                @Nullable final Date dateOfBirth, @Nullable final Gender gender,
-                                @Nullable final String country) {
+                                final String email, final EmailVerificationStatus emailVerificationStatus,
+                                @Nullable final Role role, @Nullable final Date dateOfBirth,
+                                @Nullable final Gender gender, @Nullable final String country,
+                                Boolean teacherAccountPending) {
         this.providerUserId = providerUserId;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -68,6 +61,7 @@ public class UserFromAuthProvider {
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
         this.countryCode = country;
+        this.teacherAccountPending = teacherAccountPending;
     }
 
     /**
@@ -140,5 +134,14 @@ public class UserFromAuthProvider {
      */
     public String getCountryCode() {
         return countryCode;
+    }
+
+    /**
+     * Gets teacher account pending.
+     *
+     * @return teacher account pending status.
+     */
+    public Boolean getTeacherAccountPending() {
+        return teacherAccountPending;
     }
 }

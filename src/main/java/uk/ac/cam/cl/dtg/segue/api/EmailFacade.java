@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -223,12 +224,14 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Verify an email verification token is valid for use.")
-    public Response validateEmailVerificationRequest(@PathParam("userid") final Long userId,
+    public Response validateEmailVerificationRequest(@Context final HttpServletRequest request,
+                                                     @Context final HttpServletResponse response,
+                                                     @PathParam("userid") final Long userId,
                                                      @PathParam("token") final String token) {
 
         try {
             misuseMonitor.notifyEvent(userId.toString(), EmailVerificationMisuseHandler.class.getSimpleName());
-            userManager.processEmailVerification(userId, token);
+            userManager.processEmailVerification(request, response, userId, token);
 
             // assume that if there are no exceptions that it worked.
             return Response.ok().build();

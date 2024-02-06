@@ -173,33 +173,33 @@ public class IsaacTest {
         // A bit scrappy, but hopefully sufficient.
         studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, true, null, null);
 
-        student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null);
+        student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false);
         student.setRole(Role.STUDENT);
         student.setId(++id);
 
-        teacher = new RegisteredUserDTO("Some", "Teacher", "test-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null);
+        teacher = new RegisteredUserDTO("Some", "Teacher", "test-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false);
         teacher.setRole(Role.TEACHER);
         teacher.setId(++id);
 
-        secondTeacher = new RegisteredUserDTO("Second", "Teacher", "second-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.PREFER_NOT_TO_SAY, somePastDate, "", null);
+        secondTeacher = new RegisteredUserDTO("Second", "Teacher", "second-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.PREFER_NOT_TO_SAY, somePastDate, "", null, false);
         secondTeacher.setRole(Role.TEACHER);
         secondTeacher.setId(++id);
 
-        otherTeacher = new RegisteredUserDTO("Other", "Teacher", "other-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.OTHER, somePastDate, "", null);
+        otherTeacher = new RegisteredUserDTO("Other", "Teacher", "other-teacher@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.OTHER, somePastDate, "", null, false);
         otherTeacher.setRole(Role.TEACHER);
         otherTeacher.setId(++id);
 
         noone = null;
 
-        secondStudent = new RegisteredUserDTO("Second", "Student", "second-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null);
+        secondStudent = new RegisteredUserDTO("Second", "Student", "second-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false);
         secondStudent.setRole(Role.STUDENT);
         secondStudent.setId(++id);
 
-        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null);
+        otherStudent = new RegisteredUserDTO("Other", "Student", "other-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false);
         otherStudent.setRole(Role.STUDENT);
         otherStudent.setId(++id);
 
-        adminUser = new RegisteredUserDTO("Test", "Admin", "test-admin@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.UNKNOWN, somePastDate, "", null);
+        adminUser = new RegisteredUserDTO("Test", "Admin", "test-admin@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.UNKNOWN, somePastDate, "", null, false);
         adminUser.setRole(Role.ADMIN);
         adminUser.setId(++id);
 

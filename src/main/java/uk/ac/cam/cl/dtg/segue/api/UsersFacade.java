@@ -28,12 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserSettings;
-import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -86,6 +86,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -156,7 +157,14 @@ public class UsersFacade extends AbstractSegueFacade {
                                            @Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse response) {
         try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            RegisteredUserDTO currentUser;
+
+            if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                // allow users who are required to verify but haven't yet done so to use this endpoint
+                currentUser = userManager.getCurrentPartiallyIdentifiedUser(httpServletRequest, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+            } else {
+                currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            }
 
             Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
             int sessionExpiryHashCode = 0;
@@ -253,8 +261,13 @@ public class UsersFacade extends AbstractSegueFacade {
                     log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
                 }
 
-                // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
-                return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                if (Role.TEACHER.equals(registeredUser.getRole()) && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                    // For teacher sign-ups where teachers should not default to student role, use a caveat login until email is verified.
+                    return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+                } else {
+                    // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
+                    return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                }
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");

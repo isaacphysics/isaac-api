@@ -534,7 +534,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             // update
             u = this.updateUser(user);
         }
-        
+
         return u;
     }
 
@@ -681,8 +681,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
         String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender," +
                 " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen," +
-                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed, country_code)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed, country_code, teacher_account_pending)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -712,6 +712,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
+            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -775,7 +776,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
                 + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
                 + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
-                + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ? WHERE id = ?;";
+                + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ?, teacher_account_pending = ? WHERE id = ?;";
 
         List<String> userContextsJsonb = Lists.newArrayList();
         if (userToCreate.getRegisteredContexts() != null) {
@@ -804,7 +805,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
-            setValueHelper(pst, 18, userToCreate.getId());
+            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
+            setValueHelper(pst, 19, userToCreate.getId());
 
 
             if (pst.executeUpdate() == 0) {
@@ -874,6 +876,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         u.setSessionToken(results.getInt("session_token"));
 
         u.setCountryCode(results.getString("country_code"));
+        u.setTeacherAccountPending(results.getBoolean("teacher_account_pending"));
 
         return u;
     }

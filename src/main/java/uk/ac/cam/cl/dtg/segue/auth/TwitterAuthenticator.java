@@ -208,7 +208,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                 }
 
                 return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,
-                        emailStatus, null, null, null, null);
+                        emailStatus, null, null, null, null, false);
             } else {
                 throw new NoUserException("No user could be created from provider details!");
             }
