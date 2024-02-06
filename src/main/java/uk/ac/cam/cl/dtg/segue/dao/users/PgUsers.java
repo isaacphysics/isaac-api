@@ -110,40 +110,17 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     }
 
     @Override
-    public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
-            throws SegueDatabaseException {
-        return this.getAuthenticationProvidersByUsers(Collections.singletonList(user)).get(user);
-    }
-
-    @Override
-    public Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder("SELECT * FROM linked_accounts WHERE user_id IN (");
-        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-        sb.append(String.join(",", questionMarks)).append(");");
+    public List<AuthenticationProvider> getAuthenticationProvidersByUser(RegisteredUser user) throws SegueDatabaseException {
+        String query = "SELECT * FROM linked_accounts WHERE user_id = ?;";
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int userParamIndex = 1;
-            // These will come in handy later...
-            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
-            Map<RegisteredUser, List<AuthenticationProvider>> authenticationProviders = new HashMap<>();
-            // Add the parameters into the query
-            for (RegisteredUser user : users) {
-                pst.setLong(userParamIndex++, user.getId());
-                authenticationProviders.put(userMap.get(user.getId()), new ArrayList<>());
-            }
+            pst.setLong(1, user.getId());
 
-            // There appears to be a hard limit of 32767 parameters (source: the Internet) while using a prepared
-            // statement over JDBC. However, one can circumvent that by running the query from a string. This is
-            // generally a bad idea, unless a prepared statement is used to construct the query first, which is probably
-            // still a bad idea, only slightly less so.
-            // TL;DR: Sorry...
-            try (Statement statement = conn.createStatement();
-                 ResultSet queryResults = statement.executeQuery(pst.toString());
-            ) {
+            List<AuthenticationProvider> authenticationProviders = Lists.newArrayList();
+            try (ResultSet queryResults = pst.executeQuery()) {
                 while (queryResults.next()) {
-                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                    authenticationProviders.get(user).add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
+                    authenticationProviders.add(AuthenticationProvider.valueOf(queryResults.getString("provider")));
                 }
                 return authenticationProviders;
             }
@@ -424,24 +401,18 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-        StringBuilder inParams = new StringBuilder();
-        inParams.append("?");
-        for (int i = 1; i < usersToLocate.size(); i++) {
-            inParams.append(",?");
-        }
-        String query = String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name", inParams.toString());
+        String query = "SELECT * FROM users WHERE id = ANY(?) AND NOT deleted ORDER BY family_name, given_name";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int index = 1;
-            for (Long userId : usersToLocate) {
-                pst.setLong(index, userId);
-                index++;
-            }
+            Array idArray = conn.createArrayOf("INTEGER", usersToLocate.toArray());
+            pst.setArray(1, idArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 return this.findAllUsers(results);
+            } finally {
+                idArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
@@ -700,7 +671,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     private RegisteredUser createUser(final RegisteredUser userToCreate) throws SegueDatabaseException {    
         // make sure student is default role if none set
         if (null == userToCreate.getRole()) {
-        	userToCreate.setRole(Role.STUDENT);
+            userToCreate.setRole(Role.STUDENT);
         }
         
         // make sure NOT_VERIFIED is default email verification status if none set
@@ -755,6 +726,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 } else {
                     throw new SQLException("Creating user failed, no ID obtained.");
                 }
+            } finally {
+                userContexts.free();
             }
 
         } catch (SQLException e) {
@@ -800,10 +773,19 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             throw new SegueDatabaseException("The user you have tried to update does not exist.");
         }
 
-        String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?," +
-                " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?," +
-                " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?," +
-                " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ?, teacher_account_pending = ? WHERE id = ?;";
+        String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
+                + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
+                + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
+                + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ?, teacher_account_pending = ? WHERE id = ?;";
+
+        List<String> userContextsJsonb = Lists.newArrayList();
+        if (userToCreate.getRegisteredContexts() != null) {
+            for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
+                userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
+            }
+        }
+        Array userContexts = conn.createArrayOf("jsonb", userContextsJsonb.toArray());
+
         try (PreparedStatement pst = conn.prepareStatement(query)) {
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -820,13 +802,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 12, userToCreate.getLastSeen());
             setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, 14, userToCreate.getEmailToVerify());
-            List<String> userContextsJsonb = Lists.newArrayList();
-            if (userToCreate.getRegisteredContexts() != null) {
-                for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
-                    userContextsJsonb.add(jsonMapper.writeValueAsString(registeredContext));
-                }
-            }
-            pst.setArray(15, conn.createArrayOf("jsonb", userContextsJsonb.toArray()));
+            pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
             setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
@@ -838,6 +814,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             }
 
             return this.getById(existingUserRecord.getId());
+        } finally {
+            userContexts.free();
         }
     }
     

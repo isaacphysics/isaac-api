@@ -207,7 +207,7 @@ CREATE TABLE anonymous.logged_events AS
     SELECT
         id,
         anonymise(user_id, hash_salt) AS user_id,
-        anonymous_user,
+        length(user_id) < 7 AS registered_user,  -- a quick proxy, since "anonymous_user" is not what it seems!
         event_type,
         event_details,
         timestamp
@@ -228,7 +228,7 @@ CREATE TABLE anonymous.logged_events AS
         -- Group and assignment related usage:
         'CREATE_USER_ASSOCIATION', 'RELEASE_USER_ASSOCIATION', 'REVOKE_USER_ASSOCIATION',
         'CREATE_USER_GROUP', 'DELETE_USER_GROUP', 'ADD_ADDITIONAL_GROUP_MANAGER', 'DELETE_ADDITIONAL_GROUP_MANAGER',
-        'SET_NEW_ASSIGNMENT', 'DELETE_ASSIGNMENT', 'VIEW_BOARD_BUILDER', 'CLONE_GAMEBOARD',
+        'SET_NEW_ASSIGNMENT', 'DELETE_ASSIGNMENT', 'VIEW_BOARD_BUILDER', 'CREATE_GAMEBOARD', 'CLONE_GAMEBOARD',
         'VIEW_ASSIGNMENT_PROGRESS', 'DOWNLOAD_ASSIGNMENT_PROGRESS_CSV', 'DOWNLOAD_GROUP_PROGRESS_CSV', 'VIEW_USER_PROGRESS',
         -- Event related usage:
         'ADMIN_EVENT_ATTENDANCE_RECORDED', 'ADMIN_EVENT_BOOKING_CANCELLED', 'ADMIN_EVENT_BOOKING_CONFIRMED',
@@ -271,6 +271,12 @@ WHERE event_details->>'oldSchoolOther' IS NOT NULL;
 UPDATE anonymous.logged_events
 SET event_details=jsonb_strip_nulls(event_details - 'newSchoolOther')
 WHERE event_details->>'newSchoolOther' IS NOT NULL;
+
+
+-- School data, no PII:
+
+CREATE TABLE anonymous.schools_2022 AS
+SELECT * FROM public.schools_2022;
 
 RETURN true;
 END;

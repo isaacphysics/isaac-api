@@ -2,7 +2,7 @@
 -- Merge and Delete Users
 --
 -- Authors: Stephen Cummins, James Sharkey
--- Last Modified: 2020-08-12
+-- Last Modified: 2023-11-01
 --
 
 CREATE OR REPLACE FUNCTION mergeuser(targetuseridtokeep bigint, targetuseridtodelete bigint) RETURNS boolean
@@ -18,8 +18,7 @@ BEGIN
     UPDATE event_bookings
     SET user_id = targetUserIdToKeep
     WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    -- Do not ignore duplicate inserts; merging should fail if booking data would be lost for duplicated bookings!
   END;
 
   UPDATE gameboards
@@ -27,19 +26,20 @@ BEGIN
   WHERE owner_user_id = targetUserIdToDelete;
 
   BEGIN
-    UPDATE group_additional_managers
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO group_additional_managers (user_id, group_id, created)
+    SELECT targetUserIdToKeep, group_id, created
+    FROM group_additional_managers WHERE user_id=targetUserIdToDelete
+    ON CONFLICT DO NOTHING;
   END;
 
   BEGIN
-    UPDATE group_memberships
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO group_memberships (group_id, user_id, created, updated, status)
+    SELECT group_id, targetuseridtokeep, created, updated, status
+    FROM group_memberships WHERE user_id = targetuseridtodelete
+    ON CONFLICT (group_id, user_id) DO UPDATE
+      -- merge memberships, ensuring "earliest" membership is used and ACTIVE status takes precedence.
+      SET created=LEAST(group_memberships.created, EXCLUDED.created), updated=GREATEST(group_memberships.updated, EXCLUDED.updated),
+          status=CASE WHEN group_memberships.status='ACTIVE' OR EXCLUDED.status='ACTIVE' THEN 'ACTIVE' ELSE group_memberships.status END;
   END;
 
   UPDATE groups
@@ -75,18 +75,19 @@ BEGIN
   WHERE user_id = targetUserIdToDelete;
 
   BEGIN
-    UPDATE user_associations
-    SET user_id_granting_permission = targetUserIdToKeep
-    WHERE user_id_granting_permission = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
+    INSERT INTO user_associations (user_id_granting_permission, user_id_receiving_permission, created)
+    SELECT targetuseridtokeep, user_id_receiving_permission, created
+    FROM user_associations WHERE user_id_granting_permission=targetuseridtodelete
     -- Ignore duplicate inserts.
+    ON CONFLICT DO NOTHING;
   END;
+
   BEGIN
-    UPDATE user_associations
-    SET user_id_receiving_permission = targetUserIdToKeep
-    WHERE user_id_receiving_permission = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
+    INSERT INTO user_associations (user_id_granting_permission, user_id_receiving_permission, created)
+    SELECT user_id_granting_permission, targetuseridtokeep, created
+    FROM user_associations WHERE user_id_receiving_permission=targetuseridtodelete
     -- Ignore duplicate inserts.
+    ON CONFLICT DO NOTHING;
   END;
 
   UPDATE user_associations_tokens
@@ -110,43 +111,41 @@ BEGIN
   END;
 
   BEGIN
-    UPDATE user_gameboards
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO user_gameboards (user_id, gameboard_id, created, last_visited)
+    SELECT targetUserIdToKeep, gameboard_id, created, last_visited
+    FROM user_gameboards WHERE user_id=targetUserIdToDelete
+    ON CONFLICT (user_id, gameboard_id) DO UPDATE
+      SET created=LEAST(EXCLUDED.created, user_gameboards.created),
+          last_visited=GREATEST(EXCLUDED.last_visited, user_gameboards.last_visited);
   END;
 
   BEGIN
-    UPDATE user_notifications
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO user_notifications (user_id, notification_id, status, created)
+    SELECT targetUserIdToKeep, notification_id, status, created
+    FROM user_notifications WHERE user_id=targetUserIdToDelete
+    ON CONFLICT DO NOTHING;
   END;
 
   BEGIN
-    UPDATE user_preferences
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO user_preferences (user_id, preference_type, preference_name, preference_value, last_updated)
+    SELECT targetUserIdToKeep, preference_type, preference_name, preference_value, last_updated
+    FROM user_preferences WHERE user_id=targetUserIdToDelete
+    ON CONFLICT DO NOTHING;
+    -- Do not let "to delete" preferences override "to keep" ones.
   END;
 
   BEGIN
-    UPDATE user_streak_freezes
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO user_streak_freezes (user_id, start_date, end_date, comment)
+    SELECT targetUserIdToKeep, start_date, end_date, comment
+    FROM user_streak_freezes WHERE user_id=targetUserIdToDelete
+    ON CONFLICT DO NOTHING;
   END;
 
   BEGIN
-    UPDATE user_streak_targets
-    SET user_id = targetUserIdToKeep
-    WHERE user_id = targetUserIdToDelete;
-    EXCEPTION WHEN unique_violation THEN
-    -- Ignore duplicate inserts.
+    INSERT INTO user_streak_targets (user_id, target_count, start_date, end_date, comment)
+    SELECT user_id, target_count, start_date, end_date, comment
+    FROM user_streak_targets WHERE user_id=targetUserIdToDelete
+    ON CONFLICT DO NOTHING;
   END;
 
   BEGIN
