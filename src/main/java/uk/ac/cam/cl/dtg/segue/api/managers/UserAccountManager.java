@@ -1421,8 +1421,8 @@ public class UserAccountManager implements IUserAccountManager {
                         userAuthenticationManager.removeCaveatFromUserSession(request, response, user,
                                 AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION);
                     } else {
-                        log.debug("Logged-in user doesn't match user to verify, session caveats for logged-in user will" +
-                                "not be updated.");
+                        log.debug("Logged-in user doesn't match user to verify, session caveats for logged-in user will"
+                                + " not be updated.");
                     }
                 } catch (NoUserLoggedInException | InvalidSessionException e) {
                     log.debug("No logged-in user for whom to update caveats.");
