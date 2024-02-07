@@ -252,7 +252,7 @@ public class UsersFacade extends AbstractSegueFacade {
             try {
                 String ipAddress = RequestIPExtractor.getClientIpAddr(request);
                 misuseMonitor.notifyEvent(ipAddress, RegistrationMisuseHandler.class.getSimpleName());
-                SegueMetrics.USER_REGISTRATION.inc();
+                SegueMetrics.USER_REGISTRATION_ATTEMPT.inc();
 
                 // Add some logging for what ought to be an impossible case; that of a registration attempt coming from a client
                 // which has not made any other authenticated/logged request to Isaac beforehand.
@@ -261,13 +261,17 @@ public class UsersFacade extends AbstractSegueFacade {
                     log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
                 }
 
+                Response newUserResponse;
                 if (Role.TEACHER.equals(registeredUser.getRole()) && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
                     // For teacher sign-ups where teachers should not default to student role, use a caveat login until email is verified.
-                    return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+                    newUserResponse = userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
                 } else {
                     // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
-                    return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                    newUserResponse = userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
                 }
+
+                SegueMetrics.USER_REGISTRATION.inc();
+                return newUserResponse;
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");
