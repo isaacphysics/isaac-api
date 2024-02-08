@@ -54,7 +54,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() throws Exception {
         // get an instance of the facade to test
-        this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager, gameManager,
+        this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager,
              groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
     }
 

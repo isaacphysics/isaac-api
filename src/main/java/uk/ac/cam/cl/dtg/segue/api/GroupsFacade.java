@@ -83,8 +83,6 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final AssignmentManager assignmentManager;
-    private final GameManager gameManager;
-
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
     private final UserBadgeManager userBadgeManager;
@@ -102,14 +100,13 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Inject
     public GroupsFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, AssignmentManager assignmentManager,
-                        final GameManager gameManager, final GroupManager groupManager,
+                        final GroupManager groupManager,
                         final UserAssociationManager associationsManager,
                         final UserBadgeManager userBadgeManager,
                         final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.assignmentManager = assignmentManager;
-        this.gameManager = gameManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
         this.userBadgeManager = userBadgeManager;

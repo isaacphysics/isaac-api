@@ -58,7 +58,7 @@ public class UserBadgeManager {
         this.transactionManager = transactionManager;
 
         badgePolicies.put(Badge.TEACHER_GROUPS_CREATED, new TeacherGroupsBadgePolicy(groupManager));
-        badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager, gameManager));
+        badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager));
         badgePolicies.put(Badge.TEACHER_GAMEBOARDS_CREATED, new TeacherGameboardsBadgePolicy(gameManager));
         badgePolicies.put(Badge.TEACHER_CPD_EVENTS_ATTENDED,
                 new TeacherCpdBadgePolicy(bookingManager, contentManager));
