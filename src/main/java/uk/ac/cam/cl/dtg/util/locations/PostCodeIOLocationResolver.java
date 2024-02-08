@@ -15,6 +15,25 @@
  */
 package uk.ac.cam.cl.dtg.util.locations;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.inject.Inject;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -23,28 +42,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import io.netty.handler.codec.http.HttpResponseStatus;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.inject.Inject;
 
 /**
  * Class to allow postcode-related searches using external service.
@@ -240,7 +237,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         List<PostCode> returnList = Lists.newArrayList();
         int responseCode = (int) response.get("status");
-        if (responseCode == HttpResponseStatus.OK.code()) {
+        if (responseCode == Response.Status.OK.getStatusCode()) {
             ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) response
                     .get("result");
 

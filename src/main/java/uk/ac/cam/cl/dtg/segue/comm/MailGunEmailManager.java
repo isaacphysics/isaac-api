@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -48,8 +47,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 
-import static com.mailgun.util.Constants.EU_BASE_URL;
+import static com.mailgun.util.Constants.EU_REGION_BASE_URL;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
@@ -75,7 +75,7 @@ public class MailGunEmailManager {
         if (null == this.mailgunMessagesApi) {
             log.info("Creating singleton MailgunMessagesApi object.");
             this.mailgunMessagesApi = MailgunClient
-                    .config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
+                    .config(EU_REGION_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
                     .logLevel(feign.Logger.Level.NONE)
                     .createApi(MailgunMessagesApi.class);
         }
