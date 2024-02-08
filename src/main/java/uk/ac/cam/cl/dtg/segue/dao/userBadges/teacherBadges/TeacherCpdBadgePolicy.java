@@ -4,15 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -24,14 +24,11 @@ public class TeacherCpdBadgePolicy implements IUserBadgePolicy {
 
     private final EventBookingManager bookingManager;
     private final GitContentManager contentManager;
-    private final String contentIndex;
 
     public TeacherCpdBadgePolicy(EventBookingManager bookingManager,
-                                 GitContentManager contentManager,
-                                 String contentIndex) {
+                                 GitContentManager contentManager) {
         this.bookingManager = bookingManager;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
     }
 
     @Override

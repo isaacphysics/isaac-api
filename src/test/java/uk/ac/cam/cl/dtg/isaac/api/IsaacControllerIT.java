@@ -52,7 +52,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() {
         this.isaacControllerFacade = new IsaacController(properties, logManager, createNiceMock(StatisticsManager.class),
-                userAccountManager, contentManager, userAssociationManager, "latest",
+                userAccountManager, contentManager, userAssociationManager,
                 createNiceMock(IUserStreaksManager.class), userBadgeManager, contentSummarizerService);
     }
 

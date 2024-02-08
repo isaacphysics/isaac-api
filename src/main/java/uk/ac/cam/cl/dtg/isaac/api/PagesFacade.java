@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import ma.glasnost.orika.MapperFacade;
@@ -97,9 +96,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final QuestionManager questionManager;
     private final GitContentManager contentManager;
-
     private final GameManager gameManager;
-    private final String contentIndex;
 
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
@@ -122,14 +119,12 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - So we can look up attempt information.
      * @param gameManager
      *            - For looking up gameboard information.
-     * @param contentIndex
-     *            - Index for the content to serve
      */
     @Inject
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
-                       final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                       final GameManager gameManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -138,7 +133,6 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.uriManager = uriManager;
         this.questionManager = questionManager;
         this.gameManager = gameManager;
-        this.contentIndex = contentIndex;
     }
 
     /**
@@ -769,7 +763,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
-            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
+            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
@@ -950,8 +944,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap, final Integer startIndex, final Integer limit) throws ContentManagerException {
         ResultsWrapper<ContentDTO> c;
 
-        c = api.findMatchingContent(this.contentIndex,
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
+        c = api.findMatchingContent(ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                 this.extractContentSummaryFromList(c.getResults()),

@@ -3,18 +3,17 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Arrays;
@@ -31,7 +30,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class FastTrackManger {
     private static final Logger log = LoggerFactory.getLogger(FastTrackManger.class);
 
-    private final String contentIndex;
     private final GitContentManager contentManager;
     private final GameManager gameboardManager;
     private final Set<String> fastTrackGamebaordIds;
@@ -43,15 +41,12 @@ public class FastTrackManger {
      *            - so we can augment game objects with actual detailed content
      * @param gameboardManager
      *            - a gamebaord manager that deals with storing and retrieving gameboards.
-     * @param contentIndex
-     *            - the current content index of interest.
      */
     @Inject
     public FastTrackManger(final AbstractConfigLoader properties, final GitContentManager contentManager,
-                           final GameManager gameboardManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                           final GameManager gameboardManager) {
 
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.gameboardManager = gameboardManager;
         String commaSeparatedIds = properties.getProperty(FASTTRACK_GAMEBOARD_WHITELIST);
         this.fastTrackGamebaordIds = new HashSet<>(Arrays.asList(commaSeparatedIds.split(",")));

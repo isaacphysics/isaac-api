@@ -73,8 +73,7 @@ public class GameManagerTest {
                 this.dummyContentManager,
                 this.dummyGameboardPersistenceManager,
                 this.dummyMapper,
-                this.dummyQuestionManager,
-                "latest"
+                this.dummyQuestionManager
         );
 
         // configure the mock GitContentManager to record the filters that are sent to it by getNextQuestionsForFilter()

@@ -20,7 +20,6 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
@@ -92,7 +91,6 @@ public class IsaacController extends AbstractIsaacFacade {
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
-    private final String contentIndex;
     private final GitContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
@@ -144,7 +142,6 @@ public class IsaacController extends AbstractIsaacFacade {
                            final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
-                           @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
                            final UserBadgeManager userBadgeManager,
                            final ContentSummarizerService contentSummarizerService) {
@@ -152,7 +149,6 @@ public class IsaacController extends AbstractIsaacFacade {
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
-        this.contentIndex = contentIndex;
         this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.userStreaksManager = userStreaksManager;
@@ -195,15 +191,13 @@ public class IsaacController extends AbstractIsaacFacade {
             return SegueErrorResponse.getBadRequestResponse(String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
         }
 
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
+        // Calculate the ETag on current version of the content
         EntityTag etag = new EntityTag(
-                this.contentIndex.hashCode()
+                String.valueOf(this.contentManager.getCurrentContentSHA().hashCode()
                         + searchString.hashCode()
                         + types.hashCode()
                         + startIndex.hashCode()
-                        + limit.hashCode()
-                        + ""
+                        + limit.hashCode())
         );
 
         Response cachedResponse = generateCachedResponse(request, etag);

@@ -3,25 +3,22 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
+import uk.ac.cam.cl.dtg.isaac.dos.UserBadge;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherAssignmentsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherCpdBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGameboardsBadgePolicy;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.teacherBadges.TeacherGroupsBadgePolicy;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.isaac.dos.UserBadge;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.util.Map;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
  * Management layer for updating and retrieving badge states
@@ -51,13 +48,11 @@ public class UserBadgeManager {
      * @param assignmentManager assignment manager object for badge policy dependencies
      * @param gameManager game manager object for badge policy dependencies
      * @param contentManager content manager object for badge policy dependencies
-     * @param contentIndex specifies content version
      */
     @Inject
     public UserBadgeManager(IUserBadgePersistenceManager userBadgePersistenceManager, GroupManager groupManager,
                             EventBookingManager bookingManager, AssignmentManager assignmentManager, GameManager gameManager,
-                            GitContentManager contentManager, @Named(CONTENT_INDEX) String contentIndex,
-                            ITransactionManager transactionManager) {
+                            GitContentManager contentManager, ITransactionManager transactionManager) {
 
         this.userBadgePersistenceManager = userBadgePersistenceManager;
         this.transactionManager = transactionManager;
@@ -66,7 +61,7 @@ public class UserBadgeManager {
         badgePolicies.put(Badge.TEACHER_ASSIGNMENTS_SET, new TeacherAssignmentsBadgePolicy(assignmentManager, gameManager));
         badgePolicies.put(Badge.TEACHER_GAMEBOARDS_CREATED, new TeacherGameboardsBadgePolicy(gameManager));
         badgePolicies.put(Badge.TEACHER_CPD_EVENTS_ATTENDED,
-                new TeacherCpdBadgePolicy(bookingManager, contentManager, contentIndex));
+                new TeacherCpdBadgePolicy(bookingManager, contentManager));
     }
 
     /**

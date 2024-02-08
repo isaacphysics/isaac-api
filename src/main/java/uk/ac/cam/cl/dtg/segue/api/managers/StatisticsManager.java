@@ -87,7 +87,6 @@ public class StatisticsManager implements IStatisticsManager {
     private ILogManager logManager;
     private SchoolListReader schoolManager;
     private final GitContentManager contentManager;
-    private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
     private ContentSummarizerService contentSummarizerService;
@@ -128,7 +127,6 @@ public class StatisticsManager implements IStatisticsManager {
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                              final SchoolListReader schoolManager, final GitContentManager contentManager,
-                             @Named(CONTENT_INDEX) final String contentIndex,
                              final LocationManager locationHistoryManager, final GroupManager groupManager,
                              final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
                              final IUserStreaksManager userStreaksManager) {
@@ -137,7 +135,6 @@ public class StatisticsManager implements IStatisticsManager {
         this.schoolManager = schoolManager;
 
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
 
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;

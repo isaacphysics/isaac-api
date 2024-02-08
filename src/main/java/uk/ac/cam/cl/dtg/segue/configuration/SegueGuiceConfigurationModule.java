@@ -1027,13 +1027,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
+                                                     final GitContentManager contentManager, final LocationManager locationHistoryManager,
                                                      final GroupManager groupManager, final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
+            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager,
                     locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
@@ -1227,10 +1227,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
                                                                               final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
-                                                                              final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                                                              final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-                    objectMapper, uriManager, contentIndex);
+                    objectMapper, uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 
