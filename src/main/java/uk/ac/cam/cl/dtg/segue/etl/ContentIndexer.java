@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -408,6 +409,12 @@ public class ContentIndexer {
         if (content instanceof IsaacCardDeck) {
             for (IsaacCard card : ((IsaacCardDeck) content).getCards()) {
                 this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
+            }
+        }
+
+        if (content instanceof InlineRegion) {
+            for (Question question : ((InlineRegion) content).getInlineQuestions()) {
+                this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
             }
         }
 
