@@ -88,8 +88,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         try {
             // increase default timeouts
             RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout(180000)
-                    .setSocketTimeout(180000)
+                    .setConnectTimeout(360000)
+                    .setSocketTimeout(360000)
                     .build();
             RequestOptions options = RequestOptions.DEFAULT.toBuilder()
                     .setRequestConfig(requestConfig)
