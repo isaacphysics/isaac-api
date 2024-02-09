@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.InlineRegionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
@@ -520,6 +521,12 @@ public class QuestionManager {
         if (toExtract instanceof QuestionDTO) {
             // we found a question so add it to the list.
             result.add((QuestionDTO) toExtract);
+        }
+
+        if (toExtract instanceof InlineRegionDTO) {
+            // extract inline questions
+            InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) toExtract;
+            result.addAll(inlineRegionDTO.getInlineQuestions());
         }
 
         if (toExtract.getChildren() != null) {
