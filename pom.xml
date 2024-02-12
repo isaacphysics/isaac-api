@@ -26,7 +26,7 @@
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <dependency-check.version>8.4.0</dependency-check.version>
+        <dependency-check.version>9.0.9</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
         <jgit.version>6.8.0.202311291450-r</jgit.version>
         <maven.surefire-failsafe.version>3.2.5</maven.surefire-failsafe.version>
