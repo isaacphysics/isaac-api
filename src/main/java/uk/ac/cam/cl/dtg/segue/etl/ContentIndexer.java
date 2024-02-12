@@ -553,6 +553,12 @@ public class ContentIndexer {
                 setOfContentObjects.add((Content) child);
                 setOfContentObjects.addAll(flattenContentObjects((Content) child));
             }
+
+            if (content instanceof InlineRegion) {
+                for (Content child : ((InlineRegion) content).getInlineQuestions()) {
+                    setOfContentObjects.addAll(flattenContentObjects(child));
+                }
+            }
         }
 
         setOfContentObjects.add(content);

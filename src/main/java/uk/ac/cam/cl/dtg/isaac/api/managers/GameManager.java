@@ -914,6 +914,12 @@ public class GameManager {
         if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
             return result;
         }
+
+        if (c instanceof InlineRegionDTO) {
+            // extract inline questions
+            InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) c;
+            result.addAll(inlineRegionDTO.getInlineQuestions());
+        }
         
         for (ContentBaseDTO child : c.getChildren()) {
             if (child instanceof QuestionDTO) {
@@ -921,12 +927,6 @@ public class GameManager {
                 // assume that we can't have nested questions
             } else {
                 depthFirstQuestionSearch((ContentDTO) child, result);
-            }
-
-            if (child instanceof InlineRegionDTO) {
-                // extract inline questions
-                InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) child;
-                result.addAll(inlineRegionDTO.getInlineQuestions());
             }
         }
         return result;
