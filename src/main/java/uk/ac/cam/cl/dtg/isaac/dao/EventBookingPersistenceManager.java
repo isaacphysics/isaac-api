@@ -156,7 +156,7 @@ public class EventBookingPersistenceManager {
 
   /**
    * Get event bookings by an event id.
-   * WARNING: This pulls PII such as medical info, email, and other stuff that should not (always) make it to end users.
+   * WARNING: This pulls PII such as dietary info, email, and other stuff that should not (always) make it to end users.
    *
    * @param eventId - of interest
    * @return event bookings

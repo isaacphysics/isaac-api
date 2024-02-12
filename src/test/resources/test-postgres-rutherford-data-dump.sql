@@ -81,9 +81,9 @@ COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creat
 --
 
 COPY public.event_bookings (id, event_id, created, user_id, reserved_by, status, updated, additional_booking_information, pii_removed) FROM stdin;
-2	_regular_test_event	2022-07-06 10:54:41.525	7	\N	CONFIRMED	2022-07-06 10:54:41.525	{"yearGroup": "13", "emergencyName": "Alice's mom", "emergencyNumber": "+44020123456", "medicalRequirements": "Alice's dietary requirements", "accessibilityRequirements": "Alice's accessibility requirements"}	\N
-3	_regular_test_event	2022-07-06 10:56:36.676	8	\N	CONFIRMED	2022-07-06 10:56:36.676	{"yearGroup": "9", "emergencyName": "Bob's dad", "emergencyNumber": "+44020654321", "medicalRequirements": "Bob's dietary requirements", "accessibilityRequirements": "Bob's accessibility requirements"}	\N
-4	_regular_test_event	2022-07-14 14:41:58	11	\N	CONFIRMED	2022-07-14 14:42:07	{"yearGroup": "8", "emergencyName": "Charlie's uncle", "emergencyNumber": "+44020918273", "medicalRequirements": "Charlie's dietary requirements", "accessibilityRequirements": "Charlie's accessibility requirements"}	\N
+2	_regular_test_event	2022-07-06 10:54:41.525	7	\N	CONFIRMED	2022-07-06 10:54:41.525	{"yearGroup": "13", "emergencyName": "Alice's mom", "emergencyNumber": "+44020123456", "dietaryRequirements": "Alice's dietary requirements", "accessibilityRequirements": "Alice's accessibility requirements"}	\N
+3	_regular_test_event	2022-07-06 10:56:36.676	8	\N	CONFIRMED	2022-07-06 10:56:36.676	{"yearGroup": "9", "emergencyName": "Bob's dad", "emergencyNumber": "+44020654321", "dietaryRequirements": "Bob's dietary requirements", "accessibilityRequirements": "Bob's accessibility requirements"}	\N
+4	_regular_test_event	2022-07-14 14:41:58	11	\N	CONFIRMED	2022-07-14 14:42:07	{"yearGroup": "8", "emergencyName": "Charlie's uncle", "emergencyNumber": "+44020918273", "dietaryRequirements": "Charlie's dietary requirements", "accessibilityRequirements": "Charlie's accessibility requirements"}	\N
 \.
 
 
