@@ -17,60 +17,41 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.util.locations.Location;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -85,23 +66,12 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval.*;
 public class StatisticsManager implements IStatisticsManager {
     private UserAccountManager userManager;
     private ILogManager logManager;
-    private SchoolListReader schoolManager;
     private final GitContentManager contentManager;
-    private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
     private ContentSummarizerService contentSummarizerService;
     private IUserStreaksManager userStreaksManager;
-    
-    private Cache<String, Object> longStatsCache;
-    private LocationManager locationHistoryManager;
-
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
-    private static final String GENERAL_STATS = "GENERAL_STATS";
-    private static final String SCHOOL_STATS = "SCHOOL_STATS";
-    private static final String LOCATION_STATS = "LOCATION_STATS";
-    private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
-    private static final long LONG_STATS_MAX_ITEMS = 20;
     private static final int PROGRESS_MAX_RECENT_QUESTIONS = 5;
 
     
@@ -112,12 +82,8 @@ public class StatisticsManager implements IStatisticsManager {
      *            - to query user information
      * @param logManager
      *            - to query Log information
-     * @param schoolManager
-     *            - to query School information
      * @param contentManager
      *            - to query live version information
-     * @param locationHistoryManager
-     *            - so that we can query our location database (ip addresses)
      * @param groupManager
      *            - so that we can see how many groups we have site wide.
      * @param questionManager
@@ -127,27 +93,19 @@ public class StatisticsManager implements IStatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-                             final SchoolListReader schoolManager, final GitContentManager contentManager,
-                             @Named(CONTENT_INDEX) final String contentIndex,
-                             final LocationManager locationHistoryManager, final GroupManager groupManager,
-                             final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
+                             final GitContentManager contentManager,
+                             final GroupManager groupManager, final QuestionManager questionManager,
+                             final ContentSummarizerService contentSummarizerService,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
-        this.schoolManager = schoolManager;
 
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
 
-        this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
         this.contentSummarizerService = contentSummarizerService;
         this.userStreaksManager = userStreaksManager;
-
-        this.longStatsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
-                .maximumSize(LONG_STATS_MAX_ITEMS).build();
     }
 
     /**
@@ -198,192 +156,6 @@ public class StatisticsManager implements IStatisticsManager {
      */
     public Long getLogCount(final String logTypeOfInterest) throws SegueDatabaseException {
         return this.logManager.getLogCountByType(logTypeOfInterest);
-    }
-    
-    /**
-     * Get an overview of all school performance. This is for analytics / admin users.
-     * 
-     * @return list of school to statistics mapping. The object in the map is another map with keys connections,
-     *         numberActiveLastThirtyDays.
-     * 
-     * @throws UnableToIndexSchoolsException
-     *             - if there is a problem getting school details.
-     */
-    public List<Map<String, Object>> getSchoolStatistics() 
-            throws UnableToIndexSchoolsException, SegueSearchException {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
-                .getIfPresent(SCHOOL_STATS);
-        if (cachedOutput != null) {
-            log.debug("Using cached statistics.");
-            return cachedOutput;
-        } else {
-            log.info("Calculating School Statistics");
-        }
-
-        Map<School, List<RegisteredUserDTO>> map = getUsersBySchool();
-
-        final String school = "school";
-        final String connections = "connections";
-        final String teachers = "teachers";
-        final String numberActive = "numberActiveLastThirtyDays";
-        final String teachersActive = "teachersActiveLastThirtyDays";
-        final int thirtyDays = 30;
-
-        Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
-        List<Map<String, Object>> result = Lists.newArrayList();
-        for (Entry<School, List<RegisteredUserDTO>> e : map.entrySet()) {
-
-            List<RegisteredUserDTO> teachersConnected = Lists.newArrayList();
-            for (RegisteredUserDTO user : e.getValue()) {
-                if (user.getRole() != null && user.getRole().equals(Role.TEACHER)) {
-                    teachersConnected.add(user);
-                }
-            }
-
-            result.add(ImmutableMap.of(
-                school, e.getKey(),
-                connections, e.getValue().size(),
-                teachers, teachersConnected.size(),
-                numberActive, getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap, thirtyDays).size(),
-                teachersActive, getNumberOfUsersActiveForLastNDays(teachersConnected, lastSeenUserMap, thirtyDays).size()
-            ));
-        }
-
-        Collections.sort(result, new Comparator<Map<String, Object>>() {
-            /**
-             * Descending numerical order
-             */
-            @Override
-            public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
-
-                if ((Integer) o1.get(numberActive) < (Integer) o2.get(numberActive)) {
-                    return 1;
-                }
-
-                if ((Integer) o1.get(numberActive) > (Integer) o2.get(numberActive)) {
-                    return -1;
-                }
-
-                return 0;
-            }
-        });
-
-        this.longStatsCache.put(SCHOOL_STATS, result);
-
-        return result;
-    }
-
-    /**
-     * Get the number of users per school.
-     * 
-     * @return A map of schools to integers (representing the number of registered users)
-     * @throws UnableToIndexSchoolsException as per the description
-     */
-    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException, SegueSearchException {
-        List<RegisteredUserDTO> users;
-        Map<School, List<RegisteredUserDTO>> usersBySchool = Maps.newHashMap();
-
-        try {
-            users = userManager.findUsers(new RegisteredUserDTO());
-
-            for (RegisteredUserDTO user : users) {
-                if (user.getSchoolId() == null) {
-                    continue;
-                }
-
-                School s = schoolManager.findSchoolById(user.getSchoolId());
-                if (s == null) {
-                    continue;
-                }
-
-                if (!usersBySchool.containsKey(s)) {
-                    List<RegisteredUserDTO> userList = Lists.newArrayList();
-                    userList.add(user);
-                    usersBySchool.put(s, userList);
-                } else {
-                    usersBySchool.get(s).add(user);
-                }
-            }
-
-        } catch (SegueDatabaseException | IOException e) {
-            log.error("Segue database error during school frequency calculation", e);
-        }
-
-        return usersBySchool;
-    }
-
-    /**
-     * Find all users belonging to a given school.
-     * 
-     * @param schoolId
-     *            - that we are interested in.
-     * @return list of users.
-     * @throws SegueDatabaseException
-     *             - if there is a general database error
-     * @throws ResourceNotFoundException
-     *             - if we cannot locate the school requested.
-     * @throws UnableToIndexSchoolsException
-     *             - if the school list has not been indexed.
-     */
-    public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
-            SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
-        Validate.notNull(schoolId);
-
-        List<RegisteredUserDTO> users;
-
-        School s;
-        try {
-            s = schoolManager.findSchoolById(schoolId);
-        } catch (IOException e) {
-            log.error("Unable to locate school based on id.", e);
-            throw new ResourceNotFoundException("Unable to locate school based on id.");
-        }
-
-        if (null == s) {
-            throw new ResourceNotFoundException("The school with the id provided cannot be found.");
-        }
-
-        RegisteredUserDTO prototype = new RegisteredUserDTO();
-        prototype.setSchoolId(schoolId);
-
-        users = userManager.findUsers(prototype);
-
-        return users;
-    }
-
-    /**
-     * @return a list of userId's to last event timestamp
-     */
-    public Map<String, Date> getLastSeenUserMap() {
-        Map<String, Date> lastSeenMap = Maps.newHashMap();
-        
-        try {
-            List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-            
-            for (RegisteredUserDTO user : users) {
-                if (user.getLastSeen() != null) {
-                    lastSeenMap.put(user.getId().toString(), user.getLastSeen());
-                } else if (user.getRegistrationDate() != null) {
-                    lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
-                }
-            }
-            
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to get last seen user map", e);
-        }
-        
-        return lastSeenMap;
-    }
-
-    /**
-     * @param qualifyingLogEvent
-     *            the string event type that will be looked for.
-     * @return a map of userId's to last event timestamp
-     * @throws SegueDatabaseException 
-     */
-    public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
-        return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
     }
 
     /**
@@ -635,111 +407,6 @@ public class StatisticsManager implements IStatisticsManager {
 
         return questionInfo;
 
-    }
-
-    /**
-     * getEventLogsByDate.
-     * 
-     * @param eventTypes
-     *            - of interest
-     * @param fromDate
-     *            - of interest
-     * @param toDate
-     *            - of interest
-     * @param binDataByMonth
-     *            - shall we group data by the first of every month?
-     * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException 
-     */
-    public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
-            final Date fromDate, final Date toDate, final boolean binDataByMonth) throws SegueDatabaseException {
-        return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
-    }
-
-    /**
-     * getEventLogsByDate.
-     *
-     * @param eventTypes
-     *            - of interest
-     * @param fromDate
-     *            - of interest
-     * @param toDate
-     *            - of interest
-     * @param userList
-     *            - user prototype to filter events. e.g. user(s) with a particular id or role.
-     * @param binDataByMonth
-     *            - shall we group data by the first of every month?
-     * @return Map of eventType --> map of dates and frequency
-     * @throws SegueDatabaseException 
-     */
-    public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
-            final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
-            final boolean binDataByMonth) throws SegueDatabaseException {
-        Validate.notNull(eventTypes);
-
-        return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, userList, binDataByMonth);
-    }
-
-    /**
-     * Calculate the number of users from the list provided that meet the criteria.
-     * 
-     * @param users
-     *            - collection of users to consider.
-     * @param lastSeenUserMap
-     *            - The map of user event data. UserId --> last event date.
-     * @param daysFromToday
-     *            - the number of days from today that should be included in the calculation e.g. 7 would be the last
-     *            week's data.
-     * @return a collection containing the users who meet the criteria
-     */
-    public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
-            final Map<String, Date> lastSeenUserMap, final int daysFromToday) {
-
-        Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
-
-        for (RegisteredUserDTO user : users) {
-            Date eventDate = lastSeenUserMap.get(user.getId().toString());
-            Calendar validInclusionTime = Calendar.getInstance();
-            validInclusionTime.setTime(new Date());
-            validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));
-
-            if (eventDate != null && eventDate.after(validInclusionTime.getTime())) {
-                qualifyingUsers.add(user);
-            }
-        }
-
-        return qualifyingUsers;
-    }
-
-    /**
-     * getLocationInformation.
-     *
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @return the list of all locations we know about..
-     * @throws SegueDatabaseException
-     *             if we can't read from the database.
-     */
-    @SuppressWarnings("unchecked")
-    public Collection<Location> getLocationInformation(final Date fromDate, final Date toDate) throws SegueDatabaseException {
-        SimpleDateFormat cacheFormat = new SimpleDateFormat("yyyyMMdd");
-        String cacheDateTag =  cacheFormat.format(fromDate) + cacheFormat.format(toDate);
-        if (this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag) != null) {
-            return (Set<Location>) this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag);
-        }
-
-        Set<Location> result = Sets.newHashSet();
-
-        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(fromDate,
-                toDate);
-
-        result.addAll(locationsFromHistory.values());
-
-        this.longStatsCache.put(LOCATION_STATS + cacheDateTag, result);
-
-        return result;
     }
 
     @Override
