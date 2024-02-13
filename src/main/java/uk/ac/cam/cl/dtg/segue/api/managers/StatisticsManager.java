@@ -17,11 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -40,30 +36,22 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.util.locations.Location;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -83,16 +71,7 @@ public class StatisticsManager implements IStatisticsManager {
     private QuestionManager questionManager;
     private ContentSummarizerService contentSummarizerService;
     private IUserStreaksManager userStreaksManager;
-    
-    private Cache<String, Object> longStatsCache;
-    private LocationManager locationHistoryManager;
-
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
-    private static final String GENERAL_STATS = "GENERAL_STATS";
-    private static final String SCHOOL_STATS = "SCHOOL_STATS";
-    private static final String LOCATION_STATS = "LOCATION_STATS";
-    private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
-    private static final long LONG_STATS_MAX_ITEMS = 20;
     private static final int PROGRESS_MAX_RECENT_QUESTIONS = 5;
 
     
@@ -103,12 +82,8 @@ public class StatisticsManager implements IStatisticsManager {
      *            - to query user information
      * @param logManager
      *            - to query Log information
-     * @param schoolManager
-     *            - to query School information
      * @param contentManager
      *            - to query live version information
-     * @param locationHistoryManager
-     *            - so that we can query our location database (ip addresses)
      * @param groupManager
      *            - so that we can see how many groups we have site wide.
      * @param questionManager
@@ -119,23 +94,18 @@ public class StatisticsManager implements IStatisticsManager {
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                              final GitContentManager contentManager,
-                             final LocationManager locationHistoryManager, final GroupManager groupManager,
-                             final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
+                             final GroupManager groupManager, final QuestionManager questionManager,
+                             final ContentSummarizerService contentSummarizerService,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;
 
         this.contentManager = contentManager;
 
-        this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
         this.contentSummarizerService = contentSummarizerService;
         this.userStreaksManager = userStreaksManager;
-
-        this.longStatsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
-                .maximumSize(LONG_STATS_MAX_ITEMS).build();
     }
 
     /**
@@ -437,68 +407,6 @@ public class StatisticsManager implements IStatisticsManager {
 
         return questionInfo;
 
-    }
-
-    /**
-     * Calculate the number of users from the list provided that meet the criteria.
-     * 
-     * @param users
-     *            - collection of users to consider.
-     * @param lastSeenUserMap
-     *            - The map of user event data. UserId --> last event date.
-     * @param daysFromToday
-     *            - the number of days from today that should be included in the calculation e.g. 7 would be the last
-     *            week's data.
-     * @return a collection containing the users who meet the criteria
-     */
-    public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
-            final Map<String, Date> lastSeenUserMap, final int daysFromToday) {
-
-        Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
-
-        for (RegisteredUserDTO user : users) {
-            Date eventDate = lastSeenUserMap.get(user.getId().toString());
-            Calendar validInclusionTime = Calendar.getInstance();
-            validInclusionTime.setTime(new Date());
-            validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));
-
-            if (eventDate != null && eventDate.after(validInclusionTime.getTime())) {
-                qualifyingUsers.add(user);
-            }
-        }
-
-        return qualifyingUsers;
-    }
-
-    /**
-     * getLocationInformation.
-     *
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search
-     * @return the list of all locations we know about..
-     * @throws SegueDatabaseException
-     *             if we can't read from the database.
-     */
-    @SuppressWarnings("unchecked")
-    public Collection<Location> getLocationInformation(final Date fromDate, final Date toDate) throws SegueDatabaseException {
-        SimpleDateFormat cacheFormat = new SimpleDateFormat("yyyyMMdd");
-        String cacheDateTag =  cacheFormat.format(fromDate) + cacheFormat.format(toDate);
-        if (this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag) != null) {
-            return (Set<Location>) this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag);
-        }
-
-        Set<Location> result = Sets.newHashSet();
-
-        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(fromDate,
-                toDate);
-
-        result.addAll(locationsFromHistory.values());
-
-        this.longStatsCache.put(LOCATION_STATS + cacheDateTag, result);
-
-        return result;
     }
 
     @Override
