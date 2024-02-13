@@ -64,9 +64,12 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.crypto.Mac;
@@ -102,6 +105,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -120,8 +124,12 @@ import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 @Tag(name = "/admin")
 public class AdminFacade extends AbstractSegueFacade {
   private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
+  private static final String ACCESS_DENIED_MESSAGE = "You must be staff to access this endpoint.";
 
   private final UserAccountManager userManager;
+
+  private final EmailManager emailManager;
+
   private final GitContentManager contentManager;
   private final String contentIndex;
 
@@ -132,6 +140,9 @@ public class AdminFacade extends AbstractSegueFacade {
   private final IExternalAccountManager externalAccountManager;
   private final IMisuseMonitor misuseMonitor;
   private final SegueJobService segueJobService;
+
+  private static final String USERS_NOT_FOUND = "usersNotFound";
+  private static final String FAILED_TO_SEND = "failedEmailSend";
 
   /**
    * Create an instance of the administrators' facade.
@@ -147,6 +158,7 @@ public class AdminFacade extends AbstractSegueFacade {
    * @param segueJobService        - Service for scheduling and managing segue jobs
    * @param externalAccountManager - Manager for synchronising account information with third-party providers
    * @param misuseMonitor          - misuse monitor.
+   * @param emailManager           - manager for sending emails
    */
   @Inject
   public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
@@ -154,7 +166,8 @@ public class AdminFacade extends AbstractSegueFacade {
                      final ILogManager logManager, final StatisticsManager statsManager,
                      final AbstractUserPreferenceManager userPreferenceManager,
                      final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
-                     final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
+                     final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor,
+                     final EmailManager emailManager) {
     super(properties, logManager);
     this.userManager = userManager;
     this.contentManager = contentManager;
@@ -165,6 +178,7 @@ public class AdminFacade extends AbstractSegueFacade {
     this.externalAccountManager = externalAccountManager;
     this.misuseMonitor = misuseMonitor;
     this.segueJobService = segueJobService;
+    this.emailManager = emailManager;
   }
 
   /**
@@ -211,7 +225,7 @@ public class AdminFacade extends AbstractSegueFacade {
     try {
       RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
       if (!isUserAnAdminOrEventManager(userManager, requestingUser)) {
-        return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
+        return new SegueErrorResponse(Status.FORBIDDEN, ACCESS_DENIED_MESSAGE)
             .toResponse();
       }
 
@@ -282,6 +296,109 @@ public class AdminFacade extends AbstractSegueFacade {
   }
 
   /**
+   * This method will allow users to have their teacher pending status mass changed.
+   *
+   * @param request - to help determine access rights.
+   * @param status  - new teacher pending status.
+   * @param userIds - a list of user ids to change en-mass
+   * @return Success shown by returning an ok response
+   */
+  @POST
+  @Path("/users/change_teacher_pending/{status}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Update teacher_pending to true or false for a list of possible user IDs.",
+      description = "This endpoint requires an admin user to be logged in. If updating teacher_pending to false it "
+          + "also sends an email to decline teacher account upgrade. If email send fails, response is still OK but "
+          + "with added message to notify user")
+  public synchronized Response modifyUsersTeacherPendingStatus(@Context final HttpServletRequest request,
+                                                               @PathParam("status") final boolean status,
+                                                               final List<Long> userIds) {
+
+    if (userIds == null || userIds.isEmpty()) {
+      return new SegueErrorResponse(Status.BAD_REQUEST, "No userIds provided")
+          .toResponse();
+    }
+
+    RegisteredUserDTO requestingUser;
+
+    try {
+      requestingUser = userManager.getCurrentRegisteredUser(request);
+      if (!isUserAnAdminOrEventManager(userManager, requestingUser)) {
+        return new SegueErrorResponse(Status.FORBIDDEN, ACCESS_DENIED_MESSAGE)
+            .toResponse();
+      }
+    } catch (NoUserLoggedInException e) {
+      return SegueErrorResponse.getNotLoggedInResponse();
+    }
+
+    Map<String, Set<Long>> failedUpdates = new HashMap<>();
+    failedUpdates.put(USERS_NOT_FOUND, new HashSet<>());
+    failedUpdates.put(FAILED_TO_SEND, new HashSet<>());
+
+    for (Long userId : userIds) {
+      try {
+        modifyTeacherPendingStatusForUser(userId, requestingUser, status, failedUpdates);
+      } catch (SegueDatabaseException e) {
+        log.error("Database error while trying to change teacher_pending status", e);
+        return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+            "Could not update teacher_pending status").toResponse();
+      }
+    }
+
+    if (!failedUpdates.get(USERS_NOT_FOUND).isEmpty()) {
+      String errorMessage =
+          String.format("One or more users could not be found: %s", failedUpdates.get(USERS_NOT_FOUND));
+      if (!failedUpdates.get(FAILED_TO_SEND).isEmpty()) {
+        errorMessage += String.format(" Emails could not be sent to userIds: %s", failedUpdates.get(FAILED_TO_SEND));
+      }
+      return new SegueErrorResponse(Status.BAD_REQUEST, errorMessage).toResponse();
+    }
+
+    String responseMessage;
+
+    if (!failedUpdates.get(FAILED_TO_SEND).isEmpty()) {
+      responseMessage = String.format("Teacher pending status updated to %s, but emails could not be sent to "
+          + "userIds: %s", status, failedUpdates.get(FAILED_TO_SEND));
+    } else {
+      responseMessage = String.format("Teacher pending status updated to %s for requested userIds: %s",
+          status, userIds);
+    }
+    return Response.ok(responseMessage).build();
+  }
+
+  private void modifyTeacherPendingStatusForUser(Long userId, RegisteredUserDTO requestingUser, boolean status,
+                                                 Map<String, Set<Long>> failedUpdates) throws SegueDatabaseException {
+
+    try {
+      RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
+
+      Boolean oldStatus = user.getTeacherPending();
+      this.userManager.updateTeacherPendingFlag(userId, status);
+      log.info("ADMIN user {} has modified the teacher_pending status of {} [{}] from {} to {}",
+          requestingUser.getEmail(), user.getEmail(), user.getId(), oldStatus, status);
+      if (!status) {
+        sendTeacherDeclinedEmail(user, failedUpdates);
+      }
+    } catch (NoUserException e) {
+      log.error("NoUserException for userId {}", userId, e);
+      failedUpdates.get(USERS_NOT_FOUND).add(userId);
+    }
+  }
+
+  private void sendTeacherDeclinedEmail(RegisteredUserDTO user, Map<String, Set<Long>> failedUpdates) {
+    try {
+      emailManager.sendTemplatedEmailToUser(user, emailManager.getEmailTemplateDTO("teacher_declined"),
+          Collections.emptyMap(), EmailType.SYSTEM);
+    } catch (ContentManagerException | SegueDatabaseException e) {
+      Long userId = user.getId();
+      log.error("Exception when sending email id 'teacher_declined' to userId {}. Unable to send email",
+          userId, e);
+      failedUpdates.get(FAILED_TO_SEND).add(userId);
+    }
+  }
+
+  /**
    * This method will allow users' email verification status to be changed en-mass.
    *
    * @param request                        - to help determine access rights.
@@ -302,7 +419,7 @@ public class AdminFacade extends AbstractSegueFacade {
     try {
       RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
       if (!isUserAnAdminOrEventManager(userManager, requestingUser)) {
-        return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
+        return new SegueErrorResponse(Status.FORBIDDEN, ACCESS_DENIED_MESSAGE)
             .toResponse();
       }
 
@@ -605,7 +722,7 @@ public class AdminFacade extends AbstractSegueFacade {
    * @param request           - to identify if the user is authorised.
    * @param requestForCaching - to determine if the content is still fresh.
    * @return a content object, such that the content object has children. The children represent each source file in
-   *     error and the grand children represent each error.
+   * error and the grand children represent each error.
    */
   @SuppressWarnings("unchecked")
   @GET

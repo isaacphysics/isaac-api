@@ -858,7 +858,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @return true if the user is a member of one of the roles in our valid roles list. False if not.
    * @throws NoUserLoggedInException - if there is no registered user logged in.
    */
-  public final boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
+  public boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
       throws NoUserLoggedInException {
     if (null == user) {
       throw new NoUserLoggedInException();
@@ -897,7 +897,7 @@ public class UserAccountManager implements IUserAccountManager {
    *         if user is not currently logged in
    * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
    */
-  public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
+  public RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
       throws NoUserLoggedInException {
     requireNonNull(request);
 
@@ -988,7 +988,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws SegueDatabaseException - If there is another database error
    */
   @Override
-  public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
+  public RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
     return this.getUserDTOById(id, false);
   }
 
@@ -1192,9 +1192,13 @@ public class UserAccountManager implements IUserAccountManager {
    * @param requestedRole - the new role
    * @throws SegueDatabaseException - an exception when accessing the database
    */
-  public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
+  public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException, NoUserException {
     requireNonNull(requestedRole);
     RegisteredUser userToSave = this.findUserById(id);
+    if (userToSave == null) {
+      // This shouldn't happen under current usage but guard against it just in case
+      throw new NoUserException("No user found with this ID.");
+    }
 
     // Send welcome email if user has become teacher or tutor, otherwise, role change notification
     try {

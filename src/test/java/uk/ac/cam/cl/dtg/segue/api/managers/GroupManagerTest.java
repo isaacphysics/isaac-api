@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -115,6 +116,7 @@ class GroupManagerTest {
       expect(this.groupDataManager.getAdditionalManagerSetByGroupId(anyObject()))
           .andReturn(someSetOfManagers).atLeastOnce();
       expect(this.userManager.findUsers(someSetOfManagers)).andReturn(someListOfUsers);
+      expect(this.userManager.getUserDTOById(null)).andThrow(new NoUserException("No user found with this ID!"));
       expect(this.userManager.convertToDetailedUserSummaryObjectList(someListOfUsers,
           UserSummaryWithEmailAddressDTO.class)).andReturn(someListOfUsersDTOs);
       expect(this.dummyMapper.map(resultFromDB, UserGroupDTO.class)).andReturn(mappedGroup).atLeastOnce();
@@ -130,9 +132,8 @@ class GroupManagerTest {
       assertEquals(someGroupName, capturedGroup.getValue().getGroupName());
       assertInstanceOf(Date.class, capturedGroup.getValue().getCreated());
 
-    } catch (SegueDatabaseException e) {
-      fail("No exception expected");
-      e.printStackTrace();
+    } catch (SegueDatabaseException | NoUserException e) {
+      fail("No exception expected", e);
     }
     verify(this.groupDataManager);
   }
