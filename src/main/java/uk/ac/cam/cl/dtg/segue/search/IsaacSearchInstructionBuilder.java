@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 
 public class IsaacSearchInstructionBuilder {
 
