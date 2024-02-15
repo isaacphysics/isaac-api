@@ -27,8 +27,17 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @JsonContentType("isaacGraphSketcherQuestion")
 @ValidatesWith(IsaacGraphSketcherValidator.class)
 public class IsaacGraphSketcherQuestionDTO extends IsaacSymbolicQuestionDTO {
+    private int maxNumCurves;
     private String axisLabelX;
     private String axisLabelY;
+
+    public int getMaxNumCurves() {
+        return maxNumCurves;
+    }
+
+    public void setMaxNumCurves(int maxNumCurves) {
+        this.maxNumCurves = maxNumCurves;
+    }
 
     public String getAxisLabelX() {
         return axisLabelX;
