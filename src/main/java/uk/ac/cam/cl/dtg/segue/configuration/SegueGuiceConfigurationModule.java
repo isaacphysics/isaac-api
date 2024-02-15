@@ -1022,8 +1022,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager, final ILogManager logManager,
-                                                     final GitContentManager contentManager,
-                                                     final GroupManager groupManager, final QuestionManager questionManager,
+                                                     final GitContentManager contentManager, final GroupManager groupManager,
+                                                     final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
@@ -1222,10 +1222,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
                                                                               final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
-                                                                              final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                                                              final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-                    objectMapper, uriManager, contentIndex);
+                    objectMapper, uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

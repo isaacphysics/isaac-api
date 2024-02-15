@@ -25,7 +25,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -38,14 +37,14 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import jakarta.annotation.Nullable;
 import java.io.IOException;
@@ -87,7 +86,6 @@ public class GameboardPersistenceManager {
     private final ObjectMapper objectMapper; // used for json serialisation
 
     private final GitContentManager contentManager;
-    private final String contentIndex;
 
     private final URIManager uriManager;
 
@@ -108,11 +106,10 @@ public class GameboardPersistenceManager {
      */
     @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                       final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                       final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager) {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.objectMapper = objectMapper;
         this.uriManager = uriManager;
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()

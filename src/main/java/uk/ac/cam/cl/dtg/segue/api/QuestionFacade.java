@@ -16,21 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
@@ -67,6 +53,18 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -87,10 +85,8 @@ public class QuestionFacade extends AbstractSegueFacade {
 
     private final ContentMapper mapper;
     private final GitContentManager contentManager;
-    private final String contentIndex;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
-    private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
@@ -114,10 +110,9 @@ public class QuestionFacade extends AbstractSegueFacade {
      */
     @Inject
     public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
-                          final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
+                          final GitContentManager contentManager, final UserAccountManager userManager,
                           final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
-                          final UserBadgeManager userBadgeManager,
                           final IUserStreaksManager userStreaksManager,
                           final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
@@ -125,11 +120,9 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.questionManager = questionManager;
         this.mapper = mapper;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
         this.userStreaksManager = userStreaksManager;
-        this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
     }
 

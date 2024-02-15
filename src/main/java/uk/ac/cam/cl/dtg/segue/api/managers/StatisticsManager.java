@@ -93,9 +93,8 @@ public class StatisticsManager implements IStatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-                             final GitContentManager contentManager,
-                             final GroupManager groupManager, final QuestionManager questionManager,
-                             final ContentSummarizerService contentSummarizerService,
+                             final GitContentManager contentManager, final GroupManager groupManager,
+                             final QuestionManager questionManager, final ContentSummarizerService contentSummarizerService,
                              final IUserStreaksManager userStreaksManager) {
         this.userManager = userManager;
         this.logManager = logManager;

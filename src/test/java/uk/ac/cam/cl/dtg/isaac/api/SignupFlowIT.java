@@ -75,7 +75,7 @@ public class SignupFlowIT extends IsaacIntegrationTest {
         // Arrange
         // create instance of groups facade
         GroupsFacade groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager,
-                gameManager, groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
+                groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
 
         // log in as unverified teacher
         LoginResult caveatTeacherLogin = loginAs(httpSession, TEST_UNVERIFIED_CAVEAT_EMAIL,

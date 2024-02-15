@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
@@ -89,10 +88,7 @@ public class GameManager {
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
     private final MapperFacade mapper;
-
     private final GitContentManager contentManager;
-    private final String contentIndex;
-
     private final QuestionManager questionManager;
 
     /**
@@ -106,17 +102,14 @@ public class GameManager {
      *            - a persistence manager that deals with storing and retrieving gameboards.
      * @param mapper
      *            - allows mapping between DO and DTO object types.
-     * @param contentIndex
-     *            - the current content index of interest.
      */
     @Inject
     public GameManager(final GitContentManager contentManager,
                        final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
-                       final QuestionManager questionManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                       final QuestionManager questionManager) {
         this.contentManager = contentManager;
         this.gameboardPersistenceManager = gameboardPersistenceManager;
         this.questionManager = questionManager;
-        this.contentIndex = contentIndex;
 
         this.randomGenerator = new Random();
 
