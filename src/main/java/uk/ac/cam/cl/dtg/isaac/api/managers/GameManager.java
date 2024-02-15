@@ -447,12 +447,9 @@ public class GameManager {
             }
         }
 
-        ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
-        Comparator<GameboardDTO> defaultComparitor = new Comparator<GameboardDTO>() {
-            public int compare(final GameboardDTO o1, final GameboardDTO o2) {
-                return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-            }
-        };
+        ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<>();
+        Comparator<GameboardDTO> defaultComparitor = (o1, o2) ->
+                o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
 
         // assume we want reverse date order for visited date for now.
         if (null == sortInstructions || sortInstructions.isEmpty()) {
@@ -516,7 +513,7 @@ public class GameManager {
             comparatorForSorting.addComparator(defaultComparitor);
         }
 
-        Collections.sort(resultToReturn, comparatorForSorting);
+        resultToReturn.sort(comparatorForSorting);
 
         int toIndex;
         if (limit == null || startIndex + limit > resultToReturn.size()) {

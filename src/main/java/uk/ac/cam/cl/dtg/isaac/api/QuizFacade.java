@@ -1477,7 +1477,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                 List<String> ids = quizSection.getChildren().stream()
                         .filter(c -> c instanceof IsaacQuestionBaseDTO)
-                        .map(c -> c.getId())
+                        .map(ContentBaseDTO::getId)
                         .collect(Collectors.toList());
                 questionIds.addAll(ids);
             }
@@ -1742,7 +1742,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     private QuizAttemptDTO getIncompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
@@ -1752,7 +1751,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         return quizAttempt;
     }
 
-    @SuppressWarnings("deprecation")
     private QuizAttemptDTO getCompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 

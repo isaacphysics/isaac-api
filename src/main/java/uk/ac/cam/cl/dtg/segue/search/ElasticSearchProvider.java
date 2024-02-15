@@ -195,7 +195,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = QueryBuilders.boolQuery();
-        Set boostFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
+        Set<String> boostFields = ImmutableSet.of("id", "title", "tags");
 
         List<String> searchTerms = Lists.newArrayList();
         searchTerms.addAll(Arrays.asList(searchString.split(" ")));
@@ -679,7 +679,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             }
             return matchQuery;
         } else if (matchInstruction instanceof RangeInstruction) {
-            RangeInstruction rangeMatch = (RangeInstruction) matchInstruction;
+            RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
             RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
             if (rangeMatch.getGreaterThan() != null) {
                 rangeQuery.gt(rangeMatch.getGreaterThan());

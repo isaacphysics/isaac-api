@@ -722,7 +722,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             List<Long> userIds = Arrays.stream(userIdsQueryParam.split(","))
-                    .map(schoolId -> Long.parseLong(schoolId))
+                    .map(Long::parseLong)
                     .collect(Collectors.toList());
 
             // Restrict event leader queries to users who have granted access to their data

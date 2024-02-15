@@ -474,14 +474,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         } else if (o instanceof Number || o instanceof Boolean) {
             valueToStore = o.toString();
         } else if (o instanceof Enum) {
-            valueToStore = ((Enum) o).name();
+            valueToStore = ((Enum<?>) o).name();
         } else if (o instanceof ExternalReference) {
             ExternalReference er = (ExternalReference) o;
             valueToStore = String.format("<a href='%s'>%s</a>", er.getUrl(), er.getTitle());
         } else if (o instanceof Collection) {
             List<String> sl = Lists.newArrayList();
 
-            for (Object i : (Collection) o) {
+            for (Object i : (Collection<?>) o) {
                 String s = this.emailTokenValueMapper(i);
                 if (s != null) {
                     sl.add(s);

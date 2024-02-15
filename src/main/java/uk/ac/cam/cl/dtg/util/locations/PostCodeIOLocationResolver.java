@@ -92,7 +92,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             }
         }
 
-        LinkedList<Long> resultingUserIds = new LinkedList<Long>();
+        LinkedList<Long> resultingUserIds = new LinkedList<>();
 
         // first do a database lookup, then fallback on the service
         List<PostCode> knownPostCodes = Lists.newArrayList();
@@ -241,9 +241,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) response
                     .get("result");
 
-            Iterator<HashMap<String, Object>> it = responseResult.iterator();
-            while (it.hasNext()) {
-                Map<String, Object> item = it.next();
+            for (Map<String, Object> item : responseResult) {
                 HashMap<String, Object> postCodeDetails = (HashMap<String, Object>) item.get("result");
 
                 if (postCodeDetails != null) {

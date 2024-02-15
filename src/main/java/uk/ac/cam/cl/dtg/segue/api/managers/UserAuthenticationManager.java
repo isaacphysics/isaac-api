@@ -452,7 +452,7 @@ public class UserAuthenticationManager {
         // Check for authentication caveats, and return null if any present are unexpected
         if (null != currentSessionInformation.get(SESSION_CAVEATS)) {
             try {
-                ArrayList<String> caveatFlags = serializationMapper.readValue(currentSessionInformation.get(SESSION_CAVEATS), new TypeReference<ArrayList<String>>(){});
+                ArrayList<String> caveatFlags = serializationMapper.readValue(currentSessionInformation.get(SESSION_CAVEATS), new TypeReference<>() {});
                 for (String caveatFlag : caveatFlags) {
                     if (!expectedCaveats.contains(AuthenticationCaveat.valueOf(caveatFlag))) {
                         return null;
@@ -538,7 +538,7 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<ArrayList<String>>(){});
+        ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<>() {});
         if (!caveatFlags.remove(caveatToRemove.toString())) {
             log.warn(String.format("Attempted to remove caveat '%s' from user (%s) session, but no such caveat was present!",
                     caveatToRemove, user.getId()));
@@ -1105,7 +1105,7 @@ public class UserAuthenticationManager {
 
         if (null != sessionInformation.get(SESSION_CAVEATS)) {
             try {
-                caveatFlags = serializationMapper.readValue(sessionInformation.get(SESSION_CAVEATS), new TypeReference<Set<String>>(){});
+                caveatFlags = serializationMapper.readValue(sessionInformation.get(SESSION_CAVEATS), new TypeReference<>() {});
             } catch (JsonProcessingException e) {
                 log.debug("Failed to deserialize session caveats!");
                 caveatFlags = null;

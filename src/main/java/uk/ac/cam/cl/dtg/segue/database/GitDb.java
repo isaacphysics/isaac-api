@@ -327,7 +327,7 @@ public class GitDb {
         List<RevCommit> logList = null;
         try {
             Iterable<RevCommit> logs = gitHandle.log().add(ObjectId.fromString(this.getHeadSha())).call();
-            logList = new ArrayList<RevCommit>();
+            logList = new ArrayList<>();
 
             for (RevCommit rev : logs) {
                 logList.add(rev);

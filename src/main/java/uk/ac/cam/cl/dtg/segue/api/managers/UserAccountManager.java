@@ -1700,24 +1700,21 @@ public class UserAccountManager implements IUserAccountManager {
 
                 // may as well spawn a new thread to do the log migration stuff asynchronously
                 // work now.
-                Thread logMigrationJob = new Thread() {
-                    @Override
-                    public void run() {
-                        // run this asynchronously as there is no need to block and it is quite slow.
-                        logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
-                                .toString());
+                Thread logMigrationJob = new Thread(() -> {
+                    // run this asynchronously as there is no need to block and it is quite slow.
+                    logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
+                            .toString());
 
-                        logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
-                                ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
+                    logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
+                            ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
-                        // delete the session attribute as merge has completed.
-                        try {
-                            temporaryUserCache.deleteAnonymousUser(anonymousUser);
-                        } catch (SegueDatabaseException e) {
-                            log.error("Unable to delete anonymous user during merge operation.", e);
-                        }
+                    // delete the session attribute as merge has completed.
+                    try {
+                        temporaryUserCache.deleteAnonymousUser(anonymousUser);
+                    } catch (SegueDatabaseException e) {
+                        log.error("Unable to delete anonymous user during merge operation.", e);
                     }
-                };
+                });
 
                 logMigrationJob.start();
 

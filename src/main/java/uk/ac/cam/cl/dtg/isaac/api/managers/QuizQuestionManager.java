@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -224,7 +225,7 @@ public class QuizQuestionManager {
             // No questions attempted.
             if (!answers.containsKey(user.getId())) {
                 Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(
-                    s -> s.getId(),
+                        ContentBaseDTO::getId,
                     s -> QuizFeedbackDTO.Mark.notAttempted(quiz.getSectionTotals().get(s.getId()))));
                 return new QuizFeedbackDTO(QuizFeedbackDTO.Mark.notAttempted(quiz.getTotal()), sectionMarks, null);
             }
@@ -345,8 +346,8 @@ public class QuizQuestionManager {
         }
 
         // Make a score table
-        Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
-        Map<String, QuizFeedbackDTO.Mark> questionMarks = questionsToAugment.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
+        Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(ContentBaseDTO::getId, s -> new QuizFeedbackDTO.Mark()));
+        Map<String, QuizFeedbackDTO.Mark> questionMarks = questionsToAugment.stream().collect(Collectors.toMap(ContentBaseDTO::getId, s -> new QuizFeedbackDTO.Mark()));
 
         // Calculate the scores
         for (QuestionDTO question: questionsToAugment) {

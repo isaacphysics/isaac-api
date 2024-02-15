@@ -296,7 +296,7 @@ public class ContentMapper {
         // Required to deal with type polymorphism
         ObjectMapper objectMapper = this.getSharedContentObjectMapper();
 
-        List<Content> contentList = new ArrayList<Content>();
+        List<Content> contentList = new ArrayList<>();
 
         for (String item : stringList) {
             try {

@@ -166,7 +166,7 @@ public class ContentIndexer {
 
     void setNamedVersion(String alias, String version) {
         List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
-                .map((contentIndexType) -> contentIndexType.toString()).collect(Collectors.toList());
+                .map(CONTENT_INDEX_TYPE::toString).collect(Collectors.toList());
         es.addOrMoveIndexAlias(alias, version, allContentTypes);
     }
 
@@ -571,7 +571,7 @@ public class ContentIndexer {
         }
 
         if (!indexProblemCache.containsKey(c)) {
-            indexProblemCache.put(c, new ArrayList<String>());
+            indexProblemCache.put(c, new ArrayList<>());
         }
 
         log.debug(message);
