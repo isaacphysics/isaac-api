@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -631,7 +632,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         String query = "UPDATE users SET last_seen = ? WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();
@@ -647,7 +648,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         String query = "UPDATE users SET session_token = session_token + 1 WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();

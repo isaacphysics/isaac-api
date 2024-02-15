@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;

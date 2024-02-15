@@ -78,6 +78,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.crypto.Mac;
@@ -116,10 +117,10 @@ public class UserAuthenticationManager {
     public UserAuthenticationManager(final IUserDataManager database,
                                      final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final EmailManager emailQueue) {
-        Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
-        Validate.notNull(properties.getProperty(HOST_NAME));
+        Objects.requireNonNull(properties.getProperty(HMAC_SALT));
+        Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+        Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
+        Objects.requireNonNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
        
@@ -274,7 +275,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser getSegueUserFromLinkedAccount(final AuthenticationProvider provider, final String providerId)
             throws SegueDatabaseException {
-        Validate.notNull(provider);
+        Objects.requireNonNull(provider);
         Validate.notBlank(providerId);
 
         RegisteredUser user = database.getByLinkedAccount(provider, providerId);
@@ -309,7 +310,7 @@ public class UserAuthenticationManager {
             SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException,
             NoCredentialsAvailableException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
-        Validate.notNull(plainTextPassword);
+        Objects.requireNonNull(plainTextPassword);
         IAuthenticator authenticator = mapToProvider(provider);
         
         if (authenticator instanceof IPasswordAuthenticator) {
@@ -347,7 +348,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser getUserFromSession(final HttpServletRequest request, final Set<AuthenticationCaveat> acceptableCaveats) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         Map<String, String> currentSessionInformation;
         try {
@@ -390,7 +391,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser getUserFromSession(final UpgradeRequest request) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         Map<String, String> currentSessionInformation;
         try {
@@ -557,7 +558,7 @@ public class UserAuthenticationManager {
      *            to destroy the segue cookie.
      */
     public void destroyUserSession(final HttpServletRequest request, final HttpServletResponse response) {
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
         try {
             request.getSession().invalidate();
             Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
@@ -621,9 +622,9 @@ public class UserAuthenticationManager {
     public void linkProviderToExistingAccount(final RegisteredUser currentUser,
             final AuthenticationProvider federatedAuthenticator, final UserFromAuthProvider providerUserObject)
             throws SegueDatabaseException {
-        Validate.notNull(currentUser);
-        Validate.notNull(federatedAuthenticator);
-        Validate.notNull(providerUserObject);
+        Objects.requireNonNull(currentUser);
+        Objects.requireNonNull(federatedAuthenticator);
+        Objects.requireNonNull(providerUserObject);
 
         this.database.linkAuthProviderToAccount(currentUser, federatedAuthenticator,
                 providerUserObject.getProviderUserId());
@@ -774,7 +775,7 @@ public class UserAuthenticationManager {
     private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO, final Map<String, Object> additionalEmailValues)
             throws
             SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
         
         // Get the user's federated authenticators
         List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
@@ -878,7 +879,7 @@ public class UserAuthenticationManager {
      */
     private boolean ensureNoCSRF(final HttpServletRequest request, final IOAuthAuthenticator oauthProvider)
             throws CrossSiteRequestForgeryException {
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         String key;
         if (oauthProvider instanceof IOAuth2Authenticator) {
@@ -944,9 +945,9 @@ public class UserAuthenticationManager {
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user, int sessionExpiryTimeInSeconds, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
-        Validate.notNull(response);
-        Validate.notNull(user);
-        Validate.notNull(user.getId());
+        Objects.requireNonNull(response);
+        Objects.requireNonNull(user);
+        Objects.requireNonNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         final int CAVEAT_SESSION_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
@@ -1009,8 +1010,8 @@ public class UserAuthenticationManager {
      * @return true if it is still valid, false if not.
      */
     private boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
-        Validate.notNull(sessionInformation);
-        Validate.notNull(userFromDatabase);
+        Objects.requireNonNull(sessionInformation);
+        Objects.requireNonNull(userFromDatabase);
 
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 

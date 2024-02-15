@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
@@ -626,7 +625,7 @@ public class GameboardPersistenceManager {
      */
     private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
             final boolean populateGameboardItems) {
-        Validate.notNull(gameboardDOs);
+        Objects.requireNonNull(gameboardDOs);
 
         List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
 

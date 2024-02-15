@@ -10,7 +10,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -563,7 +562,7 @@ public class ContentIndexer {
      *            - Error message to associate with the problem file / content.
      */
     private synchronized void registerContentProblem(final Content c, final String message, Map<Content, List<String>> indexProblemCache) {
-        Validate.notNull(c);
+        Objects.requireNonNull(c);
 
         // try and make sure each dummy content object has a title
         if (c.getTitle() == null) {

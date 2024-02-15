@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;

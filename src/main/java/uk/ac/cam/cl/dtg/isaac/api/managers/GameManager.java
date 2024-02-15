@@ -65,6 +65,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -403,7 +404,7 @@ public class GameManager {
             @Nullable final Integer limit, @Nullable final GameboardState showOnly,
             @Nullable final List<Map.Entry<String, SortOrder>> sortInstructions) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
         if (null == usersGameboards || usersGameboards.isEmpty()) {
@@ -559,8 +560,8 @@ public class GameManager {
     public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
             throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
             ContentManagerException {
-        Validate.notNull(gameboardDTO);
-        Validate.notNull(owner);
+        Objects.requireNonNull(gameboardDTO);
+        Objects.requireNonNull(owner);
 
         String gameboardId = gameboardDTO.getId();
         if (gameboardId == null) {
@@ -640,8 +641,8 @@ public class GameManager {
     public List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> gatherGameProgressData(
             final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(users);
-        Validate.notNull(gameboard);
+        Objects.requireNonNull(users);
+        Objects.requireNonNull(gameboard);
 
         List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> result = Lists.newArrayList();
 
@@ -1117,8 +1118,8 @@ public class GameManager {
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>>
                     questionAttemptsFromUser)
             throws ContentManagerException, ResourceNotFoundException {
-        Validate.notNull(gameItem, "gameItem cannot be null");
-        Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
+        Objects.requireNonNull(gameItem, "gameItem cannot be null");
+        Objects.requireNonNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
         List<QuestionPartState> questionPartStates = Lists.newArrayList();
         int questionPartsCorrect = 0;

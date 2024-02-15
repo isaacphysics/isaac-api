@@ -27,12 +27,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
@@ -40,6 +34,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
@@ -50,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
@@ -234,8 +235,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
             final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(allSelectedUsers);
-        Validate.notNull(contentObjectId);
+        Objects.requireNonNull(allSelectedUsers);
+        Objects.requireNonNull(contentObjectId);
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO(contentObjectId);
 
@@ -290,7 +291,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate,
                                        final List<RegisteredUserDTO> allSelectedUsers,
                                        final EmailType emailType) throws SegueDatabaseException, ContentManagerException {
-        Validate.notNull(allSelectedUsers);
+        Objects.requireNonNull(allSelectedUsers);
 
 
         int numberOfFilteredUsers = 0;
@@ -346,8 +347,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     private boolean filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
                     final EmailCommunicationMessage email) throws SegueDatabaseException {
-        Validate.notNull(email);
-        Validate.notNull(userDTO);
+        Objects.requireNonNull(email);
+        Objects.requireNonNull(userDTO);
 
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
                    .put("userId", userDTO.getId())
@@ -610,7 +611,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                                          EmailTemplateDTO emailContent, Properties contentProperties,
                                          final EmailType emailType, @Nullable final List<EmailAttachment> attachments)
                     throws ContentManagerException, ResourceNotFoundException {
-        Validate.notNull(userEmail);
+        Objects.requireNonNull(userEmail);
         Validate.notEmpty(userEmail);
 
         // Ensure global properties are included, but in a safe manner (allow contentProperties to override globals!)

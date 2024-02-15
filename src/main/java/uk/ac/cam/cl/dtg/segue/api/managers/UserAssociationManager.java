@@ -15,28 +15,27 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 
-import com.google.inject.Inject;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * UserAssociationManager Responsible for managing user associations, groups and permissions for one user to grant data
@@ -85,7 +84,7 @@ public class UserAssociationManager {
      */
     public AssociationToken generateAssociationToken(final RegisteredUserDTO registeredUser,
             final Long associatedGroupId) throws SegueDatabaseException, UserGroupNotFoundException {
-        Validate.notNull(registeredUser);
+        Objects.requireNonNull(registeredUser);
 
         if (associatedGroupId != null) {
             if (!userGroupManager.isValidGroup(associatedGroupId)) {
@@ -177,7 +176,7 @@ public class UserAssociationManager {
      */
     public AssociationToken lookupTokenDetails(final RegisteredUserDTO userMakingRequest, final String token)
             throws InvalidUserAssociationTokenException, SegueDatabaseException {
-        Validate.notNull(userMakingRequest);
+        Objects.requireNonNull(userMakingRequest);
         Validate.notBlank(token);
         AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 
@@ -230,7 +229,7 @@ public class UserAssociationManager {
     public AssociationToken createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
             throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
-        Validate.notNull(userGrantingPermission);
+        Objects.requireNonNull(userGrantingPermission);
 
         AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 
@@ -269,8 +268,8 @@ public class UserAssociationManager {
      */
     public void revokeAssociation(final RegisteredUserDTO ownerUser, final RegisteredUserDTO userToRevoke)
             throws SegueDatabaseException {
-        Validate.notNull(ownerUser);
-        Validate.notNull(userToRevoke);
+        Objects.requireNonNull(ownerUser);
+        Objects.requireNonNull(userToRevoke);
 
         associationDatabase.deleteAssociation(ownerUser.getId(), userToRevoke.getId());
     }
@@ -285,7 +284,7 @@ public class UserAssociationManager {
      */
     public void revokeAllAssociationsByOwnerUser(final RegisteredUserDTO ownerUser)
             throws SegueDatabaseException {
-        Validate.notNull(ownerUser);
+        Objects.requireNonNull(ownerUser);
 
         associationDatabase.deleteAssociationsByOwner(ownerUser.getId());
     }
@@ -300,7 +299,7 @@ public class UserAssociationManager {
      */
     public void revokeAllAssociationsByRecipientUser(final RegisteredUserDTO recipientUser)
             throws SegueDatabaseException {
-        Validate.notNull(recipientUser);
+        Objects.requireNonNull(recipientUser);
 
         associationDatabase.deleteAssociationsByRecipient(recipientUser.getId());
     }
