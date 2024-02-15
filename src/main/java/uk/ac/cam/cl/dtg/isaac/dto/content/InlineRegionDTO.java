@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class InlineRegionDTO extends ContentDTO {
     private List<IsaacStringMatchQuestionDTO> inlineQuestions;
+    private List<ContentBaseDTO> hints;
 
     public InlineRegionDTO() {}
 
@@ -19,5 +20,13 @@ public class InlineRegionDTO extends ContentDTO {
 
     public void setInlineQuestions(List<IsaacStringMatchQuestionDTO> inlineQuestions) {
         this.inlineQuestions = inlineQuestions;
+    }
+
+    public List<ContentBaseDTO> getHints() {
+        return hints;
+    }
+
+    public void setHints(List<ContentBaseDTO> hints) {
+        this.hints = hints;
     }
 }

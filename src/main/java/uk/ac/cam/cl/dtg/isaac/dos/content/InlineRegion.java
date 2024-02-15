@@ -12,6 +12,7 @@ import java.util.List;
 @JsonContentType("isaacInlineRegion")
 public class InlineRegion extends Content {
     private List<IsaacStringMatchQuestion> inlineQuestions;
+    private List<ContentBase> hints;
 
     public InlineRegion() {}
 
@@ -21,5 +22,13 @@ public class InlineRegion extends Content {
 
     public void setInlineQuestions(List<IsaacStringMatchQuestion> inlineQuestions) {
         this.inlineQuestions = inlineQuestions;
+    }
+
+    public List<ContentBase> getHints() {
+        return hints;
+    }
+
+    public void setHints(final List<ContentBase> hints) {
+        this.hints = hints;
     }
 }
