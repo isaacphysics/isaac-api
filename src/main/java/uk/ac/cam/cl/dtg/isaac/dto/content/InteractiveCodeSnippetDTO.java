@@ -14,31 +14,36 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.segue.dos.content;
+package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.InteractiveCodeSnippetDTO;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Interactive code snippet is a code snippet that can be run and edited.
  *
  */
-@DTOMapping(InteractiveCodeSnippetDTO.class)
-@JsonContentType("interactiveCodeSnippet")
-public class InteractiveCodeSnippet extends CodeSnippet {
+public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
 
   private String setupCode;
   private String testCode;
   private String expectedResult;
   private Boolean wrapCodeInMain;
 
-  /**
-   * Default constructor, required for mappers.
-   */
-  public InteractiveCodeSnippet() {
-
+  @JsonCreator
+  public InteractiveCodeSnippetDTO(@JsonProperty("language") final String language,
+                                   @JsonProperty("code") final String code,
+                                   @JsonProperty("disableHighlighting") final Boolean disableHighlighting,
+                                   @JsonProperty("url") final String url,
+                                   @JsonProperty("setupCode") final String setupCode,
+                                   @JsonProperty("testCode") final String testCode,
+                                   @JsonProperty("expectedResult") final String expectedResult,
+                                   @JsonProperty("wrapCodeInMain") final Boolean wrapCodeInMain) {
+    super(language, code, disableHighlighting, url);
+    this.setupCode = setupCode;
+    this.testCode = testCode;
+    this.expectedResult = expectedResult;
+    this.wrapCodeInMain = wrapCodeInMain;
   }
 
   public String getSetupCode() {
@@ -73,3 +78,4 @@ public class InteractiveCodeSnippet extends CodeSnippet {
     this.wrapCodeInMain = wrapCodeInMain;
   }
 }
+

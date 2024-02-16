@@ -16,19 +16,21 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
+import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
+
 /**
  * View of a User Summary object, which contains additional information (email and gender).
  * Usually used where a sharing relationship has or will be created.
  */
-public class UserSummaryWithEmailAddressAndGenderDto extends UserSummaryWithEmailAddressDTO {
-  private String gender;
+public class UserSummaryWithEmailAddressAndGenderDTO extends UserSummaryWithEmailAddressDTO {
+  private Gender gender;
 
   /**
    * Gets the gender.
    *
    * @return the gender
    */
-  public String getGender() {
+  public Gender getGender() {
     return gender;
   }
 
@@ -38,7 +40,7 @@ public class UserSummaryWithEmailAddressAndGenderDto extends UserSummaryWithEmai
    *
    * @param gender - The gender of the user
    */
-  public void setGender(final String gender) {
+  public void setGender(final Gender gender) {
     this.gender = gender;
   }
 

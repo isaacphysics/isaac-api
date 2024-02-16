@@ -28,9 +28,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
-import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
@@ -56,7 +54,6 @@ class GameboardsFacadeTest {
   private UserAccountManager userManager;
   private QuestionManager questionManager;
   private UserBadgeManager userBadgeManager;
-  private FastTrackManger fastTrackManager;
 
   /**
    * Initial configuration of tests.
@@ -72,9 +69,6 @@ class GameboardsFacadeTest {
     this.userManager = createMock(UserAccountManager.class);
     this.questionManager = createMock(QuestionManager.class);
     this.userBadgeManager = createMock(UserBadgeManager.class);
-    this.fastTrackManager = createMock(FastTrackManger.class);
-    expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
-        .andReturn("ft_board_1,ft_board_2").anyTimes();
     replay(this.dummyPropertiesLoader);
   }
 
@@ -86,7 +80,7 @@ class GameboardsFacadeTest {
       throws NoWildcardException, SegueDatabaseException, ContentManagerException {
     GameboardsFacade gameboardFacade = new GameboardsFacade(
         dummyPropertiesLoader, dummyLogManager, dummyGameManager, questionManager,
-        userManager, userBadgeManager, fastTrackManager);
+        userManager, userBadgeManager);
 
     HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
     String subjects = "computerscience";

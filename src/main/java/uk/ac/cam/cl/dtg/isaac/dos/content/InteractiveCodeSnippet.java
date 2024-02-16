@@ -14,37 +14,28 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.isaac.dto.content.CodeSnippetDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.InteractiveCodeSnippetDTO;
 
 /**
  * Interactive code snippet is a code snippet that can be run and edited.
  *
  */
-public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
+@DTOMapping(InteractiveCodeSnippetDTO.class)
+@JsonContentType("interactiveCodeSnippet")
+public class InteractiveCodeSnippet extends CodeSnippet {
 
   private String setupCode;
   private String testCode;
   private String expectedResult;
   private Boolean wrapCodeInMain;
 
-  @JsonCreator
-  public InteractiveCodeSnippetDTO(@JsonProperty("language") final String language,
-                                   @JsonProperty("code") final String code,
-                                   @JsonProperty("disableHighlighting") final Boolean disableHighlighting,
-                                   @JsonProperty("url") final String url,
-                                   @JsonProperty("setupCode") final String setupCode,
-                                   @JsonProperty("testCode") final String testCode,
-                                   @JsonProperty("expectedResult") final String expectedResult,
-                                   @JsonProperty("wrapCodeInMain") final Boolean wrapCodeInMain) {
-    super(language, code, disableHighlighting, url);
-    this.setupCode = setupCode;
-    this.testCode = testCode;
-    this.expectedResult = expectedResult;
-    this.wrapCodeInMain = wrapCodeInMain;
+  /**
+   * Default constructor, required for mappers.
+   */
+  public InteractiveCodeSnippet() {
+
   }
 
   public String getSetupCode() {
@@ -79,4 +70,3 @@ public class InteractiveCodeSnippetDTO extends CodeSnippetDTO {
     this.wrapCodeInMain = wrapCodeInMain;
   }
 }
-

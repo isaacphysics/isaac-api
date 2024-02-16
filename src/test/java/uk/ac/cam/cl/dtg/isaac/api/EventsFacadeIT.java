@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressAndGenderDto;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressAndGenderDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -123,7 +123,7 @@ class EventsFacadeIT extends IsaacIntegrationTest {
     assertEquals(DetailedEventBookingDTO.class.getCanonicalName(),
         getEventBookingsByIdResponse.getEntity().getClass().getCanonicalName());
     assertNotNull(((DetailedEventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked());
-    assertEquals(UserSummaryWithEmailAddressAndGenderDto.class.getCanonicalName(),
+    assertEquals(UserSummaryWithEmailAddressAndGenderDTO.class.getCanonicalName(),
         ((EventBookingDTO) getEventBookingsByIdResponse.getEntity()).getUserBooked().getClass().getCanonicalName());
 
     // --- Delete the booking created above otherwise the other tests may be affected.

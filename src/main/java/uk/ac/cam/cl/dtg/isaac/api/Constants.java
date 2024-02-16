@@ -36,7 +36,6 @@ public final class Constants {
    */
   public static final String CONCEPT_TYPE = "isaacConceptPage";
   public static final String QUESTION_TYPE = "isaacQuestionPage";
-  public static final String FAST_TRACK_QUESTION_TYPE = "isaacFastTrackQuestionPage";
   public static final String WILDCARD_TYPE = "isaacWildcard";
   public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
   public static final String POD_FRAGMENT_TYPE = "isaacPod";
@@ -70,26 +69,6 @@ public final class Constants {
   public enum QuestionPartState {
     CORRECT, INCORRECT, NOT_ATTEMPTED
   }
-
-  public enum FastTrackLevel {
-    FT_TOP_TEN,
-    FT_UPPER,
-    FT_LOWER;
-
-    public static FastTrackLevel getStateFromTags(final Set<String> tags) {
-      FastTrackLevel state = null;
-      if (tags.contains("ft_top_ten")) {
-        state = FT_TOP_TEN;
-      } else if (tags.contains("ft_upper")) {
-        state = FT_UPPER;
-      } else if (tags.contains("ft_lower")) {
-        state = FT_LOWER;
-      }
-      return state;
-    }
-  }
-
-  public static final String FASTTRACK_GAMEBOARD_WHITELIST = "FASTTRACK_GAMEBOARD_WHITELIST";
 
   /**
    * GameboardState Represents the potential states of a gameboard.

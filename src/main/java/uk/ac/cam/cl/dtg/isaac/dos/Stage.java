@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 public enum Stage {
-  year_7_and_8, year_9, gcse, a_level, further_a, university, all
+  gcse, a_level, all
   /* NOTE: lower case is necessary for correct JSON auto mapping */
 }

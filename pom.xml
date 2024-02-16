@@ -661,6 +661,7 @@
                         <version>2.12.476</version>
                         <executions>
                             <execution>
+                                <!-- This generates a type file for use in Isaac React App -->
                                 <id>generate</id>
                                 <goals>
                                     <goal>generate</goal>
@@ -674,6 +675,7 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <!-- This generates a type file for use in Isaac Content Editor -->
                                 <id>generateDO</id>
                                 <goals>
                                     <goal>generate</goal>
@@ -692,6 +694,9 @@
                             <outputKind>module</outputKind>
                             <outputFileType>declarationFile</outputFileType>
                             <optionalProperties>all</optionalProperties>
+                            <customTypeMappings>
+                                <mapping>java.util.Date:EpochTimeStamp</mapping>
+                            </customTypeMappings>
                         </configuration>
                     </plugin>
                 </plugins>

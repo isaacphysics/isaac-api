@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_ID_LOG_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FRAGMENT_ID_LOG_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacServerLogType;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.MAX_PODS_TO_RETURN;
@@ -293,7 +292,6 @@ public class PagesFacade extends AbstractIsaacFacade {
    * @param stages       - a comma separated list of stages
    * @param difficulties - a comma separated list of difficulties
    * @param examBoards   - a comma separated list of examBoards
-   * @param fasttrack    - a flag to indicate whether to search isaacFasttrackQuestions or not.
    * @param startIndex   - a string value to be converted into an integer representing the start index of the results
    * @param limit        - a string value to be converted into an integer representing the number of results to return
    * @return A response object which contains a list of questions or an empty list.
@@ -311,7 +309,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                                         @QueryParam("stages") final String stages,
                                         @QueryParam("difficulties") final String difficulties,
                                         @QueryParam("examBoards") final String examBoards,
-                                        @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
                                         @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index")
                                         final Integer startIndex,
                                         @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit")
@@ -319,13 +316,8 @@ public class PagesFacade extends AbstractIsaacFacade {
     StringBuilder etagCodeBuilder = new StringBuilder();
     Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-    if (fasttrack) {
-      fieldsToMatch.put(TYPE_FIELDNAME, List.of(FAST_TRACK_QUESTION_TYPE));
-      etagCodeBuilder.append(FAST_TRACK_QUESTION_TYPE);
-    } else {
-      fieldsToMatch.put(TYPE_FIELDNAME, List.of(QUESTION_TYPE));
-      etagCodeBuilder.append(QUESTION_TYPE);
-    }
+    fieldsToMatch.put(TYPE_FIELDNAME, List.of(QUESTION_TYPE));
+    etagCodeBuilder.append(QUESTION_TYPE);
 
     // defaults
     int newLimit = DEFAULT_RESULTS_LIMIT;
@@ -419,7 +411,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                     @Context final HttpServletRequest httpServletRequest,
                                     @PathParam("question_page_id") final String questionId) {
     Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-    fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+    fieldsToMatch.put(TYPE_FIELDNAME, List.of(QUESTION_TYPE));
 
     if (null == questionId || questionId.isEmpty()) {
       return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid question id.").toResponse();
