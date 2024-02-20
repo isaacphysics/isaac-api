@@ -1163,7 +1163,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database) {
+    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database,
+                                                                     final ObjectMapper objectMapper) {
 
         if (null == externalAccountManager) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
@@ -1171,7 +1172,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
                 // If MailJet is configured, initialise the sync:
-                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
+                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database, objectMapper);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
                         properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
                         properties.getProperty(MAILJET_LEGAL_LIST_ID));
