@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Set;
+import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -33,7 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 public class IsaacQuestionPageDTO extends SeguePageDTO {
   private Float passMark;
   private String supersededBy;
-  private Integer difficulty;
+  private Difficulty difficulty;
 
   @JsonCreator
   public IsaacQuestionPageDTO(
@@ -53,7 +54,7 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
       @JsonProperty("tags") final Set<String> tags,
       @JsonProperty("deprecated") final Boolean deprecated,
       @JsonProperty("level") final Integer level,
-      @JsonProperty("difficulty") final Integer difficulty,
+      @JsonProperty("difficulty") final Difficulty difficulty,
       @JsonProperty("passMark") final Float passMark,
       @JsonProperty("supersededBy") final String supersededBy) {
 
@@ -88,11 +89,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     this.supersededBy = supersededBy;
   }
 
-  public Integer getDifficulty() {
+  public Difficulty getDifficulty() {
     return difficulty;
   }
 
-  public void setDifficulty(final Integer difficulty) {
+  public void setDifficulty(final Difficulty difficulty) {
     this.difficulty = difficulty;
   }
 

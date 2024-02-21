@@ -22,6 +22,7 @@ import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 
 /**
@@ -40,7 +41,7 @@ public class GameboardItem {
   private AudienceContext creationContext;
 
   private Integer level;
-  private Integer difficulty;
+  private Difficulty difficulty;
 
   private Integer questionPartsCorrect;
   private Integer questionPartsIncorrect;
@@ -225,7 +226,7 @@ public class GameboardItem {
    *
    * @return the difficulty
    */
-  public final Integer getDifficulty() {
+  public final Difficulty getDifficulty() {
     return difficulty;
   }
 
@@ -235,7 +236,7 @@ public class GameboardItem {
    * @param difficulty
    *            the difficulty to set
    */
-  public final void setDifficulty(final Integer difficulty) {
+  public final void setDifficulty(final Difficulty difficulty) {
     this.difficulty = difficulty;
   }
 

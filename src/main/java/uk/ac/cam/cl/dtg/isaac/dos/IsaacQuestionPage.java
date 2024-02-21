@@ -35,7 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 public class IsaacQuestionPage extends SeguePage {
   private Float passMark;
   private String supersededBy;
-  private Integer difficulty;
+  private Difficulty difficulty;
 
   @JsonCreator
   public IsaacQuestionPage(
@@ -55,7 +55,7 @@ public class IsaacQuestionPage extends SeguePage {
       @JsonProperty("deprecated") final Boolean deprecated,
       @JsonProperty("tags") final Set<String> tags,
       @JsonProperty("level") final Integer level,
-      @JsonProperty("difficulty") final Integer difficulty,
+      @JsonProperty("difficulty") final Difficulty difficulty,
       @JsonProperty("passMark") final Float passMark,
       @JsonProperty("supersededBy") final String supersededBy) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
@@ -88,11 +88,11 @@ public class IsaacQuestionPage extends SeguePage {
     this.supersededBy = supersededBy;
   }
 
-  public Integer getDifficulty() {
+  public Difficulty getDifficulty() {
     return difficulty;
   }
 
-  public void setDifficulty(final Integer difficulty) {
+  public void setDifficulty(final Difficulty difficulty) {
     this.difficulty = difficulty;
   }
 }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Lists;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 
 /**
  * This DTO represents high level information about a piece of content
@@ -32,14 +33,14 @@ public class ContentSummaryDTO {
   private String title;
   private String summary;
   private String type;
-  private String level;
+  private Integer level;
   private List<String> tags;
   private String url;
   private Boolean correct;
   private List<String> questionPartIds;
   private String supersededBy;
   private Boolean deprecated;
-  private String difficulty;
+  private Difficulty difficulty;
   private List<AudienceContext> audience;
 
   /**
@@ -150,7 +151,7 @@ public class ContentSummaryDTO {
    *
    * @return the level
    */
-  public String getLevel() {
+  public Integer getLevel() {
     return level;
   }
 
@@ -160,7 +161,7 @@ public class ContentSummaryDTO {
    * @param level
    *            the level to set
    */
-  public void setLevel(final String level) {
+  public void setLevel(final Integer level) {
     this.level = level;
   }
 
@@ -263,7 +264,7 @@ public class ContentSummaryDTO {
    *
    * @return the difficulty
    */
-  public String getDifficulty() {
+  public Difficulty getDifficulty() {
     return difficulty;
   }
 
@@ -272,7 +273,7 @@ public class ContentSummaryDTO {
    *
    * @param difficulty the difficulty to set
    */
-  public void setDifficulty(final String difficulty) {
+  public void setDifficulty(final Difficulty difficulty) {
     this.difficulty = difficulty;
   }
 
