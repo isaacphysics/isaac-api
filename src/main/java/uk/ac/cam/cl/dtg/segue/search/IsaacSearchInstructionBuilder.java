@@ -127,7 +127,7 @@ public class IsaacSearchInstructionBuilder {
     public BooleanInstruction buildBaseInstructions(final BooleanInstruction instruction) {
         // Exclude unpublished content (based on config)
         if (this.includeOnlyPublishedContent) {
-            instruction.mustNot(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "false"));
+            instruction.must(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "true"));
         }
 
         // Exclude regression test content (based on config)
