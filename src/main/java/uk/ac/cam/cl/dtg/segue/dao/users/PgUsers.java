@@ -22,6 +22,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -679,10 +680,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         }
 
-        String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender," +
-                " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen," +
-                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed, country_code, teacher_account_pending)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender,"
+                + " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen,"
+                + " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed,"
+                + " country_code, teacher_account_pending)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                + " ON CONFLICT DO NOTHING;";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -715,7 +718,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
 
             if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save user.");
+                throw new DuplicateAccountException();
             }
 
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
