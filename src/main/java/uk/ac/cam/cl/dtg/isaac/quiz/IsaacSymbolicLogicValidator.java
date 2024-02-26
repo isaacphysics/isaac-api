@@ -16,11 +16,10 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Maps;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicLogicQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.FormulaValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicLogicQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -33,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Validator that provides functionality to validate symbolic logic questions.
@@ -60,8 +60,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
     @Override
     public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer)
             throws ValidatorUnavailableException {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacSymbolicLogicQuestion)) {
             throw new IllegalArgumentException(String.format(

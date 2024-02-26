@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -51,6 +50,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
@@ -172,7 +172,7 @@ public class StatisticsManager implements IStatisticsManager {
      */
     public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
             throws SegueDatabaseException, ContentManagerException {
-        Validate.notNull(userOfInterest);
+        Objects.requireNonNull(userOfInterest);
 
         // FIXME: there was a TODO here about tidying this up and moving it elsewhere.
         // It has been improved and tidied, but may still better belong elsewhere . . .

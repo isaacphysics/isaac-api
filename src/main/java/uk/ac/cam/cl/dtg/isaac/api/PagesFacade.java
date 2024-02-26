@@ -912,7 +912,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             return null;
         }
 
-        List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
+        List<ContentSummaryDTO> listOfContentInfo = new ArrayList<>();
 
         for (ContentDTO content : contentList) {
             ContentSummaryDTO contentInfo = extractContentSummary(content);
@@ -946,7 +946,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         c = api.findMatchingContent(ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
 
-        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
                 this.extractContentSummaryFromList(c.getResults()),
                 c.getTotalResults());
 

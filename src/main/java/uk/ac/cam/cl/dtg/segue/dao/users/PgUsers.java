@@ -21,16 +21,16 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -39,14 +39,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -633,7 +632,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         String query = "UPDATE users SET last_seen = ? WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();
@@ -649,7 +648,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         String query = "UPDATE users SET session_token = session_token + 1 WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();

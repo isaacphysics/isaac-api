@@ -32,7 +32,6 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
@@ -178,6 +177,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -393,11 +393,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Raspberry Pi
         try {
             // Ensure all the required config properties are present.
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
 
             // If so, bind them to constants.
             this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
