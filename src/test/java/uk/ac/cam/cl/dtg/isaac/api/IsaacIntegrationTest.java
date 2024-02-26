@@ -161,7 +161,7 @@ public abstract class IsaacIntegrationTest {
 
   @BeforeAll
   public static void setUpClass() {
-    postgres = new PostgreSQLContainer<>("postgres:12")
+    postgres = new PostgreSQLContainer<>("postgres:14-alpine")
         .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
         .withUsername("rutherford")
         .withFileSystemBind(
