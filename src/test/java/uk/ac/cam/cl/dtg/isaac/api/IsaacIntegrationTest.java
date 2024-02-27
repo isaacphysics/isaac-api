@@ -32,6 +32,7 @@ import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.eclipse.jgit.api.Git;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -116,7 +117,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public abstract class IsaacIntegrationTest {
 
   protected static HttpSession httpSession;
-  protected static PostgreSQLContainer postgres;
+  protected static PostgreSQLContainer<?> postgres;
   protected static ElasticsearchContainer elasticsearch;
   protected static PropertiesLoader properties;
   protected static Map<String, String> globalTokens;
@@ -355,6 +356,12 @@ public abstract class IsaacIntegrationTest {
     });
     Injector injector = Guice.createInjector(testModule);
      */
+  }
+
+  @AfterAll
+  static void tearDownClass() {
+    postgres.stop();
+    elasticsearch.stop();
   }
 
   protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password)
