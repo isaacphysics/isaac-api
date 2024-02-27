@@ -697,6 +697,7 @@
                             <customTypeMappings>
                                 <mapping>java.util.Date:EpochTimeStamp</mapping>
                             </customTypeMappings>
+                            <indentString xml:space="preserve">  </indentString>
                         </configuration>
                     </plugin>
                 </plugins>
