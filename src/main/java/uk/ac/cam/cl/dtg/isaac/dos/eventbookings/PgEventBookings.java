@@ -39,6 +39,7 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.zip.CRC32;
 
 /**
@@ -350,7 +351,7 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public EventBooking findBookingById(final Long bookingId) throws SegueDatabaseException {
-        Validate.notNull(bookingId);
+        Objects.requireNonNull(bookingId);
 
         String query = "SELECT * FROM event_bookings WHERE id = ?";
         try (Connection conn = ds.getDatabaseConnection();
@@ -529,7 +530,7 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public Iterable<EventBooking> findAllByUserId(final Long userId) throws SegueDatabaseException {
-        Validate.notNull(userId);
+        Objects.requireNonNull(userId);
 
         String query = "SELECT * FROM event_bookings WHERE user_id = ?";
         try (Connection conn = ds.getDatabaseConnection();
@@ -551,7 +552,7 @@ public class PgEventBookings implements EventBookings {
 
     @Override
     public Iterable<EventBooking> findAllReservationsByUserId(final Long userId) throws SegueDatabaseException {
-        Validate.notNull(userId);
+        Objects.requireNonNull(userId);
 
         String query = "SELECT distinct on (event_id) * FROM event_bookings WHERE reserved_by = ? AND status != 'CANCELLED'";
         try (Connection conn = ds.getDatabaseConnection();

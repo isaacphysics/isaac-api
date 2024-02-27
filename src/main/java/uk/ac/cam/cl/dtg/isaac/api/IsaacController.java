@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -199,7 +200,7 @@ public class IsaacController extends AbstractIsaacFacade {
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacServerLogType.GLOBAL_SITE_SEARCH, logMap);
 
-            ResultsWrapper results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
+            ResultsWrapper<ContentSummaryDTO> results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
             return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();

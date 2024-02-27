@@ -17,13 +17,13 @@ package uk.ac.cam.cl.dtg.segue.comm;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.commons.lang3.Validate;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  * @author nr378 and Alistair Stead
@@ -48,8 +48,8 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
 							 @Named(Constants.MAIL_FROM_ADDRESS) final String defaultFromAddress,
 							 @Named(Constants.MAIL_NAME) final String mailName) {
-		Validate.notNull(smtpAddress);
-		Validate.notNull(defaultFromAddress);
+		Objects.requireNonNull(smtpAddress);
+		Objects.requireNonNull(defaultFromAddress);
 
 		this.defaultFromAddress = defaultFromAddress;
 		this.mailName = mailName;

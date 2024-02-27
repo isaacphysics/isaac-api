@@ -65,6 +65,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -403,7 +404,7 @@ public class GameManager {
             @Nullable final Integer limit, @Nullable final GameboardState showOnly,
             @Nullable final List<Map.Entry<String, SortOrder>> sortInstructions) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
         if (null == usersGameboards || usersGameboards.isEmpty()) {
@@ -447,12 +448,9 @@ public class GameManager {
             }
         }
 
-        ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
-        Comparator<GameboardDTO> defaultComparitor = new Comparator<GameboardDTO>() {
-            public int compare(final GameboardDTO o1, final GameboardDTO o2) {
-                return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-            }
-        };
+        ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<>();
+        Comparator<GameboardDTO> defaultComparitor = (o1, o2) ->
+                o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
 
         // assume we want reverse date order for visited date for now.
         if (null == sortInstructions || sortInstructions.isEmpty()) {
@@ -466,48 +464,56 @@ public class GameManager {
                     reverseOrder = true;
                 }
 
-                if (sortInstruction.getKey().equals(CREATED_DATE_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getCreationDate().getTime() == o2.getCreationDate().getTime()) {
-                            return 0;
-                        } else {
-                            return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
-                        }
-                    }, reverseOrder);
-                } else if (sortInstruction.getKey().equals(VISITED_DATE_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getLastVisited().getTime() == o2.getLastVisited().getTime()) {
-                            return 0;
-                        } else {
-                            return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-                        }
-                    }, reverseOrder);
-                }  else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getTitle() == null && o2.getTitle() == null) {
-                            return 0;
-                        }
-                        if (o1.getTitle() == null) {
-                            return 1;
-                        }
-                        if (o2.getTitle() == null) {
-                            return -1;
-                        }
-                        return o1.getTitle().compareTo(o2.getTitle());
-                    }, reverseOrder);
-                } else if (sortInstruction.getKey().equals(COMPLETION_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
-                            return 0;
-                        }
-                        if (o1.getPercentageCompleted() == null) {
-                            return 1;
-                        }
-                        if (o2.getPercentageCompleted() == null) {
-                            return -1;
-                        }
-                        return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
-                    }, reverseOrder);
+                switch (sortInstruction.getKey()) {
+                    case CREATED_DATE_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getCreationDate().getTime() == o2.getCreationDate().getTime()) {
+                                return 0;
+                            } else {
+                                return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
+                            }
+                        }, reverseOrder);
+                        break;
+                    case VISITED_DATE_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getLastVisited().getTime() == o2.getLastVisited().getTime()) {
+                                return 0;
+                            } else {
+                                return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
+                            }
+                        }, reverseOrder);
+                        break;
+                    case TITLE_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getTitle() == null && o2.getTitle() == null) {
+                                return 0;
+                            }
+                            if (o1.getTitle() == null) {
+                                return 1;
+                            }
+                            if (o2.getTitle() == null) {
+                                return -1;
+                            }
+                            return o1.getTitle().compareTo(o2.getTitle());
+                        }, reverseOrder);
+                        break;
+                    case COMPLETION_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
+                                return 0;
+                            }
+                            if (o1.getPercentageCompleted() == null) {
+                                return 1;
+                            }
+                            if (o2.getPercentageCompleted() == null) {
+                                return -1;
+                            }
+                            return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
+                        }, reverseOrder);
+                        break;
+                    default:
+                        // This should not happen?
+                        break;
                 }
             }
         }
@@ -516,7 +522,7 @@ public class GameManager {
             comparatorForSorting.addComparator(defaultComparitor);
         }
 
-        Collections.sort(resultToReturn, comparatorForSorting);
+        resultToReturn.sort(comparatorForSorting);
 
         int toIndex;
         if (limit == null || startIndex + limit > resultToReturn.size()) {
@@ -554,8 +560,8 @@ public class GameManager {
     public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
             throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
             ContentManagerException {
-        Validate.notNull(gameboardDTO);
-        Validate.notNull(owner);
+        Objects.requireNonNull(gameboardDTO);
+        Objects.requireNonNull(owner);
 
         String gameboardId = gameboardDTO.getId();
         if (gameboardId == null) {
@@ -635,8 +641,8 @@ public class GameManager {
     public List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> gatherGameProgressData(
             final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(users);
-        Validate.notNull(gameboard);
+        Objects.requireNonNull(users);
+        Objects.requireNonNull(gameboard);
 
         List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> result = Lists.newArrayList();
 
@@ -1112,8 +1118,8 @@ public class GameManager {
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>>
                     questionAttemptsFromUser)
             throws ContentManagerException, ResourceNotFoundException {
-        Validate.notNull(gameItem, "gameItem cannot be null");
-        Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
+        Objects.requireNonNull(gameItem, "gameItem cannot be null");
+        Objects.requireNonNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
         List<QuestionPartState> questionPartStates = Lists.newArrayList();
         int questionPartsCorrect = 0;

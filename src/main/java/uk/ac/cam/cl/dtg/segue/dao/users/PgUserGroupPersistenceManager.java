@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
@@ -42,8 +41,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * PgUserGroupPersistenceManager.
@@ -109,7 +108,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
-        Validate.notNull(group.getId());
+        Objects.requireNonNull(group.getId());
         if (group.getStatus() == null) {
             group.setStatus(GroupStatus.ACTIVE);
         }
