@@ -49,6 +49,23 @@ public class ContentService {
             final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             @Nullable final Integer startIndex, @Nullable final Integer limit
     ) throws ContentManagerException {
+        return findMatchingContent(fieldsToMatch, startIndex, limit, null);
+    }
+
+    /**
+     * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
+     *
+     * @param fieldsToMatch    - List of Boolean search clauses that must be true for the returned content.
+     * @param startIndex       - the start index for the search results.
+     * @param limit            - the max number of results to return.
+     * @param sortInstructions - Map of sorting functions to use in ElasticSearch query
+     * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
+     */
+    public final ResultsWrapper<ContentDTO> findMatchingContent(
+            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+            @Nullable final Integer startIndex, @Nullable final Integer limit,
+            @Nullable Map<String, Constants.SortOrder> sortInstructions
+    ) throws ContentManagerException {
 
         Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;
         Integer newStartIndex = 0;
@@ -60,7 +77,7 @@ public class ContentService {
             newStartIndex = startIndex;
         }
 
-        return this.contentManager.findByFieldNames(fieldsToMatch, newStartIndex, newLimit);
+        return this.contentManager.findByFieldNames(fieldsToMatch, newStartIndex, newLimit, sortInstructions);
     }
 
     /**

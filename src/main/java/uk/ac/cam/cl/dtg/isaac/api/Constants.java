@@ -118,7 +118,7 @@ public final class Constants {
 
     public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
-    public static final Integer MAX_PODS_TO_RETURN = 10;
+    public static final Integer MAX_PODS_TO_RETURN = 12;
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
     public static final Integer GAMEBOARD_MAX_TITLE_LENGTH = 255;
 
