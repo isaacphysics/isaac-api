@@ -155,10 +155,10 @@ public class UserAccountManager implements IUserAccountManager {
                               final ISecondFactorAuthenticator secondFactorManager,
                               final AbstractUserPreferenceManager userPreferenceManager) {
 
-        Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
-        Validate.notNull(properties.getProperty(HOST_NAME));
+        Objects.requireNonNull(properties.getProperty(HMAC_SALT));
+        Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+        Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
+        Objects.requireNonNull(properties.getProperty(HOST_NAME));
 
         this.properties = properties;
 
@@ -531,7 +531,7 @@ public class UserAccountManager implements IUserAccountManager {
                                      final List<UserContext> registeredUserContexts)
             throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException, InvalidKeySpecException,
             NoSuchAlgorithmException {
-        Validate.notNull(userObjectFromClient.getId());
+        Objects.requireNonNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
         // security checks
@@ -782,7 +782,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
             throws NoUserLoggedInException {
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         RegisteredUser user = this.getCurrentRegisteredUserDO(request);
 
@@ -820,7 +820,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
             throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
         if (userAuthenticationSettings != null) {
@@ -852,7 +852,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException - if there is a database error.
      */
     public List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
-        Validate.notNull(userIds);
+        Objects.requireNonNull(userIds);
         if (userIds.isEmpty()) {
             return Lists.newArrayList();
         }
@@ -943,7 +943,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param response to destroy the segue cookie.
      */
     public void logUserOut(final HttpServletRequest request, final HttpServletResponse response) {
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
         this.userAuthenticationManager.destroyUserSession(request, response);
     }
 
@@ -1085,7 +1085,7 @@ public class UserAccountManager implements IUserAccountManager {
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
             throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
             InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
-        Validate.notNull(updatedUser.getId());
+        Objects.requireNonNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
         // change fields that aren't exposed to them
@@ -1193,7 +1193,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException - an exception when accessing the database
      */
     public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
-        Validate.notNull(requestedRole);
+        Objects.requireNonNull(requestedRole);
         RegisteredUser userToSave = this.findUserById(id);
 
         // Send welcome email if user has become teacher or tutor, otherwise, role change notification
@@ -1232,7 +1232,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public void updateUserEmailVerificationStatus(final String email,
                                                   final EmailVerificationStatus requestedEmailVerificationStatus) throws SegueDatabaseException {
-        Validate.notNull(requestedEmailVerificationStatus);
+        Objects.requireNonNull(requestedEmailVerificationStatus);
         RegisteredUser userToSave = this.findUserByEmail(email);
         if (null == userToSave) {
             log.warn(String.format(
@@ -1539,7 +1539,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return a list of summarised objects with minimal personal information
      */
     public List<UserSummaryDTO> convertToUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
-        Validate.notNull(userListToConvert);
+        Objects.requireNonNull(userListToConvert);
         List<UserSummaryDTO> resultList = Lists.newArrayList();
         for (RegisteredUserDTO user : userListToConvert) {
             resultList.add(this.convertToUserSummaryObject(user));
@@ -1555,7 +1555,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return a list of summarised objects with reduced personal information
      */
     public List<UserSummaryWithEmailAddressDTO> convertToDetailedUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert, final Class<? extends UserSummaryWithEmailAddressDTO> detailedDTO) {
-        Validate.notNull(userListToConvert);
+        Objects.requireNonNull(userListToConvert);
         List<UserSummaryWithEmailAddressDTO> resultList = Lists.newArrayList();
         for (RegisteredUserDTO user : userListToConvert) {
             resultList.add(this.convertToDetailedUserSummaryObject(user, detailedDTO));
@@ -1700,24 +1700,21 @@ public class UserAccountManager implements IUserAccountManager {
 
                 // may as well spawn a new thread to do the log migration stuff asynchronously
                 // work now.
-                Thread logMigrationJob = new Thread() {
-                    @Override
-                    public void run() {
-                        // run this asynchronously as there is no need to block and it is quite slow.
-                        logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
-                                .toString());
+                Thread logMigrationJob = new Thread(() -> {
+                    // run this asynchronously as there is no need to block and it is quite slow.
+                    logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
+                            .toString());
 
-                        logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
-                                ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
+                    logManager.logInternalEvent(userDTO, SegueServerLogType.MERGE_USER,
+                            ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
-                        // delete the session attribute as merge has completed.
-                        try {
-                            temporaryUserCache.deleteAnonymousUser(anonymousUser);
-                        } catch (SegueDatabaseException e) {
-                            log.error("Unable to delete anonymous user during merge operation.", e);
-                        }
+                    // delete the session attribute as merge has completed.
+                    try {
+                        temporaryUserCache.deleteAnonymousUser(anonymousUser);
+                    } catch (SegueDatabaseException e) {
+                        log.error("Unable to delete anonymous user during merge operation.", e);
                     }
-                };
+                });
 
                 logMigrationJob.start();
 

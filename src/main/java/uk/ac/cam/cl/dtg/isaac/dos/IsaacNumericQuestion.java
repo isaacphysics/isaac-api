@@ -106,7 +106,7 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
 
     public List<String> getAvailableUnits() {
         if (null == availableUnits) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
         return availableUnits;
     }

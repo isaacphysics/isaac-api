@@ -264,7 +264,7 @@ public class UserAlertsWebSocket implements IAlertListener {
         Lock userLock = userLocks.get(connectedUserId);
         userLock.lock();
         try {
-            Set unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
+            Set<UserAlertsWebSocket> unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
             unsafeUsersSockets.remove(this);
             numberOfUserSockets = unsafeUsersSockets.size();
             removeUser = numberOfUserSockets == 0;

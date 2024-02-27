@@ -27,12 +27,13 @@ import com.mailjet.client.resource.ContactManagecontactslists;
 import com.mailjet.client.resource.Contactdata;
 import com.mailjet.client.resource.Contacts;
 import com.mailjet.client.resource.ContactslistImportList;
-import org.apache.commons.lang3.Validate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 public class MailJetApiClientWrapper {
 
@@ -93,7 +94,7 @@ public class MailJetApiClientWrapper {
      * @throws MailjetException  - if underlying MailjetClient throws an exception
      */
     public void permanentlyDeleteAccountById(final String mailjetId) throws MailjetException {
-        Validate.notNull(mailjetId);
+        Objects.requireNonNull(mailjetId);
         MailjetRequest request = new MailjetRequest(Contacts.resource, mailjetId);
         mailjetClient.delete(request);
     }
@@ -141,7 +142,7 @@ public class MailJetApiClientWrapper {
     public void updateUserProperties(final String mailjetId, final String firstName, final String role,
                                      final String emailVerificationStatus, final String countryCode,
                                      final String stages) throws MailjetException {
-        Validate.notNull(mailjetId);
+        Objects.requireNonNull(mailjetId);
         MailjetRequest request = new MailjetRequest(Contactdata.resource, mailjetId)
                 .property(Contactdata.DATA, new JSONArray()
                         .put(new JSONObject().put("Name", "firstname").put("value", firstName))
@@ -165,7 +166,7 @@ public class MailJetApiClientWrapper {
      */
     public void updateUserSubscriptions(final String mailjetId, final MailJetSubscriptionAction newsEmails,
                                          final MailJetSubscriptionAction eventsEmails) throws MailjetException {
-        Validate.notNull(mailjetId);
+        Objects.requireNonNull(mailjetId);
         MailjetRequest request = new MailjetRequest(ContactManagecontactslists.resource, mailjetId)
                 .property(ContactManagecontactslists.CONTACTSLISTS, new JSONArray()
                         .put(new JSONObject()

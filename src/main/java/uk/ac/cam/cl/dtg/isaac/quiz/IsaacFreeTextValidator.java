@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.common.collect.ImmutableMap;
 import org.isaacphysics.thirdparty.openmark.marker.PMatch;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFreeTextQuestion;
@@ -30,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
@@ -83,8 +83,8 @@ public class IsaacFreeTextValidator implements IValidator {
     }
 
     private static void validateInputs(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not free-text question");

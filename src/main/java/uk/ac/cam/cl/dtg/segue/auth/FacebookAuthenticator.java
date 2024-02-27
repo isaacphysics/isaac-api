@@ -33,7 +33,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -54,6 +53,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
@@ -272,7 +272,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
      * @return true if the token passes our validation false if not.
      */
     private boolean verifyAccessTokenIsValid(final Credential credentials) {
-        Validate.notNull(credentials, "Credentials cannot be null");
+        Objects.requireNonNull(credentials, "Credentials cannot be null");
 
         try {
             GenericUrl urlBuilder = new GenericUrl(TOKEN_VERIFICATION_URL);

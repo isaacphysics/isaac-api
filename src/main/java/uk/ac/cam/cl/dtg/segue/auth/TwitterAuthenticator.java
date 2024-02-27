@@ -97,7 +97,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
         this.callbackUri = callbackUri;
 
         if (null == credentialStore) {
-            credentialStore = new WeakHashMap<String, Credential>();
+            credentialStore = new WeakHashMap<>();
         }
 
         if (null == tokenVerifier) {

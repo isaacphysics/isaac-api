@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.api.services;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
@@ -26,6 +25,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -36,9 +38,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.NameFormatter;
 
 import java.text.DateFormat;
@@ -48,6 +47,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
@@ -87,8 +87,8 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onMemberAddedToGroup(UserGroupDTO group, RegisteredUserDTO user) {
-        Validate.notNull(group);
-        Validate.notNull(user);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(user);
 
         // Try to email user to let them know
         try {
@@ -112,7 +112,7 @@ public class GroupChangedService implements IGroupObserver {
      * @throws SegueDatabaseException if we can't get the gameboard details.
      */
     private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup) throws SegueDatabaseException, ContentManagerException {
-        Validate.notNull(userDTO);
+        Objects.requireNonNull(userDTO);
 
         UserSummaryWithEmailAddressDTO groupOwner = userGroup.getOwnerSummary();
         String groupOwnerName = getTeacherNameFromUser(groupOwner);
@@ -195,8 +195,8 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onAdditionalManagerAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO additionalManagerUser) {
-        Validate.notNull(group);
-        Validate.notNull(additionalManagerUser);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(additionalManagerUser);
 
         // Try to email new manager to let them know:
         try {
@@ -264,8 +264,8 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onAdditionalManagerPromotedToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner) {
-        Validate.notNull(group);
-        Validate.notNull(newOwner);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(newOwner);
 
         String groupName = "Unknown";
         if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
@@ -290,7 +290,7 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onAdditionalManagerPrivilegesChanged(final UserGroupDTO group) {
-        Validate.notNull(group);
+        Objects.requireNonNull(group);
 
         try {
             RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());

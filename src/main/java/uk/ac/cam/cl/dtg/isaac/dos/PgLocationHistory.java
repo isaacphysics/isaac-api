@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.lang3.Validate;
@@ -199,7 +200,7 @@ public class PgLocationHistory implements LocationHistory {
      */
     @Override
     public void updateLocationEventDate(final Long id, final boolean isCurrent) throws SegueDatabaseException {
-        Validate.notNull(id);
+        Objects.requireNonNull(id);
 
         String query = "UPDATE ip_location_history SET last_lookup = ?, is_current=? WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();

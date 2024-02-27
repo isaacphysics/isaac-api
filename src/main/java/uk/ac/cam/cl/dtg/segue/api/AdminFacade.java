@@ -755,8 +755,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
-     * @param subjectOfInterest
-     *            - if searching by subject interest
      * @return a userDTO or a segue error response
      */
     @GET

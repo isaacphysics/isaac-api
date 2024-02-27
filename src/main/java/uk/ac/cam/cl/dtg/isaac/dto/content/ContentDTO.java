@@ -77,11 +77,11 @@ public class ContentDTO extends ContentBaseDTO {
 
         // useful for when we want to augment this POJO
         if (null == this.children) {
-            this.children = new ArrayList<ContentBaseDTO>();
+            this.children = new ArrayList<>();
         }
 
         if (null == this.tags) {
-            this.tags = new HashSet<String>();
+            this.tags = new HashSet<>();
         }
     }
 

@@ -541,7 +541,7 @@ public class GitContentManager {
 
             for (SearchHit hit : hits) {
                 Content partialContentWithErrors = new Content();
-                Map src = hit.getSourceAsMap();
+                Map<String, Object> src = hit.getSourceAsMap();
                 partialContentWithErrors.setId((String) src.get("id"));
                 partialContentWithErrors.setTitle((String) src.get("title"));
                 //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
@@ -549,7 +549,7 @@ public class GitContentManager {
                 partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
                 ArrayList<String> errors = new ArrayList<>();
-                for (Object v : (List) hit.getSourceAsMap().get("errors")) {
+                for (Object v : (List<?>) hit.getSourceAsMap().get("errors")) {
                     errors.add((String) v);
                 }
 

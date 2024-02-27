@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
@@ -39,6 +38,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
+import java.util.Objects;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.LOG_EVENT;
@@ -81,7 +81,7 @@ public class PgLogManager implements ILogManager {
     @Override
     public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final LogType eventType,
                          final Object eventDetails) {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,
@@ -101,7 +101,7 @@ public class PgLogManager implements ILogManager {
     @Override
     public void logExternalEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
                          final String eventType, final Object eventDetails) {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
@@ -120,7 +120,7 @@ public class PgLogManager implements ILogManager {
 
     @Override
     public void logInternalEvent(final AbstractSegueUserDTO user, final LogType eventType, final Object eventDetails) {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType.name(), eventDetails,

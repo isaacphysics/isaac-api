@@ -26,10 +26,10 @@ import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.ArrayList;
@@ -37,9 +37,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * AssignmentManager.
@@ -134,8 +135,8 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      */
     public AssignmentDTO createAssignment(final AssignmentDTO newAssignment) throws SegueDatabaseException {
         Validate.isTrue(newAssignment.getId() == null, "The id field must be empty.");
-        Validate.notNull(newAssignment.getGameboardId());
-        Validate.notNull(newAssignment.getGroupId());
+        Objects.requireNonNull(newAssignment.getGameboardId());
+        Objects.requireNonNull(newAssignment.getGroupId());
 
         if (assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(newAssignment.getGameboardId(),
                 newAssignment.getGroupId()).size() != 0) {
@@ -173,7 +174,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      *             - if we cannot complete a required database operation.
      */
     public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
         return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getId());
     }
 
@@ -187,7 +188,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      *             - if we cannot complete a required database operation.
      */
     public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture) throws SegueDatabaseException {
-        Validate.notNull(groups);
+        Objects.requireNonNull(groups);
         // TODO - Is there a better way of doing this empty list check? Database method explodes if given it.
         if (groups.isEmpty()) {
             return new ArrayList<>();
@@ -211,8 +212,8 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
      *             - if we cannot complete a required database operation.
      */
     public void deleteAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
-        Validate.notNull(assignment);
-        Validate.notNull(assignment.getId());
+        Objects.requireNonNull(assignment);
+        Objects.requireNonNull(assignment.getId());
         this.assignmentPersistenceManager.deleteAssignment(assignment.getId());
     }
 

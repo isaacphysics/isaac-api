@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
@@ -436,7 +435,7 @@ public class GameboardPersistenceManager {
             results = this.contentManager.findByFieldNames(
                     fieldsToMap, 0, gameboardDO.getContents().size());
         } catch (ContentManagerException e) {
-            results = new ResultsWrapper<ContentDTO>();
+            results = new ResultsWrapper<>();
             log.error("Unable to select questions for gameboard.", e);
         }
         
@@ -495,7 +494,7 @@ public class GameboardPersistenceManager {
 
         for (GameboardDTO game : gameboards) {
             // empty and re-populate the gameboard dto with fully augmented gameboard items.
-            game.setContents(new ArrayList<GameboardItem>());
+            game.setContents(new ArrayList<>());
             for (String questionId : gameboardToQuestionsMap.get(game.getId())) {
                 // There is a possibility that the question cannot be found any more for some reason
                 // In this case we will simply pretend it isn't there.
@@ -626,7 +625,7 @@ public class GameboardPersistenceManager {
      */
     private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
             final boolean populateGameboardItems) {
-        Validate.notNull(gameboardDOs);
+        Objects.requireNonNull(gameboardDOs);
 
         List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
 
@@ -740,7 +739,7 @@ public class GameboardPersistenceManager {
                 results = this.contentManager.getUnsafeCachedContentDTOsMatchingIds(
                         questionsIds, 0, contentDescriptorBatch.size());
             } catch (ContentManagerException e) {
-                results = new ResultsWrapper<ContentDTO>();
+                results = new ResultsWrapper<>();
                 log.error("Unable to locate questions for gameboard. Using empty results", e);
             }
 
