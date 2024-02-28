@@ -188,7 +188,6 @@ public class SegueLocalAuthenticatorTest {
      * @throws SegueDatabaseException
      * @throws IncorrectCredentialsProvidedException
      * @throws NoCredentialsAvailableException
-     * @throws NoUserException
      */
     @Test
     public final void segueLocalAuthenticator_authenticate_badEmailAndIncorrectPasswordProvided()
@@ -228,7 +227,6 @@ public class SegueLocalAuthenticatorTest {
      * @throws IncorrectCredentialsProvidedException
      * @throws NoCredentialsAvailableException
      * @throws InvalidPasswordException
-     * @throws NoUserException
      */
     @Test
     public final void segueLocalAuthenticator_setPasswordAndImmediateAuthenticate_correctEmailAndPasswordProvided()

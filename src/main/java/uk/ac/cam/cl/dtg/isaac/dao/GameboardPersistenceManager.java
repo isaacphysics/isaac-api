@@ -192,7 +192,6 @@ public class GameboardPersistenceManager {
      * @return internal database id for the saved gameboard.
      * @throws SegueDatabaseException
      *             - if there is a problem saving the gameboard in the database.
-     * @throws JsonProcessingException
      */
     public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
         throws SegueDatabaseException {
