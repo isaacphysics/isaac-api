@@ -916,7 +916,7 @@ public class ContentIndexer {
         // Make sure no children of potentially expandable content are expandable, if so record a content error
         if (((null != content.getLayout() && content.getLayout().equals("tabs")) || content instanceof CodeSnippet) && null != content.getChildren()) {
             String expandableChildrenLog = collateExpandableChildren(content);
-            if (!expandableChildrenLog.equals("")) {
+            if (!expandableChildrenLog.isEmpty()) {
                 this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
                         + "potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
                         + ". These children will have their expandable property disabled since we cannot handle nested "

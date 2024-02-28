@@ -213,7 +213,7 @@ public class GitContentManager {
      * @throws ContentManagerException on failure to return the object or null.
      */
     public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
-        if (null == id || id.equals("")) {
+        if (null == id || id.isEmpty()) {
             return null;
         }
 

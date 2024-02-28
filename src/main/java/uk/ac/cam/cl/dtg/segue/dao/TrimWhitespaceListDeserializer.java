@@ -48,7 +48,7 @@ public class TrimWhitespaceListDeserializer extends JsonDeserializer<List<String
 
         int index = 0;
         for (String s : listOfStringToTrim) {
-            if (!s.trim().equals("")) {
+            if (!s.trim().isEmpty()) {
                 listOfStringToTrim.set(index, s.trim());
             }
             index++;

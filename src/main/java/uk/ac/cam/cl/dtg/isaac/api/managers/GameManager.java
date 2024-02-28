@@ -1082,8 +1082,8 @@ public class GameManager {
             // Only keep questions that have not been superseded.
             // Yes, this should probably be done in the fieldsToMap filter above, but this is simpler.
             if (c instanceof IsaacQuestionPageDTO) {
-                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO)c;
-                if (qp.getSupersededBy() != null && !qp.getSupersededBy().equals("")) {
+                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO) c;
+                if (qp.getSupersededBy() != null && !qp.getSupersededBy().isEmpty()) {
                     // This question has been superseded. Don't include it.
                     continue;
                 }
