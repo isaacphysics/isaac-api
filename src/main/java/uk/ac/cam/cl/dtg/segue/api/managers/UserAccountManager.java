@@ -870,6 +870,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws NoUserException        - If we cannot find a valid user with the email address provided.
      * @throws SegueDatabaseException - If there is another database error
      */
+    @Override
     public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
         return this.getUserDTOById(id, false);
     }
@@ -885,6 +886,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws NoUserException        - If we cannot find a valid user with the email address provided.
      * @throws SegueDatabaseException - If there is another database error
      */
+    @Override
     public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
             SegueDatabaseException {
         RegisteredUser user;
