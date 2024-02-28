@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An abstract representation of a Segue CMS facade.
@@ -125,25 +126,6 @@ public abstract class AbstractSegueFacade {
     }
 
     /**
-     * Same as integer varient.
-     * 
-     * @param maxAge
-     *            in seconds for the returned object to remain fresh. Longs will be converted into integers
-     * @param isPublicData
-     *            Should the data being delivered be cacheable by intermediate proxy servers?
-     * @return a CacheControl object configured with a MaxAge.
-     */
-    public CacheControl getCacheControl(@Nullable final Integer maxAge, @Nullable final Boolean isPublicData) {
-        Long maxAgeToSend = null;
-        
-        if (maxAge != null) {
-            maxAgeToSend = new Long(maxAge);
-        }
-        
-        return getCacheControl(maxAgeToSend, isPublicData);
-    }
-    
-    /**
      * Helper to get cache control information for response objects that can be cached.
      * 
      * @param maxAge
@@ -152,17 +134,14 @@ public abstract class AbstractSegueFacade {
      *            Should the data being delivered be cacheable by intermediate proxy servers?
      * @return a CacheControl object configured with a MaxAge.
      */
-    public CacheControl getCacheControl(@Nullable final Long maxAge, @Nullable final Boolean isPublicData) {
+    public CacheControl getCacheControl(@Nullable final Integer maxAge, @Nullable final Boolean isPublicData) {
         // Create cache control header
         CacheControl cc = new CacheControl();
         
         int maxCacheAge;
-        if (null == maxAge) {
-            // set max age to server default.
-            maxCacheAge = Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME));
-        } else {
-            maxCacheAge = maxAge.intValue();
-        }
+        // set max age to server default.
+        maxCacheAge = Objects.requireNonNullElseGet(maxAge,
+                () -> Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME)));
 
         cc.setMaxAge(maxCacheAge);
         
