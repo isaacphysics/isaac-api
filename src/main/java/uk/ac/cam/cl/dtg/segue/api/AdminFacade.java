@@ -26,12 +26,6 @@ import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -91,6 +85,10 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -1101,23 +1099,22 @@ public class AdminFacade extends AbstractSegueFacade {
 
                 String oldLiveVersion = contentManager.getCurrentContentSHA();
 
-                HttpClient httpClient = new DefaultHttpClient();
+                HttpClient httpClient = HttpClient.newHttpClient();
+                URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/set_version_alias/%s/%s",
+                        getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
+                        this.contentIndex, version));
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
-                        + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/"
-                        + this.contentIndex + "/" + version);
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(url)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-                httpPost.addHeader("Content-Type", "application/json");
-
-                HttpResponse httpResponse = httpClient.execute(httpPost);
-
-                HttpEntity e = httpResponse.getEntity();
-
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.statusCode() == 200) {
                     log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
                     return Response.ok().build();
                 } else {
-                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());
                     r.setBypassGenericSiteErrorPage(true);
                     return r.toResponse();
                 }
@@ -1130,7 +1127,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (Exception e) {
             log.error("Exception during version change.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during version change.", e).toResponse();
         }
     }
 
@@ -1177,27 +1174,30 @@ public class AdminFacade extends AbstractSegueFacade {
         // TODO: Verify webhook secret.
         try {
             // We are only interested in the master branch
-            if(payload.getRef().equals("refs/heads/master")) {
+            if (payload.getRef().equals("refs/heads/master")) {
                 String newVersion = payload.getAfter();
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
-                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/new_version_alert/" + newVersion);
+                HttpClient httpClient = HttpClient.newHttpClient();
+                URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/new_version_alert/%s",
+                        getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
+                        newVersion));
 
-                HttpResponse httpResponse;
-                httpResponse = new DefaultHttpClient().execute(httpPost);
-                HttpEntity e = httpResponse.getEntity();
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(url)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.statusCode() == 200) {
                     return Response.ok().build();
                 } else {
-                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());
                     r.setBypassGenericSiteErrorPage(true);
                     return r.toResponse();
                 }
             }
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    e.getMessage()).toResponse();
+        } catch (IOException | InterruptedException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
         return Response.ok().build();
     }
