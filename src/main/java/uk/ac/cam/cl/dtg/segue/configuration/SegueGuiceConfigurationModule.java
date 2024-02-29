@@ -1039,7 +1039,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) throws SchedulerException {
+    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) {
         if (null == segueJobService) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);

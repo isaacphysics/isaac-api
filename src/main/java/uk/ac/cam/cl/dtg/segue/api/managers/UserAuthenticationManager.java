@@ -681,14 +681,12 @@ public class UserAuthenticationManager {
      *             - if the configured algorithm is not valid.
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     public final void resetPasswordRequest(final RegisteredUser userDO, final RegisteredUserDTO userAsDTO)
             throws InvalidKeySpecException,
-            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
+            NoSuchAlgorithmException, SegueDatabaseException {
         try {
             IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                     .get(AuthenticationProvider.SEGUE);

@@ -53,7 +53,7 @@ public interface IAssignmentLike {
     }
 
     interface Details<T extends IAssignmentLike> {
-        String getAssignmentLikeName(T assignment) throws SegueDatabaseException, ContentManagerException;
+        String getAssignmentLikeName(T assignment) throws SegueDatabaseException;
 
         String getAssignmentLikeUrl(T assignment);
     }
