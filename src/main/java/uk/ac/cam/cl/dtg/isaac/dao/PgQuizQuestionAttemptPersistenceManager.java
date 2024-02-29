@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAttemptPersistenceManager {
@@ -41,13 +41,14 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
   /**
    * Creates a new quiz question attempt persistence manager.
    *
-   * @param database     - the database reference used for persistence.
-   * @param objectMapper - the ContentMapper to get a Jackson ObjectMapper for persisting question answers.
+   * @param database           - the database reference used for persistence.
+   * @param contentMapperUtils - the ContentMapperUtils to get a Jackson ObjectMapper for persisting question answers.
    */
   @Inject
-  public PgQuizQuestionAttemptPersistenceManager(final PostgresSqlDb database, final ContentMapper objectMapper) {
+  public PgQuizQuestionAttemptPersistenceManager(final PostgresSqlDb database,
+                                                 final ContentMapperUtils contentMapperUtils) {
     this.database = database;
-    this.objectMapper = objectMapper.getSharedContentObjectMapper();
+    this.objectMapper = contentMapperUtils.getSharedContentObjectMapper();
   }
 
   @Override

@@ -44,8 +44,6 @@ public class UserFromAuthProvider {
    *            - primary e-mail address
    * @param emailVerificationStatus
    *            - email verification status of user
-   * @param role
-   *            - role description
    * @param dateOfBirth
    *            - date of birth to help with monitoring
    * @param gender
@@ -53,7 +51,6 @@ public class UserFromAuthProvider {
    */
   public UserFromAuthProvider(final String providerUserId, final String givenName, final String familyName,
                               final String email, final EmailVerificationStatus emailVerificationStatus,
-                              final Role role,
                               final Date dateOfBirth, final Gender gender) {
     this.providerUserId = providerUserId;
     this.familyName = familyName;

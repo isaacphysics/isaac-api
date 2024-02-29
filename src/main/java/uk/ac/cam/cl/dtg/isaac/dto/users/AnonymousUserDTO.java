@@ -16,11 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
-import com.google.api.client.util.Maps;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 
 /**
  * Data Transfer Object to represent an anonymous user of the system.
@@ -28,7 +24,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
  */
 public class AnonymousUserDTO extends AbstractSegueUserDTO {
   private String sessionId;
-  private Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts;
   private Date dateCreated;
   private Date lastUpdated;
 
@@ -37,7 +32,6 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    * Default constructor required for Jackson.
    */
   public AnonymousUserDTO() {
-    temporaryQuestionAttempts = Maps.newHashMap();
   }
 
   /**
@@ -47,7 +41,6 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    *            - Our session Unique ID
    */
   public AnonymousUserDTO(final String sessionId) {
-    temporaryQuestionAttempts = Maps.newHashMap();
     this.sessionId = sessionId;
   }
 

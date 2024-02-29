@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -49,7 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager.BooleanSearchClause;
 class GameManagerTest {
   private GitContentManager dummyContentManager;
   private GameboardPersistenceManager dummyGameboardPersistenceManager;
-  private MapperFacade dummyMapper;
+  private ContentMapper dummyMapper;
   private QuestionManager dummyQuestionManager;
   private GameManager gameManager;
 
@@ -57,7 +57,7 @@ class GameManagerTest {
   public void setUp() {
     this.dummyContentManager = createMock(GitContentManager.class);
     this.dummyGameboardPersistenceManager = createMock(GameboardPersistenceManager.class);
-    this.dummyMapper = createMock(MapperFacade.class);
+    this.dummyMapper = createMock(ContentMapper.class);
     this.dummyQuestionManager = createMock(QuestionManager.class);
     this.gameManager = new GameManager(
         this.dummyContentManager,

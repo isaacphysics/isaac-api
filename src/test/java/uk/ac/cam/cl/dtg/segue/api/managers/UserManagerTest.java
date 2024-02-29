@@ -48,7 +48,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
@@ -67,6 +66,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.MainObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -94,7 +94,7 @@ class UserManagerTest {
   private PropertiesLoader dummyPropertiesLoader;
   private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
-  private MapperFacade dummyMapper;
+  private MainObjectMapper dummyMapper;
   private EmailManager dummyQueue;
   private SimpleDateFormat sdf;
 
@@ -118,7 +118,7 @@ class UserManagerTest {
     this.dummyProvidersMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
 
     String dummyHostName = "bob";
-    this.dummyMapper = createMock(MapperFacade.class);
+    this.dummyMapper = createMock(MainObjectMapper.class);
     this.dummyQueue = createMock(EmailManager.class);
     this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
     this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
@@ -216,7 +216,7 @@ class UserManagerTest {
         .andReturn(ImmutableMap.of(returnUser, false)).atLeastOnce();
     replay(dummyQuestionDatabase);
 
-    expect(dummyMapper.map(returnUser, RegisteredUserDTO.class)).andReturn(new RegisteredUserDTO()).atLeastOnce();
+    expect(dummyMapper.map(returnUser)).andReturn(new RegisteredUserDTO()).atLeastOnce();
     replay(dummyMapper, dummyDatabase, dummyLocalAuth);
 
     // Act
@@ -373,7 +373,7 @@ class UserManagerTest {
 
     // User object back from provider
     UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
-        "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE);
+        "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, new Date(), Gender.MALE);
 
     // Mock get User Information from provider call
     expect(((IFederatedAuthenticator) dummyAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(
@@ -399,8 +399,8 @@ class UserManagerTest {
     RegisteredUserDTO mappedUserDTO = new RegisteredUserDTO();
 
     expect(dummyMapper.map(providerUser, RegisteredUser.class)).andReturn(mappedUser).atLeastOnce();
-    expect(dummyMapper.map(mappedUser, RegisteredUserDTO.class)).andReturn(mappedUserDTO).atLeastOnce();
-    expect(dummyMapper.map(au, AnonymousUserDTO.class)).andReturn(someAnonymousUserDTO).anyTimes();
+    expect(dummyMapper.map(mappedUser)).andReturn(mappedUserDTO).atLeastOnce();
+    expect(dummyMapper.map(au)).andReturn(someAnonymousUserDTO).anyTimes();
 
     // handle duplicate account check.
     expect(dummyDatabase.getByEmail(providerUser.getEmail())).andReturn(null).once();

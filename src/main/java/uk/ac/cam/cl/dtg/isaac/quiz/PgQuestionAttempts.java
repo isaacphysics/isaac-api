@@ -45,7 +45,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
@@ -63,7 +63,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
    * @param objectMapper - for mapping between DO and DTO
    */
   @Inject
-  public PgQuestionAttempts(final PostgresSqlDb ds, final ContentMapper objectMapper) {
+  public PgQuestionAttempts(final PostgresSqlDb ds, final ContentMapperUtils objectMapper) {
     this.database = ds;
     this.objectMapper = objectMapper.getSharedContentObjectMapper();
   }

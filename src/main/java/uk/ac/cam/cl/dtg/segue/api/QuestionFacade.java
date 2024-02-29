@@ -76,7 +76,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
@@ -90,7 +90,7 @@ import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 @Tag(name = "/questions")
 public class QuestionFacade extends AbstractSegueFacade {
   private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
-  private final ContentMapper mapper;
+  private final ContentMapperUtils mapperUtils;
   private final GameManager gameManager;
   private final GitContentManager contentManager;
   private final String contentIndex;
@@ -103,7 +103,7 @@ public class QuestionFacade extends AbstractSegueFacade {
 
   /**
    * @param properties             - the fully configured properties loader for the api.
-   * @param mapper                 - The Content mapper object used for polymorphic mapping of content objects.
+   * @param mapperUtils            - The Content mapper object used for polymorphic mapping of content objects.
    * @param contentManager         - The content version controller used by the api.
    * @param gameManager            - The manager object responsible for games.
    * @param contentIndex           - The index string for current content version
@@ -118,7 +118,7 @@ public class QuestionFacade extends AbstractSegueFacade {
    *                               users
    */
   @Inject
-  public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
+  public QuestionFacade(final PropertiesLoader properties, final ContentMapperUtils mapperUtils,
                         final GitContentManager contentManager, final GameManager gameManager,
                         @Named(CONTENT_INDEX) final String contentIndex,
                         final UserAccountManager userManager, final QuestionManager questionManager,
@@ -128,7 +128,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     super(properties, logManager);
 
     this.questionManager = questionManager;
-    this.mapper = mapper;
+    this.mapperUtils = mapperUtils;
     this.contentManager = contentManager;
     this.gameManager = gameManager;
     this.contentIndex = contentIndex;
@@ -429,7 +429,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         return SegueErrorResponse.getIncorrectRoleResponse();
       }
 
-      TestQuestion testDefinition = mapper.getSharedContentObjectMapper().readValue(testJson, TestQuestion.class);
+      TestQuestion testDefinition = mapperUtils.getSharedContentObjectMapper().readValue(testJson, TestQuestion.class);
       List<TestCase> results = questionManager.testQuestion(questionType, testDefinition);
       return Response.ok(results).build();
 

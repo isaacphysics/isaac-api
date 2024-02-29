@@ -70,7 +70,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +91,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
@@ -112,7 +112,7 @@ public class PagesFacade extends AbstractIsaacFacade {
   private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
   private final ContentService api;
-  private final MapperFacade mapper;
+  private final ContentMapper mapper;
   private final UserAccountManager userManager;
   private final URIManager uriManager;
   private final QuestionManager questionManager;
@@ -134,11 +134,10 @@ public class PagesFacade extends AbstractIsaacFacade {
    * @param gameManager      - For looking up gameboard information.
    */
   @Inject
-  public PagesFacade(final ContentService api, final PropertiesLoader propertiesLoader,
-                     final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
+  public PagesFacade(final ContentService api, final PropertiesLoader propertiesLoader, final ILogManager logManager,
+                     final ContentMapper mapper, final GitContentManager contentManager,
                      final UserAccountManager userManager, final URIManager uriManager,
-                     final QuestionManager questionManager,
-                     final GameManager gameManager) {
+                     final QuestionManager questionManager, final GameManager gameManager) {
     super(propertiesLoader, logManager);
     this.api = api;
     this.mapper = mapper;

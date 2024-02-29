@@ -28,11 +28,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.MiscMapper;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 public class PgAssignmentPersistenceManager implements IAssignmentPersistenceManager {
   private static final Logger log = LoggerFactory.getLogger(PgAssignmentPersistenceManager.class);
 
-  private final MapperFacade mapper;
+  private final MiscMapper mapper;
   private final PostgresSqlDb database;
 
   /**
@@ -55,14 +55,14 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
    */
   @Inject
   public PgAssignmentPersistenceManager(final PostgresSqlDb database,
-                                        final MapperFacade mapper) {
+                                        final MiscMapper mapper) {
     this.database = database;
     this.mapper = mapper;
   }
 
   @Override
   public Long saveAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
-    AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
+    AssignmentDO assignmentToSave = mapper.map(assignment);
 
     String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes,"
         + " scheduled_start_date) VALUES (?, ?, ?, ?, ?, ?, ?);";
@@ -144,7 +144,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
               + listOfResults);
         }
 
-        if (listOfResults.size() == 0) {
+        if (listOfResults.isEmpty()) {
           return null;
         }
 
@@ -321,7 +321,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
    * @return Assignment DTO
    */
   private AssignmentDTO convertToAssignmentDTO(final AssignmentDO assignmentDO) {
-    return mapper.map(assignmentDO, AssignmentDTO.class);
+    return mapper.map(assignmentDO);
   }
 
   /**

@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import uk.ac.cam.cl.dtg.isaac.mappers.Default;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 
 /**
@@ -39,6 +40,9 @@ public class UserAuthenticationSettings extends AbstractSegueUser {
    * @param hasSegueAccount - boolean whether or not they have a segue account
    * @param mfaStatus       - indicates if MFA is enabled for the account.
    */
+  // As several properties on this class lack a setter, MapStruct must be directed to use this constructor instead of
+  // generating an empty object and applying setters
+  @Default
   public UserAuthenticationSettings(final Long id, final List<AuthenticationProvider> linkedAccounts,
                                     final boolean hasSegueAccount, final boolean mfaStatus) {
     this.id = id;

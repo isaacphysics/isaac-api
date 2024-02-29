@@ -31,11 +31,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizAttemptDO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.MiscMapper;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -45,7 +45,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceManager {
   private static final Logger log = LoggerFactory.getLogger(PgQuizAttemptPersistenceManager.class);
 
-  private final MapperFacade mapper;
+  private final MiscMapper mapper;
   private final PostgresSqlDb database;
 
   /**
@@ -58,7 +58,7 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
    */
   @Inject
   public PgQuizAttemptPersistenceManager(final PostgresSqlDb database,
-                                         final MapperFacade mapper) {
+                                         final MiscMapper mapper) {
     this.database = database;
     this.mapper = mapper;
   }
@@ -87,7 +87,7 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
 
   @Override
   public Long saveAttempt(final QuizAttemptDTO attempt) throws SegueDatabaseException {
-    QuizAttemptDO attemptToSave = mapper.map(attempt, QuizAttemptDO.class);
+    QuizAttemptDO attemptToSave = mapper.map(attempt);
 
     String query = "INSERT INTO quiz_attempts(user_id, quiz_id, quiz_assignment_id, start_date) VALUES (?, ?, ?, ?);";
     try (Connection conn = database.getDatabaseConnection();
@@ -297,7 +297,7 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
    * @return Assignment DTO
    */
   private QuizAttemptDTO convertToQuizAttemptDTO(final QuizAttemptDO attemptDO) {
-    return mapper.map(attemptDO, QuizAttemptDTO.class);
+    return mapper.map(attemptDO);
   }
 
   /**

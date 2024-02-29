@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-import ma.glasnost.orika.MapperFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.UserMapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -60,7 +60,7 @@ class UserAccountManagerTest {
     QuestionManager questionmanager = createNiceMock(QuestionManager.class);
     PropertiesLoader propertiesLoader = createNiceMock(PropertiesLoader.class);
     Map<AuthenticationProvider, IAuthenticator> providersToRegister = Map.of();
-    MapperFacade dtoMapper = createNiceMock(MapperFacade.class);
+    UserMapper userMapper = createMock(UserMapper.class);
     emailManager = createMock(EmailManager.class);
     PgAnonymousUsers pgAnonymousUsers = createNiceMock(PgAnonymousUsers.class);
     ILogManager logManager = createNiceMock(ILogManager.class);
@@ -76,7 +76,7 @@ class UserAccountManagerTest {
     replay(propertiesLoader);
 
     userAccountManager =
-        new UserAccountManager(database, questionmanager, propertiesLoader, providersToRegister, dtoMapper,
+        new UserAccountManager(database, questionmanager, propertiesLoader, providersToRegister, userMapper,
             emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorAuthenticator,
             userPreferenceManager, schoolListReader);
   }

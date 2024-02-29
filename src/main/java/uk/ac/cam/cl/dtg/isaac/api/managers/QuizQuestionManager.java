@@ -37,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -51,15 +49,15 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.MainObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 
 public class QuizQuestionManager {
   private final QuestionManager questionManager;
-  private final ContentMapper mapper;
+  private final MainObjectMapper mapper;
   private final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager;
   private final QuizManager quizManager;
   private final QuizAttemptManager quizAttemptManager;
@@ -81,7 +79,7 @@ public class QuizQuestionManager {
    *                                         feedback.
    */
   @Inject
-  public QuizQuestionManager(final QuestionManager questionManager, final ContentMapper mapper,
+  public QuizQuestionManager(final QuestionManager questionManager, final MainObjectMapper mapper,
                              final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager,
                              final QuizManager quizManager, final QuizAttemptManager quizAttemptManager) {
     this.questionManager = questionManager;
@@ -112,7 +110,7 @@ public class QuizQuestionManager {
                                     final QuestionValidationResponseDTO questionResponse)
       throws SegueDatabaseException {
     QuestionValidationResponse questionResponseDO =
-        this.mapper.getAutoMapper().map(questionResponse, QuestionValidationResponse.class);
+        this.mapper.map(questionResponse);
 
     this.quizQuestionAttemptManager.registerQuestionAttempt(quizAttempt.getId(), questionResponseDO);
   }
@@ -261,7 +259,7 @@ public class QuizQuestionManager {
 
       QuestionValidationResponse lastResponse = null;
 
-      if (questionAttempts != null && questionAttempts.size() > 0) {
+      if (questionAttempts != null && !questionAttempts.isEmpty()) {
         // The latest answer is the only answer we consider.
         lastResponse = questionAttempts.get(questionAttempts.size() - 1);
       }
@@ -291,11 +289,8 @@ public class QuizQuestionManager {
           lastAttempt = questionManager.convertQuestionValidationResponseToDTO(lastResponse);
         } else {
           // Manual extract only the safe details (questionId, answer, date attempted).
-          Choice answer = lastResponse.getAnswer();
           lastAttempt = new QuestionValidationResponseDTO();
-          DTOMapping dtoMapping = answer.getClass().getAnnotation(DTOMapping.class);
-          lastAttempt.setAnswer(mapper.getAutoMapper().map(lastResponse.getAnswer(),
-              (Class<? extends ChoiceDTO>) dtoMapping.value()));
+          lastAttempt.setAnswer(mapper.mapChoice(lastResponse.getAnswer()));
           lastAttempt.setQuestionId(lastResponse.getQuestionId());
           lastAttempt.setDateAttempted(lastResponse.getDateAttempted());
         }
@@ -342,9 +337,9 @@ public class QuizQuestionManager {
 
     // Make a score table
     Map<String, QuizFeedbackDTO.Mark> sectionMarks =
-        sections.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
+        sections.stream().collect(Collectors.toMap(IsaacQuizSectionDTO::getId, s -> new QuizFeedbackDTO.Mark()));
     Map<String, QuizFeedbackDTO.Mark> questionMarks =
-        questionsToAugment.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
+        questionsToAugment.stream().collect(Collectors.toMap(QuestionDTO::getId, s -> new QuizFeedbackDTO.Mark()));
 
     // Calculate the scores
     for (QuestionDTO question : questionsToAugment) {

@@ -175,7 +175,6 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2Authenticator {
           email,
           emailStatus,
           null,
-          null,
           null
       );
     }

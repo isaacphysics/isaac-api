@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 class ContentIndexerTest {
   private GitDb database;
   private ElasticSearchIndexer searchProvider;
-  private ContentMapper contentMapper;
+  private ContentMapperUtils contentMapperUtils;
 
   private ContentIndexer defaultContentIndexer;
 
@@ -68,9 +68,9 @@ class ContentIndexerTest {
   public final void setUp() throws Exception {
     this.database = createMock(GitDb.class);
     this.searchProvider = createMock(ElasticSearchIndexer.class);
-    this.contentMapper = createMock(ContentMapper.class);
+    this.contentMapperUtils = createMock(ContentMapperUtils.class);
     this.defaultContentIndexer = new ContentIndexer(database, searchProvider,
-        contentMapper);
+        contentMapperUtils);
   }
 
   /**
@@ -114,7 +114,7 @@ class ContentIndexerTest {
 
     // prepare pre-canned responses for the object mapper
     ObjectMapper objectMapper = createMock(ObjectMapper.class);
-    expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
+    expect(contentMapperUtils.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
         .once();
     expect(objectMapper.writeValueAsString(content)).andReturn(
         uniqueObjectHash).once();
@@ -159,16 +159,16 @@ class ContentIndexerTest {
         anyObject());
     expectLastCall().once();
 
-    replay(searchProvider, contentMapper, objectMapper);
+    replay(searchProvider, contentMapperUtils, objectMapper);
 
     ContentIndexer contentIndexer = new ContentIndexer(database,
-        searchProvider, contentMapper);
+        searchProvider, contentMapperUtils);
 
     // Method under test
     contentIndexer.buildElasticSearchIndex(INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap,
         someContentProblemsMap);
 
-    verify(searchProvider, contentMapper, objectMapper);
+    verify(searchProvider, contentMapperUtils, objectMapper);
   }
 
   /**

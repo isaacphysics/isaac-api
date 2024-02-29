@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
@@ -63,6 +62,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.MainObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -81,7 +81,7 @@ public class GameboardPersistenceManager {
   private final PostgresSqlDb database;
   private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
 
-  private final MapperFacade mapper; // used for content object mapping.
+  private final MainObjectMapper mapper; // used for content object mapping.
   private final ObjectMapper objectMapper; // used for json serialisation
 
   private final GitContentManager contentManager;
@@ -104,7 +104,7 @@ public class GameboardPersistenceManager {
    */
   @Inject
   public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                     final MapperFacade mapper, final ObjectMapper objectMapper,
+                                     final MainObjectMapper mapper, final ObjectMapper objectMapper,
                                      final URIManager uriManager) {
     this.database = database;
     this.mapper = mapper;
@@ -302,7 +302,7 @@ public class GameboardPersistenceManager {
    */
   public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
       throws SegueDatabaseException {
-    GameboardDO gameboardToSave = mapper.map(gameboard, GameboardDO.class);
+    GameboardDO gameboardToSave = mapper.map(gameboard);
     // the mapping operation won't work for the list so we should just
     // create a new one.
     gameboardToSave.setContents(Lists.newArrayList());
@@ -773,7 +773,7 @@ public class GameboardPersistenceManager {
    * @return gameboard DTO
    */
   private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO, final boolean populateGameboardItems) {
-    GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
+    GameboardDTO gameboardDTO = mapper.map(gameboardDO);
 
     if (!populateGameboardItems) {
       List<GameboardItem> listOfSparseGameItems = Lists.newArrayList();
@@ -813,7 +813,7 @@ public class GameboardPersistenceManager {
    * @return GameboardDO.
    */
   private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
-    GameboardDO gameboardDO = mapper.map(gameboardDTO, GameboardDO.class);
+    GameboardDO gameboardDO = mapper.map(gameboardDTO);
     // the mapping operation won't work for the list so we should just
     // create a new one.
     gameboardDO.setContents(Lists.newArrayList());

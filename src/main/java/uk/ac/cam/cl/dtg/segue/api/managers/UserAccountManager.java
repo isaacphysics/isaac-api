@@ -57,8 +57,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import ma.glasnost.orika.MapperFacade;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -87,6 +85,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.UserMapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -133,7 +132,7 @@ public class UserAccountManager implements IUserAccountManager {
   private final IUserDataManager database;
   private final QuestionManager questionAttemptDb;
   private final ILogManager logManager;
-  private final MapperFacade dtoMapper;
+  private final UserMapper dtoMapper;
   private final EmailManager emailManager;
 
   private final IAnonymousUserDataManager temporaryUserCache;
@@ -177,7 +176,7 @@ public class UserAccountManager implements IUserAccountManager {
   public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
                             final PropertiesLoader properties,
                             final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-                            final MapperFacade dtoMapper,
+                            final UserMapper dtoMapper,
                             final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                             final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
                             final ISecondFactorAuthenticator secondFactorManager,
@@ -671,7 +670,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     // We want to map to DTO first to make sure that the user cannot
     // change fields that aren't exposed to them
-    RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
+    RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser);
     if (updatedUser.getId() == null) {
       throw new IllegalArgumentException(
           "The user object specified does not have an id. Users cannot be updated without a specific id set.");
@@ -704,11 +703,8 @@ public class UserAccountManager implements IUserAccountManager {
       authenticator.ensureValidPassword(newPassword);
     }
 
-    MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
-
-    RegisteredUser userToSave = new RegisteredUser();
-    mergeMapper.map(existingUser, userToSave);
-    mergeMapper.map(userDTOContainingUpdates, userToSave);
+    RegisteredUser userToSave = dtoMapper.copy(existingUser);
+    dtoMapper.merge(userDTOContainingUpdates, userToSave);
     // Don't modify email verification status, registration date, or role
     userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
     userToSave.setRegistrationDate(existingUser.getRegistrationDate());
@@ -941,7 +937,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
     if (userAuthenticationSettings != null) {
-      return this.dtoMapper.map(userAuthenticationSettings, UserAuthenticationSettingsDTO.class);
+      return this.dtoMapper.map(userAuthenticationSettings);
     } else {
       return new UserAuthenticationSettingsDTO();
     }
@@ -955,8 +951,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws SegueDatabaseException - if there is a database error.
    */
   public List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
-    List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
-        RegisteredUser.class));
+    List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype));
 
     return this.convertUserDOListToUserDTOList(registeredUsersDOs);
   }
@@ -1004,7 +999,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @throws SegueDatabaseException - If there is another database error
    */
   @Override
-  public final RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
+  public RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
       SegueDatabaseException {
     RegisteredUser user;
     if (includeDeleted) {
@@ -1101,14 +1096,14 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     RegisteredUser userToSave;
-    MapperFacade mapper = this.dtoMapper;
+    UserMapper mapper = this.dtoMapper;
 
     // We want to map to DTO first to make sure that the user cannot
     // change fields that aren't exposed to them
-    RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
+    RegisteredUserDTO userDtoForNewUser = mapper.map(user);
 
     // This is a new registration
-    userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
+    userToSave = mapper.map(userDtoForNewUser);
 
     // Set defaults
     userToSave.setRole(Role.STUDENT);
@@ -1509,9 +1504,8 @@ public class UserAccountManager implements IUserAccountManager {
    * @param detailedDtoClass - The DTO class type into which the user object is to be converted
    * @return a summarised DTO object with details as per the specified detailedDTOClass
    */
-  public <T extends UserSummaryDTO> T convertToUserSummary(
-          final RegisteredUserDTO userToConvert,
-          final Class<T> detailedDtoClass) {
+  public <T extends UserSummaryDTO> T convertToUserSummary(final RegisteredUserDTO userToConvert,
+                                                           final Class<T> detailedDtoClass) {
     return this.dtoMapper.map(userToConvert, detailedDtoClass);
   }
 
@@ -1613,7 +1607,7 @@ public class UserAccountManager implements IUserAccountManager {
     emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate, emailTokens, EmailType.SYSTEM);
 
     // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
-    RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
+    RegisteredUserDTO temporaryUser = this.dtoMapper.copy(userDTO);
     temporaryUser.setEmail(newEmail);
     temporaryUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
     this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
@@ -1680,7 +1674,7 @@ public class UserAccountManager implements IUserAccountManager {
         final RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
 
         this.questionAttemptDb.mergeAnonymousQuestionAttemptsIntoRegisteredUser(
-            this.dtoMapper.map(anonymousUser, AnonymousUserDTO.class), userDTO);
+            this.dtoMapper.map(anonymousUser), userDTO);
 
         // may as well spawn a new thread to do the log migration stuff asynchronously
         // work now.
@@ -1847,7 +1841,7 @@ public class UserAccountManager implements IUserAccountManager {
       return new ArrayList<>();
     }
 
-    return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class))
+    return users.parallelStream().map(user -> this.dtoMapper.map(user))
         .collect(Collectors.toList());
   }
 
@@ -1871,7 +1865,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @return An anonymous user containing any anonymous question attempts (which could be none)
    */
   private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) throws SegueDatabaseException {
-    return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
+    return this.dtoMapper.map(this.getAnonymousUserDO(request));
   }
 
   /**
@@ -2018,7 +2012,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
     user.setTeacherPending(newFlagValue);
     RegisteredUser updatedUser = database.createOrUpdateUser(user);
-    return dtoMapper.map(updatedUser, RegisteredUserDTO.class);
+    return dtoMapper.map(updatedUser);
   }
 
   public void sendRoleChangeRequestEmail(final HttpServletRequest request, final RegisteredUserDTO user,

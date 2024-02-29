@@ -65,7 +65,7 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
    *
    * @return the matchType
    */
-  public final String matchType() {
+  public final String getMatchType() {
     return matchType;
   }
 
@@ -75,7 +75,7 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
    * @param matchType
    *            the matchType to set
    */
-  public final void matchType(final String matchType) {
+  public final void setMatchType(final String matchType) {
     this.matchType = matchType;
   }
 

@@ -8,15 +8,15 @@ import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 
-class ContentMapperTest {
+class ContentMapperUtilsTest {
 
-  private ContentMapper contentMapper;
+  private ContentMapperUtils contentMapperUtils;
 
   @BeforeEach
   public void setUp() {
-    this.contentMapper = new ContentMapper(getClasses("uk.ac.cam.cl.dtg.isaac"));
+    this.contentMapperUtils = new ContentMapperUtils(getClasses("uk.ac.cam.cl.dtg.isaac"));
   }
 
   @Test
@@ -27,7 +27,7 @@ class ContentMapperTest {
     codeSnippet.setExpandable(true);
 
     // Act
-    ContentDTO codeSnippetDTO = contentMapper.getDTOByDO(codeSnippet);
+    ContentDTO codeSnippetDTO = contentMapperUtils.getDTOByDO(codeSnippet);
 
     // Assert
     assertTrue(codeSnippetDTO.getExpandable());
@@ -41,7 +41,7 @@ class ContentMapperTest {
     content.setExpandable(true);
 
     // Act
-    ContentDTO contentDTO = contentMapper.getDTOByDO(content);
+    ContentDTO contentDTO = contentMapperUtils.getDTOByDO(content);
 
     // Assert
     assertTrue(contentDTO.getExpandable());

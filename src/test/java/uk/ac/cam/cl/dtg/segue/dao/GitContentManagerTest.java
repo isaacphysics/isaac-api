@@ -22,8 +22,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.ac.cam.cl.dtg.isaac.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -38,9 +39,10 @@ class GitContentManagerTest {
   public final void setUp() {
     GitDb database = createMock(GitDb.class);
     ISearchProvider searchProvider = createMock(ISearchProvider.class);
+    ContentMapperUtils contentMapperUtils = createMock(ContentMapperUtils.class);
     ContentMapper contentMapper = createMock(ContentMapper.class);
 
-    this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper);
+    this.defaultGCM = new GitContentManager(database, searchProvider, contentMapperUtils, contentMapper);
   }
 
   /**

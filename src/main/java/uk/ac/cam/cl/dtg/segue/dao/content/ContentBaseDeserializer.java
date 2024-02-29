@@ -27,7 +27,7 @@ import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 
 /**
- * Content deserializer will try and use the map built up in the ContentMapper class to determine what subtype of
+ * Content deserializer will try and use the map built up in the ContentMapperUtils class to determine what subtype of
  * content needs to be created.
  * <br>
  * Currently this is dependent on the register map key being the exact same text as the json 'type' property value

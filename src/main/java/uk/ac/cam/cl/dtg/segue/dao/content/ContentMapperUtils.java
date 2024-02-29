@@ -31,10 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import ma.glasnost.orika.MapperFacade;
-import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.converter.ConverterFactory;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,25 +44,21 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
-import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
-import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
 
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass.
  */
-public class ContentMapper {
-  private static final Logger log = LoggerFactory.getLogger(ContentMapper.class);
+public class ContentMapperUtils {
+  private static final Logger log = LoggerFactory.getLogger(ContentMapperUtils.class);
 
   // Used for serialization into the correct POJO as well as deserialization.
   // Currently depends on the string key being the same text value as the type
   // field.
   private final Map<String, Class<? extends Content>> jsonTypes;
   private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
-
-  // this autoMapper is initialised lazily in the getAutoMapper method
-  private MapperFacade autoMapper = null;
 
   private static ObjectMapper preconfiguredObjectMapper;
 
@@ -76,7 +68,7 @@ public class ContentMapper {
    * Note: Type information must be provided by using the register type methods.
    */
   @Inject
-  public ContentMapper() {
+  public ContentMapperUtils() {
     jsonTypes = Maps.newConcurrentMap();
     mapOfDOsToDTOs = Maps.newConcurrentMap();
   }
@@ -86,7 +78,7 @@ public class ContentMapper {
    *
    * @param classes - series of classes contained within the parent package to search for content classes.
    */
-  public ContentMapper(final Collection<Class<?>> classes) {
+  public ContentMapperUtils(final Collection<Class<?>> classes) {
     this();
     requireNonNull(classes);
     Validate.notEmpty(classes);
@@ -151,8 +143,8 @@ public class ContentMapper {
     if (dtoMapping != null && ContentDTO.class.isAssignableFrom(dtoMapping.value())) {
       this.mapOfDOsToDTOs.put(cls, (Class<? extends ContentDTO>) dtoMapping.value());
     } else {
-      log.error("The DTO mapping provided is null or the annotation is not present" + " for the class " + cls
-          + ". This class cannot be auto mapped from DO to DTO.");
+      log.error("The DTO mapping provided is null or the annotation is not present for the class {}."
+          + " This class cannot be auto mapped from DO to DTO.", cls);
     }
   }
 
@@ -229,7 +221,7 @@ public class ContentMapper {
       return null;
     }
 
-    ContentDTO result = getAutoMapper().map(content, this.mapOfDOsToDTOs.get(content.getClass()));
+    ContentDTO result = ContentMapper.INSTANCE.mapContent(content);
     this.populateRelatedContentWithIDs(content, result);
     return result;
   }
@@ -258,14 +250,14 @@ public class ContentMapper {
 
   /**
    * Provides a pre-configured module that can be added to an object mapper so that contentBase objects can be
-   * deseerialized using the custom deserializer.
+   * deserialized using the custom deserializer.
    * <br>
    * This object Mapper is shared and should be treated as immutable.
    *
    * @return a jackson object mapper.
    */
   public ObjectMapper getSharedContentObjectMapper() {
-    if (ContentMapper.preconfiguredObjectMapper != null) {
+    if (ContentMapperUtils.preconfiguredObjectMapper != null) {
       return preconfiguredObjectMapper;
     }
 
@@ -287,7 +279,7 @@ public class ContentMapper {
     // Required to deal with type polymorphism
     ObjectMapper objectMapper = this.getSharedContentObjectMapper();
 
-    List<Content> contentList = new ArrayList<Content>();
+    List<Content> contentList = new ArrayList<>();
 
     for (String item : stringList) {
       try {
@@ -297,31 +289,6 @@ public class ContentMapper {
       }
     }
     return contentList;
-  }
-
-  /**
-   * Get an instance of the automapper which has been configured to cope with recursive content objects. This
-   * automapper is more efficient than the jackson one as there is no intermediate representation.
-   *
-   * @return autoMapper
-   */
-  public MapperFacade getAutoMapper() {
-    if (null == this.autoMapper) {
-      log.info("Creating instance of content auto mapper.");
-      MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
-
-      ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-      converterFactory.registerConverter(new ContentBaseOrikaConverter(this));
-      converterFactory.registerConverter(new ChoiceOrikaConverter());
-      converterFactory.registerConverter(new ItemOrikaConverter());
-      converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
-      converterFactory.registerConverter(new AnonymousUserQuestionAttemptsOrikaConverter());
-      converterFactory.registerConverter(new AudienceOrikaConverter());
-
-      this.autoMapper = mapperFactory.getMapperFacade();
-    }
-
-    return this.autoMapper;
   }
 
   /**

@@ -63,7 +63,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
@@ -74,16 +74,16 @@ public class ContentIndexer {
 
   private final ElasticSearchIndexer es;
   private final GitDb database;
-  private final ContentMapper mapper;
+  private final ContentMapperUtils mapperUtils;
 
   private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
   private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
   @Inject
-  public ContentIndexer(final GitDb database, final ElasticSearchIndexer es, final ContentMapper mapper) {
+  public ContentIndexer(final GitDb database, final ElasticSearchIndexer es, final ContentMapperUtils mapperUtils) {
     this.database = database;
     this.es = es;
-    this.mapper = mapper;
+    this.mapperUtils = mapperUtils;
   }
 
 
@@ -214,7 +214,7 @@ public class ContentIndexer {
 
         // setup object mapper to use preconfigured deserializer
         // module. Required to deal with type polymorphism
-        ObjectMapper objectMapper = mapper.getSharedContentObjectMapper();
+        ObjectMapper objectMapper = mapperUtils.getSharedContentObjectMapper();
 
         Content content;
         try {
@@ -661,7 +661,7 @@ public class ContentIndexer {
     // setup object mapper to use pre-configured deserializer module.
     // Required to deal with type polymorphism
     List<Map.Entry<String, String>> contentToIndex = Lists.newArrayList();
-    ObjectMapper objectMapper = mapper.generateNewPreconfiguredContentMapper();
+    ObjectMapper objectMapper = mapperUtils.generateNewPreconfiguredContentMapper();
     for (Content content : gitCache.values()) {
       try {
         contentToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));

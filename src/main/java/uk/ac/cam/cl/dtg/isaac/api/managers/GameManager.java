@@ -61,7 +61,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -88,6 +87,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -106,7 +106,7 @@ public class GameManager {
 
   private final GameboardPersistenceManager gameboardPersistenceManager;
   private final Random randomGenerator;
-  private final MapperFacade mapper;
+  private final ContentMapper mapper;
 
   private final GitContentManager contentManager;
 
@@ -122,7 +122,7 @@ public class GameManager {
    */
   @Inject
   public GameManager(final GitContentManager contentManager,
-                     final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
+                     final GameboardPersistenceManager gameboardPersistenceManager, final ContentMapper mapper,
                      final QuestionManager questionManager) {
     this.contentManager = contentManager;
     this.gameboardPersistenceManager = gameboardPersistenceManager;
@@ -1285,7 +1285,7 @@ public class GameManager {
    * @throws NoWildcardException     - when we are unable to provide you with a wildcard object.
    * @throws ContentManagerException - if we cannot access the content requested.
    */
-  private IsaacWildcard getRandomWildcard(final MapperFacade mapper, final List<String> subjectsList)
+  private IsaacWildcard getRandomWildcard(final ContentMapper mapper, final List<String> subjectsList)
       throws NoWildcardException,
       ContentManagerException {
     List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();

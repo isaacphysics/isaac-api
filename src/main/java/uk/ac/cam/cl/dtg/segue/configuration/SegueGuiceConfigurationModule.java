@@ -44,7 +44,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -69,10 +68,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
@@ -97,6 +94,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
+import uk.ac.cam.cl.dtg.isaac.mappers.ContentMapper;
+import uk.ac.cam.cl.dtg.isaac.mappers.EventMapper;
+import uk.ac.cam.cl.dtg.isaac.mappers.MainObjectMapper;
+import uk.ac.cam.cl.dtg.isaac.mappers.MiscMapper;
+import uk.ac.cam.cl.dtg.isaac.mappers.UserMapper;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
@@ -158,7 +160,7 @@ import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManagerEventListener;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.userbadges.IUserBadgePersistenceManager;
@@ -205,7 +207,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
   // Singletons - we only ever want there to be one instance of each of these.
   private static PostgresSqlDb postgresDB;
-  private static ContentMapper mapper = null;
+  private static ContentMapperUtils mapperUtils = null;
   private static GitContentManager contentManager = null;
   private static RestHighLevelClient elasticSearchClient = null;
   private static UserAccountManager userManager = null;
@@ -520,20 +522,22 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
    * TODO: This is a singleton as the units and tags are stored in memory. If we move these out it can be an instance.
    *  This would be better as then we can give it a new search provider if the client has closed.
    *
-   * @param database         - database reference
-   * @param searchProvider   - search provider to use
-   * @param contentMapper    - content mapper to use.
-   * @param globalProperties - properties loader to use
+   * @param database           - database reference
+   * @param searchProvider     - search provider to use
+   * @param contentMapperUtils - content mapper to use.
+   * @param globalProperties   - properties loader to use
    * @return a fully configured content Manager.
    */
   @Inject
   @Provides
   @Singleton
   private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
-                                                     final ContentMapper contentMapper,
+                                                     final ContentMapperUtils contentMapperUtils,
+                                                     final ContentMapper objectMapper,
                                                      final PropertiesLoader globalProperties) {
     if (null == contentManager) {
-      contentManager = new GitContentManager(database, searchProvider, contentMapper, globalProperties);
+      contentManager =
+          new GitContentManager(database, searchProvider, contentMapperUtils, objectMapper, globalProperties);
       log.info("Creating singleton of ContentManager");
     }
 
@@ -581,14 +585,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   @Inject
   @Provides
   @Singleton
-  private static ContentMapper getContentMapper() {
-    if (null == mapper) {
+  private static ContentMapperUtils getContentMapper() {
+    if (null == mapperUtils) {
       Set<Class<?>> c = getClasses("uk.ac.cam.cl.dtg");
-      mapper = new ContentMapper(c);
+      mapperUtils = new ContentMapperUtils(c);
       log.info("Creating Singleton of the Content Mapper");
     }
 
-    return mapper;
+    return mapperUtils;
   }
 
   /**
@@ -610,7 +614,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
     ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
 
-    Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
+    Map<String, ISegueHashingAlgorithm> possibleAlgorithms = Map.of(
         preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
         oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
         oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
@@ -719,7 +723,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                              final EmailManager emailQueue,
                                              final IAnonymousUserDataManager temporaryUserCache,
-                                             final ILogManager logManager, final MapperFacade mapperFacade,
+                                             final ILogManager logManager, final MainObjectMapper mapperFacade,
                                              final UserAuthenticationManager userAuthenticationManager,
                                              final ISecondFactorAuthenticator secondFactorManager,
                                              final AbstractUserPreferenceManager userPreferenceManager,
@@ -745,7 +749,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   @Inject
   @Provides
   @Singleton
-  private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapper objectMapper) {
+  private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapperUtils objectMapper) {
     // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
     if (null == questionPersistenceManager) {
       questionPersistenceManager = new PgQuestionAttempts(ds, objectMapper);
@@ -771,7 +775,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   @Singleton
   private GroupManager getGroupManager(final IUserGroupPersistenceManager userGroupDataManager,
                                        final UserAccountManager userManager, final GameManager gameManager,
-                                       final MapperFacade dtoMapper) {
+                                       final UserMapper dtoMapper) {
 
     if (null == groupManager) {
       groupManager = new GroupManager(userGroupDataManager, userManager, gameManager, dtoMapper);
@@ -867,16 +871,39 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     return misuseMonitor;
   }
 
-  /**
-   * Gets the instance of the dozer mapper object.
-   *
-   * @return a preconfigured instance of an Auto Mapper. This is specialised for mapping SegueObjects.
-   */
   @Provides
   @Singleton
   @Inject
-  public static MapperFacade getDOtoDTOMapper() {
-    return SegueGuiceConfigurationModule.getContentMapper().getAutoMapper();
+  public static MainObjectMapper getMainMapperInstance() {
+    return MainObjectMapper.INSTANCE;
+  }
+
+  @Provides
+  @Singleton
+  @Inject
+  public static ContentMapper getContentMapperInstance() {
+    return ContentMapper.INSTANCE;
+  }
+
+  @Provides
+  @Singleton
+  @Inject
+  public static UserMapper getUserMapperInstance() {
+    return UserMapper.INSTANCE;
+  }
+
+  @Provides
+  @Singleton
+  @Inject
+  public static EventMapper getEventMapperInstance() {
+    return EventMapper.INSTANCE;
+  }
+
+  @Provides
+  @Singleton
+  @Inject
+  public static MiscMapper getMiscMapperInstance() {
+    return MiscMapper.INSTANCE;
   }
 
   /**
@@ -964,11 +991,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     return statsManager;
   }
 
+  static final String CRON_STRING_0200_DAILY = "0 0 2 * * ?";
+  static final String CRON_STRING_0230_DAILY = "0 30 2 * * ?";
+  static final String CRON_STRING_0700_DAILY = "0 0 7 * * ?";
+  static final String CRON_STRING_2000_DAILY = "0 0 20 * * ?";
+  static final String CRON_STRING_HOURLY = "0 0 * ? * * *";
+  static final String CRON_STRING_EVERY_FOUR_HOURS = "0 0 0/4 ? * * *";
+  static final String CRON_GROUP_NAME_SQL_MAINTENANCE = "SQLMaintenance";
+  static final String CRON_GROUP_NAME_JAVA_JOB = "JavaJob";
+
   @Provides
   @Singleton
   @Inject
-  private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database)
-      throws SchedulerException {
+  private static SegueJobService getSegueJobService(final PropertiesLoader properties, final PostgresSqlDb database) {
     if (null == segueJobService) {
       String mailjetKey = properties.getProperty(MAILJET_API_KEY);
       String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
@@ -978,72 +1013,72 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
       SegueScheduledJob piiSqlJob = new SegueScheduledDatabaseScriptJob(
           "PIIDeleteScheduledJob",
-          "SQLMaintenance",
+          CRON_GROUP_NAME_SQL_MAINTENANCE,
           "SQL scheduled job that deletes PII",
-          "0 0 2 * * ?", "db_scripts/scheduled/pii-delete-task.sql");
+          CRON_STRING_0200_DAILY, "db_scripts/scheduled/pii-delete-task.sql");
 
       SegueScheduledJob cleanUpOldAnonymousUsers = new SegueScheduledDatabaseScriptJob(
           "cleanAnonymousUsers",
-          "SQLMaintenance",
+          CRON_GROUP_NAME_SQL_MAINTENANCE,
           "SQL scheduled job that deletes old AnonymousUsers",
-          "0 30 2 * * ?", "db_scripts/scheduled/anonymous-user-clean-up.sql");
+          CRON_STRING_0230_DAILY, "db_scripts/scheduled/anonymous-user-clean-up.sql");
 
       SegueScheduledJob cleanUpExpiredReservations = new SegueScheduledDatabaseScriptJob(
           "cleanUpExpiredReservations",
-          "SQLMaintenence",
+          CRON_GROUP_NAME_SQL_MAINTENANCE,
           "SQL scheduled job that deletes expired reservations for the event booking system",
-          "0 0 7 * * ?", "db_scripts/scheduled/expired-reservations-clean-up.sql");
+          CRON_STRING_0700_DAILY, "db_scripts/scheduled/expired-reservations-clean-up.sql");
 
       SegueScheduledJob deleteEventAdditionalBookingInformation = SegueScheduledJob.createCustomJob(
           "deleteEventAdditionalBookingInformation",
-          "JavaJob",
+          CRON_GROUP_NAME_JAVA_JOB,
           "Delete event additional booking information a given period after an event has taken place",
-          "0 0 7 * * ?",
+          CRON_STRING_0700_DAILY,
           Maps.newHashMap(),
           new DeleteEventAdditionalBookingInformationJob()
       );
 
       SegueScheduledJob deleteEventAdditionalBookingInformationOneYearJob = SegueScheduledJob.createCustomJob(
           "deleteEventAdditionalBookingInformationOneYear",
-          "JavaJob",
+          CRON_GROUP_NAME_JAVA_JOB,
           "Delete event additional booking information a year after an event has taken place if not already removed",
-          "0 0 7 * * ?",
+          CRON_STRING_0700_DAILY,
           Maps.newHashMap(),
           new DeleteEventAdditionalBookingInformationOneYearJob()
       );
 
       SegueScheduledJob eventReminderEmail = SegueScheduledJob.createCustomJob(
           "eventReminderEmail",
-          "JavaJob",
+          CRON_GROUP_NAME_JAVA_JOB,
           "Send scheduled reminder emails to events",
-          "0 0 7 * * ?",
+          CRON_STRING_0700_DAILY,
           Maps.newHashMap(),
           new EventReminderEmailJob()
       );
 
       SegueScheduledJob eventFeedbackEmail = SegueScheduledJob.createCustomJob(
           "eventFeedbackEmail",
-          "JavaJob",
+          CRON_GROUP_NAME_JAVA_JOB,
           "Send scheduled feedback emails to events",
-          "0 0 20 * * ?",
+          CRON_STRING_2000_DAILY,
           Maps.newHashMap(),
           new EventFeedbackEmailJob()
       );
 
       SegueScheduledJob scheduledAssignmentsEmail = SegueScheduledJob.createCustomJob(
           "scheduledAssignmentsEmail",
-          "JavaJob",
+          CRON_GROUP_NAME_JAVA_JOB,
           "Send scheduled assignment notification emails to groups",
-          "0 0 * ? * * *",
+          CRON_STRING_HOURLY,
           Maps.newHashMap(),
           new ScheduledAssignmentsEmailJob()
       );
 
       SegueScheduledJob syncMailjetUsers = new SegueScheduledSyncMailjetUsersJob(
           "syncMailjetUsersJob",
-          "JavaJob",
+          CRON_GROUP_NAME_JAVA_JOB,
           "Sync users to mailjet",
-          "0 0 0/4 ? * * *");
+          CRON_STRING_EVERY_FOUR_HOURS);
 
       List<SegueScheduledJob> configuredScheduledJobs = new ArrayList<>(Arrays.asList(
           piiSqlJob,
@@ -1124,7 +1159,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
   private static GameboardPersistenceManager getGameboardPersistenceManager(
       final PostgresSqlDb database,
       final GitContentManager contentManager,
-      final MapperFacade mapper,
+      final MainObjectMapper mapper,
       final ObjectMapper objectMapper,
       final URIManager uriManager
   ) {
