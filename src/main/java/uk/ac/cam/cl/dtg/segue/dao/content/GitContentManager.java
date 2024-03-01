@@ -505,7 +505,7 @@ public class GitContentManager {
                     Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
                     "tags"
             ).getSource().get("tags");
-            return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+            return tagObjects.stream().map(Functions.toStringFunction()).collect(Collectors.toSet());
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
             return Sets.newHashSet();
