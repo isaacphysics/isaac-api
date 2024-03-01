@@ -896,10 +896,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     /**
      * Helper function to remove PII and set tombstone flag for a Registered User.
      * Note: This function mutates the object that it was provided.
-     *
-     * @return User object to be persisted that no longer has PII
      */
-    private static RegisteredUser removePIIFromUserDO(RegisteredUser user) {
+    private static void removePIIFromUserDO(RegisteredUser user) {
         user.setFamilyName(null);
         user.setGivenName(null);
         user.setEmail(UUID.randomUUID().toString());
@@ -914,6 +912,5 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             user.setDateOfBirth(calendar.getTime());
         }
 
-        return user;
     }
 }

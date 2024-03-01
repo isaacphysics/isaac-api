@@ -465,9 +465,8 @@ public class GameboardPersistenceManager {
      * gameboard items populated with meaningful titles.
      *
      * @param gameboards - list of gameboards to fully augment.
-     * @return augmented gameboards as per inputted list.
      */
-    public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
+    public void augmentGameboardItems(final List<GameboardDTO> gameboards) {
         Set<GameboardContentDescriptor> contentDescriptors = Sets.newHashSet();
         Map<String, List<String>> gameboardToQuestionsMap = Maps.newHashMap();
 
@@ -481,7 +480,7 @@ public class GameboardPersistenceManager {
 
         if (contentDescriptors.isEmpty()) {
             log.info("No question ids found; returning original gameboard without augmenting.");
-            return gameboards;
+            return;
         }
 
         Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(contentDescriptors));
@@ -501,7 +500,6 @@ public class GameboardPersistenceManager {
                 }
             }
         }
-        return gameboards;
     }
 
     /**

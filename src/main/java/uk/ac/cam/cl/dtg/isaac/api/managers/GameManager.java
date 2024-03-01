@@ -1106,14 +1106,12 @@ public class GameManager {
      *             - the gameboard item.
      * @param questionAttemptsFromUser
      *             - the user that may or may not have attempted questions in the gameboard.
-     * @return gameItem
-     *             - the gameItem passed in having been modified (augmented)), returned for possiblity of chaining.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      * @throws ResourceNotFoundException
      *             - if we cannot find the question specified.
      */
-    private GameboardItem augmentGameItemWithAttemptInformation(
+    private void augmentGameItemWithAttemptInformation(
             final GameboardItem gameItem,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>>
                     questionAttemptsFromUser)
@@ -1195,8 +1193,6 @@ public class GameManager {
             state = GameboardItemState.IN_PROGRESS;
         }
         gameItem.setState(state);
-
-        return gameItem;
     }
     
     /**
@@ -1436,17 +1432,16 @@ public class GameManager {
     }
 
     /**
-     * Provides validation for a given gameboard. For use prior to persistence.
+     * Validate gameboard or throw an exception. For use prior to persistence.
      * 
      * @param gameboardDTO
      *            - to check
-     * @return the gameboard (unchanged) if everything is ok, otherwise an exception will be thrown.
      * @throws InvalidGameboardException
      *             - If the gameboard is considered to be invalid.
      * @throws NoWildcardException
      *             - if the wildcard cannot be found.
      */
-    private GameboardDTO validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
+    private void validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
             NoWildcardException {
         if (gameboardDTO.getId() != null && gameboardDTO.getId().contains(" ")) {
             throw new InvalidGameboardException(
@@ -1488,7 +1483,5 @@ public class GameManager {
             throw new InvalidGameboardException(
                     "There was a problem validating the gameboard due to ContentManagerException another exception.");
         }
-
-        return gameboardDTO;
     }
 }
