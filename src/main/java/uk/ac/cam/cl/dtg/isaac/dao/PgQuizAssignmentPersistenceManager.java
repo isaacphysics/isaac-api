@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -142,31 +143,23 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
     public List<QuizAssignmentDTO> getAssignmentsByGroupList(List<Long> groupIds) throws SegueDatabaseException {
         List<QuizAssignmentDTO> listOfResults = Lists.newArrayList();
         if (groupIds.isEmpty()) {
-            return listOfResults; // IN condition below doesn't work with empty list.
+            return listOfResults;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM quiz_assignments WHERE group_id IN (");
+        String query = "SELECT * FROM quiz_assignments WHERE group_id = ANY(?) AND NOT deleted ORDER BY creation_date;";
 
-        for (int i = 0; i < groupIds.size(); i++) {
-            sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
-        }
-        sb.append(") AND NOT deleted ORDER BY creation_date");
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int i = 1;
-            for (Long id : groupIds) {
-                pst.setLong(i, id);
-                i++;
-            }
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
 
             try (ResultSet results = pst.executeQuery()) {
-
                 while (results.next()) {
                     listOfResults.add(this.convertToQuizAssignmentDTO(this.convertFromSQLToQuizAssignmentDO(results)));
                 }
-
                 return listOfResults;
+            } finally {
+                groupIdsArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by group list", e);

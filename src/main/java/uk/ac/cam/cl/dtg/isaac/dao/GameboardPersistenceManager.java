@@ -341,25 +341,20 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException - if there is an error during the delete operation.
      */
     public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId) throws SegueDatabaseException {
-        StringBuilder params = new StringBuilder();
-        params.append("?");
-        for (int i = 1; i < gameboardId.size(); i++) {
-            params.append(",?");
-        }
-        String query = String.format("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id IN (%s)", params);
+        String query = "DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id = ANY(?)";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
+            Array gameboardIdsArray = conn.createArrayOf("varchar", gameboardId.toArray());
             pst.setLong(1, userId);
+            pst.setArray(2, gameboardIdsArray);
 
-            int index = 2;
-            for (String id : gameboardId) {
-                pst.setString(index, id);
-                index++;
+            try {
+                pst.execute();
+            } finally {
+                gameboardIdsArray.free();
             }
-
-            pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
