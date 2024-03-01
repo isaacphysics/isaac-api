@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 /**
  * An abstract representation of a Segue CMS facade.
  * 
@@ -140,8 +142,13 @@ public abstract class AbstractSegueFacade {
         
         int maxCacheAge;
         // set max age to server default.
-        maxCacheAge = Objects.requireNonNullElseGet(maxAge,
-                () -> Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME)));
+        try {
+            maxCacheAge = Objects.requireNonNullElseGet(maxAge,
+                    () -> Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME)));
+        } catch (NumberFormatException e) {
+            log.warn("Invalid MAX_CONTENT_CACHE_TIME property, defaulting to no cache!");
+            maxCacheAge = NEVER_CACHE_WITHOUT_ETAG_CHECK;
+        }
 
         cc.setMaxAge(maxCacheAge);
         
