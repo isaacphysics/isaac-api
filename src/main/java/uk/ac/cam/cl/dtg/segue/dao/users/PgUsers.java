@@ -163,41 +163,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         }
     }
 
-
-    @Override
-    public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder("SELECT * FROM user_credentials WHERE user_id IN (");
-        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-        sb.append(String.join(",", questionMarks)).append(");");
-
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
-        ) {
-            int userParamIndex = 1;
-            // These will come in handy later...
-            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
-            Map<RegisteredUser, Boolean> userCredentialsExistence = new HashMap<>();
-            // Add the parameters into the query
-            for (RegisteredUser user : users) {
-                pst.setLong(userParamIndex++, user.getId());
-                userCredentialsExistence.put(userMap.get(user.getId()), false);
-            }
-
-            // See comment in getAuthenticationProvidersByUsers
-            try (Statement statement = conn.createStatement();
-                 ResultSet queryResults = statement.executeQuery(pst.toString());
-            ) {
-                while (queryResults.next()) {
-                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                    userCredentialsExistence.put(user, true);
-                }
-                return userCredentialsExistence;
-            }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
-        }
-    }
-
     @Override
     public RegisteredUser getByLinkedAccount(final AuthenticationProvider provider, final String providerUserId)
             throws SegueDatabaseException {
