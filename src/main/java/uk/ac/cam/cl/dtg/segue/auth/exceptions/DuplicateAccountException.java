@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
  */
 public class DuplicateAccountException extends SegueDatabaseException {
     private static final long serialVersionUID = 7415512495026915539L;
+    private static final String DEFAULT_MESSAGE = "An account with that email address already exists.";
 
     /**
      * Create a new DuplicateAccountException.
@@ -32,6 +33,13 @@ public class DuplicateAccountException extends SegueDatabaseException {
      */
     public DuplicateAccountException(final String message) {
         super(message);
+    }
+
+    /**
+     * Create a new DuplicateAccountException with the default message.
+     */
+    public DuplicateAccountException() {
+        super(DEFAULT_MESSAGE);
     }
 
     /**

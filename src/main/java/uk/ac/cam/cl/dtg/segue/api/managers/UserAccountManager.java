@@ -430,7 +430,7 @@ public class UserAccountManager implements IUserAccountManager {
             log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Unable to set a password, due to an internal database error.";
+            String errorMsg = "Unable to create account due to a database error.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (EmailMustBeVerifiedException e) {
@@ -974,7 +974,7 @@ public class UserAccountManager implements IUserAccountManager {
                 "When creating a new user the user id must not be set.");
 
         if (this.findUserByEmail(user.getEmail()) != null) {
-            throw new DuplicateAccountException("An account with that e-mail address already exists.");
+            throw new DuplicateAccountException();
         }
 
         // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
@@ -1101,7 +1101,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         // Check that the user isn't trying to take an existing users e-mail.
         if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail().equals(updatedUser.getEmail())) {
-            throw new DuplicateAccountException("An account with that e-mail address already exists.");
+            throw new DuplicateAccountException();
         }
 
         // validate names
