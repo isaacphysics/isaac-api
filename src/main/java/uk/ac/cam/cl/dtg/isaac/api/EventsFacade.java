@@ -1456,14 +1456,15 @@ public class EventsFacade extends AbstractIsaacFacade {
                     eventOverviewBuilder.put("location", event.getLocation());
                 }
 
+                Map<BookingStatus, Long> bookingCounts =  this.bookingManager.getBookingStatusCountsByEventId(event.getId());
                 eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.CONFIRMED));
+                        bookingCounts.getOrDefault(BookingStatus.CONFIRMED, 0L));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.WAITING_LIST));
+                        bookingCounts.getOrDefault(BookingStatus.WAITING_LIST, 0L));
                 eventOverviewBuilder.put("numberAttended",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ATTENDED));
+                        bookingCounts.getOrDefault(BookingStatus.ATTENDED, 0L));
                 eventOverviewBuilder.put("numberAbsent",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ABSENT));
+                        bookingCounts.getOrDefault(BookingStatus.ABSENT, 0L));
 
                 if (null != event.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());
