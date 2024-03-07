@@ -64,7 +64,7 @@ class AdminFacadeTest {
     mockRequest = replayMockServletRequest();
     userManager = createMock(UserAccountManager.class);
     emailManager = createMock(EmailManager.class);
-    adminFacade = new AdminFacade(properties, userManager, contentManager, contentIndex, logManager, statsManager,
+    adminFacade = new AdminFacade(properties, userManager, contentManager, logManager, statsManager,
         userPreferenceManager, eventBookingManager, segueJobService, externalAccountManager, misuseMonitor, emailManager);
   }
 

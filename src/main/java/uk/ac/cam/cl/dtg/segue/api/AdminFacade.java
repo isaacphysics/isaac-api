@@ -17,7 +17,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DEFAULT_MISUSE_STATISTICS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_SECRET_KEY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_EVENTS_LIST_ID;
@@ -40,7 +39,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
@@ -75,12 +73,6 @@ import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -131,7 +123,6 @@ public class AdminFacade extends AbstractSegueFacade {
   private final EmailManager emailManager;
 
   private final GitContentManager contentManager;
-  private final String contentIndex;
 
   private final StatisticsManager statsManager;
 
@@ -150,7 +141,6 @@ public class AdminFacade extends AbstractSegueFacade {
    * @param properties             - the fully configured properties loader for the api.
    * @param userManager            - The manager object responsible for users.
    * @param contentManager         - The content manager used by the api.
-   * @param contentIndex           - The index string for the target content version
    * @param logManager             - So we can log events of interest.
    * @param statsManager           - So we can report high level stats.
    * @param userPreferenceManager  - Manager for retrieving and updating user preferences
@@ -162,16 +152,14 @@ public class AdminFacade extends AbstractSegueFacade {
    */
   @Inject
   public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
-                     final ILogManager logManager, final StatisticsManager statsManager,
-                     final AbstractUserPreferenceManager userPreferenceManager,
+                     final GitContentManager contentManager, final ILogManager logManager,
+                     final StatisticsManager statsManager, final AbstractUserPreferenceManager userPreferenceManager,
                      final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
                      final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor,
                      final EmailManager emailManager) {
     super(properties, logManager);
     this.userManager = userManager;
     this.contentManager = contentManager;
-    this.contentIndex = contentIndex;
     this.statsManager = statsManager;
     this.userPreferenceManager = userPreferenceManager;
     this.eventBookingManager = eventBookingManager;
@@ -1080,62 +1068,6 @@ public class AdminFacade extends AbstractSegueFacade {
     } catch (NoUserException e) {
       return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the users with the requested ids: "
           + userIdMergeDTO.getTargetId() + ", " + userIdMergeDTO.getSourceId()).toResponse();
-    }
-  }
-
-  /**
-   * This method will allow the live version served by the site to be changed.
-   *
-   * @param request - to help determine access rights.
-   * @param version - version to use as updated version of content store.
-   * @return Success shown by returning the new liveSHA or failed message "Invalid version selected".
-   */
-  @POST
-  @Path("/live_version/{version}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
-                                                 @PathParam("version") final String version) {
-
-    try {
-      RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-      if (isUserAnAdmin(userManager, currentUser)) {
-
-        String oldLiveVersion = contentManager.getCurrentContentSHA();
-
-        HttpResponse httpResponse;
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-          String host = getProperties().getProperty("ETL_HOSTNAME");
-          String port = getProperties().getProperty("ETL_PORT");
-          String urlWithPlaceholders = "http://%s:%s/isaac-api/api/etl/set_version_alias/%s/%s";
-          String url = String.format(urlWithPlaceholders, host, port, contentIndex, version);
-          HttpPost httpPost = new HttpPost(url);
-
-          httpPost.addHeader("Content-Type", "application/json");
-
-          httpResponse = httpClient.execute(httpPost);
-        }
-
-        HttpEntity e = httpResponse.getEntity();
-
-        if (httpResponse.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
-          log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to "
-              + sanitiseInternalLogValue(version) + ".");
-          return Response.ok().build();
-        } else {
-          SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
-          r.setBypassGenericSiteErrorPage(true);
-          return r.toResponse();
-        }
-
-      } else {
-        return new SegueErrorResponse(Status.FORBIDDEN,
-            "You must be logged in as an admin to access this function.").toResponse();
-      }
-    } catch (NoUserLoggedInException e) {
-      return SegueErrorResponse.getNotLoggedInResponse();
-    } catch (Exception e) {
-      log.error("Exception during version change.", e);
-      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
     }
   }
 
