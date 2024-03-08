@@ -103,21 +103,47 @@ COPY anonymous.imd_deprivation (lsoa_code, lsoa_name, lad_code, lad_name, imd_sc
 
 CREATE TABLE anonymous.users_enhanced AS
 SELECT users.*,
-       schools.name                as school_name,
-       schools.postcode            as location,
-       imd_deprivation.imd_score   as imd_deprivation_score,
-       ncce_priority.priority_type as ncce_priority_type,
+       schools.school_name         AS school_name,
+       schools.postcode            AS location,
+       imd_deprivation.imd_score   AS imd_deprivation_score,
+       ncce_priority.priority_type AS ncce_priority_type,
        COALESCE(
                users.country_code,
                CASE schools.data_source
                    WHEN 'GOVERNMENT_WAL' THEN 'GB-WLS'
                    WHEN 'GOVERNMENT_SCO' THEN 'GB-SCT'
-                   WHEN 'GOVERNMENT_NIR' THEN 'GB-NIR'
+                   WHEN 'GOVERNMENT_NI' THEN 'GB-NIR'
+                   WHEN 'GOVERNMENT_IE' THEN 'GB-IE'
                    WHEN 'GOVERNMENT_UK' THEN 'GB-ENG'
-                   END)
-                                   AS country_code_inferred
-FROM anonymous.users as users
-         left join school_csv_list as schools on schools.urn = users.school_id
-         left join schools_2021_priority as ncce_priority on ncce_priority.urn = users.school_id
-         left join anonymous.nspl21_postcodes as postcodes on schools.postcode = postcodes.pcd
-         left join anonymous.imd_deprivation as imd_deprivation on postcodes.lsoa21 = imd_deprivation.lsoa_code;
+                   END,
+               from_connections.mode_country_code,
+               CASE connections_schools.data_source
+                   WHEN 'GOVERNMENT_WAL' THEN 'GB-WLS'
+                   WHEN 'GOVERNMENT_SCO' THEN 'GB-SCT'
+                   WHEN 'GOVERNMENT_NI' THEN 'GB-NIR'
+                   WHEN 'GOVERNMENT_IE' THEN 'GB-IE'
+                   WHEN 'GOVERNMENT_UK' THEN 'GB-ENG'
+                   END
+       )                           AS country_code_inferred,
+       COALESCE(
+               users.school_id,
+               from_connections.mode_school_id
+       )                           AS school_id_inferred
+FROM anonymous.users
+     -- Use teacher connections to infer school_id and country_code
+         LEFT JOIN
+     (SELECT user_id_receiving_permission                        AS teacher_id,
+             mode() WITHIN GROUP (ORDER BY student.country_code) AS mode_country_code,
+             mode() WITHIN GROUP (ORDER BY student.school_id)    AS mode_school_id
+      FROM anonymous.user_associations
+               JOIN anonymous.users AS student ON user_associations.user_id_granting_permission = student.id
+               JOIN anonymous.users AS teacher ON user_associations.user_id_receiving_permission = teacher.id
+      GROUP BY teacher_id) AS from_connections ON users.id = from_connections.teacher_id
+         LEFT JOIN anonymous.schools_2022 AS schools ON users.school_id = schools.school_id
+         LEFT JOIN anonymous.schools_2022 AS connections_schools
+                   ON from_connections.mode_school_id = connections_schools.school_id
+
+     -- Add deprivation data
+         LEFT JOIN schools_2021_priority AS ncce_priority ON ncce_priority.urn = users.school_id
+         LEFT JOIN anonymous.nspl21_postcodes AS postcodes ON schools.postcode = postcodes.pcd
+         LEFT JOIN anonymous.imd_deprivation AS imd_deprivation ON postcodes.lsoa21 = imd_deprivation.lsoa_code;
