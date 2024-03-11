@@ -35,7 +35,11 @@ public class PrometheusMetricsExporter implements IMetricsExporter {
    * @param port the port to expose the metrics.
    * @throws IOException could be thrown by the socket.
    */
+  @SuppressWarnings("java:S2095")
   public PrometheusMetricsExporter(final int port) throws IOException {
+    // IMPORTANT: it has been suggested that the grafana issues seen during a previous dependency update attempt were
+    // the result of applying a try-catch pattern to this resource, causing the metrics server to close prematurely.
+    // Do not apply this linter recommendation at this time.
     new HTTPServer(port);
     log.info("Prometheus Metrics Exporter has been initialised on port {}", port);
   }
