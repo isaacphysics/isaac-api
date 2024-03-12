@@ -97,7 +97,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
         this.callbackUri = callbackUri;
 
         if (null == credentialStore) {
-            credentialStore = new WeakHashMap<String, Credential>();
+            credentialStore = new WeakHashMap<>();
         }
 
         if (null == tokenVerifier) {
@@ -208,7 +208,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                 }
 
                 return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,
-                        emailStatus, null, null, null, null);
+                        emailStatus, null, null, null, null, false);
             } else {
                 throw new NoUserException("No user could be created from provider details!");
             }

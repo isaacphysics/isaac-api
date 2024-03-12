@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AttemptCompletedException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
@@ -39,6 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -93,6 +93,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -901,91 +902,144 @@ public class QuizFacade extends AbstractIsaacFacade {
      * Takes a quiz id, a group id, an optional end datetime for completion, and the feedbackMode.
      *
      * @param request              so that we can extract user information.
-     * @param clientQuizAssignment the partially constructed quiz assignment
-     * @return the quiz assignment that has been created, or an error.
+     * @param quizAssignmentDTOsFromClient the partially constructed quiz assignment
+     * @return A list of assignmentStatusDTOs for each succesful or failed quiz assignment.
      */
     @POST
-    @Path("/assignment")
+    @Path("/assign_bulk")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Set a test to a group, with an optional due date and optional start date.")
-    public final Response createQuizAssignment(@Context final HttpServletRequest request,
-                                               final QuizAssignmentDTO clientQuizAssignment) {
-
-        if (clientQuizAssignment.getQuizId() == null
-                || clientQuizAssignment.getGroupId() == null
-                || clientQuizAssignment.getQuizFeedbackMode() == null) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and test ids and a test feedback mode.").toResponse();
-        }
+    @Operation(summary = "Set a test to one or more groups, with an optional due date and optional start date.")
+    public final Response createQuizAssignments(@Context final HttpServletRequest request,
+                                                final List<QuizAssignmentDTO> quizAssignmentDTOsFromClient) {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!(isUserTeacherOrAbove(userManager, currentlyLoggedInUser))) {
+            boolean userIsTeacherOrAbove = isUserTeacherOrAbove(userManager, currentlyLoggedInUser);
+
+            if (!userIsTeacherOrAbove) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            if (!canManageAssignment(clientQuizAssignment, currentlyLoggedInUser)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You can only set assignments to groups you own or manage.").toResponse();
+            if (quizAssignmentDTOsFromClient == null || quizAssignmentDTOsFromClient.isEmpty()) {
+                return SegueErrorResponse.getBadRequestResponse("You need to specify at least one quiz to set.");
             }
 
-            IsaacQuizDTO quiz = this.quizManager.findQuiz(clientQuizAssignment.getQuizId());
-            if (null == quiz) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "The test id specified does not exist.")
-                        .toResponse();
+            List<AssignmentStatusDTO> quizStatuses = new ArrayList<>();
+            Map<String, IsaacQuizDTO> quizMap = new HashMap<>();
+            Map<Long, UserGroupDTO> groupMap = new HashMap<>();
+
+            for (QuizAssignmentDTO quizAssignmentDTO : quizAssignmentDTOsFromClient) {
+                if (quizAssignmentDTO.getQuizId() == null
+                        || quizAssignmentDTO.getGroupId() == null
+                        || quizAssignmentDTO.getQuizFeedbackMode() == null) {
+                    quizStatuses.add(new AssignmentStatusDTO(
+                            quizAssignmentDTO.getGroupId(),
+                            "A required field was missing. Must provide quiz id, group id, and feedback mode."
+                    ));
+                    continue;
+                }
+
+                if (null != quizAssignmentDTO.getDueDate() && !quizAssignmentDTO.dueDateIsAfter(new Date())) {
+                    quizStatuses.add(new AssignmentStatusDTO(
+                            quizAssignmentDTO.getGroupId(),
+                            "The quiz cannot be due in the past."
+                    ));
+                    continue;
+                }
+
+                if (null != quizAssignmentDTO.getScheduledStartDate()) {
+                    Date oneYearInFuture = DateUtils.addYears(new Date(), 1);
+                    if (quizAssignmentDTO.getScheduledStartDate().after(oneYearInFuture)) {
+                        quizStatuses.add(new AssignmentStatusDTO(
+                                quizAssignmentDTO.getGroupId(),
+                                "The quiz cannot be scheduled to begin more than one year in the future."
+                        ));
+                        continue;
+                    }
+                    if (null != quizAssignmentDTO.getDueDate() && !quizAssignmentDTO.dueDateIsAfter(quizAssignmentDTO.getScheduledStartDate())) {
+                        quizStatuses.add(new AssignmentStatusDTO(
+                                quizAssignmentDTO.getGroupId(),
+                                "The quiz cannot be scheduled to being after it is due."
+                        ));
+                        continue;
+                    }
+                    // If the assignment will have started in the next hour (meaning it might miss the related emails
+                    // being scheduled), then remove it so that the assignment is set immediately.
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(new Date());
+                    cal.add(Calendar.HOUR_OF_DAY, 1);
+                    if (quizAssignmentDTO.getScheduledStartDate().before(cal.getTime())) {
+                        quizAssignmentDTO.setScheduledStartDate(null);
+                    }
+                }
+
+                try {
+                    if (!canManageAssignment(quizAssignmentDTO, currentlyLoggedInUser)) {
+                        quizStatuses.add(new AssignmentStatusDTO(
+                                quizAssignmentDTO.getGroupId(),
+                                "You can only set quizzes to groups you own or manage."
+                        ));
+                        continue;
+                    }
+
+                    IsaacQuizDTO quiz = quizMap.get(quizAssignmentDTO.getQuizId());
+                    if (null == quiz) {
+                        quiz = this.quizManager.findQuiz(quizAssignmentDTO.getQuizId());
+                        if (null == quiz) {
+                            quizStatuses.add(new AssignmentStatusDTO(
+                                    quizAssignmentDTO.getGroupId(),
+                                    "The quiz id specified does not exist."
+                            ));
+                            continue;
+                        }
+                        quizMap.put(quiz.getId(), quiz);
+                    }
+
+                    UserGroupDTO assigneeGroup = groupMap.get(quizAssignmentDTO.getGroupId());
+                    if (null == assigneeGroup) {
+                        assigneeGroup = groupManager.getGroupById(quizAssignmentDTO.getGroupId());
+                        if (null == assigneeGroup) {
+                            quizStatuses.add(new AssignmentStatusDTO(
+                                    quizAssignmentDTO.getGroupId(),
+                                    "The group id specified does not exist."
+                            ));
+                            continue;
+                        }
+                        groupMap.put(assigneeGroup.getId(), assigneeGroup);
+                    }
+
+                    quizAssignmentDTO.setOwnerUserId(currentlyLoggedInUser.getId());
+                    quizAssignmentDTO.setCreationDate(null);
+                    quizAssignmentDTO.setId(null);
+
+                    // modifies assignment passed in to include an id.
+                    QuizAssignmentDTO assignmentWithID = this.quizAssignmentManager.createAssignment(quizAssignmentDTO);
+
+                    LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+                    eventDetails.put(QUIZ_ID_FKEY, assignmentWithID.getQuizId());
+                    eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
+                    eventDetails.put(QUIZ_ASSIGNMENT_FK, assignmentWithID.getId());
+                    eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate());
+                    eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
+
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
+
+                    quizStatuses.add(new AssignmentStatusDTO(
+                            assignmentWithID.getGroupId(), assignmentWithID.getId())
+                    );
+                } catch (DuplicateAssignmentException e) {
+                    quizStatuses.add(new AssignmentStatusDTO(quizAssignmentDTO.getGroupId(), e.getMessage()));
+                } catch (SegueDatabaseException | ContentManagerException e) {
+                    log.error("Database error while trying to assign work", e);
+                    quizStatuses.add(new AssignmentStatusDTO(quizAssignmentDTO.getGroupId(), e.getMessage()));
+                }
             }
-
-            if (null != clientQuizAssignment.getScheduledStartDate()) {
-                Date oneYearInFuture = DateUtils.addYears(new Date(), 1);
-                if (clientQuizAssignment.getScheduledStartDate().after(oneYearInFuture)) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "The test cannot be scheduled to begin more than one year in the future.").toResponse();
-                }
-                if (null != clientQuizAssignment.getDueDate() && !clientQuizAssignment.dueDateIsAfter(clientQuizAssignment.getScheduledStartDate())) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "The assignment cannot be scheduled to begin after it is due.").toResponse();
-                }
-                // If the assignment will have started in the next hour (meaning it might miss the related emails
-                // being scheduled), then remove it so that the assignment is set immediately.
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(new Date());
-                cal.add(Calendar.HOUR_OF_DAY, 1);
-                if (clientQuizAssignment.getScheduledStartDate().before(cal.getTime())) {
-                    clientQuizAssignment.setScheduledStartDate(null);
-                }
-            }
-
-            clientQuizAssignment.setOwnerUserId(currentlyLoggedInUser.getId());
-            clientQuizAssignment.setCreationDate(null);
-            clientQuizAssignment.setId(null);
-
-            // modifies assignment passed in to include an id.
-            QuizAssignmentDTO assignmentWithID = this.quizAssignmentManager.createAssignment(clientQuizAssignment);
-
-            Map<String, Object> eventDetails = new HashMap<>();
-            eventDetails.put(QUIZ_ID_FKEY, assignmentWithID.getQuizId());
-            eventDetails.put(GROUP_FK, assignmentWithID.getGroupId());
-            eventDetails.put(QUIZ_ASSIGNMENT_FK, assignmentWithID.getId());
-            eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate());
-            eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
-
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
-
-            List<QuizAssignmentDTO> assignments = Collections.singletonList(assignmentWithID);
-            quizManager.augmentWithQuizSummary(assignments);
-
-            return Response.ok(assignmentWithID).build();
+            return Response.ok(quizStatuses).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (DuplicateAssignmentException | DueBeforeNowException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (SegueDatabaseException e) {
-            String message = "Database error whilst setting quiz";
-            log.error(message, e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ContentManagerException e) {
-            log.error("Content error whilst setting test", e);
-            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         }
     }
 
@@ -1423,7 +1477,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
                 List<String> ids = quizSection.getChildren().stream()
                         .filter(c -> c instanceof IsaacQuestionBaseDTO)
-                        .map(c -> c.getId())
+                        .map(ContentBaseDTO::getId)
                         .collect(Collectors.toList());
                 questionIds.addAll(ids);
             }
@@ -1688,7 +1742,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     private QuizAttemptDTO getIncompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 
@@ -1698,7 +1751,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         return quizAttempt;
     }
 
-    @SuppressWarnings("deprecation")
     private QuizAttemptDTO getCompleteQuizAttemptForUser(Long quizAttemptId, RegisteredUserDTO user) throws SegueDatabaseException, ErrorResponseWrapper {
         QuizAttemptDTO quizAttempt = getQuizAttemptForUser(quizAttemptId, user);
 

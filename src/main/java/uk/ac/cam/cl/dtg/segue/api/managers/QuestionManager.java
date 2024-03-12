@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.prometheus.client.Histogram;
 import ma.glasnost.orika.MapperFacade;
-import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +70,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY_HISTOGRAM;
@@ -377,7 +377,7 @@ public class QuestionManager {
      */
     public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
             final AbstractSegueUserDTO user) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         if (user instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;

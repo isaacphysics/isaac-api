@@ -23,6 +23,7 @@ import java.util.*;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
+import org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -30,6 +31,7 @@ import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -67,7 +69,7 @@ public class ContentIndexerTest {
     }
 
     /**
-     * Test that the buildSearchIndex sends all of the various different segue data
+     * Test that the buildSearchIndex sends all the various different segue data
      * to the searchProvider and we haven't forgotten anything.
      *
      * @throws Exception
@@ -180,7 +182,7 @@ public class ContentIndexerTest {
         Set<Content> contents = Whitebox.invokeMethod(
                 defaultContentIndexer, "flattenContentObjects", rootNode);
 
-        assertTrue(contents.size() == numNodes);
+        assertEquals(numNodes, contents.size());
 
         for (Content c : contents) {
             boolean containsElement = elements.contains(c);
@@ -190,7 +192,210 @@ public class ContentIndexerTest {
             }
         }
 
-        assertTrue(elements.size() == 0);
+        assertEquals(0, elements.size());
+    }
+
+    /**
+     * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when neither
+     * significant figure is set whilst disregardSignificantFigures is not set
+     *
+     * @throws Exception as reflection may not find method
+     */
+    @Test
+    public void recordContentTypeSpecificError_noSigFigSet_checkNoError()
+            throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        contents.add(createIsaacNumericQuestion(false, null, null, "null"));
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        for (Content key : indexProblemCache.keySet()) {
+            assertTrue(indexProblemCache.get(key).isEmpty());
+        }
+    }
+
+    /**
+     * Test that recordContentTypeSpecificError adds an error message to indexProblemCach when only one significant
+     * figure is specified and the other is set to null whilst disregardSignificantFigures is not set
+     *
+     * @throws Exception as reflection may not find method
+     */
+    @Test
+    public void recordContentTypeSpecificError_onlyOneSigFigSet_checkErrorIsCorrect()
+            throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        contents.add(createIsaacNumericQuestion(false, 1, null, "min_set"));
+        contents.add(createIsaacNumericQuestion(false, null, 1, "max_set"));
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        for (Content key : indexProblemCache.keySet()) {
+            for (String problem : indexProblemCache.get(key)) {
+                assertTrue(problem.contains("has only one significant figure bound"));
+            }
+        }
+    }
+
+    /**
+     * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when both significant
+     * figures are specified but either is less than 1 whilst disregardSignificantFigures is not set
+     *
+     * @throws Exception as reflection may not find method
+     */
+    @Test
+    public void recordContentTypeSpecificError_bothSigFigSetLessThan1_checkErrorIsCorrect()
+            throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        contents.add(createIsaacNumericQuestion(false, 1, 0, "max_fault"));
+        contents.add(createIsaacNumericQuestion(false, 0, 1, "min_fault"));
+        contents.add(createIsaacNumericQuestion(false, 0, 0, "both_fault"));
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        for (Content key : indexProblemCache.keySet()) {
+            for (String problem : indexProblemCache.get(key)) {
+                assertTrue(problem.contains("either bound might be less than 1"));
+            }
+        }
+    }
+
+    /**
+     * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when the maximum significant
+     * figure is less than the minimum significant figure (both above 1) whilst disregardSignificantFigures is not set
+     *
+     * @throws Exception as reflection may not find method
+     */
+    @Test
+    public void recordContentTypeSpecificError_maxLessThanMin_checkErrorIsCorrect()
+            throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        contents.add(createIsaacNumericQuestion(false, 2, 1, "order_fault"));
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        for (Content key : indexProblemCache.keySet()) {
+            for (String problem : indexProblemCache.get(key)) {
+                assertTrue(problem.contains("The upper bound may be below the lower bound"));
+            }
+        }
+    }
+
+    /**
+     * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when the minimum
+     * significant figure is less than the maximum significant figure (both above 1) whilst disregardSignificantFigures
+     * is not set
+     *
+     * @throws Exception as reflection may not find method
+     */
+    @Test
+    public void recordContentTypeSpecificError_minLessThanMax_checkNoError()
+            throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        contents.add(createIsaacNumericQuestion(false, 1, 2, "order_correct"));
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        for (Content key : indexProblemCache.keySet()) {
+            assertTrue(indexProblemCache.get(key).isEmpty());
+        }
+    }
+
+    /**
+     * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when
+     * disregardSignificantFigures is not set
+     *
+     * @throws Exception as reflection may not find method
+     */
+    @Test
+    public void recordContentTypeSpecificError_disregardSigFigsSet_checkNoError()
+            throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        contents.add(createIsaacNumericQuestion(true, null, null, "null"));
+        contents.add(createIsaacNumericQuestion(true, 1, null, "min_set"));
+        contents.add(createIsaacNumericQuestion(true, null, 1, "max_set"));
+        contents.add(createIsaacNumericQuestion(true, 0, 1, "min_fault"));
+        contents.add(createIsaacNumericQuestion(true, 1, 0, "max_fault"));
+        contents.add(createIsaacNumericQuestion(true, 0, 0, "both_fault"));
+        contents.add(createIsaacNumericQuestion(true, 2, 1, "order_fault"));
+        contents.add(createIsaacNumericQuestion(true, 1, 2, "order_correct"));
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        for (Content key : indexProblemCache.keySet()) {
+            assertTrue(indexProblemCache.get(key).isEmpty());
+        }
     }
 
     private Content createContentHierarchy(final int numLevels,
@@ -223,6 +428,37 @@ public class ContentIndexerTest {
                                               final String id) {
         return new Content(id, "", "", "", "", "", "", "", children, "",
                 "", new LinkedList<>(), false, false, new HashSet<>(), 1);
+    }
+
+    /**
+     * Helper method for the recordContentTypeSpecificError tests,
+     * generates an IsaacNumericQuestion with provided significant figure information
+     *
+     * @param disregardSigFig
+     *              - Whether to set the disregardSignificantFigures to true
+     * @param sigFigMin
+     *              - The minimum significant figures value
+     * @param sigFigMax
+     *              - The maximum significant figures value
+     * @return The new IsaacNumericQuestion object
+     */
+    private IsaacNumericQuestion createIsaacNumericQuestion(final Boolean disregardSigFig,
+                                                            final Integer sigFigMin,
+                                                            final Integer sigFigMax,
+                                                            final String id) {
+        IsaacNumericQuestion question = new IsaacNumericQuestion();
+
+        // TODO: See if there is a "better" way of initialising object fields
+        question.setId(id);
+        question.setTitle("");
+        question.setType("isaacQuestion");
+        question.setChoices(new LinkedList<>());
+
+        question.setDisregardSignificantFigures(disregardSigFig);
+        question.setSignificantFiguresMin(sigFigMin);
+        question.setSignificantFiguresMax(sigFigMax);
+
+        return question;
     }
 
     /**

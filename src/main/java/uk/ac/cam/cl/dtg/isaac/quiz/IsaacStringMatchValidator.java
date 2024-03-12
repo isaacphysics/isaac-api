@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacStringMatchQuestion;
@@ -27,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -39,8 +39,8 @@ public class IsaacStringMatchValidator implements IValidator {
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacStringMatchQuestion)) {
             throw new IllegalArgumentException(String.format(

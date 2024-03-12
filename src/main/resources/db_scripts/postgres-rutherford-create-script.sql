@@ -720,7 +720,8 @@ CREATE TABLE public.users (
     email_verification_token text,
     session_token integer DEFAULT 0 NOT NULL,
     deleted boolean DEFAULT false NOT NULL,
-    country_code character varying(255) DEFAULT NULL
+    country_code character varying(255) DEFAULT NULL,
+    teacher_account_pending boolean DEFAULT false NOT NULL
 );
 
 
@@ -1102,13 +1103,6 @@ CREATE INDEX "fki_user_id fkey" ON public.user_notifications USING btree (user_i
 
 
 --
--- Name: gameboards_tags_gin_index; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX gameboards_tags_gin_index ON public.gameboards USING gin (tags);
-
-
---
 -- Name: group_additional_managers_group_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1137,13 +1131,6 @@ CREATE INDEX ip_location_history_ips ON public.ip_location_history USING btree (
 
 
 --
--- Name: log_events_timestamp; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX log_events_timestamp ON public.logged_events USING btree ("timestamp");
-
-
---
 -- Name: log_events_type; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1155,13 +1142,6 @@ CREATE INDEX log_events_type ON public.logged_events USING btree (event_type);
 --
 
 CREATE INDEX log_events_user_id ON public.logged_events USING btree (user_id);
-
-
---
--- Name: logged_events_type_timestamp; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE INDEX logged_events_type_timestamp ON public.logged_events USING btree (event_type, "timestamp");
 
 
 --
@@ -1246,13 +1226,6 @@ CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING
 --
 
 CREATE INDEX user_credentials_reset_tokens ON public.user_credentials USING btree (reset_token);
-
-
---
--- Name: user_email; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE UNIQUE INDEX user_email ON public.users USING btree (email);
 
 
 --

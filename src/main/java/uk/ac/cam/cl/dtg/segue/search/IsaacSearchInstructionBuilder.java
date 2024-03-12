@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
 
 public class IsaacSearchInstructionBuilder {
 
@@ -127,7 +126,7 @@ public class IsaacSearchInstructionBuilder {
     public BooleanInstruction buildBaseInstructions(final BooleanInstruction instruction) {
         // Exclude unpublished content (based on config)
         if (this.includeOnlyPublishedContent) {
-            instruction.mustNot(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "false"));
+            instruction.must(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "true"));
         }
 
         // Exclude regression test content (based on config)

@@ -1,11 +1,18 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import ma.glasnost.orika.MapperFacade;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
+import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
@@ -65,13 +73,9 @@ import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -87,19 +91,14 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -112,9 +111,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Abstract superclass for integration tests, providing them with dependencies including Elasticsearch and PostgreSQL
@@ -126,6 +123,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 public abstract class IsaacIntegrationTest {
 
     protected static final Logger log = LoggerFactory.getLogger(IsaacIntegrationTest.class);
+
+    private final ObjectMapper serializationMapper = new ObjectMapper();
 
     protected static HttpSession httpSession;
     protected static PostgreSQLContainer postgres;
@@ -171,6 +170,12 @@ public abstract class IsaacIntegrationTest {
     protected static AbstractUserPreferenceManager userPreferenceManager;
 
     protected static ITUsers integrationTestUsers;
+
+    protected static Map<AuthenticationProvider, IAuthenticator> providersToRegister;
+
+    protected static PgAnonymousUsers pgAnonymousUsers;
+
+    protected static ISecondFactorAuthenticator secondFactorManager;
 
     protected class LoginResult {
         public RegisteredUserDTO user;
@@ -264,7 +269,7 @@ public abstract class IsaacIntegrationTest {
 
         JsonMapper jsonMapper = new JsonMapper();
         pgUsers = new PgUsers(postgresSqlDb, jsonMapper);
-        PgAnonymousUsers pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
+        pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
         ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
@@ -273,7 +278,7 @@ public abstract class IsaacIntegrationTest {
 
         mapperFacade = contentMapper.getAutoMapper();
 
-        Map<AuthenticationProvider, IAuthenticator> providersToRegister = new HashMap<>();
+        providersToRegister = new HashMap<>();
         providersToRegister.put(AuthenticationProvider.RASPBERRYPI, new RaspberryPiOidcAuthenticator(
                     "id",
                     "secret",
@@ -297,7 +302,7 @@ public abstract class IsaacIntegrationTest {
         emailManager = new EmailManager(communicator, userPreferenceManager, properties, contentManager, logManager, globalTokens);
 
         userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties, providersToRegister, emailManager);
-        ISecondFactorAuthenticator secondFactorManager = createMock(SegueTOTPAuthenticator.class);
+        secondFactorManager = createMock(SegueTOTPAuthenticator.class);
         // We don't care for MFA here so we can safely disable it
         try {
             expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
@@ -315,8 +320,8 @@ public abstract class IsaacIntegrationTest {
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
         IAssignmentPersistenceManager assignmentPersistenceManager = new PgAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
 
-        GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, objectMapper, new URIManager(properties), "latest");
-        gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager, "latest");
+        GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, objectMapper, new URIManager(properties));
+        gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager);
         groupManager = new GroupManager(pgUserGroupPersistenceManager, userAccountManager, gameManager, mapperFacade);
         userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
@@ -326,7 +331,7 @@ public abstract class IsaacIntegrationTest {
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
-        quizManager = new QuizManager(properties, new ContentService(contentManager, "latest"), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)), contentMapper);
+        quizManager = new QuizManager(properties, new ContentService(contentManager), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)), contentMapper);
         quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
         quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
@@ -338,6 +343,7 @@ public abstract class IsaacIntegrationTest {
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
         misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(), new RegistrationMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(), new EmailVerificationMisuseHandler());
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
@@ -374,7 +380,7 @@ public abstract class IsaacIntegrationTest {
         postgres.stop();
     }
 
-    protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws Exception {
         Capture<Cookie> capturedUserCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
         HttpServletRequest userLoginRequest = createNiceMock(HttpServletRequest.class);
@@ -386,7 +392,13 @@ public abstract class IsaacIntegrationTest {
         expectLastCall().atLeastOnce(); // This is how you expect void methods, apparently...
         replay(userLoginResponse);
 
-        RegisteredUserDTO user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
+        RegisteredUserDTO user;
+        try {
+            user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
+        } catch (AdditionalAuthenticationRequiredException | EmailMustBeVerifiedException e) {
+            // In this case, we won't get a user object but the cookies have still been set.
+            user = null;
+        }
 
         return new LoginResult(user, capturedUserCookie.getValue());
     }
@@ -401,6 +413,22 @@ public abstract class IsaacIntegrationTest {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
         expect(request.getSession()).andReturn(httpSession).anyTimes();
         return request;
+    }
+
+    protected HttpServletResponse createResponseAndCaptureCookies(Capture<Cookie> cookieToCapture) {
+        HttpServletResponse response = createNiceMock(HttpServletResponse.class);
+        response.addCookie(capture(cookieToCapture));
+        EasyMock.expectLastCall();
+        return response;
+    }
+
+    protected HashMap<String, String> getSessionInformationFromCookie(Cookie cookie) throws Exception {
+        return this.serializationMapper.readValue(Base64.decodeBase64(cookie.getValue()), HashMap.class);
+    }
+
+    protected List<String> getCaveatsFromCookie(Cookie cookie) throws Exception {
+        return serializationMapper.readValue(getSessionInformationFromCookie(cookie)
+                        .get(SESSION_CAVEATS), new TypeReference<ArrayList<String>>(){});
     }
 
     static Set<RegisteredUser> allTestUsersProvider() {

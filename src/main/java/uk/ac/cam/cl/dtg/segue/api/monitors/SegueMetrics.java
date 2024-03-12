@@ -58,8 +58,11 @@ public final class SegueMetrics {
             .name("segue_websocket_close_total").help("Websockets closed since process start.").register();
 
     // User Metrics
+    public static final Counter USER_REGISTRATION_ATTEMPT = Counter.build()
+            .name("segue_user_registration_attempt_total")
+            .help("User registration attempts since process start.").register();
     public static final Counter USER_REGISTRATION = Counter.build()
-            .name("segue_user_registration_total").help("User registrations since process start.").register();
+            .name("segue_user_registration_total").help("Successful user registrations since process start.").register();
 
     public static final Gauge CURRENT_WEBSOCKET_USERS = Gauge.build()
             .name("segue_websocket_users").help("Currently number of websocket users/browsers.").register();

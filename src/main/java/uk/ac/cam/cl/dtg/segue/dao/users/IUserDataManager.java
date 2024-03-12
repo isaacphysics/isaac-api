@@ -75,18 +75,6 @@ public interface IUserDataManager {
             throws SegueDatabaseException;
 
     /**
-     * Get all the linked accounts by users in a list.
-     *
-     * @param users
-     *             - the list of DOs to search for.
-     * @return List of authentication providers (or empty list) per user.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users)
-            throws SegueDatabaseException;
-
-    /**
      * Get UserAuthenticationSettings Object
      * This object provides information on how a user can login based on linked accounts and if they have a Segue account
      *

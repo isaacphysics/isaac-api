@@ -21,9 +21,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.LocalAuthDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.MFAResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -38,19 +43,16 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dto.LocalAuthDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.MFAResponseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -61,17 +63,17 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -403,7 +405,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (AdditionalAuthenticationRequiredException e) {
             // in this case the users account has been configured to require a second factor
             // The password challenge has completed successfully but they must complete the second step of the flow
-            return Response.accepted(ImmutableMap.of("2FA_REQUIRED", true)).build();
+            return Response.accepted(ImmutableMap.of("MFA_REQUIRED", true)).build();
+        } catch (EmailMustBeVerifiedException e) {
+            // the user's account requires a verified email
+            return Response.accepted(ImmutableMap.of("EMAIL_VERIFICATION_REQUIRED", true)).build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
             log.error(errorMsg, e);
@@ -514,7 +519,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         final String rateThrottleMessage = "There have been too many attempts to login to this account. Try again later.";
         try {
             final Integer verificationCode = Integer.parseInt(mfaResponse.getMfaVerificationCode());
-            partiallyLoggedInUser = this.userManager.getPartiallyIdentifiedUser(request);
+            partiallyLoggedInUser = this.userManager.convertToDetailedUserSummaryObject(this.userManager.getCurrentPartiallyIdentifiedUser(request, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE)), UserSummaryWithEmailAddressDTO.class);
 
             if (misuseMonitor.hasMisused(partiallyLoggedInUser.getEmail().toLowerCase(),
                     SegueLoginMisuseHandler.class.getSimpleName())) {
@@ -549,11 +554,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             String errorMsg = "Internal Database error has occurred during mfa challenge.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-        } catch (NoUserLoggedInException e) {
-            log.error("Unable to retrieve partial session information for MFA flow. "
-                    + "Maybe users' partial session expired?");
-            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login. "
-                    + "Your login session may have expired. Please enter your password again.");
+        } catch (IOException e) {
+            log.error("Unable to retrieve caveat session for 2FA login, failed to read malformed caveat information.");
+            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login - failed to read session " +
+                    "information. Please enter your password again.");
+        } catch (NoUserLoggedInException | InvalidSessionException e) {
+            log.error("Unable to retrieve caveat session for 2FA login, it may have expired.");
+            return SegueErrorResponse.getBadRequestResponse("Unable to complete 2FA login - your login session may " +
+                    "have expired. Please enter your password again.");
         }
     }
 }

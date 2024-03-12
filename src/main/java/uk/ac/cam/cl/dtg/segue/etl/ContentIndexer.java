@@ -10,7 +10,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -72,7 +71,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Created by Ian on 17/10/2016.
  */
 public class ContentIndexer {
-    private static final Logger log = LoggerFactory.getLogger(Content.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentIndexer.class);
 
     private static ConcurrentHashMap<String, Boolean> versionLocks = new ConcurrentHashMap<>();
 
@@ -140,7 +139,13 @@ public class ContentIndexer {
             log.info("Finished recording content errors, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
             startTime = System.nanoTime();
-            buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
+            try {
+                buildElasticSearchIndex(version, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
+            } catch (Exception e) {
+                log.warn("Exception during indexing, cleaning up partial indices!");
+                expungeAnyContentTypeIndicesRelatedToVersion(version);  // This may itself fail if ElasticSearch is broken!
+                throw e;
+            }
             endTime = System.nanoTime();
             log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
 
@@ -160,7 +165,7 @@ public class ContentIndexer {
 
     void setNamedVersion(String alias, String version) {
         List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
-                .map((contentIndexType) -> contentIndexType.toString()).collect(Collectors.toList());
+                .map(CONTENT_INDEX_TYPE::toString).collect(Collectors.toList());
         es.addOrMoveIndexAlias(alias, version, allContentTypes);
     }
 
@@ -215,7 +220,8 @@ public class ContentIndexer {
                     content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 
                     // check if we only want to index published content
-                    if (!includeUnpublished && !content.getPublished()) {
+                    boolean contentPublished = content.getPublished() != null && content.getPublished();
+                    if (!includeUnpublished && !contentPublished) {
                         log.debug("Skipping unpublished content: " + content.getId());
                         continue;
                     }
@@ -357,7 +363,7 @@ public class ContentIndexer {
      * @return Content object with new reference
      */
     private Content augmentChildContent(final Content content, final String canonicalSourceFile,
-            @Nullable final String parentId, final boolean parentPublished) {
+            @Nullable final String parentId, final Boolean parentPublished) {
         if (null == content) {
             return null;
         }
@@ -556,7 +562,7 @@ public class ContentIndexer {
      *            - Error message to associate with the problem file / content.
      */
     private synchronized void registerContentProblem(final Content c, final String message, Map<Content, List<String>> indexProblemCache) {
-        Validate.notNull(c);
+        Objects.requireNonNull(c);
 
         // try and make sure each dummy content object has a title
         if (c.getTitle() == null) {
@@ -564,7 +570,7 @@ public class ContentIndexer {
         }
 
         if (!indexProblemCache.containsKey(c)) {
-            indexProblemCache.put(c, new ArrayList<String>());
+            indexProblemCache.put(c, new ArrayList<>());
         }
 
         log.debug(message);
@@ -625,7 +631,7 @@ public class ContentIndexer {
         }
 
         allUnits.putAll(newUnits);
-        if (q.getPublished()) {
+        if (q.getPublished() != null && q.getPublished()) {
             publishedUnits.putAll(newUnits);
         }
     }
@@ -643,7 +649,7 @@ public class ContentIndexer {
                                                       final Set<String> tagsList,
                                                       final Map<String, String> allUnits,
                                                       final Map<String, String> publishedUnits,
-                                                      final Map<Content, List<String>> indexProblemCache) {
+                                                      final Map<Content, List<String>> indexProblemCache) throws Exception {
         if (anyContentTypesAreIndexedForVersion(sha)) {
             expungeAnyContentTypeIndicesRelatedToVersion(sha);
         }
@@ -701,7 +707,7 @@ public class ContentIndexer {
                             "id", e.getKey().getId() == null ? "" : e.getKey().getId(),
                             "title", e.getKey().getTitle() == null ? "" : e.getKey().getTitle(),
                             // "tags", c.getTags(), // TODO: Add tags
-                            "published", e.getKey().getPublished() == null ? "" : e.getKey().getPublished(),
+                            "published", e.getKey().getPublished() != null && e.getKey().getPublished(),
                             "errors", e.getValue().toArray()));
                 } catch (JsonProcessingException jsonProcessingException) {
                     log.error("Unable to serialise content error entry from file: " + e.getKey().getCanonicalSourceFile());
@@ -712,8 +718,10 @@ public class ContentIndexer {
             log.info("Bulk content error indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha or tags");
+            throw new Exception("Unable to serialise sha or tags");
         } catch (SegueSearchException e) {
             log.error("Unable to index sha, tags, units or content errors.");
+            throw new Exception("Unable to index sha, tags, units or content errors.", e);
         }
 
 
@@ -725,8 +733,10 @@ public class ContentIndexer {
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
+            throw new Exception("Error whilst trying to perform bulk index operation.", e);
         } catch (ActionRequestValidationException e) {
-            log.error("Error validating content during index",e);
+            log.error("Error validating content during index", e);
+            throw new Exception("Error validating content during index", e);
         }
     }
 
@@ -800,7 +810,9 @@ public class ContentIndexer {
             Content refTarget = contentById.get(refTargetId);
             if (refTarget != null) {
                 for (Content refSrc : incomingReferences.get(refTargetId)) {
-                    if (refSrc.getPublished() && !refTarget.getPublished()) {
+                    boolean srcPublished = refSrc.getPublished() != null && refSrc.getPublished();
+                    boolean targetPublished = refTarget.getPublished() != null && refTarget.getPublished();
+                    if (srcPublished && !targetPublished) {
                         this.registerContentProblem(refSrc, "Content is published, "
                                 + "but references unpublished content '" + refTargetId + "'.", indexProblemCache);
                     }

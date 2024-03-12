@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.common.collect.Streams;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
@@ -17,15 +16,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 public class IsaacCoordinateValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacCoordinateValidator.class);
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacCoordinateQuestion)) {
             throw new IllegalArgumentException(String.format(

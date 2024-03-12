@@ -146,9 +146,17 @@ public final class Constants {
     public static final String DATE_EXPIRES = "expires";
 
     /**
-     * Constant representing the key for the additional date property - used in HMAC calculations.
+     * Constant representing the key for cookie caveats - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "partial";
+    public static final String SESSION_CAVEATS = "caveats";
+
+    /**
+     * Representing caveats saved to session cookies, allowing endpoints to decide whether the cookie should be
+     * considered sufficient authentication for their purposes. In most cases, cookies with any caveats are rejected.
+     */
+    public enum AuthenticationCaveat {
+        INCOMPLETE_MFA_CHALLENGE, INCOMPLETE_MANDATORY_EMAIL_VERIFICATION
+    };
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
@@ -428,6 +436,7 @@ public final class Constants {
     // Content model specific stuff
     public static final String ID_FIELDNAME = "id";
     public static final String TITLE_FIELDNAME = "title";
+    public static final String SUBTITLE_FIELDNAME = "subtitle";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
     public static final String LEVEL_FIELDNAME = "level";
@@ -570,6 +579,8 @@ public final class Constants {
     public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
 
     public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
+
+    public static final String ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION = "ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION";
 
     /**
      * Private constructor to prevent this class being created.

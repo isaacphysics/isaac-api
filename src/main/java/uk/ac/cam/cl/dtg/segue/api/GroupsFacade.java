@@ -23,9 +23,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -38,13 +43,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -83,8 +81,6 @@ public class GroupsFacade extends AbstractSegueFacade {
 
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final AssignmentManager assignmentManager;
-    private final GameManager gameManager;
-
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
     private final UserBadgeManager userBadgeManager;
@@ -102,14 +98,13 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Inject
     public GroupsFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, AssignmentManager assignmentManager,
-                        final GameManager gameManager, final GroupManager groupManager,
+                        final GroupManager groupManager,
                         final UserAssociationManager associationsManager,
                         final UserBadgeManager userBadgeManager,
                         final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.assignmentManager = assignmentManager;
-        this.gameManager = gameManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
         this.userBadgeManager = userBadgeManager;
@@ -205,7 +200,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
+            List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, true);
 
             List<Map<String, Object>> results = Lists.newArrayList();
             for(UserGroupDTO group : groups) {
@@ -301,7 +296,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
 
-            List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
+            List<UserGroupDTO> groups = groupManager.getAllGroupsOwnedAndManagedByUser(userOfInterest, false);
             return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

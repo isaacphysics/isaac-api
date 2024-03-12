@@ -18,13 +18,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotifications;
@@ -33,6 +26,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
 import java.util.Calendar;
 import java.util.Collections;
@@ -40,8 +37,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class is responsible for selecting notifications from various sources so that users can be told about them.
@@ -50,7 +46,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 public class NotificationPicker {
     private IUserNotifications notifications;
     private final GitContentManager contentManager;
-    private final String contentIndex;
 
     /**
      * @param contentManager
@@ -59,10 +54,8 @@ public class NotificationPicker {
      *            - the DAO allowing the recording of which notifications have been shown to whom.
      */
     @Inject
-    public NotificationPicker(final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
-                              final PgUserNotifications notifications) {
+    public NotificationPicker(final GitContentManager contentManager, final PgUserNotifications notifications) {
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.notifications = notifications;
     }
 
@@ -92,7 +85,7 @@ public class NotificationPicker {
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
-        	IUserNotification record = listOfRecordedNotifications.get(c.getId());
+            IUserNotification record = listOfRecordedNotifications.get(c.getId());
             if (!(c instanceof NotificationDTO)) {
                 // skip if not a notification somehow.
                 continue;
@@ -117,7 +110,7 @@ public class NotificationPicker {
                 // or they have but they postponed it...
                 Calendar postPoneExpiry = Calendar.getInstance();
                 postPoneExpiry.setTime(record.getCreated());
-                postPoneExpiry.add(Calendar.SECOND, Constants.NUMBER_SECONDS_IN_ONE_DAY);
+                postPoneExpiry.add(Calendar.SECOND, NUMBER_SECONDS_IN_ONE_DAY);
 
                 if (new Date().after(postPoneExpiry.getTime())) {
                     resultsToReturn.add(c);

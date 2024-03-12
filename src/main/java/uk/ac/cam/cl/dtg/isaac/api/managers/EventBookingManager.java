@@ -26,11 +26,18 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.ITransactionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IUserAccountManager;
@@ -44,13 +51,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.UnsupportedEncodingException;
@@ -69,14 +69,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ADMIN_EMAIL;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_ICAL_UID_DOMAIN;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_RESERVATION_CLOSE_INTERVAL_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAIL_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 /**
@@ -188,22 +185,20 @@ public class EventBookingManager {
     }
 
     /**
-     * Utility method to provide a count of the number of bookings on a given event with a given status.
+     * Utility method to provide a count of the number of bookings on a given event with each status.
      *
-     * @param eventId the event id to look up
-     * @param status  - the status of bookings we are interested in
-     * @return the total bookings matching the criteria provided.
-     * @throws SegueDatabaseException if we cannot get the booking.
+     * @param eventId - the event in question
+     * @return a map of booking status to count
+     * @throws SegueDatabaseException if bookings cannot be loaded.
      */
-    public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
-            throws SegueDatabaseException {
-        long v = 0L;
-        for (EventBookingDTO eb : this.bookingPersistenceManager.adminGetBookingsByEventId(eventId)) {
-            if (status.equals(eb.getBookingStatus())) {
-                v++;
-            }
-        }
-        return v;
+    public Map<BookingStatus, Long> getBookingStatusCountsByEventId(final String eventId) throws SegueDatabaseException {
+        Map<BookingStatus, Map<Role, Long>> bookingRoleCounts
+                = this.bookingPersistenceManager.getEventBookingStatusCounts(eventId, false);
+
+        return bookingRoleCounts.keySet().stream().collect(Collectors.toMap(
+            Function.identity(),
+            k -> bookingRoleCounts.get(k).values().stream().reduce(0L, Long::sum)
+        ));
     }
 
     /**

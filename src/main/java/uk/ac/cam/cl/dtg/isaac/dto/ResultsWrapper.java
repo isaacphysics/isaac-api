@@ -37,7 +37,7 @@ public class ResultsWrapper<T> {
      * Default constructor for constructing an empty results wrapper.
      */
     public ResultsWrapper() {
-        this.results = new ArrayList<T>();
+        this.results = new ArrayList<>();
         totalResultsAvailable = 0L;
     }
 

@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import ma.glasnost.orika.MapperFacade;
@@ -97,9 +96,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final QuestionManager questionManager;
     private final GitContentManager contentManager;
-
     private final GameManager gameManager;
-    private final String contentIndex;
 
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
@@ -122,14 +119,12 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - So we can look up attempt information.
      * @param gameManager
      *            - For looking up gameboard information.
-     * @param contentIndex
-     *            - Index for the content to serve
      */
     @Inject
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
-                       final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                       final GameManager gameManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -138,7 +133,6 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.uriManager = uriManager;
         this.questionManager = questionManager;
         this.gameManager = gameManager;
-        this.contentIndex = contentIndex;
     }
 
     /**
@@ -743,8 +737,8 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Rest end point that gets a all of the content marked as being type "pods".
-     * 
+     * Rest endpoint retrieving the first MAX_PODS_TO_RETURN pods by ID.
+     *
      * @param request
      *            - so that we can deal with caching.
      * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
@@ -756,6 +750,24 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Operation(summary = "List pods matching the subject provided.")
     public final Response getPodList(@Context final Request request,
                                      @PathParam("subject") final String subject) {
+        return getPodList(request, subject, 0);
+    }
+
+    /**
+     * Rest endpoint retrieving MAX_PODS_TO_RETURN pods, sorted by ID, starting from startIndex.
+     * 
+     * @param request
+     *            - so that we can deal with caching.
+     * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/pods/{subject}/{startIndex}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "List pods matching the subject provided.")
+    public final Response getPodList(@Context final Request request,
+                                     @PathParam("subject") final String subject,
+                                     @PathParam("startIndex") final int startIndex) {
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + subject.hashCode() + "");
@@ -769,8 +781,13 @@ public class PagesFacade extends AbstractIsaacFacade {
             fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
             fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
-            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+            Map<String, SortOrder> sortInstructions = new HashMap<>();
+            sortInstructions.put("id.raw", SortOrder.DESC); // Sort by ID (i.e. most recent; all pod ids should start yyyymmdd)
+            // We would ideally also sort by presence of 'featured' tag, tricky with current implementation
+
+            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(
+                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, MAX_PODS_TO_RETURN,
+                    sortInstructions);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                     .tag(etag)
@@ -918,7 +935,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             return null;
         }
 
-        List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
+        List<ContentSummaryDTO> listOfContentInfo = new ArrayList<>();
 
         for (ContentDTO content : contentList) {
             ContentSummaryDTO contentInfo = extractContentSummary(content);
@@ -950,10 +967,9 @@ public class PagesFacade extends AbstractIsaacFacade {
             @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap, final Integer startIndex, final Integer limit) throws ContentManagerException {
         ResultsWrapper<ContentDTO> c;
 
-        c = api.findMatchingContent(this.contentIndex,
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
+        c = api.findMatchingContent(ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
 
-        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
                 this.extractContentSummaryFromList(c.getResults()),
                 c.getTotalResults());
 

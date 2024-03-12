@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
@@ -30,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import jakarta.annotation.Nullable;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,8 +41,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * PgUserGroupPersistenceManager.
@@ -108,7 +108,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
     @Override
     public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
-        Validate.notNull(group.getId());
+        Objects.requireNonNull(group.getId());
         if (group.getStatus() == null) {
             group.setStatus(GroupStatus.ACTIVE);
         }
@@ -284,22 +284,18 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     @Override
     public List<UserGroup> findGroupsByIds(final List<Long> groupIds) throws SegueDatabaseException {
 
-        if (null == groupIds || groupIds.size() == 0) {
+        if (null == groupIds || groupIds.isEmpty()) {
             return Collections.emptyList();
         }
 
-        String query = "SELECT * FROM groups WHERE id IN ("
-                + groupIds.stream().map(g -> "?").collect(Collectors.joining(", "))
-                + ") AND group_status <> ?;";
+        String query = "SELECT * FROM groups WHERE id = ANY(?) AND group_status <> ?;";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query)
         ) {
-            int index = 1;
-            for (Long groupId : groupIds) {
-                pst.setLong(index++, groupId);
-            }
-            pst.setString(index, GroupStatus.DELETED.name());
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
+            pst.setString(2, GroupStatus.DELETED.name());
 
             try (ResultSet results = pst.executeQuery()) {
                 List<UserGroup> listOfResults = Lists.newArrayList();
@@ -308,6 +304,8 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
                 }
 
                 return listOfResults;
+            } finally {
+                groupIdsArray.free();
             }
 
         } catch (SQLException e) {
@@ -464,6 +462,38 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
                     listOfResults.add(results.getLong("user_id"));
                 }
                 return listOfResults;
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public Map<Long, Set<Long>> getAdditionalManagerSetsByGroupIds(final Collection<Long> groupIds) throws SegueDatabaseException {
+        String query = "SELECT group_id, user_id FROM group_additional_managers WHERE group_id = ANY(?)";
+        // this includes deleted groups, as getAdditionalManagerSetByGroupId does.
+
+        Map<Long, Set<Long>> mapOfResults = Maps.newHashMap();
+        if (groupIds.isEmpty()) {
+            return mapOfResults;
+        }
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
+
+            try (ResultSet results = pst.executeQuery()) {
+                while (results.next()) {
+                    Long groupId = results.getLong("group_id");
+                    Long userId = results.getLong("user_id");
+                    Set<Long> groupManagers = mapOfResults.computeIfAbsent(groupId, g -> Sets.newHashSet());
+                    groupManagers.add(userId);
+                }
+                return mapOfResults;
+            } finally {
+                groupIdsArray.free();  // maybe unnecessary?
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

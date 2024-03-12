@@ -52,7 +52,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() {
         this.isaacControllerFacade = new IsaacController(properties, logManager, createNiceMock(StatisticsManager.class),
-                userAccountManager, contentManager, userAssociationManager, "latest",
+                userAccountManager, contentManager, userAssociationManager,
                 createNiceMock(IUserStreaksManager.class), userBadgeManager, contentSummarizerService);
     }
 
@@ -63,11 +63,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
      * We expect to see only the concept page containing the term in the results.
      */
     @Test
-    public void searchEndpoint_searchAllTypesSpecificTermAsStudent_returnsOnlyConceptWithMatchingValue() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-            MFARequiredButNotConfiguredException {
+    public void searchEndpoint_searchAllTypesSpecificTermAsStudent_returnsOnlyConceptWithMatchingValue() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -99,11 +95,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
      * We expect to see only the topic summary containing the term in the results.
      */
     @Test
-    public void searchEndpoint_searchAllTypesSpecificTermAsStudent_returnsOnlyTopicSummaryWithMatchingValue() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-            MFARequiredButNotConfiguredException {
+    public void searchEndpoint_searchAllTypesSpecificTermAsStudent_returnsOnlyTopicSummaryWithMatchingValue() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -135,11 +127,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
      * We expect to see only the event containing the term in the results.
      */
     @Test
-    public void searchEndpoint_searchEventsOnlyGenericTermAsStudent_returnsOnlyEventWithMatchingValue() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-            MFARequiredButNotConfiguredException {
+    public void searchEndpoint_searchEventsOnlyGenericTermAsStudent_returnsOnlyEventWithMatchingValue() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,

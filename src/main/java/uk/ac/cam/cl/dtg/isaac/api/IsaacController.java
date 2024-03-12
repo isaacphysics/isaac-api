@@ -15,19 +15,23 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -38,13 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DefaultValue;
@@ -59,17 +57,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -92,34 +85,10 @@ public class IsaacController extends AbstractIsaacFacade {
     private final IStatisticsManager statsManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
-    private final String contentIndex;
     private final GitContentManager contentManager;
     private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
     private final ContentSummarizerService contentSummarizerService;
-
-    private static long lastQuestionCount = 0L;
-
-    // Question counts are slow to calculate, so cache for up to 10 minutes. We may want to move this to a more
-    // reusable place (such as statsManager.getLogCount) if we find ourselves using this pattern more).
-    private final Supplier<Long> questionCountCache = Suppliers.memoizeWithExpiration(new Supplier<Long>() {
-        public Long get() {
-            Executors.newSingleThreadExecutor().submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        log.info("Triggering question answer count query.");
-                        lastQuestionCount = statsManager.getLogCount(SegueServerLogType.ANSWER_QUESTION.name());
-                        log.info("Question answer count query complete.");
-                    } catch (SegueDatabaseException e) {
-                        lastQuestionCount = 0L;
-                    }
-                }
-            });
-
-            return lastQuestionCount;
-        }
-    }, 10, TimeUnit.MINUTES);
 
     /**
      * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
@@ -144,7 +113,6 @@ public class IsaacController extends AbstractIsaacFacade {
                            final ILogManager logManager, final IStatisticsManager statsManager,
                            final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
-                           @Named(CONTENT_INDEX) final String contentIndex,
                            final IUserStreaksManager userStreaksManager,
                            final UserBadgeManager userBadgeManager,
                            final ContentSummarizerService contentSummarizerService) {
@@ -152,7 +120,6 @@ public class IsaacController extends AbstractIsaacFacade {
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
-        this.contentIndex = contentIndex;
         this.contentManager = contentManager;
         this.userBadgeManager = userBadgeManager;
         this.userStreaksManager = userStreaksManager;
@@ -195,15 +162,13 @@ public class IsaacController extends AbstractIsaacFacade {
             return SegueErrorResponse.getBadRequestResponse(String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
         }
 
-        // Calculate the ETag on current live version of the content
-        // NOTE: Assumes that the latest version of the content is being used.
+        // Calculate the ETag on current version of the content
         EntityTag etag = new EntityTag(
-                this.contentIndex.hashCode()
+                String.valueOf(this.contentManager.getCurrentContentSHA().hashCode()
                         + searchString.hashCode()
                         + types.hashCode()
                         + startIndex.hashCode()
-                        + limit.hashCode()
-                        + ""
+                        + limit.hashCode())
         );
 
         Response cachedResponse = generateCachedResponse(request, etag);
@@ -235,7 +200,7 @@ public class IsaacController extends AbstractIsaacFacade {
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacServerLogType.GLOBAL_SITE_SEARCH, logMap);
 
-            ResultsWrapper results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
+            ResultsWrapper<ContentSummaryDTO> results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
             return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();

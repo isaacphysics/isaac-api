@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
@@ -30,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,8 +41,8 @@ public class IsaacParsonsValidator implements IValidator {
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacParsonsQuestion)) {
             throw new IllegalArgumentException(String.format(

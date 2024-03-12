@@ -39,7 +39,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() {
         // Get an instance of the facade to test
-        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, "latest", userBadgeManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
+        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, userBadgeManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     // GET    /events/bookings/{booking_id}      -> EventsFacade::getEventBookingsById(request, bookingId)
     // POST   /events/{event_id}/booking         -> EventsFacade::createBookingForMe(request, eventId, additionalInformation)
     // DELETE /events/{event_id}/bookings/cancel -> EventsFacade::cancelBooking(request, eventId)
-    public void getBookingByIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException, SQLException {
+    public void getBookingByIdTest() throws Exception {
         // --- Login as a student
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
         // --- Login as an event manager
@@ -124,7 +124,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     // events/{event_id}/bookings
     @Test
     // GET /events/{event_id}/bookings -> EventsFacade::adminGetEventBookingByEventId(request, eventId)
-    public void getEventBookingsByEventIdTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getEventBookingsByEventIdTest() throws Exception {
         // Get event bookings by event id as an anonymous user (should fail)
         HttpServletRequest getEventBookingsAsAnonymous_Request = createRequestWithCookies(new Cookie[]{});
         Response getEventBookingsAsAnonymous_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsAnonymous_Request, "_regular_test_event");
@@ -173,7 +173,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
     @Test
     // GET /events/{event_id}/groups_bookings
-    public void getEventBookingForAllGroupsTest() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getEventBookingForAllGroupsTest() throws Exception {
         // Get event bookings by event id as an anonymous user (should fail)
         HttpServletRequest anonymous_Request = createRequestWithCookies(new Cookie[] {});
         replay(anonymous_Request);
@@ -233,7 +233,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
     @Test
     // GET /events/{event_id}/bookings/for_group/{group_id} -> EventFacade::getEventBookingForGivenGroup(request, eventId, groupId)
-    public void getEventBookingsByEventIdForGroup() throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException, AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getEventBookingsByEventIdForGroup() throws Exception {
         // Anonymous users MUST NOT be able to get event bookings by event id and group id
         HttpServletRequest anonymous_Request = createNiceMock(HttpServletRequest.class);
         replay(anonymous_Request);

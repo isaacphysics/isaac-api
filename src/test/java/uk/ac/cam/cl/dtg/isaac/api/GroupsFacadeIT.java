@@ -54,7 +54,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() throws Exception {
         // get an instance of the facade to test
-        this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager, gameManager,
+        this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager,
              groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
     }
 
@@ -69,10 +69,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void createGroupEndpoint_createGroupAsTeacher_succeeds() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void createGroupEndpoint_createGroupAsTeacher_succeeds() throws Exception {
         // Arrange
         // log in as Teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -97,10 +94,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void createGroupEndpoint_createGroupAsTutor_succeeds() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void createGroupEndpoint_createGroupAsTutor_succeeds() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL,
@@ -125,11 +119,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void addAdditionalManagerToGroupEndpoint_addAdditionalTeacherManagerAsTeacher_succeeds() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-            MFARequiredButNotConfiguredException {
+    public void addAdditionalManagerToGroupEndpoint_addAdditionalTeacherManagerAsTeacher_succeeds() throws Exception {
         // Arrange
         // log in as Teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -155,11 +145,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void addAdditionalManagerToGroupEndpoint_addAdditionalTutorManagerAsTeacher_fails() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-            MFARequiredButNotConfiguredException {
+    public void addAdditionalManagerToGroupEndpoint_addAdditionalTutorManagerAsTeacher_fails() throws Exception {
         // Arrange
         // log in as Teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -186,11 +172,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void addAdditionalManagerToGroupEndpoint_addAdditionalTeacherManagerAsTutor_fails() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-            MFARequiredButNotConfiguredException {
+    public void addAdditionalManagerToGroupEndpoint_addAdditionalTeacherManagerAsTutor_fails() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL,

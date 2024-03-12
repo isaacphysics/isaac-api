@@ -14,4 +14,8 @@ public class EmailMustBeVerifiedException extends Exception {
 	public EmailMustBeVerifiedException(final String message) {
 		super(message);
 	}
+
+	public EmailMustBeVerifiedException() {
+		super();
+	}
 }

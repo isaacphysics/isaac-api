@@ -62,7 +62,7 @@ public class SegueETLApplicationRegister extends Application {
 
     @Override
     public final Set<Class<?>> getClasses() {
-        Set<Class<?>> result = new HashSet<Class<?>>();
+        Set<Class<?>> result = new HashSet<>();
 
         result.add(OpenApiResource.class);
         result.add(AcceptHeaderOpenApiResource.class);
