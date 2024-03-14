@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,18 +18,18 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -40,8 +40,6 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -59,21 +57,17 @@ public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 
     private final GitContentManager contentManager;
-    private final String contentIndex;
 
     /**
      * @param properties     - to allow access to system properties.
      * @param contentManager - so that metadata about content can be accessed.
-     * @param contentIndex   - to access the right version of the content.
      * @param logManager     - for logging events using the logging api.
      */
     @Inject
     public GlossaryFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
-                          @Named(CONTENT_INDEX) final String contentIndex,
                           final ILogManager logManager) {
         super(properties, logManager);
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
     }
 
     /**

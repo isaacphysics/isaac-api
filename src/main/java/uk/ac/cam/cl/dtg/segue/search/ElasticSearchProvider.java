@@ -22,7 +22,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -55,13 +54,12 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -72,6 +70,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -161,7 +160,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
 
-
+    @Override
     public ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
             @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
@@ -195,7 +194,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = QueryBuilders.boolQuery();
-        Set boostFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
+        Set<String> boostFields = ImmutableSet.of("id", "title", "tags");
 
         List<String> searchTerms = Lists.newArrayList();
         searchTerms.addAll(Arrays.asList(searchString.split(" ")));
@@ -291,8 +290,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public boolean hasIndex(final String indexBase, final String indexType) {
-        Validate.notNull(indexBase);
-        Validate.notNull(indexType);
+        Objects.requireNonNull(indexBase);
+        Objects.requireNonNull(indexType);
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
             return client.indices().exists(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT);
@@ -679,7 +678,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             }
             return matchQuery;
         } else if (matchInstruction instanceof RangeInstruction) {
-            RangeInstruction rangeMatch = (RangeInstruction) matchInstruction;
+            RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
             RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
             if (rangeMatch.getGreaterThan() != null) {
                 rangeQuery.gt(rangeMatch.getGreaterThan());
@@ -711,6 +710,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
     }
 
+    @Override
     public GetResponse getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
@@ -721,6 +721,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
     }
 
+    @Override
     public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(10000).fetchSource(true);

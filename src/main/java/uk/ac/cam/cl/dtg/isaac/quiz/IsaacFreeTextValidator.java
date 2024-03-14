@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2018 Meurig Thomas
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.common.collect.ImmutableMap;
 import org.isaacphysics.thirdparty.openmark.marker.PMatch;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFreeTextQuestion;
@@ -30,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 
 public class IsaacFreeTextValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacFreeTextValidator.class);
@@ -83,8 +83,8 @@ public class IsaacFreeTextValidator implements IValidator {
     }
 
     private static void validateInputs(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not free-text question");

@@ -2,14 +2,13 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
 import org.isaacphysics.graphchecker.data.Input;
 import org.isaacphysics.graphchecker.dos.GraphAnswer;
 import org.isaacphysics.graphchecker.features.Features;
 import org.isaacphysics.graphchecker.translation.AnswerToInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -19,6 +18,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Validator that only provides functionality to validate graph questions.
@@ -38,8 +38,8 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacGraphSketcherQuestion)) {
             throw new IllegalArgumentException(String.format(
@@ -133,6 +133,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
      * @param choices - the Choices from a Question
      * @return the ordered list of Choices
      */
+    @Override
     public List<Choice> getOrderedChoices(final List<Choice> choices) {
         return Lists.newArrayList(choices);
     }

@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2019 Andrea Franceschini
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.isaac.dto.content.GlossaryTermDTO;
 
+import java.util.Set;
+
 /**
  * Glossary Term object The glossary term object is a specialized form of content and allows the storage of data
  * relating to glossary terms.
@@ -29,6 +31,7 @@ public class GlossaryTerm extends Content {
     protected Content explanation;
     protected boolean autoId;
     protected String examBoard;
+    protected Set<String> stages;
 
     /**
      * Default constructor, required for mappers.
@@ -64,7 +67,20 @@ public class GlossaryTerm extends Content {
         this.examBoard = examBoard;
     }
 
+    public Set<String> getStages() {
+        return stages;
+    }
+
+    public void setStages(Set<String> stages) {
+        this.stages = stages;
+    }
+
     @JsonIgnore
-    public final boolean getAutoId() { return autoId; }
-    public final void setAutoId(final boolean autoId) { this.autoId = autoId; }
+    public final boolean getAutoId() {
+        return autoId;
+    }
+
+    public final void setAutoId(final boolean autoId) {
+        this.autoId = autoId;
+    }
 }

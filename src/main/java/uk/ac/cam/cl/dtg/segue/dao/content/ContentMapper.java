@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,14 +25,9 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import org.apache.commons.lang3.Validate;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
-import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
-import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
-import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -43,11 +38,16 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
+import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
+import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
+import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -88,7 +88,7 @@ public class ContentMapper {
     @SuppressWarnings("unchecked")
     public ContentMapper(final Reflections configuredReflectionClass) {
         this();
-        Validate.notNull(configuredReflectionClass);
+        Objects.requireNonNull(configuredReflectionClass);
 
         // We need to pre-register different content objects here for the
         // auto-mapping to work
@@ -129,7 +129,7 @@ public class ContentMapper {
      *            - the class to extract the jsontype value from.
      */
     public synchronized void registerJsonType(final Class<? extends Content> cls) {
-        Validate.notNull(cls, "Class cannot be null.");
+        Objects.requireNonNull(cls, "Class cannot be null.");
 
         JsonContentType jt = cls.getAnnotation(JsonContentType.class);
         if (jt != null) {
@@ -147,7 +147,7 @@ public class ContentMapper {
      */
     @SuppressWarnings("unchecked")
     public synchronized void registerDTOMapping(final Class<? extends Content> cls) {
-        Validate.notNull(cls, "Class cannot be null.");
+        Objects.requireNonNull(cls, "Class cannot be null.");
 
         DTOMapping dtoMapping = cls.getAnnotation(DTOMapping.class);
         if (dtoMapping != null && ContentDTO.class.isAssignableFrom(dtoMapping.value())) {
@@ -250,7 +250,7 @@ public class ContentMapper {
      * @return the list of DTOs
      */
     public List<ContentDTO> getDTOByDOList(final List<Content> contentDOList) {
-        Validate.notNull(contentDOList);
+        Objects.requireNonNull(contentDOList);
 
         List<ContentDTO> resultList = Lists.newArrayList();
         for (Content c : contentDOList) {
@@ -296,7 +296,7 @@ public class ContentMapper {
         // Required to deal with type polymorphism
         ObjectMapper objectMapper = this.getSharedContentObjectMapper();
 
-        List<Content> contentList = new ArrayList<Content>();
+        List<Content> contentList = new ArrayList<>();
 
         for (String item : stringList) {
             try {

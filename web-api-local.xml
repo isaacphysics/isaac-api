@@ -53,11 +53,14 @@
         <param-name>resteasy.providers</param-name>
         <param-value>
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.UnhandledExceptionMapper,
-            uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.OptionsMethodExceptionMapper,
             uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.MethodNotAllowedExceptionMapper,
             uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonInvalidFormatExceptionMapper,
             org.jboss.resteasy.plugins.interceptors.GZIPEncodingInterceptor
         </param-value>
+    </context-param>
+    <context-param>
+        <param-name>org.eclipse.jetty.servlet.Default.dirAllowed</param-name>
+        <param-value>false</param-value>
     </context-param>
 
     <session-config>

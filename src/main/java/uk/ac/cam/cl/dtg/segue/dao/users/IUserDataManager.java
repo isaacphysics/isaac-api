@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -75,18 +75,6 @@ public interface IUserDataManager {
             throws SegueDatabaseException;
 
     /**
-     * Get all the linked accounts by users in a list.
-     *
-     * @param users
-     *             - the list of DOs to search for.
-     * @return List of authentication providers (or empty list) per user.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(final List<RegisteredUser> users)
-            throws SegueDatabaseException;
-
-    /**
      * Get UserAuthenticationSettings Object
      * This object provides information on how a user can login based on linked accounts and if they have a Segue account
      *
@@ -96,18 +84,6 @@ public interface IUserDataManager {
      *             - If there is an internal database error.
      */
     UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException;
-
-    /**
-     * Get whether a list of users have a Segue account.
-     *
-     * @param users
-     *             - the list fo DOs to search for.
-     * @return List of Segue account existence information.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(final List<RegisteredUser> users)
-            throws SegueDatabaseException;
 
     /**
      * Find a user by their linked account information.

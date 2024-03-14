@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2021 Chris Purdy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,6 +32,7 @@ public class InteractiveCodeSnippet extends CodeSnippet {
     protected String testCode;
     protected String expectedResult;
     protected Boolean wrapCodeInMain;
+    protected String dataUrl;
 
     /**
      * Default constructor, required for mappers.
@@ -44,7 +45,7 @@ public class InteractiveCodeSnippet extends CodeSnippet {
         return setupCode;
     }
 
-    public void setSetupCode(String setupCode) {
+    public void setSetupCode(final String setupCode) {
         this.setupCode = setupCode;
     }
 
@@ -52,7 +53,7 @@ public class InteractiveCodeSnippet extends CodeSnippet {
         return testCode;
     }
 
-    public void setTestCode(String testCode) {
+    public void setTestCode(final String testCode) {
         this.testCode = testCode;
     }
 
@@ -60,7 +61,7 @@ public class InteractiveCodeSnippet extends CodeSnippet {
         return expectedResult;
     }
 
-    public void setExpectedResult(String expectedResult) {
+    public void setExpectedResult(final String expectedResult) {
         this.expectedResult = expectedResult;
     }
 
@@ -68,7 +69,15 @@ public class InteractiveCodeSnippet extends CodeSnippet {
         return wrapCodeInMain;
     }
 
-    public void setWrapCodeInMain(Boolean wrapCodeInMain) {
+    public void setWrapCodeInMain(final Boolean wrapCodeInMain) {
         this.wrapCodeInMain = wrapCodeInMain;
+    }
+
+    public String getDataUrl() {
+        return dataUrl;
+    }
+
+    public void setDataUrl(final String dataUrl) {
+        this.dataUrl = dataUrl;
     }
 }

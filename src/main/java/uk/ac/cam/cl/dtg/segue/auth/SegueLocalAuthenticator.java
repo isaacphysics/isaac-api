@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,17 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.*;
-
+import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -35,11 +30,17 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import com.google.inject.Inject;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue Local Authenticator. This provides a mechanism for users to create an account on the Segue CMS without the need
@@ -156,8 +157,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     @Override
     public RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken, 
             final String email) {
-        Validate.notNull(userToAttachVerificationToken);
-        Validate.notNull(email, "Email used for verification cannot be null");
+        Objects.requireNonNull(userToAttachVerificationToken);
+        Objects.requireNonNull(email, "Email used for verification cannot be null");
         
         // Generate HMAC
         String key = properties.getProperty(HMAC_SALT);
@@ -171,8 +172,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     
     @Override
     public boolean isValidEmailVerificationToken(final RegisteredUser user, final String token) {
-        Validate.notNull(user);
-        Validate.notNull(token);
+        Objects.requireNonNull(user);
+        Objects.requireNonNull(token);
         
         String userToken = user.getEmailVerificationToken();
         if (userToken != null && userToken.substring(0, Constants.TRUNCATED_TOKEN_LENGTH).equals(token)) {
@@ -190,7 +191,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     @Override
     public String createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
             throws SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException {
-        Validate.notNull(userToAttachToken);
+        Objects.requireNonNull(userToAttachToken);
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
         if (null == luc) {

@@ -567,7 +567,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 for (String pageId : attempts.keySet()) {
                     Map<String, List<LightweightQuestionValidationResponse>> a = attempts.get(pageId);
                     for (String questionId : a.keySet()) {
-                        List l = a.get(questionId);
+                        List<LightweightQuestionValidationResponse> l = a.get(questionId);
                         attemptsByQuestionId.put(questionId, l);
                     }
                 }
@@ -584,11 +584,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 userQuestionDataMap.put(user, userAttemptsSummary);
             });
             // FIXME ^^^ This is duplicated code ^^^
-            userQuestionDataMap.forEach((user, outcome) -> {
-                questionIds.forEach(questionId -> {
-                    outcome.putIfAbsent(questionId, null);
-                });
-            });
+            userQuestionDataMap.forEach((user, outcome) ->
+                    questionIds.forEach(questionId -> outcome.putIfAbsent(questionId, null)));
 
             List<String[]> resultRows = Lists.newArrayList();
             int[] columnTotals = new int[questionIds.size()];
@@ -752,7 +749,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     for (String pageId : attempts.keySet()) {
                         Map<String, List<LightweightQuestionValidationResponse>> a = attempts.get(pageId);
                         for (String questionId : a.keySet()) {
-                            List l = a.get(questionId);
+                            List<LightweightQuestionValidationResponse> l = a.get(questionId);
                             attemptsByQuestionId.put(questionId, l);
                         }
                     }
@@ -1164,10 +1161,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             if (null == assignmentToDelete) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "The assignment does not exist.").toResponse();
             }
-            if (!assigneeGroup.getOwnerId().equals(currentlyLoggedInUser.getId()) &&
-                    !GroupManager.isInAdditionalManagerList(assigneeGroup, currentlyLoggedInUser.getId())) {
+            if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not the owner of the group or a manager. Unable to delete it.").toResponse();
+                        "You are not the owner of the group or a manager. Unable to delete assignment.").toResponse();
             }
 
             // Check if user is additional manager, and if so if they are either the creator of the assignment or additional

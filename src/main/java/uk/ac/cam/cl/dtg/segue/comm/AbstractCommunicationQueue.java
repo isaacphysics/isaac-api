@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2015 Alistair Stead
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,13 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -33,26 +33,22 @@ import org.slf4j.LoggerFactory;
  *            type of message to send
  */
 public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage> {
-	
-	/**
-	 * Comparator that tells the priority queue which email should be sent first.
-	 */
-	private Comparator<ICommunicationMessage> emailPriorityComparator = new Comparator<ICommunicationMessage>() {
-		@Override
-		public int compare(final ICommunicationMessage first, final ICommunicationMessage second) {
-			if (first.getPriority() == second.getPriority()) {
-				return 0;
-			} else if (first.getPriority() <= second.getPriority()) {
-				return -1;
-			} else {
-				return 1;
-			}
-		}
-    	
+    
+    /**
+     * Comparator that tells the priority queue which email should be sent first.
+     */
+    private Comparator<ICommunicationMessage> emailPriorityComparator = (first, second) -> {
+        if (first.getPriority() == second.getPriority()) {
+            return 0;
+        } else if (first.getPriority() <= second.getPriority()) {
+            return -1;
+        } else {
+            return 1;
+        }
     };
 
-    private PriorityBlockingQueue<T> messageSenderRunnableQueue = 
-    				new PriorityBlockingQueue<T>(100, emailPriorityComparator);
+    private PriorityBlockingQueue<T> messageSenderRunnableQueue =
+            new PriorityBlockingQueue<>(100, emailPriorityComparator);
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCommunicationQueue.class);
 
@@ -77,8 +73,8 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      *            object of type S that can be added to the queue
      */
     protected void addToQueue(final T queueObject) {
-    	messageSenderRunnableQueue.add(queueObject);
-    	executorService.submit(new MessageSenderRunnable());
+        messageSenderRunnableQueue.add(queueObject);
+        executorService.submit(new MessageSenderRunnable());
         log.debug("Added to the email queue. Current size: " + messageSenderRunnableQueue.size());
     }
 
@@ -94,7 +90,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * @return current queue length
      */
     public int getQueueLength() {
-    	return messageSenderRunnableQueue.size();
+        return messageSenderRunnableQueue.size();
     }
 
     /**
@@ -104,12 +100,12 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      *
      */
     class MessageSenderRunnable implements Runnable {
-    	    	
+                
         @Override
         public void run() {
             // Send the actual message
             try {
-            	T queueItem = getLatestQueueItem();
+                T queueItem = getLatestQueueItem();
                 communicator.sendMessage(queueItem);
                 log.info("Sent message. Current size: " + messageSenderRunnableQueue.size());
             } catch (CommunicationException e) {
@@ -117,7 +113,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
             } catch (Exception e) {
                 log.warn("Generic Exception:" + e.getMessage());
                 e.printStackTrace();
-			}
+            }
         }
     }    
 }

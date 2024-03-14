@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,10 +29,13 @@ public class UserExternalAccountChanges {
     private EmailVerificationStatus emailVerificationStatus;
     private Boolean allowsNewsEmails;
     private Boolean allowsEventsEmails;
+    private String countryCode;
+    private String stages;
 
     public UserExternalAccountChanges(Long userId, String providerUserId, String accountEmail, Role role,
                                       String givenName, Boolean deleted, EmailVerificationStatus emailVerificationStatus,
-                                      Boolean allowsNewsEmails, Boolean allowsEventsEmails) {
+                                      Boolean allowsNewsEmails, Boolean allowsEventsEmails, String countryCode,
+                                      String stages) {
         this.userId = userId;
         this.providerUserId = providerUserId;
         this.accountEmail = accountEmail;
@@ -42,6 +45,8 @@ public class UserExternalAccountChanges {
         this.emailVerificationStatus = emailVerificationStatus;
         this.allowsNewsEmails = allowsNewsEmails;
         this.allowsEventsEmails = allowsEventsEmails;
+        this.countryCode = countryCode;
+        this.stages = stages;
     }
 
     public Long getUserId() {
@@ -116,4 +121,19 @@ public class UserExternalAccountChanges {
         this.allowsEventsEmails = allowsEventsEmails;
     }
 
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public String getStages() {
+        return stages;
+    }
+
+    public void setStages(String stages) {
+        this.stages = stages;
+    }
 }

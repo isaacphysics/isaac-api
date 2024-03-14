@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
@@ -85,6 +86,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -155,7 +157,14 @@ public class UsersFacade extends AbstractSegueFacade {
                                            @Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse response) {
         try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            RegisteredUserDTO currentUser;
+
+            if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                // allow users who are required to verify but haven't yet done so to use this endpoint
+                currentUser = userManager.getCurrentPartiallyIdentifiedUser(httpServletRequest, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+            } else {
+                currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            }
 
             Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
             int sessionExpiryHashCode = 0;
@@ -243,7 +252,7 @@ public class UsersFacade extends AbstractSegueFacade {
             try {
                 String ipAddress = RequestIPExtractor.getClientIpAddr(request);
                 misuseMonitor.notifyEvent(ipAddress, RegistrationMisuseHandler.class.getSimpleName());
-                SegueMetrics.USER_REGISTRATION.inc();
+                SegueMetrics.USER_REGISTRATION_ATTEMPT.inc();
 
                 // Add some logging for what ought to be an impossible case; that of a registration attempt coming from a client
                 // which has not made any other authenticated/logged request to Isaac beforehand.
@@ -252,8 +261,17 @@ public class UsersFacade extends AbstractSegueFacade {
                     log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
                 }
 
-                // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
-                return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                Response newUserResponse;
+                if (Role.TEACHER.equals(registeredUser.getRole()) && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                    // For teacher sign-ups where teachers should not default to student role, use a caveat login until email is verified.
+                    newUserResponse = userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, false, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+                } else {
+                    // TODO rememberMe is set as true. Do we assume a user will want to be remembered on the machine the register on?
+                    newUserResponse = userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences, true);
+                }
+
+                SegueMetrics.USER_REGISTRATION.inc();
+                return newUserResponse;
             } catch (SegueResourceMisuseException e) {
                 log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");
@@ -294,6 +312,48 @@ public class UsersFacade extends AbstractSegueFacade {
                     "Can't load user preferences!", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        }
+    }
+
+    @POST
+    @Path("users/current_user/upgrade/{role}")
+    @Operation(summary = "Upgrade the current user's role in a self-service manner.",
+               description = "Currently only upgrading from student to teacher is supported and only on some sites.")
+    public Response upgradeCurrentAccountRole(@Context final HttpServletRequest request, @PathParam("role") final String role) {
+        if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES))) {
+            try {
+                Role requestedRole = Role.valueOf(role);
+                if (!requestedRole.equals(Role.TEACHER)) {
+                    return SegueErrorResponse.getBadRequestResponse("You can only upgrade your account to a teacher account.");
+                }
+
+                RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(request);
+
+                if (!Role.STUDENT.equals(user.getRole())) {
+                    return SegueErrorResponse.getBadRequestResponse("You already have an upgraded account.");
+                }
+
+                if (user.getEmailVerificationStatus() != EmailVerificationStatus.VERIFIED) {
+                    return SegueErrorResponse.getBadRequestResponse("You need to have a verified email address to upgrade to a teacher account.");
+                }
+
+                // We'll leave TEACHER hard-coded here for security until we support a wider range of requestedRoles:
+                userManager.updateUserRole(user.getId(), Role.TEACHER);
+                log.info(String.format("User (%s) has upgraded their account from %s to %s", user.getId(), user.getRole(), Role.TEACHER));
+                this.getLogManager().logEvent(user, request, SegueServerLogType.USER_UPGRADE_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
+                                    "oldRole", user.getRole(),
+                                    "newRole", Role.TEACHER));
+
+                return Response.ok().build();
+
+            } catch (NoUserLoggedInException e) {
+                return SegueErrorResponse.getNotLoggedInResponse();
+            } catch (SegueDatabaseException e) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Could not save new role to the database.").toResponse();
+            }
+        } else {
+            return SegueErrorResponse.getNotImplementedResponse();
         }
     }
 
@@ -662,7 +722,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             List<Long> userIds = Arrays.stream(userIdsQueryParam.split(","))
-                    .map(schoolId -> Long.parseLong(schoolId))
+                    .map(Long::parseLong)
                     .collect(Collectors.toList());
 
             // Restrict event leader queries to users who have granted access to their data

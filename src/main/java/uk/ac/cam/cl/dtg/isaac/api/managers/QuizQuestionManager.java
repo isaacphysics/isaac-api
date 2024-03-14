@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -142,6 +143,20 @@ public class QuizQuestionManager {
     }
 
     /**
+     * This method will shuffle choices for questions in the quiz.
+     * @param quiz
+     *            - to augment - this object may be mutated as a result of this method. i.e choices may be shuffled.
+     * @return The quiz object augmented (generally a modified parameter).
+     */
+    public IsaacQuizDTO augmentQuestionsForPreview(IsaacQuizDTO quiz) {
+        List<QuestionDTO> questionsToAugment = GameManager.getAllMarkableQuestionPartsDFSOrder(quiz);
+
+        questionManager.shuffleChoiceQuestionsChoices("PREVIEW", questionsToAugment);
+
+        return quiz;
+    }
+
+    /**
      * Modify the quiz to contain feedback for the specified mode, and possibly the users answers and the correct answers.
      *  @param quizAttempt
      *            - which attempt at the quiz to get attempts for.
@@ -210,7 +225,7 @@ public class QuizQuestionManager {
             // No questions attempted.
             if (!answers.containsKey(user.getId())) {
                 Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(
-                    s -> s.getId(),
+                        ContentBaseDTO::getId,
                     s -> QuizFeedbackDTO.Mark.notAttempted(quiz.getSectionTotals().get(s.getId()))));
                 return new QuizFeedbackDTO(QuizFeedbackDTO.Mark.notAttempted(quiz.getTotal()), sectionMarks, null);
             }
@@ -331,8 +346,8 @@ public class QuizQuestionManager {
         }
 
         // Make a score table
-        Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
-        Map<String, QuizFeedbackDTO.Mark> questionMarks = questionsToAugment.stream().collect(Collectors.toMap(s -> s.getId(), s -> new QuizFeedbackDTO.Mark()));
+        Map<String, QuizFeedbackDTO.Mark> sectionMarks = sections.stream().collect(Collectors.toMap(ContentBaseDTO::getId, s -> new QuizFeedbackDTO.Mark()));
+        Map<String, QuizFeedbackDTO.Mark> questionMarks = questionsToAugment.stream().collect(Collectors.toMap(ContentBaseDTO::getId, s -> new QuizFeedbackDTO.Mark()));
 
         // Calculate the scores
         for (QuestionDTO question: questionsToAugment) {

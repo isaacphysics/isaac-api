@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -98,7 +98,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             @Named(Constants.RASPBERRYPI_CALLBACK_URI) final String callbackUri,
             @Named(Constants.RASPBERRYPI_OAUTH_SCOPES) final String oauthScopes,
             @Named(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH) final String idpMetadataLocation
-    ) throws AuthenticatorSecurityException, IOException {
+    ) throws IOException {
 
         Validate.notBlank(clientId, "Missing resource %s", clientId);
         Validate.notBlank(clientSecret, "Missing resource %s", clientSecret);
@@ -193,8 +193,8 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
                     null,
                     null,
                     null,
-                    country
-            );
+                    country,
+                    false);
         }
     }
 

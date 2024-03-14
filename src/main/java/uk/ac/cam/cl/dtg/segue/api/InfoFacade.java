@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +38,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Collection;
 import java.util.Objects;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Info Facade
@@ -165,23 +164,8 @@ public class InfoFacade extends AbstractSegueFacade {
     @Operation(summary = "Check whether the symbolic question checker is running.")
     public Response pingEqualityChecker() {
 
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
-                                      + ":" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT) +  "/");
-
-        HttpResponse httpResponse = null;
-        try {
-            httpResponse = httpClient.execute(httpGet);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
-            return Response.ok(ImmutableMap.of("success", true)).build();
-        } else {
-            return Response.ok(ImmutableMap.of("success", false)).build();
-        }
-
+        return pingUrlForStatus("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
+                + ":" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT) +  "/");
     }
 
     /**
@@ -195,23 +179,8 @@ public class InfoFacade extends AbstractSegueFacade {
     @Operation(summary = "Check whether the chemistry question checker is running.")
     public Response pingChemistryChecker() {
 
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_HOST)
-                                      + ":" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_PORT) +  "/");
-
-        HttpResponse httpResponse = null;
-        try {
-            httpResponse = httpClient.execute(httpGet);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
-            return Response.ok(ImmutableMap.of("success", true)).build();
-        } else {
-            return Response.ok(ImmutableMap.of("success", false)).build();
-        }
-
+        return pingUrlForStatus("http://" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_HOST)
+                + ":" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_PORT) +  "/");
     }
 
     /**
@@ -224,23 +193,9 @@ public class InfoFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the content indexer is running.")
     public Response pingETLServer() {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
+
+        return pingUrlForStatus("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
                 + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/ping");
-
-        HttpResponse httpResponse = null;
-        try {
-            httpResponse = httpClient.execute(httpGet);
-        } catch (IOException e) {
-            log.warn("Error when checking status of ETL server: " + e.toString());
-        }
-
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
-            return Response.ok(ImmutableMap.of("success", true)).build();
-        } else {
-            return Response.ok(ImmutableMap.of("success", false)).build();
-        }
-
     }
 
     /**
@@ -254,25 +209,8 @@ public class InfoFacade extends AbstractSegueFacade {
     @Operation(summary = "Check whether elasticsearch is running.")
     public Response pingElasticSearch() {
 
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("SEARCH_CLUSTER_ADDRESS") + ":"
-                + getProperties().getProperty("SEARCH_CLUSTER_INFO_PORT") + "/_cat/health");
-
-        HttpResponse httpResponse = null;
-        try {
-            httpResponse = httpClient.execute(httpGet);
-        } catch (IOException e) {
-            log.warn("Error when checking status of elasticsearch: " + e.toString());
-        }
-
-        // FIXME - this assumes a 200 means all is ok.
-        // It's likely that a real problem with clustering would also lead to a 200!
-        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
-            return Response.ok(ImmutableMap.of("success", true)).build();
-        } else {
-            return Response.ok(ImmutableMap.of("success", false)).build();
-        }
-
+        return pingUrlForStatus("http://" + getProperties().getProperty("SEARCH_CLUSTER_ADDRESS") + ":"
+                    + getProperties().getProperty("SEARCH_CLUSTER_INFO_PORT") + "/_cat/health");
     }
 
     /**
@@ -286,6 +224,36 @@ public class InfoFacade extends AbstractSegueFacade {
     @Operation(summary = "Check whether Quartz job scheduler is currently running.")
     public Response pingQuartzScheduler() {
         if (segueJobService.wasStarted() && !segueJobService.isShutdown()) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
+    }
+
+    /**
+     *  Test a HTTP URL for a 200 status code.
+     *
+     * @param url - the url to test.
+     * @return a Response containing "success" and true/false for the status.
+     */
+    private Response pingUrlForStatus(final String url) {
+
+        HttpResponse<String> httpResponse = null;
+        try {
+            HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET().build();
+
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            log.warn("Error when pinging for status: ", e);
+        }
+
+        // FIXME: should we inspect the response body?
+        if (httpResponse != null && httpResponse.statusCode() == 200) {
             return Response.ok(ImmutableMap.of("success", true)).build();
         } else {
             return Response.ok(ImmutableMap.of("success", false)).build();

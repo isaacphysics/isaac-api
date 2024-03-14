@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2016 Ryan Lau
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,4 +27,31 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @JsonContentType("isaacGraphSketcherQuestion")
 @ValidatesWith(IsaacGraphSketcherValidator.class)
 public class IsaacGraphSketcherQuestionDTO extends IsaacSymbolicQuestionDTO {
+    private int maxNumCurves;
+    private String axisLabelX;
+    private String axisLabelY;
+
+    public int getMaxNumCurves() {
+        return maxNumCurves;
+    }
+
+    public void setMaxNumCurves(int maxNumCurves) {
+        this.maxNumCurves = maxNumCurves;
+    }
+
+    public String getAxisLabelX() {
+        return axisLabelX;
+    }
+
+    public String getAxisLabelY() {
+        return axisLabelY;
+    }
+
+    public void setAxisLabelX(String axisLabelX) {
+        this.axisLabelX = axisLabelX;
+    }
+
+    public void setAxisLabelY(String axisLabelY) {
+        this.axisLabelY = axisLabelY;
+    }
 }

@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Nick Rogers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -97,7 +97,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
         this.callbackUri = callbackUri;
 
         if (null == credentialStore) {
-            credentialStore = new WeakHashMap<String, Credential>();
+            credentialStore = new WeakHashMap<>();
         }
 
         if (null == tokenVerifier) {
@@ -208,7 +208,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                 }
 
                 return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,
-                        emailStatus, null, null, null, null);
+                        emailStatus, null, null, null, null, false);
             } else {
                 throw new NoUserException("No user could be created from provider details!");
             }

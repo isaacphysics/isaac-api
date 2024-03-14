@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,11 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.Date;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
 
 /**
  * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
@@ -94,6 +93,7 @@ public class AssignmentDTO implements IAssignmentLike {
      *
      * @return the id
      */
+    @Override
     public Long getId() {
         return id;
     }
@@ -164,6 +164,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * 
      * @return the groupId
      */
+    @Override
     public Long getGroupId() {
         return groupId;
     }
@@ -199,6 +200,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * 
      * @return the ownerUserId
      */
+    @Override
     public Long getOwnerUserId() {
         return ownerUserId;
     }
@@ -241,6 +243,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * Sets the assignerSummary.
      * @param assignerSummary the assignerSummary to set
      */
+    @Override
     public void setAssignerSummary(final UserSummaryDTO assignerSummary) {
         this.assignerSummary = assignerSummary;
     }
@@ -250,6 +253,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * 
      * @return the creationDate
      */
+    @Override
     public Date getCreationDate() {
         return creationDate;
     }
@@ -268,6 +272,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * get the due date of the assignment.
      * @return dueDate
      */
+    @Override
     public Date getDueDate() {
         return dueDate;
     }
@@ -284,6 +289,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * get the date of when the assignment should be displayed to users.
      * @return scheduledStartDate
      */
+    @Override
     public Date getScheduledStartDate() {
         return scheduledStartDate;
     }

@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,22 +17,22 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.google.common.collect.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 
 import jakarta.annotation.Nullable;
 import java.util.List;
 
 /**
  * DTO that provides high level information for Isaac Questions.
- * 
  * Used for gameboards to represent cut down versions of questions
  */
 public class GameboardItem {
     private String id;
     private String contentType;
     private String title;
+    private String subtitle;
     private String description;
     private String uri;
     private List<String> tags;
@@ -50,7 +50,7 @@ public class GameboardItem {
     private GameboardItemState state;
     private List<Constants.QuestionPartState> questionPartStates = Lists.newArrayList();
     
-    // optional field if we want to use the gameboard item outside of the context of a board.
+    // optional field if we want to use the gameboard item outside the context of a board.
     @Nullable
     private String boardId;
     // Optional record of the question ID which supersedes this one.
@@ -65,16 +65,19 @@ public class GameboardItem {
     /**
      * Static factory method for constructing a minimal Gameboard Item from a GameboardContentDescriptor.
      * Augmentation by mapping the content object to the instance will need to be done separately.
+     *
      * @param contentDescriptor
      *          a content descriptor to populate the gameboard item's fields.
-     * @return A Minimal gameboard item containing all of the information from the content descriptor.
+     * @return A Minimal gameboard item containing all the information from the content descriptor.
      */
     public static GameboardItem buildLightweightItemFromContentDescriptor(final GameboardContentDescriptor contentDescriptor) {
-        return new GameboardItem() {{
-            this.setId(contentDescriptor.getId());
-            this.setContentType(contentDescriptor.getContentType());
-            this.setCreationContext(contentDescriptor.getContext());
-        }};
+        return new GameboardItem() {
+            {
+                this.setId(contentDescriptor.getId());
+                this.setContentType(contentDescriptor.getContentType());
+                this.setCreationContext(contentDescriptor.getContext());
+            }
+        };
     }
 
     /**
@@ -87,6 +90,7 @@ public class GameboardItem {
         this.setId(original.getId());
         this.setContentType(original.getContentType());
         this.setTitle(original.getTitle());
+        this.setSubtitle(original.getSubtitle());
         this.setDescription(original.getDescription());
         this.setUri(original.getUri());
         this.setAudience(original.getAudience());
@@ -103,7 +107,7 @@ public class GameboardItem {
 
     /**
      * Gets the id.
-     * 
+     *
      * @return the id
      */
     public final String getId() {
@@ -112,7 +116,7 @@ public class GameboardItem {
 
     /**
      * Sets the id.
-     * 
+     *
      * @param id
      *            the id to set
      */
@@ -122,7 +126,7 @@ public class GameboardItem {
 
     /**
      * Gets the title.
-     * 
+     *
      * @return the title
      */
     public final String getTitle() {
@@ -131,7 +135,7 @@ public class GameboardItem {
 
     /**
      * Sets the title.
-     * 
+     *
      * @param title
      *            the title to set
      */
@@ -140,8 +144,27 @@ public class GameboardItem {
     }
 
     /**
+     * Gets the subtitle.
+     *
+     * @return the subtitle
+     */
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    /**
+     * Sets the subtitle.
+     *
+     * @param subtitle
+     *            the subtitle to set
+     */
+    public void setSubtitle(final String subtitle) {
+        this.subtitle = subtitle;
+    }
+
+    /**
      * Gets the description.
-     * 
+     *
      * @return the description
      */
     public final String getDescription() {
@@ -150,7 +173,7 @@ public class GameboardItem {
 
     /**
      * Sets the description.
-     * 
+     *
      * @param description
      *            the description to set
      */
@@ -160,7 +183,7 @@ public class GameboardItem {
 
     /**
      * Gets the uri.
-     * 
+     *
      * @return the uri
      */
     public final String getUri() {
@@ -169,7 +192,7 @@ public class GameboardItem {
 
     /**
      * Sets the uri.
-     * 
+     *
      * @param uri
      *            the uri to set
      */
@@ -179,7 +202,7 @@ public class GameboardItem {
 
     /**
      * Gets the tags.
-     * 
+     *
      * @return the tags
      */
     public final List<String> getTags() {
@@ -188,7 +211,7 @@ public class GameboardItem {
 
     /**
      * Sets the tags.
-     * 
+     *
      * @param tags
      *            the tags to set
      */
@@ -198,7 +221,7 @@ public class GameboardItem {
 
     /**
      * Gets the level.
-     * 
+     *
      * @return the level
      */
     public final Integer getLevel() {
@@ -207,7 +230,7 @@ public class GameboardItem {
 
     /**
      * Sets the level.
-     * 
+     *
      * @param level
      *            the level to set
      */
@@ -231,10 +254,10 @@ public class GameboardItem {
      *            the difficulty to set
      */
     public final void setDifficulty(final Integer difficulty) {
-        this.difficulty= difficulty;
+        this.difficulty = difficulty;
     }
 
-    public final List<Constants.QuestionPartState> getQuestionPartStates(){
+    public final List<Constants.QuestionPartState> getQuestionPartStates() {
         return this.questionPartStates;
     }
 
@@ -246,7 +269,7 @@ public class GameboardItem {
     // that will require altering some of the front end code - the assignment progress page in particular.
     /**
      * Gets the number of questionPartsCorrect.
-     * 
+     *
      * @return the number of questionPartsCorrect
      */
     public final Integer getQuestionPartsCorrect() {
@@ -265,7 +288,7 @@ public class GameboardItem {
 
     /**
      * Gets the number of questionPartsIncorrect.
-     * 
+     *
      * @return the number of questionPartsIncorrect
      */
     public final Integer getQuestionPartsIncorrect() {
@@ -284,7 +307,7 @@ public class GameboardItem {
 
     /**
      * Gets the number of questionPartsNotAttempted.
-     * 
+     *
      * @return the number of questionPartsNotAttempted
      */
     public final Integer getQuestionPartsNotAttempted() {
@@ -341,7 +364,7 @@ public class GameboardItem {
 
     /**
      * Gets the state.
-     * 
+     *
      * @return the state
      */
     public final GameboardItemState getState() {
@@ -350,7 +373,7 @@ public class GameboardItem {
 
     /**
      * Sets the state.
-     * 
+     *
      * @param state
      *            the state to set
      */
@@ -360,6 +383,7 @@ public class GameboardItem {
 
     /**
      * Gets the boardId.
+     *
      * @return the boardId
      */
     public String getBoardId() {
@@ -368,6 +392,7 @@ public class GameboardItem {
 
     /**
      * Sets the boardId.
+     *
      * @param boardId the boardId to set
      */
     public void setBoardId(final String boardId) {
@@ -376,6 +401,7 @@ public class GameboardItem {
 
     /**
      * Gets the supersededBy question.
+     *
      * @return the supersededBy question
      */
     public String getSupersededBy() {
@@ -384,6 +410,7 @@ public class GameboardItem {
 
     /**
      * Sets the supersededBy question.
+     *
      * @param supersededBy the ID of the question that supersedes this one to set
      */
     public void setSupersededBy(final String supersededBy) {
@@ -435,12 +462,9 @@ public class GameboardItem {
         }
         GameboardItem other = (GameboardItem) obj;
         if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.id)) {
-            return false;
+            return other.id == null;
+        } else {
+            return id.equals(other.id);
         }
-        return true;
     }
 }

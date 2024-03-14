@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import com.google.api.client.util.Lists;
+import com.google.inject.Inject;
+import ma.glasnost.orika.MapperFacade;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,19 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import ma.glasnost.orika.MapperFacade;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -239,22 +237,13 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
     @Override
     public List<AssignmentDTO> getAssignmentsByGroupList(Collection<Long> groupIds) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM assignments WHERE group_id IN (");
-
-        for (int i = 0; i < groupIds.size(); i++) {
-            sb.append("?").append(i < groupIds.size() - 1 ? ", " : "");
-        }
-        sb.append(") ORDER BY creation_date");
+        String query = "SELECT * FROM assignments WHERE group_id = ANY (?) ORDER BY creation_date";
 
         try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
+             PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            int i = 1;
-            for (Long id : groupIds) {
-                pst.setLong(i, id);
-                i++;
-            }
+            Array groupIdsArray = conn.createArrayOf("INTEGER", groupIds.toArray());
+            pst.setArray(1, groupIdsArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 List<AssignmentDTO> listOfResults = Lists.newArrayList();
@@ -264,12 +253,15 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                 }
 
                 return listOfResults;
+            } finally {
+                groupIdsArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by group list", e);
         }
     }
 
+    @Override
     public List<AssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
         if (null == timestamp) {
             throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");

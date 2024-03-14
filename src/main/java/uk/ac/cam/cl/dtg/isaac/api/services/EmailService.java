@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2021 Raspberry Pi Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,18 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
-import feign.FeignException;
-import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -36,20 +36,16 @@ import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_EMAILS_BETA_OPT_IN;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
@@ -121,15 +117,14 @@ public class EmailService {
             EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
 
             if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
-                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE).forEach(userBatch -> {
-                    mailGunEmailManager.sendBatchEmails(
-                            userBatch,
-                            emailTemplate,
-                            EmailType.ASSIGNMENTS,
-                            variables,
-                            null
+                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE)
+                    .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
+                        userBatch,
+                        emailTemplate,
+                        EmailType.ASSIGNMENTS,
+                        variables,
+                        null)
                     );
-                });
             } else {
                 // If user is not in the MailGun assignment emails beta list, use our standard email method
                 Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());

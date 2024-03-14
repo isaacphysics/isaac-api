@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,16 +52,12 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
     @BeforeEach
     public void setUp() {
-        this.pagesFacade = new PagesFacade(new ContentService(contentManager, "latest"), properties, logManager,
-                mapperFacade, contentManager, userAccountManager, new URIManager(properties), questionManager, gameManager,
-                "latest");
+        this.pagesFacade = new PagesFacade(new ContentService(contentManager), properties, logManager,
+                mapperFacade, contentManager, userAccountManager, new URIManager(properties), questionManager, gameManager);
     }
 
     @Test
-    public void getQuestionList_searchSpecificIDAsStudent_returnsOnlyQuestionWithID() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchSpecificIDAsStudent_returnsOnlyQuestionWithID() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -71,8 +67,8 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), ITConstants.REGRESSION_TEST_PAGE_ID, "",
-                "", "", "", "", "", false, 0, -1);
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -87,10 +83,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchByIDOfNonQuestionPageAsStudent_doesNotReturnPage() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchByIDOfNonQuestionPageAsStudent_doesNotReturnPage() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -100,8 +93,8 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), ITConstants.SEARCH_TEST_CONCEPT_ID,
-                "", "", "", "", "", "", false, 0, -1);
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+                ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -116,10 +109,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchByIDOfNonFastTrackQuestionPageAsStudentWhenFastTrackOnly_doesNotReturnPage() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchByIDOfNonFastTrackQuestionPageAsStudentWhenFastTrackOnly_doesNotReturnPage() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -129,8 +119,8 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), ITConstants.REGRESSION_TEST_PAGE_ID,
-                "", "", "", "", "", "", true, 0, -1);
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", true, 0, -1);
 
         // Assert
         // check status code is OK
@@ -145,10 +135,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchSpecificIDsAsStudent_returnsOnlyQuestionsWithIDs() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchSpecificIDsAsStudent_returnsOnlyQuestionsWithIDs() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -158,7 +145,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
                 String.format("%s,%s", ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), "",
                 "", "", "", "", "", false, 0, -1);
 
@@ -175,10 +162,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchByStringAsStudent_returnsQuestionsWithSimilarTitlesInOrder() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_searchByStringAsStudent_returnsQuestionsWithSimilarTitlesInOrder() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -188,8 +172,8 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), "", "Regression Test Page",
-                "", "", "", "", "", false, 0, -1);
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+                "", "Regression Test Page", "", "", "", "", "", false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -204,10 +188,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_limitedSearchByStringAsStudent_returnsLimitedNumberOfQuestions() throws NoCredentialsAvailableException,
-            NoUserException, SegueDatabaseException, AuthenticationProviderMappingException,
-            IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void getQuestionList_limitedSearchByStringAsStudent_returnsLimitedNumberOfQuestions() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
@@ -217,8 +198,8 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), "", "Regression Test Page",
-                "", "", "", "", "", false, 0, 1);
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+                "", "Regression Test Page", "", "", "", "", "", false, 0, 1);
 
         // Assert
         // check status code is OK

@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -118,7 +118,7 @@ public final class Constants {
 
     public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
-    public static final Integer MAX_PODS_TO_RETURN = 10;
+    public static final Integer MAX_PODS_TO_RETURN = 12;
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
     public static final Integer GAMEBOARD_MAX_TITLE_LENGTH = 255;
 
@@ -197,7 +197,7 @@ public final class Constants {
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
-    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<String>() {{
+    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<>() {{
         addAll(SEGUE_SERVER_LOG_TYPES);
         addAll(ISAAC_SERVER_LOG_TYPES);
         addAll(ISAAC_CLIENT_LOG_TYPES);

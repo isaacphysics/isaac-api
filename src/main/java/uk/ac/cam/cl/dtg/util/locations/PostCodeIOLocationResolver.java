@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2016 Alistair Stead
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,36 +15,29 @@
  */
 package uk.ac.cam.cl.dtg.util.locations;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import io.netty.handler.codec.http.HttpResponseStatus;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
+import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class to allow postcode-related searches using external service.
@@ -55,7 +48,7 @@ import com.google.inject.Inject;
 public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private static final Logger log = LoggerFactory.getLogger(PostCodeIOLocationResolver.class);
 
-    private final String url = "http://api.postcodes.io/postcodes";
+    private final String url = "https://api.postcodes.io/postcodes";
     private final int POSTCODEIO_MAX_REQUESTS = 100;
     
     private final LocationHistory locationHistory;
@@ -95,7 +88,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             }
         }
 
-        LinkedList<Long> resultingUserIds = new LinkedList<Long>();
+        LinkedList<Long> resultingUserIds = new LinkedList<>();
 
         // first do a database lookup, then fallback on the service
         List<PostCode> knownPostCodes = Lists.newArrayList();
@@ -213,26 +206,25 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         HashMap<String, Object> response;
 
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost(url);
-
-        StringEntity requestEntity;
         try {
-            requestEntity = new StringEntity(requestJson);
-            httppost.addHeader("Content-Type", "application/json");
-            httppost.setEntity(requestEntity);
-            HttpResponse httpresponse = httpclient.execute(httppost);
-            HttpEntity entity = httpresponse.getEntity();
-            String jsonResponse = EntityUtils.toString(entity);
+            java.net.http.HttpClient httpClient = HttpClient.newHttpClient();
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestJson))
+                    .build();
+            java.net.http.HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
             ObjectMapper objectMapper = new ObjectMapper();
 
-            response = objectMapper.readValue(jsonResponse, HashMap.class);
+            response = objectMapper.readValue(httpResponse.body(), HashMap.class);
 
         } catch (UnsupportedEncodingException | JsonParseException | JsonMappingException e) {
             String error = "Unable to parse postcode location response " + e.getMessage();
             log.error(error);
             throw new LocationServerException(error);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             String error = "Unable to read postcode location response " + e.getMessage();
             log.error(error);
             throw new LocationServerException(error);
@@ -240,13 +232,11 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         List<PostCode> returnList = Lists.newArrayList();
         int responseCode = (int) response.get("status");
-        if (responseCode == HttpResponseStatus.OK.code()) {
+        if (responseCode == Response.Status.OK.getStatusCode()) {
             ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) response
                     .get("result");
 
-            Iterator<HashMap<String, Object>> it = responseResult.iterator();
-            while (it.hasNext()) {
-                Map<String, Object> item = it.next();
+            for (Map<String, Object> item : responseResult) {
                 HashMap<String, Object> postCodeDetails = (HashMap<String, Object>) item.get("result");
 
                 if (postCodeDetails != null) {

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -213,7 +213,7 @@ public class GitContentManager {
      * @throws ContentManagerException on failure to return the object or null.
      */
     public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
-        if (null == id || id.equals("")) {
+        if (null == id || id.isEmpty()) {
             return null;
         }
 
@@ -346,6 +346,7 @@ public class GitContentManager {
                 // Fuzzy search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
@@ -504,7 +505,7 @@ public class GitContentManager {
                     Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
                     "tags"
             ).getSource().get("tags");
-            return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+            return tagObjects.stream().map(Functions.toStringFunction()).collect(Collectors.toSet());
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
             return Sets.newHashSet();
@@ -540,7 +541,7 @@ public class GitContentManager {
 
             for (SearchHit hit : hits) {
                 Content partialContentWithErrors = new Content();
-                Map src = hit.getSourceAsMap();
+                Map<String, Object> src = hit.getSourceAsMap();
                 partialContentWithErrors.setId((String) src.get("id"));
                 partialContentWithErrors.setTitle((String) src.get("title"));
                 //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
@@ -548,7 +549,7 @@ public class GitContentManager {
                 partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
                 ArrayList<String> errors = new ArrayList<>();
-                for (Object v : (List) hit.getSourceAsMap().get("errors")) {
+                for (Object v : (List<?>) hit.getSourceAsMap().get("errors")) {
                     errors.add((String) v);
                 }
 

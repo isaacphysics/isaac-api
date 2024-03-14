@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -31,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.io.IOException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,6 +44,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -232,51 +234,41 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             throws SegueDatabaseException {
 
         if (userIds.isEmpty()) {
-            return Maps.newHashMap();
+            return Collections.emptyMap();
         }
 
-        try (Connection conn = database.getDatabaseConnection()) {
-            StringBuilder query = new StringBuilder();
-            query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts WHERE");
+        String query = "SELECT id, user_id, question_id, correct, timestamp FROM question_attempts"
+                     + " WHERE user_id = ANY(?) ORDER BY \"timestamp\" ASC";
 
-            // add all of the user ids we are interested in.
-            if (!userIds.isEmpty()) {
-                String inParams = userIds.stream().map(u -> "?").collect(Collectors.joining(", "));
-                query.append(String.format(" user_id IN (%s)", inParams));
-            }
-            query.append(" ORDER BY \"timestamp\" ASC");
+        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
+                = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));
 
-            try (PreparedStatement pst = conn.prepareStatement(query.toString())) {
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query)) {
 
-                Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn = Maps.newHashMap();
+            Array userIdArray = conn.createArrayOf("INTEGER", userIds.toArray());
+            pst.setArray(1, userIdArray);
 
-                int index = 1;
-                for (Long userId : userIds) {
-                    pst.setLong(index++, userId);
-                    mapToReturn.put(userId, new HashMap<>());
-                }
+            try (ResultSet results = pst.executeQuery()) {
+                while (results.next()) {
+                    LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
 
-                try (ResultSet results = pst.executeQuery()) {
-                    while (results.next()) {
-                        LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
+                    String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
+                    String questionId = partialQuestionAttempt.getQuestionId();
+                    Long userId = results.getLong("user_id");
 
-                        String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
-                        String questionId = partialQuestionAttempt.getQuestionId();
-                        Long userId = results.getLong("user_id");
-
-                        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
+                    Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
                                 = mapToReturn.get(userId);
 
-                        Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage =
-                                mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
+                    Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage =
+                            mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
 
-                        List<LightweightQuestionValidationResponse> listOfResponses =
-                                attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
+                    List<LightweightQuestionValidationResponse> listOfResponses =
+                            attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
 
-                        listOfResponses.add(partialQuestionAttempt);
-                    }
-                    return mapToReturn;
+                    listOfResponses.add(partialQuestionAttempt);
                 }
+                return mapToReturn;
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -287,10 +279,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
         getMatchingLightweightQuestionAttempts(final List<Long> userIds, final List<String> allQuestionPageIds)
             throws SegueDatabaseException {
-        if (allQuestionPageIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        if (userIds.isEmpty()) {
+
+        if (allQuestionPageIds.isEmpty() || userIds.isEmpty()) {
             return Collections.emptyMap();
         }
 
@@ -301,31 +291,25 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             return this.getLightweightQuestionAttemptsByUsers(userIds);
         }
 
+        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
+                = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));;
+
         try (Connection conn = database.getDatabaseConnection()) {
             StringBuilder query = new StringBuilder();
-            query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts WHERE");
-            
-            // add all of the user ids we are interested in.
-            if (!userIds.isEmpty()) {
-                String inParams = userIds.stream().map(u -> "?").collect(Collectors.joining(", "));
-                query.append(String.format(" user_id IN (%s)", inParams));
-            }
+            query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts");
+            query.append(" WHERE user_id = ANY(?)");
 
             // add all of the question page ids we are interested in
             String questionIdsOr = uniquePageIds.stream().map(q -> "question_id LIKE ?").collect(Collectors.joining(" OR "));
             query.append(" AND (").append(questionIdsOr).append(")");
             query.append(" ORDER BY \"timestamp\" ASC");
-            
+
             try (PreparedStatement pst = conn.prepareStatement(query.toString())) {
 
-                Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
-                        = Maps.newHashMap();
-
                 int index = 1;
-                for (Long userId : userIds) {
-                    pst.setLong(index++, userId);
-                    mapToReturn.put(userId, new HashMap<>());
-                }
+
+                Array userIdArray = conn.createArrayOf("INTEGER", userIds.toArray());
+                pst.setArray(index++, userIdArray);
 
                 for (String pageId : uniquePageIds) {
                     // Using LIKE matching on part IDs; add % wildcard to end of each page ID, and ensure any underscores
@@ -353,6 +337,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                         listOfResponses.add(partialQuestionAttempt);
                     }
                     return mapToReturn;
+                } finally {
+                    userIdArray.free();
                 }
             }
         } catch (SQLException e) {
@@ -373,8 +359,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public void mergeAnonymousQuestionInformationWithRegisteredUserRecord(final String anonymousUserId,
             final Long registeredUserId) throws SegueDatabaseException {
-        Validate.notNull(anonymousUserId, "Anonymous user must not be null when merging anonymousQuestion info");
-        Validate.notNull(registeredUserId, "Registered user must not be null when merging anonymousQuestion info");
+        Objects.requireNonNull(anonymousUserId, "Anonymous user must not be null when merging anonymousQuestion info");
+        Objects.requireNonNull(registeredUserId, "Registered user must not be null when merging anonymousQuestion info");
 
         Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = this
                 .getAnonymousQuestionAttempts(anonymousUserId);
@@ -422,8 +408,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate, final Date toDate,
                                                                      final Long userId, final Boolean perDay) throws SegueDatabaseException {
-        Validate.notNull(fromDate);
-        Validate.notNull(toDate);
+        Objects.requireNonNull(fromDate);
+        Objects.requireNonNull(toDate);
 
         StringBuilder queryToBuild = new StringBuilder();
         queryToBuild.append("WITH filtered_attempts AS (SELECT * FROM question_attempts WHERE user_id = ?) ");

@@ -32,9 +32,7 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,9 +79,42 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.*;
-import uk.ac.cam.cl.dtg.segue.auth.*;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PrometheusMetricsExporter;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
+import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
+import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
+import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -129,8 +160,8 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
-import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
@@ -146,6 +177,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -266,9 +298,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
 
-        // IP address geocoding
-        this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
-
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
@@ -364,11 +393,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Raspberry Pi
         try {
             // Ensure all the required config properties are present.
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
 
             // If so, bind them to constants.
             this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
@@ -821,9 +850,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private IGroupObserver getGroupObserver(EmailManager emailManager, GroupManager groupManager, UserAccountManager userManager,
-                                            AssignmentManager assignmentManager, QuizAssignmentManager quizAssignmentManager) {
+                                            UserAssociationManager associationManager, AssignmentManager assignmentManager,
+                                            QuizAssignmentManager quizAssignmentManager) {
         if (null == groupObserver) {
-            groupObserver = new GroupChangedService(emailManager, groupManager, userManager, assignmentManager, quizAssignmentManager);
+            groupObserver = new GroupChangedService(emailManager, groupManager, userManager, associationManager, assignmentManager, quizAssignmentManager);
             log.info("Creating singleton of GroupObserver");
         }
         return groupObserver;
@@ -982,11 +1012,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param logManager
      *            - dependency
-     * @param schoolManager
-     *            - dependency
      * @param contentManager
-     *            - dependency
-     * @param locationHistoryManager
      *            - dependency
      * @param groupManager
      *            - dependency
@@ -997,16 +1023,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static StatisticsManager getStatsManager(final UserAccountManager userManager,
-                                                     final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
-                                                     final GroupManager groupManager, final QuestionManager questionManager,
+    private static StatisticsManager getStatsManager(final UserAccountManager userManager, final ILogManager logManager,
+                                                     final GitContentManager contentManager, final GroupManager groupManager,
+                                                     final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
+            statsManager = new StatisticsManager(userManager, logManager, contentManager,
+                    groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
@@ -1016,7 +1041,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) throws SchedulerException {
+    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) {
         if (null == segueJobService) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
@@ -1140,7 +1165,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database) {
+    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database,
+                                                                     final ObjectMapper objectMapper) {
 
         if (null == externalAccountManager) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
@@ -1148,7 +1174,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
                 // If MailJet is configured, initialise the sync:
-                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
+                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database, objectMapper);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
                         properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
                         properties.getProperty(MAILJET_LEGAL_LIST_ID));
@@ -1167,14 +1193,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a new instance of the location resolver.
      *
-     * @param apiKey
-     *            - for using the third party service.
+     * @param properties
+     *            - properties loader for the IP database filename
      * @return The singleton instance of EmailCommunicator
      */
     @Inject
     @Provides
-    private IPLocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-        return new IPInfoDBLocationResolver(apiKey);
+    private IPLocationResolver getIPLocator(final AbstractConfigLoader properties) throws IOException {
+        return new MaxMindIPLocationResolver(properties);
     }
 
     /**
@@ -1199,10 +1225,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
                                                                               final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
-                                                                              final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                                                              final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-                    objectMapper, uriManager, contentIndex);
+                    objectMapper, uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

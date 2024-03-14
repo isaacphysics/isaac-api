@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,19 +16,19 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.GET;
@@ -40,11 +40,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -62,7 +59,6 @@ public class SegueContentFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
     private final GitContentManager contentManager;
-    private final String contentIndex;
     private final ContentService contentService;
 
     /**
@@ -76,20 +72,16 @@ public class SegueContentFacade extends AbstractSegueFacade {
      */
     @Inject
     public SegueContentFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
-                              @Named(CONTENT_INDEX) final String contentIndex,
                               final ILogManager logManager, final ContentService contentService) {
         super(properties, logManager);
 
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.contentService = contentService;
     }
 
     /**
      * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
-     * 
-     * @param version
-     *            - the version of the content to search. If null it will default to the current live version.
+     *
      * @param fieldsToMatch
      *            - List of Boolean search clauses that must be true for the returned content.
      * @param startIndex
@@ -98,22 +90,19 @@ public class SegueContentFacade extends AbstractSegueFacade {
      *            - the max number of results to return.
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
-    public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+    public final ResultsWrapper<ContentDTO> findMatchingContent(final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
 
-        return contentService.findMatchingContent(version, fieldsToMatch, startIndex, limit);
+        return contentService.findMatchingContent(fieldsToMatch, startIndex, limit);
     }
 
     /**
      * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied. Providing the results in a
      * randomised order.
-     * 
-     * This method is the same as {@link #findMatchingContentRandomOrder(String, List, Integer, Integer, Long)} but uses
+     *
+     * This method is the same as {@link #findMatchingContentRandomOrder(List, Integer, Integer, Long)} but uses
      * a default random seed.
-     * 
-     * @param version
-     *            - the version of the content to search. If null it will default to the current live version.
+     *
      * @param fieldsToMatch
      *            - List of Boolean search clauses that must be true for the returned content.
      * @param startIndex
@@ -123,17 +112,15 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             final Integer startIndex, final Integer limit) {
-        return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
+        return this.findMatchingContentRandomOrder(fieldsToMatch, startIndex, limit, null);
     }
 
     /**
      * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied. Providing the results in a
      * randomised order.
-     * 
-     * @param version
-     *            - the version of the content to search. If null it will default to the current live version.
+     *
      * @param fieldsToMatch
      *            - List of Boolean search clauses that must be true for the returned content.
      * @param startIndex
@@ -145,15 +132,11 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
      */
     public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            @Nullable final String version, final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
+            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             final Integer startIndex, final Integer limit, final Long randomSeed) {
 
-        String newVersion = this.contentIndex;
         Integer newLimit = DEFAULT_RESULTS_LIMIT;
         Integer newStartIndex = 0;
-        if (version != null) {
-            newVersion = version;
-        }
         if (limit != null) {
             newLimit = limit;
         }

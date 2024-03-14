@@ -30,9 +30,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -836,6 +838,153 @@ public class IsaacNumericValidatorTest {
         assertFalse(response.isCorrect());
     }
 
+    /**
+     * Test that the validator converts null valued significant figures to the default value and thus evaluates the
+     * the answer as correct while disregardSignificantFigures is not set
+     */
+    @Test
+    public final void isaacNumericValidator_correctAnswerWithNullSigFigsInQuestion_responseIsCorrect() {
+        // ARRANGE
+        List<IsaacNumericQuestion> questions = new LinkedList<>();
+
+        questions.add(createIsaacNumericQuestion(false, null, null));
+        questions.add(createIsaacNumericQuestion(false, 1, null));
+        questions.add(createIsaacNumericQuestion(false, null, 2));
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity correctAnswer = new Quantity("2.1", "None");
+        correctAnswer.setCorrect(true);
+        answerList.add(correctAnswer);
+
+        for(IsaacNumericQuestion question : questions) {
+            question.setChoices(answerList);
+        }
+
+        // ACT
+        for (IsaacNumericQuestion q : questions) {
+            QuestionValidationResponse response = validator.validateQuestionResponse(q, correctAnswer);
+
+        // ASSERT
+            System.out.println(response.isCorrect());
+            assertTrue(response.isCorrect());
+        }
+    }
+
+    /**
+     * Test that the validator returns an "unanswerable question" response if any of the significant figures are below
+     * one while disregardSignificantFigures is not set
+     */
+    @Test
+    public final void isaacNumericValidator_correctAnswerWithSigFigLessThanOne_unanswerableQuestionResponse() {
+        // ARRANGE
+        List<IsaacNumericQuestion> questions = new LinkedList<>();
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity correctAnswer = new Quantity("2.1", "None");
+        correctAnswer.setCorrect(true);
+        answerList.add(correctAnswer);
+
+        questions.add(createIsaacNumericQuestion(false, 0, 1));
+        questions.add(createIsaacNumericQuestion(false, 1, 0));
+        questions.add(createIsaacNumericQuestion(false, 0, 0));
+
+        for(IsaacNumericQuestion question : questions) {
+            question.setChoices(answerList);
+        }
+
+        // ACT
+        for (IsaacNumericQuestion q : questions) {
+            QuestionValidationResponse response = validator.validateQuestionResponse(q, correctAnswer);
+
+        // ASSERT
+            assertEquals("This question cannot be answered correctly.", response.getExplanation().getValue());
+        }
+    }
+
+    /**
+     * Test that the validator returns an "unanswerable question" response if maximum significant figures is below
+     * the minimum significant figures while disregardSignificantFigures is not set
+     */
+    @Test
+    public final void isaacNumericValidator_correctAnswerWithMaxLessThanMin_unanswerableQuestionResponse() {
+        // ARRANGE
+        IsaacNumericQuestion question = createIsaacNumericQuestion(false, 2, 1);
+
+        List<Choice> answerList = Lists.newArrayList();
+
+        Quantity correctAnswer = new Quantity("2.1", "None");
+        correctAnswer.setCorrect(true);
+
+        answerList.add(correctAnswer);
+        question.setChoices(answerList);
+
+        // ACT
+        QuestionValidationResponse response = validator.validateQuestionResponse(question, correctAnswer);
+
+        // ASSERT
+        assertEquals("This question cannot be answered correctly.", response.getExplanation().getValue());
+    }
+
+    /**
+     * Test that the validator correctly validates questions when both significant figures are set correctly while
+     * disregardSignificantFigures is not set
+     */
+    @Test
+    public final void isaacNumericValidator_correctAnswerWithMinLessThanMax_responseIsCorrect() {
+        // ARRANGE
+        IsaacNumericQuestion question = createIsaacNumericQuestion(false, 5, 6);
+
+        List<Choice> answerList = Lists.newArrayList();
+
+        Quantity correctAnswer = new Quantity("2.12345", "None");
+        correctAnswer.setCorrect(true);
+
+        answerList.add(correctAnswer);
+        question.setChoices(answerList);
+
+        // ACT
+        QuestionValidationResponse response = validator.validateQuestionResponse(question, correctAnswer);
+
+        // ASSERT
+        assertTrue(response.isCorrect());
+    }
+
+    /**
+     * Test that the validator returns a correct answer response regardless of whether the significant figures are
+     * incorrect when disregardSignificantFigures is set
+     */
+    @Test
+    public final void isaacNumericValidator_correctAnswerWithDisregardSigFigs_responseIsCorrectRegardless() {
+        // ARRANGE
+        List<IsaacNumericQuestion> questions = new LinkedList<>();
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity correctAnswer = new Quantity("2.1", "None");
+        correctAnswer.setCorrect(true);
+        answerList.add(correctAnswer);
+
+        questions.add(createIsaacNumericQuestion(false, null, null));
+        questions.add(createIsaacNumericQuestion(false, 1, null));
+        questions.add(createIsaacNumericQuestion(false, null, 2));
+        questions.add(createIsaacNumericQuestion(true, 0, 1));
+        questions.add(createIsaacNumericQuestion(true, 1, 0));
+        questions.add(createIsaacNumericQuestion(true, 0, 0));
+        questions.add(createIsaacNumericQuestion(true, 2, 1));
+        questions.add(createIsaacNumericQuestion(true, 5, 6));
+
+        for(IsaacNumericQuestion question : questions) {
+            question.setChoices(answerList);
+        }
+
+        // ACT
+        for (IsaacNumericQuestion q : questions) {
+            QuestionValidationResponse response = validator.validateQuestionResponse(q, correctAnswer);
+
+            // ASSERT
+            assertTrue(response.isCorrect());
+        }
+    }
+
     //  ---------- Helper methods to test internal functionality of the validator class ----------
 
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
@@ -882,5 +1031,31 @@ public class IsaacNumericValidatorTest {
                 assertTrue("Expected incorrect sig fig for " + number + " @ " + sigFig + "sf", incorrectSigFig);
             }
         }
+    }
+
+    /**
+     * Helper method for the recordContentTypeSpecificError tests,
+     * generates an IsaacNumericQuestion with provided significant figure information
+     *
+     * @param disregardSigFig - Whether to set the disregardSignificantFigures to true
+     * @param sigFigMin       - The minimum significant figures value
+     * @param sigFigMax       - The maximum significant figures value
+     * @return The new IsaacNumericQuestion object
+     */
+    private IsaacNumericQuestion createIsaacNumericQuestion(final Boolean disregardSigFig,
+                                                            final Integer sigFigMin,
+                                                            final Integer sigFigMax) {
+        IsaacNumericQuestion question = new IsaacNumericQuestion();
+
+        // TODO: See if there is a "better" way of initialising object fields
+        question.setTitle("");
+        question.setType("isaacQuestion");
+        question.setChoices(new LinkedList<>());
+
+        question.setDisregardSignificantFigures(disregardSigFig);
+        question.setSignificantFiguresMin(sigFigMin);
+        question.setSignificantFiguresMax(sigFigMax);
+
+        return question;
     }
 }

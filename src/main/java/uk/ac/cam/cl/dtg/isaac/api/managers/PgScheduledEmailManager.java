@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
@@ -28,7 +27,7 @@ public class PgScheduledEmailManager {
         this.database = database;
     }
 
-    public boolean commitToSchedulingEmail(final String emailKey) throws SegueDatabaseException {
+    public boolean commitToSchedulingEmail(final String emailKey) {
         ZonedDateTime now = ZonedDateTime.now();
         String query = "INSERT INTO scheduled_emails(email_id, sent) VALUES (?, ?) ON CONFLICT (email_id) DO NOTHING";
         try (Connection conn = database.getDatabaseConnection();

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,14 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.mailgun.api.v3.MailgunMessagesApi;
-import com.mailgun.api.v3.MailgunTemplatesApi;
 import com.mailgun.client.MailgunClient;
 import com.mailgun.model.message.Message;
 import com.mailgun.model.message.MessageResponse;
-import com.mailgun.model.templates.TemplateRequest;
-import com.mailgun.model.templates.TemplateWithMessageResponse;
 import feign.FeignException;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.inject.Inject;
@@ -36,28 +34,23 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import javax.annotation.Nullable;
-
-import static com.mailgun.util.Constants.EU_BASE_URL;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_DOMAIN;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILGUN_SECRET_KEY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static com.mailgun.util.Constants.EU_REGION_BASE_URL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 
 public class MailGunEmailManager {
@@ -82,7 +75,7 @@ public class MailGunEmailManager {
         if (null == this.mailgunMessagesApi) {
             log.info("Creating singleton MailgunMessagesApi object.");
             this.mailgunMessagesApi = MailgunClient
-                    .config(EU_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
+                    .config(EU_REGION_BASE_URL, globalProperties.getProperty(MAILGUN_SECRET_KEY))
                     .logLevel(feign.Logger.Level.NONE)
                     .createApi(MailgunMessagesApi.class);
         }
@@ -163,17 +156,25 @@ public class MailGunEmailManager {
         String replyTo = replyToName + " <" + replyToAddress + "> ";
         String from = fromName + " <" + fromAddress + "> ";
 
+        List<String> usersToSendTo = Lists.newArrayList(recipientVariables.keySet());
+        if (usersToSendTo.isEmpty()) {
+            if (!userDTOs.isEmpty()) {
+                log.warn(String.format("No eligible recipients from batch of %s %s emails.", userDTOs.size(), emailType.name()));
+            }
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+
         Message message = Message.builder()
                 .from(from)
                 .replyTo(replyTo)
-                .to(new ArrayList<>(recipientVariables.keySet()))
+                .to(usersToSendTo)
                 .template(emailContentTemplate.getId())  // We use the same template IDs in MailGun!
                 .subject(emailContentTemplate.getSubject())
                 .mailgunVariables(templateVariables)
                 .recipientVariables(recipientVariables)
                 .build();
 
-        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc();
+        QUEUED_EMAIL.labels(emailType.name(), "mailgun-api").inc(usersToSendTo.size());
 
         return executor.submit(() -> {
             try {

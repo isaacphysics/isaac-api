@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.associations;
 
+import com.google.api.client.util.Lists;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.isaac.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,18 +31,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.isaac.dos.UserAssociation;
-
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
+import java.util.Objects;
 
 /**
  * MongoAssociationDataManager.
@@ -57,7 +55,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
 
     @Override
     public AssociationToken saveAssociationToken(final AssociationToken token) throws SegueDatabaseException {
-        Validate.notNull(token);
+        Objects.requireNonNull(token);
 
         String query = "INSERT INTO user_associations_tokens(token, owner_user_id, group_id) VALUES (?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
@@ -97,7 +95,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     @Override
     public void createAssociation(final Long userIdReceivingAccess, final Long userIdGrantingAccess)
             throws SegueDatabaseException {
-        Validate.notNull(userIdReceivingAccess);
+        Objects.requireNonNull(userIdReceivingAccess);
 
         String query = "INSERT INTO user_associations(user_id_granting_permission, user_id_receiving_permission," +
                 " created) VALUES (?, ?, ?);";
@@ -168,7 +166,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
 
     @Override
     public List<UserAssociation> getUserAssociations(final Long userId) throws SegueDatabaseException {
-        Validate.notNull(userId);
+        Objects.requireNonNull(userId);
 
         String query = "SELECT * FROM user_associations WHERE user_id_granting_permission = ?;";
         try (Connection conn = database.getDatabaseConnection();
@@ -256,7 +254,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
 
     @Override
     public List<UserAssociation> getUsersThatICanSee(final Long userId) throws SegueDatabaseException {
-        Validate.notNull(userId);
+        Objects.requireNonNull(userId);
 
         String query = "SELECT * FROM user_associations WHERE user_id_receiving_permission = ?;";
         try (Connection conn = database.getDatabaseConnection();

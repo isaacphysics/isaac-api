@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
@@ -31,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,8 +44,8 @@ public class IsaacClozeValidator implements IValidator {
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         if (!(question instanceof IsaacClozeQuestion)) {
             throw new IllegalArgumentException(String.format(

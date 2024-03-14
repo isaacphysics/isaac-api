@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,12 +62,20 @@ public final class ITConstants {
     public static final String ERIKA_STUDENT_PASSWORD = "test1234";
     public static final long ERIKA_STUDENT_ID = 11L;
 
+    public static final String CHARLIE_STUDENT_EMAIL = "charlie-student@test.com";
+    public static final String CHARLIE_STUDENT_PASSWORD = "test1234";
+    public static final long CHARLIE_STUDENT_ID = 9L;
+
     public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
     public static final String TEST_SIGNUP_PASSWORD = "test1234";
 
     public static final String TEST_TUTOR_EMAIL = "test-tutor@test.com";
     public static final String TEST_TUTOR_PASSWORD = "test1234";
     public static final long TEST_TUTOR_ID = 12L;
+
+    public static final String TEST_UNVERIFIED_CAVEAT_EMAIL = "test-unverified-caveat@test.com";
+    public static final String TEST_UNVERIFIED_CAVEAT_PASSWORD = "test1234";
+    public static final long TEST_UNVERIFIED_CAVEAT_ID = 15L;
 
     // Groups
     public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;

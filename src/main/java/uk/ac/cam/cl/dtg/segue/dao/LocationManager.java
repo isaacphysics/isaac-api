@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,31 +15,25 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Maps;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistoryEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.LocationHistoryEvent;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * LocationHistoryManager. This class is intended to be used to maintain a database of geocoded ip addresses such that
@@ -118,7 +112,7 @@ public class LocationManager implements IPLocationResolver {
 
                 if (new Date().after(locationExpiry.getTime())) {
                     // lookup to see if ip location data is different. If so update it.
-                    log.info("Sending IP Location request to external provider.");
+                    log.debug("Performing IP Location lookup.");
                     Location locationInformation = ipLocationResolver
                             .resolveAllLocationInformation(ipAddress);
 
@@ -157,76 +151,6 @@ public class LocationManager implements IPLocationResolver {
     @Override
     public Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException {
         return ipLocationResolver.resolveCountryOnly(ipAddress);
-    }
-
-    /**
-     * Get the latest location information held by our history.
-     * 
-     * @param ipAddress
-     *            that we are interested in.
-     * @return latest location info for that ip address. or null if we have no data.
-     * @throws SegueDatabaseException
-     *             - if we cannot resolve the location from our database
-     */
-    public Location getLocationFromHistory(final String ipAddress) throws SegueDatabaseException {
-        Validate.notBlank(ipAddress, "You must provide an ipAddress.");
-
-        Location cachedLocation = locationCache.getIfPresent(ipAddress);
-        if (cachedLocation != null) {
-            return cachedLocation;
-        }
-
-        LocationHistoryEvent latestByIPAddress = dao.getLatestByIPAddress(ipAddress);
-        if (null == latestByIPAddress) {
-            return null;
-        }
-
-        Location locationInformation = latestByIPAddress.getLocationInformation();
-        locationCache.put(ipAddress, locationInformation);
-
-        return locationInformation;
-    }
-
-    /**
-     * Get the latest location information held by our history.
-     * 
-     * @param ipAddresses
-     *            that we are interested in.
-     * @return latest location info for that ip address. or null if we have no data.
-     * @throws SegueDatabaseException
-     *             - if we cannot resolve the location from our database
-     */
-    public Map<String, Location> getLocationsFromHistory(final Collection<String> ipAddresses)
-            throws SegueDatabaseException {
-
-        Map<String, LocationHistoryEvent> latestByIPAddresses = dao.getLatestByIPAddresses(ipAddresses);    
-
-        return this.convertToIPLocationMap(latestByIPAddresses);
-    }
-    
-    /**
-     * @param fromDate - lower bound for inclusion in the results.
-     * @param toDate - upper bound for inclusion in the results.
-     * @return get the last locations and ip addresses by date range.
-     * @throws SegueDatabaseException if the database fails to retreive required information
-     */
-    public Map<String, Location> getLocationsByLastAccessDate(final Date fromDate, final Date toDate)
-            throws SegueDatabaseException {
-        return this.convertToIPLocationMap(dao.getLatestByIPAddresses(fromDate, toDate));
-    }
-    
-    /**
-     * @param toConvert the map to convert
-     * @return map of ip address to location
-     */
-    private Map<String, Location> convertToIPLocationMap(final Map<String, LocationHistoryEvent> toConvert) {
-        Map<String, Location> resultToReturn = Maps.newHashMap();
-        for (Entry<String, LocationHistoryEvent> e : toConvert.entrySet()) {
-            resultToReturn.put(e.getKey(), e.getValue().getLocationInformation());
-            locationCache.put(e.getKey(), e.getValue().getLocationInformation());
-        }
-        
-        return resultToReturn;
     }
 
     /**

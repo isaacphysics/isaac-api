@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -226,6 +226,15 @@ public interface IUserGroupPersistenceManager {
      * @throws SegueDatabaseException
      */
     Set<Long> getAdditionalManagerSetByGroupId(final Long groupId) throws SegueDatabaseException;
+
+    /**
+     * Get the additional manager user IDs in bulk for a list of groups.
+     *
+     * @param groupIds - the groups IDs of interest
+     * @return map of group ID to set of manager user ids.
+     * @throws SegueDatabaseException on database failure
+     */
+    Map<Long, Set<Long>> getAdditionalManagerSetsByGroupIds(final Collection<Long> groupIds) throws SegueDatabaseException;
 
     /**
      * Get groups by additional manager id.

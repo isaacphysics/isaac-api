@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,25 +17,27 @@ package uk.ac.cam.cl.dtg.isaac.api.services;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.NameFormatter;
 
 import java.text.DateFormat;
@@ -45,6 +47,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
@@ -54,16 +57,21 @@ public class GroupChangedService implements IGroupObserver {
     private static final Logger log = LoggerFactory.getLogger(GroupChangedService.class);
 
     private final EmailManager emailManager;
+    private final GroupManager groupManager;
     private final UserAccountManager userManager;
+    private final UserAssociationManager associationManager;
     private final AssignmentManager assignmentManager;
     private final QuizAssignmentManager quizAssignmentManager;
 
     @Inject
     public GroupChangedService(final EmailManager emailManager, final GroupManager groupManager,
-                               final UserAccountManager userManager, final AssignmentManager assignmentManager,
+                               final UserAccountManager userManager, final UserAssociationManager associationManager,
+                               final AssignmentManager assignmentManager,
                                final QuizAssignmentManager quizAssignmentManager) {
         this.emailManager = emailManager;
+        this.groupManager = groupManager;
         this.userManager = userManager;
+        this.associationManager = associationManager;
         this.assignmentManager = assignmentManager;
         this.quizAssignmentManager = quizAssignmentManager;
 
@@ -79,8 +87,8 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onMemberAddedToGroup(UserGroupDTO group, RegisteredUserDTO user) {
-        Validate.notNull(group);
-        Validate.notNull(user);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(user);
 
         // Try to email user to let them know
         try {
@@ -104,7 +112,7 @@ public class GroupChangedService implements IGroupObserver {
      * @throws SegueDatabaseException if we can't get the gameboard details.
      */
     private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup) throws SegueDatabaseException, ContentManagerException {
-        Validate.notNull(userDTO);
+        Objects.requireNonNull(userDTO);
 
         UserSummaryWithEmailAddressDTO groupOwner = userGroup.getOwnerSummary();
         String groupOwnerName = getTeacherNameFromUser(groupOwner);
@@ -187,10 +195,10 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onAdditionalManagerAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO additionalManagerUser) {
-        Validate.notNull(group);
-        Validate.notNull(additionalManagerUser);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(additionalManagerUser);
 
-        // Try to email user to let them know:
+        // Try to email new manager to let them know:
         try {
             RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
 
@@ -204,15 +212,44 @@ public class GroupChangedService implements IGroupObserver {
                 groupName = group.getGroupName();
             }
 
-            Map<String, Object> emailProperties = new ImmutableMap.Builder<String, Object>()
+            Map<String, Object> welcomeEmailProperties = new ImmutableMap.Builder<String, Object>()
                 .put("ownerName", groupOwnerName)
                 .put("ownerEmail", groupOwnerEmail)
                 .put("groupName", groupName)
                 .build();
             emailManager.sendTemplatedEmailToUser(additionalManagerUser,
                 emailManager.getEmailTemplateDTO("email-template-group-additional-manager-welcome"),
-                emailProperties,
+                welcomeEmailProperties,
                 EmailType.SYSTEM);
+
+            // email students not connected to new manager
+
+            // load students from group
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
+
+            String newManagerName = getTeacherNameFromUser(additionalManagerUser);
+            String newManagerEmail = "Unknown";
+            if (additionalManagerUser.getEmail() != null && !additionalManagerUser.getEmail().isEmpty()) {
+                newManagerEmail = additionalManagerUser.getEmail();
+            }
+
+            AssociationToken token = associationManager.generateAssociationToken(groupOwner, group.getId());
+
+            // check which are connected and email those that are not
+            for (RegisteredUserDTO groupMember : groupMembers) {
+                if (!associationManager.hasPermission(additionalManagerUser, groupMember)) {
+                    Map<String, Object> permissionEmailProperties = new ImmutableMap.Builder<String, Object>()
+                            .put("managerName", newManagerName)
+                            .put("managerEmail", newManagerEmail)
+                            .put("groupName", groupName)
+                            .put("groupToken", token.getToken())
+                            .build();
+                    emailManager.sendTemplatedEmailToUser(groupMember,
+                            emailManager.getEmailTemplateDTO("email-template-new-group-additional-manager"),
+                            permissionEmailProperties,
+                            EmailType.SYSTEM);
+                }
+            }
 
         } catch (ContentManagerException e) {
             log.info("Could not send group additional manager email ", e);
@@ -220,13 +257,15 @@ public class GroupChangedService implements IGroupObserver {
             log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
+        } catch (UserGroupNotFoundException e) {
+            log.error(String.format("Changed group cannot be found %s", group.getId()));
         }
     }
 
     @Override
     public void onAdditionalManagerPromotedToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner) {
-        Validate.notNull(group);
-        Validate.notNull(newOwner);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(newOwner);
 
         String groupName = "Unknown";
         if (group.getGroupName() != null && !group.getGroupName().isEmpty()) {
@@ -251,7 +290,7 @@ public class GroupChangedService implements IGroupObserver {
 
     @Override
     public void onAdditionalManagerPrivilegesChanged(final UserGroupDTO group) {
-        Validate.notNull(group);
+        Objects.requireNonNull(group);
 
         try {
             RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());

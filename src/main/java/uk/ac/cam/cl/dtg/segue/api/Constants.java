@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -90,6 +90,8 @@ public final class Constants {
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
+    public static final String MAXMIND_CITY_DB_LOCATION = "MAXMIND_CITY_DB_LOCATION";
+
     // GIT stuff
     public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
     public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
@@ -144,9 +146,17 @@ public final class Constants {
     public static final String DATE_EXPIRES = "expires";
 
     /**
-     * Constant representing the key for the additional date property - used in HMAC calculations.
+     * Constant representing the key for cookie caveats - used in HMAC calculations.
      */
-    public static final String PARTIAL_LOGIN_FLAG = "partial";
+    public static final String SESSION_CAVEATS = "caveats";
+
+    /**
+     * Representing caveats saved to session cookies, allowing endpoints to decide whether the cookie should be
+     * considered sufficient authentication for their purposes. In most cases, cookies with any caveats are rejected.
+     */
+    public enum AuthenticationCaveat {
+        INCOMPLETE_MFA_CHALLENGE, INCOMPLETE_MANDATORY_EMAIL_VERIFICATION
+    };
 
     /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
@@ -393,6 +403,7 @@ public final class Constants {
         SEND_MASS_EMAIL,
         SENT_EMAIL,
         USER_REGISTRATION,
+        USER_UPGRADE_ROLE,
         USER_SCHOOL_CHANGE
     }
 
@@ -403,9 +414,6 @@ public final class Constants {
 
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
-
-    // IP Geocoding stuff
-    public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
 
     /*
      * Default values.
@@ -428,6 +436,7 @@ public final class Constants {
     // Content model specific stuff
     public static final String ID_FIELDNAME = "id";
     public static final String TITLE_FIELDNAME = "title";
+    public static final String SUBTITLE_FIELDNAME = "subtitle";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
     public static final String LEVEL_FIELDNAME = "level";
@@ -485,6 +494,7 @@ public final class Constants {
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
     public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
+    public static final String SCHOOL_CLOSED_FIELDNAME_POJO = "closed";
 
     // User School Reporting
 
@@ -567,6 +577,10 @@ public final class Constants {
 
     public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
     public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
+
+    public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
+
+    public static final String ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION = "ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION";
 
     /**
      * Private constructor to prevent this class being created.

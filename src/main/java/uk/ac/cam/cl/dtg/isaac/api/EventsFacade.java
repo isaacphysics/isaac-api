@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,23 +20,9 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -82,6 +68,19 @@ import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -115,7 +114,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final GroupManager groupManager;
 
     private final GitContentManager contentManager;
-    private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
@@ -125,22 +123,18 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * EventsFacade.
-     *  @param properties
-     *            - global properties map
-     * @param logManager
-     *            - for managing logs.
-     * @param bookingManager
- *            - Instance of Booking Manager
+     *
+     * @param properties     - global properties map
+     * @param logManager     - for managing logs.
+     * @param bookingManager - Instance of Booking Manager
      * @param userManager
-     * @param contentManager
-*            - for retrieving event content.
+     * @param contentManager - for retrieving event content.
      * @param mapper
      */
     @Inject
     public EventsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final GitContentManager contentManager,
-                        @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,
                         final GroupManager groupManager,
@@ -150,7 +144,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
@@ -161,23 +154,15 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to provide a list of events.
-     * 
-     * @param request
-     *            - this allows us to check to see if a user is currently loggedin.
-     * @param tags
-     *            - a comma separated list of tags to include in the search.
-     * @param startIndex
-     *            - the initial index for the first result.
-     * @param limit
-     *            - the maximums number of results to return
-     * @param sortOrder
-     *            - flag to indicate preferred sort order.
-     * @param showActiveOnly
-     *            - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showInactiveOnly
-     *            - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showStageOnly
-     *            - if present, only events with an audience matching this string will be shown
+     *
+     * @param request          - this allows us to check to see if a user is currently loggedin.
+     * @param tags             - a comma separated list of tags to include in the search.
+     * @param startIndex       - the initial index for the first result.
+     * @param limit            - the maximums number of results to return
+     * @param sortOrder        - flag to indicate preferred sort order.
+     * @param showActiveOnly   - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showInactiveOnly - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showStageOnly    - if present, only events with an audience matching this string will be shown
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
     @GET
@@ -186,15 +171,15 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "List events matching the provided criteria.")
     public final Response getEvents(@Context final HttpServletRequest request,
-            @QueryParam("tags") final String tags,
-            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-            @QueryParam("sort_by") final String sortOrder,
-            @QueryParam("show_active_only") final Boolean showActiveOnly,
-            @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
-            @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
-            @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
-            @QueryParam("show_stage_only") final String showStageOnly) {
+                                    @QueryParam("tags") final String tags,
+                                    @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+                                    @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                    @QueryParam("sort_by") final String sortOrder,
+                                    @QueryParam("show_active_only") final Boolean showActiveOnly,
+                                    @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
+                                    @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
+                                    @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
+                                    @QueryParam("show_stage_only") final String showStageOnly) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -223,7 +208,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
 
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+        fieldsToMatch.put(TYPE_FIELDNAME, List.of(EVENT_TYPE));
 
         Map<String, AbstractFilterInstruction> filterInstructions = null;
         if (null != showActiveOnly && showActiveOnly) {
@@ -290,15 +275,15 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error accessing your bookings.")
-                .toResponse();
+                    .toResponse();
         }
     }
 
-	/**
+    /**
      * Get Events Booked by user.
      *
-     * @param request - the http request so we can resolve booking information
-     * @param tags - the tags we want to filter on
+     * @param request     - the http request so we can resolve booking information
+     * @param tags        - the tags we want to filter on
      * @param currentUser - the currently logged on user.
      * @return a list of event pages that the user has been booked
      * @throws SegueDatabaseException
@@ -312,30 +297,30 @@ public class EventsFacade extends AbstractIsaacFacade {
         Map<String, BookingStatus> userBookingMap = this.bookingManager.getAllEventStatesForUser(currentUser.getId());
 
         for (String eventId : userBookingMap.keySet()) {
-			if (BookingStatus.CANCELLED.equals(userBookingMap.get(eventId))) {
-				continue;
-			}
+            if (BookingStatus.CANCELLED.equals(userBookingMap.get(eventId))) {
+                continue;
+            }
 
-			final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, eventId);
+            final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, eventId);
 
-			if (tags != null) {
-				Set<String> tagsList = Sets.newHashSet(tags);
-				tagsList.retainAll(eventDTOById.getTags()); // get intersection
-				if (tagsList.size() == 0) {
-					// if the intersection is empty then we can continue
-					continue;
-				}
-			}
+            if (tags != null) {
+                Set<String> tagsList = Sets.newHashSet(tags);
+                tagsList.retainAll(eventDTOById.getTags()); // get intersection
+                if (tagsList.size() == 0) {
+                    // if the intersection is empty then we can continue
+                    continue;
+                }
+            }
 
-			filteredResults.add(eventDTOById);
-		}
+            filteredResults.add(eventDTOById);
+        }
         return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
     }
 
     /**
      * Get Events Reserved by user.
      *
-     * @param request - the http request so we can resolve booking information
+     * @param request     - the http request so we can resolve booking information
      * @param currentUser - the currently logged on user.
      * @return a list of event pages that the user has been booked
      * @throws SegueDatabaseException
@@ -359,11 +344,9 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to retrieve an event by id..
-     * 
-     * @param request
-     *            - this allows us to check to see if a user is currently logged-in.
-     * @param eventId
-     *            - Id of the event of interest.
+     *
+     * @param request - this allows us to check to see if a user is currently logged-in.
+     * @param eventId - Id of the event of interest.
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
     @GET
@@ -371,7 +354,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get details about a specific event.")
     public final Response getEvent(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId) {
+                                   @PathParam("event_id") final String eventId) {
         try {
             IsaacEventPageDTO page = getAugmentedEventDTOById(request, eventId);
             return Response.ok(page)
@@ -385,15 +368,14 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (SegueDatabaseException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error resolving event bookings.")
-                .toResponse();
+                    .toResponse();
         }
     }
 
     /**
      * Count all event bookings.
-     * 
-     * @param request
-     *            - so we can determine if the user is logged in
+     *
+     * @param request - so we can determine if the user is logged in
      * @return a list of booking objects
      */
     @GET
@@ -419,11 +401,9 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * Find a booking by id.
-     * 
-     * @param request
-     *            - for authentication
-     * @param bookingId
-     *            - the booking of interest.
+     *
+     * @param request   - for authentication
+     * @param bookingId - the booking of interest.
      * @return The booking information.
      */
     @GET
@@ -455,14 +435,10 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * Allow a staff user to promote a existing bookings to confirmed bookings.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event booking containing updates, must contain primary id.
-     * @param userId
-     *            - the user to be promoted.
-     * @param additionalInformation
-     *            - additional information to be stored with this booking e.g. dietary requirements.
+     * @param request               - so we can determine if the user is logged in
+     * @param eventId               - event booking containing updates, must contain primary id.
+     * @param userId                - the user to be promoted.
+     * @param additionalInformation - additional information to be stored with this booking e.g. dietary requirements.
      * @return the updated booking.
      */
     @POST
@@ -487,7 +463,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             this.getLogManager().logEvent(currentUser, request,
                     SegueServerLogType.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                                                                         USER_ID_FKEY_FIELDNAME, userId));
+                            USER_ID_FKEY_FIELDNAME, userId));
             return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -497,20 +473,20 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                "Content Database error occurred while trying to retrieve event booking information.")
-                .toResponse();
+                    "Content Database error occurred while trying to retrieve event booking information.")
+                    .toResponse();
         } catch (EventIsFullException e) {
             return new SegueErrorResponse(Status.CONFLICT,
-                "This event is already full. Unable to book the user on to it.")
-                .toResponse();
+                    "This event is already full. Unable to book the user on to it.")
+                    .toResponse();
         } catch (EventBookingUpdateException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "Unable to modify the booking", e)
-                .toResponse();
+                    "Unable to modify the booking", e)
+                    .toResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "The user doesn't exist, so unable to book them onto an event", e)
-                .toResponse();
+                    "The user doesn't exist, so unable to book them onto an event", e)
+                    .toResponse();
         } catch (EventIsCancelledException e) {
             return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
@@ -518,11 +494,9 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * gets an admin and selected staff only list of event bookings based on a given event id.
-     * 
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
      *
+     * @param request - so we can determine if the user is logged in
+     * @param eventId
      * @return list of bookings.
      */
     @GET
@@ -530,7 +504,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "List event bookings for a specific event.")
     public final Response adminGetEventBookingByEventId(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId) {
+                                                        @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             IsaacEventPageDTO event = getRawEventDTOById(eventId);
@@ -541,7 +515,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             List<DetailedEventBookingDTO> eventBookings = bookingManager.adminGetBookingsByEventId(eventId);
 
-            if (Arrays.asList(Role.EVENT_LEADER).contains(currentUser.getRole())) {
+            if (List.of(Role.EVENT_LEADER).contains(currentUser.getRole())) {
                 eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings, booking -> booking.getUserBooked().getId());
             }
 
@@ -556,8 +530,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
     }
 
-    /** gets a list of event bookings based on a given group id.
-     *
+    /**
+     * gets a list of event bookings based on a given group id.
      */
     @GET
     @Path("{event_id}/bookings/for_group/{group_id}")
@@ -593,7 +567,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             // Event leaders are only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings,
-                booking -> booking.getUserBooked().getId());
+                    booking -> booking.getUserBooked().getId());
 
             return Response.ok(this.mapper.mapAsList(eventBookings, EventBookingDTO.class)).build();
         } catch (SegueDatabaseException e) {
@@ -611,15 +585,15 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
     }
 
-    /** gets a list of event bookings for all groups owned.
-     *
+    /**
+     * gets a list of event bookings for all groups owned.
      */
     @GET
     @Path("{event_id}/groups_bookings")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "List event bookings for a specific event")
     public final Response getEventBookingForAllGroups(@Context final HttpServletRequest request,
-                                                       @PathParam("event_id") final String eventId) {
+                                                      @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
@@ -632,7 +606,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             // Only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(
-                        currentUser, eventBookings, booking -> booking.getUserBooked().getId());
+                    currentUser, eventBookings, booking -> booking.getUserBooked().getId());
 
             return Response.ok(eventBookings).build();
         } catch (NoUserLoggedInException e) {
@@ -649,10 +623,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * Allows authorised users to view a csv of event attendees
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - the event of interest.
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - the event of interest.
      * @return list of bookings csv.
      */
     @GET
@@ -660,7 +632,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces("text/csv")
     @Operation(summary = "Download event attendance csv.")
     public Response getEventBookingCSV(@Context final HttpServletRequest request,
-                                                   @PathParam("event_id") final String eventId) {
+                                       @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             IsaacEventPageDTO event = this.getRawEventDTOById(eventId);
@@ -744,7 +716,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             csvWriter.writeAll(rows);
             csvWriter.close();
 
-            headerBuilder.append(stringWriter.toString());
+            headerBuilder.append(stringWriter);
             return Response.ok(headerBuilder.toString())
                     .header("Content-Disposition", String.format("attachment; filename=event_attendees_%s.csv", eventId))
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -757,29 +729,25 @@ public class EventsFacade extends AbstractIsaacFacade {
             String message = "Database error occurred while trying to retrieve all event booking information.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        }   catch (ContentManagerException e) {
+        } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Content Database error occurred while trying to retrieve event booking information.")
                     .toResponse();
         } catch (UnableToIndexSchoolsException e) {
-        return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
-                .toResponse();
-    }
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                    .toResponse();
+        }
     }
 
     /**
      * createBooking for a specific isaac user.
      * - Will attempt to create a waiting list booking if the event is already full.
      * - Must be a Staff user.
-     * 
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
-     * @param userId
-     *            - user id
-     * @param additionalInformation
-     *            - additional information to be stored with this booking e.g. dietary requirements.
+     *
+     * @param request               - so we can determine if the user is logged in
+     * @param eventId               - event id
+     * @param userId                - user id
+     * @param additionalInformation - additional information to be stored with this booking e.g. dietary requirements.
      * @return the new booking
      */
     @POST
@@ -808,10 +776,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             this.getLogManager().logEvent(currentUser, request,
                     SegueServerLogType.ADMIN_EVENT_BOOKING_CREATED,
                     ImmutableMap.of(
-                        EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                        USER_ID_FKEY_FIELDNAME, userId,
-                        BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
-                        ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")
+                            EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                            USER_ID_FKEY_FIELDNAME, userId,
+                            BOOKING_STATUS_FIELDNAME, booking.getBookingStatus().toString(),
+                            ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")
                     ));
 
             return Response.ok(this.mapper.map(booking, EventBookingDTO.class)).build();
@@ -829,8 +797,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "User already booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
+                    "User already booked on this event. Unable to create a duplicate booking.")
+                    .toResponse();
         } catch (EventIsCancelledException e) {
             return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
@@ -839,12 +807,9 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * Add event reservations for the given users.
      *
-     * @param request
-     *            - so we can determine who is making the request
-     * @param eventId
-     *            - event id
-     * @param userIds
-     *            - the users to reserve spaces for
+     * @param request - so we can determine who is making the request
+     * @param eventId - event id
+     * @param userIds - the users to reserve spaces for
      * @return the list of bookings/reservations
      */
     @POST
@@ -932,20 +897,17 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * This function allows cancellation of the reservations for the given users
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
-     * @param userIds
-     *            - user ids
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
+     * @param userIds - user ids
      */
     @POST
     @Path("{event_id}/reservations/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Cancel a reservations on an event for a set of users.")
     public final Response cancelReservations(@Context final HttpServletRequest request,
-                                        @PathParam("event_id") final String eventId,
-                                        final List<Long> userIds) {
+                                             @PathParam("event_id") final String eventId,
+                                             final List<Long> userIds) {
         try {
             IsaacEventPageDTO event = getRawEventDTOById(eventId);
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
@@ -1008,10 +970,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * createBooking for the current user.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
      * @return the new booking if allowed to book.
      */
     @POST
@@ -1027,7 +987,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             if (EventStatus.CLOSED.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
-                    .toResponse();
+                        .toResponse();
             }
 
             if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
@@ -1042,7 +1002,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
-                    .toResponse();
+                        .toResponse();
             }
 
             // Reservation-only events can only be booked by teachers, reserved by the group manager (teacher), or
@@ -1070,24 +1030,24 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                "Content Database error occurred while trying to retrieve all event booking information.")
-                .toResponse();
+                    "Content Database error occurred while trying to retrieve all event booking information.")
+                    .toResponse();
         } catch (EmailMustBeVerifiedException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
-                .toResponse();
+                    "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
+                    .toResponse();
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "You have already been booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
+                    "You have already been booked on this event. Unable to create a duplicate booking.")
+                    .toResponse();
         } catch (EventIsFullException e) {
             return new SegueErrorResponse(Status.CONFLICT,
-                "This event is already full. Unable to book you on to it.")
-                .toResponse();
+                    "This event is already full. Unable to book you on to it.")
+                    .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "The booking deadline for this event has passed. No more bookings are being accepted.")
-                .toResponse();
+                    "The booking deadline for this event has passed. No more bookings are being accepted.")
+                    .toResponse();
         } catch (EventIsCancelledException e) {
             return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
@@ -1096,10 +1056,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * Add current user to waiting list for the given event.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
      * @return the new booking
      */
     @POST
@@ -1127,24 +1085,24 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                "Content Database error occurred while trying to retrieve all event booking information.")
-                .toResponse();
+                    "Content Database error occurred while trying to retrieve all event booking information.")
+                    .toResponse();
         } catch (EmailMustBeVerifiedException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
-                .toResponse();
+                    "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
+                    .toResponse();
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "You have already been booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
+                    "You have already been booked on this event. Unable to create a duplicate booking.")
+                    .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
-                "The booking deadline for this event has passed. No more bookings are being accepted.")
-                .toResponse();
+                    "The booking deadline for this event has passed. No more bookings are being accepted.")
+                    .toResponse();
         } catch (EventIsNotFullException e) {
             return new SegueErrorResponse(Status.CONFLICT,
-                "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
-                .toResponse();
+                    "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
+                    .toResponse();
         } catch (EventIsCancelledException e) {
             return SegueErrorResponse.getBadRequestResponse("The event is cancelled, so no bookings are being accepted.");
         }
@@ -1153,10 +1111,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * This function allows a user who has booked onto an event to cancel their booking.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
      * @return the new booking
      */
     @DELETE
@@ -1171,12 +1127,9 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * This function allows cancellation of a booking.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
-     * @param userId
-     *            - user id
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
+     * @param userId  - user id
      * @return the new booking
      */
     @DELETE
@@ -1200,13 +1153,13 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             if (event.getDate() != null && new Date().after(event.getDate())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot cancel a booking on an event that has already started.")
-                    .toResponse();
+                        .toResponse();
             }
 
             // if the user id is null then it means they are changing their own booking.
             if (userId != null) {
                 if (!(bookingManager.isUserAbleToManageEvent(userLoggedIn, event) ||
-                      bookingManager.isReservationMadeByRequestingUser(userLoggedIn, userOwningBooking, event))) {
+                        bookingManager.isReservationMadeByRequestingUser(userLoggedIn, userOwningBooking, event))) {
                     return SegueErrorResponse.getIncorrectRoleResponse();
                 }
             }
@@ -1237,7 +1190,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
-                .toResponse();
+                    .toResponse();
         } catch (NoUserException e) {
             return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
         }
@@ -1246,12 +1199,9 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * This function allows an administrator to attempt to resend the last confirmation email send for a given booking.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
-     * @param userId
-     *            - user id
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
+     * @param userId  - user id
      * @return the new booking
      */
     @POST
@@ -1295,22 +1245,19 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * Delete a booking.
-     *
+     * <p>
      * This is an admin function to allow staff to delete a booking permanently.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event id
-     * @param userId
-     *            - user id
+     * @param request - so we can determine if the user is logged in
+     * @param eventId - event id
+     * @param userId  - user id
      * @return the new booking
      */
     @DELETE
     @Path("{event_id}/bookings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Erase a user's booking on an event.",
-                  description = "This method removes the booking entirely, rather than recording the booking as cancelled.")
+            description = "This method removes the booking entirely, rather than recording the booking as cancelled.")
     public final Response deleteBooking(@Context final HttpServletRequest request,
                                         @PathParam("event_id") final String eventId,
                                         @PathParam("user_id") final Long userId) {
@@ -1353,14 +1300,10 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * Allow a staff user to record event attendance.
      *
-     * @param request
-     *            - so we can determine if the user is logged in
-     * @param eventId
-     *            - event booking containing updates, must contain primary id.
-     * @param userId
-     *            - the user to be promoted.
-     * @param attended
-     *            - boolean value representing whether the user was present, true, or absent, false.
+     * @param request  - so we can determine if the user is logged in
+     * @param eventId  - event booking containing updates, must contain primary id.
+     * @param userId   - the user to be promoted.
+     * @param attended - boolean value representing whether the user was present, true, or absent, false.
      * @return the updated booking.
      */
     @POST
@@ -1384,11 +1327,11 @@ public class EventsFacade extends AbstractIsaacFacade {
             this.getLogManager().logEvent(currentUser, request,
                     SegueServerLogType.ADMIN_EVENT_ATTENDANCE_RECORDED,
                     ImmutableMap.of(
-                        EVENT_ID_FKEY_FIELDNAME, event.getId(),
-                        USER_ID_FKEY_FIELDNAME, userId,
-                        ATTENDED_FIELDNAME, attended,
-                        EVENT_DATE_FIELDNAME, event.getDate(),
-                        EVENT_TAGS_FIELDNAME, event.getTags()
+                            EVENT_ID_FKEY_FIELDNAME, event.getId(),
+                            USER_ID_FKEY_FIELDNAME, userId,
+                            ATTENDED_FIELDNAME, attended,
+                            EVENT_DATE_FIELDNAME, event.getDate(),
+                            EVENT_TAGS_FIELDNAME, event.getTags()
                     ));
 
             if (event.getTags().contains("teacher")) {
@@ -1424,14 +1367,10 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * REST end point to provide a list of events.
      *
-     * @param request
-     *            - this allows us to check to see if a user is currently loggedin.
-     * @param startIndex
-     *            - the initial index for the first result.
-     * @param limit
-     *            - the maximums number of results to return
-     * @param filter
-     *            - in which way should the results be filtered from a choice defined in the EventFilterOption enum.
+     * @param request    - this allows us to check to see if a user is currently loggedin.
+     * @param startIndex - the initial index for the first result.
+     * @param limit      - the maximums number of results to return
+     * @param filter     - in which way should the results be filtered from a choice defined in the EventFilterOption enum.
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
     @GET
@@ -1495,7 +1434,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             List<Map<String, Object>> resultList = Lists.newArrayList();
 
             for (ContentDTO c : findByFieldNames.getResults()) {
-                if (!(c instanceof  IsaacEventPageDTO)) {
+                if (!(c instanceof IsaacEventPageDTO)) {
                     continue;
                 }
                 IsaacEventPageDTO event = (IsaacEventPageDTO) c;
@@ -1517,14 +1456,15 @@ public class EventsFacade extends AbstractIsaacFacade {
                     eventOverviewBuilder.put("location", event.getLocation());
                 }
 
+                Map<BookingStatus, Long> bookingCounts =  this.bookingManager.getBookingStatusCountsByEventId(event.getId());
                 eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.CONFIRMED));
+                        bookingCounts.getOrDefault(BookingStatus.CONFIRMED, 0L));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.WAITING_LIST));
+                        bookingCounts.getOrDefault(BookingStatus.WAITING_LIST, 0L));
                 eventOverviewBuilder.put("numberAttended",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ATTENDED));
+                        bookingCounts.getOrDefault(BookingStatus.ATTENDED, 0L));
                 eventOverviewBuilder.put("numberAbsent",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ABSENT));
+                        bookingCounts.getOrDefault(BookingStatus.ABSENT, 0L));
 
                 if (null != event.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());
@@ -1553,16 +1493,11 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * REST end point to provide a summary of events suitable for mapping.
      *
-     * @param request
-     *            - this allows us to check to see if a user is currently logged in.
-     * @param startIndex
-     *            - the initial index for the first result.
-     * @param limit
-     *            - the maximums number of results to return
-     * @param showActiveOnly
-     *            - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showStageOnly
-     *            - if present, only events with an audience matching this string will be shown
+     * @param request        - this allows us to check to see if a user is currently logged in.
+     * @param startIndex     - the initial index for the first result.
+     * @param limit          - the maximums number of results to return
+     * @param showActiveOnly - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showStageOnly  - if present, only events with an audience matching this string will be shown
      * @return a Response containing a list of event map summaries or containing a SegueErrorResponse.
      */
     @GET
@@ -1571,10 +1506,10 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "List summary details suitable for mapping for events matching the provided criteria.")
     public final Response getEventMapData(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
-                                            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-                                            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                            @QueryParam("show_active_only") final Boolean showActiveOnly,
-                                            @QueryParam("show_stage_only") final String showStageOnly) {
+                                          @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+                                          @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                          @QueryParam("show_active_only") final Boolean showActiveOnly,
+                                          @QueryParam("show_stage_only") final String showStageOnly) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
         Integer newLimit = null;
@@ -1618,7 +1553,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             List<Map<String, Object>> resultList = Lists.newArrayList();
 
             for (ContentDTO c : findByFieldNames.getResults()) {
-                if (!(c instanceof  IsaacEventPageDTO)) {
+                if (!(c instanceof IsaacEventPageDTO)) {
                     continue;
                 }
 
@@ -1667,7 +1602,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @param eventId the id of the event of interest
      * @return the fully populated event dto with user context information.
      * @throws ContentManagerException - if there is a problem finding the event information
-     * @throws SegueDatabaseException if there is a database error.
+     * @throws SegueDatabaseException  if there is a database error.
      */
     private IsaacEventPageDTO getRawEventDTOById(final String eventId)
             throws ContentManagerException, SegueDatabaseException {
@@ -1690,23 +1625,22 @@ public class EventsFacade extends AbstractIsaacFacade {
     /**
      * A helper method for retrieving an event and the number of places available and if the user is booked or not.
      *
-     *
      * @param request so we can determine if the user is logged in
      * @param eventId the id of the event of interest
      * @return the fully populated event dto with user context information.
      * @throws ContentManagerException - if there is a problem finding the event information
-     * @throws SegueDatabaseException if there is a database error.
-	 */
+     * @throws SegueDatabaseException  if there is a database error.
+     */
     private IsaacEventPageDTO getAugmentedEventDTOById(final HttpServletRequest request, final String eventId)
             throws ContentManagerException, SegueDatabaseException {
         IsaacEventPageDTO event = getRawEventDTOById(eventId);
         return augmentEventWithBookingInformation(request, event);
     }
 
-	/**
+    /**
      * Augment a single event with booking information before we send it out.
      *
-     * @param request - for user look up
+     * @param request       - for user look up
      * @param possibleEvent - a ContentDTO that should hopefully be an IsaacEventPageDTO.
      * @return an augmented IsaacEventPageDTO.
      * @throws SegueDatabaseException

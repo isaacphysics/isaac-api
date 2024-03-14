@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,37 +26,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardProgressSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGameboardProgressSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithGroupMembershipDTO;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Comparator;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -86,9 +88,9 @@ public class GroupManager {
     @Inject
     public GroupManager(final IUserGroupPersistenceManager groupDatabase, final UserAccountManager userManager,
                         final GameManager gameManager, final MapperFacade dtoMapper) {
-        Validate.notNull(groupDatabase);
-        Validate.notNull(userManager);
-        Validate.notNull(gameManager);
+        Objects.requireNonNull(groupDatabase);
+        Objects.requireNonNull(userManager);
+        Objects.requireNonNull(gameManager);
 
         this.groupDatabase = groupDatabase;
         this.userManager = userManager;
@@ -112,7 +114,7 @@ public class GroupManager {
     public UserGroupDTO createUserGroup(final String groupName, final RegisteredUserDTO groupOwner)
             throws SegueDatabaseException {
         Validate.notBlank(groupName);
-        Validate.notNull(groupOwner);
+        Objects.requireNonNull(groupOwner);
 
         Date now = new Date();
         UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, false, now);
@@ -130,7 +132,7 @@ public class GroupManager {
      *             - If an error occurred while interacting with the database.
      */
     public UserGroupDTO editUserGroup(final UserGroupDTO groupToEdit) throws SegueDatabaseException {
-        Validate.notNull(groupToEdit);
+        Objects.requireNonNull(groupToEdit);
         UserGroup userGroup = dtoMapper.map(groupToEdit, UserGroup.class);
         userGroup.setLastUpdated(new Date());
 
@@ -156,7 +158,7 @@ public class GroupManager {
      *             - If an error occurred while interacting with the database.
      */
     public void deleteGroup(final UserGroupDTO group) throws SegueDatabaseException {
-        Validate.notNull(group);
+        Objects.requireNonNull(group);
         groupDatabase.deleteGroup(group.getId());
     }
 
@@ -170,7 +172,7 @@ public class GroupManager {
      *             - If an error occurred while interacting with the database.
      */
     public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {
-        Validate.notNull(group);
+        Objects.requireNonNull(group);
         List<Long> groupMemberIds = Lists.newArrayList(groupDatabase.getGroupMemberIds(group.getId()));
 
         if (groupMemberIds.isEmpty()) {
@@ -232,7 +234,7 @@ public class GroupManager {
      * @throws SegueDatabaseException if there is a db error
      */
     public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) throws SegueDatabaseException {
-        Validate.notNull(ownerUser);
+        Objects.requireNonNull(ownerUser);
         return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId()));
     }
 
@@ -251,27 +253,11 @@ public class GroupManager {
      * @throws SegueDatabaseException - if there is a db error
      */
     public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
-        Validate.notNull(ownerUser);
+        Objects.requireNonNull(ownerUser);
         List<UserGroupDTO> combinedResults = Lists.newArrayList();
         combinedResults.addAll(convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly)));
         combinedResults.addAll(convertGroupsToDTOs(groupDatabase.getGroupsByAdditionalManager(ownerUser.getId(), archivedGroupsOnly)));
         return combinedResults;
-    }
-
-    /**
-     * getGroupsByOwner.
-     * 
-     * @param ownerUser
-     *            - the owner of the groups to search for.
-     * @param archivedGroupsOnly
-     *            if true then only archived groups will be returned,
-     *            if false then only unarchived groups will be returned.
-     * @return List of groups or empty list.
-     * @throws SegueDatabaseException if there is a db error
-     */
-    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser, boolean archivedGroupsOnly) throws SegueDatabaseException {
-        Validate.notNull(ownerUser);
-        return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId(), archivedGroupsOnly));
     }
 
     /**
@@ -287,21 +273,9 @@ public class GroupManager {
      */
     public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup, final boolean augmentGroups)
             throws SegueDatabaseException {
-        Validate.notNull(userToLookup);
+        Objects.requireNonNull(userToLookup);
 
         return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), augmentGroups);
-    }
-    /**
-     * getGroupMembershipList. Gets the groups a user is a member of.
-     *
-     * @param userToLookup
-     *            - the user to search for group membership details for.
-     * @return the list of groups the user belongs to.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup) throws SegueDatabaseException {
-        return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), true);
     }
 
     /**
@@ -316,8 +290,8 @@ public class GroupManager {
      */
     public void addUserToGroup(final UserGroupDTO group, final RegisteredUserDTO userToAdd)
             throws SegueDatabaseException {
-        Validate.notNull(group);
-        Validate.notNull(userToAdd);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(userToAdd);
 
         // don't do it if they are already in there
         if (!this.isUserInGroup(userToAdd, group)) {
@@ -349,8 +323,8 @@ public class GroupManager {
      */
     public void setMembershipStatus(final UserGroupDTO group, final RegisteredUserDTO user, GroupMembershipStatus newStatus)
             throws SegueDatabaseException {
-        Validate.notNull(group);
-        Validate.notNull(user);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(user);
         // we don't want people to delete user membership via this route as observers are not notified.
         Validate.isTrue(!GroupMembershipStatus.DELETED.equals(newStatus), "Deletion of a group membership should not use this route.");
         groupDatabase.setUsersGroupMembershipStatus(user.getId(), group.getId(), newStatus);
@@ -368,8 +342,8 @@ public class GroupManager {
      */
     public void removeUserFromGroup(final UserGroupDTO group, final RegisteredUserDTO userToRemove)
             throws SegueDatabaseException {
-        Validate.notNull(group);
-        Validate.notNull(userToRemove);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(userToRemove);
         groupDatabase.removeUserFromGroup(userToRemove.getId(), group.getId());
 
         for (IGroupObserver interestedParty : this.groupsObservers) {
@@ -415,8 +389,8 @@ public class GroupManager {
      * @throws SegueDatabaseException if there is a db error
      */
     public UserGroupDTO addUserToManagerList(final UserGroupDTO group, final RegisteredUserDTO userToAdd) throws SegueDatabaseException {
-        Validate.notNull(group);
-        Validate.notNull(userToAdd);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(userToAdd);
 
         if (group.getAdditionalManagersUserIds().contains(userToAdd.getId())) {
             // don't add them if they are already in there
@@ -443,9 +417,9 @@ public class GroupManager {
      * @throws IllegalAccessException if oldOwner is not the current owner of the group
      */
     public UserGroupDTO promoteUserToOwner(final UserGroupDTO group, final RegisteredUserDTO newOwner, final RegisteredUserDTO oldOwner) throws SegueDatabaseException, IllegalAccessException {
-        Validate.notNull(group);
-        Validate.notNull(newOwner);
-        Validate.notNull(oldOwner);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(newOwner);
+        Objects.requireNonNull(oldOwner);
 
         // Old owner must actually be the old (current) owner of the group
         if (!oldOwner.getId().equals(group.getOwnerId())) {
@@ -485,8 +459,8 @@ public class GroupManager {
      * @throws SegueDatabaseException if there is a db error
      */
     public UserGroupDTO removeUserFromManagerList(final UserGroupDTO group, final RegisteredUserDTO userToAdd) throws SegueDatabaseException {
-        Validate.notNull(group);
-        Validate.notNull(userToAdd);
+        Objects.requireNonNull(group);
+        Objects.requireNonNull(userToAdd);
 
         if (!group.getAdditionalManagersUserIds().contains(userToAdd.getId())) {
             // don't remove them if they are not in there
@@ -613,44 +587,51 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *      *            - if there is a database problem.
      */
-    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups, final boolean augmentGroups)
+    private List<UserGroupDTO> convertGroupsToDTOs(final Collection<UserGroup> groups, final boolean augmentGroups)
             throws SegueDatabaseException {
-        // FIXME - this duplicates much of the behaviour of the single-group convertGroupToDTO(...) method.
-        // If refactored so additional managers uses lookup cache, then the single-group method should use this code!
         List<UserGroupDTO> result = Lists.newArrayList();
-
-        // add temporary cache so we don't have to look up the same user each time.
-        Map<Long, RegisteredUserDTO> userLookupCache = Maps.newHashMap();
 
         // go through each group and get the related user information in the correct format
         for (UserGroup group : groups) {
             UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+            result.add(dtoToReturn);
+        }
 
-            if (augmentGroups) {
-                // convert the owner of the group into a DTO
-                try {
-                    RegisteredUserDTO ownerUser = userLookupCache.get(group.getOwnerId());
-                    if (null == ownerUser) {
-                        ownerUser = userManager.getUserDTOById(group.getOwnerId());
-                        userLookupCache.put(ownerUser.getId(), ownerUser);
-                    }
+        if (augmentGroups) {
 
-                    dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
-                } catch (NoUserException e) {
-                    // This should never happen!
-                    log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+            Set<Long> groupIds = groups.stream().map(UserGroup::getId).collect(Collectors.toSet());
+            Map<Long, Set<Long>> groupAdditionalManagers = groupDatabase.getAdditionalManagerSetsByGroupIds(groupIds);
+            Set<Long> ownerManagerIds = groups.stream().map(UserGroup::getOwnerId).collect(Collectors.toSet());
+            ownerManagerIds.addAll(groupAdditionalManagers.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()));
+
+            List<RegisteredUserDTO> userLookup = userManager.findUsers(ownerManagerIds);
+            Map<Long, RegisteredUserDTO> userLookupCache = userLookup.stream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
+
+            for (UserGroupDTO groupDTO : result) {
+                // set owner summary:
+                RegisteredUserDTO ownerUser = userLookupCache.get(groupDTO.getOwnerId());
+                if (null != ownerUser) {
+                    groupDTO.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
+                } else {
+                    log.debug(String.format("Group (%s) has owner ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
                 }
 
-                // Didn't bother using the user cache above for the below as the bottleneck was the group owner db calls.
-                Set<Long> additionalManagers = this.groupDatabase.getAdditionalManagerSetByGroupId(group.getId());
+                // set additional manager summary:
+                Set<Long> additionalManagers = groupAdditionalManagers.get(groupDTO.getId());
                 Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
                 if (additionalManagers != null) {
-                    setOfUsers.addAll(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(additionalManagers), UserSummaryWithEmailAddressDTO.class));
+                    for (Long additionalManagerId : additionalManagers) {
+                        RegisteredUserDTO managerUser = userLookupCache.get(additionalManagerId);
+                        if (managerUser != null) {
+                            setOfUsers.add(userManager.convertToDetailedUserSummaryObject(managerUser, UserSummaryWithEmailAddressDTO.class));
+                        } else {
+                            log.debug(String.format("Group (%s) has manager ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
+                        }
+                    }
                 }
 
-                dtoToReturn.setAdditionalManagers(setOfUsers);
+                groupDTO.setAdditionalManagers(setOfUsers);
             }
-            result.add(dtoToReturn);
         }
 
         return result;
@@ -663,7 +644,7 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *      *            - if there is a database problem.
      */
-    private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
+    private List<UserGroupDTO> convertGroupsToDTOs(final Collection<UserGroup> groups) throws SegueDatabaseException {
         return convertGroupsToDTOs(groups, true);
     }
 

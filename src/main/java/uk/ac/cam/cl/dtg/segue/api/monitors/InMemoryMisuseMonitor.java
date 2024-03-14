@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,13 +26,13 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.MisuseStatisticDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -77,11 +77,11 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
             final Integer adjustmentValue) throws SegueResourceMisuseException {
         Validate.notBlank(agentIdentifier);
         Validate.notBlank(eventLabel);
-        Validate.notNull(adjustmentValue);
+        Objects.requireNonNull(adjustmentValue);
         Validate.isTrue(adjustmentValue >= 0, "Expected positive integer value.");
         
         IMisuseHandler handler = handlerMap.get(eventLabel);
-        Validate.notNull(handler, "No handler has been registered for " + eventLabel);
+        Objects.requireNonNull(handler, "No handler has been registered for " + eventLabel);
 
         Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 

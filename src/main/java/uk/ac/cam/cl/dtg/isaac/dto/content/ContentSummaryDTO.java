@@ -1,11 +1,11 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  *
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,13 +23,13 @@ import java.util.List;
 
 /**
  * This DTO represents high level information about a piece of content
- *
- * This should be a light weight object used for presenting search results etc.
+ * This should be a lightweight object used for presenting search results etc.
  *
  */
 public class ContentSummaryDTO {
     private String id;
     private String title;
+    private String subtitle;
     private String summary;
     private String type;
     private String level;
@@ -86,6 +86,25 @@ public class ContentSummaryDTO {
      */
     public void setTitle(final String title) {
         this.title = title;
+    }
+
+    /**
+     * Gets the subtitle.
+     *
+     * @return the subtitle
+     */
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    /**
+     * Sets the subtitle.
+     *
+     * @param subtitle
+     *            the subtitle to set
+     */
+    public void setSubtitle(final String subtitle) {
+        this.subtitle = subtitle;
     }
 
     /**
@@ -203,7 +222,7 @@ public class ContentSummaryDTO {
     }
 
     /**
-     * Gets a list of the question part IDs
+     * Gets a list of the question part IDs.
      *
      * @return list of question part IDs for any questions in this content
      */
@@ -213,7 +232,7 @@ public class ContentSummaryDTO {
     }
 
     /**
-     * Sets a list of question part IDs
+     * Sets a list of question part IDs.
      *
      * @param questionPartIds list of question part IDs for any questions in this content
      */
@@ -223,21 +242,25 @@ public class ContentSummaryDTO {
     }
 
     /**
-     * Gets the superseding question ID if this is a superseded question
+     * Gets the superseding question ID if this is a superseded question.
      *
      * @return superseding question ID, or null
      */
-    public String getSupersededBy() { return this.supersededBy; }
+    public String getSupersededBy() {
+        return this.supersededBy;
+    }
 
     /**
-     * Sets the superseding question ID if this is a superseded question
+     * Sets the superseding question ID if this is a superseded question.
      *
      * @param supersededBy superseding question ID
      */
-    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+    public void setSupersededBy(String supersededBy) {
+        this.supersededBy = supersededBy;
+    }
 
     /**
-     * Gets whether or not this question is deprecated
+     * Gets deprecation status of this question.
      *
      * @return is question deprecated, if null assume not deprecated
      */
@@ -246,7 +269,7 @@ public class ContentSummaryDTO {
     }
 
     /**
-     * Sets whether or not this question should be treated as deprecated
+     * Sets deprecation status of this question.
      *
      * @param deprecated is question deprecated or not
      */
