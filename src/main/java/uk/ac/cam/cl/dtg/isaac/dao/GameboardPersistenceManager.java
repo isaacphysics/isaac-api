@@ -192,7 +192,6 @@ public class GameboardPersistenceManager {
      * @return internal database id for the saved gameboard.
      * @throws SegueDatabaseException
      *             - if there is a problem saving the gameboard in the database.
-     * @throws JsonProcessingException
      */
     public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
         throws SegueDatabaseException {
@@ -342,25 +341,20 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException - if there is an error during the delete operation.
      */
     public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId) throws SegueDatabaseException {
-        StringBuilder params = new StringBuilder();
-        params.append("?");
-        for (int i = 1; i < gameboardId.size(); i++) {
-            params.append(",?");
-        }
-        String query = String.format("DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id IN (%s)", params);
+        String query = "DELETE FROM user_gameboards WHERE user_id = ? AND gameboard_id = ANY(?)";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
+            Array gameboardIdsArray = conn.createArrayOf("varchar", gameboardId.toArray());
             pst.setLong(1, userId);
+            pst.setArray(2, gameboardIdsArray);
 
-            int index = 2;
-            for (String id : gameboardId) {
-                pst.setString(index, id);
-                index++;
+            try {
+                pst.execute();
+            } finally {
+                gameboardIdsArray.free();
             }
-
-            pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -471,9 +465,8 @@ public class GameboardPersistenceManager {
      * gameboard items populated with meaningful titles.
      *
      * @param gameboards - list of gameboards to fully augment.
-     * @return augmented gameboards as per inputted list.
      */
-    public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
+    public void augmentGameboardItems(final List<GameboardDTO> gameboards) {
         Set<GameboardContentDescriptor> contentDescriptors = Sets.newHashSet();
         Map<String, List<String>> gameboardToQuestionsMap = Maps.newHashMap();
 
@@ -487,7 +480,7 @@ public class GameboardPersistenceManager {
 
         if (contentDescriptors.isEmpty()) {
             log.info("No question ids found; returning original gameboard without augmenting.");
-            return gameboards;
+            return;
         }
 
         Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(contentDescriptors));
@@ -507,7 +500,6 @@ public class GameboardPersistenceManager {
                 }
             }
         }
-        return gameboards;
     }
 
     /**

@@ -42,15 +42,11 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -158,41 +154,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 }
 
                 return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
-            }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
-        }
-    }
-
-
-    @Override
-    public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder("SELECT * FROM user_credentials WHERE user_id IN (");
-        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-        sb.append(String.join(",", questionMarks)).append(");");
-
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
-        ) {
-            int userParamIndex = 1;
-            // These will come in handy later...
-            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
-            Map<RegisteredUser, Boolean> userCredentialsExistence = new HashMap<>();
-            // Add the parameters into the query
-            for (RegisteredUser user : users) {
-                pst.setLong(userParamIndex++, user.getId());
-                userCredentialsExistence.put(userMap.get(user.getId()), false);
-            }
-
-            // See comment in getAuthenticationProvidersByUsers
-            try (Statement statement = conn.createStatement();
-                 ResultSet queryResults = statement.executeQuery(pst.toString());
-            ) {
-                while (queryResults.next()) {
-                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                    userCredentialsExistence.put(user, true);
-                }
-                return userCredentialsExistence;
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
@@ -934,10 +895,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     /**
      * Helper function to remove PII and set tombstone flag for a Registered User.
      * Note: This function mutates the object that it was provided.
-     *
-     * @return User object to be persisted that no longer has PII
      */
-    private static RegisteredUser removePIIFromUserDO(RegisteredUser user) {
+    private static void removePIIFromUserDO(RegisteredUser user) {
         user.setFamilyName(null);
         user.setGivenName(null);
         user.setEmail(UUID.randomUUID().toString());
@@ -952,6 +911,5 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             user.setDateOfBirth(calendar.getTime());
         }
 
-        return user;
     }
 }

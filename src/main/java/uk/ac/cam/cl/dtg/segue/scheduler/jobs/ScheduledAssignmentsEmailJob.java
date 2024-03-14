@@ -45,12 +45,7 @@ public class ScheduledAssignmentsEmailJob implements Job {
     private void startSingleScheduledAssignment(final AssignmentDTO assignment) {
         String emailKey = String.format("%d@scheduled_assignment", assignment.getId());
         boolean sendAssignmentEmail;
-        try {
-            sendAssignmentEmail = this.pgScheduledEmailManager.commitToSchedulingEmail(emailKey);
-        } catch (SegueDatabaseException e) {
-            log.debug("Skipping email for scheduled assignment since it was already sent");
-            sendAssignmentEmail = false;
-        }
+        sendAssignmentEmail = this.pgScheduledEmailManager.commitToSchedulingEmail(emailKey);
         if (sendAssignmentEmail) {
             try {
                 GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());

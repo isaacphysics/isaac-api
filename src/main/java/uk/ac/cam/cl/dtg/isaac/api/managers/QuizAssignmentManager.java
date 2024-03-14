@@ -190,7 +190,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
     }
 
     @Override
-    public String getAssignmentLikeName(QuizAssignmentDTO assignment) throws ContentManagerException {
+    public String getAssignmentLikeName(QuizAssignmentDTO assignment) {
         if (assignment.getQuizSummary() == null) {
             quizManager.augmentWithQuizSummary(Collections.singletonList(assignment));
         }

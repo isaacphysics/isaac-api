@@ -56,6 +56,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
      *
      * @throws ExternalAccountSynchronisationException on unrecoverable errors with external providers.
      */
+    @Override
     public synchronized void synchroniseChangedUsers() throws ExternalAccountSynchronisationException {
         try {
             List<UserExternalAccountChanges> userRecordsToUpdate = database.getRecentlyChangedRecords();

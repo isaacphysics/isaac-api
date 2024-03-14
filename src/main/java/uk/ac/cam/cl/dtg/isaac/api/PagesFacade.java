@@ -836,11 +836,10 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - the content to augment.
      * @param usersQuestionAttempts
      *            - nullable question attempt information to support augmentation of content.
-     * @return content which has been augmented
      * @throws ContentManagerException
      *             - an exception when the content is not found
      */
-    private ContentDTO augmentContentWithRelatedContent(final ContentDTO contentToAugment,
+    private void augmentContentWithRelatedContent(final ContentDTO contentToAugment,
                                                         @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
 
@@ -849,8 +848,6 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (usersQuestionAttempts != null) {
             this.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
         }
-
-        return augmentedDTO;
     }
 
     /**

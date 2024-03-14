@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import jakarta.annotation.Nullable;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -217,32 +218,26 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
     public Map<Long, QuizAttemptDTO> getByQuizAssignmentIdsAndUserId(List<Long> quizAssignmentIds, Long userId) throws SegueDatabaseException {
         Map<Long, QuizAttemptDTO> mapOfResults = Maps.newHashMap();
         if (quizAssignmentIds.isEmpty()) {
-            return mapOfResults; // IN condition below doesn't work with empty list.
+            return mapOfResults;
         }
-        // This is a nasty hack to make a prepared statement using the sql IN operator.
-        StringBuilder builder = new StringBuilder();
-        builder.append("(");
-        for (int i = 0; i < quizAssignmentIds.size(); i++) {
-            builder.append("?,");
-        }
-        String quizAssignmentIdsHoles = builder.deleteCharAt(builder.length() - 1).append(")").toString();
-        String query = "SELECT quiz_attempts.* FROM quiz_attempts INNER JOIN quiz_assignments" +
-                " ON quiz_attempts.quiz_assignment_id = quiz_assignments.id" +
-                " WHERE quiz_attempts.user_id = ? AND quiz_assignments.id IN " + quizAssignmentIdsHoles;
+
+        String query = "SELECT quiz_attempts.* FROM quiz_attempts"
+                + " INNER JOIN quiz_assignments ON quiz_attempts.quiz_assignment_id = quiz_assignments.id"
+                + " WHERE quiz_attempts.user_id = ? AND quiz_assignments.id = ANY(?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
+            Array quizIdArray = conn.createArrayOf("INTEGER", quizAssignmentIds.toArray());
             pst.setLong(1, userId);
-            int i = 2;
-            for (Long quizAssignmentId : quizAssignmentIds) {
-                pst.setLong(i++, quizAssignmentId);
-            }
+            pst.setArray(2, quizIdArray);
 
             try (ResultSet results = pst.executeQuery()) {
                 while (results.next()) {
                     mapOfResults.put(results.getLong("quiz_assignment_id"), this.convertToQuizAttemptDTO(this.convertFromSQLToQuizAttemptDO(results)));
                 }
                 return mapOfResults;
+            } finally {
+                quizIdArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find quiz attempts by assignment ids for user id", e);

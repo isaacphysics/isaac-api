@@ -114,6 +114,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @return ImmutableMap<String, String> (stat name, stat value)
      * @throws SegueDatabaseException - if there is a database error.
      */
+    @Override
     public synchronized Map<String, Object> getGeneralStatistics()
             throws SegueDatabaseException {
         Map<String, Object> result = Maps.newHashMap();
@@ -153,6 +154,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @throws SegueDatabaseException
      *             if there is a problem with the database.
      */
+    @Override
     public Long getLogCount(final String logTypeOfInterest) throws SegueDatabaseException {
         return this.logManager.getLogCountByType(logTypeOfInterest);
     }
@@ -170,6 +172,7 @@ public class StatisticsManager implements IStatisticsManager {
      * @throws ContentManagerException
      *             - if we are unable to look up the content.
      */
+    @Override
     public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
             throws SegueDatabaseException, ContentManagerException {
         Objects.requireNonNull(userOfInterest);

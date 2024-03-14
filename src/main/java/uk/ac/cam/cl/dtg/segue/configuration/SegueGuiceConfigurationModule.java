@@ -33,7 +33,6 @@ import com.google.inject.util.Providers;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1039,7 +1038,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) throws SchedulerException {
+    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) {
         if (null == segueJobService) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
