@@ -19,10 +19,17 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.InlineRegionDTO;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -67,7 +74,22 @@ public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<Cont
             return null;
         }
 
-        return super.mapperFacade.map(source, destinationClass);
+        ContentDTO result = super.mapperFacade.map(source, destinationClass);
+
+        if (result instanceof InlineRegionDTO) {
+            List<IsaacQuestionBase> questionBases = ((InlineRegion) source).getInlineQuestions();
+            List<IsaacQuestionBaseDTO> newQuestionBases = new ArrayList<>();
+
+            for (IsaacQuestionBase questionBase : questionBases) {
+                Class<? extends Content> questionClass = contentMapper.getClassByType(questionBase.getType());
+                Class<? extends ContentDTO> questionDestinationClass = contentMapper.getDTOClassByDOClass(questionClass);
+                newQuestionBases.add((IsaacQuestionBaseDTO) super.mapperFacade.map(questionBase, questionDestinationClass));
+            }
+
+            ((InlineRegionDTO) result).setInlineQuestions(newQuestionBases);
+        }
+
+        return result;
     }
 
 }
