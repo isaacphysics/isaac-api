@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
@@ -41,6 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentBaseOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -66,6 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -413,7 +416,7 @@ public class ContentIndexer {
         }
 
         if (content instanceof InlineRegion) {
-            for (Question question : ((InlineRegion) content).getInlineQuestions()) {
+            for (IsaacQuestionBase question : ((InlineRegion) content).getInlineQuestions()) {
                 this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
             }
         }
@@ -554,7 +557,7 @@ public class ContentIndexer {
             }
 
             if (content instanceof InlineRegion) {
-                for (Content child : ((InlineRegion) content).getInlineQuestions()) {
+                for (IsaacQuestionBase child : ((InlineRegion) content).getInlineQuestions()) {
                     setOfContentObjects.addAll(flattenContentObjects(child));
                 }
             }

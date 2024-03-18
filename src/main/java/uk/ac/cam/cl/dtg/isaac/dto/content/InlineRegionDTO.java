@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacStringMatchQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 
 import java.util.List;
 
@@ -9,16 +9,16 @@ import java.util.List;
  *
  */
 public class InlineRegionDTO extends ContentDTO {
-    private List<IsaacStringMatchQuestionDTO> inlineQuestions;
+    private List<IsaacQuestionBaseDTO> inlineQuestions;
     private List<ContentBaseDTO> hints;
 
     public InlineRegionDTO() {}
 
-    public List<IsaacStringMatchQuestionDTO> getInlineQuestions() {
+    public List<IsaacQuestionBaseDTO> getInlineQuestions() {
         return inlineQuestions;
     }
 
-    public void setInlineQuestions(List<IsaacStringMatchQuestionDTO> inlineQuestions) {
+    public void setInlineQuestions(List<IsaacQuestionBaseDTO> inlineQuestions) {
         this.inlineQuestions = inlineQuestions;
     }
 
