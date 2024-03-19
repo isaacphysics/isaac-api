@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 /**
  *  A hashing algorithm for blind-upgrading SeguePBKDFv1 hashes to use SegueSCryptv1.
  */
-public class SegueChainedPBKDFv1SCryptv1 extends ChainedHashAlgorithm implements ISegueHashingAlgorithm {
+public class SegueChainedPBKDFv1SCryptv1 extends ChainedHashAlgorithm {
 
     public SegueChainedPBKDFv1SCryptv1() {
         super(new SeguePBKDF2v1(), new SegueSCryptv1());

@@ -30,7 +30,7 @@ import java.security.spec.InvalidKeySpecException;
  * function correctly and trigger the usual algorithm upgrade process.
  *
  */
-public abstract class ChainedHashAlgorithm {
+public abstract class ChainedHashAlgorithm implements ISegueHashingAlgorithm {
     private final ISegueHashingAlgorithm insecureInnerAlgorithm;
     private final ISegueHashingAlgorithm secureOuterAlgorithm;
 
