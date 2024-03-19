@@ -64,4 +64,10 @@
         <param-value>false</param-value>
     </context-param>
 
+    <session-config>
+        <cookie-config>
+            <secure>true</secure>
+        </cookie-config>
+    </session-config>
+
 </web-app>
