@@ -8,7 +8,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_AUTH_COOKIE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_DEFAULT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_FALLBACK;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,7 +40,6 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
   private static final Logger log = LoggerFactory.getLogger(SessionValidator.class);
 
   private final UserAuthenticationManager userAuthenticationManager;
-  private final PropertiesLoader properties;
   private final Integer sessionExpirySeconds;
   @Context
   private HttpServletRequest httpServletRequest;
@@ -52,13 +50,12 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
   public SessionValidator(final UserAuthenticationManager userAuthenticationManager,
                           final PropertiesLoader properties) {
     this.userAuthenticationManager = userAuthenticationManager;
-    this.properties = properties;
-    this.sessionExpirySeconds = this.properties.getIntegerPropertyOrFallback(
+    this.sessionExpirySeconds = properties.getIntegerPropertyOrFallback(
         SESSION_EXPIRY_SECONDS_DEFAULT, SESSION_EXPIRY_SECONDS_FALLBACK);
   }
 
   @Override
-  public void filter(final ContainerRequestContext containerRequestContext) throws IOException {
+  public void filter(final ContainerRequestContext containerRequestContext) {
     Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
     if (authCookie != null && !userAuthenticationManager.isSessionValid(httpServletRequest)) {
       log.warn("Request made with invalid segue auth cookie - closing session");
@@ -74,16 +71,16 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
 
   @Override
   public void filter(final ContainerRequestContext containerRequestContext,
-                     final ContainerResponseContext containerResponseContext)
-      throws IOException {
-    Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
-    if (authCookie != null && !isPartialLoginCookie(authCookie) && !isLogoutCookiePresent(httpServletResponse)
-        && wasRequestValid(containerResponseContext)) {
+                     final ContainerResponseContext containerResponseContext) {
+    if (!isLogoutCookiePresent(httpServletResponse)) {
+      Cookie authCookie = containerRequestContext.getCookies().get(SEGUE_AUTH_COOKIE);
       try {
-        jakarta.servlet.http.Cookie newAuthCookie = generateRefreshedSegueAuthCookie(authCookie);
-        httpServletResponse.addCookie(newAuthCookie);
-      } catch (JsonProcessingException e) {
-        log.error("Unable to save cookie.", e);
+        if (authCookie != null && !isPartialLoginCookie(authCookie) && wasRequestValid(containerResponseContext)) {
+          jakarta.servlet.http.Cookie newAuthCookie = generateRefreshedSegueAuthCookie(authCookie);
+          httpServletResponse.addCookie(newAuthCookie);
+        }
+      } catch (IOException e) {
+        log.error("Failed to parse an auth cookie for refresh", e);
       }
     }
   }
@@ -122,9 +119,7 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
     String updatedHMAC = userAuthenticationManager.calculateUpdatedHMAC(sessionInformation);
     sessionInformation.put(HMAC, updatedHMAC);
 
-    jakarta.servlet.http.Cookie newAuthCookie =
-        userAuthenticationManager.createAuthCookie(sessionInformation, sessionExpirySeconds);
-    return newAuthCookie;
+    return userAuthenticationManager.createAuthCookie(sessionInformation, sessionExpirySeconds);
   }
 
   private static String getFutureDateString(final Integer secondsInFuture) {
