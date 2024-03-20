@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -91,6 +92,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -290,6 +292,59 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         return Response.ok().build();
+    }
+
+    /**
+     * Attempt to upgrade the stored credentials of a list of users.
+     *
+     * @param request - to check the user permissions
+     * @param chainedHashAlgorithmName - the chained algorithm to use
+     * @param userIds - the users to attempt to upgrade
+     * @return - a map of user ID to success status.
+     */
+    @POST
+    @Path("/users/upgrade_password_algorithm/{chainedHashAlgorithmName}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Upgrade stored password hashes of users to more secure algorithm.",
+               description = "This endpoint only works if the chained algorithm is compatible with the stored credentials.")
+    public Response upgradeUsersPasswordHashAlgorithm(@Context final HttpServletRequest request,
+                                                                   @PathParam("chainedHashAlgorithmName") final String chainedHashAlgorithmName,
+                                                                   final List<Long> userIds) {
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, requestingUser)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            if (null == userIds || userIds.isEmpty()) {
+                return SegueErrorResponse.getBadRequestResponse("You must specify a list of user IDs!");
+            }
+
+            Map<Long, Boolean> successStatus = Maps.newHashMap();
+            for (Long userId : userIds) {
+
+                try {
+                    successStatus.put(userId, false);
+                    this.userManager.upgradeUsersPasswordHashAlgorithm(userId, chainedHashAlgorithmName);
+                    successStatus.put(userId, true);
+                } catch (NoCredentialsAvailableException | UnsupportedOperationException e) {
+                    // Silently fail. We have already set success=false above.
+                } catch (SegueDatabaseException | InvalidKeySpecException e) {
+                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "An error occurred whilst upgrading password hashes!", e).toResponse();
+                } catch (NoSuchAlgorithmException e) {
+                    return SegueErrorResponse.getBadRequestResponse(String.format("Hash algorithm '%s' not found!", chainedHashAlgorithmName));
+                }
+            }
+
+            log.info(String.format("Admin user (%s) attempted to upgrade %d user password hashes.",
+                    requestingUser.getEmail(), successStatus.size()));
+
+            return Response.ok(successStatus).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
     }
 
     /**

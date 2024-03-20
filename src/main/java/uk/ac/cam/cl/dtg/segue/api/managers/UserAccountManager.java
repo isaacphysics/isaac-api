@@ -830,6 +830,11 @@ public class UserAccountManager implements IUserAccountManager {
         }
     }
 
+    public void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
+            throws NoCredentialsAvailableException, SegueDatabaseException, NoSuchAlgorithmException, InvalidKeySpecException {
+        this.userAuthenticationManager.upgradeUsersPasswordHashAlgorithm(userId, chainedHashingAlgorithmName);
+    }
+
     /**
      * Find a list of users based on some user prototype.
      *

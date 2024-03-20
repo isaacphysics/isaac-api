@@ -115,7 +115,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         }
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(localUserAccount.getId());
-        if (null == luc || null == luc.getPassword() || null == luc.getSecureSalt()) {
+        if (!hasPasswordRegistered(luc)) {
             log.debug(String.format("No credentials available for this account id (%s)", localUserAccount.getId()));
             throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
         }
@@ -140,6 +140,10 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         }
     }
 
+    private boolean hasPasswordRegistered(LocalUserCredential luc) {
+        return null != luc && null != luc.getPassword() && null != luc.getSecureSalt();
+    }
+
     @Override
     public boolean hasPasswordRegistered(RegisteredUser userToCheck) throws SegueDatabaseException {
         if (null == userToCheck) {
@@ -147,11 +151,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         }
 
         LocalUserCredential localUserCredential = this.passwordDataManager.getLocalUserCredential(userToCheck.getId());
-        if (null == localUserCredential || localUserCredential.getPassword() == null) {
-            return false;
-        }
-
-        return true;
+        return hasPasswordRegistered(localUserCredential);
     }
 
     @Override
@@ -258,6 +258,43 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         }
 
         return this.userDataManager.getById(luc.getUserId());
+    }
+
+    /**
+     * Upgrade a user's password hash to a chained hashing algorithm.
+     *
+     * This method can be used to upgrade an insecure algorithm hash to wrap it inside a secure algorithm.
+     * However, it assumes that the caller knows in advance a valid chainedHashingAlgorithmName to use with
+     * the user's existing stored credential, and will throw a runtime UnsupportedOperationException if
+     * the algorithm is incompatible.
+     *
+     * @param userId - the user to upgrade the password hash of.
+     * @param chainedHashingAlgorithmName - the chained algorithm name,
+     *                                      which must be compatible with the user's existing credential.
+     * @throws NoSuchAlgorithmException - if a chained algorithm does not exist with this name.
+     * @throws SegueDatabaseException - if a database error occurs loading or saving.
+     * @throws InvalidKeySpecException - if the algorithm hardcoded params are invalid.
+     */
+    @Override
+    public void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
+            throws NoSuchAlgorithmException, SegueDatabaseException, InvalidKeySpecException, NoCredentialsAvailableException {
+
+        ISegueHashingAlgorithm algorithm = possibleAlgorithms.get(chainedHashingAlgorithmName);
+        if (!(algorithm instanceof ChainedHashAlgorithm)) {
+            throw new NoSuchAlgorithmException(String.format("Algorithm '%s' requested but no such chained algorithm found!", chainedHashingAlgorithmName));
+        }
+        ChainedHashAlgorithm chainedHashAlgorithm = (ChainedHashAlgorithm) algorithm;
+
+        LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userId);
+        if (!hasPasswordRegistered(luc)) {
+            throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
+        }
+
+        String upgradedHash = chainedHashAlgorithm.upgradeHash(luc.getSecurityScheme(), luc.getPassword(), luc.getSecureSalt());
+        luc.setPassword(upgradedHash);
+        luc.setSecurityScheme(chainedHashAlgorithm.hashingAlgorithmName());
+
+        passwordDataManager.createOrUpdateLocalUserCredential(luc);
     }
 
     /**
