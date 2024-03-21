@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.Hub;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
@@ -73,6 +74,7 @@ public class IsaacEventPageDTO extends ContentDTO {
   private Boolean allowGroupReservations;
 
   private Boolean privateEvent;
+  private Hub hub;
 
   /**
    * @param id
@@ -101,6 +103,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param groupReservationLimit
    * @param allowGroupReservations
    * @param privateEvent if an event should be publicly visible or hidden
+   * @param hub the hub hosting the event
    */
   @JsonCreator
   public IsaacEventPageDTO(
@@ -129,7 +132,8 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("EventStatus") final EventStatus eventStatus,
       @JsonProperty("groupReservationLimit") final Integer groupReservationLimit,
       @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations,
-      @JsonProperty("privateEvent") final Boolean privateEvent) {
+      @JsonProperty("privateEvent") final Boolean privateEvent,
+      @JsonProperty("hub") final Hub hub) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
         relatedContent, published, deprecated, tags, null);
 
@@ -547,5 +551,13 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   public void setPrivateEvent(Boolean privateEvent) {
     this.privateEvent = privateEvent;
+  }
+
+  public Hub getHub() {
+    return hub;
+  }
+
+  public void setHub(Hub hub) {
+    this.hub = hub;
   }
 }

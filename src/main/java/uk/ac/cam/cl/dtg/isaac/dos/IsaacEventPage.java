@@ -70,6 +70,7 @@ public class IsaacEventPage extends Content {
   private Boolean allowGroupReservations;
 
   private Boolean privateEvent;
+  private Hub hub;
 
   @JsonCreator
   public IsaacEventPage(@JsonProperty("id") final String id,
@@ -97,7 +98,8 @@ public class IsaacEventPage extends Content {
                         @JsonProperty("EventStatus") final EventStatus eventStatus,
                         @JsonProperty("groupReservationLimit") final Integer groupReservationLimit,
                         @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations,
-                        @JsonProperty("privateEvent") final Boolean privateEvent) {
+                        @JsonProperty("privateEvent") final Boolean privateEvent,
+                        @JsonProperty("hub") final Hub hub) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
         null, relatedContent, published, deprecated, tags, null);
 
@@ -115,6 +117,7 @@ public class IsaacEventPage extends Content {
         groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
     this.allowGroupReservations = allowGroupReservations != null ? allowGroupReservations : false;
     this.privateEvent = privateEvent;
+    this.hub = hub;
   }
 
   /**
@@ -476,5 +479,13 @@ public class IsaacEventPage extends Content {
 
   public void setPrivateEvent(Boolean privateEvent) {
     this.privateEvent = privateEvent;
+  }
+
+  public Hub getHub() {
+    return hub;
+  }
+
+  public void setHub(Hub hub) {
+    this.hub = hub;
   }
 }
