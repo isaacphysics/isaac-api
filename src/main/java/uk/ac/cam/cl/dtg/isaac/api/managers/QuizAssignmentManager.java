@@ -25,20 +25,21 @@ import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Manage quiz assignments
@@ -87,8 +88,8 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
      */
     public QuizAssignmentDTO createAssignment(final QuizAssignmentDTO newAssignment) throws SegueDatabaseException, ContentManagerException {
         Validate.isTrue(newAssignment.getId() == null, "The id field must be empty.");
-        Validate.notNull(newAssignment.getQuizId());
-        Validate.notNull(newAssignment.getGroupId());
+        Objects.requireNonNull(newAssignment.getQuizId());
+        Objects.requireNonNull(newAssignment.getGroupId());
 
         Date now = new Date();
         Date newAssignmentStartDate;
@@ -189,7 +190,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
     }
 
     @Override
-    public String getAssignmentLikeName(QuizAssignmentDTO assignment) throws ContentManagerException {
+    public String getAssignmentLikeName(QuizAssignmentDTO assignment) {
         if (assignment.getQuizSummary() == null) {
             quizManager.augmentWithQuizSummary(Collections.singletonList(assignment));
         }

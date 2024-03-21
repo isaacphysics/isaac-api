@@ -15,11 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.List;
-import java.util.Map;
-
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+
+import java.util.List;
 
 /**
  *  Abstract class for managing general user preferences.

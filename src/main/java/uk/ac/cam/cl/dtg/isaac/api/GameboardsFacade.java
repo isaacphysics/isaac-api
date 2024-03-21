@@ -569,15 +569,19 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         GameboardState gameboardShowCriteria = null;
         if (showCriteria != null) {
-            if (showCriteria.toLowerCase().equals("completed")) {
-                gameboardShowCriteria = GameboardState.COMPLETED;
-            } else if (showCriteria.toLowerCase().equals("in_progress")) {
-                gameboardShowCriteria = GameboardState.IN_PROGRESS;
-            } else if (showCriteria.toLowerCase().equals("not_attempted")) {
-                gameboardShowCriteria = GameboardState.NOT_ATTEMPTED;
-            } else {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to interpret showOnly criteria specified "
-                        + showCriteria).toResponse();
+            switch (showCriteria.toLowerCase()) {
+                case "completed":
+                    gameboardShowCriteria = GameboardState.COMPLETED;
+                    break;
+                case "in_progress":
+                    gameboardShowCriteria = GameboardState.IN_PROGRESS;
+                    break;
+                case "not_attempted":
+                    gameboardShowCriteria = GameboardState.NOT_ATTEMPTED;
+                    break;
+                default:
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to interpret showOnly criteria specified "
+                            + showCriteria).toResponse();
             }
         }
 
@@ -592,17 +596,22 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     instruction = instruction.substring(1);
                 }
 
-                if (instruction.equals("created")) {
-                    parsedSortInstructions.add(immutableEntry(CREATED_DATE_FIELDNAME, s));
-                } else if (instruction.equals("visited")) {
-                    parsedSortInstructions.add(immutableEntry(VISITED_DATE_FIELDNAME, s));
-                } else if (instruction.equals("title")) {
-                    parsedSortInstructions.add(immutableEntry(TITLE_FIELDNAME, s));
-                } else if (instruction.equals("completion")) {
-                    parsedSortInstructions.add(immutableEntry(COMPLETION_FIELDNAME, s));
-                } else {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry we do not recognise the sort instruction "
-                            + instruction).toResponse();
+                switch (instruction) {
+                    case "created":
+                        parsedSortInstructions.add(immutableEntry(CREATED_DATE_FIELDNAME, s));
+                        break;
+                    case "visited":
+                        parsedSortInstructions.add(immutableEntry(VISITED_DATE_FIELDNAME, s));
+                        break;
+                    case "title":
+                        parsedSortInstructions.add(immutableEntry(TITLE_FIELDNAME, s));
+                        break;
+                    case "completion":
+                        parsedSortInstructions.add(immutableEntry(COMPLETION_FIELDNAME, s));
+                        break;
+                    default:
+                        return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry we do not recognise the sort instruction "
+                                + instruction).toResponse();
                 }
             }
         }

@@ -50,26 +50,20 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Date lastUpdated;
     private Date lastSeen;
     private EmailVerificationStatus emailVerificationStatus;
+    private Boolean teacherAccountPending;
 
     /**
      * Full constructor for the User object.
-     * 
-     * @param givenName
-     *            - Equivalent to firstname
-     * @param familyName
-     *            - Equivalent to second name
-     * @param email
-     *            - primary e-mail address
-     * @param emailVerificationStatus
-     *            - verification status of email address
-     * @param dateOfBirth
-     *            - date of birth to help with monitoring
-     * @param gender
-     *            - gender of the user
-     * @param registrationDate
-     *            - date of registration
-     * @param schoolId
-     *            - the list of linked authentication provider accounts.
+     *
+     * @param givenName               - Equivalent to firstname
+     * @param familyName              - Equivalent to second name
+     * @param email                   - primary e-mail address
+     * @param emailVerificationStatus - verification status of email address
+     * @param dateOfBirth             - date of birth to help with monitoring
+     * @param gender                  - gender of the user
+     * @param registrationDate        - date of registration
+     * @param schoolId                - the list of linked authentication provider accounts.
+     * @param teacherAccountPending   - whether the user is pending upgrade to a teacher account
      */
     @JsonCreator
     public RegisteredUserDTO(
@@ -81,8 +75,8 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
             @JsonProperty("gender") final Gender gender,
             @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("schoolId") final String schoolId,
-            @JsonProperty("countryCode") final String countryCode
-    ) {
+            @JsonProperty("countryCode") final String countryCode,
+            @JsonProperty("teacherAccountPending") final Boolean teacherAccountPending) {
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
@@ -92,6 +86,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.schoolId = schoolId;
         this.countryCode = countryCode;
         this.emailVerificationStatus = emailVerificationStatus;
+        this.teacherAccountPending = teacherAccountPending;
     }
 
 
@@ -418,6 +413,14 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     public void setRegisteredContextsLastConfirmed(Date registeredContextsLastConfirmed) {
         this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
+    }
+
+    public Boolean getTeacherAccountPending() {
+        return teacherAccountPending;
+    }
+
+    public void setTeacherAccountPending(Boolean teacherAccountPending) {
+        this.teacherAccountPending = teacherAccountPending;
     }
 
     @Override

@@ -81,7 +81,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
         String proxyPath = getProperties().getProperty(PROXY_PATH);
         StringBuilder uri = new StringBuilder();
 
-        if (proxyPath.equals("")) {
+        if (proxyPath.isEmpty()) {
             uri.append("https://");
             uri.append(hostname);
             uri.append("/api-docs/");

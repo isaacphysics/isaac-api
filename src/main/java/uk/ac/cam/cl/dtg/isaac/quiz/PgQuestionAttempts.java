@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -45,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -359,8 +359,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public void mergeAnonymousQuestionInformationWithRegisteredUserRecord(final String anonymousUserId,
             final Long registeredUserId) throws SegueDatabaseException {
-        Validate.notNull(anonymousUserId, "Anonymous user must not be null when merging anonymousQuestion info");
-        Validate.notNull(registeredUserId, "Registered user must not be null when merging anonymousQuestion info");
+        Objects.requireNonNull(anonymousUserId, "Anonymous user must not be null when merging anonymousQuestion info");
+        Objects.requireNonNull(registeredUserId, "Registered user must not be null when merging anonymousQuestion info");
 
         Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = this
                 .getAnonymousQuestionAttempts(anonymousUserId);
@@ -408,8 +408,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate, final Date toDate,
                                                                      final Long userId, final Boolean perDay) throws SegueDatabaseException {
-        Validate.notNull(fromDate);
-        Validate.notNull(toDate);
+        Objects.requireNonNull(fromDate);
+        Objects.requireNonNull(toDate);
 
         StringBuilder queryToBuild = new StringBuilder();
         queryToBuild.append("WITH filtered_attempts AS (SELECT * FROM question_attempts WHERE user_id = ?) ");

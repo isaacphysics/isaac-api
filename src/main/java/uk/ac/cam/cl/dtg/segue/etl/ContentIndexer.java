@@ -10,7 +10,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -170,7 +169,7 @@ public class ContentIndexer {
 
     void setNamedVersion(String alias, String version) {
         List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
-                .map((contentIndexType) -> contentIndexType.toString()).collect(Collectors.toList());
+                .map(CONTENT_INDEX_TYPE::toString).collect(Collectors.toList());
         es.addOrMoveIndexAlias(alias, version, allContentTypes);
     }
 
@@ -579,7 +578,7 @@ public class ContentIndexer {
      *            - Error message to associate with the problem file / content.
      */
     private synchronized void registerContentProblem(final Content c, final String message, Map<Content, List<String>> indexProblemCache) {
-        Validate.notNull(c);
+        Objects.requireNonNull(c);
 
         // try and make sure each dummy content object has a title
         if (c.getTitle() == null) {
@@ -587,7 +586,7 @@ public class ContentIndexer {
         }
 
         if (!indexProblemCache.containsKey(c)) {
-            indexProblemCache.put(c, new ArrayList<String>());
+            indexProblemCache.put(c, new ArrayList<>());
         }
 
         log.debug(message);
@@ -933,7 +932,7 @@ public class ContentIndexer {
         // Make sure no children of potentially expandable content are expandable, if so record a content error
         if (((null != content.getLayout() && content.getLayout().equals("tabs")) || content instanceof CodeSnippet) && null != content.getChildren()) {
             String expandableChildrenLog = collateExpandableChildren(content);
-            if (!expandableChildrenLog.equals("")) {
+            if (!expandableChildrenLog.isEmpty()) {
                 this.registerContentProblem(content, "Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
                         + "potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
                         + ". These children will have their expandable property disabled since we cannot handle nested "

@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePolicy;
-import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.util.Iterator;
 
@@ -19,12 +18,9 @@ import java.util.Iterator;
 public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
 
     protected final AssignmentManager assignmentManager;
-    protected final GameManager gameManager;
 
-    public TeacherAssignmentsBadgePolicy(AssignmentManager assignmentManager,
-                                         GameManager gameManager) {
+    public TeacherAssignmentsBadgePolicy(AssignmentManager assignmentManager) {
         this.assignmentManager = assignmentManager;
-        this.gameManager = gameManager;
     }
 
     @Override
@@ -70,7 +66,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
      * @param assignmentId a new assignment ID to add
      * @return the updated arrayNode
      */
-    protected ArrayNode updateAssignments(ArrayNode assignments, String assignmentId) throws SegueDatabaseException {
+    protected ArrayNode updateAssignments(ArrayNode assignments, String assignmentId) {
 
         if (assignments.has(assignmentId)) {
             return assignments;

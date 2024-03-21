@@ -86,18 +86,6 @@ public interface IUserDataManager {
     UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException;
 
     /**
-     * Get whether a list of users have a Segue account.
-     *
-     * @param users
-     *             - the list fo DOs to search for.
-     * @return List of Segue account existence information.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(final List<RegisteredUser> users)
-            throws SegueDatabaseException;
-
-    /**
      * Find a user by their linked account information.
      * 
      * @param provider

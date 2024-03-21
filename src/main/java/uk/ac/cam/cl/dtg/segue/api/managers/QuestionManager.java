@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.prometheus.client.Histogram;
 import ma.glasnost.orika.MapperFacade;
-import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,11 +66,13 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY_HISTOGRAM;
@@ -342,7 +343,7 @@ public class QuestionManager {
             if (null == questionClass || !ChoiceQuestion.class.isAssignableFrom(questionClass)) {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
-            ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
+            ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.getDeclaredConstructor().newInstance();
             testQuestion.setChoices(testDefinition.getUserDefinedChoices());
             IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
@@ -362,7 +363,7 @@ public class QuestionManager {
             }
 
             return results;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new BadRequestException(String.format(e.getMessage()));
         }
     }
@@ -378,7 +379,7 @@ public class QuestionManager {
      */
     public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
             final AbstractSegueUserDTO user) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         if (user instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;

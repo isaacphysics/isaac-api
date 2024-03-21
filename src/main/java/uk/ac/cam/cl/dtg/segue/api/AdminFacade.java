@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -27,17 +26,21 @@ import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserIdMergeDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ExternalAccountSynchronisationException;
 import uk.ac.cam.cl.dtg.segue.api.managers.IExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -56,16 +59,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dos.users.School;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserIdMergeDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -75,8 +68,6 @@ import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import jakarta.annotation.Nullable;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -94,6 +85,10 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -103,6 +98,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -756,8 +753,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
-     * @param subjectOfInterest
-     *            - if searching by subject interest
      * @return a userDTO or a segue error response
      */
     @GET
@@ -1104,23 +1099,22 @@ public class AdminFacade extends AbstractSegueFacade {
 
                 String oldLiveVersion = contentManager.getCurrentContentSHA();
 
-                HttpClient httpClient = new DefaultHttpClient();
+                HttpClient httpClient = HttpClient.newHttpClient();
+                URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/set_version_alias/%s/%s",
+                        getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
+                        this.contentIndex, version));
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
-                        + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/"
-                        + this.contentIndex + "/" + version);
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(url)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-                httpPost.addHeader("Content-Type", "application/json");
-
-                HttpResponse httpResponse = httpClient.execute(httpPost);
-
-                HttpEntity e = httpResponse.getEntity();
-
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.statusCode() == 200) {
                     log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
                     return Response.ok().build();
                 } else {
-                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());
                     r.setBypassGenericSiteErrorPage(true);
                     return r.toResponse();
                 }
@@ -1133,7 +1127,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (Exception e) {
             log.error("Exception during version change.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during version change.", e).toResponse();
         }
     }
 
@@ -1180,27 +1174,30 @@ public class AdminFacade extends AbstractSegueFacade {
         // TODO: Verify webhook secret.
         try {
             // We are only interested in the master branch
-            if(payload.getRef().equals("refs/heads/master")) {
+            if (payload.getRef().equals("refs/heads/master")) {
                 String newVersion = payload.getAfter();
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
-                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/new_version_alert/" + newVersion);
+                HttpClient httpClient = HttpClient.newHttpClient();
+                URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/new_version_alert/%s",
+                        getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
+                        newVersion));
 
-                HttpResponse httpResponse;
-                httpResponse = new DefaultHttpClient().execute(httpPost);
-                HttpEntity e = httpResponse.getEntity();
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(url)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.statusCode() == 200) {
                     return Response.ok().build();
                 } else {
-                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());
                     r.setBypassGenericSiteErrorPage(true);
                     return r.toResponse();
                 }
             }
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    e.getMessage()).toResponse();
+        } catch (IOException | InterruptedException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
         return Response.ok().build();
     }
@@ -1214,13 +1211,12 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/diagnostics")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response getDiagnostics(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+    public Response getDiagnostics(@Context final HttpServletRequest httpServletRequest) {
 
         try {
 
             if (isUserAnAdmin(userManager, httpServletRequest)) {
 
-                ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> diagnosticReport = Maps.newHashMap();
                 Map<String, Object> websocketReport = Maps.newHashMap();
                 Map<String, Object> runtimeReport = Maps.newHashMap();

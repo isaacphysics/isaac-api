@@ -58,5 +58,9 @@ public abstract class AbstractPgDataManager {
         if (value instanceof java.util.Date) {
             pst.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()));
         }
+
+        if (value instanceof Boolean) {
+            pst.setBoolean(index, (Boolean) value);
+        }
     }
 }

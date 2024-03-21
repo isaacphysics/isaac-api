@@ -32,9 +32,7 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -178,6 +176,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -393,11 +392,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Raspberry Pi
         try {
             // Ensure all the required config properties are present.
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
-            Validate.notNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
+            Objects.requireNonNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
 
             // If so, bind them to constants.
             this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
@@ -1010,11 +1009,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param logManager
      *            - dependency
-     * @param schoolManager
-     *            - dependency
      * @param contentManager
-     *            - dependency
-     * @param locationHistoryManager
      *            - dependency
      * @param groupManager
      *            - dependency
@@ -1025,16 +1020,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static StatisticsManager getStatsManager(final UserAccountManager userManager,
-                                                     final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
-                                                     final GroupManager groupManager, final QuestionManager questionManager,
+    private static StatisticsManager getStatsManager(final UserAccountManager userManager, final ILogManager logManager,
+                                                     final GitContentManager contentManager, final GroupManager groupManager,
+                                                     final QuestionManager questionManager,
                                                      final ContentSummarizerService contentSummarizerService,
                                                      final IUserStreaksManager userStreaksManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, contentSummarizerService, userStreaksManager);
+            statsManager = new StatisticsManager(userManager, logManager, contentManager,
+                    groupManager, questionManager, contentSummarizerService, userStreaksManager);
             log.info("Created Singleton of Statistics Manager");
         }
 
@@ -1044,7 +1038,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) throws SchedulerException {
+    private static SegueJobService getSegueJobService(final AbstractConfigLoader properties, final PostgresSqlDb database) {
         if (null == segueJobService) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
@@ -1168,7 +1162,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database) {
+    private static IExternalAccountManager getExternalAccountManager(final AbstractConfigLoader properties, final PostgresSqlDb database,
+                                                                     final ObjectMapper objectMapper) {
 
         if (null == externalAccountManager) {
             String mailjetKey = properties.getProperty(MAILJET_API_KEY);
@@ -1176,7 +1171,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             if (null != mailjetKey && null != mailjetSecret && !mailjetKey.isEmpty() && !mailjetSecret.isEmpty()) {
                 // If MailJet is configured, initialise the sync:
-                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database);
+                IExternalAccountDataManager externalAccountDataManager = new PgExternalAccountPersistenceManager(database, objectMapper);
                 MailJetApiClientWrapper mailJetApiClientWrapper = new MailJetApiClientWrapper(mailjetKey, mailjetSecret,
                         properties.getProperty(MAILJET_NEWS_LIST_ID), properties.getProperty(MAILJET_EVENTS_LIST_ID),
                         properties.getProperty(MAILJET_LEGAL_LIST_ID));
@@ -1227,10 +1222,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
                                                                               final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
-                                                                              final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                                                                              final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-                    objectMapper, uriManager, contentIndex);
+                    objectMapper, uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

@@ -105,7 +105,7 @@ public class QuizManager {
                     BooleanOperator.NOT, Collections.singletonList(visibleToRole)));
         }
 
-        ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(null, fieldsToMatch, startIndex, limit);
+        ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(fieldsToMatch, startIndex, limit);
 
         return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content, QuizSummaryDTO.class);
     }

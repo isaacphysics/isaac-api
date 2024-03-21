@@ -20,21 +20,22 @@ SET row_security = off;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
-COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted, country_code) FROM stdin;
-11	\N	Student	Erika	erika-student@test.com	STUDENT	\N	FEMALE	2022-07-03 17:34:07		A Manually Entered School	{}	\N	2022-07-05 17:34:31	VERIFIED	2022-08-09 10:53:44.547	erika-student@test.com	\N	0	f	\N
-4	\N	Editor	Test Editor	test-editor@test.com	CONTENT_EDITOR	\N	PREFER_NOT_TO_SAY	2019-08-01 12:50:32.631	133801	\N	{}	\N	2021-03-09 16:46:26.28	VERIFIED	2022-08-09 10:54:30.095	test-editor@test.com	nAAK4xSBuAPRejM4YPNfTKRDGK4Oa1VuL3EMmJburjE	0	f	\N
-3	\N	Event Manager	Test Event	test-event@test.com	EVENT_MANAGER	\N	OTHER	2019-08-01 12:43:14.583	133801	\N	{}	\N	2021-03-09 16:47:03.77	VERIFIED	2022-08-09 10:54:42.013	test-event@test.com	QlIS3PVS33I8jmMo3JPQgIn2xaKe4gFgwXfH4qiI8	0	f	\N
-1	\N	Progress	Test Progress	test-progress@test.com	STUDENT	\N	FEMALE	2019-08-01 12:28:22.869	130615	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:10:37.441	2021-11-05 10:52:13.018	VERIFIED	2022-08-09 10:54:55.362	test-progress@test.com	scIF1UJeYyGRGwGrwGNUyIWuZxKBrQHd8evcAeZk	0	f	\N
-6	\N	Student	Test Student	test-student@test.com	STUDENT	\N	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-08-09 10:55:06.592	test-student@test.com	ZMUU7NbjhUSawOClEzb1KPEMcUA93QCkxuGejMwmE	0	f	\N
-10	\N	Teacher	Dave	dave-teacher@test.com	TEACHER	\N	MALE	2022-07-06 15:15:00	110158	\N	{}	\N	\N	VERIFIED	2022-08-09 10:55:35.591	dave-teacher@test.com	\N	0	f	\N
-7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2022-08-09 10:56:00.055	alice-student@test.com	\N	0	f	\N
-8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-08-09 10:56:12.965	bob-student@test.com	\N	0	f	\N
-5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f	\N
-2	\N	Test	Test Admin	test-admin@test.com	ADMIN	\N	OTHER	2019-08-01 12:40:16.738	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:48:59.527	2022-07-06 10:48:59.673	VERIFIED	2023-07-10 09:57:41.777	test-admin@test.com	AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE	0	f	\N
-12	\N	Tutor	Test Tutor	test-tutor@test.com	TUTOR	\N	\N	2022-12-12 14:42:02.974	\N	\N	{}	\N	2022-12-12 14:42:02.974	VERIFIED	2022-12-12 14:48:40.236	test-tutor@test.com	4V115j6oH0YctCgBYXclb3WUT8D2Bz4nIaoJCasCJs	0	f	\N
-13	\N	Editor	Freddie	freddie-editor@test.com	CONTENT_EDITOR	\N	\N	2023-07-10 09:39:05.76	\N	\N	{}	\N	2023-07-10 09:39:05.76	VERIFIED	2023-07-10 09:39:06.28	freddie-editor@test.com	cBDgCe6EGrOICL86FTYdTkHCpTxhQ4G6kDwnlzWUOQ	0	f	\N
-14	\N	Eventmanager	Gary	gary-event@test.com	EVENT_MANAGER	\N	\N	2023-07-10 09:57:03.121	\N	\N	{}	\N	2023-07-10 09:57:03.121	VERIFIED	2023-07-10 09:57:03.698	gary-event@test.com	JypFx7bjIJnSVwuuLGEnk1teOl3dzQWNaEe9x0g	0	f	\N
-9	\N	Student	Charlie	charlie-student@test.com	STUDENT	\N	MALE	2022-07-05 17:34:07	130615	\N	{}	\N	2022-07-05 17:34:31	NOT_VERIFIED	2022-08-09 10:54:15.741	charlie-student@test.com	\N	0	f	\N
+COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted, country_code, teacher_account_pending) FROM stdin;
+11	\N	Student	Erika	erika-student@test.com	STUDENT	\N	FEMALE	2022-07-03 17:34:07		A Manually Entered School	{}	\N	2022-07-05 17:34:31	VERIFIED	2022-08-09 10:53:44.547	erika-student@test.com	\N	0	f	\N	f
+4	\N	Editor	Test Editor	test-editor@test.com	CONTENT_EDITOR	\N	PREFER_NOT_TO_SAY	2019-08-01 12:50:32.631	133801	\N	{}	\N	2021-03-09 16:46:26.28	VERIFIED	2022-08-09 10:54:30.095	test-editor@test.com	nAAK4xSBuAPRejM4YPNfTKRDGK4Oa1VuL3EMmJburjE	0	f	\N	f
+3	\N	Event Manager	Test Event	test-event@test.com	EVENT_MANAGER	\N	OTHER	2019-08-01 12:43:14.583	133801	\N	{}	\N	2021-03-09 16:47:03.77	VERIFIED	2022-08-09 10:54:42.013	test-event@test.com	QlIS3PVS33I8jmMo3JPQgIn2xaKe4gFgwXfH4qiI8	0	f	\N	f
+1	\N	Progress	Test Progress	test-progress@test.com	STUDENT	\N	FEMALE	2019-08-01 12:28:22.869	130615	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:10:37.441	2021-11-05 10:52:13.018	VERIFIED	2022-08-09 10:54:55.362	test-progress@test.com	scIF1UJeYyGRGwGrwGNUyIWuZxKBrQHd8evcAeZk	0	f	\N	f
+6	\N	Student	Test Student	test-student@test.com	STUDENT	\N	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-08-09 10:55:06.592	test-student@test.com	ZMUU7NbjhUSawOClEzb1KPEMcUA93QCkxuGejMwmE	0	f	\N	f
+10	\N	Teacher	Dave	dave-teacher@test.com	TEACHER	\N	MALE	2022-07-06 15:15:00	110158	\N	{}	\N	\N	VERIFIED	2022-08-09 10:55:35.591	dave-teacher@test.com	\N	0	f	\N	f
+7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2022-08-09 10:56:00.055	alice-student@test.com	\N	0	f	\N	f
+8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-08-09 10:56:12.965	bob-student@test.com	\N	0	f	\N	f
+5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f	\N	f
+2	\N	Test	Test Admin	test-admin@test.com	ADMIN	\N	OTHER	2019-08-01 12:40:16.738	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:48:59.527	2022-07-06 10:48:59.673	VERIFIED	2023-07-10 09:57:41.777	test-admin@test.com	AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE	0	f	\N	f
+12	\N	Tutor	Test Tutor	test-tutor@test.com	TUTOR	\N	\N	2022-12-12 14:42:02.974	\N	\N	{}	\N	2022-12-12 14:42:02.974	VERIFIED	2022-12-12 14:48:40.236	test-tutor@test.com	4V115j6oH0YctCgBYXclb3WUT8D2Bz4nIaoJCasCJs	0	f	\N	f
+13	\N	Editor	Freddie	freddie-editor@test.com	CONTENT_EDITOR	\N	\N	2023-07-10 09:39:05.76	\N	\N	{}	\N	2023-07-10 09:39:05.76	VERIFIED	2023-07-10 09:39:06.28	freddie-editor@test.com	cBDgCe6EGrOICL86FTYdTkHCpTxhQ4G6kDwnlzWUOQ	0	f	\N	f
+14	\N	Eventmanager	Gary	gary-event@test.com	EVENT_MANAGER	\N	\N	2023-07-10 09:57:03.121	\N	\N	{}	\N	2023-07-10 09:57:03.121	VERIFIED	2023-07-10 09:57:03.698	gary-event@test.com	JypFx7bjIJnSVwuuLGEnk1teOl3dzQWNaEe9x0g	0	f	\N	f
+9	\N	Student	Charlie	charlie-student@test.com	STUDENT	\N	MALE	2022-07-05 17:34:07	130615	\N	{}	\N	2022-07-05 17:34:31	NOT_VERIFIED	2022-08-09 10:54:15.741	charlie-student@test.com	\N	0	f	\N	f
+15	\N	Teacher	Test Unverified Caveat	test-unverified-caveat@test.com	TEACHER	\N	\N	2024-02-05 09:44:51.249	\N	N/A	{}	\N	2024-02-05 09:44:51.249	NOT_VERIFIED	\N	test-unverified-caveat@test.com	QAHQQS01ZLCj1iCFlGWyh7GS00kzVpi1mfZBRGNdsQ	0	f	GB	t
 \.
 
 
@@ -255,6 +256,7 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 12	dbPapTuZ+jEHYN3ZzS2yJfEZ4OFN4PenY53a2vgCB5E3jtQgR4A3cMQs3rgowD6ZtLRZS2pZLP3fq/bo9nRsZg==	1E4RZF4KVPhmci10DG8A4w==	SegueSCryptv1	\N	\N	2022-12-12 14:42:03.618265+00	2022-12-12 14:42:03.615+00
 13	fI3OzX0PbXWJPJGWN7d6GgXIxqDd8DNisGyF0cFWxhuS6uIBk2HvhRcAdjh/kadD4LIlYroD9Crd9zMT6TsfSQ==	VSpsq1+V48pHiZV/5lv4uw==	SegueSCryptv1	\N	\N	2023-07-10 08:39:06.107684+00	2023-07-10 08:39:06.107+00
 14	IzlHJX0RyCeY/k7YLQR27VZowm9SxTUVZbkLgZRi2Q6hnGzrEQUwh9fewOo73pyt+WAQJ5URPZ7azUhHu1RXWA==	7S8zRdqDuVK9E7KQj58TmA==	SegueSCryptv1	\N	\N	2023-07-10 08:57:03.393026+00	2023-07-10 08:57:03.391+00
+15	1OJ/FMVDtXI7gcC/t575nqtjDlzZLHvdEA3zgTGPdRzss2aK2B8o/HaQPy3OkjaAt5XWHA307g69G20qMYKRVQ==	yCg4zei908HorrK7y5orHg==	SegueSCryptv1	\N	\N	2024-02-05 09:44:51.738573+00	2024-02-05 09:44:51.737+00
 \.
 
 
@@ -493,7 +495,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 14, true);
+SELECT pg_catalog.setval('public.users_id_seq', 16, true);
 
 
 --

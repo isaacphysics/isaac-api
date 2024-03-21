@@ -20,7 +20,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -115,7 +114,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final GroupManager groupManager;
 
     private final GitContentManager contentManager;
-    private final String contentIndex;
     private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
@@ -137,7 +135,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     public EventsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final GitContentManager contentManager,
-                        @Named(Constants.CONTENT_INDEX) final String contentIndex,
                         final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,
                         final GroupManager groupManager,
@@ -147,7 +144,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
@@ -1460,14 +1456,15 @@ public class EventsFacade extends AbstractIsaacFacade {
                     eventOverviewBuilder.put("location", event.getLocation());
                 }
 
+                Map<BookingStatus, Long> bookingCounts =  this.bookingManager.getBookingStatusCountsByEventId(event.getId());
                 eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.CONFIRMED));
+                        bookingCounts.getOrDefault(BookingStatus.CONFIRMED, 0L));
                 eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.WAITING_LIST));
+                        bookingCounts.getOrDefault(BookingStatus.WAITING_LIST, 0L));
                 eventOverviewBuilder.put("numberAttended",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ATTENDED));
+                        bookingCounts.getOrDefault(BookingStatus.ATTENDED, 0L));
                 eventOverviewBuilder.put("numberAbsent",
-                        this.bookingManager.countNumberOfBookingsWithStatus(event.getId(), BookingStatus.ABSENT));
+                        bookingCounts.getOrDefault(BookingStatus.ABSENT, 0L));
 
                 if (null != event.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());

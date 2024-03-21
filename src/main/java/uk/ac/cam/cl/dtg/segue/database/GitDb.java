@@ -15,17 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import jakarta.ws.rs.NotFoundException;
-
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -47,17 +37,26 @@ import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.sshd.JGitKeyCache;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
-import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder.ConfigStoreFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder.ConfigStoreFactory;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore;
+
+import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 
 /**
@@ -110,7 +109,7 @@ public class GitDb {
      *            - The (probably mocked) Git object to use.
      */
     public GitDb(final Git gitHandle) {
-        Validate.notNull(gitHandle);
+        Objects.requireNonNull(gitHandle);
 
         this.privateKey = null;
         this.sshFetchUrl = null;
@@ -209,7 +208,7 @@ public class GitDb {
     public TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
             UnsupportedOperationException {
         Validate.notBlank(sha);
-        Validate.notNull(searchString);
+        Objects.requireNonNull(searchString);
 
         ObjectId commitId = gitHandle.getRepository().resolve(sha);
         if (null == commitId) {
@@ -327,7 +326,7 @@ public class GitDb {
         List<RevCommit> logList = null;
         try {
             Iterable<RevCommit> logs = gitHandle.log().add(ObjectId.fromString(this.getHeadSha())).call();
-            logList = new ArrayList<RevCommit>();
+            logList = new ArrayList<>();
 
             for (RevCommit rev : logs) {
                 logList.add(rev);

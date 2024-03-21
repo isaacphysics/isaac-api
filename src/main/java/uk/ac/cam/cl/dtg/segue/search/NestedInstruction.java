@@ -16,10 +16,6 @@
 
 package uk.ac.cam.cl.dtg.segue.search;
 
-import com.google.api.client.util.Lists;
-
-import java.util.List;
-
 public class NestedInstruction extends AbstractInstruction {
     private String path;
     private AbstractInstruction instruction;

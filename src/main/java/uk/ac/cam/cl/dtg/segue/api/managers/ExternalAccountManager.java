@@ -21,10 +21,10 @@ import com.mailjet.client.errors.MailjetRateLimitException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserExternalAccountChanges;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
 import uk.ac.cam.cl.dtg.util.email.MailJetSubscriptionAction;
 
@@ -56,6 +56,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
      *
      * @throws ExternalAccountSynchronisationException on unrecoverable errors with external providers.
      */
+    @Override
     public synchronized void synchroniseChangedUsers() throws ExternalAccountSynchronisationException {
         try {
             List<UserExternalAccountChanges> userRecordsToUpdate = database.getRecentlyChangedRecords();
@@ -142,7 +143,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
     private void updateUserOnMailJet(final String mailjetId, final UserExternalAccountChanges userRecord) throws SegueDatabaseException, MailjetException {
         Long userId = userRecord.getUserId();
         mailjetApi.updateUserProperties(mailjetId, userRecord.getGivenName(), userRecord.getRole().toString(),
-                userRecord.getEmailVerificationStatus().toString(), userRecord.getCountryCode());
+                userRecord.getEmailVerificationStatus().toString(), userRecord.getCountryCode(), userRecord.getStages());
 
         MailJetSubscriptionAction newsStatus = (userRecord.allowsNewsEmails() != null && userRecord.allowsNewsEmails()) ? MailJetSubscriptionAction.FORCE_SUBSCRIBE : MailJetSubscriptionAction.UNSUBSCRIBE;
         MailJetSubscriptionAction eventsStatus = (userRecord.allowsEventsEmails() != null && userRecord.allowsEventsEmails()) ? MailJetSubscriptionAction.FORCE_SUBSCRIBE : MailJetSubscriptionAction.UNSUBSCRIBE;

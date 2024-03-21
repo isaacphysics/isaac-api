@@ -19,7 +19,7 @@ public class RangeInstruction<T> extends AbstractInstruction {
     public long getBoost() {
         return this.boost;
     }
-    public RangeInstruction boost(long boost) {
+    public RangeInstruction<T> boost(long boost) {
         this.boost = boost;
         return this;
     }
@@ -27,7 +27,7 @@ public class RangeInstruction<T> extends AbstractInstruction {
     public T getLessThan() {
         return this.lessThan;
     }
-    public RangeInstruction lessThan(T lessThan) {
+    public RangeInstruction<T> lessThan(T lessThan) {
         this.lessThan = lessThan;
         return this;
     }
@@ -35,7 +35,7 @@ public class RangeInstruction<T> extends AbstractInstruction {
     public T getLessThanOrEqual() {
         return this.lessThanOrEqual;
     }
-    public RangeInstruction lessThanOrEqual(T lessThanOrEqual) {
+    public RangeInstruction<T> lessThanOrEqual(T lessThanOrEqual) {
         this.lessThanOrEqual = lessThanOrEqual;
         return this;
     }
@@ -43,7 +43,7 @@ public class RangeInstruction<T> extends AbstractInstruction {
     public T getGreaterThan() {
         return this.greaterThan;
     }
-    public RangeInstruction greaterThan(T greaterThan) {
+    public RangeInstruction<T> greaterThan(T greaterThan) {
         this.greaterThan = greaterThan;
         return this;
     }
@@ -51,7 +51,7 @@ public class RangeInstruction<T> extends AbstractInstruction {
     public T getGreaterThanOrEqual() {
         return this.greaterThanOrEqual;
     }
-    public RangeInstruction greaterThanOrEqual(T greaterThanOrEqual) {
+    public RangeInstruction<T> greaterThanOrEqual(T greaterThanOrEqual) {
         this.greaterThanOrEqual = greaterThanOrEqual;
         return this;
     }

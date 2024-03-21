@@ -103,11 +103,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_setValidAssignmentAsTeacher_assignsSuccessfully() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void assignBulkEndpoint_setValidAssignmentAsTeacher_assignsSuccessfully() throws Exception {
 
         // Arrange
         // log in as Teacher, create request
@@ -137,11 +133,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_setValidAssignmentAsTutor_assignsSuccessfully() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void assignBulkEndpoint_setValidAssignmentAsTutor_assignsSuccessfully() throws Exception {
 
         // Arrange
         // log in as Tutor, create request
@@ -171,11 +163,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTeacher_assignsSuccessfully() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTeacher_assignsSuccessfully() throws Exception {
 
         // Arrange
         // build due date
@@ -212,11 +200,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTutor_assignsSuccessfully() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void assignBulkEndpoint_scheduleAssignmentWithValidDueDateAsTutor_assignsSuccessfully() throws Exception {
 
         // Arrange
         // build due date
@@ -253,11 +237,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void assignBulkEndpoint_scheduleAssignmentWithDueDateInPastAsTeacher_failsToAssign() throws
-            NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-            AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-            AdditionalAuthenticationRequiredException, InvalidKeySpecException,
-            NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
+    public void assignBulkEndpoint_scheduleAssignmentWithDueDateInPastAsTeacher_failsToAssign() throws Exception {
 
         // Arrange
         // build due date

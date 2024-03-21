@@ -21,16 +21,17 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
+import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -39,18 +40,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -158,41 +154,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                 }
 
                 return new UserAuthenticationSettings(userId, providersList, results.getBoolean("has_segue_account"), results.getBoolean("mfa_status"));
-            }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
-        }
-    }
-
-
-    @Override
-    public Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users) throws SegueDatabaseException {
-        StringBuilder sb = new StringBuilder("SELECT * FROM user_credentials WHERE user_id IN (");
-        List<String> questionMarks = IntStream.range(0, users.size()).mapToObj(i -> "?").collect(Collectors.toList());
-        sb.append(String.join(",", questionMarks)).append(");");
-
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(sb.toString());
-        ) {
-            int userParamIndex = 1;
-            // These will come in handy later...
-            Map<Long, RegisteredUser> userMap = users.stream().collect(Collectors.toMap(RegisteredUser::getId, Function.identity()));
-            Map<RegisteredUser, Boolean> userCredentialsExistence = new HashMap<>();
-            // Add the parameters into the query
-            for (RegisteredUser user : users) {
-                pst.setLong(userParamIndex++, user.getId());
-                userCredentialsExistence.put(userMap.get(user.getId()), false);
-            }
-
-            // See comment in getAuthenticationProvidersByUsers
-            try (Statement statement = conn.createStatement();
-                 ResultSet queryResults = statement.executeQuery(pst.toString());
-            ) {
-                while (queryResults.next()) {
-                    RegisteredUser user = userMap.get(queryResults.getLong("user_id"));
-                    userCredentialsExistence.put(user, true);
-                }
-                return userCredentialsExistence;
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
@@ -534,7 +495,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             // update
             u = this.updateUser(user);
         }
-        
+
         return u;
     }
 
@@ -633,7 +594,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         String query = "UPDATE users SET last_seen = ? WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();
@@ -649,7 +610,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public void incrementSessionToken(RegisteredUser user) throws SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         String query = "UPDATE users SET session_token = session_token + 1 WHERE id = ?";
         try (Connection conn = database.getDatabaseConnection();
@@ -679,10 +640,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         }
 
-        String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender," +
-                " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen," +
-                " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed, country_code)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender,"
+                + " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen,"
+                + " email_verification_token, email_to_verify, registered_contexts, registered_contexts_last_confirmed,"
+                + " country_code, teacher_account_pending)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                + " ON CONFLICT DO NOTHING;";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -712,9 +675,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
+            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
 
             if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save user.");
+                throw new DuplicateAccountException();
             }
 
             try (ResultSet generatedKeys = pst.getGeneratedKeys()) {
@@ -775,7 +739,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
                 + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
                 + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
-                + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ? WHERE id = ?;";
+                + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ?, teacher_account_pending = ? WHERE id = ?;";
 
         List<String> userContextsJsonb = Lists.newArrayList();
         if (userToCreate.getRegisteredContexts() != null) {
@@ -804,7 +768,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             pst.setArray(15, userContexts);
             setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
             setValueHelper(pst, 17, userToCreate.getCountryCode());
-            setValueHelper(pst, 18, userToCreate.getId());
+            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
+            setValueHelper(pst, 19, userToCreate.getId());
 
 
             if (pst.executeUpdate() == 0) {
@@ -874,6 +839,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         u.setSessionToken(results.getInt("session_token"));
 
         u.setCountryCode(results.getString("country_code"));
+        u.setTeacherAccountPending(results.getBoolean("teacher_account_pending"));
 
         return u;
     }
@@ -929,10 +895,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     /**
      * Helper function to remove PII and set tombstone flag for a Registered User.
      * Note: This function mutates the object that it was provided.
-     *
-     * @return User object to be persisted that no longer has PII
      */
-    private static RegisteredUser removePIIFromUserDO(RegisteredUser user) {
+    private static void removePIIFromUserDO(RegisteredUser user) {
         user.setFamilyName(null);
         user.setGivenName(null);
         user.setEmail(UUID.randomUUID().toString());
@@ -947,6 +911,5 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             user.setDateOfBirth(calendar.getTime());
         }
 
-        return user;
     }
 }

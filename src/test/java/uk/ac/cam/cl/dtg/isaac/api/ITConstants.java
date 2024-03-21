@@ -73,6 +73,10 @@ public final class ITConstants {
     public static final String TEST_TUTOR_PASSWORD = "test1234";
     public static final long TEST_TUTOR_ID = 12L;
 
+    public static final String TEST_UNVERIFIED_CAVEAT_EMAIL = "test-unverified-caveat@test.com";
+    public static final String TEST_UNVERIFIED_CAVEAT_PASSWORD = "test1234";
+    public static final long TEST_UNVERIFIED_CAVEAT_ID = 15L;
+
     // Groups
     public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
     public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;

@@ -15,16 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.PostCode;
+
+import java.util.List;
 
 /**
  *
@@ -40,17 +36,6 @@ public interface LocationHistory {
      *             - if there is a db error.
      */
     LocationHistoryEvent getLatestByIPAddress(final String ipAddress) throws SegueDatabaseException;
-
-    /**
-     * Get all locations by an ip address.
-     * 
-     * @param ipAddress
-     *            of interest
-     * @return the location event records
-     * @throws SegueDatabaseException
-     *             - if there is a db error.
-     */
-    List<LocationHistoryEvent> getAllByIPAddress(final String ipAddress) throws SegueDatabaseException;
 
     /**
      * Store location information about an ip address.
@@ -82,32 +67,6 @@ public interface LocationHistory {
      *             - if there is a db error.
      */
     void updateLocationEventDate(final Long id, boolean isCurrent) throws SegueDatabaseException;
-
-    /**
-     * Utility method to allow requesting IP addresses in one single db request.
-     * 
-     * @param ipAddress
-     *            - list of ip addresses of interest. - if null then all ips will be returned.
-     * @return Map of Ip address to location history event.
-     * @throws SegueDatabaseException
-     *             - if we cannot talk to the db.
-     */
-    Map<String, LocationHistoryEvent> getLatestByIPAddresses(Collection<String> ipAddress)
-            throws SegueDatabaseException;
-    
-    /**
-     * Utility method to get all locations lastAccessed between a certain date range.
-     * 
-     * @param fromDate
-     *            - to filter locations
-     * @param toDate
-     *            - to filter loctions
-     * @return Map of Ip address to location history event.
-     * @throws SegueDatabaseException
-     *             - if something goes wrong with the database.
-     */
-    Map<String, LocationHistoryEvent> getLatestByIPAddresses(Date fromDate, Date toDate)
-            throws SegueDatabaseException;   
     
     /**
      * @param postCode

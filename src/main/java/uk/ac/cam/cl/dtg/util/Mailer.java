@@ -34,6 +34,7 @@ import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -208,7 +209,7 @@ public class Mailer {
             throws MessagingException {
         Validate.notEmpty(recipient);
         Validate.notBlank(recipient[0]);
-        Validate.notNull(fromAddress);
+        Objects.requireNonNull(fromAddress);
 
         Properties p = new Properties();
 

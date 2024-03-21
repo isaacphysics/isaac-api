@@ -19,13 +19,17 @@ import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.easymock.EasyMock.*;
@@ -90,6 +94,103 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals("signup", ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
 
         // check the other returned fields match the expected defaults
+        assertEquals(Role.STUDENT, ((RegisteredUserDTO) createResponse.getEntity()).getRole());
+    }
+
+    /**
+     * Tests user registration as a teacher where ALLOW_DIRECT_TEACHER_SIGNUP... is enabled. We expect to receive an
+     * Accepted response containing 'EMAIL_VERIFICATION_REQUIRED' and a caveat cookie.
+     *
+     * @throws Exception - not expected.
+     */
+    @Test
+    public void createOrUpdateEndpoint_registerAsTeacherWithSignUpFlagEnabled_acceptedAndSetsCaveatCookie()
+            throws Exception {
+        // Arrange
+        // inject config with feature flag enabled
+        AbstractConfigLoader propertiesForTest = new YamlLoader(
+                "src/test/resources/segue-integration-test-config.yaml,"
+                        + "src/test/resources/segue-integration-test-teacher-signup-override.yaml"
+        );
+
+        UserAccountManager userAccountManagerForTest = new UserAccountManager(pgUsers, questionManager,
+                propertiesForTest, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager,
+                userAuthenticationManager, secondFactorManager, userPreferenceManager);
+
+        UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManagerForTest, logManager,
+                userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
+
+        JSONObject payload = new JSONObject()
+                .put("registeredUser", new JSONObject()
+                        .put("email", ITConstants.TEST_SIGNUP_EMAIL)
+                        .put("password", ITConstants.TEST_SIGNUP_PASSWORD)
+                        .put("familyName", "signup")
+                        .put("givenName", "test")
+                        .put("role", "TEACHER")
+                )
+                .put("userPreferences", new JSONObject())
+                .put("passwordCurrent", JSONObject.NULL);
+
+        HttpServletRequest request = createRequestWithSession();
+        replay(request);
+
+        Capture<Cookie> cookieToCapture = Capture.newInstance();
+        HttpServletResponse response = createResponseAndCaptureCookies(cookieToCapture);
+        replay(response);
+
+        // Act
+        Response createResponse = usersFacadeForTest.createOrUpdateUserSettings(request, response, payload.toString());
+
+        // Assert
+        // check status code is 'Accepted' with the expected body
+        assertEquals(Response.Status.ACCEPTED.getStatusCode(), createResponse.getStatus());
+        assertEquals(true, ((Map<String, Boolean>) createResponse.getEntity()).get("EMAIL_VERIFICATION_REQUIRED"));
+
+        // check we have an auth cookie with INCOMPLETE_MANDATORY_EMAIL_VERIFICATION caveat only
+        assertEquals("SEGUE_AUTH_COOKIE", cookieToCapture.getValue().getName());
+        assertEquals(List.of(Constants.AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION.name()),
+                getCaveatsFromCookie(cookieToCapture.getValue()));
+
+        // check the user record has role of teacher and the pending flag set
+        assertEquals(Role.TEACHER, pgUsers.getByEmail(ITConstants.TEST_SIGNUP_EMAIL).getRole());
+        assertEquals(true, pgUsers.getByEmail(ITConstants.TEST_SIGNUP_EMAIL).getTeacherAccountPending());
+    }
+
+    /**
+     * Tests user registration as a teacher where ALLOW_DIRECT_TEACHER_SIGNUP... is disabled. This should ignore the
+     * requested teacher role and create a student account as is default.
+     *
+     * @throws Exception - not expected.
+     */
+    @Test
+    public void createOrUpdateEndpoint_registerAsTeacherWithSignUpFlagDisabled_succeedsWithRoleSelectionIgnored()
+            throws Exception {
+        // Arrange
+        JSONObject payload = new JSONObject()
+                .put("registeredUser", new JSONObject()
+                        .put("email", ITConstants.TEST_SIGNUP_EMAIL)
+                        .put("password", ITConstants.TEST_SIGNUP_PASSWORD)
+                        .put("familyName", "signup")
+                        .put("givenName", "test")
+                        .put("role", "TEACHER")
+                )
+                .put("userPreferences", new JSONObject())
+                .put("passwordCurrent", JSONObject.NULL);
+
+        HttpServletRequest request = createRequestWithSession();
+        replay(request);
+
+        Capture<Cookie> cookieToCapture = Capture.newInstance();
+        HttpServletResponse response = createResponseAndCaptureCookies(cookieToCapture);
+        replay(response);
+
+        // Act
+        Response createResponse = usersFacade.createOrUpdateUserSettings(request, response, payload.toString());
+
+        // Assert
+        // check status code is 'OK'
+        assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
+        // check we weren't given a teacher account, instead defaulting back to student
         assertEquals(Role.STUDENT, ((RegisteredUserDTO) createResponse.getEntity()).getRole());
     }
 

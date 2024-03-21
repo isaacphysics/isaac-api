@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
@@ -68,6 +67,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -91,10 +91,7 @@ public class GameManager {
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
     private final MapperFacade mapper;
-
     private final GitContentManager contentManager;
-    private final String contentIndex;
-
     private final QuestionManager questionManager;
 
     /**
@@ -108,17 +105,14 @@ public class GameManager {
      *            - a persistence manager that deals with storing and retrieving gameboards.
      * @param mapper
      *            - allows mapping between DO and DTO object types.
-     * @param contentIndex
-     *            - the current content index of interest.
      */
     @Inject
     public GameManager(final GitContentManager contentManager,
                        final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
-                       final QuestionManager questionManager, @Named(CONTENT_INDEX) final String contentIndex) {
+                       final QuestionManager questionManager) {
         this.contentManager = contentManager;
         this.gameboardPersistenceManager = gameboardPersistenceManager;
         this.questionManager = questionManager;
-        this.contentIndex = contentIndex;
 
         this.randomGenerator = new Random();
 
@@ -412,7 +406,7 @@ public class GameManager {
             @Nullable final Integer limit, @Nullable final GameboardState showOnly,
             @Nullable final List<Map.Entry<String, SortOrder>> sortInstructions) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
         if (null == usersGameboards || usersGameboards.isEmpty()) {
@@ -456,12 +450,9 @@ public class GameManager {
             }
         }
 
-        ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
-        Comparator<GameboardDTO> defaultComparitor = new Comparator<GameboardDTO>() {
-            public int compare(final GameboardDTO o1, final GameboardDTO o2) {
-                return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-            }
-        };
+        ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<>();
+        Comparator<GameboardDTO> defaultComparitor = (o1, o2) ->
+                o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
 
         // assume we want reverse date order for visited date for now.
         if (null == sortInstructions || sortInstructions.isEmpty()) {
@@ -475,48 +466,56 @@ public class GameManager {
                     reverseOrder = true;
                 }
 
-                if (sortInstruction.getKey().equals(CREATED_DATE_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getCreationDate().getTime() == o2.getCreationDate().getTime()) {
-                            return 0;
-                        } else {
-                            return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
-                        }
-                    }, reverseOrder);
-                } else if (sortInstruction.getKey().equals(VISITED_DATE_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getLastVisited().getTime() == o2.getLastVisited().getTime()) {
-                            return 0;
-                        } else {
-                            return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-                        }
-                    }, reverseOrder);
-                }  else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getTitle() == null && o2.getTitle() == null) {
-                            return 0;
-                        }
-                        if (o1.getTitle() == null) {
-                            return 1;
-                        }
-                        if (o2.getTitle() == null) {
-                            return -1;
-                        }
-                        return o1.getTitle().compareTo(o2.getTitle());
-                    }, reverseOrder);
-                } else if (sortInstruction.getKey().equals(COMPLETION_FIELDNAME)) {
-                    comparatorForSorting.addComparator((o1, o2) -> {
-                        if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
-                            return 0;
-                        }
-                        if (o1.getPercentageCompleted() == null) {
-                            return 1;
-                        }
-                        if (o2.getPercentageCompleted() == null) {
-                            return -1;
-                        }
-                        return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
-                    }, reverseOrder);
+                switch (sortInstruction.getKey()) {
+                    case CREATED_DATE_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getCreationDate().getTime() == o2.getCreationDate().getTime()) {
+                                return 0;
+                            } else {
+                                return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
+                            }
+                        }, reverseOrder);
+                        break;
+                    case VISITED_DATE_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getLastVisited().getTime() == o2.getLastVisited().getTime()) {
+                                return 0;
+                            } else {
+                                return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
+                            }
+                        }, reverseOrder);
+                        break;
+                    case TITLE_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getTitle() == null && o2.getTitle() == null) {
+                                return 0;
+                            }
+                            if (o1.getTitle() == null) {
+                                return 1;
+                            }
+                            if (o2.getTitle() == null) {
+                                return -1;
+                            }
+                            return o1.getTitle().compareTo(o2.getTitle());
+                        }, reverseOrder);
+                        break;
+                    case COMPLETION_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
+                                return 0;
+                            }
+                            if (o1.getPercentageCompleted() == null) {
+                                return 1;
+                            }
+                            if (o2.getPercentageCompleted() == null) {
+                                return -1;
+                            }
+                            return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
+                        }, reverseOrder);
+                        break;
+                    default:
+                        // This should not happen?
+                        break;
                 }
             }
         }
@@ -525,7 +524,7 @@ public class GameManager {
             comparatorForSorting.addComparator(defaultComparitor);
         }
 
-        Collections.sort(resultToReturn, comparatorForSorting);
+        resultToReturn.sort(comparatorForSorting);
 
         int toIndex;
         if (limit == null || startIndex + limit > resultToReturn.size()) {
@@ -563,8 +562,8 @@ public class GameManager {
     public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
             throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
             ContentManagerException {
-        Validate.notNull(gameboardDTO);
-        Validate.notNull(owner);
+        Objects.requireNonNull(gameboardDTO);
+        Objects.requireNonNull(owner);
 
         String gameboardId = gameboardDTO.getId();
         if (gameboardId == null) {
@@ -644,8 +643,8 @@ public class GameManager {
     public List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> gatherGameProgressData(
             final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
             ContentManagerException {
-        Validate.notNull(users);
-        Validate.notNull(gameboard);
+        Objects.requireNonNull(users);
+        Objects.requireNonNull(gameboard);
 
         List<ImmutablePair<RegisteredUserDTO, List<GameboardItem>>> result = Lists.newArrayList();
 
@@ -1102,8 +1101,8 @@ public class GameManager {
             // Only keep questions that have not been superseded.
             // Yes, this should probably be done in the fieldsToMap filter above, but this is simpler.
             if (c instanceof IsaacQuestionPageDTO) {
-                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO)c;
-                if (qp.getSupersededBy() != null && !qp.getSupersededBy().equals("")) {
+                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO) c;
+                if (qp.getSupersededBy() != null && !qp.getSupersededBy().isEmpty()) {
                     // This question has been superseded. Don't include it.
                     continue;
                 }
@@ -1126,20 +1125,18 @@ public class GameManager {
      *             - the gameboard item.
      * @param questionAttemptsFromUser
      *             - the user that may or may not have attempted questions in the gameboard.
-     * @return gameItem
-     *             - the gameItem passed in having been modified (augmented)), returned for possiblity of chaining.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      * @throws ResourceNotFoundException
      *             - if we cannot find the question specified.
      */
-    private GameboardItem augmentGameItemWithAttemptInformation(
+    private void augmentGameItemWithAttemptInformation(
             final GameboardItem gameItem,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>>
                     questionAttemptsFromUser)
             throws ContentManagerException, ResourceNotFoundException {
-        Validate.notNull(gameItem, "gameItem cannot be null");
-        Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
+        Objects.requireNonNull(gameItem, "gameItem cannot be null");
+        Objects.requireNonNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
         List<QuestionPartState> questionPartStates = Lists.newArrayList();
         int questionPartsCorrect = 0;
@@ -1215,8 +1212,6 @@ public class GameManager {
             state = GameboardItemState.IN_PROGRESS;
         }
         gameItem.setState(state);
-
-        return gameItem;
     }
     
     /**
@@ -1456,17 +1451,16 @@ public class GameManager {
     }
 
     /**
-     * Provides validation for a given gameboard. For use prior to persistence.
+     * Validate gameboard or throw an exception. For use prior to persistence.
      * 
      * @param gameboardDTO
      *            - to check
-     * @return the gameboard (unchanged) if everything is ok, otherwise an exception will be thrown.
      * @throws InvalidGameboardException
      *             - If the gameboard is considered to be invalid.
      * @throws NoWildcardException
      *             - if the wildcard cannot be found.
      */
-    private GameboardDTO validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
+    private void validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
             NoWildcardException {
         if (gameboardDTO.getId() != null && gameboardDTO.getId().contains(" ")) {
             throw new InvalidGameboardException(
@@ -1508,7 +1502,5 @@ public class GameManager {
             throw new InvalidGameboardException(
                     "There was a problem validating the gameboard due to ContentManagerException another exception.");
         }
-
-        return gameboardDTO;
     }
 }

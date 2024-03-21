@@ -15,12 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException;
+
+import java.io.IOException;
 
 /**
  * Content deserializer will try and use the map built up in the ContentMapper class to determine what subtype of
@@ -34,7 +33,7 @@ public class TrimWhitespaceDeserializer extends JsonDeserializer<String> {
 
     @Override
     public String deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
-            throws IOException, JsonProcessingException, JsonMappingException {
+            throws IOException {
         return jsonParser.getText().trim();
     }
 }

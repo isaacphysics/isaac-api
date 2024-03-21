@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -26,6 +26,9 @@ import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -48,21 +51,15 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import jakarta.annotation.Nullable;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -80,6 +77,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_STRICT_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -114,10 +116,10 @@ public class UserAuthenticationManager {
     public UserAuthenticationManager(final IUserDataManager database,
                                      final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final EmailManager emailQueue) {
-        Validate.notNull(properties.getProperty(HMAC_SALT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
-        Validate.notNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
-        Validate.notNull(properties.getProperty(HOST_NAME));
+        Objects.requireNonNull(properties.getProperty(HMAC_SALT));
+        Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
+        Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_REMEMBERED));
+        Objects.requireNonNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
        
@@ -272,7 +274,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser getSegueUserFromLinkedAccount(final AuthenticationProvider provider, final String providerId)
             throws SegueDatabaseException {
-        Validate.notNull(provider);
+        Objects.requireNonNull(provider);
         Validate.notBlank(providerId);
 
         RegisteredUser user = database.getByLinkedAccount(provider, providerId);
@@ -307,7 +309,7 @@ public class UserAuthenticationManager {
             SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException,
             NoCredentialsAvailableException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(email);
-        Validate.notNull(plainTextPassword);
+        Objects.requireNonNull(plainTextPassword);
         IAuthenticator authenticator = mapToProvider(provider);
         
         if (authenticator instanceof IPasswordAuthenticator) {
@@ -333,14 +335,19 @@ public class UserAuthenticationManager {
         return passwordAuthenticator.hasPasswordRegistered(user);
     }
 
+    public RegisteredUser getUserFromSession(final HttpServletRequest request) {
+        return getUserFromSession(request, Set.of());
+    }
+
     /**
      * This method will look up a userDO based on the session information provided.
      * @param request containing session information
+     * @param acceptableCaveats return a user object even if the session indicates their authentication isn't fully complete for one of these reasons.
      * @return either a user or null if we couldn't find the user for whatever reason.
      */
-    public RegisteredUser getUserFromSession(final HttpServletRequest request, final boolean allowIncompleteLoginsToReturnUser) {
+    public RegisteredUser getUserFromSession(final HttpServletRequest request, final Set<AuthenticationCaveat> acceptableCaveats) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         Map<String, String> currentSessionInformation;
         try {
@@ -374,16 +381,16 @@ public class UserAuthenticationManager {
             }
         }
 
-        return getUserFromSessionInformationMap(currentSessionInformation, allowIncompleteLoginsToReturnUser);
+        return getUserFromSessionInformationMap(currentSessionInformation, acceptableCaveats);
     }
 
     /**
-     * @see #getUserFromSession(HttpServletRequest,boolean) - the two types of "request" have identical methods but are not
+     * @see #getUserFromSession(HttpServletRequest,Set) - the two types of "request" have identical methods but are not
      *           related by interfaces or inheritance and so require duplicated methods!
      */
     public RegisteredUser getUserFromSession(final UpgradeRequest request) {
         // WARNING: There are two public getUserFromSession methods: ensure you check both!
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         Map<String, String> currentSessionInformation;
         try {
@@ -397,8 +404,8 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        // WebSocket UpgradeRequests should never use a partial login:
-        return getUserFromSessionInformationMap(currentSessionInformation, false);
+        // WebSocket UpgradeRequests should never accept a session with caveats
+        return getUserFromSessionInformationMap(currentSessionInformation, Set.of());
     }
 
     /**
@@ -432,25 +439,31 @@ public class UserAuthenticationManager {
      * as per normal users but will have an additional status flag that indicates they haven't completed MFA.
      * This method will act upon that by refusing to return the user if the boolean parameter is set to false.
      *
-     * @see #getUserFromSession(HttpServletRequest, boolean) - there are two types of "request" and they have identical methods
+     * @see #getUserFromSession(HttpServletRequest, Set) - there are two types of "request" and they have identical methods
      * @see #getUserFromSession(UpgradeRequest) -     but unrelated by interfaces/inheritance, so require duplication!
      *
      * @param currentSessionInformation - the session information map extracted from the cookie.
-     * @param allowIncompleteLoginsToReturnUser - boolean if true will allow users that haven't completed MFA to be returned,
-     *                                          false will be stricter and return null if user hasn't completed MFA.
+     * @param expectedCaveats - return a user object even if the session indicates their authentication isn't fully complete for one of these reasons
      * @return either the valid user from the cookie, or null if no valid user
      */
     private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation,
-                                                            final boolean allowIncompleteLoginsToReturnUser) {
-        if (!allowIncompleteLoginsToReturnUser) {
-            // check if the session has a caveat about incomplete MFA Login
-            if (!Strings.isNullOrEmpty(currentSessionInformation.get(PARTIAL_LOGIN_FLAG))
-                    && Boolean.parseBoolean(currentSessionInformation.get(PARTIAL_LOGIN_FLAG))) {
-                // login is incomplete we cannot proceed.
-                log.debug("Incomplete MFA flow - no user object to be provided");
+                                                            final Set<AuthenticationCaveat> expectedCaveats) {
+
+        // Check for authentication caveats, and return null if any present are unexpected
+        if (null != currentSessionInformation.get(SESSION_CAVEATS)) {
+            try {
+                ArrayList<String> caveatFlags = serializationMapper.readValue(currentSessionInformation.get(SESSION_CAVEATS), new TypeReference<>() {});
+                for (String caveatFlag : caveatFlags) {
+                    if (!expectedCaveats.contains(AuthenticationCaveat.valueOf(caveatFlag))) {
+                        return null;
+                    }
+                }
+            } catch (JsonProcessingException | IllegalArgumentException e) {
+                log.debug("Failed to deserialize session caveats!");
                 return null;
             }
         }
+
         // Retrieve the user from database.
         try {
             // Get the user the cookie claims to belong to from the session information:
@@ -483,7 +496,7 @@ public class UserAuthenticationManager {
      */
     public RegisteredUser createUserSession(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user, final boolean rememberMe) {
-        this.createSession(request, response, user, false, rememberMe);
+        this.createSession(request, response, user, Set.of(), rememberMe);
         return user;
     }
 
@@ -496,13 +509,46 @@ public class UserAuthenticationManager {
      * @param rememberMe - Boolean to indicate whether or not this cookie expiry duration should be long or short
      * @return the request and response will be modified and the original userDO will be returned for convenience.
      */
-    public RegisteredUser createIncompleteLoginUserSession(final HttpServletRequest request, final HttpServletResponse response,
-                                            final RegisteredUser user, final boolean rememberMe) {
-        this.createSession(request, response, user, true, rememberMe);
+    public RegisteredUser createUserSessionWithCaveats(final HttpServletRequest request, final HttpServletResponse response,
+                                                       final RegisteredUser user, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
+        this.createSession(request, response, user, authenticationCaveats, rememberMe);
         return user;
     }
 
     /**
+     * Remove a session caveat from a user's session. Typically used once the user has completed some additional step
+     * required for login e.g. MFA.
+     *
+     * @param request to identify the session
+     * @param response to update the session cookie
+     * @param user the user who should be logged in
+     * @param caveatToRemove the caveat to remove
+     * @return the request and response will be modified and the original userDO will be returned for convenience
+     * @throws InvalidSessionException if there is no valid session
+     * @throws IOException if we are unable to read the session caveats from the cookie
+     */
+    public RegisteredUser removeCaveatFromUserSession(final HttpServletRequest request, final HttpServletResponse response,
+                                            final RegisteredUser user,
+                                            final AuthenticationCaveat caveatToRemove) throws InvalidSessionException,
+            IOException {
+        Map<String, String> session = getSegueSessionFromRequest(request);
+        String caveats = session.get(SESSION_CAVEATS);
+
+        if (null == caveats) {
+            return null;
+        }
+
+        ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<>() {});
+        if (!caveatFlags.remove(caveatToRemove.toString())) {
+            log.warn(String.format("Attempted to remove caveat '%s' from user (%s) session, but no such caveat was present!",
+                    caveatToRemove, user.getId()));
+        }
+        Set<AuthenticationCaveat> remainingCaveats = caveatFlags.stream().map(AuthenticationCaveat::valueOf).collect(Collectors.toSet());
+
+        return this.createUserSessionWithCaveats(request, response, user, remainingCaveats, true);
+    }
+
+    /**;
      * Destroy a session attached to the request.
      * 
      * @param request
@@ -511,7 +557,7 @@ public class UserAuthenticationManager {
      *            to destroy the segue cookie.
      */
     public void destroyUserSession(final HttpServletRequest request, final HttpServletResponse response) {
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
         try {
             request.getSession().invalidate();
             Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
@@ -575,9 +621,9 @@ public class UserAuthenticationManager {
     public void linkProviderToExistingAccount(final RegisteredUser currentUser,
             final AuthenticationProvider federatedAuthenticator, final UserFromAuthProvider providerUserObject)
             throws SegueDatabaseException {
-        Validate.notNull(currentUser);
-        Validate.notNull(federatedAuthenticator);
-        Validate.notNull(providerUserObject);
+        Objects.requireNonNull(currentUser);
+        Objects.requireNonNull(federatedAuthenticator);
+        Objects.requireNonNull(providerUserObject);
 
         this.database.linkAuthProviderToAccount(currentUser, federatedAuthenticator,
                 providerUserObject.getProviderUserId());
@@ -634,14 +680,12 @@ public class UserAuthenticationManager {
      *             - if the configured algorithm is not valid.
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     public final void resetPasswordRequest(final RegisteredUser userDO, final RegisteredUserDTO userAsDTO)
             throws InvalidKeySpecException,
-            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
+            NoSuchAlgorithmException, SegueDatabaseException {
         try {
             IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                     .get(AuthenticationProvider.SEGUE);
@@ -728,7 +772,7 @@ public class UserAuthenticationManager {
     private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO, final Map<String, Object> additionalEmailValues)
             throws
             SegueDatabaseException {
-        Validate.notNull(user);
+        Objects.requireNonNull(user);
         
         // Get the user's federated authenticators
         List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
@@ -832,7 +876,7 @@ public class UserAuthenticationManager {
      */
     private boolean ensureNoCSRF(final HttpServletRequest request, final IOAuthAuthenticator oauthProvider)
             throws CrossSiteRequestForgeryException {
-        Validate.notNull(request);
+        Objects.requireNonNull(request);
 
         String key;
         if (oauthProvider instanceof IOAuth2Authenticator) {
@@ -867,15 +911,16 @@ public class UserAuthenticationManager {
      *            to store the session in our own segue cookie.
      * @param user
      *            account to associate the session with.
-     * @param partialLoginFlag
-     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     * @param authenticationCaveats
+     *            to indicate if authentication is not fully complete for some reason. Endpoints (e.g. MFA) must decide
+     *            which caveats are acceptable, if any.
      * @param rememberMe
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-                               final RegisteredUser user, final boolean partialLoginFlag, final boolean rememberMe) {
+                               final RegisteredUser user, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
         int sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(rememberMe ? SESSION_EXPIRY_SECONDS_REMEMBERED : SESSION_EXPIRY_SECONDS_DEFAULT));
-        createSession(request, response, user, sessionExpiryTimeInSeconds, partialLoginFlag, rememberMe);
+        createSession(request, response, user, sessionExpiryTimeInSeconds, authenticationCaveats, rememberMe);
     }
 
     /**
@@ -889,28 +934,30 @@ public class UserAuthenticationManager {
      *            account to associate the session with.
      * @param sessionExpiryTimeInSeconds
      *            max age of the cookie if not a partial login.
-     * @param partialLoginFlag
-     *            Boolean to indicate whether or not this cookie represents a partial login (true) or full (false)
+     * @param authenticationCaveats
+     *            to indicate if authentication is not fully complete for some reason. Endpoints (e.g. MFA) must decide
+     *            which caveats are acceptable, if any.
      * @param rememberMe
      *            Boolean to indicate whether or not this cookie expiry duration should be long or short
      */
     private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser user, int sessionExpiryTimeInSeconds, final boolean partialLoginFlag, final boolean rememberMe) {
-        Validate.notNull(response);
-        Validate.notNull(user);
-        Validate.notNull(user.getId());
+            final RegisteredUser user, int sessionExpiryTimeInSeconds, final Set<AuthenticationCaveat> authenticationCaveats, final boolean rememberMe) {
+        Objects.requireNonNull(response);
+        Objects.requireNonNull(user);
+        Objects.requireNonNull(user.getId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        final int PARTIAL_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
+        final int CAVEAT_SESSION_EXPIRY_TIME_IN_SECONDS = 1200; // 20 mins
 
         String userId = user.getId().toString();
         String userSessionToken = user.getSessionToken().toString();
         String hmacKey = properties.getProperty(HMAC_SALT);
-        String partialLoginFlagString = null;
+        Set<String> caveatFlags = authenticationCaveats.stream().map(AuthenticationCaveat::toString)
+                .collect(Collectors.toSet());
 
         try {
-            if (partialLoginFlag) {
-                // use shortened expiry time if partial login
-                sessionExpiryTimeInSeconds = PARTIAL_EXPIRY_TIME_IN_SECONDS;
+            if (!authenticationCaveats.isEmpty()) {
+                // use shortened expiry time if there are any caveats
+                sessionExpiryTimeInSeconds = CAVEAT_SESSION_EXPIRY_TIME_IN_SECONDS;
             }
 
             Calendar calendar = Calendar.getInstance();
@@ -922,12 +969,9 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(SESSION_TOKEN, userSessionToken);
             sessionInformationBuilder.put(DATE_EXPIRES, sessionExpiryDate);
 
-            if (partialLoginFlag) {
-                partialLoginFlagString = String.valueOf(true);
-                sessionInformationBuilder.put(PARTIAL_LOGIN_FLAG, partialLoginFlagString);
-            }
+            sessionInformationBuilder.put(SESSION_CAVEATS, serializationMapper.writeValueAsString(caveatFlags));
 
-            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, partialLoginFlagString);
+            String sessionHMAC = calculateSessionHMAC(hmacKey, userId, sessionExpiryDate, userSessionToken, caveatFlags);
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
@@ -963,8 +1007,8 @@ public class UserAuthenticationManager {
      * @return true if it is still valid, false if not.
      */
     private boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
-        Validate.notNull(sessionInformation);
-        Validate.notNull(userFromDatabase);
+        Objects.requireNonNull(sessionInformation);
+        Objects.requireNonNull(userFromDatabase);
 
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
@@ -1020,19 +1064,22 @@ public class UserAuthenticationManager {
      *            - Current date
      * @param sessionToken
      *            - a token allowing session invalidation
-     * @param partialLoginFlag
+     * @param caveatFlags
      *            - Boolean data to encode in the cookie - true if a partial login
      * @return HMAC signature.
      */
     private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken,
-                                        @Nullable final String partialLoginFlag) {
+                                        @Nullable final Set<String> caveatFlags) {
         StringBuilder sb = new StringBuilder();
         sb.append(userId);
         sb.append("|").append(currentDate);
         sb.append("|").append(sessionToken);
 
-        if (partialLoginFlag != null) {
-            sb.append("|").append(partialLoginFlag);
+        if (null != caveatFlags) {
+            List<String> sortedCaveatFlags = caveatFlags.stream().sorted().collect(Collectors.toList());
+            for (String c : sortedCaveatFlags) {
+                sb.append("|").append(c);
+            }
         }
 
         return UserAuthenticationManager.calculateHMAC(key, sb.toString());
@@ -1052,10 +1099,20 @@ public class UserAuthenticationManager {
         String supposedUserId = sessionInformation.get(SESSION_USER_ID);
         String userSessionToken = sessionInformation.get(SESSION_TOKEN);
         String sessionDate = sessionInformation.get(DATE_EXPIRES);
-        String partialLoginFlag = sessionInformation.get(PARTIAL_LOGIN_FLAG);
+        Set<String> caveatFlags = Set.of();
+
+        if (null != sessionInformation.get(SESSION_CAVEATS)) {
+            try {
+                caveatFlags = serializationMapper.readValue(sessionInformation.get(SESSION_CAVEATS), new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                log.debug("Failed to deserialize session caveats!");
+                caveatFlags = null;
+            }
+        }
+
         String sessionHMAC = sessionInformation.get(HMAC);
 
-        String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, partialLoginFlag);
+        String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, caveatFlags);
         return ourHMAC.equals(sessionHMAC);
     }
 

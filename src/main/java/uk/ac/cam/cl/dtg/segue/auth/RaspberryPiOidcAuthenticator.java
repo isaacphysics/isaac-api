@@ -98,7 +98,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             @Named(Constants.RASPBERRYPI_CALLBACK_URI) final String callbackUri,
             @Named(Constants.RASPBERRYPI_OAUTH_SCOPES) final String oauthScopes,
             @Named(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH) final String idpMetadataLocation
-    ) throws AuthenticatorSecurityException, IOException {
+    ) throws IOException {
 
         Validate.notBlank(clientId, "Missing resource %s", clientId);
         Validate.notBlank(clientSecret, "Missing resource %s", clientSecret);
@@ -193,8 +193,8 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
                     null,
                     null,
                     null,
-                    country
-            );
+                    country,
+                    false);
         }
     }
 

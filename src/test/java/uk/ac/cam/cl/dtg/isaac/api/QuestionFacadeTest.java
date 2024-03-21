@@ -21,17 +21,16 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.core.EntityTag;
@@ -69,14 +68,13 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
 
         String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
         IMisuseMonitor misuseMonitor = createMock(IMisuseMonitor.class);
-        UserBadgeManager userBadgeManager = createMock(UserBadgeManager.class);
         IUserStreaksManager userStreaksManager = createMock(IUserStreaksManager.class);
         UserAssociationManager userAssociationManager = createMock(UserAssociationManager.class);
 
         questionManager = createMock(QuestionManager.class);
 
-        questionFacade = new QuestionFacade(properties, contentMapper, contentManager, contentIndex,
-            userManager, questionManager, logManager, misuseMonitor, userBadgeManager, userStreaksManager, userAssociationManager);
+        questionFacade = new QuestionFacade(properties, contentMapper, contentManager,
+            userManager, questionManager, logManager, misuseMonitor, userStreaksManager, userAssociationManager);
 
         expect(contentManager.getCurrentContentSHA()).andStubReturn(contentIndex);
         expect(contentManager.getContentDOById(questionDO.getId())).andStubReturn(questionDO);

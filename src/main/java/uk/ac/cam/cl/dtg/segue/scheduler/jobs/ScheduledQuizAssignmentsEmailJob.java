@@ -46,12 +46,7 @@ public class ScheduledQuizAssignmentsEmailJob implements Job {
     private void startSingleScheduledQuizAssignment(final QuizAssignmentDTO quizAssignment) {
         String emailKey = String.format("%d@scheduled_quiz_assignment", quizAssignment.getId());
         boolean sendAssignmentEmail;
-        try {
-            sendAssignmentEmail = this.pgScheduledEmailManager.commitToSchedulingEmail(emailKey);
-        } catch (SegueDatabaseException e) {
-            log.debug("Skipping email for scheduled assignment since it was already sent");
-            sendAssignmentEmail = false;
-        }
+        sendAssignmentEmail = this.pgScheduledEmailManager.commitToSchedulingEmail(emailKey);
         if (sendAssignmentEmail) {
             try {
                 IsaacQuizDTO quiz = quizManager.findQuiz(quizAssignment.getQuizId());

@@ -15,17 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.util.Date;
-
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * Default quiz validator for ChoiceQuestions.
@@ -38,8 +37,8 @@ public class ChoiceQuestionValidator implements IValidator {
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, 
             final Choice answer) {
-        Validate.notNull(question);
-        Validate.notNull(answer);
+        Objects.requireNonNull(question);
+        Objects.requireNonNull(answer);
 
         ChoiceQuestion choiceQuestion;
         // These variables store the important features of the response we'll send.
