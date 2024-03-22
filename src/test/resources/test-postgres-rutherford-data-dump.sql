@@ -84,10 +84,6 @@ COPY public.event_bookings (id, event_id, created, user_id, reserved_by, status,
 2	_regular_test_event	2022-07-06 10:54:41.525	7	\N	CONFIRMED	2022-07-06 10:54:41.525	{"yearGroup": "13", "emergencyName": "Alice's mom", "emergencyNumber": "+44020123456", "dietaryRequirements": "Alice's dietary requirements", "accessibilityRequirements": "Alice's accessibility requirements"}	\N
 3	_regular_test_event	2022-07-06 10:56:36.676	8	\N	CONFIRMED	2022-07-06 10:56:36.676	{"yearGroup": "9", "emergencyName": "Bob's dad", "emergencyNumber": "+44020654321", "dietaryRequirements": "Bob's dietary requirements", "accessibilityRequirements": "Bob's accessibility requirements"}	\N
 4	_regular_test_event	2022-07-14 14:41:58	11	\N	CONFIRMED	2022-07-14 14:42:07	{"yearGroup": "8", "emergencyName": "Charlie's uncle", "emergencyNumber": "+44020918273", "dietaryRequirements": "Charlie's dietary requirements", "accessibilityRequirements": "Charlie's accessibility requirements"}	\N
-5	dc8686cf-be3b-4c0d-8761-1e5504146867	2022-07-06 10:09:23.225	6	\N	CONFIRMED	2022-07-06 10:09:23.225	{"yearGroup": "13", "emergencyName": "Test Student Parent", "emergencyNumber": "+44020987654", "dietaryRequirements": "Test Student dietary requirements", "accessibilityRequirements": "Test Student accessibility requirements"}	\N
-6	dc8686cf-be3b-4c0d-8761-1e5504146867	2022-07-06 10:54:41.525	7	\N	WAITING_LIST	2022-07-06 10:54:41.525	{"yearGroup": "13", "emergencyName": "Alice's mom", "emergencyNumber": "+44020123456", "dietaryRequirements": "Alice's dietary requirements", "accessibilityRequirements": "Alice's accessibility requirements"}	\N
-7	dc8686cf-be3b-4c0d-8761-1e5504146867	2022-07-06 10:56:36.676	8	\N	WAITING_LIST	2022-07-06 10:56:36.676	{"yearGroup": "9", "emergencyName": "Bob's dad", "emergencyNumber": "+44020654321", "dietaryRequirements": "Bob's dietary requirements", "accessibilityRequirements": "Bob's accessibility requirements"}	\N
-8	dc8686cf-be3b-4c0d-8761-1e5504146867	2022-07-14 14:41:58	11	\N	WAITING_LIST	2022-07-14 14:42:07	{"yearGroup": "8", "emergencyName": "Charlie's uncle", "emergencyNumber": "+44020918273", "dietaryRequirements": "Charlie's dietary requirements", "accessibilityRequirements": "Charlie's accessibility requirements"}	\N
 \.
 
 
@@ -512,7 +508,7 @@ SELECT pg_catalog.setval('public.assignments_id_seq', 4, true);
 -- Name: event_bookings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.event_bookings_id_seq', 8, true);
+SELECT pg_catalog.setval('public.event_bookings_id_seq', 4, true);
 
 
 --

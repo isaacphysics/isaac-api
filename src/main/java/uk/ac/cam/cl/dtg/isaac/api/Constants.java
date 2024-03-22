@@ -196,44 +196,6 @@ public final class Constants {
 
   public static final Integer DO_HASHCODE_PRIME = 31;
 
-  // Email Template Tokens
-  public static final String EMAIL_TEMPLATE_TOKEN_CONTACT_US_URL = "contactUsURL";
-  public static final String EMAIL_TEMPLATE_TOKEN_AUTHORIZATION_LINK = "authorizationLink";
-  public static final String EMAIL_TEMPLATE_TOKEN_EVENT_DETAILS = "event.emailEventDetails";
-  public static final String EMAIL_TEMPLATE_TOKEN_EVENT = "event";
-  public static final String EMAIL_TEMPLATE_TOKEN_EVENT_URL = "eventURL";
-
-  // Email Template Ids
-  public static final String EMAIL_TEMPLATE_ID_EVENT_BOOKING_CONFIRMED = "email-event-booking-confirmed";
-  public static final String EMAIL_TEMPLATE_ID_WAITING_LIST_ONLY_ADDITION =
-      "email-event-waiting-list-only-addition-notification";
-  public static final String EMAIL_TEMPLATE_ID_WAITING_LIST_ADDITION =
-      "email-event-waiting-list-addition-notification";
-
-  // Exception Message Strings
-  public static final String EXCEPTION_MESSAGE_CONTENT_ERROR_RETRIEVING_BOOKING =
-      "Content Database error occurred while trying to retrieve event booking information.";
-  public static final String EXCEPTION_MESSAGE_DATABASE_ERROR_RETRIEVING_BOOKING =
-      "Database error occurred while trying to retrieve all event booking information.";
-  public static final String EXCEPTION_MESSAGE_EVENT_REQUEST_ERROR = "Error during event request";
-  public static final String EXCEPTION_MESSAGE_ERROR_LOCATING_CONTENT = "Error locating the content you requested.";
-  public static final String EXCEPTION_MESSAGE_CANNOT_BOOK_CANCELLED_EVENT =
-      "The event is cancelled, so no bookings are being accepted.";
-  public static final String EXCEPTION_MESSAGE_DATABASE_ERROR_CREATING_BOOKING =
-      "Database error occurred while trying to book a user onto an event.";
-  public static final String EXCEPTION_MESSAGE_DATABASE_ERROR_DELETING_BOOKING =
-      "Database error occurred while trying to delete an event booking.";
-  public static final String EXCEPTION_MESSAGE_CANNOT_LOCATE_USER = "Unable to locate user specified.";
-  public static final String EXCEPTION_MESSAGE_TEMPLATE_DUPLICATE_BOOKING =
-      "Unable to book onto event (%s) as user (%s) is already booked on to it.";
-  public static final String EXCEPTION_MESSAGE_TEMPLATE_CANCELLED_EVENT =
-      "Unable to book user (%s) onto event (%s); the event is cancelled.";
-  public static final String EXCEPTION_MESSAGE_TEMPLATE_UNABLE_TO_SEND_EMAIL =
-      "Unable to send event email ({}) to user ({})";
-  public static final String EXCEPTION_MESSAGE_NOT_EVENT = "Content object is not an event page.";
-  public static final String EXCEPTION_MESSAGE_CANNOT_CREATE_BOOKING_DTO =
-      "Unable to create event booking DTO from DO.";
-
   /**
    * Private constructor to prevent this class being created.
    */
