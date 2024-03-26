@@ -71,7 +71,7 @@ public class SegueSCrypt {
      *            - the desired output key length
      * @return a byte array of the hash
      */
-    public byte[] computeHash(final String str, final String salt, final int keyLength) {
+    private byte[] computeHash(final String str, final String salt, final int keyLength) {
         byte[] strBytes = str.getBytes();
         byte[] saltBytes = salt.getBytes();
 

@@ -15,15 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 /**
  * An interface defining the password authentication process.
@@ -47,6 +47,19 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      *             - If there is an internal database error.
      */
     void setOrChangeUsersPassword(RegisteredUser user, final String plainTextPassword) throws InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException, NoSuchAlgorithmException;
+
+    /**
+     * Upgrade a user's password hash to a chained hashing algorithm.
+     *
+     * @param userId - the user to upgrade the password hash of.
+     * @param chainedHashingAlgorithmName - the chained algorithm name,
+     *                                      which must be compatible with the user's existing credential.
+     * @throws NoSuchAlgorithmException - if a chained algorithm does not exist with this name.
+     * @throws SegueDatabaseException - if a database error occurs loading or saving.
+     * @throws InvalidKeySpecException - if the algorithm hardcoded params are invalid.
+     */
+    void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
+            throws NoSuchAlgorithmException, SegueDatabaseException, InvalidKeySpecException, NoCredentialsAvailableException;
 
     /**
      * authenticate This method authenticates a given user based on the given e-mail address and password.

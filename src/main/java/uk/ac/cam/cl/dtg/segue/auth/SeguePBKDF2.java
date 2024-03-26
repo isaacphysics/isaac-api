@@ -17,12 +17,11 @@ package uk.ac.cam.cl.dtg.segue.auth;
 
 import org.apache.commons.codec.binary.Base64;
 
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Represents an instance of a hashing scheme used in Segue.
@@ -60,11 +59,11 @@ public class SeguePBKDF2 {
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
      */
-    public String hashPassword(final String password, final String salt) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
-        BigInteger hashedPassword = new BigInteger(computeHash(password, salt, keyLength));
+    public String hashPassword(final String password, final String salt)
+            throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-        return new String(Base64.encodeBase64(hashedPassword.toByteArray()));
+        byte[] hashedPassword = computeHash(password, salt, keyLength);
+        return new String(Base64.encodeBase64(hashedPassword));
     }
 
     /**
@@ -82,8 +81,9 @@ public class SeguePBKDF2 {
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
      */
-    public byte[] computeHash(final String str, final String salt, final int keyLength)
+    private byte[] computeHash(final String str, final String salt, final int keyLength)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
+
         char[] strChars = str.toCharArray();
         byte[] saltBytes = salt.getBytes();
 

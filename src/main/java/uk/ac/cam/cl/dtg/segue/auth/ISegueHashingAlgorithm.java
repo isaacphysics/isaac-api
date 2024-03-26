@@ -45,16 +45,4 @@ public interface ISegueHashingAlgorithm {
      * @return hashingAlgorithm name as a string
      */
     String hashingAlgorithmName();
-
-    /**
-     * Compute a hash as a byte array
-     * @param str - string value
-     * @param salt -- salt value
-     * @param keyLength - key length
-     * @return hash as a byte array
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeySpecException
-     */
-    byte[] computeHash(final String str, final String salt, final int keyLength)
-            throws NoSuchAlgorithmException, InvalidKeySpecException;
 }
