@@ -52,6 +52,7 @@ public abstract class ChainedHashAlgorithm implements ISegueHashingAlgorithm {
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
      */
+    @Override
     public String hashPassword(final String password, final String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
         String innerHash = insecureInnerAlgorithm.hashPassword(password, salt);
         return secureOuterAlgorithm.hashPassword(innerHash, salt);
@@ -64,6 +65,7 @@ public abstract class ChainedHashAlgorithm implements ISegueHashingAlgorithm {
      * @throws NoSuchAlgorithmException
      *             - problem locating the algorithm.
      */
+    @Override
     public String generateSalt() throws NoSuchAlgorithmException {
         return secureOuterAlgorithm.generateSalt();
     }
