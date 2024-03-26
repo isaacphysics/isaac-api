@@ -633,9 +633,16 @@ public class QuestionManager {
       List<String> stagesList = new ArrayList<>();
       List<String> examBoardsList = new ArrayList<>();
 
+      boolean containsAllStages = userContexts.stream().anyMatch(uc -> "all".equals(uc.getStage().name()));
+      boolean containsAllExamBoards = userContexts.stream().anyMatch(uc -> "all".equals(uc.getExamBoard().name()));
+
       for (UserContext uc : userContexts) {
-        stagesList.add(uc.getStage().name());
-        examBoardsList.add(uc.getExamBoard().name());
+        if (!containsAllStages) {
+          stagesList.add(uc.getStage().name());
+        }
+        if (!containsAllExamBoards) {
+          examBoardsList.add(uc.getExamBoard().name());
+        }
       }
 
       gameFilter = new GameFilter(
