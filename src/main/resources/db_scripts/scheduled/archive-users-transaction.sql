@@ -25,4 +25,12 @@ UPDATE users SET family_name=NULL, given_name=NULL,
                  deleted=TRUE
 WHERE id IN (SELECT user_id FROM archive_in_progress);
 
+-- Unlink linked accounts:
+UPDATE linked_accounts SET provider_user_id = gen_random_uuid()
+WHERE user_id IN (SELECT user_id FROM archive_in_progress);
+
+-- Delete credential data:
+DELETE FROM user_credentials
+WHERE user_id IN (SELECT user_id FROM archive_in_progress);
+
 COMMIT;
