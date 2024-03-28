@@ -335,6 +335,14 @@ public class UserAuthenticationManager {
         return passwordAuthenticator.hasPasswordRegistered(user);
     }
 
+    public void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
+            throws NoCredentialsAvailableException, SegueDatabaseException, NoSuchAlgorithmException, InvalidKeySpecException {
+        IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
+        passwordAuthenticator.upgradeUsersPasswordHashAlgorithm(userId, chainedHashingAlgorithmName);
+    }
+
     public RegisteredUser getUserFromSession(final HttpServletRequest request) {
         return getUserFromSession(request, Set.of());
     }

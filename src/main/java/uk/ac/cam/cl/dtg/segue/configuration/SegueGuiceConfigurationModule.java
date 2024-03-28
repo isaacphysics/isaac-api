@@ -107,6 +107,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
@@ -615,12 +616,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
         ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
         ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
+        ISegueHashingAlgorithm chainedAlgorithm1 = new SegueChainedPBKDFv1SCryptv1();
 
         Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
                 preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
                 oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
                 oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
-                oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3
+                oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3,
+                chainedAlgorithm1.hashingAlgorithmName(), chainedAlgorithm1
         );
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
