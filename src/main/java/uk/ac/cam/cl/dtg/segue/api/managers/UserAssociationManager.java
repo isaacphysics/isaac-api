@@ -327,22 +327,18 @@ public class UserAssociationManager {
     /**
      * This method will accept a list of User objects and will strip out any data that is restricted by authorisation
      * settings.
-     * 
-     * @param currentUser
-     *            - user requesting access
-     * @param dataRequested
-     *            - the list of users being accessed.
-     * @return updated collection of users with data removed and access flags set.
+     *
+     * @param currentUser   - user requesting access
+     * @param dataRequested - the list of users being accessed.
      */
-    public List<UserSummaryDTO> enforceAuthorisationPrivacy(final RegisteredUserDTO currentUser,
-            final List<UserSummaryDTO> dataRequested) {
+    public void enforceAuthorisationPrivacy(final RegisteredUserDTO currentUser,
+                                            final List<UserSummaryDTO> dataRequested) {
         // verify permission of currentUser to access dataRequested.
 
         // for those without permission obfuscate the date
         for (UserSummaryDTO user : dataRequested) {
             this.enforceAuthorisationPrivacy(currentUser, user);
         }
-        return dataRequested;
     }
 
     /**

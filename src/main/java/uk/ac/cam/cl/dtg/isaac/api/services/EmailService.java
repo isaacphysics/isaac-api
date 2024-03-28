@@ -117,15 +117,14 @@ public class EmailService {
             EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
 
             if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
-                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE).forEach(userBatch -> {
-                    mailGunEmailManager.sendBatchEmails(
-                            userBatch,
-                            emailTemplate,
-                            EmailType.ASSIGNMENTS,
-                            variables,
-                            null
+                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE)
+                    .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
+                        userBatch,
+                        emailTemplate,
+                        EmailType.ASSIGNMENTS,
+                        variables,
+                        null)
                     );
-                });
             } else {
                 // If user is not in the MailGun assignment emails beta list, use our standard email method
                 Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());

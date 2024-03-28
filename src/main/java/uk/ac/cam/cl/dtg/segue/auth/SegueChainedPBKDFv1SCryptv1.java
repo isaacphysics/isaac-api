@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Andrew Rice
+ * Copyright 2022 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.configuration;
-
-import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+package uk.ac.cam.cl.dtg.segue.auth;
 
 /**
- * Isaac servlet dispatcher - we need this to initialise RestEasy. Probably.
- *
+ *  A hashing algorithm for blind-upgrading SeguePBKDFv1 hashes to use SegueSCryptv1.
  */
-public class IsaacHttpServletDispatcher extends HttpServletDispatcher {
-    private static final long serialVersionUID = -4757864378012588474L;
+public class SegueChainedPBKDFv1SCryptv1 extends ChainedHashAlgorithm {
+
+    public SegueChainedPBKDFv1SCryptv1() {
+        super(new SeguePBKDF2v1(), new SegueSCryptv1());
+    }
+
+    @Override
+    public String hashingAlgorithmName() {
+        return "SegueChainedPBKDFv1SCryptv1";
+    }
 }

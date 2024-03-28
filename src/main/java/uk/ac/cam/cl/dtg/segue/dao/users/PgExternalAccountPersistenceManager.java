@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserContext;
@@ -109,7 +110,10 @@ public class PgExternalAccountPersistenceManager implements IExternalAccountData
             if (registeredContextsArray != null) {
                 for (String registeredContextJson : (String[]) registeredContextsArray.getArray()) {
                     UserContext context = jsonMapper.readValue(registeredContextJson, UserContext.class);
-                    stageList.add(context.getStage().toString());
+                    Stage stage = context.getStage();
+                    if (null != stage) {
+                        stageList.add(stage.toString());
+                    }
                 }
             }
         } catch (JsonProcessingException e) {

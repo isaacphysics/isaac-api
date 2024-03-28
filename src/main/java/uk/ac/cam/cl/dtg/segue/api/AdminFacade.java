@@ -26,12 +26,6 @@ import com.google.inject.name.Named;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -55,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
@@ -91,8 +86,13 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -292,6 +292,59 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         return Response.ok().build();
+    }
+
+    /**
+     * Attempt to upgrade the stored credentials of a list of users.
+     *
+     * @param request - to check the user permissions
+     * @param chainedHashAlgorithmName - the chained algorithm to use
+     * @param userIds - the users to attempt to upgrade
+     * @return - a map of user ID to success status.
+     */
+    @POST
+    @Path("/users/upgrade_password_algorithm/{chainedHashAlgorithmName}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Upgrade stored password hashes of users to more secure algorithm.",
+               description = "This endpoint only works if the chained algorithm is compatible with the stored credentials.")
+    public Response upgradeUsersPasswordHashAlgorithm(@Context final HttpServletRequest request,
+                                                                   @PathParam("chainedHashAlgorithmName") final String chainedHashAlgorithmName,
+                                                                   final List<Long> userIds) {
+        try {
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, requestingUser)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            if (null == userIds || userIds.isEmpty()) {
+                return SegueErrorResponse.getBadRequestResponse("You must specify a list of user IDs!");
+            }
+
+            Map<Long, Boolean> successStatus = Maps.newHashMap();
+            for (Long userId : userIds) {
+
+                try {
+                    successStatus.put(userId, false);
+                    this.userManager.upgradeUsersPasswordHashAlgorithm(userId, chainedHashAlgorithmName);
+                    successStatus.put(userId, true);
+                } catch (NoCredentialsAvailableException | UnsupportedOperationException e) {
+                    // Silently fail. We have already set success=false above.
+                } catch (SegueDatabaseException | InvalidKeySpecException e) {
+                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "An error occurred whilst upgrading password hashes!", e).toResponse();
+                } catch (NoSuchAlgorithmException e) {
+                    return SegueErrorResponse.getBadRequestResponse(String.format("Hash algorithm '%s' not found!", chainedHashAlgorithmName));
+                }
+            }
+
+            log.info(String.format("Admin user (%s) attempted to upgrade %d user password hashes.",
+                    requestingUser.getEmail(), successStatus.size()));
+
+            return Response.ok(successStatus).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
     }
 
     /**
@@ -1101,23 +1154,22 @@ public class AdminFacade extends AbstractSegueFacade {
 
                 String oldLiveVersion = contentManager.getCurrentContentSHA();
 
-                HttpClient httpClient = new DefaultHttpClient();
+                HttpClient httpClient = HttpClient.newHttpClient();
+                URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/set_version_alias/%s/%s",
+                        getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
+                        this.contentIndex, version));
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
-                        + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/"
-                        + this.contentIndex + "/" + version);
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(url)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-                httpPost.addHeader("Content-Type", "application/json");
-
-                HttpResponse httpResponse = httpClient.execute(httpPost);
-
-                HttpEntity e = httpResponse.getEntity();
-
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.statusCode() == 200) {
                     log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
                     return Response.ok().build();
                 } else {
-                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());
                     r.setBypassGenericSiteErrorPage(true);
                     return r.toResponse();
                 }
@@ -1130,7 +1182,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (Exception e) {
             log.error("Exception during version change.", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during version change.", e).toResponse();
         }
     }
 
@@ -1177,27 +1229,30 @@ public class AdminFacade extends AbstractSegueFacade {
         // TODO: Verify webhook secret.
         try {
             // We are only interested in the master branch
-            if(payload.getRef().equals("refs/heads/master")) {
+            if (payload.getRef().equals("refs/heads/master")) {
                 String newVersion = payload.getAfter();
 
-                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
-                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/new_version_alert/" + newVersion);
+                HttpClient httpClient = HttpClient.newHttpClient();
+                URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/new_version_alert/%s",
+                        getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
+                        newVersion));
 
-                HttpResponse httpResponse;
-                httpResponse = new DefaultHttpClient().execute(httpPost);
-                HttpEntity e = httpResponse.getEntity();
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(url)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.statusCode() == 200) {
                     return Response.ok().build();
                 } else {
-                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());
                     r.setBypassGenericSiteErrorPage(true);
                     return r.toResponse();
                 }
             }
-        } catch (IOException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    e.getMessage()).toResponse();
+        } catch (IOException | InterruptedException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage()).toResponse();
         }
         return Response.ok().build();
     }

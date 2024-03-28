@@ -51,7 +51,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -334,6 +333,14 @@ public class UserAuthenticationManager {
                 .get(AuthenticationProvider.SEGUE);
 
         return passwordAuthenticator.hasPasswordRegistered(user);
+    }
+
+    public void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
+            throws NoCredentialsAvailableException, SegueDatabaseException, NoSuchAlgorithmException, InvalidKeySpecException {
+        IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
+        passwordAuthenticator.upgradeUsersPasswordHashAlgorithm(userId, chainedHashingAlgorithmName);
     }
 
     public RegisteredUser getUserFromSession(final HttpServletRequest request) {
@@ -681,14 +688,12 @@ public class UserAuthenticationManager {
      *             - if the configured algorithm is not valid.
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
     public final void resetPasswordRequest(final RegisteredUser userDO, final RegisteredUserDTO userAsDTO)
             throws InvalidKeySpecException,
-            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
+            NoSuchAlgorithmException, SegueDatabaseException {
         try {
             IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                     .get(AuthenticationProvider.SEGUE);

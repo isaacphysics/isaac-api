@@ -21,13 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
@@ -36,6 +29,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -51,7 +48,7 @@ import java.util.Map;
 public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private static final Logger log = LoggerFactory.getLogger(PostCodeIOLocationResolver.class);
 
-    private final String url = "http://api.postcodes.io/postcodes";
+    private final String url = "https://api.postcodes.io/postcodes";
     private final int POSTCODEIO_MAX_REQUESTS = 100;
     
     private final LocationHistory locationHistory;
@@ -209,26 +206,25 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         HashMap<String, Object> response;
 
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost(url);
-
-        StringEntity requestEntity;
         try {
-            requestEntity = new StringEntity(requestJson);
-            httppost.addHeader("Content-Type", "application/json");
-            httppost.setEntity(requestEntity);
-            HttpResponse httpresponse = httpclient.execute(httppost);
-            HttpEntity entity = httpresponse.getEntity();
-            String jsonResponse = EntityUtils.toString(entity);
+            java.net.http.HttpClient httpClient = HttpClient.newHttpClient();
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestJson))
+                    .build();
+            java.net.http.HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
             ObjectMapper objectMapper = new ObjectMapper();
 
-            response = objectMapper.readValue(jsonResponse, HashMap.class);
+            response = objectMapper.readValue(httpResponse.body(), HashMap.class);
 
         } catch (UnsupportedEncodingException | JsonParseException | JsonMappingException e) {
             String error = "Unable to parse postcode location response " + e.getMessage();
             log.error(error);
             throw new LocationServerException(error);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             String error = "Unable to read postcode location response " + e.getMessage();
             log.error(error);
             throw new LocationServerException(error);

@@ -66,7 +66,7 @@ public class TeacherAssignmentsBadgePolicy implements IUserBadgePolicy {
      * @param assignmentId a new assignment ID to add
      * @return the updated arrayNode
      */
-    protected ArrayNode updateAssignments(ArrayNode assignments, String assignmentId) throws SegueDatabaseException {
+    protected ArrayNode updateAssignments(ArrayNode assignments, String assignmentId) {
 
         if (assignments.has(assignmentId)) {
             return assignments;

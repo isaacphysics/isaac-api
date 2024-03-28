@@ -65,6 +65,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -341,7 +342,7 @@ public class QuestionManager {
             if (null == questionClass || !ChoiceQuestion.class.isAssignableFrom(questionClass)) {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
-            ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.newInstance();
+            ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.getDeclaredConstructor().newInstance();
             testQuestion.setChoices(testDefinition.getUserDefinedChoices());
             IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
@@ -361,7 +362,7 @@ public class QuestionManager {
             }
 
             return results;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new BadRequestException(String.format(e.getMessage()));
         }
     }

@@ -213,7 +213,7 @@ public class GitContentManager {
      * @throws ContentManagerException on failure to return the object or null.
      */
     public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
-        if (null == id || id.equals("")) {
+        if (null == id || id.isEmpty()) {
             return null;
         }
 
@@ -505,7 +505,7 @@ public class GitContentManager {
                     Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
                     "tags"
             ).getSource().get("tags");
-            return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
+            return tagObjects.stream().map(Functions.toStringFunction()).collect(Collectors.toSet());
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
             return Sets.newHashSet();

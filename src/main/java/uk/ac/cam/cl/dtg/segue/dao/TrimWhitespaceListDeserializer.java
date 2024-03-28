@@ -15,16 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Content deserializer will try and use the map built up in the ContentMapper class to determine what subtype of
@@ -41,20 +38,20 @@ public class TrimWhitespaceListDeserializer extends JsonDeserializer<List<String
 
     @Override
     public List<String> deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
-            throws IOException, JsonProcessingException, JsonMappingException {
+            throws IOException {
 
         @SuppressWarnings("unchecked")
         List<String> listOfStringToTrim = jsonParser.readValueAs(ArrayList.class);
 
         int index = 0;
         for (String s : listOfStringToTrim) {
-            if (!s.trim().equals("")) {
+            if (!s.trim().isEmpty()) {
                 listOfStringToTrim.set(index, s.trim());
             }
             index++;
         }
 
-        listOfStringToTrim.removeAll(Arrays.asList(""));
+        listOfStringToTrim.removeAll(List.of(""));
 
         return listOfStringToTrim;
     }

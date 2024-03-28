@@ -21,13 +21,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -35,6 +28,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,18 +104,23 @@ public interface IValidator {
         g.close();
         String requestString = sw.toString();
 
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(externalValidatorUrl);
+        try {
+            HttpClient httpClient = HttpClient.newHttpClient();
 
-        httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
-        httpPost.addHeader("Content-Type", "application/json");
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(externalValidatorUrl))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestString))
+                    .build();
+            HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        HttpEntity responseEntity = httpResponse.getEntity();
-        String responseString = EntityUtils.toString(responseEntity);
-        HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
+            @SuppressWarnings("unchecked")  // JSON _will_ be String -> Object.
+            HashMap<String, Object> response = mapper.readValue(httpResponse.body(), HashMap.class);
 
-        return response;
+            return response;
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
     }
 
     /**

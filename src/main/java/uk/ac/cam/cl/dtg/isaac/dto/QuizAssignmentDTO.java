@@ -87,6 +87,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *
      * @return the id
      */
+    @Override
     public Long getId() {
         return id;
     }
@@ -106,6 +107,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *
      * @return the quizId
      */
+    @Override
     public String getQuizId() {
         return quizId;
     }
@@ -120,10 +122,12 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.quizId = quizId;
     }
 
+    @Override
     public ContentSummaryDTO getQuizSummary() {
         return quizSummary;
     }
 
+    @Override
     public void setQuizSummary(final ContentSummaryDTO contentSummaryDTO) {
         this.quizSummary = contentSummaryDTO;
     }
@@ -133,6 +137,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *
      * @return the groupId
      */
+    @Override
     public Long getGroupId() {
         return groupId;
     }
@@ -152,6 +157,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *
      * @return the ownerUserId
      */
+    @Override
     public Long getOwnerUserId() {
         return ownerUserId;
     }
@@ -178,6 +184,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      * Sets the assignerSummary.
      * @param assignerSummary the assignerSummary to set
      */
+    @Override
     public void setAssignerSummary(final UserSummaryDTO assignerSummary) {
         this.assignerSummary = assignerSummary;
     }
@@ -187,6 +194,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      *
      * @return the creationDate
      */
+    @Override
     public Date getCreationDate() {
         return creationDate;
     }
@@ -205,6 +213,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      * get the due date of the assignment.
      * @return dueDate
      */
+    @Override
     @Nullable public Date getDueDate() {
         return dueDate;
     }
@@ -217,6 +226,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.dueDate = dueDate;
     }
 
+    @Override
     @Nullable public Date getScheduledStartDate() {
         return scheduledStartDate;
     }

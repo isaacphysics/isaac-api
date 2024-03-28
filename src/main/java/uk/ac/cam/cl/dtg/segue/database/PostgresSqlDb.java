@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 
 /**
  * PostgresSqlDb adapter.
@@ -50,20 +51,17 @@ public class PostgresSqlDb implements Closeable {
         dataSource.setUrl(databaseUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
-        dataSource.setTestWhileIdle(false);
         dataSource.setTestOnBorrow(true);
         dataSource.setValidationQuery("SELECT 1");
-        dataSource.setTestOnReturn(false);
-        dataSource.setTimeBetweenEvictionRunsMillis(30000);
+        dataSource.setAutoCommitOnReturn(true);
+        dataSource.setMaxWait(Duration.ofSeconds(10));
         dataSource.setMaxTotal(30);
         dataSource.setInitialSize(10);
-        dataSource.setMaxWaitMillis(10000);
-        dataSource.setRemoveAbandonedTimeout(60);
-        dataSource.setMinEvictableIdleTimeMillis(30000);
         dataSource.setMinIdle(10);
-        dataSource.setLogAbandoned(true);
+        dataSource.setMinEvictableIdle(Duration.ofSeconds(30));
         dataSource.setRemoveAbandonedOnBorrow(true);
-        dataSource.setEnableAutoCommitOnReturn(true);
+        dataSource.setRemoveAbandonedTimeout(Duration.ofSeconds(60));
+        dataSource.setDurationBetweenEvictionRuns(Duration.ofSeconds(30));
     }
 
     /**

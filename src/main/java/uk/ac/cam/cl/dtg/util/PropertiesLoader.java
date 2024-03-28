@@ -63,6 +63,7 @@ public class PropertiesLoader extends AbstractConfigLoader {
      *            - that the property is listed under.
      * @return value as a String
      */
+    @Override
     public String getProperty(final String key) {
         Validate.notBlank(configPath, "Property key requested cannot be null");
 
