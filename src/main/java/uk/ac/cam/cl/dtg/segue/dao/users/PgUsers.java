@@ -894,7 +894,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
      * Note: This function mutates the object that it was provided.
      *
      * This method performs the same action as the script
-     *     src/main/resources/db_scripts/scheduled/expired-users-task.sql
+     *     src/main/resources/db_scripts/scheduled/archive-users-transaction.sql
      * and changes here should be reflected there.
      */
     private static void removePIIFromUserDO(RegisteredUser user) {
