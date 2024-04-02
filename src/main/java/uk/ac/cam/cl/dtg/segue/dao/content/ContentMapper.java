@@ -319,9 +319,11 @@ public class ContentMapper {
         if (null == this.autoMapper) {
             log.info("Creating instance of content auto mapper.");
             MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
+            ContentBaseOrikaConverter contentBaseOrikaConverter = new ContentBaseOrikaConverter(this);
 
             ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-            converterFactory.registerConverter(new ContentBaseOrikaConverter(this));
+            converterFactory.registerConverter(contentBaseOrikaConverter);
+            converterFactory.registerConverter(new QuestionBaseOrikaConverter(contentBaseOrikaConverter));
             converterFactory.registerConverter(new ChoiceOrikaConverter());
             converterFactory.registerConverter(new ItemOrikaConverter());
             converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
