@@ -39,6 +39,7 @@ public class UserGroupDTO {
     private Long ownerId;
     private Date created;
     private Date lastUpdated;
+    private boolean selfRemoval;
     private String token;
     private boolean archived;
     private boolean additionalManagerPrivileges;
@@ -66,12 +67,13 @@ public class UserGroupDTO {
      *            - date created.
      */
     public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created, final Date lastUpdated,
-                        final boolean archived) {
+                        final boolean selfRemoval, final boolean archived) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
         this.created = created;
         this.lastUpdated = lastUpdated;
+        this.selfRemoval = selfRemoval;
         this.archived = archived;
         this.additionalManagers = Sets.newHashSet();
     }
@@ -193,6 +195,25 @@ public class UserGroupDTO {
      */
     public void setLastUpdated(final Date lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    /**
+     * Gets whether students can remove themselves from the group.
+     *
+     * @return whether students can remove themselves from the group
+     */
+    public boolean getSelfRemoval() {
+        return selfRemoval;
+    }
+
+    /**
+     * Sets whether students can remove themselves from the group.
+     *
+     * @param selfRemoval
+     *            the status student self-removal to set
+     */
+    public void setSelfRemoval(final boolean selfRemoval) {
+        this.selfRemoval = selfRemoval;
     }
 
     /**
