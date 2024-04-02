@@ -76,19 +76,6 @@ public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<Cont
 
         ContentDTO result = super.mapperFacade.map(source, destinationClass);
 
-        if (result instanceof InlineRegionDTO) {
-            List<IsaacQuestionBase> questionBases = ((InlineRegion) source).getInlineQuestions();
-            List<IsaacQuestionBaseDTO> newQuestionBases = new ArrayList<>();
-
-            for (IsaacQuestionBase questionBase : questionBases) {
-                Class<? extends Content> questionClass = contentMapper.getClassByType(questionBase.getType());
-                Class<? extends ContentDTO> questionDestinationClass = contentMapper.getDTOClassByDOClass(questionClass);
-                newQuestionBases.add((IsaacQuestionBaseDTO) super.mapperFacade.map(questionBase, questionDestinationClass));
-            }
-
-            ((InlineRegionDTO) result).setInlineQuestions(newQuestionBases);
-        }
-
         return result;
     }
 
