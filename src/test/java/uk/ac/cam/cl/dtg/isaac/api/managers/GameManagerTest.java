@@ -155,4 +155,31 @@ class GameManagerTest {
     assertEquals(Constants.BooleanOperator.NOT, deprecatedFilter.getOperator());
     assertEquals(Collections.singletonList("true"), deprecatedFilter.getValues());
   }
+
+  @Test
+  void generateRandomQuestions_appliesExclusionFilterForRegressionTest() throws
+      ContentManagerException {
+
+    Capture<List<BooleanSearchClause>> capturedFilters = Capture.newInstance();
+    expect(dummyContentManager.findByFieldNamesRandomOrder(
+        capture(capturedFilters),
+        anyInt(),
+        anyInt(),
+        anyLong())
+    ).andStubReturn(new ResultsWrapper<>());
+    replay(dummyContentManager);
+
+    // Act
+    gameManager.generateRandomQuestions(new GameFilter(), 5);
+
+    // Assert
+    // check that one of the filters sent to GitContentManager was the regression test exclusion filter
+    List<BooleanSearchClause> filters = capturedFilters.getValues().get(0);
+    BooleanSearchClause tagsFilter = filters.stream()
+        .filter(f -> f.getField().equals("tags")).toList().get(0);
+
+    assertNotNull(tagsFilter);
+    assertEquals(Constants.BooleanOperator.NOT, tagsFilter.getOperator());
+    assertEquals(Collections.singletonList("regression_test"), tagsFilter.getValues());
+  }
 }
