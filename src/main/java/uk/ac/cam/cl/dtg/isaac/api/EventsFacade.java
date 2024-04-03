@@ -761,7 +761,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             .map(uc -> uc.getStage() != null ? uc.getStage().name() : "").collect(Collectors.toSet())));
         resultRow.add(String.join(" ", resultUser.getRegisteredContexts().stream()
             .map(uc -> uc.getExamBoard() != null ? uc.getExamBoard().name() : "").collect(Collectors.toSet())));
-        resultRow.add(resultAdditionalInformation.get("experienceLevel"));
         resultRow.add(resultAdditionalInformation.get("dietaryRequirements"));
         resultRow.add(resultAdditionalInformation.get("accessibilityRequirements"));
         resultRow.add(resultAdditionalInformation.get("emergencyName"));
@@ -772,7 +771,7 @@ public class EventsFacade extends AbstractIsaacFacade {
       rows.add(totalsRow.toArray(new String[0]));
       rows.add(("Family name,Given name,Role,School,Booking status,Booking date,Last updated date,Year group,"
           // lgtm [java/missing-space-in-concatenation]
-          + "Job title,Stages,Exam boards,Level of teaching experience,dietary requirements,"
+          + "Job title,Stages,Exam boards,dietary requirements,"
           + "Accessibility requirements,Emergency name,Emergency number").split(","));
       rows.addAll(resultRows);
       csvWriter.writeAll(rows);
