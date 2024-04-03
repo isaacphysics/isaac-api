@@ -894,6 +894,11 @@ public class GameManager {
         List<Question> results = Lists.newArrayList();
         for (Content possibleQuestion : contentToFilter) {
 
+            if (possibleQuestion instanceof InlineRegion) {
+                InlineRegion inlineRegion = (InlineRegion) possibleQuestion;
+                results.addAll(inlineRegion.getInlineQuestions());
+            }
+
             if (!(possibleQuestion instanceof Question) || possibleQuestion instanceof IsaacQuickQuestion) {
                 // we are not interested if this is not a question or if it is a quick question.
                 continue;
