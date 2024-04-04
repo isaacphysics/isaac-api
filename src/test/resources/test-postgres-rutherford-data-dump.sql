@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.9 (Debian 12.9-1.pgdg110+1)
--- Dumped by pg_dump version 12.9 (Debian 12.9-1.pgdg110+1)
+-- Dumped from database version 12.16 (Debian 12.16-1.pgdg120+1)
+-- Dumped by pg_dump version 12.16 (Debian 12.16-1.pgdg120+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -55,10 +55,10 @@ COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_f
 -- Data for Name: groups; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
-COPY public.groups (id, group_name, owner_id, created, archived, group_status, last_updated, additional_manager_privileges) FROM stdin;
-1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N	f
-2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N	f
-4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245	f
+COPY public.groups (id, group_name, owner_id, created, archived, group_status, last_updated, additional_manager_privileges, self_removal) FROM stdin;
+1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N	f	f
+2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N	f	f
+4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245	f	f
 \.
 
 
