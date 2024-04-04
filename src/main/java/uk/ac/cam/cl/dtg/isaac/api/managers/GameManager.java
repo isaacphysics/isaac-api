@@ -798,13 +798,14 @@ public class GameManager {
             return null;
         }
 
-        if (null == questionAttemptsFromUser || gameboardDTO.getContents().size() == 0) {
+        if (null == questionAttemptsFromUser || gameboardDTO.getContents().isEmpty()) {
             return gameboardDTO;
         }
 
         boolean gameboardStarted = false;
         List<GameboardItem> questions = gameboardDTO.getContents();
         int totalNumberOfQuestionsParts = 0;
+        int totalNumberOfAttemptedQuestionParts = 0;
         int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
             try {
@@ -822,10 +823,11 @@ public class GameManager {
             }
             totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
             totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
+            totalNumberOfAttemptedQuestionParts += gameItem.getQuestionPartsCorrect() + gameItem.getQuestionPartsIncorrect();
         }
 
-        float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
-        gameboardDTO.setPercentageAttempted(Math.round(boardPercentage));
+        gameboardDTO.setPercentageAttempted(Math.round(100f * totalNumberOfAttemptedQuestionParts / totalNumberOfQuestionsParts));
+        gameboardDTO.setPercentageCorrect(Math.round(100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts));
 
         return gameboardDTO;
     }
