@@ -557,7 +557,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
                             USER_ID_FKEY_FIELDNAME, userToRemove.getId()));
 
-            return this.getUsersInGroup(request, cacheRequest, groupId);
+            return Response.ok().build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to add user to a group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
