@@ -84,7 +84,7 @@ public class SignupFlowIT extends IsaacIntegrationTest {
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Unverified Teacher's Group", TEST_UNVERIFIED_CAVEAT_ID,
-                GroupStatus.ACTIVE, new Date(), false, false, new Date());
+                GroupStatus.ACTIVE, new Date(), false, false, new Date(), false);
 
         // Act
         // make request - this requires a caveat-free login

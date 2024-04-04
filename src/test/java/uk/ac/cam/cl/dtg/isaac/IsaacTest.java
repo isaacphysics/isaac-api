@@ -218,7 +218,7 @@ public class IsaacTest {
 
         studentGroup.setAdditionalManagers(Collections.singleton(secondTeacherSummary));
 
-        studentInactiveGroup = new UserGroupDTO(++id, "studentInactiveGroup", teacher.getId(), somePastDate, somePastDate, false);
+        studentInactiveGroup = new UserGroupDTO(++id, "studentInactiveGroup", teacher.getId(), somePastDate, somePastDate, false, false);
 
         studentGroups = ImmutableList.of(studentGroup.getId(), studentInactiveGroup.getId());
 

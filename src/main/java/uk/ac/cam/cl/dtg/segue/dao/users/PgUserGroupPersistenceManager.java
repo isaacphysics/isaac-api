@@ -113,7 +113,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             group.setStatus(GroupStatus.ACTIVE);
         }
 
-        String query = "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?, additional_manager_privileges=?, group_status=?, last_updated=? WHERE id = ?;";
+        String query = "UPDATE groups SET group_name=?, owner_id=?, created=?, archived=?, self_removal=?, additional_manager_privileges=?, group_status=?, last_updated=? WHERE id = ?;";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
@@ -121,10 +121,11 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst.setLong(2, group.getOwnerId());
             pst.setTimestamp(3, new Timestamp(group.getCreated().getTime()));
             pst.setBoolean(4, group.isArchived());
-            pst.setBoolean(5, group.isAdditionalManagerPrivileges());
-            pst.setString(6, group.getStatus().name());
-            pst.setTimestamp(7, new Timestamp(group.getLastUpdated().getTime()));
-            pst.setLong(8, group.getId());
+            pst.setBoolean(5, group.getSelfRemoval());
+            pst.setBoolean(6, group.isAdditionalManagerPrivileges());
+            pst.setString(7, group.getStatus().name());
+            pst.setTimestamp(8, new Timestamp(group.getLastUpdated().getTime()));
+            pst.setLong(9, group.getId());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save group.");
@@ -548,7 +549,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
                 GroupStatus.valueOf(set.getString("group_status")), set.getDate("created"),
                 set.getBoolean("archived"), set.getBoolean("additional_manager_privileges"),
-                set.getDate("last_updated"));
+                set.getDate("last_updated"), set.getBoolean("self_removal"));
     }
 
     private GroupMembership buildMembershipRecord(final ResultSet set) throws SQLException {
