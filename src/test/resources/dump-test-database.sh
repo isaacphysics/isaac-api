@@ -19,6 +19,6 @@ docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE quartz_cluster.qr
 docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE quartz_cluster.qrtz_triggers CASCADE"
 
 echo "Dumping test data..."
-docker exec -it postgres pg_dump -U rutherford --data-only > test-postgres-rutherford-data-dump.sql
+docker exec -it postgres pg_dump -U rutherford --data-only > src/test/resources/test-postgres-rutherford-data-dump.sql
 
 echo "... done. Check your test-postgres-rutherford-data-dump.sql for any issues, then commit and push."
