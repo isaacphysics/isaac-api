@@ -318,6 +318,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     g.setGameFilter(null);
                     g.setLastVisited(null);
                     g.setPercentageAttempted(null);
+                    g.setPercentageCorrect(null);
                     g.setCreationMethod(null);
                     g.setCreationDate(null);
                 });
