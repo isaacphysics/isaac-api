@@ -22,7 +22,7 @@
         <jetty.version>11.0.20</jetty.version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>1.19.6</testcontainers.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
