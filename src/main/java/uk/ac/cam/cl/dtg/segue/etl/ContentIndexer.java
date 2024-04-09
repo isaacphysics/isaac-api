@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
@@ -34,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -411,6 +413,12 @@ public class ContentIndexer {
             }
         }
 
+        if (content instanceof InlineRegion) {
+            for (IsaacQuestionBase question : ((InlineRegion) content).getInlineQuestions()) {
+                this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
+            }
+        }
+
         // TODO: hack to get hints to apply as children
         if (content instanceof Question) {
             Question question = (Question) content;
@@ -544,6 +552,12 @@ public class ContentIndexer {
             for (ContentBase child : children) {
                 setOfContentObjects.add((Content) child);
                 setOfContentObjects.addAll(flattenContentObjects((Content) child));
+            }
+
+            if (content instanceof InlineRegion) {
+                for (IsaacQuestionBase child : ((InlineRegion) content).getInlineQuestions()) {
+                    setOfContentObjects.addAll(flattenContentObjects(child));
+                }
             }
         }
 
