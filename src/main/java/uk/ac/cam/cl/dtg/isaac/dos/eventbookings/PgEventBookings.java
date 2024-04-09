@@ -536,7 +536,7 @@ public class PgEventBookings implements EventBookings {
   }
 
   @Override
-  public Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(final String eventId,
+  public Map<BookingStatus, Map<Role, Integer>> getEventBookingStatusCounts(final String eventId,
                                                                          final boolean includeDeletedUsersInCounts)
       throws SegueDatabaseException {
     // Note this method joins at the db table mainly to allow inclusion of deleted users in the counts.
@@ -558,13 +558,13 @@ public class PgEventBookings implements EventBookings {
       pst.setString(FIELD_GET_STATUS_COUNTS_EVENT_ID, eventId);
 
       try (ResultSet results = pst.executeQuery()) {
-        Map<BookingStatus, Map<Role, Long>> returnResult = Maps.newHashMap();
+        Map<BookingStatus, Map<Role, Integer>> returnResult = Maps.newHashMap();
         while (results.next()) {
           BookingStatus bookingStatus = BookingStatus.valueOf(results.getString("status"));
           Role role = Role.valueOf(results.getString("role"));
-          Long count = results.getLong("count");
+          Integer count = results.getInt("count");
 
-          Map<Role, Long> roleCountMap = returnResult.getOrDefault(bookingStatus, Maps.newHashMap());
+          Map<Role, Integer> roleCountMap = returnResult.getOrDefault(bookingStatus, Maps.newHashMap());
           roleCountMap.put(role, count);
           returnResult.put(bookingStatus, roleCountMap);
         }

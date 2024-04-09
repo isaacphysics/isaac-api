@@ -67,7 +67,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   private BookingStatus userBookingStatus;
 
-  private Long placesAvailable;
+  private Integer placesAvailable;
 
   private Integer groupReservationLimit;
 
@@ -444,7 +444,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @return the get the places available.
    */
-  public Long getPlacesAvailable() {
+  public Integer getPlacesAvailable() {
     return placesAvailable;
   }
 
@@ -453,7 +453,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @param placesAvailable - the number of places available.
    */
-  public void setPlacesAvailable(final Long placesAvailable) {
+  public void setPlacesAvailable(final Integer placesAvailable) {
     this.placesAvailable = placesAvailable;
   }
 

@@ -53,40 +53,40 @@ class PgEventBookingsTest {
     expect(dummyResultSet.next()).andReturn(true).once();
     expect(dummyResultSet.getString("status")).andReturn("CONFIRMED").once();
     expect(dummyResultSet.getString("role")).andReturn("STUDENT").once();
-    expect(dummyResultSet.getLong("count")).andReturn(20L).once();
+    expect(dummyResultSet.getInt("count")).andReturn(20).once();
 
     expect(dummyResultSet.next()).andReturn(true).once();
     expect(dummyResultSet.getString("status")).andReturn("CONFIRMED").once();
     expect(dummyResultSet.getString("role")).andReturn("TEACHER").once();
-    expect(dummyResultSet.getLong("count")).andReturn(4L).once();
+    expect(dummyResultSet.getInt("count")).andReturn(4).once();
 
     expect(dummyResultSet.next()).andReturn(true).once();
     expect(dummyResultSet.getString("status")).andReturn("WAITING_LIST").once();
     expect(dummyResultSet.getString("role")).andReturn("STUDENT").once();
-    expect(dummyResultSet.getLong("count")).andReturn(10L).once();
+    expect(dummyResultSet.getInt("count")).andReturn(10).once();
 
     expect(dummyResultSet.next()).andReturn(true).once();
     expect(dummyResultSet.getString("status")).andReturn("CANCELLED").once();
     expect(dummyResultSet.getString("role")).andReturn("TEACHER").once();
-    expect(dummyResultSet.getLong("count")).andReturn(2L).once();
+    expect(dummyResultSet.getInt("count")).andReturn(2).once();
 
     expect(dummyResultSet.next()).andReturn(false).once();
     dummyResultSet.close();
     dummyConnection.close();
 
     // Create expected status count
-    Map<BookingStatus, Map<Role, Long>> expectedStatusCounts = new HashMap<BookingStatus, Map<Role, Long>>() {{
-        put(BookingStatus.CONFIRMED, new HashMap<Role, Long>() {{
-            put(Role.STUDENT, 20L);
-            put(Role.TEACHER, 4L);
+    Map<BookingStatus, Map<Role, Integer>> expectedStatusCounts = new HashMap<>() {{
+        put(BookingStatus.CONFIRMED, new HashMap<>() {{
+            put(Role.STUDENT, 20);
+            put(Role.TEACHER, 4);
           }
         });
-        put(BookingStatus.WAITING_LIST, new HashMap<Role, Long>() {{
-            put(Role.STUDENT, 10L);
+        put(BookingStatus.WAITING_LIST, new HashMap<>() {{
+            put(Role.STUDENT, 10);
           }
         });
-        put(BookingStatus.CANCELLED, new HashMap<Role, Long>() {{
-            put(Role.TEACHER, 2L);
+        put(BookingStatus.CANCELLED, new HashMap<>() {{
+            put(Role.TEACHER, 2);
           }
         });
       }};
@@ -95,7 +95,7 @@ class PgEventBookingsTest {
     Object[] mockedObjects = {dummyPostgresSqlDb, dummyConnection, dummyPreparedStatement, dummyResultSet};
     replay(mockedObjects);
     PgEventBookings pgEventBookings = this.buildPgEventBookings();
-    Map<BookingStatus, Map<Role, Long>> actualStatusCounts =
+    Map<BookingStatus, Map<Role, Integer>> actualStatusCounts =
         pgEventBookings.getEventBookingStatusCounts("someEventId", true);
     assertEquals(expectedStatusCounts, actualStatusCounts, "Every row should be represented in the result");
     verify(mockedObjects);

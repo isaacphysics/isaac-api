@@ -119,7 +119,8 @@ public interface EventBookings {
    * @return Map of booking status to number of bookings for the event.
    * @throws SegueDatabaseException - if there is a problem accessing the db
    */
-  Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(String eventId, boolean includeDeletedUsersInCounts)
+  Map<BookingStatus, Map<Role, Integer>> getEventBookingStatusCounts(String eventId,
+                                                                     boolean includeDeletedUsersInCounts)
       throws SegueDatabaseException;
 
   /**

@@ -151,7 +151,7 @@ public class EventBookingPersistenceManager {
    * @return Map of booking status, role to count
    * @throws SegueDatabaseException - if something is wrong with the database
    */
-  public Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(final String eventId,
+  public Map<BookingStatus, Map<Role, Integer>> getEventBookingStatusCounts(final String eventId,
                                                                          final boolean includeDeletedUsersInCounts)
       throws SegueDatabaseException {
     return dao.getEventBookingStatusCounts(eventId, includeDeletedUsersInCounts);

@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -654,7 +655,7 @@ public class EventBookingManager {
       // Obtain an exclusive database lock to lock the event
       this.bookingPersistenceManager.lockEventUntilTransactionComplete(transaction, event.getId());
 
-      Long numberOfPlaces = getPlacesAvailable(event);
+      Integer numberOfPlaces = getPlacesAvailable(event);
       // check the number of places - if some available then check if the event deadline has passed. If not
       // throw error.
       if (numberOfPlaces != null && !EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus()) && numberOfPlaces > 0
@@ -736,7 +737,7 @@ public class EventBookingManager {
             + "might not have all of the required user information.");
       }
 
-      final Long placesAvailable = this.getPlacesAvailable(event, true);
+      final Integer placesAvailable = this.getPlacesAvailable(event, true);
       if (placesAvailable != null && placesAvailable <= 0) {
         throw new EventIsFullException("The event you are attempting promote a booking for is at or "
             + "over capacity.");
@@ -829,7 +830,7 @@ public class EventBookingManager {
    *     method will only return 0. This allows for manual overbooking.
    * @throws SegueDatabaseException - if we cannot contact the database.
    */
-  public Long getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
+  public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
     boolean isWaitingListOnly = EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus());
     return this.getPlacesAvailable(event, isWaitingListOnly);
   }
@@ -846,7 +847,7 @@ public class EventBookingManager {
    *     the method will only return 0. This allows for manual overbooking.
    * @throws SegueDatabaseException - if we cannot contact the database.
    */
-  private Long getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
+  private Integer getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
       throws SegueDatabaseException {
     boolean isStudentEvent = event.getTags().contains(EVENT_STAGE_STUDENT);
     Integer numberOfPlaces = event.getNumberOfPlaces();
@@ -858,52 +859,44 @@ public class EventBookingManager {
     // users to book on future events.
     boolean includeDeletedUsersInCounts = event.getDate() != null && event.getDate().before(new Date());
 
-    Map<BookingStatus, Map<Role, Long>> eventBookingStatusCounts =
+    Map<BookingStatus, Map<Role, Integer>> eventBookingStatusCounts =
         this.bookingPersistenceManager.getEventBookingStatusCounts(event.getId(), includeDeletedUsersInCounts);
 
-    long totalBooked = 0L;
-    Long studentCount = 0L;
-
-    if (eventBookingStatusCounts.get(BookingStatus.CONFIRMED) != null) {
-      for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.CONFIRMED).entrySet()) {
-        if (Role.STUDENT.equals(roleLongEntry.getKey())) {
-          studentCount = roleLongEntry.getValue();
-        }
-
-        totalBooked = totalBooked + roleLongEntry.getValue();
-      }
+    Map<Role, Integer> roleCounts;
+    if (countOnlyConfirmed) {
+      roleCounts = eventBookingStatusCounts.getOrDefault(BookingStatus.CONFIRMED, new HashMap<>());
+    } else {
+      roleCounts = getCombinedBookingCountsByRole(eventBookingStatusCounts);
     }
 
-    if (!countOnlyConfirmed && eventBookingStatusCounts.get(BookingStatus.WAITING_LIST) != null) {
-      for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.WAITING_LIST).entrySet()) {
-        if (Role.STUDENT.equals(roleLongEntry.getKey())) {
-          studentCount = studentCount + roleLongEntry.getValue();
-        }
-
-        totalBooked = totalBooked + roleLongEntry.getValue();
-      }
-    }
-
-    if (!countOnlyConfirmed && eventBookingStatusCounts.get(BookingStatus.RESERVED) != null) {
-      for (Map.Entry<Role, Long> roleLongEntry : eventBookingStatusCounts.get(BookingStatus.RESERVED).entrySet()) {
-        if (Role.STUDENT.equals(roleLongEntry.getKey())) {
-          studentCount = studentCount + roleLongEntry.getValue();
-        }
-
-        totalBooked = totalBooked + roleLongEntry.getValue();
-      }
-    }
-
-    // capacity of the event
+    // Calculate remaining capacity with a lower bound of zero (no negatives)
     if (isStudentEvent) {
-      return numberOfPlaces - studentCount;
+      // For Student events we only limit the number of students, other roles do not count against the capacity
+      Integer studentCount = roleCounts.getOrDefault(Role.STUDENT, 0);
+      return Math.max(0, numberOfPlaces - studentCount);
+    } else {
+      // For other events, count all roles
+      Integer totalBooked = roleCounts.values().stream().reduce(0, Integer::sum);
+      return Math.max(0, numberOfPlaces - totalBooked);
     }
+  }
 
-    if (totalBooked > numberOfPlaces) {
-      return 0L;
+  private static Map<Role, Integer> getCombinedBookingCountsByRole(
+      Map<BookingStatus, Map<Role, Integer>> eventBookingStatusCounts) {
+    List<Map<Role, Integer>> listOfBookingCountByRoleMaps = new ArrayList<>(3);
+    // Extract the count-by-role maps for each relevant status and add them to a list
+    if (eventBookingStatusCounts.get(BookingStatus.CONFIRMED) != null) {
+      listOfBookingCountByRoleMaps.add(eventBookingStatusCounts.get(BookingStatus.CONFIRMED));
     }
-
-    return numberOfPlaces - totalBooked;
+    if (eventBookingStatusCounts.get(BookingStatus.WAITING_LIST) != null) {
+      listOfBookingCountByRoleMaps.add(eventBookingStatusCounts.get(BookingStatus.WAITING_LIST));
+    }
+    if (eventBookingStatusCounts.get(BookingStatus.RESERVED) != null) {
+      listOfBookingCountByRoleMaps.add(eventBookingStatusCounts.get(BookingStatus.RESERVED));
+    }
+    // Flatten the list and return a single map of the summed counts for each role
+    return listOfBookingCountByRoleMaps.stream().flatMap(map -> map.entrySet().stream())
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
   }
 
   /**
@@ -1330,12 +1323,12 @@ public class EventBookingManager {
   private void ensureCapacity(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                               final Boolean countOnlyConfirmed) throws SegueDatabaseException, EventIsFullException {
     final boolean isStudentEvent = event.getTags().contains(EVENT_STAGE_STUDENT);
-    Long numberOfPlaces =
+    Integer numberOfPlaces =
         countOnlyConfirmed != null ? getPlacesAvailable(event, countOnlyConfirmed) : getPlacesAvailable(event);
     if (numberOfPlaces != null) {
       long numberOfRequests = users.stream()
           // Consider tutors as students with regard to teacher events (for now)
-          .filter(user -> !isStudentEvent || !Role.TEACHER.equals(user.getRole()))
+          .filter(user -> !isStudentEvent || Role.STUDENT.equals(user.getRole()) || Role.TUTOR.equals(user.getRole()))
           .count();
       if (numberOfPlaces - numberOfRequests < 0) {
         throw new EventIsFullException(
