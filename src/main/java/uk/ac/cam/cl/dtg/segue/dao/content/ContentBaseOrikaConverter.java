@@ -19,17 +19,10 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.InlineRegionDTO;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
@@ -40,7 +33,7 @@ import java.util.List;
 public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<ContentBase, ContentBaseDTO> {
     private static final Logger log = LoggerFactory.getLogger(ContentBaseOrikaConverter.class);
 
-    private ContentMapper contentMapper;
+    private final ContentMapper contentMapper;
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for content objects.
@@ -74,9 +67,7 @@ public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<Cont
             return null;
         }
 
-        ContentDTO result = super.mapperFacade.map(source, destinationClass);
-
-        return result;
+        return super.mapperFacade.map(source, destinationClass);
     }
 
 }
