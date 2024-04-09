@@ -1149,6 +1149,154 @@ class EventBookingManagerTest {
     }
 
     @Test
+    void cancelConfirmedBookingTriggersWaitingListPromotion()
+        throws SegueDatabaseException, ContentManagerException, NoUserException {
+      IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
+
+      RegisteredUserDTO confirmedUser = new RegisteredUserDTO();
+      confirmedUser.setId(2L);
+      RegisteredUserDTO waitingListUser = new RegisteredUserDTO();
+      waitingListUser.setId(4L);
+
+      DetailedEventBookingDTO waitingListBookingToBeUpdated =
+          prepareDetailedEventBookingDto(prepareUserSummaryDto(4L), BookingStatus.WAITING_LIST, testEvent.getId());
+      waitingListBookingToBeUpdated.setBookingDate(someFutureDate);
+      List<DetailedEventBookingDTO> waitingListBookingsList = List.of(waitingListBookingToBeUpdated);
+      DetailedEventBookingDTO updatedWaitingListBooking =
+          prepareDetailedEventBookingDto(prepareUserSummaryDto(4L), BookingStatus.CONFIRMED, testEvent.getId());
+
+      prepareTransactionExpectations(testEvent);
+      prepareConfirmedBookingExpectations(testEvent, confirmedUser);
+      prepareNonEmptyWaitingListExpectations(testEvent, waitingListBookingToBeUpdated, waitingListBookingsList,
+          updatedWaitingListBooking);
+      prepareCancellationEmailExpectations("email-event-booking-cancellation-confirmed", testEvent,
+          confirmedUser);
+
+      expect(dummyUserAccountManager.getUserDTOById(4L)).andReturn(waitingListUser);
+      EmailTemplateDTO bookingPromotionNotificationTemplate = new EmailTemplateDTO();
+      expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed")).andReturn(
+          bookingPromotionNotificationTemplate);
+      dummyEmailManager.sendTemplatedEmailToUser(eq(waitingListUser), eq(bookingPromotionNotificationTemplate),
+          eq(Map.of(EMAIL_TEMPLATE_TOKEN_CONTACT_US_URL,
+              String.format("https://hostname.com/contact?subject=Event+-++-+%s", urlDate),
+              EMAIL_TEMPLATE_TOKEN_AUTHORIZATION_LINK, "https://hostname.com/account?authToken=null",
+              EMAIL_TEMPLATE_TOKEN_EVENT_DETAILS, "", EMAIL_TEMPLATE_TOKEN_EVENT, testEvent)), eq(EmailType.SYSTEM),
+          EasyMock.<List<EmailAttachment>>anyObject());
+      expectLastCall();
+
+      replay(mockedObjects);
+
+      EventBookingManager ebm = buildEventBookingManager();
+      try {
+        ebm.cancelBooking(testEvent, confirmedUser);
+      } catch (SegueDatabaseException | ContentManagerException e) {
+        fail("No exception is expected for this test");
+      }
+
+      verify(mockedObjects);
+    }
+
+    @Test
+    void cancelReservedBookingTriggersWaitingListPromotion()
+        throws SegueDatabaseException, ContentManagerException, NoUserException {
+      IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
+
+      RegisteredUserDTO reservedUser = new RegisteredUserDTO();
+      reservedUser.setId(2L);
+      reservedUser.setGivenName("givenName");
+      reservedUser.setFamilyName("familyName");
+      RegisteredUserDTO waitingListUser = new RegisteredUserDTO();
+      waitingListUser.setId(4L);
+      RegisteredUserDTO reservingUser = new RegisteredUserDTO();
+      reservingUser.setId(5L);
+
+      DetailedEventBookingDTO waitingListBookingToBeUpdated =
+          prepareDetailedEventBookingDto(prepareUserSummaryDto(4L), BookingStatus.WAITING_LIST, testEvent.getId());
+      waitingListBookingToBeUpdated.setBookingDate(someFutureDate);
+      List<DetailedEventBookingDTO> waitingListBookingsList = List.of(waitingListBookingToBeUpdated);
+      DetailedEventBookingDTO updatedWaitingListBooking =
+          prepareDetailedEventBookingDto(prepareUserSummaryDto(4L), BookingStatus.CONFIRMED, testEvent.getId());
+
+      prepareTransactionExpectations(testEvent);
+      prepareReservedBookingExpectations(testEvent, reservedUser);
+      prepareNonEmptyWaitingListExpectations(testEvent, waitingListBookingToBeUpdated, waitingListBookingsList,
+          updatedWaitingListBooking);
+      prepareCancellationEmailExpectations("email-event-reservation-cancellation-confirmed", testEvent,
+          reservedUser);
+
+      expect(dummyUserAccountManager.getUserDTOById(5L)).andReturn(reservingUser);
+      EmailTemplateDTO bookingCancellationReserverNotificationTemplate = new EmailTemplateDTO();
+      expect(
+          dummyEmailManager.getEmailTemplateDTO(
+              "email_event_reservation_cancellation_reserver_notification")).andReturn(
+          bookingCancellationReserverNotificationTemplate);
+      dummyEmailManager.sendTemplatedEmailToUser(reservingUser, bookingCancellationReserverNotificationTemplate,
+          Map.of(EMAIL_TEMPLATE_TOKEN_CONTACT_US_URL,
+              String.format("https://hostname.com/contact?subject=Event+-++-+%s", urlDate),
+              EMAIL_TEMPLATE_TOKEN_EVENT_DETAILS, "", EMAIL_TEMPLATE_TOKEN_EVENT, testEvent, "reservedName",
+              "givenName familyName"), EmailType.SYSTEM);
+      expectLastCall();
+
+      expect(dummyUserAccountManager.getUserDTOById(4L)).andReturn(waitingListUser);
+      EmailTemplateDTO bookingPromotionNotificationTemplate = new EmailTemplateDTO();
+      expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed")).andReturn(
+          bookingPromotionNotificationTemplate);
+      dummyEmailManager.sendTemplatedEmailToUser(eq(waitingListUser), eq(bookingPromotionNotificationTemplate),
+          eq(Map.of(EMAIL_TEMPLATE_TOKEN_CONTACT_US_URL,
+              String.format("https://hostname.com/contact?subject=Event+-++-+%s", urlDate),
+              EMAIL_TEMPLATE_TOKEN_AUTHORIZATION_LINK, "https://hostname.com/account?authToken=null",
+              EMAIL_TEMPLATE_TOKEN_EVENT_DETAILS, "", EMAIL_TEMPLATE_TOKEN_EVENT, testEvent)), eq(EmailType.SYSTEM),
+          EasyMock.<List<EmailAttachment>>anyObject());
+      expectLastCall();
+
+      replay(mockedObjects);
+
+      EventBookingManager ebm = buildEventBookingManager();
+      try {
+        ebm.cancelBooking(testEvent, reservedUser);
+      } catch (SegueDatabaseException | ContentManagerException e) {
+        fail("No exception is expected for this test");
+      }
+
+      verify(mockedObjects);
+    }
+
+    @Test
+    void cancelWaitingListBookingDoesNotTriggerWaitingListPromotion()
+        throws SegueDatabaseException, ContentManagerException {
+      IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
+
+      RegisteredUserDTO waitingListUserToCancelBooking = new RegisteredUserDTO();
+      waitingListUserToCancelBooking.setId(2L);
+
+      DetailedEventBookingDTO waitingListBookingToBeCancelled =
+          prepareDetailedEventBookingDto(prepareUserSummaryDto(2L), BookingStatus.WAITING_LIST, testEvent.getId());
+      DetailedEventBookingDTO updatedWaitingListBooking =
+          prepareDetailedEventBookingDto(prepareUserSummaryDto(2L), BookingStatus.CANCELLED, testEvent.getId());
+
+      prepareTransactionExpectations(testEvent);
+
+      expect(dummyEventBookingPersistenceManager.getBookingByEventIdAndUserId(testEvent.getId(),
+          waitingListUserToCancelBooking.getId())).andReturn(waitingListBookingToBeCancelled);
+      expect(dummyEventBookingPersistenceManager.updateBookingStatus(dummyTransaction, testEvent.getId(),
+          waitingListUserToCancelBooking.getId(), BookingStatus.CANCELLED, null)).andReturn(updatedWaitingListBooking);
+
+      prepareCancellationEmailExpectations("email-event-booking-cancellation-confirmed", testEvent,
+          waitingListUserToCancelBooking);
+
+      replay(mockedObjects);
+
+      EventBookingManager ebm = buildEventBookingManager();
+      try {
+        ebm.cancelBooking(testEvent, waitingListUserToCancelBooking);
+      } catch (SegueDatabaseException | ContentManagerException e) {
+        fail("No exception is expected for this test");
+      }
+
+      verify(mockedObjects);
+    }
+
+    @Test
     void cancelBooking_noUserExceptionShouldBeCaughtIfPromotedUserNotFound()
         throws SegueDatabaseException, ContentManagerException, NoUserException {
       IsaacEventPageDTO testEvent = prepareIsaacEventPageDto(studentCSTags);
@@ -1279,6 +1427,7 @@ class EventBookingManagerTest {
               String.format("https://hostname.com/contact?subject=Event+-++-+%s", urlDate),
               EMAIL_TEMPLATE_TOKEN_EVENT_DETAILS, "", EMAIL_TEMPLATE_TOKEN_EVENT, testEvent, "reservedName",
               "givenName familyName"), EmailType.SYSTEM);
+      expectLastCall();
 
       replay(mockedObjects);
 

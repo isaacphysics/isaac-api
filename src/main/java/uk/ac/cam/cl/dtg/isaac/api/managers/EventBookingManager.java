@@ -995,14 +995,21 @@ public class EventBookingManager {
       this.bookingPersistenceManager.updateBookingStatus(transaction, event.getId(), user.getId(),
           BookingStatus.CANCELLED, null);
 
-      List<DetailedEventBookingDTO> waitingListBookings =
-          this.bookingPersistenceManager.adminGetBookingsByEventIdAndStatus(event.getId(), BookingStatus.WAITING_LIST);
-      if (!waitingListBookings.isEmpty()) {
-        DetailedEventBookingDTO oldestWaitingListBooking =
-            Collections.min(waitingListBookings, Comparator.comparing(EventBookingDTO::getBookingDate));
-        updatedWaitingListBooking = this.bookingPersistenceManager.updateBookingStatus(transaction, event.getId(),
-            oldestWaitingListBooking.getUserBooked().getId(), BookingStatus.CONFIRMED,
-            oldestWaitingListBooking.getAdditionalInformation());
+      // If the status was CONFIRMED or RESERVED then promote the oldest booking from the waiting list, if one exists
+      // WAITING_LIST bookings can also be cancelled but do not trigger promotion
+      if (previousBookingStatus == BookingStatus.CONFIRMED || previousBookingStatus == BookingStatus.RESERVED) {
+        List<DetailedEventBookingDTO> waitingListBookings =
+            this.bookingPersistenceManager.adminGetBookingsByEventIdAndStatus(event.getId(),
+                BookingStatus.WAITING_LIST);
+        if (!waitingListBookings.isEmpty()) {
+          DetailedEventBookingDTO oldestWaitingListBooking =
+              Collections.min(waitingListBookings, Comparator.comparing(EventBookingDTO::getBookingDate));
+          updatedWaitingListBooking = this.bookingPersistenceManager.updateBookingStatus(transaction, event.getId(),
+              oldestWaitingListBooking.getUserBooked().getId(), BookingStatus.CONFIRMED,
+              oldestWaitingListBooking.getAdditionalInformation());
+        } else {
+          updatedWaitingListBooking = null;
+        }
       } else {
         updatedWaitingListBooking = null;
       }
