@@ -48,6 +48,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.easymock.Capture;
@@ -150,9 +151,10 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   class AuthenticateWithCredentialsLocalProvider {
     @Test
     void success() throws InvalidKeySpecException, NoSuchAlgorithmException {
-      RegisteredUserDTO expectedUser =
-          new RegisteredUserDTO("Test Student", "Student", TEST_STUDENT_EMAIL, EmailVerificationStatus.VERIFIED, null,
-              Gender.MALE, LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC), "110158", false);
+      RegisteredUserDTO expectedUser = new RegisteredUserDTO(
+          "Test Student", "Student", TEST_STUDENT_EMAIL, EmailVerificationStatus.VERIFIED, null, Gender.MALE,
+          Date.from(LocalDateTime.parse("2019-08-01T12:51:39.981").toInstant(ZoneOffset.UTC)), "110158", false
+      );
       expectedUser.setId(TEST_STUDENT_ID);
       LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
       testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);

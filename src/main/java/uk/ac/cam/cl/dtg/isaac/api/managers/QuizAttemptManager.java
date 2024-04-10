@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.inject.Inject;
 import jakarta.annotation.Nullable;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,7 +66,7 @@ public class QuizAttemptManager {
     newQuizAttempt.setUserId(user.getId());
     newQuizAttempt.setQuizAssignmentId(quizAssignment.getId());
     newQuizAttempt.setQuizId(quizAssignment.getQuizId());
-    newQuizAttempt.setStartDate(Instant.now());
+    newQuizAttempt.setStartDate(new Date());
 
     newQuizAttempt.setId(quizAttemptPersistenceManager.saveAttempt(newQuizAttempt));
 
@@ -94,7 +94,7 @@ public class QuizAttemptManager {
     newQuizAttempt.setUserId(user.getId());
     newQuizAttempt.setQuizAssignmentId(null);
     newQuizAttempt.setQuizId(quiz.getId());
-    newQuizAttempt.setStartDate(Instant.now());
+    newQuizAttempt.setStartDate(new Date());
 
     newQuizAttempt.setId(quizAttemptPersistenceManager.saveAttempt(newQuizAttempt));
 

@@ -17,7 +17,6 @@
 package uk.ac.cam.cl.dtg.segue.dao.associations;
 
 import static java.util.Objects.requireNonNull;
-import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromDate;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -26,7 +25,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +110,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
     ) {
       pst.setLong(FIELD_CREATE_ASSOCIATION_GRANTING_USER_ID, userIdGrantingAccess);
       pst.setLong(FIELD_CREATE_ASSOCIATION_RECEIVING_USER_ID, userIdReceivingAccess);
-      pst.setTimestamp(FIELD_CREATE_ASSOCIATION_CREATION_DATE, Timestamp.from(Instant.now()));
+      pst.setTimestamp(FIELD_CREATE_ASSOCIATION_CREATION_DATE, new Timestamp(new Date().getTime()));
 
       if (pst.executeUpdate() == 0) {
         throw new SegueDatabaseException("Unable to create association.");
@@ -290,7 +289,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
    */
   private UserAssociation convertFromSQLToAssociation(final ResultSet results) throws SQLException {
     return new UserAssociation(results.getLong("user_id_granting_permission"),
-        results.getLong("user_id_receiving_permission"), getInstantFromDate(results, "created"));
+        results.getLong("user_id_receiving_permission"), results.getDate("created"));
   }
 
   /**

@@ -16,15 +16,10 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import static java.time.ZoneOffset.UTC;
-
-import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.Instant;
 
 /**
  * Common abstract class for postgres DAOs.
@@ -49,45 +44,24 @@ public abstract class AbstractPgDataManager {
       pst.setString(index, ((Enum<?>) value).name());
     }
 
-    if (value instanceof String stringValue) {
-      pst.setString(index, stringValue);
+    if (value instanceof String) {
+      pst.setString(index, (String) value);
     }
 
-    if (value instanceof Integer integerValue) {
-      pst.setInt(index, integerValue);
+    if (value instanceof Integer) {
+      pst.setInt(index, (Integer) value);
     }
 
-    if (value instanceof Long longValue) {
-      pst.setLong(index, longValue);
+    if (value instanceof Long) {
+      pst.setLong(index, (Long) value);
     }
 
-    if (value instanceof Instant instantValue) {
-      pst.setTimestamp(index, Timestamp.from(instantValue));
+    if (value instanceof java.util.Date) {
+      pst.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()));
     }
 
-    if (value instanceof Boolean booleanValue) {
-      pst.setBoolean(index, booleanValue);
-    }
-  }
-
-  // The ResultSet getter methods can return null if the value in the table is NULL.
-  // The Timestamp toInstant method will throw a NullPointerException if called on such a value
-  public static Instant getInstantFromTimestamp(ResultSet results, String columnLabel) throws SQLException {
-    Timestamp timestamp = results.getTimestamp(columnLabel);
-    if (timestamp != null) {
-      return timestamp.toInstant();
-    } else {
-      return null;
-    }
-  }
-
-  // The Date toInstant method will throw an UnsupportedOperationException, so we must convert it via LocalDate
-  public static Instant getInstantFromDate(ResultSet results, String columnLabel) throws SQLException {
-    Date date = results.getDate(columnLabel);
-    if (date != null) {
-      return date.toLocalDate().atStartOfDay(UTC).toInstant();
-    } else {
-      return null;
+    if (value instanceof Boolean) {
+      pst.setBoolean(index, (Boolean) value);
     }
   }
 }

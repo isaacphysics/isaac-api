@@ -23,8 +23,9 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import java.time.Instant;
+import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -42,7 +43,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
  */
 public class InMemoryMisuseMonitor implements IMisuseMonitor {
   // Cache of the form agentIdentifier --> Event --> Date, number
-  private final Cache<String, Map<String, Map.Entry<Instant, Integer>>> nonPersistentDatabase;
+  private final Cache<String, Map<String, Map.Entry<Date, Integer>>> nonPersistentDatabase;
 
   private final Map<String, IMisuseHandler> handlerMap;
 
@@ -54,7 +55,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
   @Inject
   public InMemoryMisuseMonitor() {
     nonPersistentDatabase = CacheBuilder.newBuilder().expireAfterAccess(2, TimeUnit.DAYS)
-        .<String, Map<String, Map.Entry<Instant, Integer>>>build();
+        .<String, Map<String, Map.Entry<Date, Integer>>>build();
     handlerMap = Maps.newConcurrentMap();
   }
 
@@ -82,23 +83,23 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
     IMisuseHandler handler = handlerMap.get(eventLabel);
     requireNonNull(handler, "No handler has been registered for " + eventLabel);
 
-    Map<String, Entry<Instant, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
+    Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 
     if (null == existingHistory) {
       existingHistory = Maps.newConcurrentMap();
 
-      existingHistory.put(eventLabel, immutableEntry(Instant.now(), adjustmentValue));
+      existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
       nonPersistentDatabase.put(agentIdentifier, existingHistory);
     } else {
-      Entry<Instant, Integer> entry = existingHistory.get(eventLabel);
+      Entry<Date, Integer> entry = existingHistory.get(eventLabel);
       if (null == entry) {
-        existingHistory.put(eventLabel, immutableEntry(Instant.now(), adjustmentValue));
+        existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
         log.debug("New Event {}", existingHistory.get(eventLabel));
       } else {
 
         // deal with expired events
         if (!isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())) {
-          existingHistory.put(eventLabel, immutableEntry(Instant.now(), adjustmentValue));
+          existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
           log.debug("Event expired starting count over");
         } else {
           // last events not expired yet so add them.
@@ -140,13 +141,13 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
   @Override
   public boolean willHaveMisused(final String agentIdentifier, final String eventToCheck,
                                  final Integer adjustmentValue) {
-    Map<String, Entry<Instant, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
+    Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 
     if (null == existingHistory || existingHistory.get(eventToCheck) == null) {
       return false;
     }
 
-    Entry<Instant, Integer> entry = existingHistory.get(eventToCheck);
+    Entry<Date, Integer> entry = existingHistory.get(eventToCheck);
     IMisuseHandler handler = handlerMap.get(eventToCheck);
 
     return isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())
@@ -155,7 +156,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
 
   @Override
   public void resetMisuseCount(final String agentIdentifier, final String eventLabel) {
-    Map<String, Entry<Instant, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
+    Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
 
     if (null == existingHistory || existingHistory.get(eventLabel) == null) {
       return;
@@ -166,7 +167,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
 
   @Override
   public Map<String, List<MisuseStatisticDTO>> getMisuseStatistics(final long n) {
-    Map<String, Map<String, Entry<Instant, Integer>>> cache = nonPersistentDatabase.asMap();
+    Map<String, Map<String, Entry<Date, Integer>>> cache = nonPersistentDatabase.asMap();
     return handlerMap.keySet().stream()
         .map(eventLabel -> {
           Integer softThreshold = handlerMap.get(eventLabel).getSoftThreshold();
@@ -175,12 +176,12 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
               cache.entrySet().stream()
                   .map(e -> Pair.of(e.getKey(), e.getValue().get(eventLabel)))
                   .filter(e -> null != e.getRight())
-                  .sorted(Comparator.comparingInt((Entry<String, Entry<Instant, Integer>> e) -> e.getValue().getValue())
+                  .sorted(Comparator.comparingInt((Entry<String, Entry<Date, Integer>> e) -> e.getValue().getValue())
                       .reversed())
                   .limit(n)
-                  .map((Pair<String, Entry<Instant, Integer>> e) -> {
+                  .map((Pair<String, Entry<Date, Integer>> e) -> {
                     String agentIdentifier = e.getKey();
-                    Entry<Instant, Integer> misuseEntry = e.getValue();
+                    Entry<Date, Integer> misuseEntry = e.getValue();
                     return new MisuseStatisticDTO(
                         agentIdentifier, eventLabel, hasMisused(agentIdentifier, eventLabel),
                         misuseEntry.getValue() >= softThreshold,
@@ -201,9 +202,15 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
    *            - the number of seconds until this entry expires.
    * @return true if we can continue counting false if we should reset the counter as the entry has expired.
    */
-  private boolean isCountStillFresh(final Instant mapEntryDate, final Integer secondsUntilExpiry) {
-    Instant entryExpiry = mapEntryDate.plusSeconds(secondsUntilExpiry);
+  private boolean isCountStillFresh(final Date mapEntryDate, final Integer secondsUntilExpiry) {
+    Calendar entryExpiry = Calendar.getInstance();
+    entryExpiry.setTime(mapEntryDate);
+    entryExpiry.add(Calendar.SECOND, secondsUntilExpiry);
 
-    return !Instant.now().isAfter(entryExpiry);
+    if (new Date().after(entryExpiry.getTime())) {
+      return false;
+    }
+
+    return true;
   }
 }

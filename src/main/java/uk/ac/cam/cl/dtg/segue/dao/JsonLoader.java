@@ -16,8 +16,6 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -29,7 +27,7 @@ import java.io.IOException;
  *
  */
 public final class JsonLoader {
-  private static ObjectMapper mapper = getSharedBasicObjectMapper();
+  private static ObjectMapper mapper = new ObjectMapper();
 
   /**
    * Prevent this class from being instantiated.

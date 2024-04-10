@@ -22,10 +22,10 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -111,7 +111,7 @@ public class GroupManager {
     Validate.notBlank(groupName);
     requireNonNull(groupOwner);
 
-    Instant now = Instant.now();
+    Date now = new Date();
     UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), GroupStatus.ACTIVE, now, false, false, now);
 
     return this.convertGroupToDTO(groupDatabase.createGroup(group));
@@ -127,7 +127,7 @@ public class GroupManager {
   public UserGroupDTO editUserGroup(final UserGroupDTO groupToEdit) throws SegueDatabaseException {
     requireNonNull(groupToEdit);
     UserGroup userGroup = dtoMapper.map(groupToEdit);
-    userGroup.setLastUpdated(Instant.now());
+    userGroup.setLastUpdated(new Date());
 
     UserGroup existingGroup = groupDatabase.findGroupById(groupToEdit.getId());
     UserGroupDTO group = this.convertGroupToDTO(groupDatabase.editGroup(userGroup));
@@ -764,7 +764,7 @@ public class GroupManager {
 
       GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
       // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
-      Instant assignmentStartDate = null;
+      Date assignmentStartDate = null;
       if (assignment instanceof AssignmentDTO) {
         assignmentStartDate = ((AssignmentDTO) assignment).getScheduledStartDate();
       }
@@ -772,7 +772,7 @@ public class GroupManager {
         assignmentStartDate = assignment.getCreationDate();
       }
       if (GroupMembershipStatus.INACTIVE.equals(membershipRecord.getStatus())
-          && membershipRecord.getUpdated().isBefore(assignmentStartDate)) {
+          && membershipRecord.getUpdated().before(assignmentStartDate)) {
         continue;
       }
 

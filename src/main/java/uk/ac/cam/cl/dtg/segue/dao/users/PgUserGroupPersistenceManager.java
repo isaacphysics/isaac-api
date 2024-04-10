@@ -17,7 +17,6 @@
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import static java.util.Objects.requireNonNull;
-import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromDate;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
@@ -30,8 +29,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,9 +73,9 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
       Timestamp created;
       if (group.getCreated() != null) {
-        created = Timestamp.from(group.getCreated());
+        created = new Timestamp(group.getCreated().getTime());
       } else {
-        created = Timestamp.from(Instant.now());
+        created = new Timestamp(new Date().getTime());
       }
 
       pst.setString(FIELD_CREATE_GROUP_GROUP_STATUS, GroupStatus.ACTIVE.name());
@@ -119,11 +118,11 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     ) {
       pst.setString(FIELD_EDIT_GROUP_GROUP_NAME, group.getGroupName());
       pst.setLong(FIELD_EDIT_GROUP_OWNER_ID, group.getOwnerId());
-      pst.setTimestamp(FIELD_EDIT_GROUP_CREATED, Timestamp.from(group.getCreated()));
+      pst.setTimestamp(FIELD_EDIT_GROUP_CREATED, new Timestamp(group.getCreated().getTime()));
       pst.setBoolean(FIELD_EDIT_GROUP_ARCHIVED, group.isArchived());
       pst.setBoolean(FIELD_EDIT_GROUP_ADDITIONAL_MANAGER_PRIVILEGES, group.isAdditionalManagerPrivileges());
       pst.setString(FIELD_EDIT_GROUP_GROUP_STATUS, group.getStatus().name());
-      pst.setTimestamp(FIELD_EDIT_GROUP_LAST_UPDATED, Timestamp.from(group.getLastUpdated()));
+      pst.setTimestamp(FIELD_EDIT_GROUP_LAST_UPDATED, new Timestamp(group.getLastUpdated().getTime()));
       pst.setLong(FIELD_EDIT_GROUP_GROUP_ID, group.getId());
 
       if (pst.executeUpdate() == 0) {
@@ -151,8 +150,8 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
       pst.setLong(FIELD_ADD_USER_GROUP_ID, groupId);
       pst.setLong(FIELD_ADD_USER_USER_ID, userId);
       pst.setString(FIELD_ADD_USER_MEMBERSHIP_STATUS, GroupMembershipStatus.ACTIVE.name());
-      pst.setTimestamp(FIELD_ADD_USER_CREATED, Timestamp.from(Instant.now()));
-      pst.setTimestamp(FIELD_ADD_USER_UPDATED, Timestamp.from(Instant.now()));
+      pst.setTimestamp(FIELD_ADD_USER_CREATED, new Timestamp(new Date().getTime()));
+      pst.setTimestamp(FIELD_ADD_USER_UPDATED, new Timestamp(new Date().getTime()));
 
       int affectedRows = pst.executeUpdate();
 
@@ -173,7 +172,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
          PreparedStatement pst = conn.prepareStatement(query)
     ) {
       pst.setString(FIELD_SET_MEMBERSHIP_STATUS_MEMBERSHIP_STATUS, newStatus.name());
-      pst.setTimestamp(FIELD_SET_MEMBERSHIP_STATUS_UPDATED, Timestamp.from(Instant.now()));
+      pst.setTimestamp(FIELD_SET_MEMBERSHIP_STATUS_UPDATED, new Timestamp(new Date().getTime()));
       pst.setLong(FIELD_SET_MEMBERSHIP_STATUS_USER_ID, userId);
       pst.setLong(FIELD_SET_MEMBERSHIP_STATUS_GROUP_ID, groupId);
 
@@ -437,7 +436,7 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
     ) {
       pst.setLong(FIELD_ADD_ADDITIONAL_MANAGER_GROUP_ID, groupId);
       pst.setLong(FIELD_ADD_ADDITIONAL_MANAGER_USER_ID, userId);
-      pst.setTimestamp(FIELD_ADD_ADDITIONAL_MANAGER_CREATED, Timestamp.from(Instant.now()));
+      pst.setTimestamp(FIELD_ADD_ADDITIONAL_MANAGER_CREATED, new Timestamp(new Date().getTime()));
 
       int affectedRows = pst.executeUpdate();
 
@@ -474,15 +473,14 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
    */
   private UserGroup buildGroup(final ResultSet set) throws SQLException {
     return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-        GroupStatus.valueOf(set.getString("group_status")), getInstantFromDate(set, "created"),
+        GroupStatus.valueOf(set.getString("group_status")), set.getDate("created"),
         set.getBoolean("archived"), set.getBoolean("additional_manager_privileges"),
-        getInstantFromDate(set, "last_updated"));
+        set.getDate("last_updated"));
   }
 
   private GroupMembership buildMembershipRecord(final ResultSet set) throws SQLException {
     return new GroupMembership(set.getLong("group_id"), set.getLong("user_id"),
-        GroupMembershipStatus.valueOf(set.getString("status")), getInstantFromDate(set, "created"),
-        getInstantFromDate(set, "updated"));
+        GroupMembershipStatus.valueOf(set.getString("status")), set.getDate("created"), set.getDate("updated"));
   }
 
   private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId,

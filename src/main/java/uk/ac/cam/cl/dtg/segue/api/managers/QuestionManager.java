@@ -29,14 +29,13 @@ import io.prometheus.client.Histogram;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
@@ -502,15 +501,15 @@ public class QuestionManager {
    * @return a Map of LocalDates to attempt counts
    */
   public Map<LocalDate, Long> getUsersQuestionAttemptCountsByDate(final RegisteredUserDTO user,
-                                                                  final Instant fromDate, final Instant toDate,
+                                                                  final Date fromDate, final Date toDate,
                                                                   final Boolean perDay) throws SegueDatabaseException {
-    Map<Instant, Long> questionAttemptCountPerDateByUser = this.questionAttemptPersistenceManager
+    Map<Date, Long> questionAttemptCountPerDateByUser = this.questionAttemptPersistenceManager
         .getQuestionAttemptCountForUserByDateRange(fromDate, toDate, user.getId(), perDay);
 
-    // Convert the Instants into localised dates and create a new map.
+    // Convert the normal java dates into useful joda dates and create a new map.
     Map<LocalDate, Long> result = Maps.newHashMap();
-    for (Map.Entry<Instant, Long> le : questionAttemptCountPerDateByUser.entrySet()) {
-      LocalDate localisedDate = LocalDate.ofInstant(le.getKey(), ZoneId.systemDefault());
+    for (Map.Entry<Date, Long> le : questionAttemptCountPerDateByUser.entrySet()) {
+      LocalDate localisedDate = new LocalDate(le.getKey());
 
       if (result.containsKey(localisedDate)) {
         result.put(localisedDate, result.get(localisedDate) + le.getValue());

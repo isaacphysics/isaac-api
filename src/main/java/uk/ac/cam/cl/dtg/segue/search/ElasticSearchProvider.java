@@ -420,21 +420,24 @@ public class ElasticSearchProvider implements ISearchProvider {
     BoolQueryBuilder filter = QueryBuilders.boolQuery();
     for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
       // date filter logic
-      if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction dateRangeInstruction) {
+      if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
+        DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
+            .getValue();
         RangeQueryBuilder rangeFilter = QueryBuilders.rangeQuery(fieldToFilterInstruction.getKey());
         // Note: assumption that dates are stored in long format.
         if (dateRangeInstruction.getFromDate() != null) {
-          rangeFilter.from(dateRangeInstruction.getFromDate().toEpochMilli());
+          rangeFilter.from(dateRangeInstruction.getFromDate().getTime());
         }
 
         if (dateRangeInstruction.getToDate() != null) {
-          rangeFilter.to(dateRangeInstruction.getToDate().toEpochMilli());
+          rangeFilter.to(dateRangeInstruction.getToDate().getTime());
         }
 
         filter.must(rangeFilter);
       }
 
-      if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction sfi) {
+      if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
+        SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
 
         List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
@@ -444,11 +447,13 @@ public class ElasticSearchProvider implements ISearchProvider {
         filter.must(this.generateBoolMatchQuery(fieldsToMatch));
       }
 
-      if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction sfi) {
+      if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
+        TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
         filter.must(QueryBuilders.termsQuery(fieldToFilterInstruction.getKey(), sfi.getMatchValues()));
       }
 
-      if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction sfi) {
+      if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
+        SimpleExclusionInstruction sfi = (SimpleExclusionInstruction) fieldToFilterInstruction.getValue();
 
         List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new GitContentManager.BooleanSearchClause(

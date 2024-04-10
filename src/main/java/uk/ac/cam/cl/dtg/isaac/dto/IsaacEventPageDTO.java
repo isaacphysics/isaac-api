@@ -21,7 +21,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_DEFAU
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -42,10 +42,10 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
  */
 @JsonContentType("isaacEventPage")
 public class IsaacEventPageDTO extends ContentDTO {
-  private Instant date;
-  private Instant endDate;
-  private Instant bookingDeadline;
-  private Instant prepWorkDeadline;
+  private Date date;
+  private Date endDate;
+  private Date bookingDeadline;
+  private Date prepWorkDeadline;
   private Location location;
 
   private List<ExternalReference> preResources;
@@ -120,10 +120,10 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("version") final boolean published,
       @JsonProperty("deprecated") final Boolean deprecated,
       @JsonProperty("tags") final Set<String> tags,
-      @JsonProperty("date") final Instant date,
-      @JsonProperty("end_date") final Instant endDate,
-      @JsonProperty("bookingDeadline") final Instant bookingDeadline,
-      @JsonProperty("prepWorkDeadline") final Instant prepWorkDeadline,
+      @JsonProperty("date") final Date date,
+      @JsonProperty("end_date") final Date endDate,
+      @JsonProperty("bookingDeadline") final Date bookingDeadline,
+      @JsonProperty("prepWorkDeadline") final Date prepWorkDeadline,
       @JsonProperty("location") final Location location,
       @JsonProperty("preResources") final List<ExternalReference> preResources,
       @JsonProperty("postResources") final List<ExternalReference> postResources,
@@ -165,7 +165,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @return the date
    */
-  public Instant getDate() {
+  public Date getDate() {
     return date;
   }
 
@@ -175,7 +175,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param date
    *            the date to set
    */
-  public void setDate(final Instant date) {
+  public void setDate(final Date date) {
     this.date = date;
   }
 
@@ -184,7 +184,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @return the end date
    */
-  public Instant getEndDate() {
+  public Date getEndDate() {
     return endDate;
   }
 
@@ -193,7 +193,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @param endDate the end date to set
    */
-  public void setEndDate(final Instant endDate) {
+  public void setEndDate(final Date endDate) {
     // Don't want 'endDate' to be null ever; force it to 'date' for consistency if necessary.
     if (null != endDate) {
       this.endDate = endDate;
@@ -207,7 +207,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @return bookingDeadline.
    */
-  public Instant getBookingDeadline() {
+  public Date getBookingDeadline() {
     return bookingDeadline;
   }
 
@@ -216,7 +216,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @param bookingDeadline the booking deadline.
    */
-  public void setBookingDeadline(final Instant bookingDeadline) {
+  public void setBookingDeadline(final Date bookingDeadline) {
     this.bookingDeadline = bookingDeadline;
   }
 
@@ -388,7 +388,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @return bookingDeadline.
    */
-  public Instant getPrepWorkDeadline() {
+  public Date getPrepWorkDeadline() {
     return prepWorkDeadline;
   }
 
@@ -397,7 +397,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    *
    * @param prepWorkDeadline the booking deadline.
    */
-  public void setPrepWorkDeadline(final Instant prepWorkDeadline) {
+  public void setPrepWorkDeadline(final Date prepWorkDeadline) {
     this.prepWorkDeadline = prepWorkDeadline;
   }
 

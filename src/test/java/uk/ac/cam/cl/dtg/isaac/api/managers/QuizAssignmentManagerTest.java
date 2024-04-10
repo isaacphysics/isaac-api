@@ -27,9 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -90,7 +89,7 @@ class QuizAssignmentManagerTest extends AbstractManagerTest {
     QuizAssignmentDTO createdAssignment = quizAssignmentManager.createAssignment(newAssignment);
 
     assertEquals(returnedId, createdAssignment.getId());
-    assertTrue(Duration.between(Instant.now(), createdAssignment.getCreationDate()).toMillis() < 1000);
+    assertTrue(new Date().getTime() - createdAssignment.getCreationDate().getTime() < 1000);
   }
 
   @Test

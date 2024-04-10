@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 import jakarta.annotation.Nullable;
-import java.time.Instant;
+import java.util.Date;
 
 /**
  * DateRangeFilterInstruction.
@@ -27,8 +27,8 @@ import java.time.Instant;
  * @author sac92
  */
 public class DateRangeFilterInstruction extends AbstractFilterInstruction {
-  private Instant fromDate;
-  private Instant toDate;
+  private Date fromDate;
+  private Date toDate;
 
   /**
    * Create a new date range filter instruction.
@@ -40,7 +40,7 @@ public class DateRangeFilterInstruction extends AbstractFilterInstruction {
    * @param toDate
    *            the end date that results can match.
    */
-  public DateRangeFilterInstruction(@Nullable final Instant fromDate, @Nullable final Instant toDate) {
+  public DateRangeFilterInstruction(@Nullable final Date fromDate, @Nullable final Date toDate) {
     this.fromDate = fromDate;
     this.toDate = toDate;
 
@@ -56,7 +56,7 @@ public class DateRangeFilterInstruction extends AbstractFilterInstruction {
    *
    * @return the fromDate
    */
-  public final Instant getFromDate() {
+  public final Date getFromDate() {
     return fromDate;
   }
 
@@ -65,7 +65,7 @@ public class DateRangeFilterInstruction extends AbstractFilterInstruction {
    *
    * @return the toDate
    */
-  public final Instant getToDate() {
+  public final Date getToDate() {
     return toDate;
   }
 }

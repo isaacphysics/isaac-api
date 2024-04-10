@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Sets;
 import jakarta.annotation.Nullable;
-import java.time.Instant;
+import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
@@ -35,8 +35,8 @@ public class UserGroupDTO {
   private Long id;
   private String groupName;
   private Long ownerId;
-  private Instant created;
-  private Instant lastUpdated;
+  private Date created;
+  private Date lastUpdated;
   private String token;
   private boolean archived;
   private boolean additionalManagerPrivileges;
@@ -61,8 +61,8 @@ public class UserGroupDTO {
    * @param lastUpdated - the date the group was last updated
    * @param archived    - if the group has been archived
    */
-  public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Instant created,
-                      final Instant lastUpdated,
+  public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created,
+                      final Date lastUpdated,
                       final boolean archived) {
     this.id = id;
     this.groupName = groupName;
@@ -156,7 +156,7 @@ public class UserGroupDTO {
    *
    * @return the created
    */
-  public Instant getCreated() {
+  public Date getCreated() {
     return created;
   }
 
@@ -165,7 +165,7 @@ public class UserGroupDTO {
    *
    * @param created the created to set
    */
-  public void setCreated(final Instant created) {
+  public void setCreated(final Date created) {
     this.created = created;
   }
 
@@ -174,7 +174,7 @@ public class UserGroupDTO {
    *
    * @return the created
    */
-  public Instant getLastUpdated() {
+  public Date getLastUpdated() {
     return lastUpdated;
   }
 
@@ -183,7 +183,7 @@ public class UserGroupDTO {
    *
    * @param lastUpdated the created to set
    */
-  public void setLastUpdated(final Instant lastUpdated) {
+  public void setLastUpdated(final Date lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 

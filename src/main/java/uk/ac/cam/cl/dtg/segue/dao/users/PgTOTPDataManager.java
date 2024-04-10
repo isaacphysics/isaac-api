@@ -23,7 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.users.TOTPSharedSecret;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
@@ -78,7 +78,7 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
     } else {
       // update
       lc = this.updateCredentials(
-          new TOTPSharedSecret(lc.getUserId(), credsToSave.getSharedSecret(), lc.getCreated(), Instant.now()));
+          new TOTPSharedSecret(lc.getUserId(), credsToSave.getSharedSecret(), lc.getCreated(), new Date()));
     }
 
     return lc;
@@ -203,8 +203,8 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
 
     return new TOTPSharedSecret(results.getLong("user_id"),
         results.getString("shared_secret"),
-        getInstantFromTimestamp(results, "created"),
-        getInstantFromTimestamp(results, "last_updated"));
+        results.getTimestamp("created"),
+        results.getTimestamp("last_updated"));
   }
 
   // Field Constants

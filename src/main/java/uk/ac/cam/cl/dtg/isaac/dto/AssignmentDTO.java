@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.Instant;
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 /**
@@ -32,9 +32,9 @@ public class AssignmentDTO implements IAssignmentLike {
   private Long ownerUserId;
   private String notes;
   private UserSummaryDTO assignerSummary;
-  private Instant creationDate;
-  private Instant dueDate;
-  private Instant scheduledStartDate;
+  private Date creationDate;
+  private Date dueDate;
+  private Date scheduledStartDate;
 
   /**
    * Complete AssignmentDTO constructor with all dependencies.
@@ -50,8 +50,8 @@ public class AssignmentDTO implements IAssignmentLike {
    * @param scheduledStartDate - the date the assignment should be shown to users/groups that it is set to
    */
   public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-                       final String groupName, final String notes, final Instant creationDate, final Instant dueDate,
-                       final Instant scheduledStartDate) {
+                       final String groupName, final String notes, final Date creationDate, final Date dueDate,
+                       final Date scheduledStartDate) {
     this.id = id;
     this.gameboardId = gameboardId;
     this.ownerUserId = ownerUserId;
@@ -248,7 +248,7 @@ public class AssignmentDTO implements IAssignmentLike {
    * @return the creationDate
    */
   @Override
-  public Instant getCreationDate() {
+  public Date getCreationDate() {
     return creationDate;
   }
 
@@ -257,7 +257,7 @@ public class AssignmentDTO implements IAssignmentLike {
    *
    * @param creationDate the creationDate to set
    */
-  public void setCreationDate(final Instant creationDate) {
+  public void setCreationDate(final Date creationDate) {
     this.creationDate = creationDate;
   }
 
@@ -267,7 +267,7 @@ public class AssignmentDTO implements IAssignmentLike {
    * @return dueDate
    */
   @Override
-  public Instant getDueDate() {
+  public Date getDueDate() {
     return dueDate;
   }
 
@@ -276,7 +276,7 @@ public class AssignmentDTO implements IAssignmentLike {
    *
    * @param dueDate - date due
    */
-  public void setDueDate(final Instant dueDate) {
+  public void setDueDate(final Date dueDate) {
     this.dueDate = dueDate;
   }
 
@@ -285,7 +285,7 @@ public class AssignmentDTO implements IAssignmentLike {
    *
    * @return scheduledStartDate
    */
-  public Instant getScheduledStartDate() {
+  public Date getScheduledStartDate() {
     return scheduledStartDate;
   }
 
@@ -294,7 +294,7 @@ public class AssignmentDTO implements IAssignmentLike {
    *
    * @param scheduledStartDate - the scheduled start date
    */
-  public void setScheduledStartDate(final Instant scheduledStartDate) {
+  public void setScheduledStartDate(final Date scheduledStartDate) {
     this.scheduledStartDate = scheduledStartDate;
   }
 

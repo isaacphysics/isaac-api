@@ -1,12 +1,13 @@
 package uk.ac.cam.cl.dtg.isaac.mappers;
 
+import static java.time.Instant.now;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static uk.ac.cam.cl.dtg.CustomAssertions.assertDeepEquals;
 
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -48,8 +49,8 @@ class UserMapperTest {
 
   private UserMapper userMapper;
 
-  private static final Instant testDate = Instant.now();
-  private static final Instant newTestDate = Instant.now().plus(10000L, ChronoUnit.SECONDS);
+  private static final Date testDate = new Date();
+  private static final Date newTestDate = Date.from(now().plus(10000L, ChronoUnit.SECONDS));
 
   @BeforeEach
   void beforeEach() {

@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
@@ -35,7 +35,7 @@ public class GameboardDO {
   private List<GameboardContentDescriptor> contents;
   private IsaacWildcard wildCard;
   private Integer wildCardPosition;
-  private Instant creationDate;
+  private Date creationDate;
   private GameFilter gameFilter;
   private Long ownerUserId;
   private GameboardCreationMethod creationMethod;
@@ -66,9 +66,9 @@ public class GameboardDO {
    *            - Set of tags associated with the game board.
    */
   public GameboardDO(final String id, final String title, final List<GameboardContentDescriptor> contents,
-                     final IsaacWildcard wildCard, final Integer wildcardPosition, final Instant creationDate,
-                     final GameFilter gameFilter, final Long ownerUserId, final GameboardCreationMethod creationMethod,
-                     final Set<String> tags) {
+                     final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
+                     final GameFilter gameFilter, final Long ownerUserId,
+                     final GameboardCreationMethod creationMethod, final Set<String> tags) {
     this.id = id;
     this.title = title;
     this.contents = contents;
@@ -170,7 +170,7 @@ public class GameboardDO {
    *
    * @return the creationDate
    */
-  public final Instant getCreationDate() {
+  public final Date getCreationDate() {
     return creationDate;
   }
 
@@ -180,7 +180,7 @@ public class GameboardDO {
    * @param creationDate
    *            the creationDate to set
    */
-  public final void setCreationDate(final Instant creationDate) {
+  public final void setCreationDate(final Date creationDate) {
     this.creationDate = creationDate;
   }
 

@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -101,7 +101,7 @@ class ContentIndexerTest {
     Map<String, String> someUnitsMapRaw = Map.of("cleanKey", "N", "unit", "N");
     Map<String, String> someUnitsMapRaw2 = Map.of("cleanKey", "km", "unit", "km");
 
-    Instant someCreatedDate = Instant.now();
+    Date someCreatedDate = new Date();
     Map<String, String> versionMeta = Map.of("version", INITIAL_VERSION, "created", someCreatedDate.toString());
     Map<String, Set<String>> tagsMeta = Map.of("tags", someTagsList);
 
@@ -114,7 +114,7 @@ class ContentIndexerTest {
 
     // prepare pre-canned responses for the object mapper
     ObjectMapper objectMapper = createMock(ObjectMapper.class);
-    expect(contentMapperUtils.getSharedContentObjectMapper()).andReturn(objectMapper)
+    expect(contentMapperUtils.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
         .once();
     expect(objectMapper.writeValueAsString(content)).andReturn(
         uniqueObjectHash).once();

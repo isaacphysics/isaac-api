@@ -24,8 +24,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_REQUIREMENTS_ERROR_M
 import com.google.inject.Inject;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
@@ -216,8 +216,11 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     luc.setResetToken(token);
 
     // Set expiry date
-    Instant resetTime = Instant.now().plus(1, ChronoUnit.DAYS);
-    luc.setResetExpiry(resetTime);
+    // Java is useless at datetime maths
+    Calendar c = Calendar.getInstance();
+    c.setTime(new Date()); // Initialises the calendar to the current date/time
+    c.add(Calendar.DATE, 1);
+    luc.setResetExpiry(c.getTime());
 
     this.passwordDataManager.createOrUpdateLocalUserCredential(luc);
 
@@ -234,11 +237,11 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     // Get today's datetime; this is initialised to the time at which it was allocated,
     // measured to the nearest millisecond.
-    Instant now = Instant.now();
+    Date now = new Date();
 
     // check the token matches and hasn't expired
     // (I know that we have just looked it up but that might change so checking anyway)
-    return luc.getResetToken().equals(token) && luc.getResetExpiry().isAfter(now);
+    return luc.getResetToken().equals(token) && luc.getResetExpiry().after(now);
   }
 
   @Override

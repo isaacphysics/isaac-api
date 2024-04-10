@@ -14,9 +14,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.quartz.Job;
@@ -65,7 +65,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
     Map<String, AbstractFilterInstruction> filterInstructions = Maps.newHashMap();
     fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
     sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-    DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, Instant.now());
+    DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
     filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
     ZonedDateTime now = ZonedDateTime.now();
     ZonedDateTime thirtyDaysAgo = now.plusDays(ADDITIONAL_EVENT_INFORMATION_RETENTION_DAYS_AGO);
@@ -74,12 +74,13 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
           ContentService.generateDefaultFieldToMatch(fieldsToMatch),
           startIndex, DEFAULT_MAX_WINDOW_SIZE, sortInstructions, filterInstructions);
       for (ContentDTO contentResult : findByFieldNames.getResults()) {
-        if (contentResult instanceof IsaacEventPageDTO page) {
+        if (contentResult instanceof IsaacEventPageDTO) {
+          IsaacEventPageDTO page = (IsaacEventPageDTO) contentResult;
           // Event end date (if present) > 30 days ago, else event date > 30 days ago
           boolean endDate30DaysAgo =
-              page.getEndDate() != null && page.getEndDate().isBefore(thirtyDaysAgo.toInstant());
+              page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
           boolean noEndDateAndStartDate30DaysAgo =
-              page.getEndDate() == null && page.getDate().isBefore(thirtyDaysAgo.toInstant());
+              page.getEndDate() == null && page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
           if (endDate30DaysAgo || noEndDateAndStartDate30DaysAgo) {
             String query =
                 "UPDATE event_bookings SET additional_booking_information="

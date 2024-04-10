@@ -23,7 +23,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Instant;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager;
@@ -112,7 +111,7 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
       setValueHelper(pst, FIELD_CREATE_CREDENTIALS_SECURE_SALT, credsToSave.getSecureSalt());
       setValueHelper(pst, FIELD_CREATE_CREDENTIALS_RESET_TOKEN, credsToSave.getResetToken());
       setValueHelper(pst, FIELD_CREATE_CREDENTIALS_RESET_EXPIRY, credsToSave.getResetExpiry());
-      setValueHelper(pst, FIELD_CREATE_CREDENTIALS_LAST_UPDATED, Instant.now());
+      setValueHelper(pst, FIELD_CREATE_CREDENTIALS_LAST_UPDATED, new java.util.Date());
 
       if (pst.executeUpdate() == 0) {
         throw new SegueDatabaseException("Unable to save user.");
@@ -140,7 +139,7 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
       setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_SECURE_SALT, credsToSave.getSecureSalt());
       setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_RESET_TOKEN, credsToSave.getResetToken());
       setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_RESET_EXPIRY, credsToSave.getResetExpiry());
-      setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_LAST_UPDATED, Instant.now());
+      setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_LAST_UPDATED, new java.util.Date());
       setValueHelper(pst, FIELD_UPDATE_CREDENTIALS_USER_ID, credsToSave.getUserId());
 
       if (pst.executeUpdate() == 0) {
@@ -195,9 +194,9 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
     toReturn.setSecurityScheme(results.getString("security_scheme"));
     toReturn.setSecureSalt(results.getString("secure_salt"));
     toReturn.setResetToken(results.getString("reset_token"));
-    toReturn.setResetExpiry(getInstantFromTimestamp(results, "reset_expiry"));
-    toReturn.setCreated(getInstantFromTimestamp(results, "created"));
-    toReturn.setLastUpdated(getInstantFromTimestamp(results, "last_updated"));
+    toReturn.setResetExpiry(results.getTimestamp("reset_expiry"));
+    toReturn.setCreated(results.getTimestamp("created"));
+    toReturn.setLastUpdated(results.getTimestamp("last_updated"));
     return toReturn;
   }
 

@@ -80,7 +80,9 @@ import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.UNKNOWN_GROUP_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.UNKNOWN_QUIZ_ID;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_MILLISECONDS_IN_SECOND;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_FIVE_MINUTES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.Cookie;
@@ -88,9 +90,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,8 +109,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 
 public class QuizFacadeIT extends IsaacIntegrationTest {
 
-  Instant someFutureDate = Instant.now().plus(1L, ChronoUnit.DAYS);
-  Instant somePastDate = Instant.now().minus(1L, ChronoUnit.DAYS);
+  Date someFutureDate =
+      new Date(System.currentTimeMillis() + NUMBER_SECONDS_IN_ONE_DAY * NUMBER_MILLISECONDS_IN_SECOND);
+  Date somePastDate = new Date(System.currentTimeMillis() - NUMBER_SECONDS_IN_ONE_DAY * NUMBER_MILLISECONDS_IN_SECOND);
   private QuizFacade quizFacade;
 
   private static String readSegueErrorMessage(Response errorResponse) {
@@ -1151,7 +1153,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
       @Test
       void changingCreationDateId_isBadRequest() {
         HttpServletRequest updateQuizAssignmentRequest = prepareAnonymousRequest();
-        QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, Instant.now(), null, null);
+        QuizAssignmentDTO quizAssignmentDto = new QuizAssignmentDTO(null, null, null, null, new Date(), null, null);
 
         try (Response updateQuizAssignmentResponse = quizFacade.updateQuizAssignment(updateQuizAssignmentRequest,
             QUIZ_ASSIGNMENT_ID, quizAssignmentDto)) {

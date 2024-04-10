@@ -23,9 +23,9 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -139,7 +139,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
       throw new DuplicateAssignmentException("You cannot assign the same work to a group more than once.");
     }
 
-    newAssignment.setCreationDate(Instant.now());
+    newAssignment.setCreationDate(new Date());
     newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
     // Get assignment gameboard in order to generate URL which will be added to the notification email
@@ -192,7 +192,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     List<AssignmentDTO> assignments =
         this.assignmentPersistenceManager.getAssignmentsByGroupList(groupIdToName.keySet()).stream().filter(
             a -> includeAssignmentsScheduledInFuture || null == a.getScheduledStartDate() || a.getScheduledStartDate()
-                .isBefore(Instant.now()))
+                .before(new Date()))
             .collect(Collectors.toList());
     assignments.forEach(assignment -> assignment.setGroupName(groupIdToName.get(assignment.getGroupId())));
     return assignments;

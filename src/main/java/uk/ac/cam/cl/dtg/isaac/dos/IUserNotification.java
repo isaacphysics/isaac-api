@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.time.Instant;
+import java.util.Date;
 
 /**
  * This interface represents a record of a specific notification having been shown to a user.
@@ -61,20 +61,20 @@ public interface IUserNotification {
   NotificationStatus getStatus();
 
   /**
-   * @param contentNotificationId
+   * @param contentNotificationid
    *            the notification id
    */
-  void setContentNotificationId(String contentNotificationId);
+  void setContentNotificationid(String contentNotificationid);
 
   /**
    * @return the date the record of the notification response was created.
    */
-  Instant getCreated();
+  Date getCreated();
 
   /**
    * @param created
    *            the date this was created.
    */
-  void setCreated(Instant created);
+  void setCreated(Date created);
 
 }

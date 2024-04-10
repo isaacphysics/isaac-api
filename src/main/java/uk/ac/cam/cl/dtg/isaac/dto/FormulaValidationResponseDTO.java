@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.time.Instant;
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
@@ -58,7 +58,7 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
   public FormulaValidationResponseDTO(final String questionId, final ChoiceDTO answer,
                                       final ContentDTO explanation, final Boolean correctExact,
                                       final Boolean correctSymbolic, final Boolean correctNumeric,
-                                      final Instant dateAttempted) {
+                                      final Date dateAttempted) {
     super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
     this.correctExact = correctExact;
     this.correctSymbolic = correctSymbolic;

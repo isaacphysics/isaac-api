@@ -22,8 +22,8 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.Validate;
@@ -88,7 +88,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
     requireNonNull(newAssignment.getQuizId());
     requireNonNull(newAssignment.getGroupId());
 
-    Instant now = Instant.now();
+    Date now = new Date();
 
     if (newAssignment.getDueDate() != null && !newAssignment.dueDateIsAfter(now)) {
       throw new DueBeforeNowException();
@@ -171,7 +171,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
   }
 
   private List<QuizAssignmentDTO> filterActiveAssignments(final List<QuizAssignmentDTO> assignments) {
-    Instant now = Instant.now();
+    Date now = new Date();
     return assignments.stream().filter(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(now))
         .collect(Collectors.toList());
   }

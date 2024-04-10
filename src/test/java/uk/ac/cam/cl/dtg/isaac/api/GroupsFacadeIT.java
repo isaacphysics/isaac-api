@@ -34,7 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -89,7 +89,7 @@ class GroupsFacadeIT extends IsaacIntegrationTest {
     replay(createGroupRequest);
 
     UserGroup userGroup = new UserGroup(null, "Test Teacher's New Group", TEST_TEACHER_ID,
-        GroupStatus.ACTIVE, Instant.now(), false, false, Instant.now());
+        GroupStatus.ACTIVE, new Date(), false, false, new Date());
 
     // Act
     // make request
@@ -117,7 +117,7 @@ class GroupsFacadeIT extends IsaacIntegrationTest {
     replay(createGroupRequest);
 
     UserGroup userGroup = new UserGroup(null, "Test Tutor's New Group", TEST_TUTOR_ID,
-        GroupStatus.ACTIVE, Instant.now(), false, false, Instant.now());
+        GroupStatus.ACTIVE, new Date(), false, false, new Date());
 
     // Act
     // make request

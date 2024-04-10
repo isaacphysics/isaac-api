@@ -21,8 +21,8 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.google.api.client.util.Maps;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -148,7 +148,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
     // point.
 
     return new FormulaValidationResponse(symbolicLogicQuestion.getId(), answer, validationResult.getFeedback(),
-        validationResult.isResponseCorrect(), validationResult.getResponseMatchType().toString(), Instant.now());
+        validationResult.isResponseCorrect(), validationResult.getResponseMatchType().toString(), new Date());
   }
 
   private ValidationResult checkForSymbolicAnswerMatch(final IsaacSymbolicLogicQuestion question,

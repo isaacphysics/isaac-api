@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import jakarta.annotation.Nullable;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -33,8 +33,8 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
   private Long groupId;
   private Long ownerUserId;
   private UserSummaryDTO assignerSummary;
-  private Instant creationDate;
-  private Instant dueDate;
+  private Date creationDate;
+  private Date dueDate;
   private QuizFeedbackMode quizFeedbackMode;
 
   private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
@@ -54,7 +54,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
    * @param quizFeedbackMode - what level of feedback to give to students.
    */
   public QuizAssignmentDTO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
-                           final Instant creationDate, final Instant dueDate, final QuizFeedbackMode quizFeedbackMode) {
+                           final Date creationDate, final Date dueDate, final QuizFeedbackMode quizFeedbackMode) {
     this.id = id;
     this.quizId = quizId;
     this.ownerUserId = ownerUserId;
@@ -182,7 +182,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
    * @return the creationDate
    */
   @Override
-  public Instant getCreationDate() {
+  public Date getCreationDate() {
     return creationDate;
   }
 
@@ -191,7 +191,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
    *
    * @param creationDate the creationDate to set
    */
-  public void setCreationDate(final Instant creationDate) {
+  public void setCreationDate(final Date creationDate) {
     this.creationDate = creationDate;
   }
 
@@ -202,7 +202,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
    */
   @Override
   @Nullable
-  public Instant getDueDate() {
+  public Date getDueDate() {
     return dueDate;
   }
 
@@ -211,7 +211,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
    *
    * @param dueDate - date due
    */
-  public void setDueDate(@Nullable final Instant dueDate) {
+  public void setDueDate(@Nullable final Date dueDate) {
     this.dueDate = dueDate;
   }
 

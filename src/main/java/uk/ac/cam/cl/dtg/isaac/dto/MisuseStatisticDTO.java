@@ -16,18 +16,18 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.time.Instant;
+import java.util.Date;
 
 public class MisuseStatisticDTO {
   private String agentIdentifier;
   private String eventType;
   private Boolean isMisused;
   private Boolean isOverSoftThreshold;
-  private Instant lastEventTimestamp;
+  private Date lastEventTimestamp;
   private Integer currentCounter;
 
   public MisuseStatisticDTO(final String agentIdentifier, final String eventType, final Boolean isMisused,
-                            final Boolean isOverSoftThreshold, final Instant lastEventTimestamp,
+                            final Boolean isOverSoftThreshold, final Date lastEventTimestamp,
                             final Integer currentCounter) {
     this.agentIdentifier = agentIdentifier;
     this.eventType = eventType;
@@ -69,11 +69,11 @@ public class MisuseStatisticDTO {
     this.isOverSoftThreshold = isOverSoftThreshold;
   }
 
-  public Instant getLastEventTimestamp() {
+  public Date getLastEventTimestamp() {
     return lastEventTimestamp;
   }
 
-  public void setLastEventTimestamp(final Instant lastEventTimestamp) {
+  public void setLastEventTimestamp(final Date lastEventTimestamp) {
     this.lastEventTimestamp = lastEventTimestamp;
   }
 

@@ -42,7 +42,6 @@ import static uk.ac.cam.cl.dtg.util.ReflectionUtils.getSubTypes;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.AbstractModule;
@@ -563,7 +562,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     if (null == logManager) {
       ObjectMapper objectMapper = new ObjectMapper();
-      objectMapper.registerModule(new JavaTimeModule());
       objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
       logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled));
 

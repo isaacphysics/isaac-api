@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.time.Instant;
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
@@ -29,7 +29,7 @@ public class QuestionValidationResponseDTO {
   private ChoiceDTO answer;
   private Boolean correct;
   private ContentDTO explanation;
-  private Instant dateAttempted;
+  private Date dateAttempted;
 
   /**
    * Default Constructor for mappers.
@@ -53,7 +53,7 @@ public class QuestionValidationResponseDTO {
    *            -
    */
   public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
-                                       final ContentDTO explanation, final Instant dateAttempted) {
+                                       final ContentDTO explanation, final Date dateAttempted) {
     this.questionId = questionId;
     this.answer = answer;
     this.correct = correct;
@@ -142,7 +142,7 @@ public class QuestionValidationResponseDTO {
    *
    * @return the dateAttempted
    */
-  public Instant getDateAttempted() {
+  public Date getDateAttempted() {
     return dateAttempted;
   }
 
@@ -152,7 +152,7 @@ public class QuestionValidationResponseDTO {
    * @param dateAttempted
    *            the dateAttempted to set
    */
-  public void setDateAttempted(final Instant dateAttempted) {
+  public void setDateAttempted(final Date dateAttempted) {
     this.dateAttempted = dateAttempted;
   }
 

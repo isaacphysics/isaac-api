@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.google.inject.Inject;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
-import java.time.Instant;
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dos.users.TOTPSharedSecret;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -44,7 +44,7 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
   public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
     final GoogleAuthenticatorKey key = googleAuthenticator.createCredentials();
 
-    return new TOTPSharedSecret(user.getId(), key.getKey(), Instant.now(), Instant.now());
+    return new TOTPSharedSecret(user.getId(), key.getKey(), new Date(), new Date());
   }
 
   @Override
@@ -56,7 +56,7 @@ public class SegueTOTPAuthenticator implements ISecondFactorAuthenticator {
   public boolean activate2FAForUser(final RegisteredUserDTO user, final String sharedSecret,
                                     final Integer verificationCode)
       throws SegueDatabaseException {
-    TOTPSharedSecret toSave = new TOTPSharedSecret(user.getId(), sharedSecret, Instant.now(), Instant.now());
+    TOTPSharedSecret toSave = new TOTPSharedSecret(user.getId(), sharedSecret, new Date(), new Date());
 
     if (googleAuthenticator.authorize(sharedSecret, verificationCode)) {
       this.dataManager.save2FASharedSecret(user.getId(), toSave);

@@ -17,13 +17,13 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.joda.time.LocalDate;
 import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -125,14 +125,14 @@ public abstract class LogManagerEventPublisher implements ILogManager {
   }
 
   @Override
-  public Collection<LogEvent> getLogsByType(final String type, final Instant fromDate, final Instant toDate)
+  public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate)
       throws SegueDatabaseException {
 
     return this.logManager.getLogsByType(type, fromDate, toDate);
   }
 
   @Override
-  public Collection<LogEvent> getLogsByType(final String type, final Instant fromDate, final Instant toDate,
+  public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
                                             final List<RegisteredUserDTO> usersOfInterest)
       throws SegueDatabaseException {
 
@@ -149,7 +149,7 @@ public abstract class LogManagerEventPublisher implements ILogManager {
 
   @Override
   public Map<String, Map<LocalDate, Long>> getLogCountByDate(
-      final Collection<String> eventTypes, final Instant fromDate, final Instant toDate,
+      final Collection<String> eventTypes, final Date fromDate, final Date toDate,
       final List<RegisteredUserDTO> usersOfInterest, final boolean binDataByMonth) throws SegueDatabaseException {
 
     return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, usersOfInterest, binDataByMonth);
@@ -164,7 +164,7 @@ public abstract class LogManagerEventPublisher implements ILogManager {
   }
 
   @Override
-  public Map<String, Instant> getLastLogDateForAllUsers(final String qualifyingLogEventType)
+  public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType)
       throws SegueDatabaseException {
 
     return this.logManager.getLastLogDateForAllUsers(qualifyingLogEventType);

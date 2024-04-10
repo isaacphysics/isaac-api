@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -31,21 +31,21 @@ public class RegisteredUser extends AbstractSegueUser {
   private String familyName;
   private String email;
   private Role role;
-  private Instant dateOfBirth;
+  private Date dateOfBirth;
   private Gender gender;
-  private Instant registrationDate;
+  private Date registrationDate;
   private String schoolId;
   private String schoolOther;
   private List<UserContext> registeredContexts;
-  private Instant registeredContextsLastConfirmed;
+  private Date registeredContextsLastConfirmed;
 
   private String emailVerificationToken;
   private String emailToVerify;
   private EmailVerificationStatus emailVerificationStatus;
   private Boolean teacherPending;
 
-  private Instant lastUpdated;
-  private Instant lastSeen;
+  private Date lastUpdated;
+  private Date lastSeen;
 
   /**
    * Full constructor for the User object.
@@ -69,9 +69,9 @@ public class RegisteredUser extends AbstractSegueUser {
       @JsonProperty("id") final Long id,
       @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
       @JsonProperty("email") final String email, @JsonProperty("role") final Role role,
-      @JsonProperty("dateOfBirth") final Instant dateOfBirth, @JsonProperty("gender") final Gender gender,
-      @JsonProperty("registrationDate") final Instant registrationDate,
-      @JsonProperty("lastUpdated") final Instant lastUpdated,
+      @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
+      @JsonProperty("registrationDate") final Date registrationDate,
+      @JsonProperty("lastUpdated") final Date lastUpdated,
       @JsonProperty("emailToVerify") final String emailToVerify,
       @JsonProperty("emailVerificationToken") final String emailVerificationToken,
       @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus,
@@ -214,7 +214,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @return the dateOfBirth
    */
-  public final Instant getDateOfBirth() {
+  public final Date getDateOfBirth() {
     return dateOfBirth;
   }
 
@@ -223,7 +223,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @param dateOfBirth the dateOfBirth to set
    */
-  public final void setDateOfBirth(final Instant dateOfBirth) {
+  public final void setDateOfBirth(final Date dateOfBirth) {
     this.dateOfBirth = dateOfBirth;
   }
 
@@ -250,7 +250,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @return the registrationDate
    */
-  public final Instant getRegistrationDate() {
+  public final Date getRegistrationDate() {
     return registrationDate;
   }
 
@@ -259,7 +259,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @param registrationDate the registrationDate to set
    */
-  public final void setRegistrationDate(final Instant registrationDate) {
+  public final void setRegistrationDate(final Date registrationDate) {
     this.registrationDate = registrationDate;
   }
 
@@ -358,7 +358,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @return the lastUpdated
    */
-  public Instant getLastUpdated() {
+  public Date getLastUpdated() {
     return lastUpdated;
   }
 
@@ -367,7 +367,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @param lastUpdated the lastUpdated to set
    */
-  public void setLastUpdated(final Instant lastUpdated) {
+  public void setLastUpdated(final Date lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 
@@ -376,7 +376,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @return the lastSeen
    */
-  public Instant getLastSeen() {
+  public Date getLastSeen() {
     return lastSeen;
   }
 
@@ -385,7 +385,7 @@ public class RegisteredUser extends AbstractSegueUser {
    *
    * @param lastSeen the lastSeen to set
    */
-  public void setLastSeen(final Instant lastSeen) {
+  public void setLastSeen(final Date lastSeen) {
     this.lastSeen = lastSeen;
   }
 
@@ -415,11 +415,11 @@ public class RegisteredUser extends AbstractSegueUser {
     this.registeredContexts = registeredContexts;
   }
 
-  public Instant getRegisteredContextsLastConfirmed() {
+  public Date getRegisteredContextsLastConfirmed() {
     return registeredContextsLastConfirmed;
   }
 
-  public void setRegisteredContextsLastConfirmed(final Instant registeredContextsLastConfirmed) {
+  public void setRegisteredContextsLastConfirmed(final Date registeredContextsLastConfirmed) {
     this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
   }
 

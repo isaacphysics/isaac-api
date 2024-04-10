@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.segue.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import java.time.Instant;
+import java.util.Date;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -48,7 +48,7 @@ class NameFormatterTest {
 
     // Check case with shared group name:
     UserGroupDTO dummyGroup = new UserGroupDTO();
-    dummyGroup.setLastUpdated(Instant.now());
+    dummyGroup.setLastUpdated(new Date());
     dummyGroup.setGroupName(groupName);
     String filteredGroupName = NameFormatter.getFilteredGroupNameFromGroup(dummyGroup);
     assertEquals(filteredGroupName, groupName);

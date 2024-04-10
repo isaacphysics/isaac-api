@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import static java.util.Objects.requireNonNull;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -115,7 +115,7 @@ public class IsaacRegexMatchValidator implements IValidator {
       feedback = regexMatchQuestion.getDefaultFeedback();
     }
 
-    return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, Instant.now());
+    return new QuestionValidationResponse(question.getId(), userAnswer, responseCorrect, feedback, new Date());
   }
 
   private boolean matchesPattern(final String trustedRegexPattern, final String userValue,

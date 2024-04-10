@@ -24,7 +24,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME_POJO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SchoolsIndexType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
-import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -53,7 +52,7 @@ public class SchoolListReader {
 
   private final ISearchProvider searchProvider;
 
-  private final ObjectMapper mapper = getSharedBasicObjectMapper();
+  private final ObjectMapper mapper = new ObjectMapper();
 
   private final String dataSourceModificationDate;
 

@@ -16,8 +16,6 @@
 
 package uk.ac.cam.cl.dtg.isaac.dao;
 
-import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromTimestamp;
-
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import java.sql.Connection;
@@ -25,9 +23,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,13 +75,15 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
       pst.setLong(FIELD_SAVE_ASSIGNMENT_OWNER_USER_ID, assignmentToSave.getOwnerUserId());
 
       if (assignmentToSave.getCreationDate() != null) {
-        pst.setTimestamp(FIELD_SAVE_ASSIGNMENT_CREATION_DATE, Timestamp.from(assignmentToSave.getCreationDate()));
+        pst.setTimestamp(FIELD_SAVE_ASSIGNMENT_CREATION_DATE,
+            new java.sql.Timestamp(assignmentToSave.getCreationDate().getTime()));
       } else {
-        pst.setTimestamp(FIELD_SAVE_ASSIGNMENT_CREATION_DATE, Timestamp.from(Instant.now()));
+        pst.setTimestamp(FIELD_SAVE_ASSIGNMENT_CREATION_DATE, new java.sql.Timestamp(new Date().getTime()));
       }
 
       if (assignmentToSave.getDueDate() != null) {
-        pst.setTimestamp(FIELD_SAVE_ASSIGNMENT_DUE_DATE, Timestamp.from(assignmentToSave.getDueDate()));
+        pst.setTimestamp(FIELD_SAVE_ASSIGNMENT_DUE_DATE,
+            new java.sql.Timestamp(assignmentToSave.getDueDate().getTime()));
       } else {
         pst.setNull(FIELD_SAVE_ASSIGNMENT_DUE_DATE, Types.TIMESTAMP);
       }
@@ -225,7 +224,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
       }
 
       if (updates.getDueDate() != null) {
-        pst.setTimestamp(FIELD_UPDATE_ASSIGNMENT_DUE_DATE, Timestamp.from(updates.getDueDate()));
+        pst.setTimestamp(FIELD_UPDATE_ASSIGNMENT_DUE_DATE, new java.sql.Timestamp(updates.getDueDate().getTime()));
       } else {
         pst.setNull(FIELD_UPDATE_ASSIGNMENT_DUE_DATE, Types.TIMESTAMP);
       }
@@ -259,9 +258,12 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
    * @throws SQLException if we cannot access a required field.
    */
   private QuizAssignmentDO convertFromSQLToQuizAssignmentDO(final ResultSet sqlResults) throws SQLException {
-    Instant preciseDate = getInstantFromTimestamp(sqlResults, "creation_date");
+    Date preciseDate = new Date(sqlResults.getTimestamp("creation_date").getTime());
 
-    Instant preciseDueDate = getInstantFromTimestamp(sqlResults, "due_date");
+    Date preciseDueDate = null;
+    if (sqlResults.getTimestamp("due_date") != null) {
+      preciseDueDate = new Date(sqlResults.getTimestamp("due_date").getTime());
+    }
 
     return new QuizAssignmentDO(sqlResults.getLong("id"), sqlResults.getString("quiz_id"),
         sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate,

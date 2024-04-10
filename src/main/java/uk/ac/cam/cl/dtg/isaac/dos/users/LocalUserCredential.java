@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
-import java.time.Instant;
+import java.util.Date;
 
 /**
  * LocalUserCredential.
@@ -30,10 +30,10 @@ public class LocalUserCredential {
   private String securityScheme;
 
   private String resetToken;
-  private Instant resetExpiry;
+  private Date resetExpiry;
 
-  private Instant created;
-  private Instant lastUpdated;
+  private Date created;
+  private Date lastUpdated;
 
   public LocalUserCredential() {
 
@@ -88,27 +88,27 @@ public class LocalUserCredential {
     this.resetToken = resetToken;
   }
 
-  public Instant getResetExpiry() {
+  public Date getResetExpiry() {
     return resetExpiry;
   }
 
-  public void setResetExpiry(final Instant resetExpiry) {
+  public void setResetExpiry(final Date resetExpiry) {
     this.resetExpiry = resetExpiry;
   }
 
-  public Instant getCreated() {
+  public Date getCreated() {
     return created;
   }
 
-  public void setCreated(final Instant created) {
+  public void setCreated(final Date created) {
     this.created = created;
   }
 
-  public Instant getLastUpdated() {
+  public Date getLastUpdated() {
     return lastUpdated;
   }
 
-  public void setLastUpdated(final Instant lastUpdated) {
+  public void setLastUpdated(final Date lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 }

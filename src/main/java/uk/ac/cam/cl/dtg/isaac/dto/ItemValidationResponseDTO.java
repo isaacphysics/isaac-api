@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacItemQuestion;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
@@ -49,7 +49,7 @@ public class ItemValidationResponseDTO extends QuestionValidationResponseDTO {
    */
   public ItemValidationResponseDTO(final String questionId, final ChoiceDTO answer,
                                    final Boolean correct, final List<Boolean> itemsCorrect,
-                                   final ContentDTO explanation, final Instant dateAttempted) {
+                                   final ContentDTO explanation, final Date dateAttempted) {
     super(questionId, answer, correct, explanation, dateAttempted);
     this.itemsCorrect = itemsCorrect;
   }

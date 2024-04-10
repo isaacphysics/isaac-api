@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.time.Instant;
+import java.util.Date;
 
 /**
  *
@@ -25,7 +25,7 @@ public class PgUserNotification implements IUserNotification {
   private Long userId;
   private String contentNotificationId;
   private NotificationStatus status;
-  private Instant created;
+  private Date created;
 
   /**
    *
@@ -36,16 +36,16 @@ public class PgUserNotification implements IUserNotification {
 
   /**
    * @param userId - of the user who has responded
-   * @param contentNotificationId - notification id.
+   * @param contentNotificationid - notification id.
    * @param status - status of the notification
    * @param created - date the entry was made.
    */
-  public PgUserNotification(final Long userId, final String contentNotificationId, final NotificationStatus status,
-                            final Instant created) {
+  public PgUserNotification(final Long userId, final String contentNotificationid, final NotificationStatus status,
+                            final Date created) {
     this.userId = userId;
-    this.contentNotificationId = contentNotificationId;
+    this.contentNotificationId = contentNotificationid;
     this.status = status;
-    this.created = created;
+    this.setCreated(created);
   }
 
   /*
@@ -75,7 +75,7 @@ public class PgUserNotification implements IUserNotification {
    *            the contentNotificationid to set
    */
   @Override
-  public void setContentNotificationId(final String contentNotificationId) {
+  public void setContentNotificationid(final String contentNotificationId) {
     this.contentNotificationId = contentNotificationId;
   }
 
@@ -117,7 +117,7 @@ public class PgUserNotification implements IUserNotification {
    * @return the created
    */
   @Override
-  public Instant getCreated() {
+  public Date getCreated() {
     return created;
   }
 
@@ -127,7 +127,7 @@ public class PgUserNotification implements IUserNotification {
    * @param created the created to set
    */
   @Override
-  public void setCreated(final Instant created) {
+  public void setCreated(final Date created) {
     this.created = created;
   }
 }

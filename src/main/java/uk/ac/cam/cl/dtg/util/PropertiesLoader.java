@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.time.Instant;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Set;
 import org.apache.commons.lang3.Validate;
@@ -37,7 +37,7 @@ public class PropertiesLoader {
 
   private final Properties loadedProperties;
   private final String propertiesFile;
-  private Instant lastRefreshed;
+  private Date lastRefreshed;
 
   /**
    * This constructor will give attempt to read the contents of the file specified and load each key value pair into
@@ -115,7 +115,7 @@ public class PropertiesLoader {
    *
    * @return the lastRefreshed
    */
-  public Instant getLastRefreshed() {
+  public Date getLastRefreshed() {
     return lastRefreshed;
   }
 
@@ -134,7 +134,7 @@ public class PropertiesLoader {
     } else {
       loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.propertiesFile));
     }
-    lastRefreshed = Instant.now();
+    lastRefreshed = new Date();
     log.debug("Properties file read successfully {}", propertiesFile);
   }
 

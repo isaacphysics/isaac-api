@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_FALLBACK;
-import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,9 +41,9 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,7 +195,7 @@ class UserManagerTest {
     int sessionToken = 7;
 
     RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
-        Instant.now(), Gender.MALE, Instant.now(), null, null, null, null, false);
+        new Date(), Gender.MALE, new Date(), null, null, null, null, false);
     returnUser.setId(validUserId);
 
     Map<String, String> sessionInformation =
@@ -374,7 +373,7 @@ class UserManagerTest {
 
     // User object back from provider
     UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
-        "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Instant.now(), Gender.MALE);
+        "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, new Date(), Gender.MALE);
 
     // Mock get User Information from provider call
     expect(((IFederatedAuthenticator) dummyAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(
@@ -386,7 +385,7 @@ class UserManagerTest {
         .atLeastOnce();
 
     RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-        Instant.now(), Gender.MALE, Instant.now(), null, null, null, null, false);
+        new Date(), Gender.MALE, new Date(), null, null, null, null, false);
 
     expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
         .andReturn(new HashMap<RegisteredUser, List<AuthenticationProvider>>() {
@@ -724,7 +723,7 @@ class UserManagerTest {
   }
 
   private Cookie[] getCookieArray(Map<String, String> sessionInformation) throws JsonProcessingException {
-    ObjectMapper om = getSharedBasicObjectMapper();
+    ObjectMapper om = new ObjectMapper();
     Cookie[] cookieWithSessionInfo = {new Cookie(Constants.SEGUE_AUTH_COOKIE,
         Base64.encodeBase64String(om.writeValueAsString(sessionInformation).getBytes()))};
     return cookieWithSessionInfo;

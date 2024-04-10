@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.time.Instant;
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
@@ -53,7 +53,7 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
    *            -
    */
   public QuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
-                                    final Content explanation, final Instant dateAttempted) {
+                                    final Content explanation, final Date dateAttempted) {
     super(questionId, correct, dateAttempted);
     this.answer = answer;
     this.explanation = explanation;

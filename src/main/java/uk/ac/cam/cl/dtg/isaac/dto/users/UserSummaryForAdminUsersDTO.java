@@ -16,15 +16,15 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
-import java.time.Instant;
+import java.util.Date;
 
 /**
  * Admin view of a User Summary object, which contains additional information (e.g. last login date).
  */
 public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO {
-  private Instant lastUpdated;
-  private Instant lastSeen;
-  private Instant registrationDate;
+  private Date lastUpdated;
+  private Date lastSeen;
+  private Date registrationDate;
   private String schoolId;
   private String schoolOther;
 
@@ -40,7 +40,7 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
    *
    * @return the lastUpdated
    */
-  public Instant getLastUpdated() {
+  public Date getLastUpdated() {
     return lastUpdated;
   }
 
@@ -49,7 +49,7 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
    *
    * @param lastUpdated the lastUpdated to set
    */
-  public void setLastUpdated(final Instant lastUpdated) {
+  public void setLastUpdated(final Date lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 
@@ -58,7 +58,7 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
    *
    * @return the lastSeen
    */
-  public Instant getLastSeen() {
+  public Date getLastSeen() {
     return lastSeen;
   }
 
@@ -67,7 +67,7 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
    *
    * @param lastSeen the lastSeen to set
    */
-  public void setLastSeen(final Instant lastSeen) {
+  public void setLastSeen(final Date lastSeen) {
     this.lastSeen = lastSeen;
   }
 
@@ -76,7 +76,7 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
    *
    * @return the registrationDate
    */
-  public Instant getRegistrationDate() {
+  public Date getRegistrationDate() {
     return registrationDate;
   }
 
@@ -85,7 +85,7 @@ public class UserSummaryForAdminUsersDTO extends UserSummaryWithEmailAddressDTO 
    *
    * @param registrationDate the registrationDate to set
    */
-  public void setRegistrationDate(final Instant registrationDate) {
+  public void setRegistrationDate(final Date registrationDate) {
     this.registrationDate = registrationDate;
   }
 

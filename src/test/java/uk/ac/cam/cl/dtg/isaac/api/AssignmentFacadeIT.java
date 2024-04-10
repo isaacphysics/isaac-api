@@ -35,6 +35,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -167,7 +168,10 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     // Arrange
     // build due date
-    Instant dueDate = Instant.parse("2050-01-01T00:00:00Z");
+    Calendar dueDateCalendar = Calendar.getInstance();
+    dueDateCalendar.set(Calendar.DAY_OF_MONTH, 1);
+    dueDateCalendar.set(Calendar.MONTH, 1);
+    dueDateCalendar.set(Calendar.YEAR, 2050);
 
     // log in as Teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -179,7 +183,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     AssignmentDTO assignment = new AssignmentDTO();
     assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
     assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
-    assignment.setDueDate(dueDate);
+    assignment.setDueDate(dueDateCalendar.getTime());
 
     // Act
     // make request
@@ -247,7 +251,10 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     // Arrange
     // build due date
-    Instant dueDate = Instant.parse("2049-01-01T00:00:00Z");
+    Calendar dueDateCalendar = Calendar.getInstance();
+    dueDateCalendar.set(Calendar.DAY_OF_MONTH, 1);
+    dueDateCalendar.set(Calendar.MONTH, 1);
+    dueDateCalendar.set(Calendar.YEAR, 2049);
 
     // log in as Teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -259,7 +266,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     AssignmentDTO assignment = new AssignmentDTO();
     assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
     assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
-    assignment.setDueDate(dueDate);
+    assignment.setDueDate(dueDateCalendar.getTime());
 
     // Act
     // make request
@@ -282,7 +289,10 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     // Arrange
     // build scheduled date
-    Instant scheduledDate = Instant.parse("2050-11-02T00:00:00Z");
+    Calendar scheduledDateCalendar = Calendar.getInstance();
+    scheduledDateCalendar.set(Calendar.DAY_OF_MONTH, 2);
+    scheduledDateCalendar.set(Calendar.MONTH, 11);
+    scheduledDateCalendar.set(Calendar.YEAR, 2050);
 
     // log in as Teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -294,7 +304,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     AssignmentDTO assignment = new AssignmentDTO();
     assignment.setGameboardId(ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
     assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
-    assignment.setScheduledStartDate(scheduledDate);
+    assignment.setScheduledStartDate(scheduledDateCalendar.getTime());
 
     // Act
     // make request
@@ -318,10 +328,16 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     // Arrange
     // build scheduled date
-    Instant scheduledDate = Instant.parse("2050-01-05T00:00:00Z");
+    Calendar scheduledDateCalendar = Calendar.getInstance();
+    scheduledDateCalendar.set(Calendar.DAY_OF_MONTH, 5);
+    scheduledDateCalendar.set(Calendar.MONTH, 1);
+    scheduledDateCalendar.set(Calendar.YEAR, 2050);
 
     // build due date
-    Instant dueDate = Instant.parse("2050-01-01T00:00:00Z");
+    Calendar dueDateCalendar = Calendar.getInstance();
+    dueDateCalendar.set(Calendar.DAY_OF_MONTH, 1);
+    dueDateCalendar.set(Calendar.MONTH, 1);
+    dueDateCalendar.set(Calendar.YEAR, 2050);
 
     // log in as Teacher, create request
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
@@ -333,8 +349,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     AssignmentDTO assignment = new AssignmentDTO();
     assignment.setGameboardId(ITConstants.ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID);
     assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
-    assignment.setDueDate(dueDate);
-    assignment.setScheduledStartDate(scheduledDate);
+    assignment.setDueDate(dueDateCalendar.getTime());
+    assignment.setScheduledStartDate(scheduledDateCalendar.getTime());
 
     // Act
     // make request

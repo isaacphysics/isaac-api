@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -170,7 +170,7 @@ public class GroupChangedService implements IGroupObserver {
 
       for (int i = 0; i < existingAssignments.size(); i++) {
         A existingAssignment = existingAssignments.get(i);
-        Instant assignmentStartDate = null;
+        Date assignmentStartDate = null;
         if (existingAssignment instanceof AssignmentDTO) {
           assignmentStartDate = ((AssignmentDTO) existingAssignment).getScheduledStartDate();
         }

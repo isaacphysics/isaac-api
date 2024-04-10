@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import static java.util.Objects.requireNonNull;
 
-import java.time.Instant;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -50,7 +50,7 @@ public class UnmarkedInputQuestionValidator implements IValidator {
       choiceQuestion = (ChoiceQuestion) question;
 
       return new QuestionValidationResponse(question.getId(), answer, null, (Content) choiceQuestion.getAnswer(),
-          Instant.now());
+          new Date());
     } else {
       log.error("Expected to be able to cast the question as a ChoiceQuestion " + "but this cast failed.");
       throw new ClassCastException("Incorrect type of question received. Unable to validate.");

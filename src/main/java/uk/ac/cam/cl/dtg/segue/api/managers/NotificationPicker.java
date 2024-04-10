@@ -17,15 +17,15 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.time.Instant;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification;
@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -100,7 +101,7 @@ public class NotificationPicker {
       }
 
       NotificationDTO notification = (NotificationDTO) c;
-      if (notification.getExpiry() != null && Instant.now().isAfter(notification.getExpiry())) {
+      if (notification.getExpiry() != null && new Date().after(notification.getExpiry())) {
         // skip expired notifications
         continue;
       }
@@ -116,9 +117,11 @@ public class NotificationPicker {
         resultsToReturn.add(c);
       } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
         // or they have but they postponed it...
-        Instant postPoneExpiry = record.getCreated().plusSeconds(NUMBER_SECONDS_IN_ONE_DAY);
+        Calendar postPoneExpiry = Calendar.getInstance();
+        postPoneExpiry.setTime(record.getCreated());
+        postPoneExpiry.add(Calendar.SECOND, Constants.NUMBER_SECONDS_IN_ONE_DAY);
 
-        if (Instant.now().isAfter(postPoneExpiry)) {
+        if (new Date().after(postPoneExpiry.getTime())) {
           resultsToReturn.add(c);
         }
       } else {

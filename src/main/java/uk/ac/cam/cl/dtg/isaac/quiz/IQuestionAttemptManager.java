@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -110,6 +110,6 @@ public interface IQuestionAttemptManager {
    * @return a collection of log events that match the above criteria or an empty collection.
    * @throws SegueDatabaseException - if we cannot retrieve the data from the database.
    */
-  Map<Instant, Long> getQuestionAttemptCountForUserByDateRange(Instant fromDate, Instant toDate,
+  Map<Date, Long> getQuestionAttemptCountForUserByDateRange(Date fromDate, Date toDate,
                                                             Long userId, Boolean perDay) throws SegueDatabaseException;
 }

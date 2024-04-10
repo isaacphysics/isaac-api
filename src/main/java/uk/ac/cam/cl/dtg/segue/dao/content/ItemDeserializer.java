@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
@@ -81,7 +80,6 @@ public class ItemDeserializer extends JsonDeserializer<Item> {
       contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
 
       ObjectMapper mapper = new ObjectMapper();
-      mapper.registerModule(new JavaTimeModule());
       mapper.registerModule(contentDeserializerModule);
       itemMapper = mapper;
     }

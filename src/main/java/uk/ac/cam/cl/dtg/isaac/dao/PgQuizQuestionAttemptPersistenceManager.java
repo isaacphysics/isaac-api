@@ -26,7 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +71,7 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
         pst.setNull(FIELD_REGISTER_ATTEMPT_IS_CORRECT, Types.BOOLEAN);
       }
       pst.setTimestamp(FIELD_REGISTER_ATTEMPT_TIMESTAMP,
-          Timestamp.from(questionResponse.getDateAttempted()));
+          new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
 
       if (pst.executeUpdate() == 0) {
         throw new SegueDatabaseException("Unable to save quiz question attempt.");

@@ -21,9 +21,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -661,7 +661,7 @@ public class ContentIndexer {
     // setup object mapper to use pre-configured deserializer module.
     // Required to deal with type polymorphism
     List<Map.Entry<String, String>> contentToIndex = Lists.newArrayList();
-    ObjectMapper objectMapper = mapperUtils.getSharedContentObjectMapper();
+    ObjectMapper objectMapper = mapperUtils.generateNewPreconfiguredContentMapper();
     for (Content content : gitCache.values()) {
       try {
         contentToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
@@ -677,7 +677,7 @@ public class ContentIndexer {
 
     try {
       es.indexObject(sha, ContentIndextype.METADATA.toString(),
-          objectMapper.writeValueAsString(Map.of("version", sha, "created", Instant.now().toString())), "general");
+          objectMapper.writeValueAsString(Map.of("version", sha, "created", new Date().toString())), "general");
       es.indexObject(sha, ContentIndextype.METADATA.toString(),
           objectMapper.writeValueAsString(Map.of("tags", tagsList)), "tags");
 
@@ -1058,10 +1058,11 @@ public class ContentIndexer {
 
   private void registerContentProblemEventMissingOrInvalidEndDate(
       final Content content, final Map<Content, List<String>> indexProblemCache) {
-    if (content instanceof IsaacEventPage eventPage) {
+    if (content instanceof IsaacEventPage) {
+      IsaacEventPage eventPage = (IsaacEventPage) content;
       if (eventPage.getEndDate() == null) {
         this.registerContentProblem(content, "Event has no end date", indexProblemCache);
-      } else if (eventPage.getEndDate().isBefore(eventPage.getDate())) {
+      } else if (eventPage.getEndDate().before(eventPage.getDate())) {
         this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
       }
     }
@@ -1069,16 +1070,19 @@ public class ContentIndexer {
 
   private void registerContentProblemEmailTemplateMissingPainTextContentField(
       final Content content, final Map<Content, List<String>> indexProblemCache) {
-    if (content instanceof EmailTemplate emailTemplate && (emailTemplate.getPlainTextContent() == null)) {
-      this.registerContentProblem(content,
-          "Email template should always have plain text content field", indexProblemCache);
-
+    if (content instanceof EmailTemplate) {
+      EmailTemplate emailTemplate = (EmailTemplate) content;
+      if (emailTemplate.getPlainTextContent() == null) {
+        this.registerContentProblem(content,
+            "Email template should always have plain text content field", indexProblemCache);
+      }
     }
   }
 
   private void registerContentProblemsChoiceQuestionMissingChoicesOrAnswer(
       final Content content, final Map<Content, List<String>> indexProblemCache) {
-    if (content instanceof ChoiceQuestion question && !(content.getType().equals("isaacQuestion"))) {
+    if (content instanceof ChoiceQuestion && !(content.getType().equals("isaacQuestion"))) {
+      ChoiceQuestion question = (ChoiceQuestion) content;
 
       if (question.getChoices() == null || question.getChoices().isEmpty()) {
         registerContentProblemChoiceQuestionMissingChoices(indexProblemCache, question);

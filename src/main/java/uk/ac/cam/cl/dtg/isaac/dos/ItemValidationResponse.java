@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -52,7 +52,7 @@ public class ItemValidationResponse extends QuestionValidationResponse {
    */
   public ItemValidationResponse(final String questionId, final Choice answer,
                                 final Boolean correct, final List<Boolean> itemsCorrect,
-                                final Content explanation, final Instant dateAttempted) {
+                                final Content explanation, final Date dateAttempted) {
     super(questionId, answer, correct, explanation, dateAttempted);
     this.itemsCorrect = itemsCorrect;
   }

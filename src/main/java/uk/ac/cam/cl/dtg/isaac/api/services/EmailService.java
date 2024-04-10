@@ -16,7 +16,6 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
-import static java.time.ZoneOffset.UTC;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
@@ -24,7 +23,8 @@ import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import jakarta.annotation.Nullable;
-import java.time.format.DateTimeFormatter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -65,7 +65,7 @@ public class EmailService {
     this.userManager = userManager;
   }
 
-  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yy").withZone(UTC);
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
 
   public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String,
       Object> tokenToValueMapping, final String templateName) throws SegueDatabaseException {

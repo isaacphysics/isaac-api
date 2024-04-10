@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
 
 import jakarta.annotation.Nullable;
-import java.time.Instant;
+import java.util.Date;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
@@ -33,9 +33,9 @@ public class QuizAttemptDTO implements IHasQuizSummary {
   private ContentSummaryDTO quizSummary; // We only need the title really.
   @Nullable
   private Long quizAssignmentId;
-  private Instant startDate;
+  private Date startDate;
   @Nullable
-  private Instant completedDate;
+  private Date completedDate;
   @Nullable
   private IsaacQuizDTO quiz; // For passing a users answers etc.
   @Nullable
@@ -53,7 +53,7 @@ public class QuizAttemptDTO implements IHasQuizSummary {
    * @param completedDate    - When this attempt was marked complete, or null if not yet completed.
    */
   public QuizAttemptDTO(final Long id, final Long userId, final String quizId, final Long quizAssignmentId,
-                        final Instant startDate, @Nullable final Instant completedDate) {
+                        final Date startDate, @Nullable final Date completedDate) {
     this.id = id;
     this.userId = userId;
     this.quizId = quizId;
@@ -127,20 +127,20 @@ public class QuizAttemptDTO implements IHasQuizSummary {
     this.quizAssignmentId = quizAssignmentId;
   }
 
-  public Instant getStartDate() {
+  public Date getStartDate() {
     return startDate;
   }
 
-  public void setStartDate(final Instant startDate) {
+  public void setStartDate(final Date startDate) {
     this.startDate = startDate;
   }
 
   @Nullable
-  public Instant getCompletedDate() {
+  public Date getCompletedDate() {
     return completedDate;
   }
 
-  public void setCompletedDate(@Nullable final Instant completedDate) {
+  public void setCompletedDate(@Nullable final Date completedDate) {
     this.completedDate = completedDate;
   }
 

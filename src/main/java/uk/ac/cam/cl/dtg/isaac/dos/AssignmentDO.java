@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.time.Instant;
+import java.util.Date;
 
 /**
  * This class is the Domain Object used to store Assignments in the isaac CMS.
@@ -27,9 +27,9 @@ public class AssignmentDO {
   private Long groupId;
   private Long ownerUserId;
   private String notes;
-  private Instant creationDate;
-  private Instant dueDate;
-  private Instant scheduledStartDate;
+  private Date creationDate;
+  private Date dueDate;
+  private Date scheduledStartDate;
 
   /**
    * Complete AssignmentDO constructor with all dependencies.
@@ -45,8 +45,7 @@ public class AssignmentDO {
    *                                 (using Quartz)
    */
   public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-                      final String notes, final Instant creationDate, final Instant dueDate,
-                      final Instant scheduledStartDate) {
+                      final String notes, final Date creationDate, final Date dueDate, final Date scheduledStartDate) {
     this.id = id;
     this.gameboardId = gameboardId;
     this.ownerUserId = ownerUserId;
@@ -159,7 +158,7 @@ public class AssignmentDO {
    *
    * @return the creationDate
    */
-  public Instant getCreationDate() {
+  public Date getCreationDate() {
     return creationDate;
   }
 
@@ -168,7 +167,7 @@ public class AssignmentDO {
    *
    * @param creationDate the creationDate to set
    */
-  public void setCreationDate(final Instant creationDate) {
+  public void setCreationDate(final Date creationDate) {
     this.creationDate = creationDate;
   }
 
@@ -207,7 +206,7 @@ public class AssignmentDO {
    *
    * @return dueDate
    */
-  public Instant getDueDate() {
+  public Date getDueDate() {
     return dueDate;
   }
 
@@ -216,7 +215,7 @@ public class AssignmentDO {
    *
    * @param dueDate - date due
    */
-  public void setDueDate(final Instant dueDate) {
+  public void setDueDate(final Date dueDate) {
     this.dueDate = dueDate;
   }
 
@@ -226,7 +225,7 @@ public class AssignmentDO {
    *
    * @return scheduledStartDate
    */
-  public Instant getScheduledStartDate() {
+  public Date getScheduledStartDate() {
     return scheduledStartDate;
   }
 
@@ -235,7 +234,7 @@ public class AssignmentDO {
    *
    * @param scheduledStartDate - the scheduled start date
    */
-  public void setScheduledStartDate(final Instant scheduledStartDate) {
+  public void setScheduledStartDate(final Date scheduledStartDate) {
     this.scheduledStartDate = scheduledStartDate;
   }
 }

@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
@@ -228,7 +228,7 @@ public interface IUserDataManager {
    * @param date to use.
    * @throws SegueDatabaseException if an error occurs
    */
-  void updateUserLastSeen(RegisteredUser user, Instant date) throws SegueDatabaseException;
+  void updateUserLastSeen(RegisteredUser user, Date date) throws SegueDatabaseException;
 
   /**
    * Create a session token record for a user object in the data store with a randomly generated value.

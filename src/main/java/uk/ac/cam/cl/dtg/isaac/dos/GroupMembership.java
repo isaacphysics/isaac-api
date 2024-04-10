@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.time.Instant;
+import java.util.Date;
 
 
 /**
@@ -26,8 +26,8 @@ public class GroupMembership {
   private Long groupId;
   private Long userId;
   private GroupMembershipStatus status;
-  private Instant updated;
-  private Instant created;
+  private Date updated;
+  private Date created;
 
   /**
    * Default Constructor.
@@ -43,8 +43,8 @@ public class GroupMembership {
    * @param created - the date the membership object was created
    * @param updated - the date the membership object was last updated
    */
-  public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status,
-                         final Instant created, final Instant updated) {
+  public GroupMembership(final Long groupId, final Long userId, final GroupMembershipStatus status, final Date created,
+                         final Date updated) {
     this.groupId = groupId;
     this.userId = userId;
     this.status = status;
@@ -111,7 +111,7 @@ public class GroupMembership {
    *
    * @return the updated date
    */
-  public Instant getUpdated() {
+  public Date getUpdated() {
     return updated;
   }
 
@@ -120,7 +120,7 @@ public class GroupMembership {
    *
    * @param updated the updated date to set
    */
-  public void setUpdated(final Instant updated) {
+  public void setUpdated(final Date updated) {
     this.updated = updated;
   }
 
@@ -129,7 +129,7 @@ public class GroupMembership {
    *
    * @return the created
    */
-  public Instant getCreated() {
+  public Date getCreated() {
     return created;
   }
 
@@ -138,7 +138,7 @@ public class GroupMembership {
    *
    * @param created the created to set
    */
-  public void setCreated(final Instant created) {
+  public void setCreated(final Date created) {
     this.created = created;
   }
 }

@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromTimestamp;
-
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import java.sql.Connection;
@@ -29,10 +27,10 @@ public class PgUserAlerts implements IUserAlerts {
         result.getLong("user_id"),
         result.getString("message"),
         result.getString("link"),
-        getInstantFromTimestamp(result, "created"),
-        getInstantFromTimestamp(result, "seen"),
-        getInstantFromTimestamp(result, "clicked"),
-        getInstantFromTimestamp(result, "dismissed"));
+        result.getTimestamp("created"),
+        result.getTimestamp("seen"),
+        result.getTimestamp("clicked"),
+        result.getTimestamp("dismissed"));
   }
 
   @Override

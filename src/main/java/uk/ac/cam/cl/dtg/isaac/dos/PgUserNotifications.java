@@ -16,16 +16,13 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromTimestamp;
-
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -98,7 +95,7 @@ public class PgUserNotifications implements IUserNotifications {
   @Override
   public void saveUserNotification(final Long userId, final String notificationId, final NotificationStatus status)
       throws SegueDatabaseException {
-    IUserNotification notification = new PgUserNotification(userId, notificationId, status, Instant.now());
+    IUserNotification notification = new PgUserNotification(userId, notificationId, status, new Date());
 
     if (this.getNotificationRecord(userId, notificationId) == null) {
       insertNewNotificationRecord(notification);
@@ -114,7 +111,7 @@ public class PgUserNotifications implements IUserNotifications {
    */
   private IUserNotification buildPgUserNotifications(final ResultSet result) throws SQLException {
     return new PgUserNotification(result.getLong("user_id"), result.getString("notification_id"),
-        NotificationStatus.valueOf(result.getString("status")), getInstantFromTimestamp(result, "created"));
+        NotificationStatus.valueOf(result.getString("status")), result.getTimestamp("created"));
   }
 
   /**
@@ -129,7 +126,7 @@ public class PgUserNotifications implements IUserNotifications {
       pst.setLong(FIELD_INSERT_NEW_RECORD_USER_ID, notification.getUserId());
       pst.setString(FIELD_INSERT_NEW_RECORD_NOTIFICATION_ID, notification.getContentNotificationId());
       pst.setString(FIELD_INSERT_NEW_RECORD_STATUS, notification.getStatus().name());
-      pst.setTimestamp(FIELD_INSERT_NEW_RECORD_CREATED, Timestamp.from(notification.getCreated()));
+      pst.setTimestamp(FIELD_INSERT_NEW_RECORD_CREATED, new java.sql.Timestamp(notification.getCreated().getTime()));
 
       if (pst.executeUpdate() == 0) {
         throw new SegueDatabaseException("Unable to save user notification.");
@@ -150,7 +147,7 @@ public class PgUserNotifications implements IUserNotifications {
          PreparedStatement pst = conn.prepareStatement(query)
     ) {
       pst.setString(FIELD_UPDATE_RECORD_STATUS, notification.getStatus().name());
-      pst.setTimestamp(FIELD_UPDATE_RECORD_CREATED, Timestamp.from(notification.getCreated()));
+      pst.setTimestamp(FIELD_UPDATE_RECORD_CREATED, new java.sql.Timestamp(notification.getCreated().getTime()));
       pst.setLong(FIELD_UPDATE_RECORD_USER_ID, notification.getUserId());
       pst.setString(FIELD_UPDATE_RECORD_NOTIFICATION_ID, notification.getContentNotificationId());
 

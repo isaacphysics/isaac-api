@@ -33,6 +33,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseInternalLogValue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -709,7 +710,7 @@ public class AdminFacade extends AbstractSegueFacade {
    * @param request           - to identify if the user is authorised.
    * @param requestForCaching - to determine if the content is still fresh.
    * @return a content object, such that the content object has children. The children represent each source file in
-   *      error and the grand children represent each error.
+   * error and the grand children represent each error.
    */
   @SuppressWarnings("unchecked")
   @GET
@@ -1123,6 +1124,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
       if (isUserAnAdmin(userManager, httpServletRequest)) {
 
+        ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> diagnosticReport = Maps.newHashMap();
         Map<String, Object> websocketReport = Maps.newHashMap();
         Map<String, Object> runtimeReport = Maps.newHashMap();
