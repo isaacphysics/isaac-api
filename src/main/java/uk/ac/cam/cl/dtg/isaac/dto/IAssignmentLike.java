@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import jakarta.annotation.Nullable;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -16,26 +16,19 @@ public interface IAssignmentLike {
 
   void setAssignerSummary(UserSummaryDTO userSummaryDTO);
 
-  Date getCreationDate();
+  Instant getCreationDate();
 
   @Nullable
-  Date getDueDate();
+  Instant getDueDate();
 
-  default boolean dueDateIsAfter(Date date) {
-    Date dueDate = this.getDueDate();
+  default boolean dueDateIsAfter(Instant date) {
+    Instant dueDate = this.getDueDate();
     if (null == dueDate) {
       // This interprets null due dates as "assignment is due by the end of the universe"
       return false;
     }
     // Compare date against midnight of the due date
-    Calendar cal = Calendar.getInstance();
-    cal.setTimeInMillis(dueDate.getTime());
-    cal.set(Calendar.HOUR_OF_DAY, 0);
-    cal.set(Calendar.MINUTE, 0);
-    cal.set(Calendar.SECOND, 0);
-    cal.set(Calendar.MILLISECOND, 0);
-    cal.add(Calendar.DATE, 1);
-    return cal.getTime().after(date);
+    return dueDate.truncatedTo(ChronoUnit.DAYS).plus(1L, ChronoUnit.DAYS).isAfter(date);
   }
 
   interface Details<T extends IAssignmentLike> {

@@ -41,7 +41,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
@@ -217,15 +217,15 @@ public class QuestionFacade extends AbstractSegueFacade {
 
       // No point looking for stats from before the user registered (except for merged attempts at registration,
       // and these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway):
-      Date fromDateObject = new Date(fromDate);
-      if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+      Instant fromDateObject = Instant.ofEpochMilli(fromDate);
+      if (fromDateObject.isBefore(userOfInterest.getRegistrationDate())) {
         fromDateObject = userOfInterest.getRegistrationDate();
       }
 
-      return Response.ok(
-              this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject, new Date(toDate),
-                  perDay))
-          .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+      return Response.ok(this.questionManager.getUsersQuestionAttemptCountsByDate(userOfInterest, fromDateObject,
+              Instant.ofEpochMilli(toDate), perDay)).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK,
+              false))
+          .build();
     } catch (NoUserLoggedInException e) {
       return SegueErrorResponse.getNotLoggedInResponse();
     } catch (NoUserException e) {

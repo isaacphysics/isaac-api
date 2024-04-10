@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import static java.util.Objects.requireNonNull;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -166,7 +166,7 @@ public class IsaacParsonsValidator implements IValidator {
       feedback = parsonsQuestion.getDefaultFeedback();
     }
 
-    return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+    return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, Instant.now());
   }
 
 }

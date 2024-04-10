@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -7,7 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -23,7 +25,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
   private static final String CURRENT_STREAK = "currentStreak";
 
   private final PostgresSqlDb database;
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper = getSharedBasicObjectMapper();
 
   /**
    * PgUserStreakManager.
@@ -114,7 +116,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
       IUserAlert alert = new PgUserAlert(null, userId,
           objectMapper.writeValueAsString(Map.of("dailyStreakRecord", this.getCurrentStreakRecord(user),
               "weeklyStreakRecord", this.getCurrentWeeklyStreakRecord(user))),
-          "progress", new Timestamp(System.currentTimeMillis()), null, null, null);
+          "progress", Instant.now(), null, null, null);
 
       UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
     } catch (JsonProcessingException e) {

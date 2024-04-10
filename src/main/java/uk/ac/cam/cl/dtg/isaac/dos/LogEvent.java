@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * An object that represents a log event.
@@ -29,7 +29,7 @@ public class LogEvent {
   private String userId;
   private boolean anonymousUser;
   private String ipAddress;
-  private Date timestamp;
+  private Instant timestamp;
 
   /**
    * Create a log event.
@@ -50,7 +50,7 @@ public class LogEvent {
    * @param timestamp        - when the log happened.
    */
   public LogEvent(final String eventType, final String eventDetailsType, final Object eventDetails,
-                  final String userId, final boolean anonymousUser, final String ipAddress, final Date timestamp) {
+                  final String userId, final boolean anonymousUser, final String ipAddress, final Instant timestamp) {
     this.eventType = eventType;
     this.eventDetailsType = eventDetailsType;
     this.eventDetails = eventDetails;
@@ -191,7 +191,7 @@ public class LogEvent {
    *
    * @return the timestamp
    */
-  public Date getTimestamp() {
+  public Instant getTimestamp() {
     return timestamp;
   }
 
@@ -200,7 +200,7 @@ public class LogEvent {
    *
    * @param timestamp the timestamp to set
    */
-  public void setTimestamp(final Date timestamp) {
+  public void setTimestamp(final Instant timestamp) {
     this.timestamp = timestamp;
   }
 }

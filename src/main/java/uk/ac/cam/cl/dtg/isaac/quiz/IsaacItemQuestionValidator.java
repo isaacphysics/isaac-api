@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -151,7 +151,7 @@ public class IsaacItemQuestionValidator implements IValidator {
       feedback = itemQuestion.getDefaultFeedback();
     }
 
-    return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+    return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, Instant.now());
   }
 
   @Override

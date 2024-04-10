@@ -12,6 +12,7 @@ import static org.easymock.EasyMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 import static uk.ac.cam.cl.dtg.util.ReflectionUtils.getClasses;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -295,7 +296,7 @@ public abstract class IsaacIntegrationTest {
             pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager,
             schoolListReader);
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = getSharedBasicObjectMapper();
     EventBookingPersistenceManager bookingPersistanceManager =
         new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
     PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);

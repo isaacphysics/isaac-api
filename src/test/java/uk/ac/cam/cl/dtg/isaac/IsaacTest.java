@@ -28,9 +28,10 @@ import static org.easymock.EasyMock.verify;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +59,9 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 public abstract class IsaacTest {
-  protected static Date somePastDate = new Date(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000);
-  protected static Date someFurtherPastDate = new Date(System.currentTimeMillis() - 14 * 24 * 60 * 60 * 1000);
-  protected static Date someFutureDate = new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000);
+  protected static Instant somePastDate = Instant.now().minus(7L, ChronoUnit.DAYS);
+  protected static Instant someFurtherPastDate = Instant.now().minus(14L, ChronoUnit.DAYS);
+  protected static Instant someFutureDate = Instant.now().plus(7L, ChronoUnit.DAYS);
   protected IsaacQuizDTO studentQuiz;
   protected IsaacQuiz studentQuizDO;
   protected IsaacQuizDTO teacherQuiz;
@@ -256,10 +257,10 @@ public abstract class IsaacTest {
         new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate, null);
     completedAttempt =
         new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), studentAssignment.getId(), somePastDate,
-            new Date());
+            Instant.now());
     overdueCompletedAttempt =
         new QuizAttemptDTO(++id, student.getId(), studentQuiz.getId(), overdueAssignment.getId(), somePastDate,
-            new Date());
+            Instant.now());
     otherAttempt =
         new QuizAttemptDTO(++id, student.getId(), teacherQuiz.getId(), otherAssignment.getId(), somePastDate, null);
 
@@ -320,7 +321,7 @@ public abstract class IsaacTest {
                 somePastDate)
         )
     );
-    Date beforeSomePastDate = new Date(somePastDate.getTime() - 1000L);
+    Instant beforeSomePastDate = somePastDate.minusMillis(1000L);
     expect(groupManager.getUserMembershipMapForGroup(studentInactiveGroup.getId())).andStubReturn(
         Collections.singletonMap(student.getId(),
             new GroupMembershipDTO(studentGroup.getId(), student.getId(), GroupMembershipStatus.INACTIVE, null,

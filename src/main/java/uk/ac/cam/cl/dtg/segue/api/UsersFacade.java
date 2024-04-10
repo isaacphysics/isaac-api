@@ -27,6 +27,7 @@ import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.api.client.util.Maps;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -52,8 +53,8 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,11 +162,11 @@ public class UsersFacade extends AbstractSegueFacade {
     try {
       RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
-      Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
+      Instant sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
       int sessionExpiryHashCode = 0;
       if (null != sessionExpiry) {
         sessionExpiryHashCode = sessionExpiry.hashCode();
-        response.setDateHeader("X-Session-Expires", sessionExpiry.getTime());
+        response.setDateHeader("X-Session-Expires", sessionExpiry.toEpochMilli());
       }
 
       // Calculate the ETag based on the user we just retrieved and the session expiry:
@@ -208,6 +209,7 @@ public class UsersFacade extends AbstractSegueFacade {
     String recaptchaToken;
     try {
       ObjectMapper tmpObjectMapper = new ObjectMapper();
+      tmpObjectMapper.registerModule(new JavaTimeModule());
       tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
       // TODO: We need to change the way the frontend sends passwords to reduce complexity

@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static uk.ac.cam.cl.dtg.CustomAssertions.assertDeepEquals;
 
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +73,7 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
 
 class ContentMapperTest {
   private ContentMapper contentMapper;
-  private static final Date testDate = new Date();
+  private static final Instant testDate = Instant.now();
 
   @BeforeEach
   void beforeEach() {

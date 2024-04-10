@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
+import java.time.Instant;
 
 public interface IUserAlert {
 
@@ -24,20 +24,20 @@ public interface IUserAlert {
 
   void setLink(String link);
 
-  Date getCreated();
+  Instant getCreated();
 
-  void setCreated(Date created);
+  void setCreated(Instant created);
 
-  Date getSeen();
+  Instant getSeen();
 
-  void setSeen(Date seen);
+  void setSeen(Instant seen);
 
-  Date getClicked();
+  Instant getClicked();
 
-  void setClicked(Date clicked);
+  void setClicked(Instant clicked);
 
-  Date getDismissed();
+  Instant getDismissed();
 
-  void setDismissed(Date dismissed);
+  void setDismissed(Instant dismissed);
 
 }

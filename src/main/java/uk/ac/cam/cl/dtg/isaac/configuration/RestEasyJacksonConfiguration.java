@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.configuration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -37,6 +38,7 @@ public class RestEasyJacksonConfiguration extends JacksonJsonProvider {
    */
   public RestEasyJacksonConfiguration() {
     ObjectMapper mapper = new ObjectMapper();
+    mapper.registerModule(new JavaTimeModule());
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     super.setMapper(mapper);
   }

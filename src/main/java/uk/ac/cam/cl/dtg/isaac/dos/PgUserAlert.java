@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
+import java.time.Instant;
 
 public class PgUserAlert implements IUserAlert {
 
@@ -8,13 +8,13 @@ public class PgUserAlert implements IUserAlert {
   private Long userId;
   private String message;
   private String link;
-  private Date created;
-  private Date seen;
-  private Date clicked;
-  private Date dismissed;
+  private Instant created;
+  private Instant seen;
+  private Instant clicked;
+  private Instant dismissed;
 
-  public PgUserAlert(final Long id, final Long userId, final String message, final String link, final Date created,
-                     final Date seen, final Date clicked, final Date dismissed) {
+  public PgUserAlert(final Long id, final Long userId, final String message, final String link, final Instant created,
+                     final Instant seen, final Instant clicked, final Instant dismissed) {
     this.id = id;
     this.userId = userId;
     this.message = message;
@@ -66,42 +66,42 @@ public class PgUserAlert implements IUserAlert {
   }
 
   @Override
-  public Date getCreated() {
+  public Instant getCreated() {
     return created;
   }
 
   @Override
-  public void setCreated(final Date created) {
+  public void setCreated(final Instant created) {
     this.created = created;
   }
 
   @Override
-  public Date getSeen() {
+  public Instant getSeen() {
     return seen;
   }
 
   @Override
-  public void setSeen(final Date seen) {
+  public void setSeen(final Instant seen) {
     this.seen = seen;
   }
 
   @Override
-  public Date getClicked() {
+  public Instant getClicked() {
     return clicked;
   }
 
   @Override
-  public void setClicked(final Date clicked) {
+  public void setClicked(final Instant clicked) {
     this.clicked = clicked;
   }
 
   @Override
-  public Date getDismissed() {
+  public Instant getDismissed() {
     return dismissed;
   }
 
   @Override
-  public void setDismissed(final Date dismissed) {
+  public void setDismissed(final Instant dismissed) {
     this.dismissed = dismissed;
   }
 }

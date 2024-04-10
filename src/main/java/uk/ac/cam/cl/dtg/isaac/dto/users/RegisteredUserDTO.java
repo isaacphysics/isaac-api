@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
@@ -35,18 +35,18 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
   private String familyName;
   private String email;
   private Role role;
-  private Date dateOfBirth;
+  private Instant dateOfBirth;
   private Gender gender;
-  private Date registrationDate;
+  private Instant registrationDate;
 
   private String schoolId;
   private String schoolOther;
   private List<UserContext> registeredContexts;
-  private Date registeredContextsLastConfirmed;
+  private Instant registeredContextsLastConfirmed;
 
   private boolean firstLogin = false;
-  private Date lastUpdated;
-  private Date lastSeen;
+  private Instant lastUpdated;
+  private Instant lastSeen;
   private EmailVerificationStatus emailVerificationStatus;
   private Boolean teacherPending;
 
@@ -69,9 +69,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
       @JsonProperty("familyName") final String familyName,
       @JsonProperty("email") final String email,
       @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
-      @JsonProperty("dateOfBirth") final Date dateOfBirth,
+      @JsonProperty("dateOfBirth") final Instant dateOfBirth,
       @JsonProperty("gender") final Gender gender,
-      @JsonProperty("registrationDate") final Date registrationDate,
+      @JsonProperty("registrationDate") final Instant registrationDate,
       @JsonProperty("schoolId") final String schoolId,
       @JsonProperty("teacherPending") final Boolean teacherPending
   ) {
@@ -217,7 +217,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @return the dateOfBirth
    */
-  public Date getDateOfBirth() {
+  public Instant getDateOfBirth() {
     return dateOfBirth;
   }
 
@@ -226,7 +226,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @param dateOfBirth the dateOfBirth to set
    */
-  public void setDateOfBirth(final Date dateOfBirth) {
+  public void setDateOfBirth(final Instant dateOfBirth) {
     this.dateOfBirth = dateOfBirth;
   }
 
@@ -268,7 +268,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @return the registrationDate
    */
-  public Date getRegistrationDate() {
+  public Instant getRegistrationDate() {
     return registrationDate;
   }
 
@@ -277,7 +277,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @param registrationDate the registrationDate to set
    */
-  public void setRegistrationDate(final Date registrationDate) {
+  public void setRegistrationDate(final Instant registrationDate) {
     this.registrationDate = registrationDate;
   }
 
@@ -340,7 +340,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @return the lastUpdated
    */
-  public Date getLastUpdated() {
+  public Instant getLastUpdated() {
     return lastUpdated;
   }
 
@@ -349,7 +349,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @param lastUpdated the lastUpdated to set
    */
-  public void setLastUpdated(final Date lastUpdated) {
+  public void setLastUpdated(final Instant lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 
@@ -358,7 +358,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @return the lastSeen
    */
-  public Date getLastSeen() {
+  public Instant getLastSeen() {
     return lastSeen;
   }
 
@@ -367,7 +367,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
    *
    * @param lastSeen the lastSeen to set
    */
-  public void setLastSeen(final Date lastSeen) {
+  public void setLastSeen(final Instant lastSeen) {
     this.lastSeen = lastSeen;
   }
 
@@ -397,11 +397,11 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     this.registeredContexts = registeredContexts;
   }
 
-  public Date getRegisteredContextsLastConfirmed() {
+  public Instant getRegisteredContextsLastConfirmed() {
     return registeredContextsLastConfirmed;
   }
 
-  public void setRegisteredContextsLastConfirmed(final Date registeredContextsLastConfirmed) {
+  public void setRegisteredContextsLastConfirmed(final Instant registeredContextsLastConfirmed) {
     this.registeredContextsLastConfirmed = registeredContextsLastConfirmed;
   }
 

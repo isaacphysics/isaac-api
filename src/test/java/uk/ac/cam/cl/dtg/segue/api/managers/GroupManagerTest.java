@@ -27,14 +27,13 @@ import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_MILLISECONDS_IN_SECOND;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_WEEK;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,8 +67,7 @@ class GroupManagerTest {
 
   private GroupManager groupManager;
 
-  private static final Date somePastDate =
-      new Date(System.currentTimeMillis() - NUMBER_SECONDS_IN_ONE_WEEK * NUMBER_MILLISECONDS_IN_SECOND);
+  private static final Instant somePastDate = Instant.now().minus(7L, ChronoUnit.DAYS);
 
   /**
    * Initial configuration of tests.
@@ -141,7 +139,7 @@ class GroupManagerTest {
       // check that what goes into the database is what we passed it.
       assertEquals(someGroupOwner.getId(), capturedGroup.getValue().getOwnerId());
       assertEquals(someGroupName, capturedGroup.getValue().getGroupName());
-      assertInstanceOf(Date.class, capturedGroup.getValue().getCreated());
+      assertInstanceOf(Instant.class, capturedGroup.getValue().getCreated());
 
     } catch (SegueDatabaseException | NoUserException e) {
       fail("No exception expected", e);

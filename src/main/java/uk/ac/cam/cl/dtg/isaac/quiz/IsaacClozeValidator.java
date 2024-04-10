@@ -19,8 +19,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import static java.util.Objects.requireNonNull;
 
 import com.google.api.client.util.Lists;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -198,7 +198,7 @@ public class IsaacClozeValidator implements IValidator {
       feedback = clozeQuestion.getDefaultFeedback();
     }
 
-    return new ItemValidationResponse(question.getId(), answer, responseCorrect, itemsCorrect, feedback, new Date());
+    return new ItemValidationResponse(question.getId(), answer, responseCorrect, itemsCorrect, feedback, Instant.now());
   }
 
   @Override

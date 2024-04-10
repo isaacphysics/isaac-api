@@ -30,10 +30,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import org.easymock.Capture;
@@ -57,6 +56,8 @@ class UserAuthenticationManagerTest {
   private EmailManager dummyQueue;
   private String dummyHMACSalt;
   private String dummyHostName;
+  private static final DateTimeFormatter DEFAULT_DATE_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
+
 
   @BeforeEach
   public void beforeEach() {
@@ -80,8 +81,8 @@ class UserAuthenticationManagerTest {
 
   @Test
   void isSessionValid_valid() throws JsonProcessingException, SegueDatabaseException {
-    Date cookieExpiryDate = Date.from(Instant.now().plus(300, SECONDS));
-    String cookieExpiryDateString = new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(cookieExpiryDate);
+    Instant cookieExpiryDate = Instant.now().plus(300, SECONDS);
+    String cookieExpiryDateString = DEFAULT_DATE_FORMATTER.format(cookieExpiryDate);
     Map<String, String> sessionInformation = new HashMap<>(4);
     sessionInformation.put(SESSION_USER_ID, "1");
     sessionInformation.put(SESSION_TOKEN, "1");
@@ -127,8 +128,8 @@ class UserAuthenticationManagerTest {
   @Test
   void calculateUpdatedHMAC_noPartialLogin() {
     String expectedHMAC = "dwHtgxiiU7r7xH/BNet7bZb4PQMK0CrOfSVnn+ctWXQ=";
-    Date cookieExpiryDate = Date.from(LocalDateTime.of(2020, 1, 1, 0, 0, 0).toInstant(UTC));
-    String cookieExpiryDateString = new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(cookieExpiryDate);
+    Instant cookieExpiryDate = LocalDateTime.of(2020, 1, 1, 0, 0, 0).toInstant(UTC);
+    String cookieExpiryDateString = DEFAULT_DATE_FORMATTER.format(cookieExpiryDate);
     Map<String, String> sessionInformation = Map.of(
         SESSION_USER_ID, "1",
         SESSION_TOKEN, "1",
@@ -141,8 +142,8 @@ class UserAuthenticationManagerTest {
   @Test
   void calculateUpdatedHMAC_PartialLogin() {
     String expectedHMAC = "/reauAoeghGgfvoMxC+zpQTVlOytSKncUpOrgzwjomw=";
-    Date cookieExpiryDate = Date.from(LocalDateTime.of(2020, 1, 1, 0, 0, 0).toInstant(UTC));
-    String cookieExpiryDateString = new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(cookieExpiryDate);
+    Instant cookieExpiryDate = LocalDateTime.of(2020, 1, 1, 0, 0, 0).toInstant(UTC);
+    String cookieExpiryDateString = DEFAULT_DATE_FORMATTER.format(cookieExpiryDate);
     Map<String, String> sessionInformation = Map.of(
         SESSION_USER_ID, "1",
         SESSION_TOKEN, "1",
@@ -167,7 +168,7 @@ class UserAuthenticationManagerTest {
     Map<String, String> sessionInformation = new HashMap<>(Map.of(
         SESSION_USER_ID, "1",
         SESSION_TOKEN, "1",
-        DATE_EXPIRES, new SimpleDateFormat(DEFAULT_DATE_FORMAT).format(Date.from(Instant.now().plus(3600, SECONDS)))
+        DATE_EXPIRES, DEFAULT_DATE_FORMATTER.format(Instant.now().plus(3600, SECONDS))
     ));
     sessionInformation.put(HMAC, userAuthenticationManager.calculateUpdatedHMAC(sessionInformation));
 

@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * A UserAssociation represents the fact that a user has granted permissions to view their users information to another
@@ -26,7 +26,7 @@ import java.util.Date;
 public class UserAssociation {
   private Long userIdGrantingPermission;
   private Long userIdReceivingPermission;
-  private Date created;
+  private Instant created;
 
   /**
    * UserAssociation.
@@ -46,7 +46,7 @@ public class UserAssociation {
    *            - date
    */
   public UserAssociation(final Long userIdGrantingPermission,
-                         final Long userIdReceivingPermission, final Date created) {
+                         final Long userIdReceivingPermission, final Instant created) {
     this.userIdGrantingPermission = userIdGrantingPermission;
     this.userIdReceivingPermission = userIdReceivingPermission;
     this.created = created;
@@ -95,7 +95,7 @@ public class UserAssociation {
    *
    * @return the created
    */
-  public Date getCreated() {
+  public Instant getCreated() {
     return created;
   }
 
@@ -105,7 +105,7 @@ public class UserAssociation {
    * @param created
    *            the created to set
    */
-  public void setCreated(final Date created) {
+  public void setCreated(final Instant created) {
     this.created = created;
   }
 }

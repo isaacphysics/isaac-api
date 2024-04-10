@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Domain Object to represent an Anonymous user of the system.
@@ -26,8 +26,8 @@ import java.util.Date;
 public class AnonymousUser extends AbstractSegueUser {
   private String sessionId;
 
-  private Date dateCreated;
-  private Date lastUpdated;
+  private Instant dateCreated;
+  private Instant lastUpdated;
 
   /**
    * Default constructor required for Jackson.
@@ -54,7 +54,7 @@ public class AnonymousUser extends AbstractSegueUser {
    * @param dateCreated - date the user object was created
    * @param lastUpdated - last time it was updated.
    */
-  public AnonymousUser(final String sessionId, final Date dateCreated, final Date lastUpdated) {
+  public AnonymousUser(final String sessionId, final Instant dateCreated, final Instant lastUpdated) {
     this.sessionId = sessionId;
     this.dateCreated = dateCreated;
     this.lastUpdated = lastUpdated;
@@ -84,7 +84,7 @@ public class AnonymousUser extends AbstractSegueUser {
    *
    * @return the dateCreated
    */
-  public Date getDateCreated() {
+  public Instant getDateCreated() {
     return dateCreated;
   }
 
@@ -94,7 +94,7 @@ public class AnonymousUser extends AbstractSegueUser {
    * @param dateCreated
    *            the dateCreated to set
    */
-  public void setDateCreated(final Date dateCreated) {
+  public void setDateCreated(final Instant dateCreated) {
     this.dateCreated = dateCreated;
   }
 
@@ -104,7 +104,7 @@ public class AnonymousUser extends AbstractSegueUser {
    *
    * @return update date
    */
-  public Date getLastUpdated() {
+  public Instant getLastUpdated() {
     return lastUpdated;
   }
 
@@ -113,7 +113,7 @@ public class AnonymousUser extends AbstractSegueUser {
    *
    * @param lastUpdated last update date
    */
-  public void setLastUpdated(final Date lastUpdated) {
+  public void setLastUpdated(final Instant lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 

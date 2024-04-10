@@ -68,7 +68,7 @@ public class ScheduledAssignmentsEmailJob implements Job {
   public void execute(final JobExecutionContext context) throws JobExecutionException {
     try {
       List<AssignmentDTO> assignments =
-          this.assignmentPersistenceManager.getAssignmentsScheduledForHour(context.getScheduledFireTime());
+          this.assignmentPersistenceManager.getAssignmentsScheduledForHour(context.getScheduledFireTime().toInstant());
       assignments.forEach(this::startSingleScheduledAssignment);
       log.info("Ran ScheduledAssignmentsEmailJob");
     } catch (SegueDatabaseException e) {

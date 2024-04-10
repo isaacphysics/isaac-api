@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Lightweight Question Validation Response DO for summary statistics and calculations.
@@ -8,7 +8,7 @@ import java.util.Date;
 public class LightweightQuestionValidationResponse {
   private String questionId;
   private Boolean correct;
-  private Date dateAttempted;
+  private Instant dateAttempted;
 
   /**
    * Default Constructor for mappers.
@@ -25,7 +25,7 @@ public class LightweightQuestionValidationResponse {
    * @param dateAttempted -
    */
   public LightweightQuestionValidationResponse(final String questionId, final Boolean correct,
-                                               final Date dateAttempted) {
+                                               final Instant dateAttempted) {
     this.questionId = questionId;
     this.correct = correct;
     this.dateAttempted = dateAttempted;
@@ -72,7 +72,7 @@ public class LightweightQuestionValidationResponse {
    *
    * @return the dateAttempted
    */
-  public Date getDateAttempted() {
+  public Instant getDateAttempted() {
     return dateAttempted;
   }
 
@@ -81,7 +81,7 @@ public class LightweightQuestionValidationResponse {
    *
    * @param dateAttempted the dateAttempted to set
    */
-  public void setDateAttempted(final Date dateAttempted) {
+  public void setDateAttempted(final Instant dateAttempted) {
     this.dateAttempted = dateAttempted;
   }
 

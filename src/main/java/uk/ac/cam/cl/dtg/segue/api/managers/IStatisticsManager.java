@@ -1,10 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.LocalDate;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -70,14 +70,14 @@ public interface IStatisticsManager {
   /**
    * @return a Map of userId's to last event timestamp
    */
-  Map<String, Date> getLastSeenUserMap();
+  Map<String, Instant> getLastSeenUserMap();
 
   /**
    * @param qualifyingLogEvent the string event type that will be looked for.
    * @return a map of userId's to last event timestamp
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
-  Map<String, Date> getLastSeenUserMap(String qualifyingLogEvent) throws SegueDatabaseException;
+  Map<String, Instant> getLastSeenUserMap(String qualifyingLogEvent) throws SegueDatabaseException;
 
   /**
    * getUserQuestionInformation. Produces a map that contains information about the total questions attempted,
@@ -103,7 +103,7 @@ public interface IStatisticsManager {
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
   Map<String, Map<LocalDate, Long>> getEventLogsByDate(
-      Collection<String> eventTypes, Date fromDate, Date toDate, boolean binDataByMonth)
+      Collection<String> eventTypes, Instant fromDate, Instant toDate, boolean binDataByMonth)
       throws SegueDatabaseException;
 
   /**
@@ -118,7 +118,7 @@ public interface IStatisticsManager {
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
   Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(
-      Collection<String> eventTypes, Date fromDate, Date toDate, List<RegisteredUserDTO> userList,
+      Collection<String> eventTypes, Instant fromDate, Instant toDate, List<RegisteredUserDTO> userList,
       boolean binDataByMonth)
       throws SegueDatabaseException;
 
@@ -132,7 +132,7 @@ public interface IStatisticsManager {
    * @return a collection containing the users who meet the criteria
    */
   Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(
-      Collection<RegisteredUserDTO> users, Map<String, Date> lastSeenUserMap, int daysFromToday);
+      Collection<RegisteredUserDTO> users, Map<String, Instant> lastSeenUserMap, int daysFromToday);
 
   /**
    * Gets additional information for a user outlining their progress for teacher-based activity.

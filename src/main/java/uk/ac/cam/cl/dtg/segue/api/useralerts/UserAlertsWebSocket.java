@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.api.useralerts;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.WEBSOCKET_LATENCY_HISTOGRAM;
+import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -63,7 +64,7 @@ public class UserAlertsWebSocket implements IAlertListener {
   private final IStatisticsManager statisticsManager;
   private final PropertiesLoader properties;
   private Session session;
-  private static final ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = getSharedBasicObjectMapper();
 
   // Named unsafeConnectedSockets because, although non-aggregate operations on the concurrent hash map are fine,
   // operations on the user sets of websockets are unsafe unless used with the matching user lock.

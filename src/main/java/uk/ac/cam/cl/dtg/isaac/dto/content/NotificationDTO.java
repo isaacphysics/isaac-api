@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import java.util.Date;
+import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 
 /**
@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
  */
 public class NotificationDTO extends ContentDTO {
   private ExternalReference externalReference;
-  private Date expiry;
+  private Instant expiry;
 
   /**
    * @param value for the value field
@@ -64,7 +64,7 @@ public class NotificationDTO extends ContentDTO {
    *
    * @return the expiry
    */
-  public Date getExpiry() {
+  public Instant getExpiry() {
     return expiry;
   }
 
@@ -73,7 +73,7 @@ public class NotificationDTO extends ContentDTO {
    *
    * @param expiry the expiry to set
    */
-  public void setExpiry(final Date expiry) {
+  public void setExpiry(final Instant expiry) {
     this.expiry = expiry;
   }
 }

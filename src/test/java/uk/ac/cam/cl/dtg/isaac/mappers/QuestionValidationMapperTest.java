@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.mappers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.CustomAssertions.assertDeepEquals;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 class QuestionValidationMapperTest {
 
   private QuestionValidationMapper questionValidationMapper;
-  private static final Date testDate = new Date();
+  private static final Instant testDate = Instant.now();
 
   @BeforeEach
   void beforeEach() {
