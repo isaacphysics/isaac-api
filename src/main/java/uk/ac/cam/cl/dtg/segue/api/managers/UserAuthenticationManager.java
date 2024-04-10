@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import static java.time.ZoneOffset.UTC;
 import static java.util.Objects.requireNonNull;
-import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_LAX_COMMENT;
+import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_ATTRIBUTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_EXPIRES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
@@ -1187,7 +1187,7 @@ public class UserAuthenticationManager {
     authCookie.setPath("/");
     authCookie.setHttpOnly(true);
     authCookie.setSecure(setSecureCookies);
-    authCookie.setComment(SAME_SITE_LAX_COMMENT);
+    authCookie.setAttribute(SAME_SITE_ATTRIBUTE, "Lax");
     return authCookie;
   }
 
@@ -1198,7 +1198,7 @@ public class UserAuthenticationManager {
     logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
     logoutCookie.setHttpOnly(true);
     logoutCookie.setSecure(setSecureCookies);
-    logoutCookie.setComment(SAME_SITE_LAX_COMMENT);
+    logoutCookie.setAttribute(SAME_SITE_ATTRIBUTE, "Lax");
     return logoutCookie;
   }
 
@@ -1209,7 +1209,7 @@ public class UserAuthenticationManager {
         .maxAge(0)
         .httpOnly(true)
         .secure(setSecureCookies)
-        .comment(SAME_SITE_LAX_COMMENT)
+        .sameSite(NewCookie.SameSite.LAX)
         .build();
     return logoutCookie;
   }
