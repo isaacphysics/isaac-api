@@ -194,8 +194,6 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
         Map<Stage, Map<Difficulty, Integer>> questionAttemptsByStageAndDifficultyStats = Maps.newHashMap();
         Map<Stage, Map<Difficulty, Integer>> questionsCorrectByStageAndDifficultyStats = Maps.newHashMap();
-        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
-        Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
         List<ContentDTO> incompleteQuestionPages = Lists.newArrayList();
@@ -347,21 +345,6 @@ public class StatisticsManager implements IStatisticsManager {
                 }
             }
 
-            // Level Stats:
-            Integer questionLevelInteger = questionContentDTO.getLevel();
-            String questionLevel;
-            if (null == questionLevelInteger) {
-                // There are questions on general pages which cannot have levels, must use a default value.
-                questionLevel = "0";
-            } else {
-                questionLevel = questionLevelInteger.toString();
-            }
-            if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
-                questionAttemptsByLevelStats.put(questionLevel, questionAttemptsByLevelStats.get(questionLevel) + 1);
-            } else {
-                questionAttemptsByLevelStats.put(questionLevel, 1);
-            }
-
             if (mostRecentAttemptAtQuestion != null && mostRecentAttemptAtQuestion.isAfter(lastDayOfPreviousAcademicYear)) {
                 attemptedQuestionsThisAcademicYear++;
             }
@@ -371,11 +354,6 @@ public class StatisticsManager implements IStatisticsManager {
                 correctQuestions++;
                 if (mostRecentCorrectQuestionPart != null && mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
                     correctQuestionsThisAcademicYear++;
-                }
-                if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
-                    questionsCorrectByLevelStats.put(questionLevel, questionsCorrectByLevelStats.get(questionLevel) + 1);
-                } else {
-                    questionsCorrectByLevelStats.put(questionLevel, 1);
                 }
             } else {
                 incompleteQuestionPages.add(questionPageDTO);
@@ -406,8 +384,6 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
         questionInfo.put("correctByStageAndDifficulty", questionsCorrectByStageAndDifficultyStats);
-        questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
-        questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
         questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
         questionInfo.put("correctByType", questionsCorrectByTypeStats);
         questionInfo.put("oldestIncompleteQuestions", questionsNotCompleteList);
