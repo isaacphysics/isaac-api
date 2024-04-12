@@ -406,7 +406,8 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
                 ", tags=" + tags +
                 ", isSavedToCurrentUser=" + isSavedToCurrentUser +
                 ", creationMethod=" + creationMethod +
-                ", percentageCompleted=" + percentageAttempted +
+                ", percentageAttempted=" + percentageAttempted +
+                ", percentageCorrect=" + percentageCorrect +
                 ", lastVisited=" + lastVisited +
                 ", startedQuestion=" + startedQuestion +
                 ']';
