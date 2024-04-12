@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -83,7 +82,6 @@ public class GroupsFacade extends AbstractSegueFacade {
     private final AssignmentManager assignmentManager;
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
-    private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
 
     /**
@@ -100,14 +98,12 @@ public class GroupsFacade extends AbstractSegueFacade {
                         final ILogManager logManager, AssignmentManager assignmentManager,
                         final GroupManager groupManager,
                         final UserAssociationManager associationsManager,
-                        final UserBadgeManager userBadgeManager,
                         final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.assignmentManager = assignmentManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
-        this.userBadgeManager = userBadgeManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -343,9 +339,6 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             this.getLogManager().logEvent(user, request, SegueServerLogType.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
-
-            this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
-                    group.getId().toString());
 
             return Response.ok(group).build();
         } catch (SegueDatabaseException e) {

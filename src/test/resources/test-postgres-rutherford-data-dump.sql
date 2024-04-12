@@ -230,14 +230,6 @@ VJ94X2	12	4
 
 
 --
--- Data for Name: user_badges; Type: TABLE DATA; Schema: public; Owner: rutherford
---
-
-COPY public.user_badges (user_id, badge, state) FROM stdin;
-\.
-
-
---
 -- Data for Name: user_credentials; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
