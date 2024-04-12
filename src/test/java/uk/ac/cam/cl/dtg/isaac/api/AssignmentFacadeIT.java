@@ -19,22 +19,18 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.util.TimeUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -44,13 +40,12 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-@Disabled("PowerMock causes all sorts of problems here, disabling for now")
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Date.class, AssignmentFacade.class})
-@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*", "ma.glasnost.orika.*"})
 public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;
@@ -62,13 +57,15 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         mockCurrentDateTime.set(Calendar.DAY_OF_MONTH, 1);
         mockCurrentDateTime.set(Calendar.MONTH, 6);
         mockCurrentDateTime.set(Calendar.YEAR, 2049);
-        PowerMock.expectNew(Date.class).andReturn(mockCurrentDateTime.getTime()).anyTimes();
-        PowerMock.replay(Date.class);
+
+        TimeUtils time = createNiceMock(TimeUtils.class);
+        expect(time.now()).andReturn(mockCurrentDateTime.getTime()).anyTimes();
+        replay(time);
 
         // get an instance of the facade to test
         this.assignmentFacade = new AssignmentFacade(assignmentManager, questionManager, userAccountManager,
                 groupManager, properties, gameManager, logManager, userAssociationManager,
-                new AssignmentService(userAccountManager));
+                new AssignmentService(userAccountManager), time);
     }
 
     @AfterEach
@@ -351,7 +348,6 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
 
     @Test
-    @Disabled("Flaky test, requires review")
     public void deleteAssignmentEndpoint_attemptToDeleteOwnersAssignmentAsAdditionalManagerWithAdditionManagerPrivilegesOff_failsToDelete()
             throws Exception {
 
