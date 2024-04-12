@@ -82,6 +82,7 @@ CREATE TABLE anonymous.group_memberships AS
     SELECT
         anonymise(group_id, hash_salt) AS group_id,
         anonymise(user_id, hash_salt) AS user_id,
+        status,
         created
     FROM public.group_memberships;
 
