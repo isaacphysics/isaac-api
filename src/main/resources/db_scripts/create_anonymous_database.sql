@@ -74,6 +74,7 @@ CREATE TABLE anonymous.groups AS
     SELECT
         anonymise(id, hash_salt) AS id,
         anonymise(owner_id, hash_salt) AS owner_id,
+        group_status,
         created,
         archived
     FROM public.groups;
