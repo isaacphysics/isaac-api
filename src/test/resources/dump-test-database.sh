@@ -5,7 +5,6 @@ docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE public.logged_eve
 docker exec -it postgres psql -U rutherford -c "SELECT pg_catalog.setval('public.logged_events_id_seq', 1, true);"
 docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE public.question_attempts"
 docker exec -it postgres psql -U rutherford -c "SELECT pg_catalog.setval('public.question_attempts_id_seq', 1, true);"
-docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE public.user_badges"
 docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE quartz_cluster.qrtz_blob_triggers CASCADE"
 docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE quartz_cluster.qrtz_calendars CASCADE"
 docker exec -it postgres psql -U rutherford -c "TRUNCATE TABLE quartz_cluster.qrtz_job_details CASCADE"

@@ -15,36 +15,35 @@
  */
 package uk.ac.cam.cl.dtg.isaac.app;
 
-import java.util.List;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
-
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import java.util.List;
+
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for the user manager class.
@@ -56,10 +55,8 @@ public class GameboardsFacadeTest {
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
 	private UserAccountManager userManager;
-	private UserAssociationManager userAssociationManager;
     private QuestionManager questionManager;
-    private UserBadgeManager userBadgeManager;
-	private FastTrackManger fastTrackManager;
+    private FastTrackManger fastTrackManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -74,8 +71,6 @@ public class GameboardsFacadeTest {
 		this.dummyLogManager = createMock(ILogManager.class);
 		this.userManager = createMock(UserAccountManager.class);
 	    this.questionManager = createMock(QuestionManager.class);
-		this.userAssociationManager = createMock(UserAssociationManager.class);
-		this.userBadgeManager = createMock(UserBadgeManager.class);
 		this.fastTrackManager = createMock(FastTrackManger.class);
 		expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
 				.andReturn("ft_board_1,ft_board_2").anyTimes();
@@ -95,7 +90,7 @@ public class GameboardsFacadeTest {
 			ContentManagerException {
 		GameboardsFacade gameboardFacade = new GameboardsFacade(
 				dummyPropertiesLoader, dummyLogManager, dummyGameManager, questionManager,
-				userManager, userAssociationManager, userBadgeManager, fastTrackManager);
+				userManager, fastTrackManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";

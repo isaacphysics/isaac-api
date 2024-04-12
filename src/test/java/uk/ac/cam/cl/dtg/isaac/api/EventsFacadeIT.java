@@ -8,20 +8,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +30,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() {
         // Get an instance of the facade to test
-        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, userBadgeManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
+        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
     }
 
     @Test

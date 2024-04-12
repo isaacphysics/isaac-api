@@ -34,16 +34,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -75,7 +67,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
         // get an instance of the facade to test
         this.assignmentFacade = new AssignmentFacade(assignmentManager, questionManager, userAccountManager,
-                groupManager, properties, gameManager, logManager, userAssociationManager, userBadgeManager,
+                groupManager, properties, gameManager, logManager, userAssociationManager,
                 new AssignmentService(userAccountManager));
     }
 
@@ -83,7 +75,6 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     public void tearDown() throws SQLException {
         // reset the mocks
         PowerMock.reset(Date.class);
-        PowerMock.reset(userBadgeManager);
 
         // reset assignments in DB, so the same assignment can be re-used across tests
         try (Connection conn = postgresSqlDb.getDatabaseConnection();
