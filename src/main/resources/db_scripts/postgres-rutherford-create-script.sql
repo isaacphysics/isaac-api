@@ -1178,7 +1178,7 @@ CREATE INDEX question_attempts_by_user_question ON public.question_attempts USIN
 -- Name: question_attempts_by_user_question_page; Type: INDEX; Schema: public; Owner: rutherford
 --
 
-CREATE INDEX question_attempts_by_user_question_page ON question_attempts USING btree (user_id, page_id);
+CREATE INDEX question_attempts_by_user_question_page ON public.question_attempts USING btree (user_id, page_id);
 
 
 --
