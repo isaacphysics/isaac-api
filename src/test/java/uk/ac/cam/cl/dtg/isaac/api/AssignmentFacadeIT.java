@@ -30,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.util.TimeUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -44,7 +43,6 @@ import java.util.Collections;
 import java.util.Date;
 
 import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
