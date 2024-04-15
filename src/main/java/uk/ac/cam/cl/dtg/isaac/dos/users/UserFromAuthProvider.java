@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Data Object to represent a user of a 3rd party provider. This object will NOT be persisted in the database.
@@ -27,7 +27,7 @@ public class UserFromAuthProvider {
   private String givenName;
   private String familyName;
   private String email;
-  private Date dateOfBirth;
+  private Instant dateOfBirth;
   private Gender gender;
   private EmailVerificationStatus emailVerificationStatus;
 
@@ -51,7 +51,7 @@ public class UserFromAuthProvider {
    */
   public UserFromAuthProvider(final String providerUserId, final String givenName, final String familyName,
                               final String email, final EmailVerificationStatus emailVerificationStatus,
-                              final Date dateOfBirth, final Gender gender) {
+                              final Instant dateOfBirth, final Gender gender) {
     this.providerUserId = providerUserId;
     this.familyName = familyName;
     this.givenName = givenName;
@@ -111,7 +111,7 @@ public class UserFromAuthProvider {
    *
    * @return the dateOfBirth
    */
-  public Date getDateOfBirth() {
+  public Instant getDateOfBirth() {
     return dateOfBirth;
   }
 

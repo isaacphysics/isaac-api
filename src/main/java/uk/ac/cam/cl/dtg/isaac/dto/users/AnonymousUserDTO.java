@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Data Transfer Object to represent an anonymous user of the system.
@@ -24,8 +24,8 @@ import java.util.Date;
  */
 public class AnonymousUserDTO extends AbstractSegueUserDTO {
   private String sessionId;
-  private Date dateCreated;
-  private Date lastUpdated;
+  private Instant dateCreated;
+  private Instant lastUpdated;
 
 
   /**
@@ -52,7 +52,7 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    * @param dateCreated - date the user object was created
    * @param lastUpdated - last time it was updated.
    */
-  public AnonymousUserDTO(final String sessionId, final Date dateCreated, final Date lastUpdated) {
+  public AnonymousUserDTO(final String sessionId, final Instant dateCreated, final Instant lastUpdated) {
     this.sessionId = sessionId;
     this.dateCreated = dateCreated;
     this.lastUpdated = lastUpdated;
@@ -82,7 +82,7 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    *
    * @return the dateCreated
    */
-  public Date getDateCreated() {
+  public Instant getDateCreated() {
     return dateCreated;
   }
 
@@ -92,7 +92,7 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    * @param dateCreated
    *            the dateCreated to set
    */
-  public void setDateCreated(final Date dateCreated) {
+  public void setDateCreated(final Instant dateCreated) {
     this.dateCreated = dateCreated;
   }
 
@@ -102,7 +102,7 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    *
    * @return update date
    */
-  public Date getLastUpdated() {
+  public Instant getLastUpdated() {
     return lastUpdated;
   }
 
@@ -111,7 +111,7 @@ public class AnonymousUserDTO extends AbstractSegueUserDTO {
    *
    * @param lastUpdated last update date
    */
-  public void setLastUpdated(final Date lastUpdated) {
+  public void setLastUpdated(final Instant lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 }

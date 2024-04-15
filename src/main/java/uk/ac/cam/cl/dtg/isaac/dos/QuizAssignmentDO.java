@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
 
 import jakarta.annotation.Nullable;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * This class is the Domain Object used to store Quiz assignments in the isaac CMS.
@@ -29,8 +29,8 @@ public class QuizAssignmentDO {
   private String quizId;
   private Long groupId;
   private Long ownerUserId;
-  private Date creationDate;
-  private Date dueDate;
+  private Instant creationDate;
+  private Instant dueDate;
   private QuizFeedbackMode quizFeedbackMode;
 
   /**
@@ -45,7 +45,7 @@ public class QuizAssignmentDO {
    * @param quizFeedbackMode - what level of feedback to give to students.
    */
   public QuizAssignmentDO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
-                          final Date creationDate, @Nullable final Date dueDate,
+                          final Instant creationDate, @Nullable final Instant dueDate,
                           final QuizFeedbackMode quizFeedbackMode) {
     this.id = id;
     this.quizId = quizId;
@@ -140,7 +140,7 @@ public class QuizAssignmentDO {
    *
    * @return the creationDate
    */
-  public Date getCreationDate() {
+  public Instant getCreationDate() {
     return creationDate;
   }
 
@@ -149,7 +149,7 @@ public class QuizAssignmentDO {
    *
    * @param creationDate the creationDate to set
    */
-  public void setCreationDate(final Date creationDate) {
+  public void setCreationDate(final Instant creationDate) {
     this.creationDate = creationDate;
   }
 
@@ -183,7 +183,7 @@ public class QuizAssignmentDO {
    * @return dueDate
    */
   @Nullable
-  public Date getDueDate() {
+  public Instant getDueDate() {
     return dueDate;
   }
 
@@ -192,7 +192,7 @@ public class QuizAssignmentDO {
    *
    * @param dueDate - date due
    */
-  public void setDueDate(@Nullable final Date dueDate) {
+  public void setDueDate(@Nullable final Instant dueDate) {
     this.dueDate = dueDate;
   }
 

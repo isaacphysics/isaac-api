@@ -19,6 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromTimestamp;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,10 +39,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -427,8 +428,8 @@ public class GameboardPersistenceManager {
     ) {
       pst.setLong(FIELD_LINK_USER_USER_ID, userId);
       pst.setString(FIELD_LINK_USER_GAMEBOARD_ID, gameboardId);
-      pst.setTimestamp(FIELD_LINK_USER_CREATED, new Timestamp(new Date().getTime()));
-      pst.setTimestamp(FIELD_LINK_USER_LAST_VISITED, new Timestamp(new Date().getTime()));
+      pst.setTimestamp(FIELD_LINK_USER_CREATED, Timestamp.from(Instant.now()));
+      pst.setTimestamp(FIELD_LINK_USER_LAST_VISITED, Timestamp.from(Instant.now()));
 
       log.debug("Saving gameboard to user relationship...");
       int affectedRows = pst.executeUpdate();
@@ -488,7 +489,7 @@ public class GameboardPersistenceManager {
   public List<GameboardDTO> getGameboardsByUserId(final RegisteredUserDTO user) throws SegueDatabaseException {
     // find all gameboards related to this user.
     List<GameboardDO> listOfResults = Lists.newArrayList();
-    Map<String, Date> lastVisitedDate = Maps.newHashMap();
+    Map<String, Instant> lastVisitedDate = Maps.newHashMap();
 
     String query = "SELECT * FROM gameboards INNER JOIN user_gameboards"
         + " ON gameboards.id = user_gameboards.gameboard_id WHERE user_gameboards.user_id = ?";
@@ -501,7 +502,7 @@ public class GameboardPersistenceManager {
         while (results.next()) {
           GameboardDO gameboard = this.convertFromSQLToGameboardDO(results);
           listOfResults.add(gameboard);
-          lastVisitedDate.put(gameboard.getId(), results.getTimestamp("last_visited"));
+          lastVisitedDate.put(gameboard.getId(), getInstantFromTimestamp(results, "last_visited"));
         }
       }
     } catch (SQLException | IOException e) {
@@ -706,10 +707,9 @@ public class GameboardPersistenceManager {
       pst.setString(FIELD_SAVE_GAMEBOARD_CREATION_METHOD, gameboardToSave.getCreationMethod().toString());
       pst.setString(FIELD_SAVE_GAMEBOARD_TAGS, objectMapper.writeValueAsString(gameboardToSave.getTags()));
       if (gameboardToSave.getCreationDate() != null) {
-        pst.setTimestamp(FIELD_SAVE_GAMEBOARD_CREATION_DATE,
-            new java.sql.Timestamp(gameboardToSave.getCreationDate().getTime()));
+        pst.setTimestamp(FIELD_SAVE_GAMEBOARD_CREATION_DATE, Timestamp.from(gameboardToSave.getCreationDate()));
       } else {
-        pst.setTimestamp(FIELD_SAVE_GAMEBOARD_CREATION_DATE, new java.sql.Timestamp(new Date().getTime()));
+        pst.setTimestamp(FIELD_SAVE_GAMEBOARD_CREATION_DATE, Timestamp.from(Instant.now()));
       }
 
       if (pst.executeUpdate() == 0) {
@@ -895,7 +895,7 @@ public class GameboardPersistenceManager {
       gameboardDO.setCreationMethod(GameboardCreationMethod.valueOf(results.getString("creation_method")));
     }
 
-    gameboardDO.setCreationDate(new Date(results.getTimestamp("creation_date").getTime()));
+    gameboardDO.setCreationDate(getInstantFromTimestamp(results, "creation_date"));
     return gameboardDO;
   }
 

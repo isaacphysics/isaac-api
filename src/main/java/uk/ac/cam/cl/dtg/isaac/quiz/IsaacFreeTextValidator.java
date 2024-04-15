@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 import org.isaacphysics.thirdparty.openmark.marker.PMatch;
 import org.slf4j.Logger;
@@ -143,6 +143,6 @@ public class IsaacFreeTextValidator implements IValidator {
       feedback = freeTextQuestion.getDefaultFeedback();
     }
 
-    return new QuestionValidationResponse(question.getId(), answer, isCorrectResponse, feedback, new Date());
+    return new QuestionValidationResponse(question.getId(), answer, isCorrectResponse, feedback, Instant.now());
   }
 }

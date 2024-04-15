@@ -34,20 +34,19 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -229,7 +228,7 @@ public class StatisticsManager implements IStatisticsManager {
     final String teachersActive = "teachersActiveLastThirtyDays";
     final int thirtyDays = 30;
 
-    Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
+    Map<String, Instant> lastSeenUserMap = getLastSeenUserMap();
     List<Map<String, Object>> result = Lists.newArrayList();
     for (Entry<School, List<RegisteredUserDTO>> e : map.entrySet()) {
 
@@ -240,7 +239,7 @@ public class StatisticsManager implements IStatisticsManager {
         }
       }
 
-      result.add(ImmutableMap.of(
+      result.add(Map.of(
           school, e.getKey(),
           connections, e.getValue().size(),
           teachers, teachersConnected.size(),
@@ -354,8 +353,8 @@ public class StatisticsManager implements IStatisticsManager {
    * @return a Map of userId's to last event timestamp
    */
   @Override
-  public Map<String, Date> getLastSeenUserMap() {
-    Map<String, Date> lastSeenMap = Maps.newHashMap();
+  public Map<String, Instant> getLastSeenUserMap() {
+    Map<String, Instant> lastSeenMap = Maps.newHashMap();
 
     try {
       List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
@@ -381,7 +380,7 @@ public class StatisticsManager implements IStatisticsManager {
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
   @Override
-  public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
+  public Map<String, Instant> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
     return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
   }
 
@@ -440,8 +439,8 @@ public class StatisticsManager implements IStatisticsManager {
 
           // Loop through each attempt at the Question Part if they have attempted it:
           for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
-            LocalDate dateAttempted = LocalDateTime.ofInstant(
-                validationResponse.getDateAttempted().toInstant(), ZoneId.systemDefault()).toLocalDate();
+            LocalDate dateAttempted =
+                LocalDateTime.ofInstant(validationResponse.getDateAttempted(), ZoneId.systemDefault()).toLocalDate();
             if (mostRecentAttemptAtThisQuestionPart == null || dateAttempted.isAfter(
                 mostRecentAttemptAtThisQuestionPart)) {
               mostRecentAttemptAtThisQuestionPart = dateAttempted;
@@ -541,9 +540,9 @@ public class StatisticsManager implements IStatisticsManager {
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
   @Override
-  public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
-                                                                            final Date fromDate, final Date toDate,
-                                                                            final boolean binDataByMonth)
+  public Map<String, Map<LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
+                                                              final Instant fromDate, final Instant toDate,
+                                                              final boolean binDataByMonth)
       throws SegueDatabaseException {
     return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
   }
@@ -560,9 +559,9 @@ public class StatisticsManager implements IStatisticsManager {
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
   @Override
-  public Map<String, Map<org.joda.time.LocalDate, Long>> getEventLogsByDateAndUserList(
+  public Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(
       final Collection<String> eventTypes,
-      final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
+      final Instant fromDate, final Instant toDate, final List<RegisteredUserDTO> userList,
       final boolean binDataByMonth) throws SegueDatabaseException {
     requireNonNull(eventTypes);
 
@@ -580,18 +579,16 @@ public class StatisticsManager implements IStatisticsManager {
    */
   @Override
   public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
-                                                                          final Map<String, Date> lastSeenUserMap,
+                                                                          final Map<String, Instant> lastSeenUserMap,
                                                                           final int daysFromToday) {
 
     Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
 
     for (RegisteredUserDTO user : users) {
-      Date eventDate = lastSeenUserMap.get(user.getId().toString());
-      Calendar validInclusionTime = Calendar.getInstance();
-      validInclusionTime.setTime(new Date());
-      validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));
+      Instant eventDate = lastSeenUserMap.get(user.getId().toString());
+      Instant validInclusionTime = Instant.now().minus(Math.abs(daysFromToday), ChronoUnit.DAYS);
 
-      if (eventDate != null && eventDate.after(validInclusionTime.getTime())) {
+      if (eventDate != null && eventDate.isAfter(validInclusionTime)) {
         qualifyingUsers.add(user);
       }
     }

@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.google.api.client.util.Sets;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
@@ -35,7 +35,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
   private List<GameboardItem> contents;
   private IsaacWildcard wildCard;
   private Integer wildCardPosition;
-  private Date creationDate;
+  private Instant creationDate;
   private GameFilter gameFilter;
   private Long ownerUserId;
   private UserSummaryDTO ownerUserInformation;
@@ -46,7 +46,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
   private GameboardCreationMethod creationMethod;
 
   private Integer percentageCompleted;
-  private Date lastVisited;
+  private Instant lastVisited;
 
   // indicates whether or not a question in this board has at least been marked as in progress
   private boolean startedQuestion;
@@ -83,9 +83,9 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    *            - Set of tags associated with the game board.
    */
   public GameboardDTO(final String id, final String title, final List<GameboardItem> contents,
-                      final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
-                      final GameFilter gameFilter, final Long ownerUserId,
-                      final GameboardCreationMethod creationMethod, final Set<String> tags) {
+                      final IsaacWildcard wildCard, final Integer wildcardPosition, final Instant creationDate,
+                      final GameFilter gameFilter, final Long ownerUserId, final GameboardCreationMethod creationMethod,
+                      final Set<String> tags) {
     this.id = id;
     this.title = title;
     this.contents = contents;
@@ -189,7 +189,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    *
    * @return the creationDate
    */
-  public Date getCreationDate() {
+  public Instant getCreationDate() {
     return creationDate;
   }
 
@@ -199,7 +199,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    * @param creationDate
    *            the creationDate to set
    */
-  public void setCreationDate(final Date creationDate) {
+  public void setCreationDate(final Instant creationDate) {
     this.creationDate = creationDate;
   }
 
@@ -323,7 +323,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    *
    * @return the lastVisited
    */
-  public Date getLastVisited() {
+  public Instant getLastVisited() {
     return lastVisited;
   }
 
@@ -333,7 +333,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
    * @param lastVisited
    *            the lastVisited to set
    */
-  public void setLastVisited(final Date lastVisited) {
+  public void setLastVisited(final Instant lastVisited) {
     this.lastVisited = lastVisited;
   }
 

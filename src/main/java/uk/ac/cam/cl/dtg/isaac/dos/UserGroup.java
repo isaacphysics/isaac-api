@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import jakarta.annotation.Nullable;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * UserGroupDO - this object represents a group or collection of users
@@ -29,10 +29,10 @@ public class UserGroup {
   private String groupName;
   private Long ownerId;
   private GroupStatus status;
-  private Date created;
+  private Instant created;
   private boolean archived;
   private boolean additionalManagerPrivileges;
-  private Date lastUpdated;
+  private Instant lastUpdated;
 
   /**
    * Default Constructor.
@@ -54,8 +54,8 @@ public class UserGroup {
    * @param lastUpdated                 - the date the group was last updated
    */
   public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final GroupStatus status,
-                   final Date created,
-                   final boolean archived, final boolean additionalManagerPrivileges, final Date lastUpdated) {
+                   final Instant created, final boolean archived, final boolean additionalManagerPrivileges,
+                   final Instant lastUpdated) {
     this.id = id;
     this.groupName = groupName;
     this.ownerId = ownerId;
@@ -143,7 +143,7 @@ public class UserGroup {
    *
    * @return the created
    */
-  public Date getCreated() {
+  public Instant getCreated() {
     return created;
   }
 
@@ -152,7 +152,7 @@ public class UserGroup {
    *
    * @param created the created to set
    */
-  public void setCreated(final Date created) {
+  public void setCreated(final Instant created) {
     this.created = created;
   }
 
@@ -213,7 +213,7 @@ public class UserGroup {
    *
    * @return the last updated date
    */
-  public Date getLastUpdated() {
+  public Instant getLastUpdated() {
     return lastUpdated;
   }
 
@@ -222,7 +222,7 @@ public class UserGroup {
    *
    * @param lastUpdated the last updated date to set
    */
-  public void setLastUpdated(final Date lastUpdated) {
+  public void setLastUpdated(final Instant lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 }

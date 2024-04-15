@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
+import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromTimestamp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,10 +31,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,7 +180,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         pst.setNull(FIELD_REGISTER_ATTEMPT_IS_CORRECT, java.sql.Types.NULL);
       }
       pst.setTimestamp(FIELD_REGISTER_ATTEMPT_TIMESTAMP,
-          new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
+          Timestamp.from(questionAttempt.getDateAttempted()));
 
       if (pst.executeUpdate() == 0) {
         throw new SegueDatabaseException("Unable to save question attempt.");
@@ -299,9 +302,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());
     if (uniquePageIds.size() > MAX_PAGE_IDS_TO_MATCH) {
       // The repeated "OR question_id LIKE ___" will get very inefficient beyond this:
-      log.debug(String.format(
-          "Attempting to match too many (%s) question page IDs; returning all attempts for these users instead!",
-          uniquePageIds.size()));
+      log.debug("Attempting to match too many ({}) question page IDs; returning all attempts for these users instead!",
+          uniquePageIds.size());
       return this.getLightweightQuestionAttemptsByUsers(userIds);
     }
 
@@ -396,8 +398,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
       }
     }
 
-    log.info(String.format("Merged anonymously answered questions (%s) with known user account (%s)", count,
-        registeredUserId));
+    log.info("Merged anonymously answered questions ({}) with known user account ({})", count, registeredUserId);
   }
 
   @Override
@@ -405,7 +406,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
           throws SegueDatabaseException {
     String query = "SELECT role, count(DISTINCT users.id) FROM question_attempts"
             + " JOIN users ON user_id=users.id AND NOT deleted WHERE timestamp > now() - ? GROUP BY role";
-    Map<TimeInterval, Map<Role, Long>> allResults = new HashMap<>();
+    Map<TimeInterval, Map<Role, Long>> allResults = new EnumMap<>(TimeInterval.class);
 
     try (Connection conn = database.getDatabaseConnection()) {
       for (TimeInterval timeRange : timeRanges) {
@@ -417,8 +418,9 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     return allResults;
   }
 
-  private Map<Role, Long> executeQueryForTimeRange(Connection conn, String query, TimeInterval timeRange) throws SQLException {
-    Map<Role, Long> resultForTimeRange = new HashMap<>();
+  private Map<Role, Long> executeQueryForTimeRange(Connection conn, String query, TimeInterval timeRange)
+      throws SQLException {
+    Map<Role, Long> resultForTimeRange = new EnumMap<>(Role.class);
     try (PreparedStatement pst = conn.prepareStatement(query)) {
       pst.setObject(FIELD_GET_ANSWERED_QUESTION_ROLES_INTERVAL_AGO, timeRange.getPGInterval());
       try (ResultSet results = pst.executeQuery()) {
@@ -432,8 +434,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
 
   @Override
-  public Map<Date, Long> getQuestionAttemptCountForUserByDateRange(final Date fromDate, final Date toDate,
-                                                                   final Long userId, final Boolean perDay)
+  public Map<Instant, Long> getQuestionAttemptCountForUserByDateRange(final Instant fromDate, final Instant toDate,
+                                                                      final Long userId, final Boolean perDay)
       throws SegueDatabaseException {
     requireNonNull(fromDate);
     requireNonNull(toDate);
@@ -462,21 +464,21 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
          PreparedStatement pst = conn.prepareStatement(queryToBuild.toString())
     ) {
       pst.setLong(FIELD_GET_ATTEMPTS_BY_USER_AND_DATE_USER_ID, userId);
-      pst.setTimestamp(FIELD_GET_ATTEMPTS_BY_USER_AND_DATE_START_TIMESTAMP, new java.sql.Timestamp(fromDate.getTime()));
-      pst.setTimestamp(FIELD_GET_ATTEMPTS_BY_USER_AND_DATE_END_TIMESTAMP, new java.sql.Timestamp(toDate.getTime()));
+      pst.setTimestamp(FIELD_GET_ATTEMPTS_BY_USER_AND_DATE_START_TIMESTAMP, Timestamp.from(fromDate));
+      pst.setTimestamp(FIELD_GET_ATTEMPTS_BY_USER_AND_DATE_END_TIMESTAMP, Timestamp.from(toDate));
 
       try (ResultSet results = pst.executeQuery()) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        Map<Date, Long> mapToReturn = Maps.newHashMap();
+        Map<Instant, Long> mapToReturn = Maps.newHashMap();
         while (results.next()) {
-          mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+          mapToReturn.put(formatter.parse(results.getString("to_char"), Instant::from), results.getLong("count"));
         }
         return mapToReturn;
       }
     } catch (SQLException e) {
       throw new SegueDatabaseException("Postgres exception", e);
-    } catch (ParseException e) {
+    } catch (DateTimeParseException e) {
       throw new SegueDatabaseException("Unable to parse date exception", e);
     }
   }
@@ -487,7 +489,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
     partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
     partialQuestionAttempt.setQuestionId(results.getString("question_id"));
-    partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
+    partialQuestionAttempt.setDateAttempted(getInstantFromTimestamp(results, "timestamp"));
 
     return partialQuestionAttempt;
   }

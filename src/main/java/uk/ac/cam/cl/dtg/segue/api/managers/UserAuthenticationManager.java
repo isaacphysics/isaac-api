@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static java.time.ZoneOffset.UTC;
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_LAX_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_EXPIRES;
@@ -36,6 +37,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS_FALLBA
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_TOKEN;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_USER_ID;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.STATE_PARAM_NAME;
+import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,11 +57,10 @@ import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +146,7 @@ public class UserAuthenticationManager {
     this.registeredAuthProviders = providersToRegister;
 
     this.emailManager = emailQueue;
-    this.serializationMapper = new ObjectMapper();
+    this.serializationMapper = getSharedBasicObjectMapper();
     boolean isProduction = properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name());
     this.checkOriginHeader = isProduction;
     this.setSecureCookies = isProduction;
@@ -406,18 +407,18 @@ public class UserAuthenticationManager {
    * Does not check session validity.
    *
    * @param request The request to extract the session information from
-   * @return The session expiry as a Date
+   * @return The session expiry as an Instant
    */
-  public Date getSessionExpiry(final HttpServletRequest request) {
+  public Instant getSessionExpiry(final HttpServletRequest request) {
     try {
       Map<String, String> currentSessionInformation = getSegueSessionFromRequest(request);
       if (currentSessionInformation.containsKey(DATE_EXPIRES)) {
-        SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        return sessionDateFormat.parse(currentSessionInformation.get(DATE_EXPIRES));
+        DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT);
+        return sessionDateFormat.parse(currentSessionInformation.get(DATE_EXPIRES), Instant::from);
       } else {
         return null;
       }
-    } catch (InvalidSessionException | ParseException | IOException e) {
+    } catch (InvalidSessionException | DateTimeParseException | IOException e) {
       log.debug("Error extracting session expiry from session information.", e);
       return null;
     }
@@ -875,22 +876,20 @@ public class UserAuthenticationManager {
   private void createSession(final HttpServletResponse response, final RegisteredUser user,
                              final int sessionExpiryTimeInSeconds,
                              @Nullable final String partialLoginFlagString) throws SegueDatabaseException {
-    SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
     String newUserSessionToken = this.database.regenerateSessionToken(user).toString();
     String userId = user.getId().toString();
     String hmacKey = properties.getProperty(HMAC_SALT);
 
     try {
-      Calendar calendar = Calendar.getInstance();
-      calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
-      String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
+      String sessionExpiryDate = sessionDateFormat.format(Instant.now().plusSeconds(sessionExpiryTimeInSeconds));
 
       Map<String, String> sessionInformation =
           prepareSessionInformation(userId, newUserSessionToken, sessionExpiryDate, hmacKey, partialLoginFlagString);
 
       Cookie authCookie = createAuthCookie(sessionInformation, sessionExpiryTimeInSeconds);
 
-      log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
+      log.debug("Creating AuthCookie for user ({}) with value {}", userId, authCookie.getValue());
 
       response.addCookie(authCookie);  // lgtm [java/insecure-cookie]  false positive due to conditional above!
 
@@ -914,7 +913,7 @@ public class UserAuthenticationManager {
     requireNonNull(sessionInformation);
     requireNonNull(sessionTokenFromDatabase);
 
-    SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT);
 
     String userId = sessionInformation.get(SESSION_USER_ID);
     String userSessionToken = sessionInformation.get(SESSION_TOKEN);
@@ -931,20 +930,18 @@ public class UserAuthenticationManager {
       log.debug("No session date provided by cookie, invalid!");
       return false;
     }
-    Calendar sessionExpiryDate = Calendar.getInstance();
     try {
-      sessionExpiryDate.setTime(sessionDateFormat.parse(sessionDate));
-      if (new Date().after(sessionExpiryDate.getTime())) {
+      if (Instant.now().isAfter(sessionDateFormat.parse(sessionDate, Instant::from))) {
         log.debug("Session expired");
         return false;
       }
-    } catch (ParseException e) {
+    } catch (DateTimeParseException e) {
       return false;
     }
 
     // Check no one has tampered with the cookie:
     if (!hasValidHmac(sessionInformation)) {
-      log.warn(String.format("Invalid Cookie HMAC detected for user id (%s)!", userId));
+      log.warn("Invalid Cookie HMAC detected for user id ({})!", userId);
       return false;
     }
 

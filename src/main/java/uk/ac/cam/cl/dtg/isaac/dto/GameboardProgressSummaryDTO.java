@@ -1,13 +1,13 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.Date;
+import java.time.Instant;
 
 public class GameboardProgressSummaryDTO {
   private Long assignmentId;
   private String gameboardId;
   private String gameboardTitle;
-  private Date dueDate;
-  private Date creationDate;
+  private Instant dueDate;
+  private Instant creationDate;
   private Integer questionPartsCorrect;
   private Integer questionPartsIncorrect;
   private Integer questionPartsNotAttempted;
@@ -32,19 +32,19 @@ public class GameboardProgressSummaryDTO {
     this.gameboardId = gameboardId;
   }
 
-  public Date getDueDate() {
+  public Instant getDueDate() {
     return dueDate;
   }
 
-  public void setDueDate(final Date dueDate) {
+  public void setDueDate(final Instant dueDate) {
     this.dueDate = dueDate;
   }
 
-  public Date getCreationDate() {
+  public Instant getCreationDate() {
     return creationDate;
   }
 
-  public void setCreationDate(final Date creationDate) {
+  public void setCreationDate(final Instant creationDate) {
     this.creationDate = creationDate;
   }
 

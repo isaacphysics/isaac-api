@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
-import java.util.Date;
+import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 
 
@@ -27,8 +27,8 @@ public class GroupMembershipDTO {
   private Long groupId;
   private Long userId;
   private GroupMembershipStatus status;
-  private Date updated;
-  private Date created;
+  private Instant updated;
+  private Instant created;
 
   /**
    * Default Constructor.
@@ -45,7 +45,7 @@ public class GroupMembershipDTO {
    * @param updated - the date the membership object was last updated
    */
   public GroupMembershipDTO(final Long groupId, final Long userId, final GroupMembershipStatus status,
-                            final Date created, final Date updated) {
+                            final Instant created, final Instant updated) {
     this.groupId = groupId;
     this.userId = userId;
     this.status = status;
@@ -112,7 +112,7 @@ public class GroupMembershipDTO {
    *
    * @return the updated date
    */
-  public Date getUpdated() {
+  public Instant getUpdated() {
     return updated;
   }
 
@@ -121,7 +121,7 @@ public class GroupMembershipDTO {
    *
    * @param updated the updated date to set
    */
-  public void setUpdated(final Date updated) {
+  public void setUpdated(final Instant updated) {
     this.updated = updated;
   }
 
@@ -130,7 +130,7 @@ public class GroupMembershipDTO {
    *
    * @return the created
    */
-  public Date getCreated() {
+  public Instant getCreated() {
     return created;
   }
 
@@ -139,7 +139,7 @@ public class GroupMembershipDTO {
    *
    * @param created the created to set
    */
-  public void setCreated(final Date created) {
+  public void setCreated(final Instant created) {
     this.created = created;
   }
 

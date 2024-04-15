@@ -34,10 +34,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -383,7 +383,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     // Build optional WHERE clause:
     StringBuilder sb = new StringBuilder();
     sb.append(" WHERE NOT deleted");
-    if (fieldsOfInterest.entrySet().size() != 0) {
+    if (!fieldsOfInterest.entrySet().isEmpty()) {
       sb.append(" AND ");
     }
 
@@ -606,7 +606,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         // Hash all PII in user object
         removePIIFromUserDO(userToDelete);
         // Ensure the last updated time is that of deletion
-        userToDelete.setLastUpdated(new Date());
+        userToDelete.setLastUpdated(Instant.now());
         // save it using this connection with auto commit turned off
         this.updateUser(conn, userToDelete);
 
@@ -622,7 +622,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         // Hash all linked account provider IDs to prevent clashes if the user creates a new account.
         String markUserDeletedQuery = "UPDATE users SET deleted=TRUE, last_updated=? WHERE id = ?";
         try (PreparedStatement markUserAsDeleted = conn.prepareStatement(markUserDeletedQuery)) {
-          markUserAsDeleted.setTimestamp(FIELD_DELETE_USER_LAST_UPDATED, new Timestamp(new Date().getTime()));
+          markUserAsDeleted.setTimestamp(FIELD_DELETE_USER_LAST_UPDATED, Timestamp.from(Instant.now()));
           markUserAsDeleted.setLong(FIELD_DELETE_USER_USER_ID, userToDelete.getId());
           markUserAsDeleted.execute();
         }
@@ -673,18 +673,18 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
   @Override
   public void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException {
-    this.updateUserLastSeen(user, new Date());
+    this.updateUserLastSeen(user, Instant.now());
   }
 
   @Override
-  public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
+  public void updateUserLastSeen(final RegisteredUser user, final Instant date) throws SegueDatabaseException {
     requireNonNull(user);
 
     String query = "UPDATE users SET last_seen = ? WHERE id = ?";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {
-      pst.setTimestamp(FIELD_UPDATE_LAST_SEEN_LAST_SEEN, new java.sql.Timestamp(date.getTime()));
+      pst.setTimestamp(FIELD_UPDATE_LAST_SEEN_LAST_SEEN, Timestamp.from(date));
       pst.setLong(FIELD_UPDATE_LAST_SEEN_USER_ID, user.getId());
       pst.execute();
     } catch (SQLException e) {
@@ -980,20 +980,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     u.setGivenName(results.getString("given_name"));
     u.setEmail(results.getString("email"));
     u.setRole(results.getString("role") != null ? Role.valueOf(results.getString("role")) : null);
-    java.sql.Date dateOfBirth = results.getDate("date_of_birth");
-    // So, DOB is a date in the database.
-    // Because Java is Java, and this code goes back to 1996, the date is interpreted as a datetime at midnight
-    // in the local timezone. This is obviously insane, but there you go.
-    // It works on the servers because they are sensibly set to a UTC timezone. However, it is broken on local
-    // machines where the timezone is London time.
-    // The front-end expects a timestamp in UTC, so this line uses four deprecated functions to make one. The joy!
-    if (null != dateOfBirth) {
-      Date utcDate = new Date(
-          Date.UTC(dateOfBirth.getYear(), dateOfBirth.getMonth(), dateOfBirth.getDate(), 0, 0, 0));
-      u.setDateOfBirth(utcDate);
-    }
+    u.setDateOfBirth(getInstantFromDate(results, "date_of_birth"));
     u.setGender(results.getString("gender") != null ? Gender.valueOf(results.getString("gender")) : null);
-    u.setRegistrationDate(results.getTimestamp("registration_date"));
+    u.setRegistrationDate(getInstantFromTimestamp(results, "registration_date"));
 
     u.setSchoolId(results.getString("school_id"));
     if (results.wasNull()) {
@@ -1009,9 +998,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       }
       u.setRegisteredContexts(userContexts);
     }
-    u.setRegisteredContextsLastConfirmed(results.getTimestamp("registered_contexts_last_confirmed"));
-    u.setLastUpdated(results.getTimestamp("last_updated"));
-    u.setLastSeen(results.getTimestamp("last_seen"));
+    u.setRegisteredContextsLastConfirmed(getInstantFromTimestamp(results, "registered_contexts_last_confirmed"));
+    u.setLastUpdated(getInstantFromTimestamp(results, "last_updated"));
+    u.setLastSeen(getInstantFromTimestamp(results, "last_seen"));
     u.setEmailToVerify(results.getString("email_to_verify"));
     u.setEmailVerificationToken(results.getString("email_verification_token"));
     u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
@@ -1081,10 +1070,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     user.setSchoolOther(null); // Risk this contains something identifying!
 
     if (user.getDateOfBirth() != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(user.getDateOfBirth());
-      calendar.set(Calendar.DATE, 1);
-      user.setDateOfBirth(calendar.getTime());
+      user.setDateOfBirth(user.getDateOfBirth().truncatedTo(ChronoUnit.MONTHS));
     }
 
     return user;

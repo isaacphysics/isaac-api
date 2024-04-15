@@ -19,7 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
 
 import jakarta.annotation.Nullable;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * This class is the Domain Object used to store Quiz attempts in the isaac CMS.
@@ -30,9 +30,9 @@ public class QuizAttemptDO {
   private String quizId;
   @Nullable
   private Long quizAssignmentId;
-  private Date startDate;
+  private Instant startDate;
   @Nullable
-  private Date completedDate;
+  private Instant completedDate;
 
   /**
    * Complete QuizAttemptDO constructor with all dependencies.
@@ -45,7 +45,7 @@ public class QuizAttemptDO {
    * @param completedDate    - When this attempt was marked complete, or null if not yet completed.
    */
   public QuizAttemptDO(final Long id, final Long userId, final String quizId, final Long quizAssignmentId,
-                       final Date startDate, @Nullable final Date completedDate) {
+                       final Instant startDate, @Nullable final Instant completedDate) {
     this.id = id;
     this.userId = userId;
     this.quizId = quizId;
@@ -118,20 +118,20 @@ public class QuizAttemptDO {
     this.quizAssignmentId = quizAssignmentId;
   }
 
-  public Date getStartDate() {
+  public Instant getStartDate() {
     return startDate;
   }
 
-  public void setStartDate(final Date startDate) {
+  public void setStartDate(final Instant startDate) {
     this.startDate = startDate;
   }
 
   @Nullable
-  public Date getCompletedDate() {
+  public Instant getCompletedDate() {
     return completedDate;
   }
 
-  public void setCompletedDate(@Nullable final Date completedDate) {
+  public void setCompletedDate(@Nullable final Instant completedDate) {
     this.completedDate = completedDate;
   }
 }

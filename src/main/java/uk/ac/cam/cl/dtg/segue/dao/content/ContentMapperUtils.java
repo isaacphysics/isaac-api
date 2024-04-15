@@ -19,8 +19,10 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -60,6 +62,7 @@ public class ContentMapperUtils {
   private final Map<String, Class<? extends Content>> jsonTypes;
   private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
 
+  private static ObjectMapper basicObjectMapper;
   private static ObjectMapper preconfiguredObjectMapper;
 
   /**
@@ -194,8 +197,8 @@ public class ContentMapperUtils {
       for (int i = 0; i < contentChildren.size(); i++) {
         ContentBase contentChild = contentChildren.get(i);
         ContentBaseDTO resultChild = resultChildren.get(i);
-        if (contentChild instanceof Content && resultChild instanceof ContentDTO) {
-          this.populateRelatedContentWithIDs((Content) contentChild, (ContentDTO) resultChild);
+        if (contentChild instanceof Content nestedContent && resultChild instanceof ContentDTO nestedContentDTO) {
+          this.populateRelatedContentWithIDs(nestedContent, nestedContentDTO);
         }
       }
     }
@@ -246,6 +249,17 @@ public class ContentMapperUtils {
     }
 
     return resultList;
+  }
+
+  /**
+   * Get an ObjectMapper with the JavaTimeModule enabled, as 'java.time' types are not supported by default.
+   */
+  public static ObjectMapper getSharedBasicObjectMapper() {
+    if (ContentMapperUtils.basicObjectMapper != null) {
+      return basicObjectMapper;
+    }
+    basicObjectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    return basicObjectMapper;
   }
 
   /**
@@ -318,8 +332,10 @@ public class ContentMapperUtils {
     contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
 
     ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
     objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     objectMapper.registerModule(contentDeserializerModule);
+    objectMapper.configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, false);
 
     return objectMapper;
   }

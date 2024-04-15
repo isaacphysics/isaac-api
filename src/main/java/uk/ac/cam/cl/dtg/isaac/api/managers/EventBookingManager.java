@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static java.time.ZoneOffset.UTC;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EMAIL_TEMPLATE_ID_EVENT_BOOKING_CONFIRMED;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EMAIL_TEMPLATE_ID_WAITING_LIST_ADDITION;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EMAIL_TEMPLATE_ID_WAITING_LIST_ONLY_ADDITION;
@@ -44,22 +45,20 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
@@ -384,8 +383,8 @@ public class EventBookingManager {
 
     try {
       // Send an email notifying the user (unless they are being added after the event for the sake of our records)
-      Date bookingDate = new Date();
-      if (event.getEndDate() == null || bookingDate.before(event.getEndDate())) {
+      Instant bookingDate = Instant.now();
+      if (event.getEndDate() == null || bookingDate.isBefore(event.getEndDate())) {
         if (BookingStatus.CONFIRMED.equals(status)) {
           sendEventBookingConfirmationNotificationEmail(event, user, booking);
         } else if (BookingStatus.WAITING_LIST.equals(status)) {
@@ -537,13 +536,10 @@ public class EventBookingManager {
 
           // Set the reservation close date (date at which an unconfirmed reservation is cancelled) to
           // the day of the event or in EVENT_RESERVATION_CLOSE_INTERVAL_DAYS from now, whichever is earlier.
-          Calendar calendar = Calendar.getInstance();
-          calendar.add(Calendar.DAY_OF_MONTH, EVENT_RESERVATION_CLOSE_INTERVAL_DAYS);
-          Date reservationCloseDate = Stream.of(calendar.getTime(), event.getDate())
-              .min(Comparator.comparing(Date::getTime))
-              .orElseThrow(NoSuchElementException::new);
+          Instant reservationCloseDate = Collections.min(
+              List.of(Instant.now().plus(EVENT_RESERVATION_CLOSE_INTERVAL_DAYS, ChronoUnit.DAYS), event.getDate()));
 
-          SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+          DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").withZone(UTC);
           Map<String, String> additionalEventInformation = new HashMap<>();
           additionalEventInformation.put("reservationCloseDate", dateFormat.format(reservationCloseDate));
 
@@ -647,7 +643,7 @@ public class EventBookingManager {
               event.getId()));
     }
 
-    final Date now = new Date();
+    final Instant now = Instant.now();
     this.ensureValidEventAndUser(event, user, true);
 
     EventBookingDTO booking;
@@ -659,7 +655,7 @@ public class EventBookingManager {
       // check the number of places - if some available then check if the event deadline has passed. If not
       // throw error.
       if (numberOfPlaces != null && !EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus()) && numberOfPlaces > 0
-          && !(event.getBookingDeadline() != null && now.after(event.getBookingDeadline()))) {
+          && !(event.getBookingDeadline() != null && now.isAfter(event.getBookingDeadline()))) {
         throw new EventIsNotFullException("There are still spaces on this event. Please attempt to book on it.");
       }
 
@@ -760,8 +756,8 @@ public class EventBookingManager {
       throws SegueDatabaseException, EventBookingUpdateException {
     try {
       // Send an email notifying the user (unless they are being promoted after the event for the sake of our records)
-      Date promotionDate = new Date();
-      if (event.getEndDate() == null || promotionDate.before(event.getEndDate())) {
+      Instant promotionDate = Instant.now();
+      if (event.getEndDate() == null || promotionDate.isBefore(event.getEndDate())) {
         sendWaitingListPromotionConfirmationNotificationEmail(event, userDTO, updatedStatus);
       }
     } catch (ContentManagerException e) {
@@ -857,7 +853,7 @@ public class EventBookingManager {
 
     // include deleted users' bookings events only if the event is in the past so it doesn't mess with ability for new
     // users to book on future events.
-    boolean includeDeletedUsersInCounts = event.getDate() != null && event.getDate().before(new Date());
+    boolean includeDeletedUsersInCounts = event.getDate() != null && event.getDate().isBefore(Instant.now());
 
     Map<BookingStatus, Map<Role, Integer>> eventBookingStatusCounts =
         this.bookingPersistenceManager.getEventBookingStatusCounts(event.getId(), includeDeletedUsersInCounts);
@@ -1051,8 +1047,8 @@ public class EventBookingManager {
   private void sendEventBookingCancellationNotificationEmails(IsaacEventPageDTO event, RegisteredUserDTO user,
                                                               Long reservedById, BookingStatus previousBookingStatus)
       throws ContentManagerException, SegueDatabaseException, NoUserException {
-    Date bookingCancellationDate = new Date();
-    if (event.getEndDate() == null || bookingCancellationDate.before(event.getEndDate())) {
+    Instant bookingCancellationDate = Instant.now();
+    if (event.getEndDate() == null || bookingCancellationDate.isBefore(event.getEndDate())) {
       if (previousBookingStatus.equals(BookingStatus.RESERVED) && reservedById != null) {
         sendEventReservationCancellationNotificationEmailToAttendee(event, user);
         // We may also want to send an email to userAccountManager.getUserDTOById(reservedById)
@@ -1387,22 +1383,22 @@ public class EventBookingManager {
    */
   private void ensureValidEventAndUser(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
       enforceBookingDeadline) throws EmailMustBeVerifiedException, EventDeadlineException {
-    Date now = new Date();
+    Instant now = Instant.now();
 
     // check if the end date has passed, if one is set:
     if (event.getEndDate() != null) {
-      if (now.after(event.getEndDate())) {
+      if (now.isAfter(event.getEndDate())) {
         throw new EventDeadlineException("The event is in the past.");
       }
     } else {
       // if there is not an endDate, ensure the start has not passed:
-      if (event.getDate() != null && now.after(event.getDate())) {
+      if (event.getDate() != null && now.isAfter(event.getDate())) {
         throw new EventDeadlineException("The event is in the past.");
       }
     }
 
     // if we are enforcing the booking deadline then enforce it.
-    if (enforceBookingDeadline && event.getBookingDeadline() != null && now.after(event.getBookingDeadline())) {
+    if (enforceBookingDeadline && event.getBookingDeadline() != null && now.isAfter(event.getBookingDeadline())) {
       throw new EventDeadlineException("The booking deadline has passed.");
     }
 
@@ -1435,8 +1431,8 @@ public class EventBookingManager {
 
       VEvent icalEvent = new VEvent();
       icalEvent.setSummary(event.getTitle());
-      icalEvent.setDateStart(event.getDate(), true);
-      icalEvent.setDateEnd(event.getEndDate(), true);
+      icalEvent.setDateStart(event.getDate() != null ? Date.from(event.getDate()) : null, true);
+      icalEvent.setDateEnd(event.getEndDate() != null ? Date.from(event.getEndDate()) : null, true);
       icalEvent.setDescription(event.getSubtitle());
 
       icalEvent.setOrganizer(new Organizer(propertiesLoader.getProperty(MAIL_NAME),
@@ -1471,7 +1467,7 @@ public class EventBookingManager {
       return defaultURL;
     }
 
-    DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
+    DateTimeFormatter shortDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(UTC);
     String location = event.getLocation() != null
         && event.getLocation().getAddress() != null
         && event.getLocation().getAddress().getAddressLine1() != null

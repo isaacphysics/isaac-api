@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao.userbadges;
 
+import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -19,7 +21,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
  */
 public class PgUserBadgePersistenceManager implements IUserBadgePersistenceManager {
 
-  private final ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper = getSharedBasicObjectMapper();
 
 
   /**

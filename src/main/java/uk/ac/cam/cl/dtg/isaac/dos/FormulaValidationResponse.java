@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.Date;
+import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
@@ -55,7 +55,7 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
    */
   public FormulaValidationResponse(final String questionId, final Choice answer,
                                    final Content explanation, final Boolean correct,
-                                   final String matchType, final Date dateAttempted) {
+                                   final String matchType, final Instant dateAttempted) {
     super(questionId, answer, correct, explanation, dateAttempted);
     this.matchType = matchType;
   }

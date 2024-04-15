@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -83,7 +83,7 @@ public interface IAssignmentPersistenceManager {
    * @return list of assignments
    * @throws SegueDatabaseException - if there is an error when accessing the database.
    */
-  List<AssignmentDTO> getAssignmentsScheduledForHour(Date timestamp) throws SegueDatabaseException;
+  List<AssignmentDTO> getAssignmentsScheduledForHour(Instant timestamp) throws SegueDatabaseException;
 
 
   /**

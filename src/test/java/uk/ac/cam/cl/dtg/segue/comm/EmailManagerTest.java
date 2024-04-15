@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.easymock.Capture;
@@ -651,7 +651,7 @@ class EmailManagerTest {
   void flattenTokenMap_checkTemplateReplacement_successfulReplacement() {
     EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
         mockContentManager, logManager, generateGlobalTokenMap());
-    Date someDate = new Date();
+    Instant someDate = Instant.now();
 
     Map<String, Object> inputMap = Maps.newHashMap();
     inputMap.put("test", "test2");

@@ -22,8 +22,9 @@ import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import org.easymock.EasyMock;
@@ -137,7 +138,7 @@ class QuizAttemptManagerTest extends AbstractManagerTest {
           return attempt.getUserId().equals(userId)
               && Objects.equals(attempt.getQuizAssignmentId(), assignmentId)
               && attempt.getQuizId().equals(quizId)
-              && new Date().getTime() - attempt.getStartDate().getTime() < 1000;
+              && Duration.between(Instant.now(), attempt.getStartDate()).toMillis() < 1000;
         }
         return false;
       }

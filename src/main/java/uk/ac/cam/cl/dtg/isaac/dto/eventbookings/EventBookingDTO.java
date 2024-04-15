@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.eventbookings;
 
-import java.util.Date;
+import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
@@ -35,13 +35,13 @@ public class EventBookingDTO {
 
   private String eventTitle;
 
-  private Date eventDate;
+  private Instant eventDate;
 
   private BookingStatus bookingStatus;
 
-  private Date lastUpdated;
+  private Instant lastUpdated;
 
-  private Date bookingDate;
+  private Instant bookingDate;
 
   /**
    * EventBookingDTO.
@@ -71,8 +71,8 @@ public class EventBookingDTO {
    *            - the booking status
    */
   public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final Long reservedById,
-                         final String eventId, final String eventTitle, final Date eventDate, final Date bookingDate,
-                         final Date lastUpdated, final BookingStatus status) {
+                         final String eventId, final String eventTitle, final Instant eventDate,
+                         final Instant bookingDate, final Instant lastUpdated, final BookingStatus status) {
     this.bookingId = bookingId;
     this.userBooked = userBooked;
     this.reservedById = reservedById;
@@ -183,7 +183,7 @@ public class EventBookingDTO {
    *
    * @return the eventDate
    */
-  public Date getEventDate() {
+  public Instant getEventDate() {
     return eventDate;
   }
 
@@ -193,7 +193,7 @@ public class EventBookingDTO {
    * @param eventDate
    *            the eventDate to set
    */
-  public void setEventDate(final Date eventDate) {
+  public void setEventDate(final Instant eventDate) {
     this.eventDate = eventDate;
   }
 
@@ -202,7 +202,7 @@ public class EventBookingDTO {
    *
    * @return the bookingDate
    */
-  public Date getBookingDate() {
+  public Instant getBookingDate() {
     return bookingDate;
   }
 
@@ -212,7 +212,7 @@ public class EventBookingDTO {
    * @param bookingDate
    *            the bookingDate to set
    */
-  public void setBookingDate(final Date bookingDate) {
+  public void setBookingDate(final Instant bookingDate) {
     this.bookingDate = bookingDate;
   }
 
@@ -221,7 +221,7 @@ public class EventBookingDTO {
    *
    * @return the Date it was most recently updated
    */
-  public Date getUpdated() {
+  public Instant getUpdated() {
     return lastUpdated;
   }
 
@@ -230,7 +230,7 @@ public class EventBookingDTO {
    *
    * @param lastUpdated - date it was updated.
    */
-  public void setUpdated(final Date lastUpdated) {
+  public void setUpdated(final Instant lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
 

@@ -50,11 +50,11 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -385,7 +385,7 @@ public class GameManager {
 
       GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
           getRandomWildcard(mapper, gameFilter.getSubjects()), generateRandomWildCardPosition(),
-          new Date(), gameFilter, boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
+          Instant.now(), gameFilter, boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 
       this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 
@@ -630,16 +630,16 @@ public class GameManager {
     }
 
     ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
-    Comparator<GameboardDTO> defaultComparitor = new Comparator<GameboardDTO>() {
+    Comparator<GameboardDTO> defaultComparator = new Comparator<GameboardDTO>() {
       @Override
       public int compare(final GameboardDTO o1, final GameboardDTO o2) {
-        return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
+        return o1.getLastVisited().compareTo(o2.getLastVisited());
       }
     };
 
     // assume we want reverse date order for visited date for now.
     if (null == sortInstructions || sortInstructions.isEmpty()) {
-      comparatorForSorting.addComparator(defaultComparitor);
+      comparatorForSorting.addComparator(defaultComparator);
     } else {
       // we have to use a more complex sorting Comparator.
 
@@ -650,21 +650,9 @@ public class GameManager {
         }
 
         if (sortInstruction.getKey().equals(CREATED_DATE_FIELDNAME)) {
-          comparatorForSorting.addComparator((o1, o2) -> {
-            if (o1.getCreationDate().getTime() == o2.getCreationDate().getTime()) {
-              return 0;
-            } else {
-              return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
-            }
-          }, reverseOrder);
+          comparatorForSorting.addComparator(Comparator.comparing(GameboardDTO::getCreationDate), reverseOrder);
         } else if (sortInstruction.getKey().equals(VISITED_DATE_FIELDNAME)) {
-          comparatorForSorting.addComparator((o1, o2) -> {
-            if (o1.getLastVisited().getTime() == o2.getLastVisited().getTime()) {
-              return 0;
-            } else {
-              return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-            }
-          }, reverseOrder);
+          comparatorForSorting.addComparator(Comparator.comparing(GameboardDTO::getLastVisited), reverseOrder);
         } else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
           comparatorForSorting.addComparator((o1, o2) -> {
             if (o1.getTitle() == null && o2.getTitle() == null) {
@@ -696,7 +684,7 @@ public class GameManager {
     }
 
     if (comparatorForSorting.size() == 0) {
-      comparatorForSorting.addComparator(defaultComparitor);
+      comparatorForSorting.addComparator(defaultComparator);
     }
 
     Collections.sort(resultToReturn, comparatorForSorting);
@@ -751,7 +739,7 @@ public class GameManager {
     }
 
     // set creation date to now.
-    gameboardDTO.setCreationDate(new Date());
+    gameboardDTO.setCreationDate(Instant.now());
     gameboardDTO.setOwnerUserId(owner.getId());
 
     // this will throw an exception if it doesn't validate.

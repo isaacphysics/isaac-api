@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import jakarta.annotation.Nullable;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,7 +76,7 @@ public interface IQuizAttemptPersistenceManager {
    * @return The new value for completedDate.
    */
   @Nullable
-  Date updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
+  Instant updateAttemptCompletionStatus(Long quizAttemptId, boolean newCompletionStatus) throws SegueDatabaseException;
 
   /**
    * Get the set of user IDs that have attempted and completed a given assignment.

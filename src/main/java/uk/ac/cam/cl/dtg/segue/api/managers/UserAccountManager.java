@@ -43,18 +43,18 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.EnumUtils;
@@ -585,7 +585,7 @@ public class UserAccountManager implements IUserAccountManager {
       if (registeredUserContexts != null) {
         // We always set the last confirmed date from code rather than trusting the client
         userObjectFromClient.setRegisteredContexts(registeredUserContexts);
-        userObjectFromClient.setRegisteredContextsLastConfirmed(new Date());
+        userObjectFromClient.setRegisteredContextsLastConfirmed(Instant.now());
       } else {
         /* Registered contexts should only ever be set via the registeredUserContexts object, so that it is the
            server that sets the time that they last confirmed their user context values.
@@ -709,7 +709,7 @@ public class UserAccountManager implements IUserAccountManager {
     userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
     userToSave.setRegistrationDate(existingUser.getRegistrationDate());
     userToSave.setRole(existingUser.getRole());
-    userToSave.setLastUpdated(new Date());
+    userToSave.setLastUpdated(Instant.now());
 
     if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
       userToSave.setSchoolId(null);
@@ -920,7 +920,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @param request The request to extract the session information from
    * @return The session expiry as a Date
    */
-  public Date getSessionExpiry(final HttpServletRequest request) {
+  public Instant getSessionExpiry(final HttpServletRequest request) {
     return userAuthenticationManager.getSessionExpiry(request);
   }
 
@@ -1108,13 +1108,13 @@ public class UserAccountManager implements IUserAccountManager {
     // Set defaults
     userToSave.setRole(Role.STUDENT);
     userToSave.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
-    userToSave.setRegistrationDate(new Date());
-    userToSave.setLastUpdated(new Date());
+    userToSave.setRegistrationDate(Instant.now());
+    userToSave.setLastUpdated(Instant.now());
 
     if (registeredUserContexts != null) {
       // We always set the last confirmed date from code rather than trusting the client
       userToSave.setRegisteredContexts(registeredUserContexts);
-      userToSave.setRegisteredContextsLastConfirmed(new Date());
+      userToSave.setRegisteredContextsLastConfirmed(Instant.now());
     }
 
     if (userToSave.getTeacherPending() == null) {
@@ -1242,7 +1242,7 @@ public class UserAccountManager implements IUserAccountManager {
       return;
     }
     userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
-    userToSave.setLastUpdated(new Date());
+    userToSave.setLastUpdated(Instant.now());
     this.database.createOrUpdateUser(userToSave);
   }
 
@@ -1413,7 +1413,7 @@ public class UserAccountManager implements IUserAccountManager {
       user.setEmail(user.getEmailToVerify());
       user.setEmailVerificationToken(null);
       user.setEmailToVerify(null);
-      user.setLastUpdated(new Date());
+      user.setLastUpdated(Instant.now());
 
       // Save user
       RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
@@ -1756,7 +1756,7 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
-    newLocalUser.setRegistrationDate(new Date());
+    newLocalUser.setRegistrationDate(Instant.now());
 
     // register user
     RegisteredUser newlyRegisteredUser = database.registerNewUserWithProvider(newLocalUser,
@@ -1881,7 +1881,7 @@ public class UserAccountManager implements IUserAccountManager {
     if (request.getSession().getAttribute(ANONYMOUS_USER) == null) {
       String anonymousUserId = getAnonymousUserIdFromRequest(request);
       user = new AnonymousUser(anonymousUserId);
-      user.setDateCreated(new Date());
+      user.setDateCreated(Instant.now());
       // add the user reference to the session
       request.getSession().setAttribute(ANONYMOUS_USER, anonymousUserId);
       this.temporaryUserCache.storeAnonymousUser(user);
@@ -1929,8 +1929,7 @@ public class UserAccountManager implements IUserAccountManager {
       this.database.updateUserLastSeen(user);
     } else {
       // work out if we should update the user record again...
-      long timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
-      long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
+      long minutesElapsed = Math.abs(Duration.between(Instant.now(), user.getLastSeen()).toMinutes());
       if (minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
         this.database.updateUserLastSeen(user);
       }

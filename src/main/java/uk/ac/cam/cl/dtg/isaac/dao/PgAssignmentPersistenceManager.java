@@ -16,6 +16,8 @@
 
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import static uk.ac.cam.cl.dtg.segue.dao.AbstractPgDataManager.getInstantFromTimestamp;
+
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import java.sql.Connection;
@@ -23,10 +25,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,14 +77,13 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
       pst.setLong(FIELD_SAVE_OWNER_USER_ID, assignmentToSave.getOwnerUserId());
 
       if (assignment.getCreationDate() != null) {
-        pst.setTimestamp(FIELD_SAVE_CREATION_DATE,
-            new java.sql.Timestamp(assignmentToSave.getCreationDate().getTime()));
+        pst.setTimestamp(FIELD_SAVE_CREATION_DATE, Timestamp.from(assignmentToSave.getCreationDate()));
       } else {
-        pst.setTimestamp(FIELD_SAVE_CREATION_DATE, new java.sql.Timestamp(new Date().getTime()));
+        pst.setTimestamp(FIELD_SAVE_CREATION_DATE, Timestamp.from(Instant.now()));
       }
 
       if (assignment.getDueDate() != null) {
-        pst.setTimestamp(FIELD_SAVE_DUE_DATE, new java.sql.Timestamp(assignmentToSave.getDueDate().getTime()));
+        pst.setTimestamp(FIELD_SAVE_DUE_DATE, Timestamp.from(assignmentToSave.getDueDate()));
       } else {
         pst.setNull(FIELD_SAVE_DUE_DATE, Types.TIMESTAMP);
       }
@@ -93,8 +95,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
       }
 
       if (assignment.getScheduledStartDate() != null) {
-        pst.setTimestamp(FIELD_SAVE_SCHEDULED_START_DATE,
-            new java.sql.Timestamp(assignmentToSave.getScheduledStartDate().getTime()));
+        pst.setTimestamp(FIELD_SAVE_SCHEDULED_START_DATE, Timestamp.from(assignmentToSave.getScheduledStartDate()));
       } else {
         pst.setNull(FIELD_SAVE_SCHEDULED_START_DATE, Types.TIMESTAMP);
       }
@@ -270,7 +271,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
   }
 
   @Override
-  public List<AssignmentDTO> getAssignmentsScheduledForHour(final Date timestamp) throws SegueDatabaseException {
+  public List<AssignmentDTO> getAssignmentsScheduledForHour(final Instant timestamp) throws SegueDatabaseException {
     if (null == timestamp) {
       throw new SegueDatabaseException("Parameter timestamp is null, cannot search for scheduled assignments!");
     }
@@ -280,8 +281,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)
     ) {
-      pst.setTimestamp(FIELD_GET_SCHEDULED_FOR_HOUR_FIRST_TIMESTAMP, new java.sql.Timestamp(timestamp.getTime()));
-      pst.setTimestamp(FIELD_GET_SCHEDULED_FOR_HOUR_SECOND_TIMESTAMP, new java.sql.Timestamp(timestamp.getTime()));
+      pst.setTimestamp(FIELD_GET_SCHEDULED_FOR_HOUR_FIRST_TIMESTAMP, Timestamp.from(timestamp));
+      pst.setTimestamp(FIELD_GET_SCHEDULED_FOR_HOUR_SECOND_TIMESTAMP, Timestamp.from(timestamp));
 
       try (ResultSet results = pst.executeQuery()) {
         List<AssignmentDTO> listOfResults = Lists.newArrayList();
@@ -332,16 +333,9 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
    * @throws SQLException if we cannot access a required field.
    */
   private AssignmentDO convertFromSQLToAssignmentDO(final ResultSet sqlResults) throws SQLException {
-    java.util.Date preciseDate = new java.util.Date(sqlResults.getTimestamp("creation_date").getTime());
-
-    java.util.Date preciseDueDate = null;
-    if (sqlResults.getTimestamp("due_date") != null) {
-      preciseDueDate = new java.util.Date(sqlResults.getTimestamp("due_date").getTime());
-    }
-    java.util.Date preciseScheduledStartDate = null;
-    if (sqlResults.getTimestamp("scheduled_start_date") != null) {
-      preciseScheduledStartDate = new java.util.Date(sqlResults.getTimestamp("scheduled_start_date").getTime());
-    }
+    Instant preciseDate = getInstantFromTimestamp(sqlResults, "creation_date");
+    Instant preciseDueDate = getInstantFromTimestamp(sqlResults, "due_date");
+    Instant preciseScheduledStartDate = getInstantFromTimestamp(sqlResults, "scheduled_start_date");
 
     return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
         sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), sqlResults.getString("notes"), preciseDate,

@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.Date;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
@@ -110,7 +110,7 @@ public class IsaacNumericValidator implements IValidator {
 
       return new QuantityValidationResponse(question.getId(), answerFromUser, false,
           new Content("This question does not have any correct answers"),
-          false, false, new Date());
+          false, false, Instant.now());
     }
 
     if (isaacNumericQuestion.getSignificantFiguresMin() < 1 || isaacNumericQuestion.getSignificantFiguresMax() < 1
@@ -120,7 +120,7 @@ public class IsaacNumericValidator implements IValidator {
 
       return new QuantityValidationResponse(question.getId(), answerFromUser, false,
           new Content("This question cannot be answered correctly."),
-          false, false, new Date());
+          false, false, Instant.now());
     }
 
     try {
@@ -135,10 +135,10 @@ public class IsaacNumericValidator implements IValidator {
 
       if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
         return new QuantityValidationResponse(question.getId(), answerFromUser, false,
-            new Content(DEFAULT_NO_ANSWER_VALIDATION_RESPONSE), false, false, new Date());
+            new Content(DEFAULT_NO_ANSWER_VALIDATION_RESPONSE), false, false, Instant.now());
       } else if (null == answerFromUser.getUnits() && shouldValidateWithUnits) {
         return new QuantityValidationResponse(question.getId(), answerFromUser, false,
-            new Content(DEFAULT_NO_UNIT_VALIDATION_RESPONSE), null, false, new Date());
+            new Content(DEFAULT_NO_UNIT_VALIDATION_RESPONSE), null, false, Instant.now());
       }
 
       QuantityValidationResponse bestResponse;
@@ -184,7 +184,7 @@ public class IsaacNumericValidator implements IValidator {
           Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
           sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
           bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-              false, validUnits, new Date());
+              false, validUnits, Instant.now());
         }
         if (tooManySignificantFigures(answerFromUser.getValue(), isaacNumericQuestion.getSignificantFiguresMax())
             && bestResponse.isCorrect()) {
@@ -200,7 +200,7 @@ public class IsaacNumericValidator implements IValidator {
           Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
           sigFigResponse.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
           bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-              false, validUnits, new Date());
+              false, validUnits, Instant.now());
         }
       }
 
@@ -219,7 +219,7 @@ public class IsaacNumericValidator implements IValidator {
           new Content("Your answer is not in a format we recognise, please enter your answer as a decimal number.");
       invalidFormatResponse.setTags(responseTags);
       return new QuantityValidationResponse(question.getId(), answerFromUser, false, invalidFormatResponse,
-          false, false, new Date());
+          false, false, Instant.now());
     }
   }
 
@@ -266,16 +266,16 @@ public class IsaacNumericValidator implements IValidator {
               null != bestResponse && bestResponse.getCorrectUnits() || quantityFromQuestion.isCorrect();
           bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
               quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-              quantityFromQuestion.isCorrect(), unitsCorrect, new Date());
+              quantityFromQuestion.isCorrect(), unitsCorrect, Instant.now());
           break;
         } else if (numericValuesMatched && !unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
           // Matches value but not units of a correct choice.
           bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-              false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, new Date());
+              false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, Instant.now());
         } else if (!numericValuesMatched && unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
           // Matches units but not value of a correct choice.
           bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-              false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
+              false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, Instant.now());
         }
       } else {
         log.error(
@@ -287,7 +287,7 @@ public class IsaacNumericValidator implements IValidator {
     if (null == bestResponse) {
       // No matches; tell them they got it wrong but we cannot find any more detailed feedback for them.
       return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, new Content(
-          DEFAULT_VALIDATION_RESPONSE), false, false, new Date());
+          DEFAULT_VALIDATION_RESPONSE), false, false, Instant.now());
     } else {
       return bestResponse;
     }
@@ -321,7 +321,7 @@ public class IsaacNumericValidator implements IValidator {
         if (numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(), sigFigsToValidateWith)) {
           bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
               quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-              quantityFromQuestion.isCorrect(), null, new Date());
+              quantityFromQuestion.isCorrect(), null, Instant.now());
           break;
         }
       } else {
@@ -333,7 +333,7 @@ public class IsaacNumericValidator implements IValidator {
     if (null == bestResponse) {
       // No matches; tell them they got it wrong but we cannot find any more detailed feedback for them.
       return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-          false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, new Date());
+          false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, Instant.now());
     } else {
       return bestResponse;
     }
@@ -545,7 +545,7 @@ public class IsaacNumericValidator implements IValidator {
 
           return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
               quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
-              quantityFromQuestion.isCorrect(), unitFeedback, new Date());
+              quantityFromQuestion.isCorrect(), unitFeedback, Instant.now());
         }
       }
     }

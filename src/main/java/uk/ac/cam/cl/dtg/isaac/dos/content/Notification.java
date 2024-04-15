@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import java.util.Date;
+import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
 
 /**
@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
 @DTOMapping(NotificationDTO.class)
 public class Notification extends Content {
   private ExternalReference externalReference;
-  private Date expiry;
+  private Instant expiry;
 
   /**
    * @param value - of the content
@@ -67,7 +67,7 @@ public class Notification extends Content {
    *
    * @return the expiry
    */
-  public Date getExpiry() {
+  public Instant getExpiry() {
     return expiry;
   }
 
@@ -76,7 +76,7 @@ public class Notification extends Content {
    *
    * @param expiry the expiry to set
    */
-  public void setExpiry(final Date expiry) {
+  public void setExpiry(final Instant expiry) {
     this.expiry = expiry;
   }
 }

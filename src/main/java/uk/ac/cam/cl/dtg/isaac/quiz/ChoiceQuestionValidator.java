@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Date;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -50,7 +50,7 @@ public class ChoiceQuestionValidator implements IValidator {
 
       if (null == choiceQuestion.getChoices() || choiceQuestion.getChoices().isEmpty()) {
         log.warn("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
-        return new QuestionValidationResponse(question.getId(), answer, false, null, new Date());
+        return new QuestionValidationResponse(question.getId(), answer, false, null, Instant.now());
       }
 
       for (Choice choice : choiceQuestion.getChoices()) {
@@ -72,7 +72,7 @@ public class ChoiceQuestionValidator implements IValidator {
         feedback = choiceQuestion.getDefaultFeedback();
       }
 
-      return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
+      return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, Instant.now());
     } else {
       log.error("Expected to be able to cast the question as a ChoiceQuestion " + "but this cast failed.");
       throw new ClassCastException("Incorrect type of question received. Unable to validate.");

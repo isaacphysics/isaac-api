@@ -16,7 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -67,14 +67,14 @@ public interface EventBooking {
    *
    * @return the date that an update or booking creation was made.
    */
-  Date getUpdateDate();
+  Instant getUpdateDate();
 
   /**
    * Getter for Creation date.
    *
    * @return creation date
    */
-  Date getCreationDate();
+  Instant getCreationDate();
 
   Map<String, String> getAdditionalInformation();
 }
