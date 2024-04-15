@@ -324,6 +324,7 @@ ALTER SEQUENCE public.logged_events_id_seq OWNED BY public.logged_events.id;
 CREATE TABLE public.question_attempts (
     id integer NOT NULL,
     user_id integer NOT NULL,
+    page_id text NOT NULL,
     question_id text NOT NULL,
     question_attempt jsonb,
     correct boolean,
@@ -1171,6 +1172,13 @@ CREATE INDEX question_attempts_by_timestamp ON public.question_attempts USING bt
 --
 
 CREATE INDEX question_attempts_by_user_question ON public.question_attempts USING btree (user_id, question_id text_pattern_ops);
+
+
+--
+-- Name: question_attempts_by_user_question_page; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX question_attempts_by_user_question_page ON question_attempts USING btree (user_id, page_id);
 
 
 --
