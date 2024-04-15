@@ -35,6 +35,9 @@ import uk.ac.cam.cl.dtg.util.TimeUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -49,23 +52,16 @@ import static org.junit.Assert.assertNull;
 public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     private AssignmentFacade assignmentFacade;
+    private final String instantExpected = "2049-07-01T12:05:30Z";
+    private final Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+
 
     @BeforeEach
     public void setUp() throws Exception {
-        // mock the current date/time
-        Calendar mockCurrentDateTime = Calendar.getInstance();
-        mockCurrentDateTime.set(Calendar.DAY_OF_MONTH, 1);
-        mockCurrentDateTime.set(Calendar.MONTH, 6);
-        mockCurrentDateTime.set(Calendar.YEAR, 2049);
-
-        TimeUtils time = createNiceMock(TimeUtils.class);
-        expect(time.now()).andReturn(mockCurrentDateTime.getTime()).anyTimes();
-        replay(time);
-
         // get an instance of the facade to test
         this.assignmentFacade = new AssignmentFacade(assignmentManager, questionManager, userAccountManager,
                 groupManager, properties, gameManager, logManager, userAssociationManager,
-                new AssignmentService(userAccountManager), time);
+                new AssignmentService(userAccountManager), clock);
     }
 
     @AfterEach
