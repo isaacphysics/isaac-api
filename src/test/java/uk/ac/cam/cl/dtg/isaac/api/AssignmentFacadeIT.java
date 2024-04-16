@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
-import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -391,5 +390,40 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // Assert
         // check status code is NO_CONTENT (successful)
         assertEquals(Response.Status.NO_CONTENT.getStatusCode(), deleteAssignmentResponse.getStatus());
+    }
+
+    @Test
+    public void assignBulkEndpoint_setDuplicateAssignmentAsTeacher_failsToAssign() throws Exception {
+
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignGameboardsRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignGameboardsRequest);
+
+        // build assignment
+        AssignmentDTO assignment = new AssignmentDTO();
+        assignment.setGameboardId(ITConstants.ASSIGNMENTS_TEST_GAMEBOARD_ID);
+        assignment.setGroupId(ITConstants.TEST_TEACHERS_AB_GROUP_ID);
+
+        // Act
+        // make initial request, which should succeed
+        assignmentFacade.assignGameBoards(assignGameboardsRequest,
+                Collections.singletonList(assignment));
+
+        // make duplicate request, which should fail
+        Response duplicateAssignBulkResponse = assignmentFacade.assignGameBoards(assignGameboardsRequest,
+                Collections.singletonList(assignment));
+
+        // Assert
+        // check status code is OK (this is expected even if no assignment assigns successfully)
+        assertEquals(Response.Status.OK.getStatusCode(), duplicateAssignBulkResponse.getStatus());
+
+        // check the assignment failed to assign
+        @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
+                (ArrayList<AssignmentStatusDTO>) duplicateAssignBulkResponse.getEntity();
+        assertEquals("You cannot assign the same work to a group more than once.",
+                responseBody.get(0).getErrorMessage());
     }
 }
