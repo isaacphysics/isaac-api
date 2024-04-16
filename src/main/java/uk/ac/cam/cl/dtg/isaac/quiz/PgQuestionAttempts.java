@@ -202,7 +202,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setLong(1, userId);
 
             try (ResultSet results = pst.executeQuery()) {
-                return resultsToMapOfValidationResponseByPageId(results);
+                return resultsToMapValidationResponseByPagePart(results);
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -222,7 +222,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setString(2, questionPageId);
 
             try (ResultSet results = pst.executeQuery()) {
-                return resultsToMapOfValidationResponseByPageId(results);
+                return resultsToMapValidationResponseByPagePart(results);
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -251,25 +251,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setArray(1, userIdArray);
 
             try (ResultSet results = pst.executeQuery()) {
-                while (results.next()) {
-                    LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
-
-                    String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
-                    String questionId = partialQuestionAttempt.getQuestionId();
-                    Long userId = results.getLong("user_id");
-
-                    Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                                = mapToReturn.get(userId);
-
-                    Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage =
-                            mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
-
-                    List<LightweightQuestionValidationResponse> listOfResponses =
-                            attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
-
-                    listOfResponses.add(partialQuestionAttempt);
-                }
-                return mapToReturn;
+                return resultsToMapLightweightValidationResponseByUserPagePart(results);
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -307,25 +289,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 pst.setArray(2, pageIdArray);
 
                 try (ResultSet results = pst.executeQuery()) {
-                    while (results.next()) {
-                        LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
-
-                        String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
-                        String questionId = partialQuestionAttempt.getQuestionId();
-                        Long userId = results.getLong("user_id");
-
-                        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                                = mapToReturn.get(userId);
-
-                        Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage
-                                = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
-
-                        List<LightweightQuestionValidationResponse> listOfResponses
-                                = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
-
-                        listOfResponses.add(partialQuestionAttempt);
-                    }
-                    return mapToReturn;
+                    return resultsToMapLightweightValidationResponseByUserPagePart(results);
                 } finally {
                     userIdArray.free();
                 }
@@ -368,7 +332,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 }
             }
         }
-        
+
         log.info(String.format("Merged anonymously answered questions (%s) with known user account (%s)", count,
                 registeredUserId));
     }
@@ -449,7 +413,45 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         return partialQuestionAttempt;
     }
 
-    private Map<String, Map<String, List<QuestionValidationResponse>>> resultsToMapOfValidationResponseByPageId(final ResultSet results) throws SQLException, JsonProcessingException {
+    /**
+     *  Turn a ResultSet into LightweightValidationResponses (for multiple users).
+     *
+     * @param results - a ResultSet from the question_attempts table.
+     * @return - Map of Users -> Map of Page IDs -> Map of Part IDs -> List of attempts by the user at that part.
+     * @throws SQLException - on database error.
+     */
+    private Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> resultsToMapLightweightValidationResponseByUserPagePart(ResultSet results) throws SQLException {
+        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn = Maps.newHashMap();
+        while (results.next()) {
+            LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
+
+            String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
+            String questionId = partialQuestionAttempt.getQuestionId();
+            Long userId = results.getLong("user_id");
+
+            Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
+                    = mapToReturn.computeIfAbsent(userId, k -> Maps.newHashMap());
+
+            Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage
+                    = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
+
+            List<LightweightQuestionValidationResponse> listOfResponses
+                    = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
+
+            listOfResponses.add(partialQuestionAttempt);
+        }
+        return mapToReturn;
+    }
+
+    /**
+     *  Turn a ResultSet into full QuestionValidationResponses (for a single user).
+     *
+     * @param results - a ResultSet from the question_attempts table.
+     * @return - Map of Page IDs -> Map of Part IDs -> List of attempts at that part.
+     * @throws SQLException - on database error.
+     * @throws JsonProcessingException - if the question_attempt JSON is invalid.
+     */
+    private Map<String, Map<String, List<QuestionValidationResponse>>> resultsToMapValidationResponseByPagePart(final ResultSet results) throws SQLException, JsonProcessingException {
         // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
         Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
 
