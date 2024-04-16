@@ -57,7 +57,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  */
 public class PgQuestionAttempts implements IQuestionAttemptManager {
     private static final Logger log = LoggerFactory.getLogger(PgQuestionAttempts.class);
-    private static final int MAX_PAGE_IDS_TO_MATCH = 100;
+    private static final int MAX_PAGE_IDS_TO_MATCH = 300;
             
     private final PostgresSqlDb database;
     private final ObjectMapper objectMapper;
@@ -214,12 +214,12 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId, final String questionPageId)
             throws SegueDatabaseException {
-        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id LIKE ? ORDER BY \"timestamp\" ASC";
+        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND page_id = ? ORDER BY \"timestamp\" ASC";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setLong(1, userId);
-            pst.setString(2, questionPageId.replace("_", "\\_") + "%");
+            pst.setString(2, questionPageId);
 
             try (ResultSet results = pst.executeQuery()) {
                 return resultsToMapOfValidationResponseByPageId(results);
@@ -287,7 +287,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
         List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());
         if (uniquePageIds.size() > MAX_PAGE_IDS_TO_MATCH) {
-            // The repeated "OR question_id LIKE ___" will get very inefficient beyond this:
             log.debug(String.format("Attempting to match too many (%s) question page IDs; returning all attempts for these users instead!", uniquePageIds.size()));
             return this.getLightweightQuestionAttemptsByUsers(userIds);
         }
@@ -296,27 +295,16 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));;
 
         try (Connection conn = database.getDatabaseConnection()) {
-            StringBuilder query = new StringBuilder();
-            query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts");
-            query.append(" WHERE user_id = ANY(?)");
+            String query = "SELECT id, user_id, question_id, correct, timestamp FROM question_attempts"
+                         + " WHERE user_id = ANY(?) AND page_id = ANY(?)"
+                         + " ORDER BY \"timestamp\" ASC";
 
-            // add all of the question page ids we are interested in
-            String questionIdsOr = uniquePageIds.stream().map(q -> "question_id LIKE ?").collect(Collectors.joining(" OR "));
-            query.append(" AND (").append(questionIdsOr).append(")");
-            query.append(" ORDER BY \"timestamp\" ASC");
-
-            try (PreparedStatement pst = conn.prepareStatement(query.toString())) {
-
-                int index = 1;
+            try (PreparedStatement pst = conn.prepareStatement(query)) {
 
                 Array userIdArray = conn.createArrayOf("INTEGER", userIds.toArray());
-                pst.setArray(index++, userIdArray);
-
-                for (String pageId : uniquePageIds) {
-                    // Using LIKE matching on part IDs; add % wildcard to end of each page ID, and ensure any underscores
-                    // in the ID are escaped and not treated as wildcard characters themselves:
-                    pst.setString(index++, pageId.replace("_", "\\_") + "%");
-                }
+                Array pageIdArray = conn.createArrayOf("TEXT", uniquePageIds.toArray());
+                pst.setArray(1, userIdArray);
+                pst.setArray(2, pageIdArray);
 
                 try (ResultSet results = pst.executeQuery()) {
                     while (results.next()) {
