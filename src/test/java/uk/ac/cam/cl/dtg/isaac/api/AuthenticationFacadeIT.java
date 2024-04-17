@@ -278,30 +278,30 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       }
     }
 
-  }
+    @ParameterizedTest
+    @MethodSource("invalidAuthDTO")
+    void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
+        throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(email);
+      testLocalAuthDTO.setPassword(password);
 
-  @ParameterizedTest
-  @MethodSource("invalidAuthDTO")
-  void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
-      throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail(email);
-    testLocalAuthDTO.setPassword(password);
-
-    try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
-        testLocalAuthDTO)) {
-      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE,
+            response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
-  }
 
-  private static Stream<Arguments> invalidAuthDTO() {
-    return Stream.of(
-        Arguments.of(null, TEST_STUDENT_PASSWORD),
-        Arguments.of("", TEST_STUDENT_PASSWORD),
-        Arguments.of(TEST_STUDENT_EMAIL, null),
-        Arguments.of(TEST_STUDENT_EMAIL, "")
-    );
+    private static Stream<Arguments> invalidAuthDTO() {
+      return Stream.of(
+          Arguments.of(null, TEST_STUDENT_PASSWORD),
+          Arguments.of("", TEST_STUDENT_PASSWORD),
+          Arguments.of(TEST_STUDENT_EMAIL, null),
+          Arguments.of(TEST_STUDENT_EMAIL, "")
+      );
+    }
   }
 
   @Test
