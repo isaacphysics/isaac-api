@@ -47,8 +47,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jetty.ee9</groupId>
-            <artifactId>jetty-ee9-servlets</artifactId>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-servlets</artifactId>
             <version>${jetty.version}</version>
         </dependency>
 
@@ -346,8 +346,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jetty.ee9.websocket</groupId>
-            <artifactId>jetty-ee9-websocket-jetty-server</artifactId>
+            <groupId>org.eclipse.jetty.ee10.websocket</groupId>
+            <artifactId>jetty-ee10-websocket-jetty-server</artifactId>
             <version>${jetty.version}</version>
         </dependency>
 
@@ -467,8 +467,8 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.eclipse.jetty.ee9</groupId>
-                <artifactId>jetty-ee9-maven-plugin</artifactId>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-maven-plugin</artifactId>
                 <version>${jetty.version}</version>
                 <configuration>
                     <webApp>
@@ -629,8 +629,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.eclipse.jetty.ee9</groupId>
-                        <artifactId>jetty-ee9-maven-plugin</artifactId>
+                        <groupId>org.eclipse.jetty.ee10</groupId>
+                        <artifactId>jetty-ee10-maven-plugin</artifactId>
                         <version>${jetty.version}</version>
                         <configuration>
                             <webApp>
