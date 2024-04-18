@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -192,16 +194,14 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
         Map<Stage, Map<Difficulty, Integer>> questionAttemptsByStageAndDifficultyStats = Maps.newHashMap();
         Map<Stage, Map<Difficulty, Integer>> questionsCorrectByStageAndDifficultyStats = Maps.newHashMap();
-        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
-        Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
-        List<ContentDTO> questionPagesNotComplete = Lists.newArrayList();
+        List<ContentDTO> incompleteQuestionPages = Lists.newArrayList();
         Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
         LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
-        LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() -1, Month.AUGUST, 31);
+        LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() - 1, Month.AUGUST, 31);
         LocalDate lastDayOfPreviousAcademicYear =
                 now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
 
@@ -210,21 +210,22 @@ public class StatisticsManager implements IStatisticsManager {
 
         // Loop through each Question attempted:
         for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
-            ContentDTO questionContentDTO = questionMap.get(question.getKey());
-            if (null == questionContentDTO) {
-                log.warn(String.format("Excluding missing question (%s) from user progress statistics for user (%s)!",
+            ContentDTO contentDTO = questionMap.get(question.getKey());
+            if (!(contentDTO instanceof IsaacQuestionPageDTO)) {
+                log.warn(String.format("Excluding unknown question (%s) from user progress statistics for user (%s)!",
                         question.getKey(), userOfInterest.getId()));
-                // We no longer have any information on this question, so we won't count it towards statistics!
+                // This content is missing, or it is not a question page; either way, exclude it.
                 continue;
             }
+            IsaacQuestionPageDTO questionPageDTO = (IsaacQuestionPageDTO) contentDTO;
 
-            mostRecentlyAttemptedQuestionPages.add(questionContentDTO);  // Assumes questionAttemptsByUser is sorted!
+            mostRecentlyAttemptedQuestionPages.add(questionPageDTO);  // Assumes questionAttemptsByUser is sorted!
             attemptedQuestions++;
             boolean questionIsCorrect = true;  // Are all Parts of the Question correct?
             LocalDate mostRecentCorrectQuestionPart = null;
             LocalDate mostRecentAttemptAtQuestion = null;
             // Loop through each Part of the Question:
-            for (QuestionDTO questionPart : GameManager.getAllMarkableQuestionPartsDFSOrder(questionContentDTO)) {
+            for (QuestionDTO questionPart : GameManager.getAllMarkableQuestionPartsDFSOrder(questionPageDTO)) {
 
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
@@ -286,7 +287,7 @@ public class StatisticsManager implements IStatisticsManager {
             }
 
             // Tag Stats - Loop through the Question's tags:
-            for (String tag : questionContentDTO.getTags()) {
+            for (String tag : questionPageDTO.getTags()) {
                 // Count the attempt at the Question:
                 if (questionAttemptsByTagStats.containsKey(tag)) {
                     questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
@@ -305,8 +306,8 @@ public class StatisticsManager implements IStatisticsManager {
 
             // Stage and difficulty Stats
             // This is hideous, sorry
-            if (questionContentDTO.getAudience() != null) {
-                for (AudienceContext audience : questionContentDTO.getAudience()) {
+            if (questionPageDTO.getAudience() != null) {
+                for (AudienceContext audience : questionPageDTO.getAudience()) {
                     // Check the question has both a stage and a difficulty
                     if (audience.getStage() != null && audience.getDifficulty() != null) {
                         Stage currentStage = audience.getStage().get(0);
@@ -344,48 +345,32 @@ public class StatisticsManager implements IStatisticsManager {
                 }
             }
 
-            // Level Stats:
-            Integer questionLevelInteger = questionContentDTO.getLevel();
-            String questionLevel;
-            if (null == questionLevelInteger) {
-                // There are questions on general pages which cannot have levels, must use a default value.
-                questionLevel = "0";
-            } else {
-                questionLevel = questionLevelInteger.toString();
-            }
-            if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
-                questionAttemptsByLevelStats.put(questionLevel, questionAttemptsByLevelStats.get(questionLevel) + 1);
-            } else {
-                questionAttemptsByLevelStats.put(questionLevel, 1);
-            }
-
             if (mostRecentAttemptAtQuestion != null && mostRecentAttemptAtQuestion.isAfter(lastDayOfPreviousAcademicYear)) {
                 attemptedQuestionsThisAcademicYear++;
             }
 
-            // If it's correct, count this globally and for the Question's level too:
+            // If it's correct, count this:
             if (questionIsCorrect) {
                 correctQuestions++;
                 if (mostRecentCorrectQuestionPart != null && mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
                     correctQuestionsThisAcademicYear++;
                 }
-                if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
-                    questionsCorrectByLevelStats.put(questionLevel, questionsCorrectByLevelStats.get(questionLevel) + 1);
-                } else {
-                    questionsCorrectByLevelStats.put(questionLevel, 1);
-                }
-            } else if (questionPagesNotComplete.size() < PROGRESS_MAX_RECENT_QUESTIONS) {
-                questionPagesNotComplete.add(questionContentDTO);
+            } else {
+                incompleteQuestionPages.add(questionPageDTO);
             }
         }
 
         // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
+
+        // Create the recent and unanswered question lists:
         List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
                 .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
         Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
-        List<ContentSummaryDTO> questionsNotCompleteList = questionPagesNotComplete
-                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
+        List<ContentSummaryDTO> questionsNotCompleteList = incompleteQuestionPages.stream()
+            .sorted(Comparator.comparing(ContentDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
+            .limit(PROGRESS_MAX_RECENT_QUESTIONS)
+            .map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
 
         questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
         questionInfo.put("totalQuestionsCorrect", correctQuestions);
@@ -399,8 +384,6 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
         questionInfo.put("correctByStageAndDifficulty", questionsCorrectByStageAndDifficultyStats);
-        questionInfo.put("attemptsByLevel", questionAttemptsByLevelStats);
-        questionInfo.put("correctByLevel", questionsCorrectByLevelStats);
         questionInfo.put("attemptsByType", questionAttemptsByTypeStats);
         questionInfo.put("correctByType", questionsCorrectByTypeStats);
         questionInfo.put("oldestIncompleteQuestions", questionsNotCompleteList);

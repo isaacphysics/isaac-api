@@ -46,7 +46,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -110,7 +109,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final GameManager gameManager;
     private final UserAssociationManager associationManager;
     private final QuestionManager questionManager;
-    private final UserBadgeManager userBadgeManager;
     private final AssignmentService assignmentService;
     private final Clock clock;
 
@@ -135,8 +133,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - Instance of log manager
      * @param associationManager
      *            - So that we can determine what information is allowed to be seen by other users.
-     * @param userBadgeManager
-     *            - So that badges can be awarded to do with assignments
      * @param assignmentService
      *            - for augmenting assignments with assigner information
      * @param clock
@@ -145,8 +141,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
                             final UserAccountManager userManager, final GroupManager groupManager,
-                            final AbstractConfigLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
-                            final UserAssociationManager associationManager, final UserBadgeManager userBadgeManager,
+                            final AbstractConfigLoader propertiesLoader, final GameManager gameManager,
+                            final ILogManager logManager, final UserAssociationManager associationManager,
                             final AssignmentService assignmentService, final Clock clock) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
@@ -155,7 +151,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         this.groupManager = groupManager;
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
-        this.userBadgeManager = userBadgeManager;
         this.assignmentService = assignmentService;
         this.clock = clock;
     }
@@ -1091,9 +1086,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate());
                     eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
                     this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.SET_NEW_ASSIGNMENT, eventDetails);
-
-                    this.userBadgeManager.updateBadge(currentlyLoggedInUser,
-                            UserBadgeManager.Badge.TEACHER_ASSIGNMENTS_SET, assignmentWithID.getId().toString());
 
                     // Assigning to this group was a success
                     assigmentStatuses.add(new AssignmentStatusDTO(assignmentWithID.getGroupId(), assignmentWithID.getId()));

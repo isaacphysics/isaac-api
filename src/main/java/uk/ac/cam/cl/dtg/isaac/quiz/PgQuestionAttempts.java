@@ -164,21 +164,22 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public void registerQuestionAttempt(final Long userId, final String questionPageId, final String fullQuestionId,
             final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
 
-        String query = "INSERT INTO question_attempts(user_id, question_id, question_attempt, correct, \"timestamp\")" +
-                " VALUES (?, ?, ?::text::jsonb, ?, ?);";
+        String query = "INSERT INTO question_attempts(user_id, page_id, question_id, question_attempt, correct, \"timestamp\")"
+                + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
             pst.setLong(1, userId);
-            pst.setString(2, fullQuestionId);
-            pst.setString(3, objectMapper.writeValueAsString(questionAttempt));
+            pst.setString(2, questionPageId);
+            pst.setString(3, fullQuestionId);
+            pst.setString(4, objectMapper.writeValueAsString(questionAttempt));
 
             if (questionAttempt.isCorrect() != null) {
-                pst.setBoolean(4, questionAttempt.isCorrect());
+                pst.setBoolean(5, questionAttempt.isCorrect());
             } else {
-                pst.setNull(4, java.sql.Types.NULL);
+                pst.setNull(5, java.sql.Types.NULL);
             }
-            pst.setTimestamp(5, new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
+            pst.setTimestamp(6, new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save question attempt.");

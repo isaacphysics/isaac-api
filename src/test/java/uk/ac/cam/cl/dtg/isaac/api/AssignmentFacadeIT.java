@@ -60,7 +60,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
     public void setUp() throws Exception {
         // get an instance of the facade to test
         this.assignmentFacade = new AssignmentFacade(assignmentManager, questionManager, userAccountManager,
-                groupManager, properties, gameManager, logManager, userAssociationManager, userBadgeManager,
+                groupManager, properties, gameManager, logManager, userAssociationManager,
                 new AssignmentService(userAccountManager), clock);
     }
 

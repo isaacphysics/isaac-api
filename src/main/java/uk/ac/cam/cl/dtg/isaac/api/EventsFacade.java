@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -114,7 +113,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final GroupManager groupManager;
 
     private final GitContentManager contentManager;
-    private final UserBadgeManager userBadgeManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
     private final SchoolListReader schoolListReader;
@@ -135,7 +133,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     public EventsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final GitContentManager contentManager,
-                        final UserBadgeManager userBadgeManager,
                         final UserAssociationManager userAssociationManager,
                         final GroupManager groupManager,
                         final UserAccountManager userAccountManager, final SchoolListReader schoolListReader,
@@ -144,7 +141,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
-        this.userBadgeManager = userBadgeManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
         this.userAccountManager = userAccountManager;
@@ -1333,11 +1329,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                             EVENT_DATE_FIELDNAME, event.getDate(),
                             EVENT_TAGS_FIELDNAME, event.getTags()
                     ));
-
-            if (event.getTags().contains("teacher")) {
-                this.userBadgeManager.updateBadge(userOfInterest,
-                        UserBadgeManager.Badge.TEACHER_CPD_EVENTS_ATTENDED, eventId);
-            }
 
             return Response.ok(eventBookingDTO).build();
 
