@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -86,7 +85,6 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final GitContentManager contentManager;
-    private final UserBadgeManager userBadgeManager;
     private final IUserStreaksManager userStreaksManager;
     private final ContentSummarizerService contentSummarizerService;
 
@@ -114,14 +112,12 @@ public class IsaacController extends AbstractIsaacFacade {
                            final UserAccountManager userManager, final GitContentManager contentManager,
                            final UserAssociationManager associationManager,
                            final IUserStreaksManager userStreaksManager,
-                           final UserBadgeManager userBadgeManager,
                            final ContentSummarizerService contentSummarizerService) {
         super(propertiesLoader, logManager);
         this.statsManager = statsManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
         this.contentManager = contentManager;
-        this.userBadgeManager = userBadgeManager;
         this.userStreaksManager = userStreaksManager;
         this.contentSummarizerService = contentSummarizerService;
     }
@@ -455,8 +451,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
         Map<String, Object> userSnapshot = ImmutableMap.of(
                 "dailyStreakRecord", dailyStreakRecord,
-                "weeklyStreakRecord", weeklyStreakRecord,
-                "achievementsRecord", userBadgeManager.getAllUserBadges(user)
+                "weeklyStreakRecord", weeklyStreakRecord
         );
 
         return Response.ok(userSnapshot).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -504,8 +499,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
                 Map<String, Object> userSnapshot = ImmutableMap.of(
                         "dailyStreakRecord", dailyStreakRecord,
-                        "weeklyStreakRecord", weeklyStreakRecord,
-                        "achievementsRecord", userBadgeManager.getAllUserBadges(userOfInterestFull)
+                        "weeklyStreakRecord", weeklyStreakRecord
                 );
 
                 userProgressInformation.put("userSnapshot", userSnapshot);

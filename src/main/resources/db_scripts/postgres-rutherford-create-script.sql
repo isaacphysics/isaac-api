@@ -568,19 +568,6 @@ CREATE TABLE public.user_associations_tokens (
 ALTER TABLE public.user_associations_tokens OWNER TO rutherford;
 
 --
--- Name: user_badges; Type: TABLE; Schema: public; Owner: rutherford
---
-
-CREATE TABLE public.user_badges (
-    user_id integer,
-    badge text,
-    state jsonb
-);
-
-
-ALTER TABLE public.user_badges OWNER TO rutherford;
-
---
 -- Name: user_credentials; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -1221,13 +1208,6 @@ CREATE INDEX user_associations_by_receiving ON public.user_associations USING bt
 --
 
 CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens USING btree (group_id DESC);
-
-
---
--- Name: user_badges_user_id_badge_unique; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING btree (user_id, badge);
 
 
 --

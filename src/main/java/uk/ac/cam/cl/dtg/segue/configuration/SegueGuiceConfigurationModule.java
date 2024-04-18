@@ -121,16 +121,12 @@ import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
-import uk.ac.cam.cl.dtg.segue.dao.LogManagerEventPublisher;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
-import uk.ac.cam.cl.dtg.segue.dao.PgLogManagerEventListener;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.IUserBadgePersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.userBadges.PgUserBadgePersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
@@ -204,7 +200,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IQuestionAttemptManager questionPersistenceManager = null;
     private static SegueJobService segueJobService = null;
 
-    private static LogManagerEventPublisher logManager;
+    private static ILogManager logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static MailGunEmailManager mailGunEmailManager = null;
     private static IMisuseMonitor misuseMonitor = null;
@@ -350,7 +346,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IQuizAssignmentPersistenceManager.class).to(PgQuizAssignmentPersistenceManager.class);
         bind(IQuizAttemptPersistenceManager.class).to(PgQuizAttemptPersistenceManager.class);
         bind(IQuizQuestionAttemptPersistenceManager.class).to(PgQuizQuestionAttemptPersistenceManager.class);
-        bind(IUserBadgePersistenceManager.class).to(PgUserBadgePersistenceManager.class);
     }
 
     /**
@@ -565,7 +560,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == logManager) {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
+            logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {

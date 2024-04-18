@@ -25,8 +25,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.LogEvent;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
@@ -41,6 +39,7 @@ import java.util.Date;
 import java.util.Objects;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.LOG_EVENT;
 
 /**
@@ -69,7 +68,7 @@ public class PgLogManager implements ILogManager {
      */
     @Inject
     public PgLogManager(final PostgresSqlDb database, final ObjectMapper objectMapper,
-            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
+            @Named(LOGGING_ENABLED) final boolean loggingEnabled,
             final LocationManager locationManager) {
 
         this.database = database;
