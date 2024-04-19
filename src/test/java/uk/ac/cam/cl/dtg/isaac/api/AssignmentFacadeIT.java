@@ -563,17 +563,20 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     @Test
     void getAssignmentProgressDownloadCSV_getAsOwner_succeeds() throws Exception {
+        // Arrange
         // log in as teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.HARRY_TEACHER_EMAIL,
                 ITConstants.HARRY_TEACHER_PASSWORD);
         HttpServletRequest downloadAssignmentRequest = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
         replay(downloadAssignmentRequest);
 
+        // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getAssignmentProgressDownloadCSV(downloadAssignmentRequest,
                         ITConstants.ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID, "excel");
         String downloadAssignmentContents = downloadAssignmentResponse.getEntity().toString();
 
+        // Assert
         String expectedContents;
         try (FileInputStream expectedFile = new FileInputStream(
                 "src/test/resources/expected_assignment_progress_export.csv")) {
@@ -584,32 +587,38 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     @Test
     void getAssignmentProgressDownloadCSV_getAsOther_permissionDenied() throws Exception {
+        // Arrange
         // log in as Test tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
                 ITConstants.TEST_TUTOR_PASSWORD);
         HttpServletRequest downloadAssignmentRequest = createRequestWithCookies(new Cookie[] {tutorLogin.cookie});
         replay(downloadAssignmentRequest);
 
+        // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getAssignmentProgressDownloadCSV(downloadAssignmentRequest,
                         ITConstants.ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID, "excel");
 
+        // Assert
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), downloadAssignmentResponse.getStatus());
     }
 
     @Test
     void getGroupProgressDownloadCSV_getAsOwner_succeeds() throws Exception {
+        // Arrange
         // log in as Test teacher, create request
         LoginResult teacherLogin = loginAs(httpSession, ITConstants.HARRY_TEACHER_EMAIL,
                 ITConstants.HARRY_TEACHER_PASSWORD);
         HttpServletRequest downloadAssignmentRequest = createRequestWithCookies(new Cookie[] {teacherLogin.cookie});
         replay(downloadAssignmentRequest);
 
+        // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest,
                        ITConstants.HARRY_TEACHERS_AB_GROUP_ID, "excel");
         String downloadAssignmentContents = downloadAssignmentResponse.getEntity().toString();
 
+        // Assert
         String expectedContents;
         try (FileInputStream expectedFile = new FileInputStream(
                 "src/test/resources/expected_group_progress_export.csv")) {
@@ -620,16 +629,19 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
 
     @Test
     void getGroupProgressDownloadCSV_getAsOther_permissionDenied() throws Exception {
+        // Arrange
         // log in as Test tutor, create request
         LoginResult tutorLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
                 ITConstants.TEST_TUTOR_PASSWORD);
         HttpServletRequest downloadAssignmentRequest = createRequestWithCookies(new Cookie[] {tutorLogin.cookie});
         replay(downloadAssignmentRequest);
 
+        // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest,
                         ITConstants.HARRY_TEACHERS_AB_GROUP_ID, "excel");
 
+        // Assert
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), downloadAssignmentResponse.getStatus());
     }
 }
