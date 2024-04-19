@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static java.time.ZoneOffset.UTC;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
@@ -41,9 +42,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URI;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Calendar;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -97,7 +97,7 @@ class UserManagerTest {
 
   private MainObjectMapper dummyMapper;
   private EmailManager dummyQueue;
-  private SimpleDateFormat sdf;
+  private DateTimeFormatter dateTimeFormatter;
 
   private IAnonymousUserDataManager dummyUserCache;
   private ILogManager dummyLogManager;
@@ -122,7 +122,7 @@ class UserManagerTest {
     this.dummyMapper = createMock(MainObjectMapper.class);
     this.dummyQueue = createMock(EmailManager.class);
     this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
-    this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+    this.dateTimeFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss Z yyyy").withZone(UTC);
 
     this.dummyUserCache = createMock(IAnonymousUserDataManager.class);
 
@@ -190,9 +190,7 @@ class UserManagerTest {
     HttpServletRequest request = createMock(HttpServletRequest.class);
 
     Long validUserId = 533L;
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, 500);
-    String validDateString = sdf.format(calendar.getTime());
+    String validDateString = dateTimeFormatter.format(Instant.now().plusSeconds(500));
     int sessionToken = 7;
 
     RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
@@ -342,9 +340,7 @@ class UserManagerTest {
     someAnonymousUserDTO.setSessionId(someSegueAnonymousUserId);
 
     String validOAuthProvider = "test";
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, 500);
-    String validDateString = sdf.format(calendar.getTime());
+    String validDateString = dateTimeFormatter.format(Instant.now().plusSeconds(500));
 
     expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 
@@ -545,9 +541,7 @@ class UserManagerTest {
     HttpServletRequest request = createMock(HttpServletRequest.class);
 
     String validUserId = "123";
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, 500);
-    String validDateString = sdf.format(calendar.getTime());
+    String validDateString = dateTimeFormatter.format(Instant.now().plusSeconds(500));
     int sessionToken = 7;
 
     Map<String, String> sessionInformation =
@@ -577,9 +571,7 @@ class UserManagerTest {
     HttpServletRequest request = createMock(HttpServletRequest.class);
 
     String validUserId = "123";
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, 500);
-    String validDateString = sdf.format(calendar.getTime());
+    String validDateString = dateTimeFormatter.format(Instant.now().plusSeconds(500));
     int sessionToken = 7;
 
     Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
@@ -616,9 +608,8 @@ class UserManagerTest {
     HttpServletRequest request = createMock(HttpServletRequest.class);
 
     String validUserId = "123";
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, -60); // Expired 60 seconds ago
-    String expiredDateString = sdf.format(calendar.getTime());
+    // Expired 60 seconds ago
+    String expiredDateString = dateTimeFormatter.format(Instant.now().minusSeconds(60));
     int sessionToken = 7;
 
     Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
@@ -650,9 +641,7 @@ class UserManagerTest {
     String validUserId = "123";
     int correctSessionToken = 7;
     int incorrectSessionToken = 0;
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, 500);
-    String validDateString = sdf.format(calendar.getTime());
+    String validDateString = dateTimeFormatter.format(Instant.now().plusSeconds(500));
 
     Map<String, String> sessionInformationWithTokenMismatch = getSessionInformationAsAMap(authManager, validUserId,
         validDateString, incorrectSessionToken);

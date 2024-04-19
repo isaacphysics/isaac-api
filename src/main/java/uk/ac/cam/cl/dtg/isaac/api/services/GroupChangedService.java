@@ -16,15 +16,15 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
+import static java.time.ZoneOffset.UTC;
 import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -163,7 +163,7 @@ public class GroupChangedService implements IGroupObserver {
       existingAssignments.sort(Comparator.comparing(IAssignmentLike::getCreationDate));
     }
 
-    final DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+    final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(UTC);
     if (existingAssignments != null && existingAssignments.size() > 0) {
       htmlSB.append("Your teacher has assigned the following " + typeOfAssignment + ":<br>");
       plainTextSB.append("Your teacher has assigned the following " + typeOfAssignment + ":\n");

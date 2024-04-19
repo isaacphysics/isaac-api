@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
+import static java.time.ZoneOffset.UTC;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_EXPIRES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC;
@@ -21,8 +22,8 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Map;
 import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
@@ -123,9 +124,7 @@ public class SessionValidator implements ContainerRequestFilter, ContainerRespon
   }
 
   private static String getFutureDateString(final Integer secondsInFuture) {
-    SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, secondsInFuture);
-    return sessionDateFormat.format(calendar.getTime());
+    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
+    return sessionDateFormat.format(Instant.now().plusSeconds(secondsInFuture));
   }
 }

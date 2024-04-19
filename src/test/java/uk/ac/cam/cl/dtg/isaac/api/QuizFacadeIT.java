@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import static java.time.ZoneOffset.UTC;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -87,10 +88,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -138,14 +138,12 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
    * @throws JsonProcessingException if the cookie serialisation fails
    */
   private Cookie createManualCookieForAdmin() throws JsonProcessingException {
-    SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
     String userId = String.valueOf(TEST_ADMIN_ID);
     String hmacKey = properties.getProperty(HMAC_SALT);
     int sessionExpiryTimeInSeconds = NUMBER_SECONDS_IN_FIVE_MINUTES;
 
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
-    String sessionExpiryDate = sessionDateFormat.format(calendar.getTime());
+    String sessionExpiryDate = sessionDateFormat.format(Instant.now().plusSeconds(sessionExpiryTimeInSeconds));
 
     Map<String, String> sessionInformation =
         userAuthenticationManager.prepareSessionInformation(userId, "0", sessionExpiryDate, hmacKey, null);

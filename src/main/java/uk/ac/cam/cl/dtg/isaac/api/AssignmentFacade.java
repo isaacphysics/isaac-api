@@ -52,7 +52,6 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -914,7 +913,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     // Add a header row with due dates
     ArrayList<String> dueDateRow = Lists.newArrayList();
     Collections.addAll(dueDateRow, "", "Due", "");
-    SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
+    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(UTC);
 
     ArrayList<String> headerRow = Lists.newArrayList();
     if (includeUserIds) {
