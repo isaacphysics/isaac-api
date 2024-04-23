@@ -413,7 +413,7 @@ public class UserAuthenticationManager {
     try {
       Map<String, String> currentSessionInformation = getSegueSessionFromRequest(request);
       if (currentSessionInformation.containsKey(DATE_EXPIRES)) {
-        DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT);
+        DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
         return sessionDateFormat.parse(currentSessionInformation.get(DATE_EXPIRES), Instant::from);
       } else {
         return null;
@@ -913,7 +913,7 @@ public class UserAuthenticationManager {
     requireNonNull(sessionInformation);
     requireNonNull(sessionTokenFromDatabase);
 
-    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT);
+    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
 
     String userId = sessionInformation.get(SESSION_USER_ID);
     String userSessionToken = sessionInformation.get(SESSION_TOKEN);

@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import static java.time.ZoneOffset.UTC;
 import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ALL_ACCEPTED_LOG_TYPES;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.LOG_EVENT;
@@ -373,11 +374,13 @@ public class PgLogManager implements ILogManager {
       pst.setTimestamp(index++, Timestamp.from(toDate));
 
       try (ResultSet results = pst.executeQuery()) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(UTC);
 
         Map<Instant, Long> mapToReturn = Maps.newHashMap();
         while (results.next()) {
-          mapToReturn.put(formatter.parse(results.getString("to_char"), Instant::from), results.getLong("count"));
+          Instant parsedDate =
+              formatter.parse(results.getString("to_char"), LocalDate::from).atStartOfDay(UTC).toInstant();
+          mapToReturn.put(parsedDate, results.getLong("count"));
         }
 
         return mapToReturn;
