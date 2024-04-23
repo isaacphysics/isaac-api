@@ -309,7 +309,7 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
      * Sets the percentageAttempted.
      * 
      * @param percentageAttempted
-     *            the percentageCompleted to set
+     *            the percentageAttempted to set
      */
     public void setPercentageAttempted(final Integer percentageAttempted) {
         this.percentageAttempted = percentageAttempted;
