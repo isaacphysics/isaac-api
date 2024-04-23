@@ -72,6 +72,8 @@ public class IsaacEventPage extends Content {
   private Boolean privateEvent;
   private Hub hub;
 
+  private String meetingUrl;
+
   @JsonCreator
   public IsaacEventPage(@JsonProperty("id") final String id,
                         @JsonProperty("title") final String title,
@@ -99,7 +101,8 @@ public class IsaacEventPage extends Content {
                         @JsonProperty("groupReservationLimit") final Integer groupReservationLimit,
                         @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations,
                         @JsonProperty("privateEvent") final Boolean privateEvent,
-                        @JsonProperty("hub") final Hub hub) {
+                        @JsonProperty("hub") final Hub hub,
+                        @JsonProperty("meetingUrl") final String meetingUrl) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
         null, relatedContent, published, deprecated, tags, null);
 
@@ -118,6 +121,7 @@ public class IsaacEventPage extends Content {
     this.allowGroupReservations = allowGroupReservations != null ? allowGroupReservations : false;
     this.privateEvent = privateEvent;
     this.hub = hub;
+    this.meetingUrl = meetingUrl;
   }
 
   /**
@@ -487,5 +491,13 @@ public class IsaacEventPage extends Content {
 
   public void setHub(Hub hub) {
     this.hub = hub;
+  }
+
+  public String getMeetingUrl() {
+    return meetingUrl;
+  }
+
+  public void setMeetingUrl(String meetingUrl) {
+    this.meetingUrl = meetingUrl;
   }
 }

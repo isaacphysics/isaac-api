@@ -76,6 +76,8 @@ public class IsaacEventPageDTO extends ContentDTO {
   private Boolean privateEvent;
   private Hub hub;
 
+  private String meetingUrl;
+
   /**
    * @param id
    * @param title
@@ -104,6 +106,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param allowGroupReservations
    * @param privateEvent if an event should be publicly visible or hidden
    * @param hub the hub hosting the event
+   * @param meetingUrl link to virtual meeting
    */
   @JsonCreator
   public IsaacEventPageDTO(
@@ -133,7 +136,8 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("groupReservationLimit") final Integer groupReservationLimit,
       @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations,
       @JsonProperty("privateEvent") final Boolean privateEvent,
-      @JsonProperty("hub") final Hub hub) {
+      @JsonProperty("hub") final Hub hub,
+      @JsonProperty("meetingUrl") final String meetingUrl) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
         relatedContent, published, deprecated, tags, null);
 
@@ -151,6 +155,8 @@ public class IsaacEventPageDTO extends ContentDTO {
         groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
     this.allowGroupReservations = allowGroupReservations;
     this.privateEvent = privateEvent;
+    this.hub = hub;
+    this.meetingUrl = meetingUrl;
   }
 
   /**
@@ -559,5 +565,13 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   public void setHub(Hub hub) {
     this.hub = hub;
+  }
+
+  public String getMeetingUrl() {
+    return meetingUrl;
+  }
+
+  public void setMeetingUrl(String meetingUrl) {
+    this.meetingUrl = meetingUrl;
   }
 }

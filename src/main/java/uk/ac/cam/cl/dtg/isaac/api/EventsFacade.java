@@ -74,6 +74,8 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -1707,10 +1709,10 @@ public class EventsFacade extends AbstractIsaacFacade {
       throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));
     }
 
-    if (possibleEvent instanceof IsaacEventPageDTO) {
+    if (possibleEvent instanceof IsaacEventPageDTO definiteEvent) {
       // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
       // the original object else we will poison the contentManager's cache!
-      return (IsaacEventPageDTO) mapper.copy(possibleEvent);
+      return mapper.copy(definiteEvent);
     }
     return null;
   }
@@ -1742,21 +1744,46 @@ public class EventsFacade extends AbstractIsaacFacade {
   private IsaacEventPageDTO augmentEventWithBookingInformation(final HttpServletRequest request,
                                                                final ContentDTO possibleEvent)
       throws SegueDatabaseException {
-    if (possibleEvent instanceof IsaacEventPageDTO) {
-      IsaacEventPageDTO page = (IsaacEventPageDTO) possibleEvent;
+    if (possibleEvent instanceof IsaacEventPageDTO page) {
 
       try {
         RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-        page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), user.getId()));
+        BookingStatus userBookingStatus = this.bookingManager.getBookingStatus(page.getId(), user.getId());
+        page.setUserBookingStatus(userBookingStatus);
+
+        if (!isUserBookingConfirmedAndEventToday(userBookingStatus, page.getDate())) {
+          page.setMeetingUrl(null);
+        }
+
       } catch (NoUserLoggedInException e) {
         // no action as we don't require the user to be logged in.
         page.setUserBookingStatus(null);
+        page.setMeetingUrl(null);
       }
-
       page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
       return page;
     } else {
       throw new ClassCastException("The object provided was not an event.");
     }
+  }
+
+  /**
+   * A helper method used to determine if the current user booking is confirmed and date of event is today.
+   *
+   * @param userBookingStatus - status of the current user's booking
+   * @param date - start date of event from IsaacEventPageDTO.
+   * @return boolean.
+   */
+
+  private boolean isUserBookingConfirmedAndEventToday(final BookingStatus userBookingStatus, final Instant date) {
+
+    if (date == null) {
+      return false;
+    }
+
+    LocalDate today = LocalDate.now();
+    LocalDate eventStartDate = date.atZone(ZoneId.systemDefault()).toLocalDate();
+
+    return userBookingStatus == BookingStatus.CONFIRMED && eventStartDate.isEqual(today);
   }
 }
