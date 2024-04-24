@@ -10,8 +10,10 @@ import static org.easymock.EasyMock.reset;
 import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 import static uk.ac.cam.cl.dtg.isaac.dos.users.Role.STUDENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_USER;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -173,7 +176,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     } catch (NoSuchAlgorithmException e) {
       fail("Unhandled NoSuchAlgorithmException during test");
     }
-    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 
   @ParameterizedTest
@@ -286,7 +289,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
   @Nested
   class RequestRoleChange {
     @Test
-    void valid()
+    void upgradeRequestForLoggedInUser()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -297,18 +300,52 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
           "verificationDetails", "school staff url",
-          "otherDetails", "more information"
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_STUDENT_EMAIL
       );
-      RegisteredUserDTO initialUserState = currentlyStudentLogin.user;
+      RegisteredUser initialUserState = pgUsers.getById(TEST_STUDENT_ID);
       assertFalse(initialUserState.getTeacherPending());
 
       Response upgradeResponse = usersFacade.requestRoleChange(upgradeRequest, requestDetails);
 
       assertEquals(Response.Status.OK.getStatusCode(), upgradeResponse.getStatus());
-      assertTrue(upgradeResponse.readEntity(RegisteredUserDTO.class).getTeacherPending());
+      assertNull(upgradeResponse.getEntity());
+
+      RegisteredUser updatedUserState = pgUsers.getById(TEST_STUDENT_ID);
+      assertTrue(updatedUserState.getTeacherPending());
 
       // Reset flag
-      resetTestDatabaseTeacherPendingFlag(ITConstants.TEST_STUDENT_ID);
+      resetTestDatabaseTeacherPendingFlag(TEST_STUDENT_ID);
+    }
+
+    @Test
+    void upgradeRequestForOtherUser()
+        throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+        AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
+        AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
+        MFARequiredButNotConfiguredException, SQLException {
+      LoginResult currentlyStudentLogin =
+          loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL, ITConstants.TEST_TEACHER_PASSWORD);
+      HttpServletRequest upgradeRequest = createRequestWithCookies(new Cookie[] {currentlyStudentLogin.cookie});
+      replay(upgradeRequest);
+      Map<String, String> requestDetails = Map.of(
+          "verificationDetails", "school staff url",
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_STUDENT_EMAIL
+      );
+      RegisteredUser initialUserState = pgUsers.getById(TEST_STUDENT_ID);
+      assertFalse(initialUserState.getTeacherPending());
+
+      Response upgradeResponse = usersFacade.requestRoleChange(upgradeRequest, requestDetails);
+
+      assertEquals(Response.Status.OK.getStatusCode(), upgradeResponse.getStatus());
+      assertNull(upgradeResponse.getEntity());
+
+      RegisteredUser updatedUserState = pgUsers.getById(TEST_STUDENT_ID);
+      assertTrue(updatedUserState.getTeacherPending());
+
+      // Reset flag
+      resetTestDatabaseTeacherPendingFlag(TEST_STUDENT_ID);
     }
 
     @Test
@@ -352,7 +389,8 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
           "verificationDetails", "school staff url",
-          "otherDetails", "more information"
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_STUDENT_EMAIL
       );
 
       usersFacadeWithEmailMock.requestRoleChange(upgradeRequest, requestDetails);
@@ -362,11 +400,11 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
       reset(mockEmailManager);
 
       // Reset flag
-      resetTestDatabaseTeacherPendingFlag(ITConstants.TEST_STUDENT_ID);
+      resetTestDatabaseTeacherPendingFlag(TEST_STUDENT_ID);
     }
 
     @Test
-    void missingDetails()
+    void missingVerificationDetails()
         throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
         AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
         AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
@@ -376,6 +414,28 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
       HttpServletRequest upgradeRequest = createRequestWithCookies(new Cookie[] {currentlyStudentLogin.cookie});
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_STUDENT_EMAIL
+      );
+
+      Response upgradeResponse = usersFacade.requestRoleChange(upgradeRequest, requestDetails);
+
+      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), upgradeResponse.getStatus());
+      assertEquals("Missing form details.", upgradeResponse.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
+
+    @Test
+    void missingTargetUserDetails()
+        throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
+        AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
+        AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
+        MFARequiredButNotConfiguredException {
+      LoginResult currentlyStudentLogin =
+          loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
+      HttpServletRequest upgradeRequest = createRequestWithCookies(new Cookie[] {currentlyStudentLogin.cookie});
+      replay(upgradeRequest);
+      Map<String, String> requestDetails = Map.of(
+          "verificationDetails", "school staff url",
           "otherDetails", "more information"
       );
 
@@ -404,19 +464,28 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    void notLoggedIn() {
+    void notLoggedIn() throws SQLException, SegueDatabaseException {
       HttpServletRequest upgradeRequest = createRequestWithCookies(new Cookie[] {});
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
           "verificationDetails", "school staff url",
-          "otherDetails", "more information"
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_STUDENT_EMAIL
       );
+
+      RegisteredUser initialUserState = pgUsers.getById(TEST_STUDENT_ID);
+      assertFalse(initialUserState.getTeacherPending());
 
       Response upgradeResponse = usersFacade.requestRoleChange(upgradeRequest, requestDetails);
 
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), upgradeResponse.getStatus());
-      assertEquals("You must be logged in to request a role change.",
-          upgradeResponse.readEntity(SegueErrorResponse.class).getErrorMessage());
+      assertEquals(Response.Status.OK.getStatusCode(), upgradeResponse.getStatus());
+      assertNull(upgradeResponse.getEntity());
+
+      RegisteredUser updatedUserState = pgUsers.getById(TEST_STUDENT_ID);
+      assertTrue(updatedUserState.getTeacherPending());
+
+      // Reset flag
+      resetTestDatabaseTeacherPendingFlag(TEST_STUDENT_ID);
     }
 
     @Test
@@ -431,7 +500,8 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
           "verificationDetails", "school staff url",
-          "otherDetails", "more information"
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_PENDING_TEACHER_EMAIL
       );
 
       Response upgradeResponse = usersFacade.requestRoleChange(upgradeRequest, requestDetails);
@@ -453,7 +523,8 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
       replay(upgradeRequest);
       Map<String, String> requestDetails = Map.of(
           "verificationDetails", "school staff url",
-          "otherDetails", "more information"
+          "otherDetails", "more information",
+          "userEmail", ITConstants.TEST_TEACHER_EMAIL
       );
 
       Response upgradeResponse = usersFacade.requestRoleChange(upgradeRequest, requestDetails);

@@ -23,6 +23,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_GROUP_MANAGER_INIT
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SegueServerLogType;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TOO_MANY_REQUESTS;
+import static uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule.getUserMapperInstance;
 import static uk.ac.cam.cl.dtg.util.LogUtils.sanitiseExternalLogValue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -73,6 +74,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.mappers.UserMapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.RecaptchaManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -262,15 +264,14 @@ public class UsersFacade extends AbstractSegueFacade {
         // which has not made any other authenticated/logged request to Isaac beforehand.
         // This _might_ be suspicious, and this logging will help establish that.
         if (request.getSession() == null || request.getSession().getAttribute(ANONYMOUS_USER) == null) {
-          log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!",
-              ipAddress, sanitiseExternalLogValue(registeredUser.getEmail())));
+          log.error("Registration attempt from ({}) for ({}) without corresponding anonymous user!",
+              ipAddress, sanitiseExternalLogValue(registeredUser.getEmail()));
         }
 
-        return userManager.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences,
-            registeredUserContexts);
+        return userManager.createNewUser(request, registeredUser, newPassword, userPreferences, registeredUserContexts);
       } catch (SegueResourceMisuseException e) {
-        log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!",
-            RequestIpExtractor.getClientIpAddr(request)));
+        log.error("Blocked a registration attempt by ({}) after misuse limit hit!",
+            RequestIpExtractor.getClientIpAddr(request));
         return SegueErrorResponse.getRateThrottledResponse(
             "Too many registration requests. Please try again later or contact us!");
       }
@@ -718,28 +719,41 @@ public class UsersFacade extends AbstractSegueFacade {
   @Operation(summary = "Submit a contact form request.")
   public Response requestRoleChange(
       @Context final HttpServletRequest request, final Map<String, String> requestDetails) {
-    if (requestDetails == null || StringUtils.isEmpty(requestDetails.get("verificationDetails"))) {
+    if (requestDetails == null || StringUtils.isEmpty(requestDetails.get("verificationDetails"))
+        || StringUtils.isEmpty(requestDetails.get("userEmail"))) {
       return new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.").toResponse();
     }
 
+    String userEmail = requestDetails.get("userEmail");
     try {
-      RegisteredUserDTO currentUserDto = this.userManager.getCurrentRegisteredUser(request);
+      RegisteredUser targetUser = userManager.findUserByEmail(userEmail);
+      if (targetUser == null) {
+        // As this endpoint does not require authentication, do not expose whether the requested user exists
+        log.warn("A role change request was made for unknown user: {}", sanitiseExternalLogValue(userEmail));
+        return Response.ok().build();
+      }
 
-      if (currentUserDto.getTeacherPending()) {
+      if (Boolean.TRUE.equals(targetUser.getTeacherPending())) {
         return new SegueErrorResponse(
             Status.BAD_REQUEST, "You have already submitted a teacher upgrade request.").toResponse();
       }
-      if (currentUserDto.getRole() == Role.TEACHER) {
+      if (targetUser.getRole() == Role.TEACHER) {
         return new SegueErrorResponse(
             Status.BAD_REQUEST, "You already have a teacher role.").toResponse();
       }
 
-      userManager.sendRoleChangeRequestEmail(request, currentUserDto, Role.TEACHER, requestDetails);
-      RegisteredUserDTO updatedUser = userManager.updateTeacherPendingFlag(currentUserDto.getId(), true);
-      return Response.ok(updatedUser).build();
-    } catch (NoUserLoggedInException | NoUserException e) {
-      return new SegueErrorResponse(Status.UNAUTHORIZED,
-          "You must be logged in to request a role change.").toResponse();
+      UserMapper userMapper = getUserMapperInstance();
+      RegisteredUserDTO targetUserDTO = userMapper.map(targetUser);
+      userManager.sendRoleChangeRequestEmail(request, targetUserDTO, Role.TEACHER, requestDetails);
+      userManager.updateTeacherPendingFlag(targetUserDTO.getId(), true);
+      return Response.ok().build();
+    } catch (NoUserException e) {
+      // This exception is thrown after we have already checked whether a user exists for the provided email address,
+      // so something has gone very wrong
+      log.error("Could not find user with email address ({}) to set teacherPending flag."
+              + " This should have already been caught.", sanitiseExternalLogValue(userEmail));
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+          "An error occurred while trying to set the role change request flag.").toResponse();
     } catch (SegueDatabaseException e) {
       String errorMsg = "A database error has occurred while handling a role change request";
       log.error(errorMsg, e);

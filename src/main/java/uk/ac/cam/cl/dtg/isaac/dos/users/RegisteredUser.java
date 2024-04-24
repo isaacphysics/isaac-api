@@ -331,9 +331,9 @@ public class RegisteredUser extends AbstractSegueUser {
   }
 
   /**
-   * Gets the resetExpiry.
+   * Gets the email verification token.
    *
-   * @return the resetExpiry
+   * @return the email verification token
    */
   public final String getEmailVerificationToken() {
     return this.emailVerificationToken;
