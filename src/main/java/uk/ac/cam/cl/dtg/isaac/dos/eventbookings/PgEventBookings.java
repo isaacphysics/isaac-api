@@ -33,6 +33,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -619,6 +620,55 @@ public class PgEventBookings implements EventBookings {
     } catch (SQLException e) {
       throw new SegueDatabaseException(EXCEPTION_MESSAGE_POSTGRES_ERROR, e);
     }
+  }
+
+  /**
+   * Find all bookings for events.
+   *
+   * @param eventIds - the event of interest.
+   * @return an iterable with all the events matching the criteria.
+   * @throws SegueDatabaseException - if an error occurs.
+   */
+  @Override
+  public Iterable<EventBooking> findAllByEventIds(final List<String> eventIds) throws SegueDatabaseException {
+    if (!eventIds.isEmpty()) {
+      String sqlQuery = createSqlQueryForEventIds(eventIds);
+
+      try (Connection conn = ds.getDatabaseConnection();
+           PreparedStatement pst = conn.prepareStatement(sqlQuery)) {
+        // Set values for each placeholder based on the eventIds list
+        for (int i = 0; i < eventIds.size(); i++) {
+          pst.setString(i + 1, eventIds.get(i));
+        }
+
+        try (ResultSet results = pst.executeQuery()) {
+          List<EventBooking> eventBookings = new ArrayList<>();
+          while (results.next()) {
+            eventBookings.add(buildPgEventBooking(results));
+          }
+          return eventBookings;
+        }
+      } catch (SQLException e) {
+        throw new SegueDatabaseException(EXCEPTION_MESSAGE_POSTGRES_ERROR, e);
+      }
+    }
+    return new ArrayList<EventBooking>();
+  }
+
+  private String createSqlQueryForEventIds(List<String> eventIds) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("SELECT event_bookings.* FROM event_bookings JOIN users ON users.id=user_id WHERE event_id IN (");
+
+    // insert placeholders into the query
+    for (int i = 0; i < eventIds.size(); i++) {
+      if (i > 0) {
+        sb.append(", ");
+      }
+      sb.append("?");
+    }
+    sb.append(") AND NOT users.deleted");
+
+    return sb.toString();
   }
 
   @Override

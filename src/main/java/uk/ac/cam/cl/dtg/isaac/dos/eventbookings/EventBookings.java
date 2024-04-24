@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
 import jakarta.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.dos.ITransaction;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -100,6 +101,15 @@ public interface EventBookings {
    * @throws SegueDatabaseException - if an error occurs.
    */
   Iterable<EventBooking> findAllByEventId(String eventId) throws SegueDatabaseException;
+
+  /**
+   * Find all bookings for given events.
+   *
+   * @param eventIds - the events of interest.
+   * @return an iterable with all the events matching the criteria.
+   * @throws SegueDatabaseException - if an error occurs.
+   */
+  Iterable<EventBooking> findAllByEventIds(List<String> eventIds) throws SegueDatabaseException;
 
   /**
    * countAllEventBookings.

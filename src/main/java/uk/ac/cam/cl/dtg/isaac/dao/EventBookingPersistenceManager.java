@@ -6,7 +6,9 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.EXCEPTION_MESSAGE_NOT_EVENT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -126,8 +128,7 @@ public class EventBookingPersistenceManager {
    * @throws SegueDatabaseException - if an error occurs.
    */
   public DetailedEventBookingDTO updateBookingStatus(final ITransaction transaction, final String eventId,
-                                                     final Long userId,
-                                                     final BookingStatus bookingStatus,
+                                                     final Long userId, final BookingStatus bookingStatus,
                                                      final Map<String, String> additionalEventInformation)
       throws SegueDatabaseException {
     return updateBookingStatus(transaction, eventId, userId, null, bookingStatus, additionalEventInformation);
@@ -217,6 +218,42 @@ public class EventBookingPersistenceManager {
   }
 
   /**
+   * Get event bookings by event ids.
+   * WARNING: This pulls PII such as dietary info, email, and other stuff that should not (always) make it to end users.
+   *
+   * @param eventIds - of interest
+   * @return event bookings
+   * @throws SegueDatabaseException - if an error occurs.
+   */
+  public Map<String, List<DetailedEventBookingDTO>> adminGetBookingsByEventIds(final List<String> eventIds)
+      throws SegueDatabaseException {
+    try {
+      Map<String, IsaacEventPageDTO> eventDetails = new HashMap<>();
+
+      for (String eventId : eventIds) {
+        ContentDTO c = this.contentManager.getContentById(eventId);
+        if (c instanceof IsaacEventPageDTO eventPage) {
+          eventDetails.put(eventId, eventPage);
+        }
+      }
+
+      Iterable<EventBooking> bookings = dao.findAllByEventIds(eventIds);
+      Map<String, List<DetailedEventBookingDTO>> result = new HashMap<>();
+
+      for (EventBooking e : bookings) {
+        if (!result.containsKey(e.getEventId())) {
+          result.put(e.getEventId(), new ArrayList<>());
+        }
+        result.get(e.getEventId()).add(convertToDTO(e, eventDetails.get(e.getEventId())));
+      }
+      return result;
+    } catch (ContentManagerException e) {
+      log.error("Unable to create event booking dto.");
+      throw new SegueDatabaseException("Unable to create event booking dto from DO.", e);
+    }
+  }
+
+  /**
    * Get event bookings by an event id.
    * NOTE: This is a patch to stop leaking PII (see adminGetBookingsByEventId).
    *
@@ -258,8 +295,8 @@ public class EventBookingPersistenceManager {
    * @throws SegueDatabaseException - if an error occurs.
    */
   public EventBookingDTO createBooking(final ITransaction transaction, final String eventId, final Long userId,
-                                       final BookingStatus status,
-                                       final Map<String, String> additionalInformation) throws SegueDatabaseException {
+                                       final BookingStatus status, final Map<String, String> additionalInformation)
+      throws SegueDatabaseException {
     return this.convertToDTO(dao.add(transaction, eventId, userId, status, additionalInformation));
   }
 
@@ -274,8 +311,8 @@ public class EventBookingPersistenceManager {
   public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
     try {
       final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
-      List<BookingStatus> bookedStatuses = Arrays.asList(
-          BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT);
+      List<BookingStatus> bookedStatuses =
+          Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.ATTENDED, BookingStatus.ABSENT);
       return bookingByEventAndUser != null && bookedStatuses.contains(bookingByEventAndUser.getBookingStatus());
     } catch (ResourceNotFoundException e) {
       return false;
@@ -326,9 +363,9 @@ public class EventBookingPersistenceManager {
       // Note: This will pull back deleted users for the purpose of the events system
       // Note: This will also pull in PII that should be of no interest to anyone
       // DANGER: The User DTO gets silently upgraded to one containing the email address here
-      UserSummaryWithEmailAddressAndGenderDTO user = userManager
-              .convertToUserSummary(userManager.getUserDTOById(eb
-          .getUserId(), true), UserSummaryWithEmailAddressAndGenderDTO.class);
+      UserSummaryWithEmailAddressAndGenderDTO user =
+          userManager.convertToUserSummary(userManager.getUserDTOById(eb.getUserId(), true),
+              UserSummaryWithEmailAddressAndGenderDTO.class);
       result.setReservedById(eb.getReservedById());
       result.setUserBooked(user);
       result.setBookingId(eb.getId());

@@ -192,31 +192,41 @@ public class EventBookingManager {
     return this.bookingPersistenceManager.getBookingsByEventId(eventId);
   }
 
+  /**
+   * Retrieves the event booking for the specified event ID and user ID.
+   *
+   * @param eventId the ID of the event
+   * @param userId the ID of the user
+   * @return the event booking for the specified event and user, or null if no booking is found
+   * @throws SegueDatabaseException - if an error occurs
+   */
   public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId)
       throws SegueDatabaseException {
     return this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
   }
 
   /**
-   * @param eventId - of interest
-   * @return event bookings
-   * @throws SegueDatabaseException - if an error occurs.
+   * Retrieves the detailed event booking for the specified event ID.
+   *
+   * @param eventId - the ID of the event of interest
+   * @return the list of detailed event booking for the specified event, or null if no booking is found
+   * @throws SegueDatabaseException - if an error occurs
    */
   public List<DetailedEventBookingDTO> adminGetBookingsByEventId(final String eventId) throws SegueDatabaseException {
     return this.bookingPersistenceManager.adminGetBookingsByEventId(eventId);
   }
 
+  /**
+   * Retrieves the detailed event bookings for the specified event IDs.
+   *
+   * @param eventIds - the list of event IDs of interest
+   * @return a map of event IDs to their corresponding list of detailed event bookings
+   * @throws SegueDatabaseException - if an error occurs
+   */
   public Map<String, List<DetailedEventBookingDTO>> adminGetBookingsByEventIds(final List<String> eventIds)
       throws SegueDatabaseException {
-    Map<String, List<DetailedEventBookingDTO>> result = new HashMap<>();
-
-    for (String eventId : eventIds) {
-      result.put(eventId, adminGetBookingsByEventId(eventId));
-    }
-
-    return result;
+    return this.bookingPersistenceManager.adminGetBookingsByEventIds(eventIds);
   }
-
 
   /**
    * Ensure an event allows group bookings.
