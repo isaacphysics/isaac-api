@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.16 (Debian 12.16-1.pgdg120+1)
--- Dumped by pg_dump version 12.16 (Debian 12.16-1.pgdg120+1)
+-- Dumped from database version 16.2 (Debian 16.2-1.pgdg120+2)
+-- Dumped by pg_dump version 16.2 (Debian 16.2-1.pgdg120+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -27,8 +27,6 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 1	\N	Progress	Test Progress	test-progress@test.com	STUDENT	\N	FEMALE	2019-08-01 12:28:22.869	130615	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:10:37.441	2021-11-05 10:52:13.018	VERIFIED	2022-08-09 10:54:55.362	test-progress@test.com	scIF1UJeYyGRGwGrwGNUyIWuZxKBrQHd8evcAeZk	0	f	\N	f
 6	\N	Student	Test Student	test-student@test.com	STUDENT	\N	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-08-09 10:55:06.592	test-student@test.com	ZMUU7NbjhUSawOClEzb1KPEMcUA93QCkxuGejMwmE	0	f	\N	f
 10	\N	Teacher	Dave	dave-teacher@test.com	TEACHER	\N	MALE	2022-07-06 15:15:00	110158	\N	{}	\N	\N	VERIFIED	2022-08-09 10:55:35.591	dave-teacher@test.com	\N	0	f	\N	f
-7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2022-08-09 10:56:00.055	alice-student@test.com	\N	0	f	\N	f
-8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2022-08-09 10:56:12.965	bob-student@test.com	\N	0	f	\N	f
 5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	0	f	\N	f
 2	\N	Test	Test Admin	test-admin@test.com	ADMIN	\N	OTHER	2019-08-01 12:40:16.738	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:48:59.527	2022-07-06 10:48:59.673	VERIFIED	2023-07-10 09:57:41.777	test-admin@test.com	AwrblcwVoRFMWxJtV2TXAalOeA7a84TpD3rO2RmE	0	f	\N	f
 12	\N	Tutor	Test Tutor	test-tutor@test.com	TUTOR	\N	\N	2022-12-12 14:42:02.974	\N	\N	{}	\N	2022-12-12 14:42:02.974	VERIFIED	2022-12-12 14:48:40.236	test-tutor@test.com	4V115j6oH0YctCgBYXclb3WUT8D2Bz4nIaoJCasCJs	0	f	\N	f
@@ -36,6 +34,9 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 14	\N	Eventmanager	Gary	gary-event@test.com	EVENT_MANAGER	\N	\N	2023-07-10 09:57:03.121	\N	\N	{}	\N	2023-07-10 09:57:03.121	VERIFIED	2023-07-10 09:57:03.698	gary-event@test.com	JypFx7bjIJnSVwuuLGEnk1teOl3dzQWNaEe9x0g	0	f	\N	f
 9	\N	Student	Charlie	charlie-student@test.com	STUDENT	\N	MALE	2022-07-05 17:34:07	130615	\N	{}	\N	2022-07-05 17:34:31	NOT_VERIFIED	2022-08-09 10:54:15.741	charlie-student@test.com	\N	0	f	\N	f
 15	\N	Teacher	Test Unverified Caveat	test-unverified-caveat@test.com	TEACHER	\N	\N	2024-02-05 09:44:51.249	\N	N/A	{}	\N	2024-02-05 09:44:51.249	NOT_VERIFIED	\N	test-unverified-caveat@test.com	QAHQQS01ZLCj1iCFlGWyh7GS00kzVpi1mfZBRGNdsQ	0	f	GB	t
+8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2024-04-18 14:54:24.371	bob-student@test.com	\N	0	f	\N	f
+17	\N	Teacher	Harry	harry-teacher@test.com	TEACHER	\N	\N	2024-04-18 14:49:03.655	\N	N/A	{}	\N	2024-04-18 14:49:03.655	VERIFIED	2024-04-18 15:10:29.993	harry-teacher@test.com	GPnv0HAq4u2j2AvDSpxGVTaXgEa5yNWwTD0o0lBn3M	0	f	GB-SCT	f
+7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2024-04-18 15:11:01.813	alice-student@test.com	\N	0	f	\N	f
 \.
 
 
@@ -48,6 +49,7 @@ COPY public.gameboards (id, title, contents, wildcard, wildcard_position, game_f
 865072ab-9223-495f-a809-5ee2b98252e4	Test Teacher's gameboard 2 (for /assignment testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:55:34.835	[]
 5acb113a-4d8b-4a6d-9714-6992e7e3dc35	Test Teacher's gameboard 3 (for /assignment due date testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:56:35.958	[]
 43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	Teacher Dave's gameboard 1 (for additional manager privileges testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json"}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	5	BUILDER	2022-08-17 10:56:35.958	[]
+5b38117c-24ed-4f8f-9c0d-3f84eeee2229	Teacher Harry's gameboard (for assignment progress testing)	{"{\\"id\\": \\"_regression_test_\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}","{\\"id\\": \\"_assignment_test\\", \\"context\\": {\\"role\\": null, \\"stage\\": null, \\"examBoard\\": null, \\"difficulty\\": null}, \\"contentType\\": \\"isaacQuestionPage\\"}"}	{"id": "wildcard_placeholder", "url": "/about", "tags": ["computer_science"], "type": "isaacWildcard", "level": null, "title": "About us", "value": null, "author": null, "layout": null, "display": null, "version": null, "audience": null, "children": [], "encoding": null, "subtitle": null, "published": true, "deprecated": null, "expandable": null, "attribution": null, "description": "Learn about Isaac Computer Science", "relatedContent": null, "searchableContent": null, "canonicalSourceFile": "content/placeholder_wildcard.json", "prioritisedSearchableContent": null}	0	{"fields": [], "levels": [], "stages": [], "topics": [], "concepts": [], "subjects": ["computer_science"], "examBoards": [], "difficulties": [], "questionCategories": []}	17	BUILDER	2024-04-18 14:55:44.373	[]
 \.
 
 
@@ -59,6 +61,7 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 1	AB Group (Test)	5	2022-07-06 15:36:58	f	ACTIVE	\N	f	f
 2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N	f	f
 4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245	f	f
+5	AB Group 3 (Harry Teacher)	17	2024-04-18 14:53:56.312	f	ACTIVE	2024-04-18 14:53:56.312	f	f
 \.
 
 
@@ -69,6 +72,7 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 COPY public.assignments (id, gameboard_id, group_id, owner_user_id, notes, creation_date, due_date, scheduled_start_date) FROM stdin;
 2	9313cadd-d4ce-420f-9331-300e3067b45f	1	5	\N	2022-08-03 12:14:50.134	\N	\N
 3	43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	2	10	\N	2023-01-27 12:14:50.134	\N	\N
+4	5b38117c-24ed-4f8f-9c0d-3f84eeee2229	5	17	\N	2024-04-18 14:55:54.915	\N	\N
 \.
 
 
@@ -111,6 +115,8 @@ COPY public.group_memberships (group_id, user_id, created, updated, status) FROM
 2	9	\N	2022-07-06 14:38:36.064903+00	ACTIVE
 4	7	2022-12-12 14:48:52.043	2022-12-12 14:48:52.043+00	ACTIVE
 4	8	2022-12-12 14:49:25.081	2022-12-12 14:49:25.082+00	ACTIVE
+5	7	2024-04-18 14:54:04.456	2024-04-18 13:54:04.456+00	ACTIVE
+5	8	2024-04-18 14:54:32.853	2024-04-18 13:54:32.853+00	ACTIVE
 \.
 
 
@@ -142,7 +148,14 @@ COPY public.logged_events (id, user_id, anonymous_user, event_type, event_detail
 -- Data for Name: question_attempts; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
-COPY public.question_attempts (id, user_id, question_id, question_attempt, correct, "timestamp") FROM stdin;
+COPY public.question_attempts (id, user_id, question_id, question_attempt, correct, "timestamp", page_id) FROM stdin;
+2	7	_regression_test_|acc_multi_q|_regression_test_multi_	{"answer": {"type": "choice", "value": "$42$", "correct": false, "children": [], "encoding": "markdown"}, "correct": true, "questionId": "_regression_test_|acc_multi_q|_regression_test_multi_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "This is a correct choice.", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "dateAttempted": 1713449470730}	t	2024-04-18 15:11:10.73	_regression_test_
+3	7	_regression_test_|acc_numeric_q|_regresssion_test_numeric_	{"answer": {"type": "quantity", "units": "m\\\\,s^{-1}", "value": "2.01", "correct": false, "children": []}, "correct": true, "questionId": "_regression_test_|acc_numeric_q|_regresssion_test_numeric_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "This is a correct choice.", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "correctUnits": true, "correctValue": true, "dateAttempted": 1713449479419}	t	2024-04-18 15:11:19.419	_regression_test_
+4	7	_regression_test_|acc_symbolic_q|_regression_test_symbolic_	{"answer": {"type": "formula", "value": "{\\"result\\":{\\"tex\\":\\"x\\",\\"mhchem\\":\\"\\",\\"python\\":\\"x\\",\\"mathml\\":\\"<math xmlns=\\\\\\"http://www.w3.org/1998/Math/MathML\\\\\\"><mi>x</mi></math>\\",\\"uniqueSymbols\\":\\"x\\"},\\"symbols\\":[{\\"type\\":\\"Symbol\\",\\"position\\":{\\"x\\":239.5,\\"y\\":322.3333333333333},\\"expression\\":{\\"latex\\":\\"x\\",\\"python\\":\\"x\\"},\\"properties\\":{\\"letter\\":\\"x\\",\\"modifier\\":\\"\\"}}],\\"textEntry\\":true,\\"userInput\\":\\"x\\"}", "correct": false, "children": [], "pythonExpression": "x", "requiresExactMatch": false}, "correct": true, "questionId": "_regression_test_|acc_symbolic_q|_regression_test_symbolic_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "This is a correct choice. It requires an exact match!", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "dateAttempted": 1713449484110}	t	2024-04-18 15:11:24.11	_regression_test_
+5	7	_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_	{"answer": {"type": "stringChoice", "value": "hello", "correct": false, "children": [], "caseInsensitive": false}, "correct": true, "questionId": "_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "This needs a lower case \\"h\\".", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "dateAttempted": 1713449505160}	t	2024-04-18 15:11:45.16	_regression_test_
+6	7	_regression_test_|acc_chemistry_q|_regression_test_chemistry_	{"answer": {"type": "chemicalFormula", "value": "{\\"result\\":{\\"tex\\":\\"\\\\\\\\text{H} + \\\\\\\\text{Cl}\\",\\"mhchem\\":\\"H +  Cl\\",\\"python\\":\\"\\\\\\\\text{H}\\",\\"mathml\\":\\"<math xmlns=\\\\\\"http://www.w3.org/1998/Math/MathML\\\\\\"><mi>H</mi><mo>+</mo><mi>Cl</mi></math>\\",\\"uniqueSymbols\\":\\"H, Cl\\"},\\"symbols\\":[{\\"type\\":\\"ChemicalElement\\",\\"position\\":{\\"x\\":392.575,\\"y\\":531},\\"expression\\":{\\"latex\\":\\"\\\\\\\\text{H} + \\\\\\\\text{Cl}\\",\\"python\\":\\"\\\\\\\\text{H}\\"},\\"children\\":{\\"right\\":{\\"type\\":\\"BinaryOperation\\",\\"children\\":{\\"right\\":{\\"type\\":\\"ChemicalElement\\",\\"properties\\":{\\"element\\":\\"Cl\\"}}},\\"properties\\":{\\"operation\\":\\"+\\"}}},\\"properties\\":{\\"element\\":\\"H\\"}}],\\"textEntry\\":false,\\"userInput\\":\\"\\"}", "correct": false, "children": [], "mhchemExpression": "H +  Cl"}, "correct": true, "questionId": "_regression_test_|acc_chemistry_q|_regression_test_chemistry_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "This is a correct choice.", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "dateAttempted": 1713449507230}	t	2024-04-18 15:11:47.23	_regression_test_
+7	7	_regression_test_|acc_freetext_q|_regression_test_freetext_	{"answer": {"type": "stringChoice", "value": "it didn't", "correct": false, "children": [], "caseInsensitive": false}, "correct": false, "questionId": "_regression_test_|acc_freetext_q|_regression_test_freetext_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "Spoil sport!", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "dateAttempted": 1713449514726}	f	2024-04-18 15:11:54.726	_regression_test_
+8	7	_regression_test_|_regression_test_logic_	{"answer": {"type": "logicFormula", "value": "{\\"result\\":{\\"tex\\":\\"A \\\\\\\\land B\\",\\"mhchem\\":\\"\\",\\"python\\":\\"A & B\\",\\"mathml\\":\\"<math xmlns=\\\\\\"http://www.w3.org/1998/Math/MathML\\\\\\"><mo>∧</mo></math>\\",\\"uniqueSymbols\\":\\"A, B\\"},\\"symbols\\":[{\\"type\\":\\"Symbol\\",\\"position\\":{\\"x\\":284.625,\\"y\\":482},\\"expression\\":{\\"latex\\":\\"A \\\\\\\\land B\\",\\"python\\":\\"A & B\\"},\\"children\\":{\\"right\\":{\\"type\\":\\"LogicBinaryOperation\\",\\"children\\":{\\"right\\":{\\"type\\":\\"Symbol\\",\\"properties\\":{\\"letter\\":\\"B\\",\\"modifier\\":\\"\\"}}},\\"properties\\":{\\"operation\\":\\"and\\"}}},\\"properties\\":{\\"letter\\":\\"A\\",\\"modifier\\":\\"\\"}}],\\"textEntry\\":false,\\"userInput\\":\\"\\"}", "correct": false, "children": [], "pythonExpression": "A & B", "requiresExactMatch": false}, "correct": true, "questionId": "_regression_test_|_regression_test_logic_", "explanation": {"tags": [], "type": "content", "children": [{"tags": [], "type": "content", "value": "This simplifies to $\\\\and{A}{B}$!", "children": [], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}], "encoding": "markdown", "canonicalSourceFile": "content/_regression_test_.json"}, "dateAttempted": 1713449529969}	t	2024-04-18 15:12:09.969	_regression_test_
 \.
 
 
@@ -213,6 +226,8 @@ COPY public.user_associations (user_id_granting_permission, user_id_receiving_pe
 9	10	2022-07-06 16:06:11
 7	12	2022-12-12 14:48:52.006
 8	12	2022-12-12 14:49:25.033
+7	17	2024-04-18 14:54:04.54
+8	17	2024-04-18 14:54:32.886
 \.
 
 
@@ -226,6 +241,7 @@ ABTOK8	8	1
 BCTOK8	8	2
 BCTOK9	9	2
 VJ94X2	12	4
+BRUHB7	17	5
 \.
 
 
@@ -249,6 +265,7 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 13	fI3OzX0PbXWJPJGWN7d6GgXIxqDd8DNisGyF0cFWxhuS6uIBk2HvhRcAdjh/kadD4LIlYroD9Crd9zMT6TsfSQ==	VSpsq1+V48pHiZV/5lv4uw==	SegueSCryptv1	\N	\N	2023-07-10 08:39:06.107684+00	2023-07-10 08:39:06.107+00
 14	IzlHJX0RyCeY/k7YLQR27VZowm9SxTUVZbkLgZRi2Q6hnGzrEQUwh9fewOo73pyt+WAQJ5URPZ7azUhHu1RXWA==	7S8zRdqDuVK9E7KQj58TmA==	SegueSCryptv1	\N	\N	2023-07-10 08:57:03.393026+00	2023-07-10 08:57:03.391+00
 15	1OJ/FMVDtXI7gcC/t575nqtjDlzZLHvdEA3zgTGPdRzss2aK2B8o/HaQPy3OkjaAt5XWHA307g69G20qMYKRVQ==	yCg4zei908HorrK7y5orHg==	SegueSCryptv1	\N	\N	2024-02-05 09:44:51.738573+00	2024-02-05 09:44:51.737+00
+17	TLq64li1MO0CnX5Il38lpNVKMrpfkLNHjIEYmVHjr9zVUfz6QIq/R5zMfXslOyL0EZn4Gk1ku7WPLpWIRfOd/w==	V4Qq8IEsjT20s2ohupm3xQ==	SegueSCryptv1	\N	\N	2024-04-18 13:49:04.093301+00	2024-04-18 13:49:04.093+00
 \.
 
 
@@ -269,6 +286,8 @@ COPY public.user_gameboards (user_id, gameboard_id, created, last_visited) FROM 
 5	865072ab-9223-495f-a809-5ee2b98252e4	2022-08-17 10:55:34.931	2022-08-17 10:55:34.931
 5	5acb113a-4d8b-4a6d-9714-6992e7e3dc35	2022-08-17 10:56:36.076	2022-08-17 10:56:40.053
 10	43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45	2023-01-26 10:16:37.553	2023-01-26 10:16:39.721
+17	5b38117c-24ed-4f8f-9c0d-3f84eeee2229	2024-04-18 14:55:44.492	2024-04-18 14:55:50.69
+7	5b38117c-24ed-4f8f-9c0d-3f84eeee2229	2024-04-18 15:00:11.754	2024-04-18 15:00:11.754
 \.
 
 
@@ -417,7 +436,7 @@ COPY quartz_cluster.qrtz_simprop_triggers (sched_name, trigger_name, trigger_gro
 -- Name: assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.assignments_id_seq', 2, true);
+SELECT pg_catalog.setval('public.assignments_id_seq', 4, true);
 
 
 --
@@ -431,7 +450,7 @@ SELECT pg_catalog.setval('public.event_bookings_id_seq', 4, true);
 -- Name: groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.groups_id_seq', 4, true);
+SELECT pg_catalog.setval('public.groups_id_seq', 5, true);
 
 
 --
@@ -452,7 +471,7 @@ SELECT pg_catalog.setval('public.logged_events_id_seq', 1, true);
 -- Name: question_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.question_attempts_id_seq', 1, true);
+SELECT pg_catalog.setval('public.question_attempts_id_seq', 8, true);
 
 
 --
@@ -487,7 +506,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 16, true);
+SELECT pg_catalog.setval('public.users_id_seq', 17, true);
 
 
 --

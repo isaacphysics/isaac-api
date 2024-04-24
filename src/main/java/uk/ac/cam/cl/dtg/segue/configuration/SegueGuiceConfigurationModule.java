@@ -167,6 +167,7 @@ import jakarta.servlet.ServletContextListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -952,6 +953,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return countryLookupManager;
     }
 
+
+
     /**
      * Gets the instance of the dozer mapper object.
      *
@@ -1421,5 +1424,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             injector = Guice.createInjector(new SegueGuiceConfigurationModule());
         }
         return injector;
+    }
+
+    @Provides
+    @Singleton
+    public static Clock getDefaultClock() {
+        return Clock.systemUTC();
     }
 }
