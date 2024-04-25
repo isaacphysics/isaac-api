@@ -17,12 +17,12 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -54,14 +54,15 @@ public class IsaacQuiz extends SeguePage {
             @JsonProperty("relatedContent") List<String> relatedContent,
             @JsonProperty("version") boolean published,
             @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("supersededBy") String supersededBy,
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
             @JsonProperty("visibleToStudents") boolean visibleToStudents,
             @JsonProperty("hiddenFromRoles") List<String> hiddenFromRoles,
-            @JsonProperty("rubric") Content rubric){
+            @JsonProperty("rubric") Content rubric) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
-                relatedContent, published, deprecated, tags, level);
+                relatedContent, published, deprecated, supersededBy, tags, level);
 
         this.visibleToStudents = visibleToStudents;
         this.hiddenFromRoles = hiddenFromRoles;

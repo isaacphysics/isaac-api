@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Image;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 import uk.ac.cam.cl.dtg.util.locations.Location;
@@ -38,7 +39,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 @DTOMapping(IsaacEventPageDTO.class)
 @JsonContentType("isaacEventPage")
-public class IsaacEventPage extends Content {
+public class IsaacEventPage extends SeguePage {
     private Date date;
     private Date end_date;
     private Date bookingDeadline;
@@ -82,6 +83,7 @@ public class IsaacEventPage extends Content {
                           @JsonProperty("relatedContent") List<String> relatedContent,
                           @JsonProperty("version") boolean published,
                           @JsonProperty("deprecated") Boolean deprecated,
+                          @JsonProperty("supersededBy") String supersededBy,
                           @JsonProperty("tags") Set<String> tags,
                           @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
                           @JsonProperty("bookingDeadline") Date bookingDeadline,
@@ -95,7 +97,7 @@ public class IsaacEventPage extends Content {
                           @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
                           @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
-                null, relatedContent, published, deprecated, tags, null);
+                null, relatedContent, published, deprecated, supersededBy, tags, null);
 
         this.date = date;
         this.end_date = end_date;
