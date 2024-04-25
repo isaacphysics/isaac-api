@@ -164,14 +164,14 @@ public class IsaacTest {
         quizSection2.setId("studentQuiz|section2");
         quizSection2.setChildren(ImmutableList.of(question2, question3));
 
-        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
-        studentQuizPreQuizAnswerChange = new IsaacQuizDTO("studentQuizPreQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
-        studentQuizPostQuizAnswerChange = new IsaacQuizDTO("studentQuizPostQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
-        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, false, ImmutableList.of("STUDENT"), null, null);
-        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, null, true, null, QuizFeedbackMode.DETAILED_FEEDBACK, null);
+        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
+        studentQuizPreQuizAnswerChange = new IsaacQuizDTO("studentQuizPreQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
+        studentQuizPostQuizAnswerChange = new IsaacQuizDTO("studentQuizPostQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
+        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, null, false, ImmutableList.of("STUDENT"), null, null);
+        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // A bit scrappy, but hopefully sufficient.
-        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, true, null, null);
+        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, null, true, null, null);
 
         student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false);
         student.setRole(Role.STUDENT);

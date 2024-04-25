@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -196,7 +197,7 @@ public class StatisticsManager implements IStatisticsManager {
         Map<Stage, Map<Difficulty, Integer>> questionsCorrectByStageAndDifficultyStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
-        List<ContentDTO> incompleteQuestionPages = Lists.newArrayList();
+        List<IsaacQuestionPageDTO> incompleteQuestionPages = Lists.newArrayList();
         Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
@@ -368,7 +369,7 @@ public class StatisticsManager implements IStatisticsManager {
                 .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
         Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
         List<ContentSummaryDTO> questionsNotCompleteList = incompleteQuestionPages.stream()
-            .sorted(Comparator.comparing(ContentDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
+            .sorted(Comparator.comparing(SeguePageDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
             .limit(PROGRESS_MAX_RECENT_QUESTIONS)
             .map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
 
