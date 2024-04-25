@@ -1219,7 +1219,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-                                                                              final GitContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
+                                                                              final GitContentManager contentManager, final MapperFacade mapper, final ContentMapper objectMapper,
                                                                               final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
