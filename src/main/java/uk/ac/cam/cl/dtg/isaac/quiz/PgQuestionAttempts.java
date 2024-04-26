@@ -251,7 +251,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setArray(1, userIdArray);
 
             try (ResultSet results = pst.executeQuery()) {
-                return resultsToMapLightweightValidationResponseByUserPagePart(results);
+                augmentMapLightweightValidationResponseByUserPagePartWithResults(mapToReturn, results);
+                return mapToReturn;
             } finally {
                 userIdArray.free();
             }
@@ -291,7 +292,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 pst.setArray(2, pageIdArray);
 
                 try (ResultSet results = pst.executeQuery()) {
-                    return resultsToMapLightweightValidationResponseByUserPagePart(results);
+                    augmentMapLightweightValidationResponseByUserPagePartWithResults(mapToReturn, results);
+                    return mapToReturn;
                 } finally {
                     userIdArray.free();
                     pageIdArray.free();
@@ -420,11 +422,15 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
      *  Turn a ResultSet into LightweightValidationResponses (for multiple users).
      *
      * @param results - a ResultSet from the question_attempts table.
-     * @return - Map of Users -> Map of Page IDs -> Map of Part IDs -> List of attempts by the user at that part.
+     * @param mapToAugment - the Map to augment with the ResultSet data, allowing it to be initialised in advance with
+     *                    empty entries for each user, for example.
+     *                    Map of Users -> Map of Page IDs -> Map of Part IDs -> List of attempts by the user at that part.
      * @throws SQLException - on database error.
      */
-    private Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> resultsToMapLightweightValidationResponseByUserPagePart(ResultSet results) throws SQLException {
-        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn = Maps.newHashMap();
+    private void augmentMapLightweightValidationResponseByUserPagePartWithResults(
+            final Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToAugment,
+            final ResultSet results) throws SQLException {
+
         while (results.next()) {
             LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
 
@@ -433,7 +439,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             Long userId = results.getLong("user_id");
 
             Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                    = mapToReturn.computeIfAbsent(userId, k -> Maps.newHashMap());
+                    = mapToAugment.computeIfAbsent(userId, k -> Maps.newHashMap());
 
             Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage
                     = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
@@ -443,7 +449,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             listOfResponses.add(partialQuestionAttempt);
         }
-        return mapToReturn;
     }
 
     /**
