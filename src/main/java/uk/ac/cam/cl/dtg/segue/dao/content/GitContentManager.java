@@ -321,9 +321,10 @@ public class GitContentManager {
 
     public final ResultsWrapper<ContentDTO> searchForContent(
             @Nullable final String searchString,
-            @Nullable final Set<String> ids, @Nullable final Set<String> tags, @Nullable Set<String> levels,
-            @Nullable Set<String> stages, @Nullable Set<String> difficulties, @Nullable Set<String> examBoards,
-            final Set<String> contentTypes, final Integer startIndex, final Integer limit, final boolean showNoFilterContent
+            @Nullable final Set<String> ids, @Nullable final Set<String> tags, @Nullable final Set<String> books,
+            @Nullable Set<String> levels, @Nullable Set<String> stages, @Nullable Set<String> difficulties,
+            @Nullable Set<String> examBoards, final Set<String> contentTypes, final Integer startIndex,
+            final Integer limit, final boolean showNoFilterContent
     ) throws ContentManagerException {
 
         // Create a set of search terms from the initial search string
@@ -361,6 +362,7 @@ public class GitContentManager {
         Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {{
             this.put(ID_FIELDNAME, ids);
             this.put(TAGS_FIELDNAME, tags);
+            this.put(BOOKS_FIELDNAME, books);
             this.put(LEVEL_FIELDNAME, levels);
             this.put(STAGE_FIELDNAME, stages);
             this.put(DIFFICULTY_FIELDNAME, difficulties);
@@ -369,10 +371,18 @@ public class GitContentManager {
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                boolean applyOrFilterBetweenValues = Constants.ID_FIELDNAME.equals(entry.getKey());
-                searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
-                        .strategy(Strategy.SIMPLE)
-                        .required(!applyOrFilterBetweenValues));
+                if (BOOKS_FIELDNAME.equals(entry.getKey())) {
+                    // books are stored as a type of tag, but unlike other tags are required fields in the search
+                    // FIXME when content team want multiple tags per question page, extend this to support "required tags" vs "optional tags"
+                    searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
+                            .strategy(Strategy.SIMPLE)
+                            .required(true));
+                } else {
+                    boolean applyOrFilterBetweenValues = Constants.ID_FIELDNAME.equals(entry.getKey());
+                    searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
+                            .strategy(Strategy.SIMPLE)
+                            .required(!applyOrFilterBetweenValues));
+                }
             }
         }
 
