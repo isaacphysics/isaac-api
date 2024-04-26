@@ -252,6 +252,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             try (ResultSet results = pst.executeQuery()) {
                 return resultsToMapLightweightValidationResponseByUserPagePart(results);
+            } finally {
+                userIdArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -292,6 +294,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                     return resultsToMapLightweightValidationResponseByUserPagePart(results);
                 } finally {
                     userIdArray.free();
+                    pageIdArray.free();
                 }
             }
         } catch (SQLException e) {
