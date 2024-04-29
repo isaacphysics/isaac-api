@@ -32,7 +32,6 @@ import java.util.Set;
 @JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPageDTO extends SeguePageDTO {
     protected Float passMark;
-    protected String supersededBy;
     protected Integer difficulty;
 
     @JsonCreator
@@ -52,12 +51,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
                 attribution, relatedContent, published, deprecated, supersededBy, tags, level);
 
         this.passMark = passMark;
-        this.supersededBy = supersededBy;
         this.difficulty = difficulty;
     }
 
     /**
-     * Default constructor required for Jackson
+     * Default constructor required for Jackson.
      */
     public IsaacQuestionPageDTO() {
 
@@ -71,12 +69,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
         this.passMark = passMark;
     }
 
-    public String getSupersededBy() { return supersededBy; }
+    public Integer getDifficulty() {
+        return difficulty;
+    }
 
-    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
-
-    public Integer getDifficulty() { return difficulty; }
-
-    public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
-
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+    }
 }
