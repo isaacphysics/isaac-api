@@ -439,6 +439,7 @@ public final class Constants {
     public static final String SUBTITLE_FIELDNAME = "subtitle";
     public static final String TYPE_FIELDNAME = "type";
     public static final String TAGS_FIELDNAME = "tags";
+    public static final String BOOKS_FIELDNAME = "books";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
     public static final String DATE_FIELDNAME = "date";
