@@ -15,16 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.List;
-import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.Set;
 
 /**
  * IsaacQuestion Page DTO.
@@ -33,7 +32,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPageDTO extends SeguePageDTO {
     protected Float passMark;
-    protected String supersededBy;
     protected Integer difficulty;
 
     @JsonCreator
@@ -50,15 +48,14 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
             @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, tags, level);
+                attribution, relatedContent, published, deprecated, supersededBy, tags, level);
 
         this.passMark = passMark;
-        this.supersededBy = supersededBy;
         this.difficulty = difficulty;
     }
 
     /**
-     * Default constructor required for Jackson
+     * Default constructor required for Jackson.
      */
     public IsaacQuestionPageDTO() {
 
@@ -72,12 +69,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
         this.passMark = passMark;
     }
 
-    public String getSupersededBy() { return supersededBy; }
+    public Integer getDifficulty() {
+        return difficulty;
+    }
 
-    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
-
-    public Integer getDifficulty() { return difficulty; }
-
-    public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
-
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+    }
 }
