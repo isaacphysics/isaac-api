@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import static java.time.ZoneOffset.UTC;
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
@@ -9,12 +10,18 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.fail;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_ADMIN_ID;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_FIVE_MINUTES;
 import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 import static uk.ac.cam.cl.dtg.util.ReflectionUtils.getClasses;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
@@ -27,6 +34,8 @@ import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.SystemUtils;
@@ -90,7 +99,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingExcep
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -368,10 +376,9 @@ public abstract class IsaacIntegrationTest {
   }
 
   protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password)
-      throws NoCredentialsAvailableException, NoUserException, SegueDatabaseException,
-      AuthenticationProviderMappingException, IncorrectCredentialsProvidedException,
-      AdditionalAuthenticationRequiredException, InvalidKeySpecException, NoSuchAlgorithmException,
-      MFARequiredButNotConfiguredException {
+      throws NoCredentialsAvailableException, SegueDatabaseException, AuthenticationProviderMappingException,
+      IncorrectCredentialsProvidedException, AdditionalAuthenticationRequiredException, InvalidKeySpecException,
+      NoSuchAlgorithmException, MFARequiredButNotConfiguredException {
     Capture<Cookie> capturedUserCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
     HttpServletRequest userLoginRequest = createNiceMock(HttpServletRequest.class);
@@ -402,6 +409,38 @@ public abstract class IsaacIntegrationTest {
     public LoginResult(final RegisteredUserDTO user, final Cookie cookie) {
       this.user = user;
       this.cookie = cookie;
+    }
+  }
+
+  /**
+   * As the integration tests do not currently support MFA login, we cannot use the normal login process and have to
+   * create cookies manually when testing admin accounts.
+   *
+   * @return a Cookie loaded with session information for the test admin user.
+   * @throws JsonProcessingException if the cookie serialisation fails
+   */
+  protected Cookie createManualCookieForAdmin() throws JsonProcessingException {
+    DateTimeFormatter sessionDateFormat = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT).withZone(UTC);
+    String userId = String.valueOf(TEST_ADMIN_ID);
+    String hmacKey = properties.getProperty(HMAC_SALT);
+    int sessionExpiryTimeInSeconds = NUMBER_SECONDS_IN_FIVE_MINUTES;
+
+    String sessionExpiryDate = sessionDateFormat.format(Instant.now().plusSeconds(sessionExpiryTimeInSeconds));
+
+    Map<String, String> sessionInformation =
+        userAuthenticationManager.prepareSessionInformation(userId, "0", sessionExpiryDate, hmacKey, null);
+    return userAuthenticationManager.createAuthCookie(sessionInformation, sessionExpiryTimeInSeconds);
+  }
+
+  protected HttpServletRequest prepareAdminRequest() {
+    try {
+      Cookie adminSessionCookie = createManualCookieForAdmin();
+      HttpServletRequest adminRequest = createRequestWithCookies(new Cookie[] {adminSessionCookie});
+      replay(adminRequest);
+      return adminRequest;
+    } catch (JsonProcessingException e) {
+      fail(e);
+      return null;
     }
   }
 }

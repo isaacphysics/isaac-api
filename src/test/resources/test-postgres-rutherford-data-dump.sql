@@ -34,6 +34,7 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 5	\N	Teacher	Test Teacher	test-teacher@test.com	TEACHER	\N	FEMALE	2019-08-01 12:51:05.416	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-08-03 12:08:57.662	2022-08-03 12:08:57.741	VERIFIED	2022-08-17 10:54:22.763	test-teacher@test.com	m9A8P0VbpFQnzOdXOywx75lpaWSpssLmQ779ij2b5LQ	f	f
 12	\N	Tutor	Test Tutor	test-tutor@test.com	TUTOR	\N	\N	2022-12-12 14:42:02.974	\N	\N	{}	\N	2022-12-12 14:42:02.974	NOT_VERIFIED	2022-12-12 14:48:40.236	test-tutor@test.com	4V115j6oH0YctCgBYXclb3WUT8D2Bz4nIaoJCasCJs	f	f
 13	\N	Student	Pending Teacher	pending-teacher@test.com	STUDENT	\N	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-08-09 10:55:06.592	pending-teacher@test.com	\N	f	t
+14	\N	Student	Deletable	deletable-student@test.com	STUDENT	2010-04-17	MALE	2019-08-01 12:51:39.981	110158	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:12:13.351	2021-10-04 14:12:13.384	VERIFIED	2022-08-09 10:55:06.592	deletable-student@test.com	ZMUU7NbjhUSawOClEzb1KPEMcUA93QCkxuGejMwmE	f	f
 \.
 
 
@@ -575,7 +576,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 13, true);
+SELECT pg_catalog.setval('public.users_id_seq', 14, true);
 
 
 --

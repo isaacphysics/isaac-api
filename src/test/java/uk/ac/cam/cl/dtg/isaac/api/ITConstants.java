@@ -44,6 +44,9 @@ public final class ITConstants {
   public static final String TEST_STUDENT_PASSWORD = "test1234";
   public static final long TEST_STUDENT_ID = 6L;
 
+  public static final String DELETION_TEST_STUDENT_EMAIL = "deletable-student@test.com";
+  public static final long DELETION_TEST_STUDENT_ID = 14L;
+
   // QuizFacade Additional Test Students
   // (1) Test Student is not in the QuizFacade assignment group and will make no free attempts
   // (2) Alice is the first member of QuizFacade assignment group, has no unassigned quiz attempts
