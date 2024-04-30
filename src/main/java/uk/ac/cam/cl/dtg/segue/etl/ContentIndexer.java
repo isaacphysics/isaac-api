@@ -408,14 +408,18 @@ public class ContentIndexer {
 
         // hack to get cards to count as children:
         if (content instanceof IsaacCardDeck) {
-            for (IsaacCard card : ((IsaacCardDeck) content).getCards()) {
+            IsaacCardDeck cardDeck = (IsaacCardDeck) content;
+            for (IsaacCard card : cardDeck.getCards()) {
                 this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
             }
         }
 
         if (content instanceof InlineRegion) {
-            for (IsaacQuestionBase question : ((InlineRegion) content).getInlineQuestions()) {
-                this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
+            InlineRegion inlineRegion = (InlineRegion) content;
+            if (inlineRegion.getInlineQuestions() != null) {
+                for (IsaacQuestionBase question : inlineRegion.getInlineQuestions()) {
+                    this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
+                }
             }
         }
 
@@ -621,6 +625,11 @@ public class ContentIndexer {
      *            - numeric question from which to extract units.
      */
     private synchronized void registerUnits(final IsaacNumericQuestion q, Map<String, String> allUnits, Map<String, String> publishedUnits) {
+
+        if (q.getChoices() == null) {
+            // This question cannot contain units.
+            return;
+        }
 
         HashMap<String, String> newUnits = Maps.newHashMap();
 
