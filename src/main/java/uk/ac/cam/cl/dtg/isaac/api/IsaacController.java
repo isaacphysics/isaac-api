@@ -185,7 +185,7 @@ public class IsaacController extends AbstractIsaacFacade {
             }
 
             ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
-                    searchString, null, null, null, null, null, null, null,
+                    searchString, null, null, null, null, null, null, null, null, null, null,
                     new HashSet<>(documentTypes), startIndex, limit, showNoFilterContent);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()

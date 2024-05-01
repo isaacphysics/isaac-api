@@ -347,9 +347,16 @@ public class IsaacSearchInstructionBuilder {
             }
 
             // Add all generated sub-instructions to parent instruction as either "should" or "must" depending on the
-            // 'required' flag.
+            // 'required' and 'optional' flag.
             if (searchInField.getRequired()) {
                 generatedSubInstructions.forEach(instruction::must);
+            } else if (searchInField.isAtLeastOne()) {
+                // Create a boolean sub-instruction such that at least one term must match
+                // This means a should 1 match clause attached to the parent as a must match
+                BooleanInstruction subInstruction = new BooleanInstruction();
+                generatedSubInstructions.forEach(subInstruction::should);
+                subInstruction.setMinimumShouldMatch(1);
+                instruction.must(subInstruction);
             } else {
                 generatedSubInstructions.forEach(instruction::should);
             }
