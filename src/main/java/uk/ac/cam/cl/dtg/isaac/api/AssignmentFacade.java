@@ -1000,7 +1000,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             List<AssignmentStatusDTO> assigmentStatuses = new ArrayList<>();
             Map<String, GameboardDTO> gameboardMap = new HashMap<>();
-            Map<Long, UserGroupDTO> groupMap = new HashMap<>();
+            Map<Long, UserGroupDTO> groupMap = groupManager.getGroupsByIds(
+                    assignmentDTOsFromClient.stream().map(AssignmentDTO::getGroupId).collect(Collectors.toList()),
+                    true
+                ).stream().collect(Collectors.toMap(UserGroupDTO::getId, Function.identity()));
 
             for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
                 if (null == assignmentDTO.getGameboardId() || null == assignmentDTO.getGroupId()) {
@@ -1059,17 +1062,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                         gameboardMap.put(gameboard.getId(), gameboard);
                     }
+                    assignmentDTO.setGameboard(gameboard);
+
                     // Get the group:
                     UserGroupDTO assigneeGroup = groupMap.get(assignmentDTO.getGroupId());
                     if (null == assigneeGroup) {
-                        assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
-                        if (null == assigneeGroup) {
-                            assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
-                            continue;
-                        }
-                        groupMap.put(assigneeGroup.getId(), assigneeGroup);
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
+                        continue;
                     }
-
                     if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
                             && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
@@ -1077,6 +1077,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     }
 
                     assignmentDTO.setOwnerUserId(currentlyLoggedInUser.getId());
+                    assignmentDTO.setAssignerSummary(userManager.convertToUserSummaryObject(currentlyLoggedInUser));
                     assignmentDTO.setCreationDate(null);
                     assignmentDTO.setId(null);
 
@@ -1103,6 +1104,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             return Response.ok(assigmentStatuses).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to assign work", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error assigning work to groups.").toResponse();
         }
     }
 
