@@ -14,6 +14,8 @@ public interface IAssignmentLike {
 
     Long getOwnerUserId();
 
+    UserSummaryDTO getAssignerSummary();
+
     void setAssignerSummary(UserSummaryDTO userSummaryDTO);
 
     Date getCreationDate();
