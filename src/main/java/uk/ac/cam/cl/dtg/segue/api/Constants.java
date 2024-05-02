@@ -243,7 +243,7 @@ public final class Constants {
      */
     public enum BooleanOperator {
         AND, OR, NOT
-    };
+    }
 
     public static final String SCHOOLS_INDEX_BASE = "schools";
     public enum SCHOOLS_INDEX_TYPE {

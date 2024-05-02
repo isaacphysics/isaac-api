@@ -361,18 +361,20 @@ public class GitContentManager {
 
 
         // Additional per-field filters if specified
-        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {{
-            this.put(ID_FIELDNAME, ids);
-            this.put(TAGS_FIELDNAME, tags);
-            this.put(SUBJECTS_FIELDNAME, subjects);
-            this.put(FIELDS_FIELDNAME, fields);
-            this.put(TOPICS_FIELDNAME, topics);
-            this.put(BOOKS_FIELDNAME, books);
-            this.put(LEVEL_FIELDNAME, levels);
-            this.put(STAGE_FIELDNAME, stages);
-            this.put(DIFFICULTY_FIELDNAME, difficulties);
-            this.put(EXAM_BOARD_FIELDNAME, examBoards);
-        }};
+        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {
+            {
+                this.put(ID_FIELDNAME, ids);
+                this.put(TAGS_FIELDNAME, tags);
+                this.put(SUBJECTS_FIELDNAME, subjects);
+                this.put(FIELDS_FIELDNAME, fields);
+                this.put(TOPICS_FIELDNAME, topics);
+                this.put(BOOKS_FIELDNAME, books);
+                this.put(LEVEL_FIELDNAME, levels);
+                this.put(STAGE_FIELDNAME, stages);
+                this.put(DIFFICULTY_FIELDNAME, difficulties);
+                this.put(EXAM_BOARD_FIELDNAME, examBoards);
+            }
+        };
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
