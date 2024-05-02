@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 /**
@@ -33,6 +34,9 @@ public class AssignmentDTO implements IAssignmentLike {
   private String notes;
   private UserSummaryDTO assignerSummary;
   private Instant creationDate;
+
+  // dueDate is not read correctly as an epoch by the jackson converter, this forces conversion
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant dueDate;
   private Instant scheduledStartDate;
 
