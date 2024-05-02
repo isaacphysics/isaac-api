@@ -125,8 +125,8 @@ public class EmailService {
                     .filter(user -> GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus()))
                     .collect(Collectors.toList());
 
-            // Send the email using MailGun if owner on list:
-            if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
+            // Send the email using MailGun if owner on list or if scheduled:
+            if (this.userInMailGunBetaList(assignmentOwnerDTO) || assignment.getScheduledStartDate() != null) {
                 Iterables.partition(usersToEmail, MAILGUN_BATCH_SIZE)
                     .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
                         userBatch,
