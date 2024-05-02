@@ -17,10 +17,10 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.Instant;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+
 
 /**
  * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
