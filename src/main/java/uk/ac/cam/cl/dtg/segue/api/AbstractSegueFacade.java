@@ -302,6 +302,23 @@ public abstract class AbstractSegueFacade {
     }
 
     /**
+     * Is the current user in a staff or event leader role.
+     *
+     * @param userManager
+     *            - Instance of User Manager
+     * @param userDTO
+     *            - for the user of interest
+     * @return true if user is logged in as an admin or event leader, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserStaffOrEventLeader(final UserAccountManager userManager, final RegisteredUserDTO userDTO)
+        throws NoUserLoggedInException {
+        return userManager.checkUserRole(userDTO,
+                Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER, Role.CONTENT_EDITOR, Role.EVENT_LEADER));
+    }
+
+    /**
      * Is the current user anything other than a tutor or a student.
      *
      * @param userManager
