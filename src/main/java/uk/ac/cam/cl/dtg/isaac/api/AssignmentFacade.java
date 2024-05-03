@@ -988,13 +988,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Assert user is allowed to set assignments - tutors and above are allowed to do so
             boolean userIsTutorOrAbove = isUserTutorOrAbove(userManager, currentlyLoggedInUser);
-            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+            boolean userIsStaffOrEventLeader = isUserStaffOrEventLeader(userManager, currentlyLoggedInUser);
             if (!userIsTutorOrAbove) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a tutor or teacher account to create groups and set assignments!").toResponse();
             }
 
             // Assert that there is at least one assignment, and that multiple assignments are only set by staff
-            if (assignmentDTOsFromClient.size() == 0) {
+            if (assignmentDTOsFromClient.isEmpty()) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You need to specify at least one assignment to set.").toResponse();
             }
 
@@ -1011,9 +1011,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     continue;
                 }
 
-                // Staff can set assignment notes up to a max length of MAX_NOTE_CHAR_LENGTH, teachers cannot set notes.
+                // Staff and event leaders can set assignment notes up to a max length of MAX_NOTE_CHAR_LENGTH,
+                // teachers cannot set notes.
                 boolean notesIsNullOrEmpty = null == assignmentDTO.getNotes() || assignmentDTO.getNotes().isEmpty();
-                if (userIsStaff) {
+                if (userIsStaffOrEventLeader) {
                     boolean notesIsTooLong = null != assignmentDTO.getNotes() && assignmentDTO.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
                     if (notesIsTooLong) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
