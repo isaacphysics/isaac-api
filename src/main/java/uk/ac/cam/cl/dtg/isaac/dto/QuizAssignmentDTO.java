@@ -176,6 +176,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      * Gets the assignerSummary.
      * @return the assignerSummary
      */
+    @Override
     public UserSummaryDTO getAssignerSummary() {
         return assignerSummary;
     }
