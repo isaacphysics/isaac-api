@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <segue.version>v3.15.4-SNAPSHOT</segue.version>
         <log4j.version>2.22.1</log4j.version>
-        <resteasy.version>6.2.7.Final</resteasy.version>
+        <resteasy.version>6.2.8.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
         <oauth-client.version>1.35.0</oauth-client.version>
         <jackson.version>2.17.0</jackson.version>
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.1.0-M1</version>
+            <version>6.1.0-M2</version>
         </dependency>
 
         <dependency>
@@ -380,7 +380,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.17.6</version>
+            <version>7.17.20</version>
         </dependency>
 
         <dependency>
@@ -426,7 +426,7 @@
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-            <version>3.0.0-M1</version>
+            <version>3.0.0</version>
         </dependency>
 
         <!-- Graph checker code -->
@@ -445,7 +445,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.77</version>
+            <version>1.78.1</version>
         </dependency>
 
         <dependency>
@@ -615,7 +615,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <version>0.8.12</version>
                 <executions>
                     <execution>
                         <id>before-unit-test-execution</id>
@@ -705,17 +705,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-core</artifactId>
                 <version>3.8.6</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-smile</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-cbor</artifactId>
-                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

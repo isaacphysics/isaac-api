@@ -987,19 +987,22 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // Assert user is allowed to set assignments - tutors and above are allowed to do so
             boolean userIsTutorOrAbove = isUserTutorOrAbove(userManager, currentlyLoggedInUser);
-            boolean userIsStaff = isUserStaff(userManager, currentlyLoggedInUser);
+            boolean userIsStaffOrEventLeader = isUserStaffOrEventLeader(userManager, currentlyLoggedInUser);
             if (!userIsTutorOrAbove) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You need a tutor or teacher account to create groups and set assignments!").toResponse();
             }
 
             // Assert that there is at least one assignment, and that multiple assignments are only set by staff
-            if (assignmentDTOsFromClient.size() == 0) {
+            if (assignmentDTOsFromClient.isEmpty()) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You need to specify at least one assignment to set.").toResponse();
             }
 
             List<AssignmentStatusDTO> assigmentStatuses = new ArrayList<>();
             Map<String, GameboardDTO> gameboardMap = new HashMap<>();
-            Map<Long, UserGroupDTO> groupMap = new HashMap<>();
+            Map<Long, UserGroupDTO> groupMap = groupManager.getGroupsByIds(
+                    assignmentDTOsFromClient.stream().map(AssignmentDTO::getGroupId).collect(Collectors.toList()),
+                    true
+                ).stream().collect(Collectors.toMap(UserGroupDTO::getId, Function.identity()));
 
             for (AssignmentDTO assignmentDTO : assignmentDTOsFromClient) {
                 if (null == assignmentDTO.getGameboardId() || null == assignmentDTO.getGroupId()) {
@@ -1007,9 +1010,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     continue;
                 }
 
-                // Staff can set assignment notes up to a max length of MAX_NOTE_CHAR_LENGTH, teachers cannot set notes.
+                // Staff and event leaders can set assignment notes up to a max length of MAX_NOTE_CHAR_LENGTH,
+                // teachers cannot set notes.
                 boolean notesIsNullOrEmpty = null == assignmentDTO.getNotes() || assignmentDTO.getNotes().isEmpty();
-                if (userIsStaff) {
+                if (userIsStaffOrEventLeader) {
                     boolean notesIsTooLong = null != assignmentDTO.getNotes() && assignmentDTO.getNotes().length() > MAX_NOTE_CHAR_LENGTH;
                     if (notesIsTooLong) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "Your assignment notes exceed the maximum allowed length of "
@@ -1058,17 +1062,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                         gameboardMap.put(gameboard.getId(), gameboard);
                     }
+                    assignmentDTO.setGameboard(gameboard);
+
                     // Get the group:
                     UserGroupDTO assigneeGroup = groupMap.get(assignmentDTO.getGroupId());
                     if (null == assigneeGroup) {
-                        assigneeGroup = groupManager.getGroupById(assignmentDTO.getGroupId());
-                        if (null == assigneeGroup) {
-                            assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
-                            continue;
-                        }
-                        groupMap.put(assigneeGroup.getId(), assigneeGroup);
+                        assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "The group id specified does not exist."));
+                        continue;
                     }
-
                     if (!GroupManager.isOwnerOrAdditionalManager(assigneeGroup, currentlyLoggedInUser.getId())
                             && !isUserAnAdmin(userManager, currentlyLoggedInUser)) {
                         assigmentStatuses.add(new AssignmentStatusDTO(assignmentDTO.getGroupId(), "You can only set assignments to groups you own or manage."));
@@ -1076,6 +1077,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     }
 
                     assignmentDTO.setOwnerUserId(currentlyLoggedInUser.getId());
+                    assignmentDTO.setAssignerSummary(userManager.convertToUserSummaryObject(currentlyLoggedInUser));
                     assignmentDTO.setCreationDate(null);
                     assignmentDTO.setId(null);
 
@@ -1102,6 +1104,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             return Response.ok(assigmentStatuses).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to assign work", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error assigning work to groups.").toResponse();
         }
     }
 
