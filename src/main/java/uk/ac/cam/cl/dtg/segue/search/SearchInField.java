@@ -16,9 +16,10 @@
 
 package uk.ac.cam.cl.dtg.segue.search;
 
-import java.util.Set;
-import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+
+import java.util.Set;
 
 
 public class SearchInField {
@@ -28,6 +29,7 @@ public class SearchInField {
     private Strategy strategy;
     private Priority priority;
     private boolean required;
+    private boolean atLeastOne;
 
 
     /**
@@ -40,6 +42,7 @@ public class SearchInField {
         this.strategy = Strategy.DEFAULT;
         this.priority = Priority.NORMAL;
         this.required = false;
+        this.atLeastOne = false;
     }
 
     /**
@@ -73,6 +76,11 @@ public class SearchInField {
         return this;
     }
 
+    public SearchInField atLeastOne(Boolean atLeastOne) {
+        this.atLeastOne = atLeastOne;
+        return this;
+    }
+
     public String getField() {
         return field;
     }
@@ -91,5 +99,9 @@ public class SearchInField {
 
     public boolean getRequired() {
         return required;
+    }
+
+    public boolean isAtLeastOne() {
+        return atLeastOne;
     }
 }
