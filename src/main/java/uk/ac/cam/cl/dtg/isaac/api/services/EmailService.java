@@ -42,6 +42,7 @@ import jakarta.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -77,32 +78,37 @@ public class EmailService {
 
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
 
-    private boolean userInMailGunBetaList(final RegisteredUserDTO user) {
+    private boolean userInMailGunBetaList(final Long userId) {
         String optInIds = properties.getProperty(MAILGUN_EMAILS_BETA_OPT_IN);
         if (Strings.isNullOrEmpty(optInIds)) {
             return false;
         }
-        return Arrays.stream(optInIds.split(",")).anyMatch(id -> id.equals(user.getId().toString()));
+        return Arrays.stream(optInIds.split(",")).anyMatch(id -> id.equals(userId.toString()));
     }
 
     public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, String> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
-        UserGroupDTO userGroupDTO = groupManager.getGroupById(assignment.getGroupId());
-
-        String dueDate = "";
-        if (assignment.getDueDate() != null) {
-            dueDate = String.format(" (due on %s)", DATE_FORMAT.format(assignment.getDueDate()));
-        }
-
-        String name = on.getId();
-        if (on.getTitle() != null) {
-            name = on.getTitle();
-        }
-
         try {
-            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(assignment.getOwnerUserId());
+            // This isn't nice, but it avoids augmenting the group unnecessarily!
+            UserGroupDTO userGroupDTO = groupManager.getGroupsByIds(Collections.singletonList(assignment.getGroupId()), false).get(0);
+
+            String dueDate = "";
+            if (assignment.getDueDate() != null) {
+                dueDate = String.format(" (due on %s)", DATE_FORMAT.format(assignment.getDueDate()));
+            }
+
+            String name = on.getId();
+            if (on.getTitle() != null) {
+                name = on.getTitle();
+            }
 
             String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
-            String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
+            String assignmentOwner;
+            if (assignment.getAssignerSummary() != null) {
+                assignmentOwner = getTeacherNameFromUser(assignment.getAssignerSummary());
+            } else {
+                RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(assignment.getOwnerUserId());
+                assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
+            }
 
             final Map<String, Object> variables = ImmutableMap.<String, Object>builder()
                 .put("gameboardName", name) // Legacy name
@@ -116,7 +122,7 @@ public class EmailService {
             // Get email template
             EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
 
-            if (this.userInMailGunBetaList(assignmentOwnerDTO)) {
+            if (this.userInMailGunBetaList(assignment.getOwnerUserId())) {
                 Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE)
                     .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
                         userBatch,
@@ -144,6 +150,8 @@ public class EmailService {
             log.error("Could not send assignment email because owner did not exist.", e);
         } catch (ContentManagerException | ResourceNotFoundException e) {
             log.error("Could not send assignment email because of content error.", e);
+        } catch (IndexOutOfBoundsException e) {
+            log.error("Could not send assignment email because group did not exist.", e);
         }
     }
 }

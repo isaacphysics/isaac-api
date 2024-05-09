@@ -28,6 +28,7 @@ import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -318,9 +319,11 @@ public class ContentMapper {
         if (null == this.autoMapper) {
             log.info("Creating instance of content auto mapper.");
             MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
+            ContentBaseOrikaConverter contentBaseOrikaConverter = new ContentBaseOrikaConverter(this);
 
             ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-            converterFactory.registerConverter(new ContentBaseOrikaConverter(this));
+            converterFactory.registerConverter(contentBaseOrikaConverter);
+            converterFactory.registerConverter(new QuestionBaseOrikaConverter(contentBaseOrikaConverter));
             converterFactory.registerConverter(new ChoiceOrikaConverter());
             converterFactory.registerConverter(new ItemOrikaConverter());
             converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
@@ -353,8 +356,11 @@ public class ContentMapper {
             = new QuestionValidationResponseDeserializer(
                 contentDeserializer, choiceDeserializer);
 
+        IsaacQuestionBaseDeserializer isaacQuestionBaseDeserializer = new IsaacQuestionBaseDeserializer(contentDeserializer);
+
         SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
         contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+        contentDeserializerModule.addDeserializer(IsaacQuestionBase.class, isaacQuestionBaseDeserializer);
         contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
         contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);

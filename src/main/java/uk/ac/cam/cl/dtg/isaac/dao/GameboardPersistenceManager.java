@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -105,11 +106,11 @@ public class GameboardPersistenceManager {
      */
     @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                       final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager) {
+                                       final MapperFacade mapper, final ContentMapper objectMapper, final URIManager uriManager) {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;
-        this.objectMapper = objectMapper;
+        this.objectMapper = objectMapper.getSharedContentObjectMapper();;
         this.uriManager = uriManager;
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
                 .expireAfterAccess(GAMEBOARD_TTL_MINUTES, TimeUnit.MINUTES).<String, GameboardDO> build();

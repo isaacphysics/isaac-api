@@ -15,12 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * DTO representing a segue page.
@@ -28,6 +28,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class SeguePageDTO extends ContentDTO {
     private String summary;
+    private Boolean deprecated;
+    private String supersededBy;
 
     @JsonCreator
     public SeguePageDTO(@JsonProperty("id") String id,
@@ -38,10 +40,14 @@ public class SeguePageDTO extends ContentDTO {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("supersededBy") String supersededBy,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, tags, level);
+                attribution, relatedContent, published, tags, level);
+
+        this.deprecated = deprecated;
+        this.supersededBy = supersededBy;
 
     }
 
@@ -71,5 +77,21 @@ public class SeguePageDTO extends ContentDTO {
     @JsonIgnore(false) // Override the parent class decorator!
     public String getCanonicalSourceFile() {
         return this.canonicalSourceFile;
+    }
+
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
+    public String getSupersededBy() {
+        return supersededBy;
+    }
+
+    public void setSupersededBy(String supersededBy) {
+        this.supersededBy = supersededBy;
     }
 }

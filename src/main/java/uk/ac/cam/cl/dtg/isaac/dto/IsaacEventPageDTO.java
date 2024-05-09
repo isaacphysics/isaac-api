@@ -15,33 +15,33 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ImageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * DTO for isaac Event.
  *
  */
 @JsonContentType("isaacEventPage")
-public class IsaacEventPageDTO extends ContentDTO {
+public class IsaacEventPageDTO extends SeguePageDTO {
     private Date date;
     private Date end_date;
     private Date bookingDeadline;
@@ -109,6 +109,7 @@ public class IsaacEventPageDTO extends ContentDTO {
                              @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
                              @JsonProperty("version") boolean published,
                              @JsonProperty("deprecated") Boolean deprecated,
+                             @JsonProperty("supersededBy") String supersededBy,
                              @JsonProperty("tags") Set<String> tags,
                              @JsonProperty("date") Date date,
                              @JsonProperty("end_date") Date end_date,
@@ -123,7 +124,7 @@ public class IsaacEventPageDTO extends ContentDTO {
                              @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
                              @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
-                relatedContent, published, deprecated, tags, null);
+                relatedContent, published, deprecated, supersededBy, tags, null);
 
         this.date = date;
         this.end_date = end_date;

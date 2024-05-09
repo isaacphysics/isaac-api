@@ -27,24 +27,38 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
-import jakarta.servlet.ServletConfig;
-import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.Context;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.isaac.api.QuizFacade;
-import uk.ac.cam.cl.dtg.segue.api.*;
+import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
+import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
+import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
+import uk.ac.cam.cl.dtg.segue.api.ContactFacade;
+import uk.ac.cam.cl.dtg.segue.api.CountryLookupFacade;
+import uk.ac.cam.cl.dtg.segue.api.EmailFacade;
+import uk.ac.cam.cl.dtg.segue.api.GlossaryFacade;
+import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
+import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
+import uk.ac.cam.cl.dtg.segue.api.LogEventFacade;
+import uk.ac.cam.cl.dtg.segue.api.NotificationFacade;
+import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
+import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
+import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -106,7 +120,6 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(EventsFacade.class));
             this.singletons.add(injector.getInstance(NotificationFacade.class));
             this.singletons.add(injector.getInstance(EmailFacade.class));
-            this.singletons.add(injector.getInstance(UserBadgeManager.class));
             this.singletons.add(injector.getInstance(QuizFacade.class));
 
             // initialise filters

@@ -125,16 +125,17 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
     
 
     /**
-     * create Assignment.
-     * 
-     * @param newAssignment
-     *            - to create - will be modified to include new id.
+     * Create an Assignment.
+     *
+     * @param newAssignment - will be modified to include new id. It must contain the gameboard being assigned,
+     *                        and should contain the ownerSummaryDTO.
      * @return the assignment object now with the id field populated.
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
     public AssignmentDTO createAssignment(final AssignmentDTO newAssignment) throws SegueDatabaseException {
         Validate.isTrue(newAssignment.getId() == null, "The id field must be empty.");
+        Validate.isTrue(newAssignment.getGameboard() != null);
         Objects.requireNonNull(newAssignment.getGameboardId());
         Objects.requireNonNull(newAssignment.getGroupId());
 
@@ -148,8 +149,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         newAssignment.setCreationDate(new Date());
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
-        // Get assignment gameboard in order to generate URL which will be added to the notification email
-        GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
+        GameboardDTO gameboard = newAssignment.getGameboard();
         final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
                 gameboard.getId());
 

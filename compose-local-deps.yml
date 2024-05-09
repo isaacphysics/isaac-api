@@ -59,7 +59,7 @@ services:
   postgres:
     network_mode: bridge
     container_name: postgres
-    image: postgres:12
+    image: postgres:16
     volumes:
       - pg-local:/var/lib/postgresql/data
       - ./src/main/resources/db_scripts/postgres-rutherford-create-script.sql:/docker-entrypoint-initdb.d/00-isaac-create.sql:ro

@@ -26,16 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
@@ -55,7 +46,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
     public void setUp() throws Exception {
         // get an instance of the facade to test
         this.groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager,
-             groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
+             groupManager, userAssociationManager, misuseMonitor);
     }
 
     @AfterEach
@@ -78,7 +69,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Test Teacher's New Group", TEST_TEACHER_ID,
-                GroupStatus.ACTIVE, new Date(), false, false, new Date());
+                GroupStatus.ACTIVE, new Date(), false, false, new Date(), false);
 
         // Act
         // make request
@@ -103,7 +94,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Test Tutor's New Group", TEST_TUTOR_ID,
-                GroupStatus.ACTIVE, new Date(), false, false, new Date());
+                GroupStatus.ACTIVE, new Date(), false, false, new Date(), false);
 
         // Act
         // make request

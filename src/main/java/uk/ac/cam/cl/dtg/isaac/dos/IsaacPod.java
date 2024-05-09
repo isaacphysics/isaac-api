@@ -52,15 +52,13 @@ public class IsaacPod extends Content {
             @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent,
             @JsonProperty("version") boolean published,
-            @JsonProperty("deprecated") Boolean deprecated,
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
-            @JsonProperty("emailAddress") String emailAddress,
             @JsonProperty("image") Image image,
             @JsonProperty("url") String url) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
-                relatedContent, published, deprecated, tags, level);
+                relatedContent, published, tags, level);
 
         this.url = url;
         this.image = image;

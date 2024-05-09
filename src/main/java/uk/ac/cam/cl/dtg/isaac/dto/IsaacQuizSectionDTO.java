@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -30,7 +30,7 @@ import java.util.Set;
  *
  */
 @JsonContentType("isaacQuizSection")
-public class IsaacQuizSectionDTO extends SeguePageDTO {
+public class IsaacQuizSectionDTO extends ContentDTO {
 
     @JsonCreator
     public IsaacQuizSectionDTO(@JsonProperty("id") String id,
@@ -41,11 +41,10 @@ public class IsaacQuizSectionDTO extends SeguePageDTO {
                                @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
                                @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
                                @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-                               @JsonProperty("deprecated") Boolean deprecated,
                                @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, tags, level);
+                attribution, relatedContent, published, tags, level);
     }
 
     /**

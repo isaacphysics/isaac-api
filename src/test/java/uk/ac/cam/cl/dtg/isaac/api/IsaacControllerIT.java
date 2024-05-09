@@ -26,16 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,7 +44,7 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
     public void setUp() {
         this.isaacControllerFacade = new IsaacController(properties, logManager, createNiceMock(StatisticsManager.class),
                 userAccountManager, contentManager, userAssociationManager,
-                createNiceMock(IUserStreaksManager.class), userBadgeManager, contentSummarizerService);
+                createNiceMock(IUserStreaksManager.class), contentSummarizerService);
     }
 
     /**

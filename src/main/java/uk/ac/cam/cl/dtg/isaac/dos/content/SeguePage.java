@@ -15,13 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import java.util.List;
-import java.util.Set;
-
-import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Segue Page object.
@@ -31,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonContentType("page")
 public class SeguePage extends Content {
     private String summary;
+    private Boolean deprecated;
+    private String supersededBy;
 
     @JsonCreator
     public SeguePage(@JsonProperty("id") String id,
@@ -40,11 +41,15 @@ public class SeguePage extends Content {
             @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
-            @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("supersededBy") String supersededBy,
+            @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, tags, level);
+                attribution, relatedContent, published, tags, level);
+
+        this.deprecated = deprecated;
+        this.supersededBy = supersededBy;
 
     }
 
@@ -68,5 +73,21 @@ public class SeguePage extends Content {
      */
     public final void setSummary(final String summary) {
         this.summary = summary;
+    }
+
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
+    public String getSupersededBy() {
+        return supersededBy;
+    }
+
+    public void setSupersededBy(String supersededBy) {
+        this.supersededBy = supersededBy;
     }
 }

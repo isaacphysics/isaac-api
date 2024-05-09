@@ -37,8 +37,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -83,8 +81,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
-    private UserAssociationManager associationManager;
-    private UserBadgeManager userBadgeManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
@@ -114,23 +110,16 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - for question content
      * @param userManager
      *            - to get user details
-     * @param associationManager
-     *            - to enforce privacy policies.
-     * @param userBadgeManager
-     *            - for updating badge information.
      */
     @Inject
     public GameboardsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
                             final GameManager gameManager, final QuestionManager questionManager,
-                            final UserAccountManager userManager, final UserAssociationManager associationManager,
-                            final UserBadgeManager userBadgeManager, final FastTrackManger fastTrackManger) {
+                            final UserAccountManager userManager, final FastTrackManger fastTrackManger) {
         super(properties, logManager);
 
-        this.userBadgeManager = userBadgeManager;
         this.gameManager = gameManager;
         this.questionManager = questionManager;
         this.userManager = userManager;
-        this.associationManager = associationManager;
         this.fastTrackManger = fastTrackManger;
     }
 
@@ -391,11 +380,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         GameboardDTO persistedGameboard;
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
-
-            if (persistedGameboard.getCreationMethod().equals(GameboardCreationMethod.BUILDER)) {
-                this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GAMEBOARDS_CREATED,
-                        persistedGameboard.getId());
-            }
 
         } catch (NoWildcardException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No wildcard available. Unable to construct gameboard.")

@@ -15,17 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * IsaacQuestion Page DO.
@@ -35,7 +34,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
 @JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPage extends SeguePage {
     protected Float passMark;
-    protected String supersededBy;
     protected Integer difficulty;
 
     @JsonCreator
@@ -51,10 +49,9 @@ public class IsaacQuestionPage extends SeguePage {
             @JsonProperty("difficulty") Integer difficulty, @JsonProperty("passMark") Float passMark,
             @JsonProperty("supersededBy") String supersededBy) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, tags, level);
+                attribution, relatedContent, published, deprecated, supersededBy, tags, level);
 
         this.passMark = passMark;
-        this.supersededBy = supersededBy;
         this.difficulty = difficulty;
     }
 
@@ -72,11 +69,11 @@ public class IsaacQuestionPage extends SeguePage {
         this.passMark = passMark;
     }
 
-    public String getSupersededBy() { return supersededBy; }
+    public Integer getDifficulty() {
+        return difficulty;
+    }
 
-    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
-
-    public Integer getDifficulty() { return difficulty; }
-
-    public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+    }
 }

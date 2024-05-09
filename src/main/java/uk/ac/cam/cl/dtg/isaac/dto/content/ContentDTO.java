@@ -15,16 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Content Class (Data Transfer Object) This class represents a majority of content types within the Content Management
@@ -44,7 +44,6 @@ public class ContentDTO extends ContentBaseDTO {
     protected String attribution;
     protected List<ContentSummaryDTO> relatedContent;
     protected Boolean published;
-    protected Boolean deprecated;
     protected Integer level;
     protected Boolean expandable;
 
@@ -56,7 +55,7 @@ public class ContentDTO extends ContentBaseDTO {
             @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("published") Boolean published,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
         this.id = id;
         this.title = title;
@@ -70,7 +69,6 @@ public class ContentDTO extends ContentBaseDTO {
         this.attribution = attribution;
         this.relatedContent = relatedContent;
         this.published = published;
-        this.deprecated = deprecated;
         this.children = children;
         this.tags = tags;
         this.level = level;
@@ -205,14 +203,6 @@ public class ContentDTO extends ContentBaseDTO {
      */
     public void setPublished(final Boolean published) {
         this.published = published;
-    }
-
-    public Boolean getDeprecated() {
-        return deprecated;
-    }
-
-    public void setDeprecated(Boolean deprecated) {
-        this.deprecated = deprecated;
     }
 
     public Integer getLevel() {

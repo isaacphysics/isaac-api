@@ -95,14 +95,6 @@ BEGIN
   WHERE owner_user_id = targetUserIdToDelete;
 
   BEGIN
-      UPDATE user_badges
-      SET user_id = targetUserIdToKeep
-      WHERE user_id = targetUserIdToDelete;
-  EXCEPTION WHEN unique_violation THEN
-  -- Ignore duplicate inserts. This may lose some badge state.
-  END;
-
-  BEGIN
       UPDATE user_credentials
       SET user_id = targetUserIdToKeep
       WHERE user_id = targetUserIdToDelete;

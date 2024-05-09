@@ -32,6 +32,7 @@ public class UserGroup {
     private boolean archived;
     private boolean additionalManagerPrivileges;
     private Date lastUpdated;
+    private boolean selfRemoval;
 
     /**
      * Default Constructor.
@@ -53,7 +54,7 @@ public class UserGroup {
      *            - date created.
      */
     public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final GroupStatus status, final Date created,
-                     final boolean archived, final boolean additionalManagerPrivileges, final Date lastUpdated) {
+                     final boolean archived, final boolean additionalManagerPrivileges, final Date lastUpdated, final boolean selfRemoval) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
@@ -62,6 +63,7 @@ public class UserGroup {
         this.archived = archived;
         this.additionalManagerPrivileges = additionalManagerPrivileges;
         this.lastUpdated = lastUpdated;
+        this.selfRemoval = selfRemoval;
     }
 
     /**
@@ -226,5 +228,24 @@ public class UserGroup {
      */
     public void setLastUpdated(final Date lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    /**
+     * Gets whether students can remove themselves from the group.
+     *
+     * @return whether students can remove themselves from the group
+     */
+    public boolean getSelfRemoval() {
+        return selfRemoval;
+    }
+
+    /**
+     * Sets whether students can remove themselves from the group.
+     *
+     * @param selfRemoval
+     *            the status student self-removal to set
+     */
+    public void setSelfRemoval(final boolean selfRemoval) {
+        this.selfRemoval = selfRemoval;
     }
 }

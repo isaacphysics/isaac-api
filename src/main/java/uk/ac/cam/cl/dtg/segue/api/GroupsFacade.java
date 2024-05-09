@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -83,7 +82,6 @@ public class GroupsFacade extends AbstractSegueFacade {
     private final AssignmentManager assignmentManager;
     private final GroupManager groupManager;
     private final UserAssociationManager associationManager;
-    private final UserBadgeManager userBadgeManager;
     private IMisuseMonitor misuseMonitor;
 
     /**
@@ -100,14 +98,12 @@ public class GroupsFacade extends AbstractSegueFacade {
                         final ILogManager logManager, AssignmentManager assignmentManager,
                         final GroupManager groupManager,
                         final UserAssociationManager associationsManager,
-                        final UserBadgeManager userBadgeManager,
                         final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.assignmentManager = assignmentManager;
         this.groupManager = groupManager;
         this.associationManager = associationsManager;
-        this.userBadgeManager = userBadgeManager;
         this.misuseMonitor = misuseMonitor;
     }
 
@@ -344,9 +340,6 @@ public class GroupsFacade extends AbstractSegueFacade {
             this.getLogManager().logEvent(user, request, SegueServerLogType.CREATE_USER_GROUP,
                     ImmutableMap.of(Constants.GROUP_FK, group.getId()));
 
-            this.userBadgeManager.updateBadge(user, UserBadgeManager.Badge.TEACHER_GROUPS_CREATED,
-                    group.getId().toString());
-
             return Response.ok(group).build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to create user group. ", e);
@@ -545,7 +538,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!GroupManager.hasAdditionalManagerPrivileges(groupBasedOnId, currentRegisteredUser.getId())) {
+            if (!groupBasedOnId.getSelfRemoval() && !GroupManager.hasAdditionalManagerPrivileges(groupBasedOnId, currentRegisteredUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are neither the owner of this group, nor an additional manager with additional privileges!").toResponse();
             }
 
@@ -557,7 +550,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                     ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
                             USER_ID_FKEY_FIELDNAME, userToRemove.getId()));
 
-            return this.getUsersInGroup(request, cacheRequest, groupId);
+            return Response.ok().build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to add user to a group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();

@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
@@ -34,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -406,8 +408,20 @@ public class ContentIndexer {
 
         // hack to get cards to count as children:
         if (content instanceof IsaacCardDeck) {
-            for (IsaacCard card : ((IsaacCardDeck) content).getCards()) {
-                this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
+            IsaacCardDeck cardDeck = (IsaacCardDeck) content;
+            if (cardDeck.getCards() != null) {
+                for (IsaacCard card : cardDeck.getCards()) {
+                    this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
+                }
+            }
+        }
+
+        if (content instanceof InlineRegion) {
+            InlineRegion inlineRegion = (InlineRegion) content;
+            if (inlineRegion.getInlineQuestions() != null) {
+                for (IsaacQuestionBase question : inlineRegion.getInlineQuestions()) {
+                    this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
+                }
             }
         }
 
@@ -545,6 +559,12 @@ public class ContentIndexer {
                 setOfContentObjects.add((Content) child);
                 setOfContentObjects.addAll(flattenContentObjects((Content) child));
             }
+
+            if (content instanceof InlineRegion) {
+                for (IsaacQuestionBase child : ((InlineRegion) content).getInlineQuestions()) {
+                    setOfContentObjects.addAll(flattenContentObjects(child));
+                }
+            }
         }
 
         setOfContentObjects.add(content);
@@ -607,6 +627,11 @@ public class ContentIndexer {
      *            - numeric question from which to extract units.
      */
     private synchronized void registerUnits(final IsaacNumericQuestion q, Map<String, String> allUnits, Map<String, String> publishedUnits) {
+
+        if (q.getChoices() == null) {
+            // This question cannot contain units.
+            return;
+        }
 
         HashMap<String, String> newUnits = Maps.newHashMap();
 

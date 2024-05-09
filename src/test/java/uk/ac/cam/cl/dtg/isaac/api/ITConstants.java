@@ -50,6 +50,10 @@ public final class ITConstants {
     public static final String DAVE_TEACHER_PASSWORD = "test1234";
     public static final long DAVE_TEACHER_ID = 10L;
 
+    public static final String HARRY_TEACHER_EMAIL = "harry-teacher@test.com";
+    public static final String HARRY_TEACHER_PASSWORD = "test1234";
+    public static final long HARRY_TEACHER_ID = 17L;
+
     public static final String TEST_STUDENT_EMAIL = "test-student@test.com";
     public static final String TEST_STUDENT_PASSWORD = "test1234";
     public static final long TEST_STUDENT_ID = 6L;
@@ -58,13 +62,17 @@ public final class ITConstants {
     public static final String ALICE_STUDENT_PASSWORD = "test1234";
     public static final long ALICE_STUDENT_ID = 7L;
 
-    public static final String ERIKA_STUDENT_EMAIL = "erika-student@test.com";
-    public static final String ERIKA_STUDENT_PASSWORD = "test1234";
-    public static final long ERIKA_STUDENT_ID = 11L;
+    public static final String BOB_STUDENT_EMAIL = "bob-student@test.com";
+    public static final String BOB_STUDENT_PASSWORD = "test1234";
+    public static final long BOB_STUDENT_ID = 8L;
 
     public static final String CHARLIE_STUDENT_EMAIL = "charlie-student@test.com";
     public static final String CHARLIE_STUDENT_PASSWORD = "test1234";
     public static final long CHARLIE_STUDENT_ID = 9L;
+
+    public static final String ERIKA_STUDENT_EMAIL = "erika-student@test.com";
+    public static final String ERIKA_STUDENT_PASSWORD = "test1234";
+    public static final long ERIKA_STUDENT_ID = 11L;
 
     public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
     public static final String TEST_SIGNUP_PASSWORD = "test1234";
@@ -81,15 +89,23 @@ public final class ITConstants {
     public static final long TEST_TEACHERS_AB_GROUP_ID = 1L;
     public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
     public static final long TEST_TUTORS_AB_GROUP_ID = 4L;
+    public static final long HARRY_TEACHERS_AB_GROUP_ID = 5L;
 
     // Questions
     public static final String REGRESSION_TEST_PAGE_ID = "_regression_test_";
     public static final String ASSIGNMENT_TEST_PAGE_ID = "_assignment_test";
 
     // Gameboards
+    public static final String ASSIGNMENTS_TEST_EXISTING_TEACHER_AB_GAMEBOARD_ID = "9313cadd-d4ce-420f-9331-300e3067b45f";
     public static final String ASSIGNMENTS_TEST_GAMEBOARD_ID = "865072ab-9223-495f-a809-5ee2b98252e4";
     public static final String ASSIGNMENTS_DATE_TEST_GAMEBOARD_ID = "5acb113a-4d8b-4a6d-9714-6992e7e3dc35";
     public static final String ADDITIONAL_MANAGER_TEST_GAMEBOARD_ID = "43c3ca6d-4d1b-49df-3ec4-4ce2b306eb45";
+
+    // Assignments
+    public static final Long ASSIGNMENTS_TEST_EXISTING_TEACHER_AB_ASSIGNMENT_ID = 2L;
+    public static final Long ASSIGNMENTS_TEST_EXISTING_DAVE_BC_ASSIGNMENT_ID = 3L;
+    public static final Long ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID = 4L;
+
 
     // Search
     public static final String SEARCH_TEST_CONCEPT_ID = "33935571-5a6c-4d42-a243-b5c01d4293e6";

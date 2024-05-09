@@ -106,6 +106,7 @@ SELECT users.*,
        schools.school_name         AS school_name,
        schools.postcode            AS location,
        imd_deprivation.imd_score   AS imd_deprivation_score,
+       imd_deprivation.imd_decile   AS imd_deprivation_decile,
        ncce_priority.priority_type AS ncce_priority_type,
        COALESCE(
                users.country_code,
