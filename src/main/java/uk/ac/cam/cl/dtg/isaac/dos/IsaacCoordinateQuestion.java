@@ -21,6 +21,8 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
 
     // If ordered is true, then the order of the coordinates in a choice matters.
     private Boolean ordered;
+    private String placeholderXValue;
+    private String placeholderYValue;
     private Integer significantFiguresMin;
     private Integer significantFiguresMax;
 
@@ -78,4 +80,19 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
         this.significantFiguresMax = significantFigures;
     }
 
+    public String getPlaceholderXValue() {
+        return placeholderXValue;
+    }
+
+    public void setPlaceholderXValue(String placeholderXValue) {
+        this.placeholderXValue = placeholderXValue;
+    }
+
+    public String getPlaceholderYValue() {
+        return placeholderYValue;
+    }
+
+    public void setPlaceholderYValue(String placeholderYValue) {
+        this.placeholderYValue = placeholderYValue;
+    }
 }
