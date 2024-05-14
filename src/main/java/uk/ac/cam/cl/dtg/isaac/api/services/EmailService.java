@@ -43,7 +43,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -122,8 +124,16 @@ public class EmailService {
             // Get email template
             EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO(templateName);
 
-            if (this.userInMailGunBetaList(assignment.getOwnerUserId())) {
-                Iterables.partition(groupManager.getUsersInGroup(userGroupDTO), MAILGUN_BATCH_SIZE)
+            // Only email users active in the group:
+            Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
+            List<RegisteredUserDTO> usersToEmail = groupManager.getUsersInGroup(userGroupDTO).stream()
+                    // filter users so those who are inactive in the group aren't emailed
+                    .filter(user -> GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus()))
+                    .collect(Collectors.toList());
+
+            // Send the email using MailGun if owner on list or if scheduled:
+            if (this.userInMailGunBetaList(assignment.getOwnerUserId()) || assignment.getScheduledStartDate() != null) {
+                Iterables.partition(usersToEmail, MAILGUN_BATCH_SIZE)
                     .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
                         userBatch,
                         emailTemplate,
@@ -132,19 +142,14 @@ public class EmailService {
                         null)
                     );
             } else {
-                // If user is not in the MailGun assignment emails beta list, use our standard email method
-                Map<Long, GroupMembershipDTO> userMembershipMapforGroup = this.groupManager.getUserMembershipMapForGroup(userGroupDTO.getId());
-                groupManager.getUsersInGroup(userGroupDTO).stream()
-                        // filter users so those who are inactive in the group aren't emailed
-                        .filter(user -> GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus()))
-                        // send an assignment email to each active user
-                        .forEach(user -> {
-                            try {
-                                emailManager.sendTemplatedEmailToUser(user, emailTemplate, variables, EmailType.ASSIGNMENTS);
-                            } catch (ContentManagerException | SegueDatabaseException e) {
-                                log.error(String.format("Problem sending assignment email for user %s.", user.getId()), e);
-                            }
-                        });
+                // Otherwise, use our standard email method:
+                usersToEmail.forEach(user -> {
+                    try {
+                        emailManager.sendTemplatedEmailToUser(user, emailTemplate, variables, EmailType.ASSIGNMENTS);
+                    } catch (ContentManagerException | SegueDatabaseException e) {
+                        log.error(String.format("Problem sending assignment email for user %s.", user.getId()), e);
+                    }
+                });
             }
         } catch (NoUserException e) {
             log.error("Could not send assignment email because owner did not exist.", e);
