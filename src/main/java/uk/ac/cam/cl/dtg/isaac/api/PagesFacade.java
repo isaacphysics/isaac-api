@@ -382,11 +382,13 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         List<ContentSummaryDTO> combinedResults = new ArrayList<>();
-        List<ContentSummaryDTO> summarizedResults = null;
         int nextSearchStartIndex = newStartIndex;
         Long totalResults = 0L;
 
-        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && (summarizedResults == null || !summarizedResults.isEmpty()); iterationLimit--) {
+        List<ContentSummaryDTO> summarizedResults = null;
+        int resultsReturnedByThisSearch = 0;
+
+        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && (summarizedResults == null || resultsReturnedByThisSearch != 0); iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.searchForContent(
@@ -408,7 +410,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                 );
 
                 summarizedResults = this.extractContentSummaryFromList(c.getResults());
-                nextSearchStartIndex += summarizedResults.size(); // add the total number of returned results, including any we will filter out
+                resultsReturnedByThisSearch = summarizedResults.size();
+                nextSearchStartIndex += resultsReturnedByThisSearch; // add the total number of returned results, including any we will filter out
 
                 if (user instanceof RegisteredUserDTO) {
                     RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
