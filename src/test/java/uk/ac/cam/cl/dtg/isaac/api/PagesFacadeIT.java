@@ -58,7 +58,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
-                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", false, 0, -1);
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -84,7 +84,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
-                ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", "", "", "", "", false, 0, -1);
+                ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -110,7 +110,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
-                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", true, 0, -1);
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", true, false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -137,7 +137,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // make request
         Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
                 String.format("%s,%s", ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), "",
-                "", "", "", "", "", "", "", "", "", false, 0, -1);
+                "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -163,7 +163,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
-                "", "Regression Test Page", "", "", "", "", "", "", "", "", "", false, 0, -1);
+                "", "Regression Test Page", "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
         // check status code is OK
@@ -189,7 +189,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
-                "", "Regression Test Page", "", "", "", "", "", "", "", "", "",false, 0, 1);
+                "", "Regression Test Page", "", "", "", "", "", "", "", "", "",false, false, 0, 1);
 
         // Assert
         // check status code is OK

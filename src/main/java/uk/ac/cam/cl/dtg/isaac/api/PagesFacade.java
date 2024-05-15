@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SearchResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -54,6 +55,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DefaultValue;
@@ -312,10 +314,13 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
-            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+            @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
+            @Nonnull @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer startIndex,
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) throws SegueDatabaseException {
         StringBuilder etagCodeBuilder = new StringBuilder();
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
+
+        AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
         if (fasttrack) {
             fieldsToMatch.put(TYPE_FIELDNAME, Set.of(FAST_TRACK_QUESTION_TYPE));
@@ -356,6 +361,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                 this.put(STAGE_FIELDNAME, stages);
                 this.put(DIFFICULTY_FIELDNAME, difficulties);
                 this.put(EXAM_BOARD_FIELDNAME, examBoards);
+                this.put(HIDE_COMPLETED_FIELDNAME, hideCompleted.toString());
+                this.put(START_INDEX_FIELDNAME, startIndex.toString());
             }
         };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
@@ -388,40 +395,74 @@ public class PagesFacade extends AbstractIsaacFacade {
             showNoFilterContent = false;
         }
 
-        try {
-            ResultsWrapper<ContentDTO> c;
-            c = contentManager.searchForContent(
-                    validatedSearchString,
-                    fieldsToMatch.get(ID_FIELDNAME),
-                    fieldsToMatch.get(TAGS_FIELDNAME),
-                    fieldsToMatch.get(SUBJECTS_FIELDNAME),
-                    fieldsToMatch.get(FIELDS_FIELDNAME),
-                    fieldsToMatch.get(TOPICS_FIELDNAME),
-                    fieldsToMatch.get(BOOKS_FIELDNAME),
-                    fieldsToMatch.get(LEVEL_FIELDNAME),
-                    fieldsToMatch.get(STAGE_FIELDNAME),
-                    fieldsToMatch.get(DIFFICULTY_FIELDNAME),
-                    fieldsToMatch.get(EXAM_BOARD_FIELDNAME),
-                    fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
-                    newStartIndex,
-                    newLimit,
-                    showNoFilterContent
-            );
+        List<ContentSummaryDTO> combinedResults = new ArrayList<>();
+        List<ContentSummaryDTO> summarizedResults = null;
+        int nextSearchStartIndex = newStartIndex;
+        Long totalResults = 0L;
 
-            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
-                    this.extractContentSummaryFromList(c.getResults()),
-                    c.getTotalResults());
+        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && (summarizedResults == null || !summarizedResults.isEmpty()); iterationLimit--) {
+            try {
+                ResultsWrapper<ContentDTO> c;
+                c = contentManager.searchForContent(
+                        validatedSearchString,
+                        fieldsToMatch.get(ID_FIELDNAME),
+                        fieldsToMatch.get(TAGS_FIELDNAME),
+                        fieldsToMatch.get(SUBJECTS_FIELDNAME),
+                        fieldsToMatch.get(FIELDS_FIELDNAME),
+                        fieldsToMatch.get(TOPICS_FIELDNAME),
+                        fieldsToMatch.get(BOOKS_FIELDNAME),
+                        fieldsToMatch.get(LEVEL_FIELDNAME),
+                        fieldsToMatch.get(STAGE_FIELDNAME),
+                        fieldsToMatch.get(DIFFICULTY_FIELDNAME),
+                        fieldsToMatch.get(EXAM_BOARD_FIELDNAME),
+                        fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
+                        nextSearchStartIndex,
+                        newLimit,
+                        showNoFilterContent
+                );
 
-            return Response.ok(summarizedContent).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                    .build();
+                summarizedResults = this.extractContentSummaryFromList(c.getResults());
+                nextSearchStartIndex += summarizedResults.size(); // add the total number of returned results, including any we will filter out
 
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                    "Error locating the content requested", e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
+                if (user instanceof RegisteredUserDTO) {
+                    RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+                    List<String> questionPageIds = summarizedResults.stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+
+                    Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttempts = questionManager
+                            .getMatchingLightweightQuestionAttempts(Collections.singletonList(registeredUser), questionPageIds)
+                            .getOrDefault(registeredUser.getId(), Collections.emptyMap());
+
+                    for (ContentSummaryDTO result : summarizedResults) {
+                        augmentContentSummaryWithAttemptInformation(result, questionAttempts);
+                    }
+
+                    if (hideCompleted) {
+                        summarizedResults = summarizedResults.stream()
+                                .filter(q -> q.getCorrect() == null || !q.getCorrect())
+                                .collect(Collectors.toList());
+                    }
+                }
+
+                combinedResults.addAll(summarizedResults.subList(0, Math.min(summarizedResults.size(), SEARCH_RESULTS_PER_PAGE - combinedResults.size())));
+                totalResults = c.getTotalResults();
+
+            } catch (ContentManagerException e1) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                        "Error locating the content requested", e1);
+                log.error(error.getErrorMessage(), e1);
+                return error.toResponse();
+            }
         }
+
+        ResultsWrapper<ContentSummaryDTO> wrappedResults = new SearchResultsWrapper<>(
+                combinedResults,
+                totalResults,
+                nextSearchStartIndex
+        );
+
+        return Response.ok(wrappedResults).tag(etag)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                .build();
     }
 
     /**
@@ -875,27 +916,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
         if (relatedContentSummaries != null) {
             for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
-                String questionId = relatedContentSummary.getId();
-                Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
-                boolean questionAnsweredCorrectly = false;
-                if (questionAttempts != null) {
-                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
-                        questionAnsweredCorrectly = false;
-                        List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
-                        if (questionPartAttempts != null) {
-                            for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
-                                questionAnsweredCorrectly = partAttempt.isCorrect();
-                                if (questionAnsweredCorrectly) {
-                                    break; // exit on first correct attempt
-                                }
-                            }
-                        }
-                        if (!questionAnsweredCorrectly) {
-                            break; // exit on first false question part
-                        }
-                    }
-                }
-                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
+                augmentContentSummaryWithAttemptInformation(relatedContentSummary, usersQuestionAttempts);
             }
         }
         // for all children recurse
@@ -908,6 +929,33 @@ public class PagesFacade extends AbstractIsaacFacade {
                 }
             }
         }
+    }
+
+    private void augmentContentSummaryWithAttemptInformation(
+            final ContentSummaryDTO contentSummary,
+            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts
+    ) {
+        String questionId = contentSummary.getId();
+        Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
+        boolean questionAnsweredCorrectly = false;
+        if (questionAttempts != null) {
+            for (String relatedQuestionPartId : contentSummary.getQuestionPartIds()) {
+                questionAnsweredCorrectly = false;
+                List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
+                if (questionPartAttempts != null) {
+                    for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
+                        questionAnsweredCorrectly = partAttempt.isCorrect();
+                        if (questionAnsweredCorrectly) {
+                            break; // exit on first correct attempt
+                        }
+                    }
+                }
+                if (!questionAnsweredCorrectly) {
+                    break; // exit on first false question part
+                }
+            }
+        }
+        contentSummary.setCorrect(questionAnsweredCorrectly);
     }
 
     /**
