@@ -958,6 +958,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         // try auto-mapping
         ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
         contentInfo.setUrl(uriManager.generateApiUrl(content));
+        GitContentManager.populateContentSummaryValues(content, contentInfo);
 
         return contentInfo;
     }
