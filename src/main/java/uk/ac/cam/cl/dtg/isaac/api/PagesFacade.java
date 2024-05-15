@@ -315,19 +315,16 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
-            @Nonnull @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer startIndex,
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) throws SegueDatabaseException {
-        StringBuilder etagCodeBuilder = new StringBuilder();
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
 
         AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
         if (fasttrack) {
             fieldsToMatch.put(TYPE_FIELDNAME, Set.of(FAST_TRACK_QUESTION_TYPE));
-            etagCodeBuilder.append(FAST_TRACK_QUESTION_TYPE);
         } else {
             fieldsToMatch.put(TYPE_FIELDNAME, Set.of(QUESTION_TYPE));
-            etagCodeBuilder.append(QUESTION_TYPE);
         }
 
         // defaults
@@ -347,7 +344,6 @@ public class PagesFacade extends AbstractIsaacFacade {
             Set<String> idsList = Set.of(ids.split(","));
             fieldsToMatch.put(ID_FIELDNAME, idsList);
             newLimit = idsList.size();
-            etagCodeBuilder.append(ids);
         }
 
         Map<String, String> fieldNameToValues = new HashMap<>() {
@@ -362,7 +358,9 @@ public class PagesFacade extends AbstractIsaacFacade {
                 this.put(DIFFICULTY_FIELDNAME, difficulties);
                 this.put(EXAM_BOARD_FIELDNAME, examBoards);
                 this.put(HIDE_COMPLETED_FIELDNAME, hideCompleted.toString());
-                this.put(START_INDEX_FIELDNAME, startIndex.toString());
+                if (startIndex != null) {
+                    this.put(START_INDEX_FIELDNAME, startIndex.toString());
+                }
             }
         };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
@@ -370,19 +368,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             String queryStringValue = entry.getValue();
             if (queryStringValue != null && !queryStringValue.isEmpty()) {
                 fieldsToMatch.put(fieldName, Set.of(queryStringValue.split(",")));
-                etagCodeBuilder.append(queryStringValue);
             }
-        }
-
-        // Calculate the ETag on last modified date of tags list
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
-                + etagCodeBuilder.toString().hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(request, etag);
-
-        if (cachedResponse != null) {
-            return cachedResponse;
         }
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
@@ -460,9 +446,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 nextSearchStartIndex
         );
 
-        return Response.ok(wrappedResults).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                .build();
+        return Response.ok(wrappedResults).build();
     }
 
     /**
