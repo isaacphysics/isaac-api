@@ -307,8 +307,10 @@ public class PagesFacade extends AbstractIsaacFacade {
             @Context final HttpServletRequest httpServletRequest,
             @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
+            @QueryParam("subjects") final String subjects,
+            @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
-            @QueryParam("examBoards") final String examBoards,
+            @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
@@ -346,6 +348,10 @@ public class PagesFacade extends AbstractIsaacFacade {
         Map<String, String> fieldNameToValues = new HashMap<>() {
             {
                 this.put(TAGS_FIELDNAME, tags);
+                this.put(SUBJECTS_FIELDNAME, subjects);
+                this.put(FIELDS_FIELDNAME, fields);
+                this.put(TOPICS_FIELDNAME, topics);
+                this.put(BOOKS_FIELDNAME, books);
                 this.put(LEVEL_FIELDNAME, level);
                 this.put(STAGE_FIELDNAME, stages);
                 this.put(DIFFICULTY_FIELDNAME, difficulties);
@@ -388,6 +394,10 @@ public class PagesFacade extends AbstractIsaacFacade {
                     validatedSearchString,
                     fieldsToMatch.get(ID_FIELDNAME),
                     fieldsToMatch.get(TAGS_FIELDNAME),
+                    fieldsToMatch.get(SUBJECTS_FIELDNAME),
+                    fieldsToMatch.get(FIELDS_FIELDNAME),
+                    fieldsToMatch.get(TOPICS_FIELDNAME),
+                    fieldsToMatch.get(BOOKS_FIELDNAME),
                     fieldsToMatch.get(LEVEL_FIELDNAME),
                     fieldsToMatch.get(STAGE_FIELDNAME),
                     fieldsToMatch.get(DIFFICULTY_FIELDNAME),

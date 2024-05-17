@@ -57,7 +57,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  */
 public class PgQuestionAttempts implements IQuestionAttemptManager {
     private static final Logger log = LoggerFactory.getLogger(PgQuestionAttempts.class);
-    private static final int MAX_PAGE_IDS_TO_MATCH = 100;
+    private static final int MAX_PAGE_IDS_TO_MATCH = 300;
             
     private final PostgresSqlDb database;
     private final ObjectMapper objectMapper;
@@ -164,21 +164,22 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public void registerQuestionAttempt(final Long userId, final String questionPageId, final String fullQuestionId,
             final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
 
-        String query = "INSERT INTO question_attempts(user_id, question_id, question_attempt, correct, \"timestamp\")" +
-                " VALUES (?, ?, ?::text::jsonb, ?, ?);";
+        String query = "INSERT INTO question_attempts(user_id, page_id, question_id, question_attempt, correct, \"timestamp\")"
+                + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
             pst.setLong(1, userId);
-            pst.setString(2, fullQuestionId);
-            pst.setString(3, objectMapper.writeValueAsString(questionAttempt));
+            pst.setString(2, questionPageId);
+            pst.setString(3, fullQuestionId);
+            pst.setString(4, objectMapper.writeValueAsString(questionAttempt));
 
             if (questionAttempt.isCorrect() != null) {
-                pst.setBoolean(4, questionAttempt.isCorrect());
+                pst.setBoolean(5, questionAttempt.isCorrect());
             } else {
-                pst.setNull(4, java.sql.Types.NULL);
+                pst.setNull(5, java.sql.Types.NULL);
             }
-            pst.setTimestamp(5, new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
+            pst.setTimestamp(6, new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save question attempt.");
@@ -201,7 +202,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setLong(1, userId);
 
             try (ResultSet results = pst.executeQuery()) {
-                return resultsToMapOfValidationResponseByPageId(results);
+                return resultsToMapValidationResponseByPagePart(results);
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -213,15 +214,15 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     @Override
     public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId, final String questionPageId)
             throws SegueDatabaseException {
-        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id LIKE ? ORDER BY \"timestamp\" ASC";
+        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND page_id = ? ORDER BY \"timestamp\" ASC";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setLong(1, userId);
-            pst.setString(2, questionPageId.replace("_", "\\_") + "%");
+            pst.setString(2, questionPageId);
 
             try (ResultSet results = pst.executeQuery()) {
-                return resultsToMapOfValidationResponseByPageId(results);
+                return resultsToMapValidationResponseByPagePart(results);
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -250,25 +251,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setArray(1, userIdArray);
 
             try (ResultSet results = pst.executeQuery()) {
-                while (results.next()) {
-                    LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
-
-                    String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
-                    String questionId = partialQuestionAttempt.getQuestionId();
-                    Long userId = results.getLong("user_id");
-
-                    Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                                = mapToReturn.get(userId);
-
-                    Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage =
-                            mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
-
-                    List<LightweightQuestionValidationResponse> listOfResponses =
-                            attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
-
-                    listOfResponses.add(partialQuestionAttempt);
-                }
+                augmentMapLightweightValidationResponseByUserPagePartWithResults(mapToReturn, results);
                 return mapToReturn;
+            } finally {
+                userIdArray.free();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -286,7 +272,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
         List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());
         if (uniquePageIds.size() > MAX_PAGE_IDS_TO_MATCH) {
-            // The repeated "OR question_id LIKE ___" will get very inefficient beyond this:
             log.debug(String.format("Attempting to match too many (%s) question page IDs; returning all attempts for these users instead!", uniquePageIds.size()));
             return this.getLightweightQuestionAttemptsByUsers(userIds);
         }
@@ -295,50 +280,23 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));;
 
         try (Connection conn = database.getDatabaseConnection()) {
-            StringBuilder query = new StringBuilder();
-            query.append("SELECT id, user_id, question_id, correct, timestamp FROM question_attempts");
-            query.append(" WHERE user_id = ANY(?)");
+            String query = "SELECT id, user_id, question_id, correct, timestamp FROM question_attempts"
+                         + " WHERE user_id = ANY(?) AND page_id = ANY(?)"
+                         + " ORDER BY \"timestamp\" ASC";
 
-            // add all of the question page ids we are interested in
-            String questionIdsOr = uniquePageIds.stream().map(q -> "question_id LIKE ?").collect(Collectors.joining(" OR "));
-            query.append(" AND (").append(questionIdsOr).append(")");
-            query.append(" ORDER BY \"timestamp\" ASC");
-
-            try (PreparedStatement pst = conn.prepareStatement(query.toString())) {
-
-                int index = 1;
+            try (PreparedStatement pst = conn.prepareStatement(query)) {
 
                 Array userIdArray = conn.createArrayOf("INTEGER", userIds.toArray());
-                pst.setArray(index++, userIdArray);
-
-                for (String pageId : uniquePageIds) {
-                    // Using LIKE matching on part IDs; add % wildcard to end of each page ID, and ensure any underscores
-                    // in the ID are escaped and not treated as wildcard characters themselves:
-                    pst.setString(index++, pageId.replace("_", "\\_") + "%");
-                }
+                Array pageIdArray = conn.createArrayOf("TEXT", uniquePageIds.toArray());
+                pst.setArray(1, userIdArray);
+                pst.setArray(2, pageIdArray);
 
                 try (ResultSet results = pst.executeQuery()) {
-                    while (results.next()) {
-                        LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
-
-                        String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
-                        String questionId = partialQuestionAttempt.getQuestionId();
-                        Long userId = results.getLong("user_id");
-
-                        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                                = mapToReturn.get(userId);
-
-                        Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage
-                                = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
-
-                        List<LightweightQuestionValidationResponse> listOfResponses
-                                = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
-
-                        listOfResponses.add(partialQuestionAttempt);
-                    }
+                    augmentMapLightweightValidationResponseByUserPagePartWithResults(mapToReturn, results);
                     return mapToReturn;
                 } finally {
                     userIdArray.free();
+                    pageIdArray.free();
                 }
             }
         } catch (SQLException e) {
@@ -379,7 +337,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 }
             }
         }
-        
+
         log.info(String.format("Merged anonymously answered questions (%s) with known user account (%s)", count,
                 registeredUserId));
     }
@@ -460,7 +418,48 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         return partialQuestionAttempt;
     }
 
-    private Map<String, Map<String, List<QuestionValidationResponse>>> resultsToMapOfValidationResponseByPageId(final ResultSet results) throws SQLException, JsonProcessingException {
+    /**
+     *  Turn a ResultSet into LightweightValidationResponses (for multiple users).
+     *
+     * @param results - a ResultSet from the question_attempts table.
+     * @param mapToAugment - the Map to augment with the ResultSet data, allowing it to be initialised in advance with
+     *                    empty entries for each user, for example.
+     *                    Map of Users -> Map of Page IDs -> Map of Part IDs -> List of attempts by the user at that part.
+     * @throws SQLException - on database error.
+     */
+    private void augmentMapLightweightValidationResponseByUserPagePartWithResults(
+            final Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToAugment,
+            final ResultSet results) throws SQLException {
+
+        while (results.next()) {
+            LightweightQuestionValidationResponse partialQuestionAttempt = resultsToLightweightValidationResponse(results);
+
+            String questionPageId = extractPageIdFromQuestionId(partialQuestionAttempt.getQuestionId());
+            String questionId = partialQuestionAttempt.getQuestionId();
+            Long userId = results.getLong("user_id");
+
+            Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
+                    = mapToAugment.computeIfAbsent(userId, k -> Maps.newHashMap());
+
+            Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage
+                    = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
+
+            List<LightweightQuestionValidationResponse> listOfResponses
+                    = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());
+
+            listOfResponses.add(partialQuestionAttempt);
+        }
+    }
+
+    /**
+     *  Turn a ResultSet into full QuestionValidationResponses (for a single user).
+     *
+     * @param results - a ResultSet from the question_attempts table.
+     * @return - Map of Page IDs -> Map of Part IDs -> List of attempts at that part.
+     * @throws SQLException - on database error.
+     * @throws JsonProcessingException - if the question_attempt JSON is invalid.
+     */
+    private Map<String, Map<String, List<QuestionValidationResponse>>> resultsToMapValidationResponseByPagePart(final ResultSet results) throws SQLException, JsonProcessingException {
         // Since we go to the effort of sorting the attempts in Postgres, use LinkedHashMap which is ordered:
         Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage = Maps.newLinkedHashMap();
 

@@ -33,7 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 public class ContentBaseOrikaConverter extends AbstractPolymorphicConverter<ContentBase, ContentBaseDTO> {
     private static final Logger log = LoggerFactory.getLogger(ContentBaseOrikaConverter.class);
 
-    private ContentMapper contentMapper;
+    private final ContentMapper contentMapper;
 
     /**
      * Constructs an Orika Converter specialises in selecting the correct subclass for content objects.

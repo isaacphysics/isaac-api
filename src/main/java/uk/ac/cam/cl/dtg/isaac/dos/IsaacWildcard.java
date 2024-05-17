@@ -17,12 +17,11 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -44,11 +43,11 @@ public class IsaacWildcard extends Content {
             @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") boolean published,
-            @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("deprecated") Boolean deprecated, // Still needed to read old objects in database, never used.
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level,
             @JsonProperty("description") String description, @JsonProperty("url") String url) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, tags, level);
+                attribution, relatedContent, published, tags, level);
 
         this.description = description;
         this.url = url;

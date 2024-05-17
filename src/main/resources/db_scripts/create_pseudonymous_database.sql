@@ -45,8 +45,6 @@ CREATE TABLE anonymous.user_associations_tokens AS SELECT * FROM public.user_ass
 
 -- external_accounts ignored
 
-CREATE TABLE anonymous.user_badges AS SELECT * FROM public.user_badges;
-
 CREATE TABLE anonymous.user_credentials AS
     SELECT
         user_id,

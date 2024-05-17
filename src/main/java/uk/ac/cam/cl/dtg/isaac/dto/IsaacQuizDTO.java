@@ -64,6 +64,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("version") boolean published,
             @JsonProperty("deprecated") Boolean deprecated,
+            @JsonProperty("supersededBy") String supersededBy,
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
             @JsonProperty("visibleToStudents") boolean visibleToStudents,
@@ -72,7 +73,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
             @JsonProperty("rubric") ContentDTO rubric) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
-                relatedContent, published, deprecated, tags, level);
+                relatedContent, published, deprecated, supersededBy, tags, level);
 
         this.visibleToStudents = visibleToStudents;
         this.hiddenFromRoles = hiddenFromRoles;

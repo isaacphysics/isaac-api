@@ -321,9 +321,12 @@ public class GitContentManager {
 
     public final ResultsWrapper<ContentDTO> searchForContent(
             @Nullable final String searchString,
-            @Nullable final Set<String> ids, @Nullable final Set<String> tags, @Nullable Set<String> levels,
-            @Nullable Set<String> stages, @Nullable Set<String> difficulties, @Nullable Set<String> examBoards,
-            final Set<String> contentTypes, final Integer startIndex, final Integer limit, final boolean showNoFilterContent
+            @Nullable final Set<String> ids, @Nullable final Set<String> tags,
+            @Nullable final Set<String> subjects, @Nullable final Set<String> fields,
+            @Nullable final Set<String> topics, @Nullable final Set<String> books,
+            @Nullable Set<String> levels, @Nullable Set<String> stages, @Nullable Set<String> difficulties,
+            @Nullable Set<String> examBoards, final Set<String> contentTypes, final Integer startIndex,
+            final Integer limit, final boolean showNoFilterContent
     ) throws ContentManagerException {
 
         // Create a set of search terms from the initial search string
@@ -358,21 +361,39 @@ public class GitContentManager {
 
 
         // Additional per-field filters if specified
-        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {{
-            this.put(ID_FIELDNAME, ids);
-            this.put(TAGS_FIELDNAME, tags);
-            this.put(LEVEL_FIELDNAME, levels);
-            this.put(STAGE_FIELDNAME, stages);
-            this.put(DIFFICULTY_FIELDNAME, difficulties);
-            this.put(EXAM_BOARD_FIELDNAME, examBoards);
-        }};
+        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {
+            {
+                this.put(ID_FIELDNAME, ids);
+                this.put(TAGS_FIELDNAME, tags);
+                this.put(SUBJECTS_FIELDNAME, subjects);
+                this.put(FIELDS_FIELDNAME, fields);
+                this.put(TOPICS_FIELDNAME, topics);
+                this.put(BOOKS_FIELDNAME, books);
+                this.put(LEVEL_FIELDNAME, levels);
+                this.put(STAGE_FIELDNAME, stages);
+                this.put(DIFFICULTY_FIELDNAME, difficulties);
+                this.put(EXAM_BOARD_FIELDNAME, examBoards);
+            }
+        };
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                boolean applyOrFilterBetweenValues = Constants.ID_FIELDNAME.equals(entry.getKey());
-                searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
-                        .strategy(Strategy.SIMPLE)
-                        .required(!applyOrFilterBetweenValues));
+                if (BOOKS_FIELDNAME.equals(entry.getKey())) {
+                    // books are stored as a type of tag, but unlike other tags are required fields in the search
+                    searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
+                            .strategy(Strategy.SIMPLE)
+                            .required(true));
+                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME)
+                        .contains(entry.getKey())) {
+                    searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
+                            .strategy(Strategy.SIMPLE)
+                            .atLeastOne(true));
+                } else {
+                    boolean applyOrFilterBetweenValues = ID_FIELDNAME.equals(entry.getKey());
+                    searchInstructionBuilder.searchFor(new SearchInField(entry.getKey(), entry.getValue())
+                            .strategy(Strategy.SIMPLE)
+                            .required(!applyOrFilterBetweenValues));
+                }
             }
         }
 

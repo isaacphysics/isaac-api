@@ -204,7 +204,8 @@ CREATE TABLE public.groups (
     archived boolean DEFAULT false NOT NULL,
     group_status text DEFAULT 'ACTIVE'::text,
     last_updated timestamp without time zone,
-    additional_manager_privileges boolean DEFAULT false
+    additional_manager_privileges boolean DEFAULT false,
+    self_removal boolean DEFAULT false
 );
 
 
@@ -341,6 +342,7 @@ ALTER SEQUENCE public.logged_events_id_seq OWNED BY public.logged_events.id;
 CREATE TABLE public.question_attempts (
     id integer NOT NULL,
     user_id integer NOT NULL,
+    page_id text NOT NULL,
     question_id text NOT NULL,
     question_attempt jsonb,
     correct boolean,
@@ -582,19 +584,6 @@ CREATE TABLE public.user_associations_tokens (
 
 
 ALTER TABLE public.user_associations_tokens OWNER TO rutherford;
-
---
--- Name: user_badges; Type: TABLE; Schema: public; Owner: rutherford
---
-
-CREATE TABLE public.user_badges (
-    user_id integer,
-    badge text,
-    state jsonb
-);
-
-
-ALTER TABLE public.user_badges OWNER TO rutherford;
 
 --
 -- Name: user_credentials; Type: TABLE; Schema: public; Owner: rutherford
@@ -1199,6 +1188,13 @@ CREATE INDEX question_attempts_by_user_question ON public.question_attempts USIN
 
 
 --
+-- Name: question_attempts_by_user_question_page; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX question_attempts_by_user_question_page ON public.question_attempts USING btree (user_id, page_id);
+
+
+--
 -- Name: quiz_attempts_index_by_quiz_id_and_user_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1238,13 +1234,6 @@ CREATE INDEX user_associations_by_receiving ON public.user_associations USING bt
 --
 
 CREATE INDEX user_associations_tokens_groups ON public.user_associations_tokens USING btree (group_id DESC);
-
-
---
--- Name: user_badges_user_id_badge_unique; Type: INDEX; Schema: public; Owner: rutherford
---
-
-CREATE UNIQUE INDEX user_badges_user_id_badge_unique ON public.user_badges USING btree (user_id, badge);
 
 
 --

@@ -235,6 +235,7 @@ public class AssignmentDTO implements IAssignmentLike {
      * Gets the assignerSummary.
      * @return the assignerSummary
      */
+    @Override
     public UserSummaryDTO getAssignerSummary() {
         return assignerSummary;
     }

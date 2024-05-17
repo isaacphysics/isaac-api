@@ -75,7 +75,7 @@ public class SignupFlowIT extends IsaacIntegrationTest {
         // Arrange
         // create instance of groups facade
         GroupsFacade groupsFacade = new GroupsFacade(properties, userAccountManager, logManager, assignmentManager,
-                groupManager, userAssociationManager, userBadgeManager, misuseMonitor);
+                groupManager, userAssociationManager, misuseMonitor);
 
         // log in as unverified teacher
         LoginResult caveatTeacherLogin = loginAs(httpSession, TEST_UNVERIFIED_CAVEAT_EMAIL,
@@ -84,7 +84,7 @@ public class SignupFlowIT extends IsaacIntegrationTest {
         replay(createGroupRequest);
 
         UserGroup userGroup = new UserGroup(null, "Unverified Teacher's Group", TEST_UNVERIFIED_CAVEAT_ID,
-                GroupStatus.ACTIVE, new Date(), false, false, new Date());
+                GroupStatus.ACTIVE, new Date(), false, false, new Date(), false);
 
         // Act
         // make request - this requires a caveat-free login

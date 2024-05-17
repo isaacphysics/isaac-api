@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -47,6 +48,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.InlineRegionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -867,6 +869,11 @@ public class GameManager {
         List<QuestionDTO> results = Lists.newArrayList();
         for (ContentDTO possibleQuestion : contentToFilter) {
 
+            if (possibleQuestion instanceof InlineRegionDTO) {
+                InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) possibleQuestion;
+                results.addAll(inlineRegionDTO.getInlineQuestions());
+            }
+
             if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
                 // we are not interested if this is not a question or if it is a quick question.
                 continue;
@@ -884,6 +891,11 @@ public class GameManager {
     private static List<Question> filterDOQuestionParts(final Collection<Content> contentToFilter) {
         List<Question> results = Lists.newArrayList();
         for (Content possibleQuestion : contentToFilter) {
+
+            if (possibleQuestion instanceof InlineRegion) {
+                InlineRegion inlineRegion = (InlineRegion) possibleQuestion;
+                results.addAll(inlineRegion.getInlineQuestions());
+            }
 
             if (!(possibleQuestion instanceof Question) || possibleQuestion instanceof IsaacQuickQuestion) {
                 // we are not interested if this is not a question or if it is a quick question.
@@ -905,6 +917,12 @@ public class GameManager {
     private static List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
         if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
             return result;
+        }
+
+        if (c instanceof InlineRegionDTO) {
+            // extract inline questions
+            InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) c;
+            result.addAll(inlineRegionDTO.getInlineQuestions());
         }
         
         for (ContentBaseDTO child : c.getChildren()) {
@@ -932,6 +950,12 @@ public class GameManager {
                 // assume that we can't have nested questions
             } else {
                 depthFirstDOQuestionSearch((Content) child, result);
+            }
+
+            if (child instanceof InlineRegion) {
+                // extract inline questions
+                InlineRegion inlineRegion = (InlineRegion) child;
+                result.addAll(inlineRegion.getInlineQuestions());
             }
         }
         return result;
