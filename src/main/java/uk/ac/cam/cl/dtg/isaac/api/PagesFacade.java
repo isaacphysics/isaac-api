@@ -432,7 +432,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     }
                 }
 
-                combinedResults.addAll(summarizedResults.subList(0, Math.min(summarizedResults.size(), 1 + Math.min(SEARCH_RESULTS_PER_PAGE, newLimit) - combinedResults.size())));
+                combinedResults.addAll(summarizedResults.subList(0, 1 + Math.min(summarizedResults.size(), Math.min(SEARCH_RESULTS_PER_PAGE, newLimit) - combinedResults.size())));
                 totalResults = c.getTotalResults();
 
             } catch (ContentManagerException e1) {
