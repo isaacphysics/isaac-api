@@ -29,8 +29,8 @@ WHERE id IN (SELECT user_id FROM archive_in_progress);
 UPDATE linked_accounts SET provider_user_id = gen_random_uuid()
 WHERE user_id IN (SELECT user_id FROM archive_in_progress);
 
--- Delete credential data:
-DELETE FROM user_credentials
+-- Remove sensitive credential data:
+UPDATE user_credentials SET password = concat('DELETED@', gen_random_uuid()), reset_token=NULL, reset_expiry=NULL
 WHERE user_id IN (SELECT user_id FROM archive_in_progress);
 
 COMMIT;
