@@ -57,7 +57,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
                 ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
@@ -83,7 +83,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
                 ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
@@ -109,7 +109,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
                 ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", true, false, 0, -1);
 
         // Assert
@@ -135,7 +135,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
                 String.format("%s,%s", ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), "",
                 "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
@@ -162,7 +162,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
                 "", "Regression Test Page", "", "", "", "", "", "", "", "", "", false, false, 0, -1);
 
         // Assert
@@ -188,7 +188,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), createNiceMock(HttpServletRequest.class),
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
                 "", "Regression Test Page", "", "", "", "", "", "", "", "", "",false, false, 0, 1);
 
         // Assert
