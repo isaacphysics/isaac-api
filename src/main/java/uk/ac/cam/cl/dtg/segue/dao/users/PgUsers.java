@@ -525,11 +525,14 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                     deleteLinkedAccounts.execute();
                 }
 
-                // Remove password and password reset values; a deleted account has no need for these.
+                // Remove password and password reset values. Leave secure_salt and last_updated untouched.
                 // This is safe even in cases where user has no local credentials.
-                String deleteUserCredentialsQuery = "DELETE FROM user_credentials WHERE user_id = ?";
+                String deleteUserCredentialsQuery = "UPDATE user_credentials SET reset_token=NULL, reset_expiry=NULL,"
+                        + "password = ? WHERE user_id = ?";
                 try (PreparedStatement deleteUserCredentials = conn.prepareStatement(deleteUserCredentialsQuery)) {
-                    deleteUserCredentials.setLong(1, userToDelete.getId());
+                    // In SegueLocalAuthenticator we use "LOCKED@..." as a prefix for deliberately-invalid password strings.
+                    deleteUserCredentials.setString(1, "DELETED@" + UUID.randomUUID());
+                    deleteUserCredentials.setLong(2, userToDelete.getId());
                     deleteUserCredentials.execute();
                 }
 
