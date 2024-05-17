@@ -388,7 +388,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         List<ContentSummaryDTO> summarizedResults = null;
         int resultsReturnedByThisSearch = 0;
 
-        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && (summarizedResults == null || resultsReturnedByThisSearch != 0); iterationLimit--) {
+        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && combinedResults.size() < newLimit && (summarizedResults == null || resultsReturnedByThisSearch != 0); iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.searchForContent(
