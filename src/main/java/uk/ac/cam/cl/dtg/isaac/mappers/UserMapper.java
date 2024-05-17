@@ -71,9 +71,11 @@ public interface UserMapper {
   @Mapping(target = "ownerSummary", ignore = true)
   @Mapping(target = "mongoId", ignore = true)
   @Mapping(target = "additionalManagers", ignore = true)
+  @Mapping(target = "additionalManagersUserIds", ignore = true) // Derived value
   UserGroupDTO map(UserGroup source);
 
   // Handling classes with multiple mapping targets
+  @SuppressWarnings("unchecked")
   default <T extends UserSummaryDTO> T map(RegisteredUserDTO source, Class<T> targetClass) {
     if (targetClass.equals(UserSummaryForAdminUsersDTO.class)) {
       return (T) mapUserToAdminSummaryDTO(source);
@@ -90,6 +92,7 @@ public interface UserMapper {
     }
   }
 
+  @SuppressWarnings("unchecked")
   default <T> T map(UserFromAuthProvider source, Class<T> targetClass) {
     if (targetClass.equals(RegisteredUser.class)) {
       return (T) mapUserFromAuthProviderToRegisteredUser(source);
@@ -98,6 +101,7 @@ public interface UserMapper {
     }
   }
 
+  @SuppressWarnings("unchecked")
   default <T> T map(UserSummaryDTO source, Class<T> targetClass) {
     if (targetClass.equals(UserSummaryWithGroupMembershipDTO.class)) {
       return (T) mapUserSummaryDTOtoUserSummaryWithGroupMembershipDTO(source);

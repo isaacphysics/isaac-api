@@ -10,6 +10,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.RoleRequirement;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 
 @Mapper
+@SuppressWarnings("unused")
 public interface AudienceContextMapper {
 
   AudienceContextMapper INSTANCE = Mappers.getMapper(AudienceContextMapper.class);

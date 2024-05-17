@@ -67,6 +67,22 @@ public interface MiscMapper {
   @Mapping(source = "creationContext", target = "context")
   GameboardContentDescriptor mapGameboardItemToGameboardContentDescriptor(GameboardItem source);
 
+  @Mapping(target = "uri", ignore = true)
+  @Mapping(target = "title", ignore = true)
+  @Mapping(target = "tags", ignore = true)
+  @Mapping(target = "supersededBy", ignore = true)
+  @Mapping(target = "state", ignore = true)
+  @Mapping(target = "questionPartsTotal", ignore = true)
+  @Mapping(target = "questionPartsNotAttempted", ignore = true)
+  @Mapping(target = "questionPartsIncorrect", ignore = true)
+  @Mapping(target = "questionPartsCorrect", ignore = true)
+  @Mapping(target = "questionPartStates", ignore = true)
+  @Mapping(target = "passMark", ignore = true)
+  @Mapping(target = "level", ignore = true)
+  @Mapping(target = "difficulty", ignore = true)
+  @Mapping(target = "description", ignore = true)
+  @Mapping(target = "boardId", ignore = true)
+  @Mapping(target = "audience", ignore = true)
   @Mapping(source = "context", target = "creationContext")
   GameboardItem mapGameboardItemToGameboardContentDescriptor(GameboardContentDescriptor source);
 }

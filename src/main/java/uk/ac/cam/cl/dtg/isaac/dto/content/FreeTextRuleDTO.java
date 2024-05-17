@@ -30,16 +30,32 @@ public class FreeTextRuleDTO extends ChoiceDTO {
     this.caseInsensitive = caseInsensitive;
   }
 
+  public boolean isCaseInsensitive() {
+    return caseInsensitive;
+  }
+
   public void setAllowsAnyOrder(final boolean allowsAnyOrder) {
     this.allowsAnyOrder = allowsAnyOrder;
+  }
+
+  public boolean isAllowsAnyOrder() {
+    return allowsAnyOrder;
   }
 
   public void setAllowsExtraWords(final boolean allowsExtraWords) {
     this.allowsExtraWords = allowsExtraWords;
   }
 
+  public boolean isAllowsExtraWords() {
+    return allowsExtraWords;
+  }
+
   public void setAllowsMisspelling(final boolean allowsMisspelling) {
     this.allowsMisspelling = allowsMisspelling;
+  }
+
+  public boolean isAllowsMisspelling() {
+    return allowsMisspelling;
   }
 
   public void setWordProximity(final Integer proximityDistance) {
