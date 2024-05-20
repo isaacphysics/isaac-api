@@ -388,7 +388,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         List<ContentSummaryDTO> summarizedResults = null;
         int resultsReturnedByThisSearch = 0;
 
-        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && combinedResults.size() < newLimit && (summarizedResults == null || resultsReturnedByThisSearch != 0); iterationLimit--) {
+        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && (newLimit < 0 || combinedResults.size() < newLimit) && (summarizedResults == null || resultsReturnedByThisSearch != 0); iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.searchForContent(
@@ -432,7 +432,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     }
                 }
 
-                combinedResults.addAll(summarizedResults.subList(0, 1 + Math.min(summarizedResults.size(), Math.min(SEARCH_RESULTS_PER_PAGE, newLimit) - combinedResults.size())));
+                combinedResults.addAll(summarizedResults.subList(0, Math.min(summarizedResults.size(), 1 + (newLimit >= 0 ? Math.min(SEARCH_RESULTS_PER_PAGE, newLimit) : SEARCH_RESULTS_PER_PAGE) - combinedResults.size())));
                 totalResults = c.getTotalResults();
 
             } catch (ContentManagerException e1) {
