@@ -38,11 +38,11 @@ public interface IUserDataManager {
   /**
    * Register a user in the local data repository.
    *
-   * @param user           - the user object to persist
-   * @param provider       - the provider that has authenticated the user.
-   * @param providerUserId - the provider specific unique user id.
-   * @return the local users id.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param user           the user object to persist
+   * @param provider       the provider that has authenticated the user.
+   * @param providerUserId the provider specific unique user id.
+   * @return the local user's id.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   RegisteredUser registerNewUserWithProvider(RegisteredUser user, AuthenticationProvider provider,
                                              String providerUserId)
@@ -53,25 +53,25 @@ public interface IUserDataManager {
    *
    * @param user with a valid id.
    * @return true if we can find at least one linked account, false if we can't.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   boolean hasALinkedAccount(RegisteredUser user) throws SegueDatabaseException;
 
   /**
    * GetAllLinked Accounts by user.
    *
-   * @param user - the user DO to search for.
+   * @param user the user DO to search for.
    * @return List of authentication providers or an empty list.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   List<AuthenticationProvider> getAuthenticationProvidersByUser(RegisteredUser user) throws SegueDatabaseException;
 
   /**
    * Get all the linked accounts by users in a list.
    *
-   * @param users - the list of DOs to search for.
-   * @return List of authentication providers (or empty list) per user.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param users the list of DOs to search for.
+   * @return Map of authentication providers (or empty list) per user.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   Map<RegisteredUser, List<AuthenticationProvider>> getAuthenticationProvidersByUsers(List<RegisteredUser> users)
       throws SegueDatabaseException;
@@ -80,18 +80,18 @@ public interface IUserDataManager {
    * Get UserAuthenticationSettings Object.
    * This object provides information on how a user can login based on linked accounts and if they have a Segue account
    *
-   * @param userId - user of interest
+   * @param userId user of interest
    * @return UserAuthenticationSettings DO
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   UserAuthenticationSettings getUserAuthenticationSettings(Long userId) throws SegueDatabaseException;
 
   /**
    * Get whether a list of users have a Segue account.
    *
-   * @param users - the list fo DOs to search for.
-   * @return List of Segue account existence information.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param users the list fo DOs to search for.
+   * @return Map of Segue account existence information by user.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   Map<RegisteredUser, Boolean> getSegueAccountExistenceByUsers(List<RegisteredUser> users)
       throws SegueDatabaseException;
@@ -99,10 +99,10 @@ public interface IUserDataManager {
   /**
    * Find a user by their linked account information.
    *
-   * @param provider       - the provider that has authenticated the user.
-   * @param providerUserId - the provider specific unique user id.
+   * @param provider       the provider that has authenticated the user.
+   * @param providerUserId the provider specific unique user id.
    * @return a full populated user object based on the provider authentication information given.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   RegisteredUser getByLinkedAccount(AuthenticationProvider provider, String providerUserId)
       throws SegueDatabaseException;
@@ -110,11 +110,11 @@ public interface IUserDataManager {
   /**
    * Creates a link record, connecting a local user to an external provider for authentication purposes.
    *
-   * @param user           - the local user object
-   * @param provider       - the provider that authenticated the user.
-   * @param providerUserId - the providers unique id for the user.
+   * @param user           the local user object
+   * @param provider       the provider that authenticated the user.
+   * @param providerUserId the providers unique id for the user.
    * @return true if success false if failure.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   boolean linkAuthProviderToAccount(RegisteredUser user, AuthenticationProvider provider, String providerUserId)
       throws SegueDatabaseException;
@@ -127,16 +127,19 @@ public interface IUserDataManager {
    * <br>
    * Note: It is best practice to make sure the user can login with some other means before doing this.
    *
-   * @param user     - The user to use as a search term.
-   * @param provider - the provider to search for.
-   * @throws SegueDatabaseException - if we have a problem accessing the database.
+   * @param user     The user to use as a search term.
+   * @param provider the provider to search for.
+   * @throws SegueDatabaseException if we have a problem accessing the database.
    */
   void unlinkAuthProviderFromUser(RegisteredUser user, AuthenticationProvider provider) throws SegueDatabaseException;
 
   /**
+   * Retrieve a RegisteredUser object from the database corresponding to the specified id.
+   * Users that have been marked as 'deleted' will be ignored.
+   *
    * @param id user id
    * @return the user the matches
-   * @throws SegueDatabaseException - if there is a database problem.
+   * @throws SegueDatabaseException if there is a database problem.
    */
   RegisteredUser getById(Long id) throws SegueDatabaseException;
 
@@ -145,25 +148,25 @@ public interface IUserDataManager {
    * WARNING - Do not expect complete RegisteredUser Objects as data may be missing.
    *
    * @param id                  user id.
-   * @param includeDeletedUsers true will allow inclusion of tombstoned users false will filter them out.
+   * @param includeDeletedUsers true will allow inclusion of tombstoned users, false will filter them out.
    * @return the user the matches
-   * @throws SegueDatabaseException - if there is a database problem.
+   * @throws SegueDatabaseException if there is a database problem.
    */
   RegisteredUser getById(Long id, boolean includeDeletedUsers) throws SegueDatabaseException;
 
   /**
    * Get a user by email.
    *
-   * @param email - local user email address.
+   * @param email local user email address.
    * @return A user object.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   RegisteredUser getByEmail(String email) throws SegueDatabaseException;
 
   /**
    * Find users by a prototype.
    *
-   * @param prototype - a user prototype that can be used for matching fields.
+   * @param prototype a user prototype that can be used for matching fields.
    * @return list of users
    * @throws SegueDatabaseException if there is a database error.
    */
@@ -172,34 +175,34 @@ public interface IUserDataManager {
   /**
    * Bulk find users based on ids.
    *
-   * @param usersToLocate - user ids as a list.
+   * @param usersToLocate user ids as a list.
    * @return a List of Registered Users.
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   List<RegisteredUser> findUsers(List<Long> usersToLocate) throws SegueDatabaseException;
 
   /**
    * Get a user by email verification token.
    *
-   * @param token - password reset token
+   * @param token password reset token
    * @return A user object.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   RegisteredUser getByEmailVerificationToken(String token) throws SegueDatabaseException;
 
   /**
    * Update user object in the data store.
    *
-   * @param user - the user object to persist.
+   * @param user the user object to persist.
    * @return user which was saved.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   RegisteredUser createOrUpdateUser(RegisteredUser user) throws SegueDatabaseException;
 
   /**
    * Delete a user account by id.
    *
-   * @param userToDelete - the user account id to remove.
+   * @param userToDelete the user account id to remove.
    * @throws SegueDatabaseException if an error occurs
    */
   void deleteUserAccount(RegisteredUser userToDelete) throws SegueDatabaseException;
@@ -207,8 +210,8 @@ public interface IUserDataManager {
   /**
    * Merge two user accounts by id.
    *
-   * @param target - the user to merge into.
-   * @param source - the user to remove.
+   * @param target the user to merge into.
+   * @param source the user to remove.
    * @throws SegueDatabaseException if an error occurs
    */
   void mergeUserAccounts(RegisteredUser target, RegisteredUser source) throws SegueDatabaseException;
@@ -287,7 +290,7 @@ public interface IUserDataManager {
    * Count all the users by role and return a map.
    *
    * @return map of user role to integers
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   Map<Role, Long> getRoleCount() throws SegueDatabaseException;
 
@@ -305,7 +308,7 @@ public interface IUserDataManager {
    * Count users' reported genders.
    *
    * @return map of counts for each gender.
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   Map<Gender, Long> getGenderCount() throws SegueDatabaseException;
 
@@ -313,7 +316,7 @@ public interface IUserDataManager {
    * Count users' reported school information.
    *
    * @return map of counts for students who have provided or not provided school information
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException;
 }

@@ -11,6 +11,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 public class EventIsCancelledException extends Exception {
 
   /**
+   * Exception constructor with message for trying to book a cancelled event.
+   *
    * @param message the message explaining the errors.
    */
   public EventIsCancelledException(final String message) {

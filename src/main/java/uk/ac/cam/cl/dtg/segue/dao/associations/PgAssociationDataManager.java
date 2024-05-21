@@ -43,8 +43,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
   /**
    * PostgresAssociationDataManager.
    *
-   * @param database
-   *            - preconfigured connection
+   * @param database preconfigured connection
    */
   @Inject
   public PgAssociationDataManager(final PostgresSqlDb database) {
@@ -284,6 +283,8 @@ public class PgAssociationDataManager implements IAssociationDataManager {
   }
 
   /**
+   * Parse a UserAssociation object from an sql query ResultSet.
+   *
    * @param results from the sql query
    * @return a user association object
    * @throws SQLException if a required property doesn't exist
@@ -294,6 +295,8 @@ public class PgAssociationDataManager implements IAssociationDataManager {
   }
 
   /**
+   * Parse an AssociationToken from an sql query ResultSet.
+   *
    * @param results from the sql query
    * @return an association token
    * @throws SQLException if a required property doesn't exist
@@ -306,10 +309,10 @@ public class PgAssociationDataManager implements IAssociationDataManager {
   /**
    * Helper function to allow deletion of all associations for a given user.
    *
-   * @param userIdOfInterest - the user id of interest
-   * @param isOwner - if true it will delete all cases where the user is the data owner and has shared,
+   * @param userIdOfInterest the user id of interest
+   * @param isOwner if true it will delete all cases where the user is the data owner and has shared,
    *                if false it will delete all cases where the user is the recipient.
-   * @throws SegueDatabaseException - if a data base error occurs.
+   * @throws SegueDatabaseException if a data base error occurs.
    */
   private void deleteAssociations(final Long userIdOfInterest, final boolean isOwner)
       throws SegueDatabaseException {

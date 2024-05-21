@@ -17,8 +17,9 @@
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 /**
- * @author sac92
+ * Object representing an Anvil app.
  *
+ * @author sac92
  */
 public class AnvilAppDTO extends ContentDTO {
   private String appId;

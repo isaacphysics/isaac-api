@@ -86,6 +86,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
       DateTimeFormatter.ofPattern("EEE d MMM yyyy h:mm a").withZone(ZoneId.of(DEFAULT_TIME_LOCALITY));
 
   /**
+   * Constructor for an EmailManager to coordinate the sending of emails.
+   *
    * @param communicator          class we'll use to send the actual email.
    * @param userPreferenceManager user preference manager used to check if users want email.
    * @param globalProperties      global properties used to get host name
@@ -120,7 +122,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Escape any HTML present in the email before sending.
    *
-   * @param emailParameters - the parameters to be inserted into the email
+   * @param emailParameters the parameters to be inserted into the email
    */
   public static void sanitizeEmailParameters(final Map<Object, Object> emailParameters) {
     for (Map.Entry<Object, Object> entry : emailParameters.entrySet()) {
@@ -134,10 +136,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Send an email to a user based on a content template.
    *
-   * @param userDTO              - the user to email
-   * @param emailContentTemplate - the content template to send to the user.
-   * @param tokenToValueMapping  - a Map of tokens to values that will be replaced in the email template.
-   * @param emailType            - the type of email that this is so that it is filtered appropriately based on user
+   * @param userDTO              the user to email
+   * @param emailContentTemplate the content template to send to the user.
+   * @param tokenToValueMapping  a Map of tokens to values that will be replaced in the email template.
+   * @param emailType            the type of email that this is so that it is filtered appropriately based on user
    *                                   email prefs.
    * @throws ContentManagerException if we can't parse the content
    * @throws SegueDatabaseException  if we cannot contact the database for logging.
@@ -151,12 +153,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Send an email to a user based on a content template.
    *
-   * @param userDTO              - the user to email
-   * @param emailContentTemplate - the content template to send to the user.
-   * @param tokenToValueMapping  - a Map of tokens to values that will be replaced in the email template.
-   * @param emailType            - the type of email that this is so that it is filtered appropriately based on user
+   * @param userDTO              the user to email
+   * @param emailContentTemplate the content template to send to the user.
+   * @param tokenToValueMapping  a Map of tokens to values that will be replaced in the email template.
+   * @param emailType            the type of email that this is so that it is filtered appropriately based on user
    *                                   email prefs.
-   * @param attachments          - list of attachment objects
+   * @param attachments          list of attachment objects
    * @throws ContentManagerException if we can't parse the content
    * @throws SegueDatabaseException  if we cannot contact the database for logging.
    */
@@ -189,11 +191,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Function that enables contact us messages to be sent to a random email address (not to a known user).
    *
-   * @param recipientEmailAddress - Email Address to send the contact us message to.
-   * @param emailValues           - must contain at least contactEmail, replyToName, contactSubject plus any other
+   * @param recipientEmailAddress Email Address to send the contact us message to.
+   * @param emailValues           must contain at least contactEmail, replyToName, contactSubject plus any other
    *                                    email tokens to replace.
-   * @throws ContentManagerException - if some content is not found
-   * @throws SegueDatabaseException  - if the database cannot be accessed
+   * @throws ContentManagerException if some content is not found
+   * @throws SegueDatabaseException  if the database cannot be accessed
    */
   public void sendContactUsFormEmail(final String recipientEmailAddress, final Map<String, Object> emailValues)
       throws ContentManagerException, SegueDatabaseException {
@@ -217,12 +219,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   }
 
   /**
-   * @param sendingUser      - the user object for the user sending the email
-   * @param contentObjectId  - the id of the email template being used
-   * @param allSelectedUsers - the users to send email to
-   * @param emailType        - the type of email to send (affects who receives it)
-   * @throws SegueDatabaseException  - a segue database exception
-   * @throws ContentManagerException - a content management exception
+   * Function to send an email to a list of users, using a template id.
+   *
+   * @param sendingUser      the user object for the user sending the email
+   * @param contentObjectId  the id of the email template being used
+   * @param allSelectedUsers the users to send email to
+   * @param emailType        the type of email to send (affects who receives it)
+   * @throws SegueDatabaseException  a segue database exception
+   * @throws ContentManagerException a content management exception
    */
   public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
                               final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType)
@@ -271,12 +275,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
 
   /**
-   * @param sendingUser      - the user object for the user sending the email
-   * @param emailTemplate    - the subject of the email
-   * @param allSelectedUsers - a list of user objects for the users to send the email to
-   * @param emailType        - the type of email to send (affects who receives it)
-   * @throws SegueDatabaseException  - a segue database exception
-   * @throws ContentManagerException - a content management exception
+   * Function to send an email to a list of users, using a template object.
+   *
+   * @param sendingUser      the user object for the user sending the email
+   * @param emailTemplate    the subject of the email
+   * @param allSelectedUsers a list of user objects for the users to send the email to
+   * @param emailType        the type of email to send (affects who receives it)
+   * @throws SegueDatabaseException  a segue database exception
+   * @throws ContentManagerException a content management exception
    */
   public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate,
                                      final List<RegisteredUserDTO> allSelectedUsers,
@@ -328,10 +334,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * This method will also check to see if the email type is allowed to be filtered by preference first
    * e.g. SYSTEM emails cannot be filtered
    *
-   * @param userDTO - the userDTO used for logging. Must not be null.
-   * @param email   - the email we want to send. Must be non-null and have an associated non-null user id
-   * @return boolean - true if the email was added to the queue false if it was filtered for some reason
-   * @throws SegueDatabaseException - the content was of incorrect type
+   * @param userDTO the userDTO used for logging. Must not be null.
+   * @param email   the email we want to send. Must be non-null and have an associated non-null user id
+   * @return boolean true if the email was added to the queue false if it was filtered for some reason
+   * @throws SegueDatabaseException the content was of incorrect type
    */
   private boolean filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
                                                    final EmailCommunicationMessage email)
@@ -382,7 +388,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * This method allows us to send system email without checking for preferences. This should
    * not be used to send email to users
    *
-   * @param email - the email we want to send
+   * @param email the email we want to send
    */
   public void addSystemEmailToQueue(final EmailCommunicationMessage email) {
     addToQueue(email);
@@ -395,9 +401,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
    * <br>
    * Nested fields are addressed as per json objects and separated with the dot operator.
    *
-   * @param inputMap  - A map of string to random object
-   * @param outputMap - the flattened map which is also the returned object
-   * @param keyPrefix - the key prefix - used for recursively creating the map key.
+   * @param inputMap  A map of string to random object
+   * @param outputMap the flattened map which is also the returned object
+   * @param keyPrefix the key prefix - used for recursively creating the map key.
    * @return a flattened map for containing strings that can be used in email template replacement.
    */
   public Map<String, String> flattenTokenMap(final Map<String, Object> inputMap, final Map<String, String> outputMap,
@@ -453,7 +459,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * helper function to map a value to an email friendly string.
    *
-   * @param o - object to map
+   * @param o object to map
    * @return more sensible string representation or null
    */
   private String emailTokenValueMapper(final Object o) {
@@ -561,14 +567,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage.
    *
-   * @param userId            - (nullable) the id of the user the email should be sent to
-   * @param userEmail         - the email of the user
-   * @param emailContent      - an EmailTemplateDTO with the content of the email
-   * @param contentProperties - properties to apply to the template
-   * @param emailType         - the type of e-mail being created
-   * @return - a multi-part EmailCommunicationMessage
-   * @throws ContentManagerException   - if there has been an error accessing content
-   * @throws ResourceNotFoundException - if the resource has not been found
+   * @param userId            (nullable) the id of the user the email should be sent to
+   * @param userEmail         the email of the user
+   * @param emailContent      an EmailTemplateDTO with the content of the email
+   * @param contentProperties properties to apply to the template
+   * @param emailType         the type of e-mail being created
+   * @return a multi-part EmailCommunicationMessage
+   * @throws ContentManagerException   if there has been an error accessing content
+   * @throws ResourceNotFoundException if the resource has not been found
    */
   public EmailCommunicationMessage constructMultiPartEmail(
       @Nullable final Long userId, final String userEmail,
@@ -581,15 +587,15 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage.
    *
-   * @param userId            - (nullable) the id of the user the email should be sent to
-   * @param userEmail         - the email of the user
-   * @param emailContent      - an EmailTemplateDTO with the content of the email
-   * @param contentProperties - properties to apply to the template
-   * @param emailType         - the type of e-mail being created
-   * @param attachments       - list of attachment objects
-   * @return - a multi-part EmailCommunicationMessage
-   * @throws ContentManagerException   - if there has been an error accessing content
-   * @throws ResourceNotFoundException - if the resource has not been found
+   * @param userId            (nullable) the id of the user the email should be sent to
+   * @param userEmail         the email of the user
+   * @param emailContent      an EmailTemplateDTO with the content of the email
+   * @param contentProperties properties to apply to the template
+   * @param emailType         the type of e-mail being created
+   * @param attachments       list of attachment objects
+   * @return a multi-part EmailCommunicationMessage
+   * @throws ContentManagerException   if there has been an error accessing content
+   * @throws ResourceNotFoundException if the resource has not been found
    */
   public EmailCommunicationMessage constructMultiPartEmail(
       @Nullable final Long userId, final String userEmail,
@@ -647,10 +653,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Returns the SegueDTO we will use as an email template.
    *
-   * @param id - the content id of the email template required
-   * @return - the SegueDTO content object
-   * @throws ContentManagerException   - error if there is a problem accessing content
-   * @throws ResourceNotFoundException - error if the content is not of the right type
+   * @param id the content id of the email template required
+   * @return the SegueDTO content object
+   * @throws ContentManagerException   error if there is a problem accessing content
+   * @throws ResourceNotFoundException error if the content is not of the right type
    */
   private ContentDTO getContentDTO(final String id)
       throws ContentManagerException, ResourceNotFoundException {
@@ -666,10 +672,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Returns the EmailTemplateDTO we will use as an email template.
    *
-   * @param id - the content id of the email template required
-   * @return - the SegueDTO content object
-   * @throws ContentManagerException   - error if there is a problem accessing content
-   * @throws ResourceNotFoundException - error if the content is not of the right type
+   * @param id the content id of the email template required
+   * @return the SegueDTO content object
+   * @throws ContentManagerException   error if there is a problem accessing content
+   * @throws ResourceNotFoundException error if the content is not of the right type
    */
   public EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
       ResourceNotFoundException {
@@ -692,8 +698,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
   /**
    * Convert new-style user preference list into old-style EmailType map.
    *
-   * @param userPreferences - the list of user preferences
-   * @return - the old-style EmailType map
+   * @param userPreferences the list of user preferences
+   * @return the old-style EmailType map
    */
   private Map<EmailType, Boolean> convertUserPreferencesToEmailPreferences(final List<UserPreference> userPreferences) {
     Map<EmailType, Boolean> emailPreferences = Maps.newHashMap();

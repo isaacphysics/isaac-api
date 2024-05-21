@@ -27,31 +27,41 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 public interface IGroupObserver {
 
   /**
-   * @param group - the group that the membership was revoked from
-   * @param user  - the user that revoked the membership
+   * Action to be taken when a user is removed from a group.
+   *
+   * @param group the group that the membership was revoked from
+   * @param user  the user that revoked the membership
    */
   void onGroupMembershipRemoved(UserGroupDTO group, RegisteredUserDTO user);
 
   /**
-   * @param group - the group that the user was added to
-   * @param user  - the user added to the group
+   * Action to be taken when a user is added to a group.
+   *
+   * @param group the group that the user was added to
+   * @param user  the user added to the group
    */
   void onMemberAddedToGroup(UserGroupDTO group, RegisteredUserDTO user);
 
   /**
-   * @param group                 - the group that the additional manager was added to
-   * @param additionalManagerUser - the additional manager added to the group
+   * Action to be taken when an additional manager is added to a group.
+   *
+   * @param group                 the group that the additional manager was added to
+   * @param additionalManagerUser the additional manager added to the group
    */
   void onAdditionalManagerAddedToGroup(UserGroupDTO group, RegisteredUserDTO additionalManagerUser);
 
   /**
-   * @param group    - the group for which the additional manager was promoted to owner
-   * @param newOwner - the additional manager that was promoted to group owner
+   * Action to be taken when an additional manager is promoted to group owner.
+   *
+   * @param group    the group for which the additional manager was promoted to owner
+   * @param newOwner the additional manager that was promoted to group owner
    */
   void onAdditionalManagerPromotedToOwner(UserGroupDTO group, RegisteredUserDTO newOwner);
 
   /**
-   * @param group - the group for which the additional manager permissions were changed
+   * Action to be taken when additional manager privileges are changed for a group.
+   *
+   * @param group the group for which the additional manager permissions were changed
    */
   void onAdditionalManagerPrivilegesChanged(UserGroupDTO group);
 

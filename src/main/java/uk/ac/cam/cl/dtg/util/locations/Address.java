@@ -35,18 +35,14 @@ public class Address {
   }
 
   /**
-   * @param addressLine1
-   *            - as a string
-   * @param addressLine2
-   *            - as a string
-   * @param town
-   *            - as a string
-   * @param county
-   *            - as a string
-   * @param postalCode
-   *            - as a string
-   * @param country
-   *            - as a string
+   * An object representing an address.
+   *
+   * @param addressLine1 as a string
+   * @param addressLine2 as a string
+   * @param town as a string
+   * @param county as a string
+   * @param postalCode as a string
+   * @param country as a string
    */
   public Address(final String addressLine1, final String addressLine2, final String town, final String county,
                  final String postalCode, final String country) {

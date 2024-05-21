@@ -19,8 +19,9 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.AnvilAppDTO;
 
 /**
- * @author sac92
+ * Object representing an Anvil app.
  *
+ * @author sac92
  */
 @DTOMapping(AnvilAppDTO.class)
 @JsonContentType("anvilApp")

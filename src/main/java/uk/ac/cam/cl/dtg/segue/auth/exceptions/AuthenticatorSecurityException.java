@@ -29,8 +29,7 @@ public class AuthenticatorSecurityException extends Exception {
   /**
    * Creates an AuthenticatorSecurityException.
    *
-   * @param message
-   *            - to store with the exception.
+   * @param message to store with the exception.
    */
   public AuthenticatorSecurityException(final String message) {
     super(message);

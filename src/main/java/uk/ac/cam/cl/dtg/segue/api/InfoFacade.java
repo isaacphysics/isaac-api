@@ -51,7 +51,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Info Facade
  * <br>
- * This facade is intended to provide access to meta data about the current running system.
+ * This facade is intended to provide access to metadata about the current running system.
  */
 @Path("/info")
 @Tag(name = "/info")
@@ -62,10 +62,12 @@ public class InfoFacade extends AbstractSegueFacade {
   private final SegueJobService segueJobService;
 
   /**
-   * @param properties      - to allow access to system properties.
-   * @param contentManager  - So that metadata about content can be accessed.
-   * @param segueJobService - for checking is the job scheduling service is running.
-   * @param logManager      - for logging events using the logging api.
+   * Constructor for the InfoFacade to provide system metadata.
+   *
+   * @param properties      to allow access to system properties.
+   * @param contentManager  So that metadata about content can be accessed.
+   * @param segueJobService for checking is the job scheduling service is running.
+   * @param logManager      for logging events using the logging api.
    */
   @Inject
   public InfoFacade(final PropertiesLoader properties, final GitContentManager contentManager,
@@ -95,7 +97,7 @@ public class InfoFacade extends AbstractSegueFacade {
   /**
    * Gets the current mode that the segue application is running in.
    *
-   * @param request - for cache control purposes.
+   * @param request for cache control purposes.
    * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
    */
   @GET

@@ -33,6 +33,8 @@ public class RegexPatternDTO extends ChoiceDTO {
   }
 
   /**
+   * Whether to ignore case when checking matches.
+   *
    * @return Whether this regex choice should allow any case to match.
    */
   public boolean isCaseInsensitive() {
@@ -49,6 +51,8 @@ public class RegexPatternDTO extends ChoiceDTO {
   }
 
   /**
+   * Whether matching strings across multiple lines should be permitted.
+   *
    * @return Whether this regex pattern should have the multiline flag set.
    */
   public boolean isMultiLineRegex() {
@@ -65,9 +69,11 @@ public class RegexPatternDTO extends ChoiceDTO {
   }
 
   /**
+   * Whether the whole string must match or just part of it.
+   *
    * @return Whether this regex pattern is partial or exact match.
    */
-  public boolean ismatchWholeString() {
+  public boolean isMatchWholeString() {
     return matchWholeString;
   }
 

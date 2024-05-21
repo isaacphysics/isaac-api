@@ -34,14 +34,14 @@ public class AssignmentDO {
   /**
    * Complete AssignmentDO constructor with all dependencies.
    *
-   * @param id                 - unique id for the gameboard
-   * @param gameboardId        - The gameboard to assign as homework.
-   * @param ownerUserId        - User id of the owner of the gameboard.
-   * @param groupId            - Group id who should be assigned the game board.
-   * @param notes
-   * @param creationDate       - the date the assignment was created.
-   * @param dueDate
-   * @param scheduledStartDate - the date and time the assignment should have notification emails sent to its group
+   * @param id                 unique id for the gameboard
+   * @param gameboardId        The gameboard to assign as homework.
+   * @param ownerUserId        User id of the owner of the gameboard.
+   * @param groupId            Group id who should be assigned the game board.
+   * @param notes              any additional information added to the assignment.
+   * @param creationDate       the date the assignment was created.
+   * @param dueDate            the date the assignment is due to be completed by.
+   * @param scheduledStartDate the date and time the assignment should have notification emails sent to its group
    *                                 (using Quartz)
    */
   public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
@@ -188,10 +188,9 @@ public class AssignmentDO {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof AssignmentDO)) {
+    if (!(obj instanceof AssignmentDO other)) {
       return false;
     }
-    AssignmentDO other = (AssignmentDO) obj;
     if (id == null) {
       if (other.id != null) {
         return false;

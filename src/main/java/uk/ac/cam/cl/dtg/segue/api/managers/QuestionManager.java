@@ -97,10 +97,10 @@ public class QuestionManager {
   /**
    * Create a default Question manager object.
    *
-   * @param mapperUtils                - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs
+   * @param mapperUtils                an auto mapper to allow us to convert to and from QuestionValidationResponseDOs
    *                                   and DTOs.
-   * @param questionPersistenceManager - for question attempt persistence.
-   * @param userPreferenceManager      - An instance of the Abstract User preference manager to check for user
+   * @param questionPersistenceManager for question attempt persistence.
+   * @param userPreferenceManager      An instance of the Abstract User preference manager to check for user
    *                                   preferences
    */
   @Inject
@@ -116,7 +116,7 @@ public class QuestionManager {
   /**
    * Reflection to try and determine the associated validator for the question being answered.
    *
-   * @param questionType - the type of question being answered.
+   * @param questionType the type of question being answered.
    * @return a Validator
    */
   @SuppressWarnings("unchecked")
@@ -147,7 +147,7 @@ public class QuestionManager {
   /**
    * Extract all of the question objects, recursively, from some content.
    *
-   * @param content - The contentDTO which may have question objects as children.
+   * @param content The contentDTO which may have question objects as children.
    * @return A list of QuestionDTO found in the content.
    */
   public static List<QuestionDTO> extractQuestionObjects(final ContentDTO content) {
@@ -158,25 +158,23 @@ public class QuestionManager {
   /**
    * Extract all of the questionObjectsRecursively.
    *
-   * @param toExtract - The contentDTO which may have question objects as children.
-   * @param result    - The initially empty List which will be mutated to contain references to all of the question
+   * @param toExtract The contentDTO which may have question objects as children.
+   * @param result    The initially empty List which will be mutated to contain references to all of the question
    *                  objects.
    * @return The modified result array.
    */
   private static List<QuestionDTO> extractQuestionObjectsRecursively(final ContentDTO toExtract,
                                                                      final List<QuestionDTO> result) {
-    if (toExtract instanceof QuestionDTO) {
+    if (toExtract instanceof QuestionDTO questionDTO) {
       // we found a question so add it to the list.
-      result.add((QuestionDTO) toExtract);
+      result.add(questionDTO);
     }
 
     if (toExtract.getChildren() != null) {
       // Go through each child in the content object.
       for (ContentBaseDTO child : toExtract.getChildren()) {
-        if (child instanceof ContentDTO) {
-          // if it is not a question but it can have children then
-          // continue recursing.
-          ContentDTO childContent = (ContentDTO) child;
+        if (child instanceof ContentDTO childContent) {
+          // if it is not a question but it can have children then continue recursing.
           if (childContent.getChildren() != null) {
             QuestionManager.extractQuestionObjectsRecursively(childContent, result);
           }
@@ -227,7 +225,7 @@ public class QuestionManager {
   /**
    * Reflection to try and determine the associated specifier for the choice given.
    *
-   * @param choiceClass - the type of choice given.
+   * @param choiceClass the type of choice given.
    * @return a Validator
    */
   @SuppressWarnings("unchecked")
@@ -262,11 +260,11 @@ public class QuestionManager {
    * <br>
    * Note: It will not do anything to related content
    *
-   * @param page                  - to augment - this object may be mutated as a result of this method. i.e. BestAttempt
+   * @param page                  to augment - this object may be mutated as a result of this method. i.e. BestAttempt
    *                              field set on question DTOs.
-   * @param userId                - to allow us to provide a per-user experience of question configuration (random seed)
-   * @param usersQuestionAttempts - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
-   * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
+   * @param userId                to allow us to provide a per-user experience of question configuration (random seed)
+   * @param usersQuestionAttempts as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
+   * @return augmented page the return result is by convenience as the page provided as a parameter will be mutated.
    */
   public SeguePageDTO augmentQuestionObjects(
       final SeguePageDTO page, final String userId,
@@ -284,11 +282,11 @@ public class QuestionManager {
   /**
    * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
    *
-   * @param page                  - the page this object may be mutated as a result of this method. i.e. BestAttempt
+   * @param page                  the page this object may be mutated as a result of this method. i.e. BestAttempt
    *                              field set on question DTOs.
-   * @param questionsToAugment    - The flattened list of questions which should be augmented.
-   * @param usersQuestionAttempts - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
-   * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
+   * @param questionsToAugment    The flattened list of questions which should be augmented.
+   * @param usersQuestionAttempts as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
+   * @return augmented page the return result is by convenience as the page provided as a parameter will be mutated.
    */
   private SeguePageDTO augmentQuestionObjectWithAttemptInformation(
       final SeguePageDTO page, final List<QuestionDTO> questionsToAugment,
@@ -333,7 +331,7 @@ public class QuestionManager {
   /**
    * Converts a QuestionValidationResponse into a QuestionValidationResponseDTO.
    *
-   * @param questionValidationResponse - the thing to convert.
+   * @param questionValidationResponse the thing to convert.
    * @return QuestionValidationResponseDTO
    */
   public QuestionValidationResponseDTO convertQuestionValidationResponseToDTO(
@@ -344,8 +342,8 @@ public class QuestionManager {
   /**
    * Record a question attempt for a given user.
    *
-   * @param user             - user that made the attempt.
-   * @param questionResponse - the outcome of the attempt to be persisted.
+   * @param user             user that made the attempt.
+   * @param questionResponse the outcome of the attempt to be persisted.
    */
   public void recordQuestionAttempt(final AbstractSegueUserDTO user,
                                     final QuestionValidationResponseDTO questionResponse)
@@ -353,15 +351,13 @@ public class QuestionManager {
     QuestionValidationResponse questionResponseDO = this.objectMapper.map(questionResponse);
 
     String questionPageId = extractPageIdFromQuestionId(questionResponse.getQuestionId());
-    if (user instanceof RegisteredUserDTO) {
-      RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+    if (user instanceof RegisteredUserDTO registeredUser) {
 
       this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
           questionPageId, questionResponse.getQuestionId(), questionResponseDO);
       log.debug("Question information recorded for user: {}", registeredUser.getId());
 
-    } else if (user instanceof AnonymousUserDTO) {
-      AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
+    } else if (user instanceof AnonymousUserDTO anonymousUserDTO) {
 
       this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
           questionPageId, questionResponse.getQuestionId(), questionResponseDO);
@@ -373,8 +369,8 @@ public class QuestionManager {
   /**
    * Test a question of a particular type against a series of test cases.
    *
-   * @param questionType   - the type of question as a string
-   * @param testDefinition - a TestQuestion data structure containing the choices and test cases to use
+   * @param questionType   the type of question as a string
+   * @param testDefinition a TestQuestion data structure containing the choices and test cases to use
    * @return a List of TestCases describing the results of the tests
    **/
   public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
@@ -412,16 +408,15 @@ public class QuestionManager {
   /**
    * getQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
    *
-   * @param user - with the session information included.
+   * @param user with the session information included.
    * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
       final AbstractSegueUserDTO user) throws SegueDatabaseException {
     requireNonNull(user);
 
-    if (user instanceof RegisteredUserDTO) {
-      RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+    if (user instanceof RegisteredUserDTO registeredUser) {
 
       return this.questionAttemptPersistenceManager.getQuestionAttempts(registeredUser.getId());
     } else {
@@ -432,6 +427,9 @@ public class QuestionManager {
   }
 
   /**
+   * Retrieve a nested map of user ids to question ids they have attempted and, for each attempt, when they did so and
+   * if they were correct.
+   *
    * @param users           who we are interested in.
    * @param questionPageIds we want to look up.
    * @return a map of user id to question page id to question_id to list of attempts.
@@ -468,7 +466,7 @@ public class QuestionManager {
    *
    * @param anonymousUser  to look up question attempts
    * @param registeredUser to merge into.
-   * @throws SegueDatabaseException - if something goes wrong.
+   * @throws SegueDatabaseException if something goes wrong.
    */
   public void mergeAnonymousQuestionAttemptsIntoRegisteredUser(final AnonymousUserDTO anonymousUser,
                                                                final RegisteredUserDTO registeredUser)
@@ -483,7 +481,7 @@ public class QuestionManager {
    * @param timeIntervals An array of time ranges (in string format) for which to get the user counts.
    *                      Each time range is used in the SQL query to filter the results.
    * @return map of counts for each role
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   public Map<TimeInterval, Map<Role, Long>> getAnsweredQuestionRolesOverPrevious(
       final Constants.TimeInterval[] timeIntervals) throws SegueDatabaseException {
@@ -495,10 +493,10 @@ public class QuestionManager {
    * <br>
    * Retrieves a map of days and number of question attempts
    *
-   * @param user     - a User DTO for the user to get question attempt count for
-   * @param fromDate - the start of the date range to fetch
-   * @param toDate   - the end of the date range to fetch
-   * @param perDay   - if true, group count by day, otherwise group count by month
+   * @param user     a User DTO for the user to get question attempt count for
+   * @param fromDate the start of the date range to fetch
+   * @param toDate   the end of the date range to fetch
+   * @param perDay   if true, group count by day, otherwise group count by month
    * @return a Map of LocalDates to attempt counts
    */
   public Map<LocalDate, Long> getUsersQuestionAttemptCountsByDate(final RegisteredUserDTO user,
@@ -525,8 +523,8 @@ public class QuestionManager {
    * This is a helper method that will shuffle multiple choice questions and item questions
    * based on a user specified seed.
    *
-   * @param seed      - Randomness
-   * @param questions - questions which may have choices to shuffle.
+   * @param seed      Randomness
+   * @param questions questions which may have choices to shuffle.
    */
   public void shuffleChoiceQuestionsChoices(final String seed, final List<QuestionDTO> questions) {
     if (null == questions) {
@@ -535,8 +533,7 @@ public class QuestionManager {
 
     // shuffle all choices based on the seed provided, augmented by individual question ID.
     for (QuestionDTO question : questions) {
-      if (question instanceof ChoiceQuestionDTO) {
-        ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+      if (question instanceof ChoiceQuestionDTO choiceQuestion) {
         String questionSeed = seed + choiceQuestion.getId();
 
         Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
@@ -549,8 +546,7 @@ public class QuestionManager {
         // FIXME: this is an Isaac specific thing in a segue class!
         //  Perhaps ItemQuestions could live in Segue, but then what relation should they have to
         //  the IsaacQuestionBase class?
-        if (question instanceof IsaacItemQuestionDTO) {
-          IsaacItemQuestionDTO itemQuestion = (IsaacItemQuestionDTO) question;
+        if (question instanceof IsaacItemQuestionDTO itemQuestion) {
           Boolean randomiseItems = itemQuestion.getRandomiseItems();
           if (randomiseItems == null || randomiseItems) {  // Default to randomised if not set.
             if (itemQuestion.getItems() != null) {

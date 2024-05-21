@@ -78,10 +78,10 @@ public class GroupManager {
   /**
    * GroupManager.
    *
-   * @param groupDatabase - the IUserGroupManager implementation
-   * @param userManager   - the user manager so that the group manager can get user details.
-   * @param gameManager   - the game manager object
-   * @param dtoMapper     - Preconfigured dto mapper
+   * @param groupDatabase the IUserGroupManager implementation
+   * @param userManager   the user manager so that the group manager can get user details.
+   * @param gameManager   the game manager object
+   * @param dtoMapper     Preconfigured dto mapper
    */
   @Inject
   public GroupManager(final IUserGroupPersistenceManager groupDatabase, final UserAccountManager userManager,
@@ -101,10 +101,10 @@ public class GroupManager {
   /**
    * createAssociationGroup.
    *
-   * @param groupName  - name describing the group.
-   * @param groupOwner - the user who wishes to grant permissions to another.
+   * @param groupName  name describing the group.
+   * @param groupOwner the user who wishes to grant permissions to another.
    * @return AssociationGroup
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public UserGroupDTO createUserGroup(final String groupName, final RegisteredUserDTO groupOwner)
       throws SegueDatabaseException {
@@ -120,9 +120,9 @@ public class GroupManager {
   /**
    * createAssociationGroup.
    *
-   * @param groupToEdit - group to edit.
+   * @param groupToEdit group to edit.
    * @return modified group.
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public UserGroupDTO editUserGroup(final UserGroupDTO groupToEdit) throws SegueDatabaseException {
     requireNonNull(groupToEdit);
@@ -145,8 +145,8 @@ public class GroupManager {
   /**
    * Delete Group and all related data.
    *
-   * @param group - to delete
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @param group to delete
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public void deleteGroup(final UserGroupDTO group) throws SegueDatabaseException {
     requireNonNull(group);
@@ -158,7 +158,7 @@ public class GroupManager {
    *
    * @param group to find
    * @return list of users who are members of the group, sorted by given name, then family name (case-insensitive)
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {
     requireNonNull(group);
@@ -176,9 +176,9 @@ public class GroupManager {
   /**
    * Get a map representing the current membership of a given group.
    *
-   * @param groupId - group of interest
+   * @param groupId group of interest
    * @return map of user id to membership record.
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public Map<Long, GroupMembershipDTO> getUserMembershipMapForGroup(final Long groupId) throws SegueDatabaseException {
     Map<Long, GroupMembershipDTO> result = Maps.newHashMap();
@@ -191,8 +191,8 @@ public class GroupManager {
   /**
    * Get an individual users groupMembershipStatus.
    *
-   * @param userId  - userId
-   * @param groupId - groupId
+   * @param userId  userId
+   * @param groupId groupId
    * @return the membership status
    */
   public GroupMembershipStatus getGroupMembershipStatus(final Long userId, final Long groupId)
@@ -203,7 +203,7 @@ public class GroupManager {
   /**
    * Helper method to consistently sort users by given name then family name in a case-insensitive order.
    *
-   * @param users - list of users.
+   * @param users list of users.
    * @return the List of RegisteredUserDTOs ordered by name
    */
   public List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
@@ -220,7 +220,7 @@ public class GroupManager {
   /**
    * get all groups by owner.
    *
-   * @param ownerUser - the owner of the groups to search for.
+   * @param ownerUser the owner of the groups to search for.
    * @return List of groups or empty list.
    * @throws SegueDatabaseException if there is a db error
    */
@@ -232,7 +232,7 @@ public class GroupManager {
   /**
    * getGroupsByOwner.
    *
-   * @param ownerUser          - the owner of the groups to search for.
+   * @param ownerUser          the owner of the groups to search for.
    * @param archivedGroupsOnly if true then only archived groups will be returned,
    *                           if false then only unarchived groups will be returned.
    * @return List of groups or empty list.
@@ -250,11 +250,11 @@ public class GroupManager {
    * This method will get all groups that a user could have an interest in.
    * I.e. if the user is the owner or additional manager of the group the group should be included in the list.
    *
-   * @param ownerUser          - the owner of the groups to search for.
+   * @param ownerUser          the owner of the groups to search for.
    * @param archivedGroupsOnly if true then only archived groups will be returned,
    *                           if false then only unarchived groups will be returned.
    * @return List of groups or empty list.
-   * @throws SegueDatabaseException - if there is a db error
+   * @throws SegueDatabaseException if there is a db error
    */
   public List<UserGroupDTO> getAllGroupsOwnedAndManagedByUser(final RegisteredUserDTO ownerUser,
                                                               final boolean archivedGroupsOnly)
@@ -270,10 +270,10 @@ public class GroupManager {
   /**
    * getGroupMembershipList. Gets the groups a user is a member of.
    *
-   * @param userToLookup  - the user to search for group membership details for.
-   * @param augmentGroups - whether to add owner and manager information to a group.
+   * @param userToLookup  the user to search for group membership details for.
+   * @param augmentGroups whether to add owner and manager information to a group.
    * @return the list of groups the user belongs to.
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup, final boolean augmentGroups)
       throws SegueDatabaseException {
@@ -285,9 +285,9 @@ public class GroupManager {
   /**
    * getGroupMembershipList. Gets the groups a user is a member of.
    *
-   * @param userToLookup - the user to search for group membership details for.
+   * @param userToLookup the user to search for group membership details for.
    * @return the list of groups the user belongs to.
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup) throws SegueDatabaseException {
     return convertGroupsToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()), true);
@@ -296,9 +296,9 @@ public class GroupManager {
   /**
    * Adds a user to a group.
    *
-   * @param group     - the group that the user should be added to
-   * @param userToAdd - the user to add to a group
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @param group     the group that the user should be added to
+   * @param userToAdd the user to add to a group
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public void addUserToGroup(final UserGroupDTO group, final RegisteredUserDTO userToAdd)
       throws SegueDatabaseException {
@@ -324,10 +324,10 @@ public class GroupManager {
   /**
    * Change users group membership status.
    *
-   * @param group     - that should be affected
-   * @param user      - user that should be affected.
-   * @param newStatus - the new membership status
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @param group     that should be affected
+   * @param user      user that should be affected.
+   * @param newStatus the new membership status
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public void setMembershipStatus(final UserGroupDTO group, final RegisteredUserDTO user,
                                   final GroupMembershipStatus newStatus)
@@ -343,9 +343,9 @@ public class GroupManager {
   /**
    * Removes a user from a group.
    *
-   * @param group        - that should be affected
-   * @param userToRemove - user that should be removed.
-   * @throws SegueDatabaseException - If an error occurred while interacting with the database.
+   * @param group        that should be affected
+   * @param userToRemove user that should be removed.
+   * @throws SegueDatabaseException If an error occurred while interacting with the database.
    */
   public void removeUserFromGroup(final UserGroupDTO group, final RegisteredUserDTO userToRemove)
       throws SegueDatabaseException {
@@ -363,8 +363,8 @@ public class GroupManager {
    *
    * @param groupId to search for.
    * @return group or null.
-   * @throws ResourceNotFoundException - if we cannot find the resource specified.
-   * @throws SegueDatabaseException    - if there is a database error.
+   * @throws ResourceNotFoundException if we cannot find the resource specified.
+   * @throws SegueDatabaseException    if there is a database error.
    */
   public UserGroupDTO getGroupById(final Long groupId) throws ResourceNotFoundException, SegueDatabaseException {
     UserGroup group = groupDatabase.findGroupById(groupId);
@@ -379,8 +379,8 @@ public class GroupManager {
   /**
    * Add a user to the list of additional managers who are allowed to manage the group.
    *
-   * @param group     - group to grant permission for
-   * @param userToAdd - user to grant permission to
+   * @param group     group to grant permission for
+   * @param userToAdd user to grant permission to
    * @return The group DTO
    * @throws SegueDatabaseException if there is a db error
    */
@@ -406,9 +406,9 @@ public class GroupManager {
   /**
    * Transfer group ownership from the group owner to another user.
    *
-   * @param group    - group to affect
-   * @param newOwner - user to promote to owner of the group
-   * @param oldOwner - user (must be previous group owner) to demote to additional manager status
+   * @param group    group to affect
+   * @param newOwner user to promote to owner of the group
+   * @param oldOwner user (must be previous group owner) to demote to additional manager status
    * @return The group DTO
    * @throws SegueDatabaseException if there is a db error
    * @throws IllegalAccessException if oldOwner is not the current owner of the group
@@ -454,8 +454,8 @@ public class GroupManager {
   /**
    * Remove a user from the list of additional managers who are allowed to manage the group.
    *
-   * @param group     - group to affect
-   * @param userToAdd - user to remove from the management list
+   * @param group     group to affect
+   * @param userToAdd user to remove from the management list
    * @return The group DTO
    * @throws SegueDatabaseException if there is a db error
    */
@@ -476,7 +476,7 @@ public class GroupManager {
   /**
    * Determine if a group id exists and is valid.
    *
-   * @param groupId - group id
+   * @param groupId group id
    * @return true if it does false if not.
    */
   public boolean isValidGroup(final Long groupId) {
@@ -491,10 +491,10 @@ public class GroupManager {
   /**
    * isUserInGroup?.
    *
-   * @param user  - to look for
-   * @param group - group to check.
+   * @param user  to look for
+   * @param group group to check.
    * @return true if yes, false if no.
-   * @throws SegueDatabaseException - if there is a database problem.
+   * @throws SegueDatabaseException if there is a database problem.
    */
   public boolean isUserInGroup(final RegisteredUserDTO user, final UserGroupDTO group) throws SegueDatabaseException {
     List<UserGroupDTO> groups = this.getGroupMembershipList(user, false);
@@ -502,6 +502,8 @@ public class GroupManager {
   }
 
   /**
+   * Get a count of the groups recorded in the database.
+   *
    * @return the total number of groups stored in the database.
    * @throws SegueDatabaseException if there is a db error
    */
@@ -510,7 +512,9 @@ public class GroupManager {
   }
 
   /**
-   * @param interestedParty - object interested in knowing when groups change
+   * Add a GroupObserver to the list of observers.
+   *
+   * @param interestedParty object interested in knowing when groups change
    */
   public void registerInterestInGroups(final IGroupObserver interestedParty) {
     groupsObservers.add(interestedParty);
@@ -520,8 +524,8 @@ public class GroupManager {
   /**
    * Helper function to check if a user id is in the additional managers list of the group dto.
    *
-   * @param group         - dto
-   * @param userIdToCheck - user id to verify
+   * @param group         dto
+   * @param userIdToCheck user id to verify
    * @return true if they are in the list false if not.
    */
   public static boolean isInAdditionalManagerList(final UserGroupDTO group, final Long userIdToCheck) {
@@ -531,8 +535,8 @@ public class GroupManager {
   /**
    * Helper function to check if a user has general permission to access a group.
    *
-   * @param group         - dto
-   * @param userIdToCheck - user id to verify
+   * @param group         dto
+   * @param userIdToCheck user id to verify
    * @return whether the user is an owner or an additional manager.
    */
   public static boolean isOwnerOrAdditionalManager(final UserGroupDTO group, final Long userIdToCheck) {
@@ -542,8 +546,8 @@ public class GroupManager {
   /**
    * Helper function to check if a user has additional permissions to modify and manage a group.
    *
-   * @param group         - dto
-   * @param userIdToCheck - user id to verify
+   * @param group         dto
+   * @param userIdToCheck user id to verify
    * @return whether the user is an owner or an additional manager with privileges.
    */
   public static boolean hasAdditionalManagerPrivileges(final UserGroupDTO group, final Long userIdToCheck) {
@@ -552,9 +556,11 @@ public class GroupManager {
   }
 
   /**
+   * Convert a UserGroup to it's DTO counterpart, adding UserSummaries for the owner and any additional managers.
+   *
    * @param group to convert
    * @return groupDTO
-   * @throws SegueDatabaseException - if there is a database problem.
+   * @throws SegueDatabaseException if there is a database problem.
    */
   private UserGroupDTO convertGroupToDTO(final UserGroup group) throws SegueDatabaseException {
     UserGroupDTO dtoToReturn = dtoMapper.map(group);
@@ -585,10 +591,10 @@ public class GroupManager {
   /**
    * Convert a collection of group DOs into DTOs.
    *
-   * @param groups        - to convert
-   * @param augmentGroups - whether owner and manager information is required for the group
+   * @param groups        to convert
+   * @param augmentGroups whether owner and manager information is required for the group
    * @return groupDTOs
-   * @throws SegueDatabaseException *            - if there is a database problem.
+   * @throws SegueDatabaseException if there is a database problem.
    */
   private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups, final boolean augmentGroups)
       throws SegueDatabaseException {
@@ -640,9 +646,9 @@ public class GroupManager {
   /**
    * Convert a collection of group DOs into DTOs.
    *
-   * @param groups - to convert
+   * @param groups to convert
    * @return groupDTOs
-   * @throws SegueDatabaseException *            - if there is a database problem.
+   * @throws SegueDatabaseException if there is a database problem.
    */
   private List<UserGroupDTO> convertGroupsToDTOs(final Iterable<UserGroup> groups) throws SegueDatabaseException {
     return convertGroupsToDTOs(groups, true);
@@ -651,10 +657,10 @@ public class GroupManager {
   /**
    * Mutates the list to include group membership information.
    *
-   * @param group                - group to look up membership info
-   * @param summarisedMemberInfo - the list containing summarised user objects - this will be replaced with summarised
+   * @param group                group to look up membership info
+   * @param summarisedMemberInfo the list containing summarised user objects this will be replaced with summarised
    *                                   user objects that include membership information
-   * @throws SegueDatabaseException - if there is an error.
+   * @throws SegueDatabaseException if there is an error.
    */
   public void convertToUserSummaryGroupMembership(final UserGroupDTO group,
                                                   final List<UserSummaryDTO> summarisedMemberInfo)
@@ -679,8 +685,8 @@ public class GroupManager {
    * @param groupMembers Group members for whom to return progress
    * @param assignments  Assignments for which to calculate progress
    * @return Progress per group member, per assignment
-   * @throws SegueDatabaseException
-   * @throws ContentManagerException
+   * @throws SegueDatabaseException if an error occurs while retrieving the gameboard(s)
+   * @throws ContentManagerException if an error occurs while retrieving question page information
    */
   public List<UserGameboardProgressSummaryDTO> getGroupProgressSummary(
       final List<RegisteredUserDTO> groupMembers, final Collection<AssignmentDTO> assignments)
@@ -765,8 +771,8 @@ public class GroupManager {
       GroupMembershipDTO membershipRecord = groupIdToUserMembershipInfoMap.get(assignment.getGroupId()).get(userId);
       // if they are inactive and they became inactive before the assignment was sent we want to skip the assignment.
       Instant assignmentStartDate = null;
-      if (assignment instanceof AssignmentDTO) {
-        assignmentStartDate = ((AssignmentDTO) assignment).getScheduledStartDate();
+      if (assignment instanceof AssignmentDTO assignmentDTO) {
+        assignmentStartDate = assignmentDTO.getScheduledStartDate();
       }
       if (assignmentStartDate == null) {
         assignmentStartDate = assignment.getCreationDate();

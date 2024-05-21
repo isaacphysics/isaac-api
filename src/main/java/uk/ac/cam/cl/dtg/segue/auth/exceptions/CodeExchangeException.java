@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
  * An exception to indicate that there was a problem exchanging code during a 3rd party authentication process.
- *
  */
 public class CodeExchangeException extends Exception {
   private static final long serialVersionUID = 4138638995944518854L;
@@ -33,18 +32,17 @@ public class CodeExchangeException extends Exception {
   /**
    * Constructor with message.
    *
-   * @param message
-   *            - to explain exception.
+   * @param message to explain exception.
    */
   public CodeExchangeException(final String message) {
     super(message);
   }
 
   /**
-   * @param message
-   *            - explaining the exception
-   * @param cause
-   *            - if there is a root cause.
+   * Constructor with message and cause.
+   *
+   * @param message explaining the exception
+   * @param cause if there is a root cause.
    */
   public CodeExchangeException(final String message, final Throwable cause) {
     super(message, cause);

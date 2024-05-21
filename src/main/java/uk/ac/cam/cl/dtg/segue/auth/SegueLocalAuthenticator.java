@@ -65,11 +65,11 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
   /**
    * Creates a segue local authenticator object to validate and create passwords to be stored by the Segue CMS.
    *
-   * @param userDataManager     - the user data manager which allows us to store and query user information.
-   * @param passwordDataManager - data manager for retrieving and updating credentials information
-   * @param properties          - so we can look up system properties.
-   * @param possibleAlgorithms  - Map of possibleAlgorithms
-   * @param preferredAlgorithm  - preferred algorithm for use in hashing operations
+   * @param userDataManager     the user data manager which allows us to store and query user information.
+   * @param passwordDataManager data manager for retrieving and updating credentials information
+   * @param properties          so we can look up system properties.
+   * @param possibleAlgorithms  Map of possibleAlgorithms
+   * @param preferredAlgorithm  preferred algorithm for use in hashing operations
    */
   @Inject
   public SegueLocalAuthenticator(final IUserDataManager userDataManager, final IPasswordDataManager passwordDataManager,
@@ -264,11 +264,13 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
   }
 
   /**
-   * Private method for creating / updating a users password.
+   * Private method for creating / updating a user's password.
    *
-   * @param userToSetPasswordFor - the user to affect
-   * @param plainTextPassword    - the new password.
-   * @throws SegueDatabaseException
+   * @param userToSetPasswordFor the user to affect
+   * @param plainTextPassword    the new password.
+   * @throws SegueDatabaseException   if an error occurs while updating credentials in the database
+   * @throws NoSuchAlgorithmException if the configured salting or hashing algorithms are invalid
+   * @throws InvalidKeySpecException  if the preconfigured hashing key spec is invalid
    */
   private void updateUsersPasswordWithoutValidation(final RegisteredUser userToSetPasswordFor,
                                                     final String plainTextPassword)

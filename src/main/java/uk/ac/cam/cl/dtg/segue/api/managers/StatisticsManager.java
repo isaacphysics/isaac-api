@@ -103,15 +103,15 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * StatisticsManager.
    *
-   * @param userManager              - to query user information
-   * @param logManager               - to query Log information
-   * @param schoolManager            - to query School information
-   * @param contentManager           - to query live version information
-   * @param contentIndex             - index string for current content version
-   * @param groupManager             - so that we can see how many groups we have site wide.
-   * @param questionManager          - so that we can see how many questions were answered.
-   * @param contentSummarizerService - to produce content summary objects
-   * @param userStreaksManager       - to notify users when their answer streak changes
+   * @param userManager              to query user information
+   * @param logManager               to query Log information
+   * @param schoolManager            to query School information
+   * @param contentManager           to query live version information
+   * @param contentIndex             index string for current content version
+   * @param groupManager             so that we can see how many groups we have site wide.
+   * @param questionManager          so that we can see how many questions were answered.
+   * @param contentSummarizerService to produce content summary objects
+   * @param userStreaksManager       to notify users when their answer streak changes
    */
   @Inject
   public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
@@ -142,7 +142,7 @@ public class StatisticsManager implements IStatisticsManager {
    * serializable facade endpoint.
    *
    * @return an ImmutableMap{@literal <String, String>} (stat name, stat value)
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   @Override
   public synchronized Map<String, Object> getGeneralStatistics() throws SegueDatabaseException {
@@ -190,7 +190,7 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * LogCount.
    *
-   * @param logTypeOfInterest - the log event that we care about.
+   * @param logTypeOfInterest the log event that we care about.
    * @return the number of logs of that type (or an estimate).
    * @throws SegueDatabaseException if there is a problem with the database.
    */
@@ -204,7 +204,7 @@ public class StatisticsManager implements IStatisticsManager {
    *
    * @return list of school to statistics mapping. The object in the map is another map with keys connections,
    *     numberActiveLastThirtyDays.
-   * @throws UnableToIndexSchoolsException - if there is a problem getting school details.
+   * @throws UnableToIndexSchoolsException if there is a problem getting school details.
    */
   @Override
   public List<Map<String, Object>> getSchoolStatistics()
@@ -316,11 +316,11 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * Find all users belonging to a given school.
    *
-   * @param schoolId - that we are interested in.
+   * @param schoolId that we are interested in.
    * @return list of users.
-   * @throws SegueDatabaseException        - if there is a general database error
-   * @throws ResourceNotFoundException     - if we cannot locate the school requested.
-   * @throws UnableToIndexSchoolsException - if the school list has not been indexed.
+   * @throws SegueDatabaseException        if there is a general database error
+   * @throws ResourceNotFoundException     if we cannot locate the school requested.
+   * @throws UnableToIndexSchoolsException if the school list has not been indexed.
    */
   @Override
   public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
@@ -350,6 +350,8 @@ public class StatisticsManager implements IStatisticsManager {
   }
 
   /**
+   * Get a map of user ids to the timestamp of their most recent recorded interaction with the platform.
+   *
    * @return a Map of userId's to last event timestamp
    */
   @Override
@@ -375,9 +377,12 @@ public class StatisticsManager implements IStatisticsManager {
   }
 
   /**
+   * Get a map of user ids to the timestamp of the most recent recorded event of the specified type that they are
+   * associated with.
+   *
    * @param qualifyingLogEvent the string event type that will be looked for.
    * @return a map of userId's to last event timestamp
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   @Override
   public Map<String, Instant> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
@@ -389,10 +394,10 @@ public class StatisticsManager implements IStatisticsManager {
    * (and those correct) "totalQuestionsAttempted", "totalCorrect",
    * ,"attemptsByTag", questionAttemptsByLevelStats.
    *
-   * @param userOfInterest - the user you wish to compile statistics for.
+   * @param userOfInterest the user you wish to compile statistics for.
    * @return gets high level statistics about the questions a user has completed.
-   * @throws SegueDatabaseException  - if something went wrong with the database.
-   * @throws ContentManagerException - if we are unable to look up the content.
+   * @throws SegueDatabaseException  if something went wrong with the database.
+   * @throws ContentManagerException if we are unable to look up the content.
    */
   @Override
   public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
@@ -532,12 +537,12 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * getEventLogsByDate.
    *
-   * @param eventTypes     - of interest
-   * @param fromDate       - of interest
-   * @param toDate         - of interest
-   * @param binDataByMonth - shall we group data by the first of every month?
+   * @param eventTypes     of interest
+   * @param fromDate       of interest
+   * @param toDate         of interest
+   * @param binDataByMonth shall we group data by the first of every month?
    * @return Map of eventType --> map of dates and frequency
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   @Override
   public Map<String, Map<LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
@@ -550,13 +555,13 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * getEventLogsByDate.
    *
-   * @param eventTypes     - of interest
-   * @param fromDate       - of interest
-   * @param toDate         - of interest
-   * @param userList       - user prototype to filter events. e.g. user(s) with a particular id or role.
-   * @param binDataByMonth - shall we group data by the first of every month?
+   * @param eventTypes     of interest
+   * @param fromDate       of interest
+   * @param toDate         of interest
+   * @param userList       user prototype to filter events. e.g. user(s) with a particular id or role.
+   * @param binDataByMonth shall we group data by the first of every month?
    * @return Map of eventType --> map of dates and frequency
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   @Override
   public Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(
@@ -571,9 +576,9 @@ public class StatisticsManager implements IStatisticsManager {
   /**
    * Calculate the number of users from the list provided that meet the criteria.
    *
-   * @param users           - collection of users to consider.
-   * @param lastSeenUserMap - The map of user event data. UserId --> last event date.
-   * @param daysFromToday   - the number of days from today that should be included in the calculation e.g. 7 would be
+   * @param users           collection of users to consider.
+   * @param lastSeenUserMap The map of user event data. UserId --> last event date.
+   * @param daysFromToday   the number of days from today that should be included in the calculation e.g. 7 would be
    *                              the last week's data.
    * @return a collection containing the users who meet the criteria
    */
@@ -618,7 +623,7 @@ public class StatisticsManager implements IStatisticsManager {
    *
    * @param ids to search for
    * @return map of id to content object.
-   * @throws ContentManagerException - if something goes wrong.
+   * @throws ContentManagerException if something goes wrong.
    */
   private Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException {
     Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();

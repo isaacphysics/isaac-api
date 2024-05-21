@@ -125,10 +125,10 @@ public class UserAuthenticationManager {
   /**
    * Fully injectable constructor.
    *
-   * @param database            - an IUserDataManager that will support persistence.
-   * @param properties          - A property loader
-   * @param providersToRegister - A map of known authentication providers.
-   * @param emailQueue          - A communications queue for managing emails
+   * @param database            an IUserDataManager that will support persistence.
+   * @param properties          A property loader
+   * @param providersToRegister A map of known authentication providers.
+   * @param emailQueue          A communications queue for managing emails
    */
   @Inject
   public UserAuthenticationManager(final IUserDataManager database,
@@ -156,7 +156,7 @@ public class UserAuthenticationManager {
    * This method is used to extract user-identifying features of a request and return them in csv format.
    * NOTE: The validity of the session token is not checked against the database.
    *
-   * @param request - http request from which to extract user identifying features.
+   * @param request http request from which to extract user identifying features.
    * @return A string of comma-separated user identifying values from the request.
    */
   public String getUserIdentifierCsv(final HttpServletRequest request) {
@@ -185,12 +185,12 @@ public class UserAuthenticationManager {
    * This method can be used for regular logins, new registrations or for linking 3rd party authenticators to an
    * existing Segue user account.
    *
-   * @param request  - http request that we can attach the session to and that already has a redirect url attached.
-   * @param provider - the provider the user wishes to authenticate with.
+   * @param request  http request that we can attach the session to and that already has a redirect url attached.
+   * @param provider the provider the user wishes to authenticate with.
    * @return A json response containing a URI to the authentication provider if authorization / login is required.
    *     Alternatively a SegueErrorResponse could be returned.
-   * @throws IOException                            -
-   * @throws AuthenticationProviderMappingException - as per exception description.
+   * @throws IOException                            if there is an error when contacting the OAuth server
+   * @throws AuthenticationProviderMappingException as per exception description.
    */
   public URI getThirdPartyAuthURI(final HttpServletRequest request, final String provider)
       throws IOException, AuthenticationProviderMappingException {
@@ -227,16 +227,16 @@ public class UserAuthenticationManager {
    * Get the 3rd party authentication providers user object.
    * This can be used to look up existing segue users or create a new one.
    *
-   * @param request  - to retrieve session params
-   * @param provider - the provider we are interested in.
+   * @param request  to retrieve session params
+   * @param provider the provider we are interested in.
    * @return a user object with 3rd party data inside.
-   * @throws AuthenticationProviderMappingException - if we cannot locate an appropriate authenticator.
-   * @throws IOException                            - Problem reading something
-   * @throws NoUserException                        - If the user doesn't exist with the provider.
-   * @throws AuthenticatorSecurityException         - If there is a security probably with the authenticator.
-   * @throws CrossSiteRequestForgeryException       - as per exception description.
-   * @throws CodeExchangeException                  - as per exception description.
-   * @throws AuthenticationCodeException            - as per exception description.
+   * @throws AuthenticationProviderMappingException if we cannot locate an appropriate authenticator.
+   * @throws IOException                            Problem reading something
+   * @throws NoUserException                        If the user doesn't exist with the provider.
+   * @throws AuthenticatorSecurityException         If there is a security probably with the authenticator.
+   * @throws CrossSiteRequestForgeryException       as per exception description.
+   * @throws CodeExchangeException                  as per exception description.
+   * @throws AuthenticationCodeException            as per exception description.
    */
   public UserFromAuthProvider getThirdPartyUserInformation(final HttpServletRequest request, final String provider)
       throws AuthenticationProviderMappingException, AuthenticatorSecurityException, NoUserException,
@@ -267,10 +267,10 @@ public class UserAuthenticationManager {
    * This method will attempt to find a segue user using a 3rd party provider and a unique id that identifies the user
    * to the provider.
    *
-   * @param provider   - the provider that we originally validated with
-   * @param providerId - the unique ID of the user as given to us from the provider.
+   * @param provider   the provider that we originally validated with
+   * @param providerId the unique ID of the user as given to us from the provider.
    * @return A user object or null if we were unable to find the user with the information provided.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public RegisteredUser getSegueUserFromLinkedAccount(final AuthenticationProvider provider, final String providerId)
       throws SegueDatabaseException {
@@ -285,16 +285,18 @@ public class UserAuthenticationManager {
   }
 
   /**
-   * @param provider          - the provider the user wishes to authenticate with.
-   * @param email             - the email the user wishes to use
-   * @param plainTextPassword - the plain text password the user has provided
-   * @return - a registered user object
-   * @throws AuthenticationProviderMappingException - if we cannot find an authenticator
-   * @throws SegueDatabaseException                 - if there is a problem with the database.
-   * @throws IncorrectCredentialsProvidedException  - if the password is incorrect
-   * @throws NoCredentialsAvailableException        - If the account exists but does not have a local password
-   * @throws NoSuchAlgorithmException               - if the configured algorithm is not valid.
-   * @throws InvalidKeySpecException                - if the preconfigured key spec is invalid.
+   * Retrieve a user using a third-party authentication provider.
+   *
+   * @param provider          the provider the user wishes to authenticate with.
+   * @param email             the email the user wishes to use
+   * @param plainTextPassword the plain text password the user has provided
+   * @return a registered user object
+   * @throws AuthenticationProviderMappingException if we cannot find an authenticator
+   * @throws SegueDatabaseException                 if there is a problem with the database.
+   * @throws IncorrectCredentialsProvidedException  if the password is incorrect
+   * @throws NoCredentialsAvailableException        If the account exists but does not have a local password
+   * @throws NoSuchAlgorithmException               if the configured algorithm is not valid.
+   * @throws InvalidKeySpecException                if the preconfigured key spec is invalid.
    */
   public final RegisteredUser getSegueUserFromCredentials(final String provider, final String email,
                                                           final String plainTextPassword)
@@ -305,8 +307,7 @@ public class UserAuthenticationManager {
     requireNonNull(plainTextPassword);
     IAuthenticator authenticator = mapToProvider(provider);
 
-    if (authenticator instanceof IPasswordAuthenticator) {
-      IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
+    if (authenticator instanceof IPasswordAuthenticator passwordAuthenticator) {
 
       return passwordAuthenticator.authenticate(email, plainTextPassword);
     } else {
@@ -318,7 +319,7 @@ public class UserAuthenticationManager {
   /**
    * Checks to see if a user has valid way to authenticate with Segue.
    *
-   * @param user - to check
+   * @param user to check
    * @return true means the user should have a means of authenticating with their account as far as we are concerned
    */
   public boolean hasLocalCredentials(final RegisteredUser user) throws SegueDatabaseException {
@@ -329,7 +330,7 @@ public class UserAuthenticationManager {
   }
 
   /**
-   * This method will look up a userDO based on the session information provided.
+   * This method will look up a userDO based on the session information provided in the request.
    *
    * @param request                           containing session information
    * @param allowIncompleteLoginsToReturnUser boolean if true will allow users that haven't completed MFA to be
@@ -376,7 +377,9 @@ public class UserAuthenticationManager {
   }
 
   /**
-   * @param request - request to get the session and therefore user from
+   * This method will look up a userDO based on the session information provided in the request.
+   *
+   * @param request request to get the session and therefore user from
    * @return the current User
    * @see #getUserFromSession(HttpServletRequest, boolean) - the two types of "request" have identical methods but are
    *     not related by interfaces or inheritance and so require duplicated methods!
@@ -432,14 +435,14 @@ public class UserAuthenticationManager {
    * as per normal users but will have an additional status flag that indicates they haven't completed MFA.
    * This method will act upon that by refusing to return the user if the boolean parameter is set to false.
    *
-   * @param currentSessionInformation         - the session information map extracted from the cookie.
-   * @param allowIncompleteLoginsToReturnUser - boolean if true will allow users that haven't completed MFA to be
+   * @param currentSessionInformation         the session information map extracted from the cookie.
+   * @param allowIncompleteLoginsToReturnUser boolean if true will allow users that haven't completed MFA to be
    *                                                returned, false will be stricter and return null if user hasn't
    *                                                completed MFA.
    * @return either the valid user from the cookie, or null if no valid user
-   * @see #getUserFromSession(HttpServletRequest, boolean) - there are two types of "request" and they have identical
+   * @see #getUserFromSession(HttpServletRequest, boolean) there are two types of "request" and they have identical
    *     methods
-   * @see #getUserFromSession(UpgradeRequest) -     but unrelated by interfaces/inheritance, so require duplication!
+   * @see #getUserFromSession(UpgradeRequest)     but unrelated by interfaces/inheritance, so require duplication!
    */
   private RegisteredUser getUserFromSessionInformationMap(final Map<String, String> currentSessionInformation,
                                                           final boolean allowIncompleteLoginsToReturnUser) {
@@ -475,8 +478,8 @@ public class UserAuthenticationManager {
   /**
    * Create a signed session based on the user DO provided and the http request and response.
    *
-   * @param response - for creating the session
-   * @param user     - the user who should be logged in.
+   * @param response for creating the session
+   * @param user     the user who should be logged in.
    * @return the request and response will be modified and the original userDO will be returned for convenience.
    */
   public RegisteredUser createUserSession(final HttpServletResponse response, final RegisteredUser user)
@@ -488,8 +491,8 @@ public class UserAuthenticationManager {
   /**
    * Create a signed session based on the user DO provided and the http request and response.
    *
-   * @param response - for creating the session
-   * @param user     - the user who should be logged in.
+   * @param response for creating the session
+   * @param user     the user who should be logged in.
    * @return the request and response will be modified and the original userDO will be returned for convenience.
    */
   public RegisteredUser createIncompleteLoginUserSession(final HttpServletResponse response, final RegisteredUser user)
@@ -503,8 +506,8 @@ public class UserAuthenticationManager {
    *
    * @param request  containing the tomcat session to destroy
    * @param response to destroy the segue cookie.
-   * @throws NoUserLoggedInException - if a user cannot be retrieved from the session information
-   * @throws SegueDatabaseException  - if accessing the database fails
+   * @throws NoUserLoggedInException if a user cannot be retrieved from the session information
+   * @throws SegueDatabaseException  if accessing the database fails
    */
   public void destroyUserSession(final HttpServletRequest request, final HttpServletResponse response)
       throws NoUserLoggedInException, SegueDatabaseException {
@@ -524,9 +527,9 @@ public class UserAuthenticationManager {
    * Takes a request holding an authentication cookie and invalidates the associated session token stored in the
    * database.
    *
-   * @param request - a servlet request holding an auth cookie for the user session to be invalidated
-   * @throws NoUserLoggedInException - if a user cannot be retrieved from the session information
-   * @throws SegueDatabaseException  - if accessing the database fails
+   * @param request a servlet request holding an auth cookie for the user session to be invalidated
+   * @throws NoUserLoggedInException if a user cannot be retrieved from the session information
+   * @throws SegueDatabaseException  if accessing the database fails
    */
   public void invalidateSessionToken(final HttpServletRequest request)
       throws NoUserLoggedInException, SegueDatabaseException {
@@ -544,7 +547,7 @@ public class UserAuthenticationManager {
   /**
    * Attempts to map a string to a known provider.
    *
-   * @param provider - String representation of the provider requested
+   * @param provider String representation of the provider requested
    * @return the FederatedAuthenticator object which can be used to get a user.
    * @throws AuthenticationProviderMappingException if we are unable to locate the provider requested.
    */
@@ -573,10 +576,10 @@ public class UserAuthenticationManager {
   /**
    * Link Provider To Existing Account.
    *
-   * @param currentUser            - the current user to link provider to.
+   * @param currentUser            the current user to link provider to.
    * @param federatedAuthenticator the federatedAuthenticator we are using for authentication
-   * @param providerUserObject     - the user object provided by the 3rd party authenticator.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param providerUserObject     the user object provided by the 3rd party authenticator.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public void linkProviderToExistingAccount(final RegisteredUser currentUser,
                                             final AuthenticationProvider federatedAuthenticator,
@@ -595,12 +598,12 @@ public class UserAuthenticationManager {
    * <br>
    * Removes the link between a user and a provider.
    *
-   * @param userDO         - user to affect.
-   * @param providerString - provider to unassociated.
-   * @throws SegueDatabaseException                 - if there is an error during the database update.
-   * @throws MissingRequiredFieldException          - If the change will mean that the user will be unable to login
-   *                                                      again.
-   * @throws AuthenticationProviderMappingException - if we are unable to locate the authentication provider specified.
+   * @param userDO         user to affect.
+   * @param providerString provider to unassociated.
+   * @throws SegueDatabaseException                 if there is an error during the database update.
+   * @throws MissingRequiredFieldException          If the change will mean that the user will be unable to login
+   *                                                again.
+   * @throws AuthenticationProviderMappingException if we are unable to locate the authentication provider specified.
    */
   public void unlinkUserAndProvider(final RegisteredUser userDO, final String providerString)
       throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
@@ -630,12 +633,12 @@ public class UserAuthenticationManager {
    * This method will use an email address to check a local user exists and if so, will send an email with a unique
    * token to allow a password reset. This method does not indicate whether or not the email actually existed.
    *
-   * @param userDO    - A user object containing the email address of the user to reset the password for.
-   * @param userAsDTO - A user DTO object sanitised so that we can send it to the email manager.
-   * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
-   * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
-   * @throws CommunicationException   - if a fault occurred whilst sending the communique
-   * @throws SegueDatabaseException   - If there is an internal database error.
+   * @param userDO    A user object containing the email address of the user to reset the password for.
+   * @param userAsDTO A user DTO object sanitised so that we can send it to the email manager.
+   * @throws NoSuchAlgorithmException if the configured algorithm is not valid.
+   * @throws InvalidKeySpecException  if the preconfigured key spec is invalid.
+   * @throws CommunicationException   if a fault occurred whilst sending the communique
+   * @throws SegueDatabaseException   If there is an internal database error.
    */
   public final void resetPasswordRequest(final RegisteredUser userDO, final RegisteredUserDTO userAsDTO)
       throws InvalidKeySpecException,
@@ -673,12 +676,12 @@ public class UserAuthenticationManager {
   /**
    * This method will use a unique password reset token to set a new password.
    *
-   * @param token       - the password reset token
-   * @param newPassword - New password to set in plain text
+   * @param token       the password reset token
+   * @param newPassword New password to set in plain text
    * @return the user which has had the password reset.
-   * @throws InvalidTokenException    - If the token provided is invalid.
-   * @throws InvalidPasswordException - If the password provided is invalid.
-   * @throws SegueDatabaseException   - If there is an internal database error.
+   * @throws InvalidTokenException    If the token provided is invalid.
+   * @throws InvalidPasswordException If the password provided is invalid.
+   * @throws SegueDatabaseException   If there is an internal database error.
    */
   public RegisteredUser resetPassword(final String token, final String newPassword)
       throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException,
@@ -704,10 +707,10 @@ public class UserAuthenticationManager {
   /**
    * This method will send a message to a user explaining that they only use a federated authenticator.
    *
-   * @param user                  - a user with the givenName, email and token fields set
-   * @param userAsDTO             - A user DTO object sanitised so that we can send it to the email manager.
-   * @param additionalEmailValues - Additional email values to find and replace including any password reset urls.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param user                  a user with the givenName, email and token fields set
+   * @param userAsDTO             A user DTO object sanitised so that we can send it to the email manager.
+   * @param additionalEmailValues Additional email values to find and replace including any password reset urls.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO,
                                                       final Map<String, Object> additionalEmailValues)
@@ -770,12 +773,12 @@ public class UserAuthenticationManager {
    * This method is an oauth2 specific method which will ultimately provide an internal reference number that the
    * oauth2 provider can use to lookup the information of the user who has just authenticated.
    *
-   * @param oauthProvider - The provider to authenticate against.
-   * @param request       - The request that will contain session information.
+   * @param oauthProvider The provider to authenticate against.
+   * @param request       The request that will contain session information.
    * @return an internal reference number that will allow retrieval of the users information from the provider.
-   * @throws AuthenticationCodeException      - possible authentication code issues.
-   * @throws CodeExchangeException            - exception whilst exchanging codes
-   * @throws CrossSiteRequestForgeryException - Unable to guarantee no CSRF
+   * @throws AuthenticationCodeException      possible authentication code issues.
+   * @throws CodeExchangeException            exception whilst exchanging codes
+   * @throws CrossSiteRequestForgeryException Unable to guarantee no CSRF
    */
   private String getOauthInternalRefCode(final IOAuthAuthenticator oauthProvider, final HttpServletRequest request)
       throws AuthenticationCodeException, CodeExchangeException,
@@ -804,10 +807,10 @@ public class UserAuthenticationManager {
   /**
    * Verify with the request that there is no CSRF violation.
    *
-   * @param request       - http request to verify there is no CSRF
-   * @param oauthProvider -
+   * @param request       http request to verify there is no CSRF
+   * @param oauthProvider the OAuth authenticator to use when verifying the request
    * @return true if we are happy , false if we think a violation has occurred.
-   * @throws CrossSiteRequestForgeryException - if we suspect cross site request forgery.
+   * @throws CrossSiteRequestForgeryException if we suspect cross site request forgery.
    */
   private boolean ensureNoCSRF(final HttpServletRequest request, final IOAuthAuthenticator oauthProvider)
       throws CrossSiteRequestForgeryException {
@@ -958,11 +961,11 @@ public class UserAuthenticationManager {
   /**
    * Calculate the session HMAC value based on the properties of interest.
    *
-   * @param key              - secret key.
-   * @param userId           - User Id
-   * @param currentDate      - Current date
-   * @param sessionToken     - a token allowing session invalidation
-   * @param partialLoginFlag - Boolean data to encode in the cookie - true if a partial login
+   * @param key              secret key.
+   * @param userId           User Id
+   * @param currentDate      Current date
+   * @param sessionToken     a token allowing session invalidation
+   * @param partialLoginFlag Boolean data to encode in the cookie - true if a partial login
    * @return HMAC signature.
    */
   public String calculateSessionHMAC(final String key, final String userId, final String currentDate,
@@ -1023,10 +1026,10 @@ public class UserAuthenticationManager {
   /**
    * This method will extract the segue session information from a given request.
    *
-   * @param request - possibly containing a segue cookie.
+   * @param request possibly containing a segue cookie.
    * @return The segue session information (unchecked or validated)
-   * @throws IOException             - problem parsing session information.
-   * @throws InvalidSessionException - if there is no session set or if it is not valid.
+   * @throws IOException             problem parsing session information.
+   * @throws InvalidSessionException if there is no session set or if it is not valid.
    */
   private Map<String, String> getSegueSessionFromRequest(final HttpServletRequest request) throws IOException,
       InvalidSessionException {
@@ -1055,9 +1058,11 @@ public class UserAuthenticationManager {
   }
 
   /**
-   * @param request - request to get the session cookie from
+   * This method will extract the segue session information from a given request.
+   *
+   * @param request request to get the session cookie from
    * @return a Map of session information
-   * @see #getSegueSessionFromRequest(HttpServletRequest) - except for some reason a WebSocket UpgradeRrequest is not
+   * @see #getSegueSessionFromRequest(HttpServletRequest) except for some reason a WebSocket UpgradeRrequest is not
    *     an HttpServletRequest. Worse, the cookies from an HttpServletRequest are Cookie objects, but those from the
    *     WebSocket UpgradeRequest are HttpCookies!
    */
@@ -1090,8 +1095,8 @@ public class UserAuthenticationManager {
   /**
    * Generate an HMAC using a key and the data to sign.
    *
-   * @param key        - HMAC key for signing
-   * @param dataToSign - data to be signed
+   * @param key        HMAC key for signing
+   * @param dataToSign data to be signed
    * @return HMAC - Unique HMAC.
    */
   public static String calculateHMAC(final String key, final String dataToSign) {

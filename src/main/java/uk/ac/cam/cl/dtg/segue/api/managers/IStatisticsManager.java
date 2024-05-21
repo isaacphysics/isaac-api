@@ -23,7 +23,7 @@ public interface IStatisticsManager {
    * serializable facade endpoint.
    *
    * @return an ImmutableMap{@literal <String, String>} (stat name, stat value)
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   Map<String, Object> getGeneralStatistics()
       throws SegueDatabaseException;
@@ -31,7 +31,7 @@ public interface IStatisticsManager {
   /**
    * LogCount.
    *
-   * @param logTypeOfInterest - the log event that we care about.
+   * @param logTypeOfInterest the log event that we care about.
    * @return the number of logs of that type (or an estimate).
    * @throws SegueDatabaseException if there is a problem with the database.
    */
@@ -42,7 +42,7 @@ public interface IStatisticsManager {
    *
    * @return list of school to statistics mapping. The object in the map is another map with keys connections,
    *     numberActiveLastThirtyDays.
-   * @throws UnableToIndexSchoolsException - if there is a problem getting school details.
+   * @throws UnableToIndexSchoolsException if there is a problem getting school details.
    */
   List<Map<String, Object>> getSchoolStatistics()
       throws UnableToIndexSchoolsException, SegueSearchException;
@@ -58,24 +58,29 @@ public interface IStatisticsManager {
   /**
    * Find all users belonging to a given school.
    *
-   * @param schoolId - that we are interested in.
+   * @param schoolId that we are interested in.
    * @return list of users.
-   * @throws SegueDatabaseException        - if there is a general database error
-   * @throws ResourceNotFoundException     - if we cannot locate the school requested.
-   * @throws UnableToIndexSchoolsException - if the school list has not been indexed.
+   * @throws SegueDatabaseException        if there is a general database error
+   * @throws ResourceNotFoundException     if we cannot locate the school requested.
+   * @throws UnableToIndexSchoolsException if the school list has not been indexed.
    */
   List<RegisteredUserDTO> getUsersBySchoolId(String schoolId) throws ResourceNotFoundException,
       SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException;
 
   /**
+   * Get a map of user ids to the timestamp of their most recent recorded interaction with the platform.
+   *
    * @return a Map of userId's to last event timestamp
    */
   Map<String, Instant> getLastSeenUserMap();
 
   /**
+   * Get a map of user ids to the timestamp of the most recent recorded event of the specified type that they are
+   * associated with.
+   *
    * @param qualifyingLogEvent the string event type that will be looked for.
    * @return a map of userId's to last event timestamp
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   Map<String, Instant> getLastSeenUserMap(String qualifyingLogEvent) throws SegueDatabaseException;
 
@@ -84,10 +89,10 @@ public interface IStatisticsManager {
    * (and those correct) "totalQuestionsAttempted", "totalCorrect",
    * ,"attemptsByTag", questionAttemptsByLevelStats.
    *
-   * @param userOfInterest - the user you wish to compile statistics for.
+   * @param userOfInterest the user you wish to compile statistics for.
    * @return gets high level statistics about the questions a user has completed.
-   * @throws SegueDatabaseException  - if something went wrong with the database.
-   * @throws ContentManagerException - if we are unable to look up the content.
+   * @throws SegueDatabaseException  if something went wrong with the database.
+   * @throws ContentManagerException if we are unable to look up the content.
    */
   Map<String, Object> getUserQuestionInformation(RegisteredUserDTO userOfInterest)
       throws SegueDatabaseException, ContentManagerException;
@@ -95,12 +100,12 @@ public interface IStatisticsManager {
   /**
    * getEventLogsByDate.
    *
-   * @param eventTypes     - of interest
-   * @param fromDate       - of interest
-   * @param toDate         - of interest
-   * @param binDataByMonth - shall we group data by the first of every month?
+   * @param eventTypes     of interest
+   * @param fromDate       of interest
+   * @param toDate         of interest
+   * @param binDataByMonth shall we group data by the first of every month?
    * @return Map of eventType --> map of dates and frequency
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   Map<String, Map<LocalDate, Long>> getEventLogsByDate(
       Collection<String> eventTypes, Instant fromDate, Instant toDate, boolean binDataByMonth)
@@ -109,13 +114,13 @@ public interface IStatisticsManager {
   /**
    * getEventLogsByDate.
    *
-   * @param eventTypes     - of interest
-   * @param fromDate       - of interest
-   * @param toDate         - of interest
-   * @param userList       - user prototype to filter events. e.g. user(s) with a particular id or role.
-   * @param binDataByMonth - shall we group data by the first of every month?
+   * @param eventTypes     of interest
+   * @param fromDate       of interest
+   * @param toDate         of interest
+   * @param userList       user prototype to filter events. e.g. user(s) with a particular id or role.
+   * @param binDataByMonth shall we group data by the first of every month?
    * @return Map of eventType --> map of dates and frequency
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(
       Collection<String> eventTypes, Instant fromDate, Instant toDate, List<RegisteredUserDTO> userList,
@@ -125,9 +130,9 @@ public interface IStatisticsManager {
   /**
    * Calculate the number of users from the list provided that meet the criteria.
    *
-   * @param users           - collection of users to consider.
-   * @param lastSeenUserMap - The map of user event data. UserId --> last event date.
-   * @param daysFromToday   - the number of days from today that should be included in the calculation e.g. 7 would be
+   * @param users           collection of users to consider.
+   * @param lastSeenUserMap The map of user event data. UserId --> last event date.
+   * @param daysFromToday   the number of days from today that should be included in the calculation e.g. 7 would be
    *                              the last week's data.
    * @return a collection containing the users who meet the criteria
    */

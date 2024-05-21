@@ -44,6 +44,8 @@ public interface ISearchProvider {
   boolean hasIndex(String indexBase, String indexType);
 
   /**
+   * Get a list of all known search indices.
+   *
    * @return the list of all indices.
    */
   Collection<String> getAllIndices();
@@ -51,14 +53,14 @@ public interface ISearchProvider {
   /**
    * Paginated Match search for one field.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - ElasticSearch index base string
-   *<br>indexType - Index type
-   *<br>startIndex - e.g. 0 for the first set of results
-   *<br>limit - e.g. 10 for 10 results per page
-   * @param fieldsToMatch         - the field name to use - and the field name search term
-   * @param sortInstructions      - the map of how to sort each field of interest.
-   * @param filterInstructions    - the map of how to sort each field of interest.
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - ElasticSearch index base string
+   *                              <br>indexType  - Index type
+   *                              <br>startIndex - e.g. 0 for the first set of results
+   *                              <br>limit      - e.g. 10 for 10 results per page
+   * @param fieldsToMatch         the field name to use - and the field name search term
+   * @param sortInstructions      the map of how to sort each field of interest.
+   * @param filterInstructions    the map of how to sort each field of interest.
    * @return Results
    */
   ResultsWrapper<String> matchSearch(
@@ -72,15 +74,16 @@ public interface ISearchProvider {
    * <br>
    * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - the base string for the name of the index
-   *<br>indexType - the name of the type of document being searched for
-   *<br>startIndex - e.g. 0 for the first set of results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
-   * @param searchString          - the string to use for fuzzy matching
-   * @param fieldsThatMustMatch   - Map of Must match field -> value
-   * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
-   * @param fields                - array (var args) of fields to search using the searchString
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - the base string for the name of the index
+   *                              <br>indexType  - the name of the type of document being searched for
+   *                              <br>startIndex - e.g. 0 for the first set of results
+   *                              <br>limit      - the maximum number of results to return -1 will attempt to return all
+   *                              results.
+   * @param searchString          the string to use for fuzzy matching
+   * @param fieldsThatMustMatch   Map of Must match field -> value
+   * @param filterInstructions    post search filter instructions e.g. remove content of a certain type.
+   * @param fields                array (var args) of fields to search using the searchString
    * @return results
    */
   ResultsWrapper<String> fuzzySearch(
@@ -101,14 +104,15 @@ public interface ISearchProvider {
    * <br>
    * note: null searches are allowed providing a filter is specified.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - the base string for the name of the index
-   *<br>indexType - the name of the type of document being searched for
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
-   * @param searchTerms           - e.g. tags can be null
-   * @param field                 - to match against - cannot be null if searchterm is not null.
-   * @param filterInstructions    - instructions for filtering the results
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - the base string for the name of the index
+   *                              <br>indexType  - the name of the type of document being searched for
+   *                              <br>startIndex - start index for results
+   *                              <br>limit      - the maximum number of results to return -1 will attempt to return all
+   *                              results.
+   * @param searchTerms           e.g. tags can be null
+   * @param field                 to match against - cannot be null if searchterm is not null.
+   * @param filterInstructions    instructions for filtering the results
    * @return results
    */
   ResultsWrapper<String> termSearch(
@@ -119,14 +123,14 @@ public interface ISearchProvider {
   /**
    * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - base string for the index that the content is stored in
-   *<br>indexType - type of index as registered with search provider
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return
-   * @param fieldsToMatch         - List of boolean clauses used for field matching.
-   * @param randomSeed            - random seed.
-   * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - base string for the index that the content is stored in
+   *                              <br>indexType  - type of index as registered with search provider
+   *                              <br>startIndex - start index for results
+   *                              <br>limit      - the maximum number of results to return
+   * @param fieldsToMatch         List of boolean clauses used for field matching.
+   * @param randomSeed            random seed.
+   * @param filterInstructions    post search filter instructions e.g. remove content of a certain type.
    * @return results in a random order for a given match search.
    */
   ResultsWrapper<String> randomisedMatchSearch(
@@ -137,14 +141,15 @@ public interface ISearchProvider {
   /**
    * Query for a list of Results that exactly match a given id.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - base string for the index that the content is stored in
-   *<br>indexType - type of index as registered with search provider
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results
-   * @param fieldName             - fieldName to search within.
-   * @param needle                - needle to search for.
-   * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - base string for the index that the content is stored in
+   *                              <br>indexType  - type of index as registered with search provider
+   *                              <br>startIndex - start index for results
+   *                              <br>limit      - the maximum number of results to return -1 will attempt to return all
+   *                              results
+   * @param fieldName             fieldName to search within.
+   * @param needle                needle to search for.
+   * @param filterInstructions    post search filter instructions e.g. remove content of a certain type.
    * @return A list of results that match the id prefix.
    */
   ResultsWrapper<String> findByExactMatch(
@@ -157,14 +162,15 @@ public interface ISearchProvider {
    * <br>
    * This is useful if you use un-analysed fields for ids and use the dot separator as a way of nesting fields.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - base string for the index that the content is stored in
-   *<br>indexType - type of index as registered with search provider
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results
-   * @param fieldname             - fieldName to search within.
-   * @param prefix                - idPrefix to search for.
-   * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - base string for the index that the content is stored in
+   *                              <br>indexType  - type of index as registered with search provider
+   *                              <br>startIndex - start index for results
+   *                              <br>limit      - the maximum number of results to return -1 will attempt to return all
+   *                              results
+   * @param fieldname             fieldName to search within.
+   * @param prefix                idPrefix to search for.
+   * @param filterInstructions    post search filter instructions e.g. remove content of a certain type.
    * @return A list of results that match the id prefix.
    */
   ResultsWrapper<String> findByPrefix(
@@ -175,14 +181,15 @@ public interface ISearchProvider {
   /**
    * Find content by a regex.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - base string for the index that the content is stored in
-   *<br>indexType - type of index as registered with search provider
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results
-   * @param fieldname             - fieldName to search within.
-   * @param regex                 - regex to search for.
-   * @param filterInstructions    - post search filter instructions e.g. remove content of a certain type.
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase  - base string for the index that the content is stored in
+   *                              <br>indexType  - type of index as registered with search provider
+   *                              <br>startIndex - start index for results
+   *                              <br>limit      - the maximum number of results to return -1 will attempt to return all
+   *                              results
+   * @param fieldname             fieldName to search within.
+   * @param regex                 regex to search for.
+   * @param filterInstructions    post search filter instructions e.g. remove content of a certain type.
    * @return A list of results that match the id prefix.
    */
   ResultsWrapper<String> findByRegEx(

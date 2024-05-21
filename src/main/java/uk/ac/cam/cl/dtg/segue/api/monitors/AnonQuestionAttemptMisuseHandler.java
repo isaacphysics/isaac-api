@@ -23,6 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 
+/**
+ * Handler to deal with question attempts by anonymous (not logged in) users.
+ */
 public class AnonQuestionAttemptMisuseHandler implements IMisuseHandler {
 
   private static final Logger log = LoggerFactory.getLogger(AnonQuestionAttemptMisuseHandler.class);
@@ -31,8 +34,6 @@ public class AnonQuestionAttemptMisuseHandler implements IMisuseHandler {
   private static final Integer HARD_THRESHOLD = 5;
   private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIVE_MINUTES;
 
-  /**
-   */
   @Inject
   public AnonQuestionAttemptMisuseHandler() {
   }

@@ -20,6 +20,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.AnvilAppDTO;
 
 /**
+ * Anvil question data transfer object.
+ *
  * @author sac92
  *
  */
@@ -46,8 +48,7 @@ public class IsaacAnvilQuestionDTO extends IsaacQuestionBaseDTO {
   /**
    * Sets the anvilApp.
    *
-   * @param anvilApp
-   *            the anvilApp to set
+   * @param anvilApp the anvilApp to set
    */
   public void setAnvilApp(final AnvilAppDTO anvilApp) {
     this.anvilApp = anvilApp;

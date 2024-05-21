@@ -52,12 +52,11 @@ public class NotificationPicker {
   private final String contentIndex;
 
   /**
-   * @param contentManager
-   *            - so we can look up notifications created in the segue content system.
-   * @param contentIndex
-   *            - index string for current content version
-   * @param notifications
-   *            - the DAO allowing the recording of which notifications have been shown to whom.
+   * Constructor for NotificationPicker.
+   *
+   * @param contentManager so we can look up notifications created in the segue content system.
+   * @param contentIndex   index string for current content version
+   * @param notifications  the DAO allowing the recording of which notifications have been shown to whom.
    */
   @Inject
   public NotificationPicker(final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
@@ -70,13 +69,10 @@ public class NotificationPicker {
   /**
    * getAvailableNotificationsForUser.
    *
-   * @param user
-   *            to select notifications for.
+   * @param user to select notifications for.
    * @return the list of content to show to the user.
-   * @throws ContentManagerException
-   *             - if something goes wrong looking up the content.
-   * @throws SegueDatabaseException
-   *             - if something goes wrong consulting the personalisation database.
+   * @throws ContentManagerException if something goes wrong looking up the content.
+   * @throws SegueDatabaseException  if something goes wrong consulting the personalisation database.
    */
   public List<ContentDTO> getAvailableNotificationsForUser(final RegisteredUserDTO user)
       throws ContentManagerException, SegueDatabaseException {
@@ -93,13 +89,12 @@ public class NotificationPicker {
     List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
     for (ContentDTO c : allContentNotifications.getResults()) {
-      IUserNotification record = listOfRecordedNotifications.get(c.getId());
-      if (!(c instanceof NotificationDTO)) {
+      IUserNotification notificationRecord = listOfRecordedNotifications.get(c.getId());
+      if (!(c instanceof NotificationDTO notification)) {
         // skip if not a notification somehow.
         continue;
       }
 
-      NotificationDTO notification = (NotificationDTO) c;
       if (notification.getExpiry() != null && Instant.now().isAfter(notification.getExpiry())) {
         // skip expired notifications
         continue;
@@ -111,12 +106,12 @@ public class NotificationPicker {
         continue;
       }
 
-      if (null == record) {
+      if (null == notificationRecord) {
         // either the use hasn't responded to the notification before...
         resultsToReturn.add(c);
-      } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
+      } else if (notificationRecord.getStatus().equals(NotificationStatus.POSTPONED)) {
         // or they have but they postponed it...
-        Instant postPoneExpiry = record.getCreated().plusSeconds(NUMBER_SECONDS_IN_ONE_DAY);
+        Instant postPoneExpiry = notificationRecord.getCreated().plusSeconds(NUMBER_SECONDS_IN_ONE_DAY);
 
         if (Instant.now().isAfter(postPoneExpiry)) {
           resultsToReturn.add(c);
@@ -134,11 +129,9 @@ public class NotificationPicker {
   /**
    * getListOfRecordedNotifications.
    *
-   * @param user
-   *            - to lookup the notification history for.
+   * @param user to lookup the notification history for.
    * @return a map of NotificationId --> UserNotificationRecord.
-   * @throws SegueDatabaseException
-   *             - if something goes wrong with the DB io step.
+   * @throws SegueDatabaseException if something goes wrong with the DB io step.
    */
   public Map<String, IUserNotification> getMapOfRecordedNotifications(final RegisteredUserDTO user)
       throws SegueDatabaseException {
@@ -154,18 +147,13 @@ public class NotificationPicker {
   }
 
   /**
-   * Allows notifications to be dismissed on a per user basis.
+   * Allows notifications to be dismissed on a per-user basis.
    *
-   * @param user
-   *            - that the notification pertains to.
-   * @param notificationId
-   *            - the id of the notification
-   * @param status
-   *            - the status of the notification e.g. dismissed, postponed, disabled
-   * @throws SegueDatabaseException
-   *             - if something goes wrong with the DB io step.
-   * @throws ContentManagerException
-   *             - if something goes wrong looking up the content.
+   * @param user           that the notification pertains to.
+   * @param notificationId the id of the notification
+   * @param status         the status of the notification e.g. dismissed, postponed, disabled
+   * @throws SegueDatabaseException  if something goes wrong with the DB io step.
+   * @throws ContentManagerException if something goes wrong looking up the content.
    */
   public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId,
                                        final NotificationStatus status)
@@ -184,12 +172,10 @@ public class NotificationPicker {
   /**
    * getNotificationById.
    *
-   * @param notificationId - the id of the notification.
+   * @param notificationId the id of the notification.
    * @return get the notification content dto.
-   * @throws ResourceNotFoundException
-   *             - if we can't find the item of interest.
-   * @throws ContentManagerException
-   *             - if something goes wrong looking up the content.
+   * @throws ResourceNotFoundException if we can't find the item of interest.
+   * @throws ContentManagerException   if something goes wrong looking up the content.
    */
   public ContentDTO getNotificationById(final String notificationId) throws ContentManagerException,
       ResourceNotFoundException {

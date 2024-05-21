@@ -44,29 +44,20 @@ public class UserPreference {
   }
 
   /**
-   * @return the ID of the user the preference belongs to
+   * Get the ID of the user the preference belongs to.
    */
   public long getUserId() {
     return userId;
   }
 
-  /**
-   * @return the type of the preference
-   */
   public String getPreferenceType() {
     return preferenceType;
   }
 
-  /**
-   * @return the name of the perference
-   */
   public String getPreferenceName() {
     return preferenceName;
   }
 
-  /**
-   * @return the value of the preference
-   */
   public boolean getPreferenceValue() {
     return preferenceValue;
   }

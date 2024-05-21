@@ -74,7 +74,7 @@ public class UserBadgeManager {
    * @param user      owner of badge record
    * @param badgeName enum of badge to be updated
    * @return user badge object
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if an error occurred while retrieving information from the database
    */
   public UserBadge getOrCreateBadge(final RegisteredUserDTO user, final Badge badgeName)
       throws SegueDatabaseException {
@@ -100,7 +100,7 @@ public class UserBadgeManager {
    * @param badgeName enum of badge to be updated
    * @param event     indicator of
    * @return user badge object
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if an error occurred while retrieving information from the database
    */
   @SuppressWarnings("checkstyle:EmptyBlock") // Resolve when the to-do is implemented
   public UserBadge updateBadge(final RegisteredUserDTO user, final Badge badgeName, final String event)

@@ -58,10 +58,12 @@ public class ContactFacade extends AbstractSegueFacade {
   private final EmailManager emailManager;
 
   /**
-   * @param properties   - the fully configured properties loader for the api.
-   * @param userManager  - The manager object responsible for users.
-   * @param emailManager - An implementation of ICommunicator for sending communiques
-   * @param logManager   - An instance of the log manager used for recording usage of the CMS.
+   * Constructor to create an instance of the ContactFacade to handle contact related endpoints.
+   *
+   * @param properties   the fully configured properties loader for the api.
+   * @param userManager  The manager object responsible for users.
+   * @param emailManager An implementation of ICommunicator for sending communiques
+   * @param logManager   An instance of the log manager used for recording usage of the CMS.
    */
   @Inject
   public ContactFacade(final PropertiesLoader properties,
@@ -75,9 +77,9 @@ public class ContactFacade extends AbstractSegueFacade {
   /**
    * Endpoint that handles contact us form submissions.
    *
-   * @param form    - Map containing the message details
-   * @param request - for logging purposes.
-   * @return - Successful response if no error occurs, otherwise error response
+   * @param form    Map containing the message details
+   * @param request for logging purposes.
+   * @return Successful response if no error occurs, otherwise error response
    */
   @POST
   @Path("/")

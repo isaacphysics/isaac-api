@@ -75,7 +75,7 @@ public class OidcDiscoveryResponse extends GenericJson {
    * @param jsonFactory The JSON factory to use to load the file from disk.
    * @param reader      The reader to use to load the file from disk.
    * @return A configured {@link OidcDiscoveryResponse}.
-   * @throws IOException
+   * @throws IOException if an error occurs while parsing the file
    */
   public static OidcDiscoveryResponse load(final JsonFactory jsonFactory, final Reader reader)
       throws IOException {

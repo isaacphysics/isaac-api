@@ -10,7 +10,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 public final class NameFormatter {
 
   /**
-   * It does not make sense to create one of these!
+   * It does not make sense to create one of these!.
    */
   private NameFormatter() {
   }
@@ -18,7 +18,7 @@ public final class NameFormatter {
   /**
    * Form the short version of a teacher name with only a first initial.
    *
-   * @param teacherUser - The user summary object of the teacher user
+   * @param teacherUser The user summary object of the teacher user
    * @return The short name with first initial
    */
   public static String getTeacherNameFromUser(final UserSummaryDTO teacherUser) {
@@ -29,7 +29,7 @@ public final class NameFormatter {
   /**
    * Form the short version of a teacher name with only a first initial.
    *
-   * @param teacherUser - The user summary object of the teacher user
+   * @param teacherUser The user summary object of the teacher user
    * @return The short name with first initial
    */
   public static String getTeacherNameFromUser(final RegisteredUserDTO teacherUser) {
@@ -58,7 +58,7 @@ public final class NameFormatter {
   /**
    * Get the group name, if it is allowed to be shared, else a placeholder.
    *
-   * @param group - the group to extract the name from
+   * @param group the group to extract the name from
    * @return the group name to show to students.
    */
   public static String getFilteredGroupNameFromGroup(final UserGroupDTO group) {

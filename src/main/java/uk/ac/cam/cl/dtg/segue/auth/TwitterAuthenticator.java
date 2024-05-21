@@ -74,9 +74,11 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
   private static GoogleIdTokenVerifier tokenVerifier;
 
   /**
-   * @param clientId
-   * @param clientSecret
-   * @param callbackUri
+   * Constructor for an authenticator to handle third-party-provider login requests using Twitter.
+   *
+   * @param clientId authenticator client id, provided from properties/environment variables
+   * @param clientSecret authenticator client secret, provided from properties/environment variables
+   * @param callbackUri authenticator callback URI, provided from properties/environment variables
    */
   @Inject
   public TwitterAuthenticator(@Named(Constants.TWITTER_CLIENT_ID) final String clientId,
@@ -213,12 +215,10 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
   /**
    * Helper method to retrieve the value of a parameter from a URL's query string.
    *
-   * @param url
-   *            - The URL to parse
-   * @param param
-   *            - The parameter name
+   * @param url   The URL to parse
+   * @param param The parameter name
    * @return The value of the parameter
-   * @throws IOException
+   * @throws IOException if the parameter could not be read
    */
   private String getParameterFromUrl(final GenericUrl url, final String param) throws IOException {
     try {

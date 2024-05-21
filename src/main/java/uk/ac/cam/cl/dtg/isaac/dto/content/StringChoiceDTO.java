@@ -17,7 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 /**
- * DTO to represent a Quantity choice.
+ * DTO to represent a String choice.
  *
  */
 public class StringChoiceDTO extends ChoiceDTO {
@@ -31,6 +31,8 @@ public class StringChoiceDTO extends ChoiceDTO {
   }
 
   /**
+   * Whether to ignore case when checking matches.
+   *
    * @return Whether this string choice should allow any case to match.
    */
   public boolean isCaseInsensitive() {

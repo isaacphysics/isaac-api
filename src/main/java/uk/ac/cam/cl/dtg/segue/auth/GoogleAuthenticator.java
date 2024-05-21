@@ -87,14 +87,10 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
   /**
    * Construct a google authenticator.
    *
-   * @param clientSecretLocation
-   *            - external file containing the secret provided by the google service.
-   * @param callbackUri
-   *            - The allowed URI for callbacks as registered with google.
-   * @param requestedScopes
-   *            - The scopes that will be granted to Segue.
-   * @throws IOException
-   *             - if we cannot load the secret file.
+   * @param clientSecretLocation external file containing the secret provided by the google service.
+   * @param callbackUri          The allowed URI for callbacks as registered with google.
+   * @param requestedScopes      The scopes that will be granted to Segue.
+   * @throws IOException if we cannot load the secret file.
    */
   @Inject
   public GoogleAuthenticator(@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation,
@@ -130,12 +126,9 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
   /**
    * Construct a google authenticator with all of its required dependencies.
    *
-   * @param clientSecret
-   *            - external file containing the secret provided by the google service.
-   * @param callbackUri
-   *            - The allowed URI for callbacks as registered with google.
-   * @param requestedScopes
-   *            - The scopes that will be granted to Segue.
+   * @param clientSecret    external file containing the secret provided by the google service.
+   * @param callbackUri     The allowed URI for callbacks as registered with google.
+   * @param requestedScopes The scopes that will be granted to Segue.
    */
   public GoogleAuthenticator(final GoogleClientSecrets clientSecret,
                              @Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,

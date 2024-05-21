@@ -21,7 +21,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.NotificationDTO;
 
 /**
  * Notification. This class represents a special content type which can be used to pop up a modal to users on the site.
- *
  */
 @JsonContentType("notification")
 @DTOMapping(NotificationDTO.class)
@@ -30,7 +29,9 @@ public class Notification extends Content {
   private Instant expiry;
 
   /**
-   * @param value - of the content
+   * Notification object constructor taking a string value for the notification content.
+   *
+   * @param value of the content
    */
   public Notification(final String value) {
     super(value);
@@ -55,8 +56,7 @@ public class Notification extends Content {
   /**
    * Sets the externalReference.
    *
-   * @param externalReference
-   *            the externalReference to set
+   * @param externalReference the externalReference to set
    */
   public void setExternalReference(final ExternalReference externalReference) {
     this.externalReference = externalReference;

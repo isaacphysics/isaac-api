@@ -26,9 +26,6 @@ public class AssociationToken {
   private Long ownerUserId;
   private Long groupId;
 
-  /**
-   *
-   */
   public AssociationToken() {
 
   }

@@ -29,7 +29,7 @@ import org.apache.commons.codec.binary.Base64;
  * <br>
  * This is a parent class for PBKDF2 algorithms.
  *
- * @deprecated
+ * @deprecated use {@link SegueSCrypt} instead
  */
 @Deprecated
 public class SeguePBKDF2 {
@@ -52,11 +52,11 @@ public class SeguePBKDF2 {
   /**
    * Hash the password using the preconfigured hashing function.
    *
-   * @param password - password to hash
-   * @param salt     - random string to use as a salt.
+   * @param password password to hash
+   * @param salt     random string to use as a salt.
    * @return the Base64 encoded hashed password
-   * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
-   * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
+   * @throws NoSuchAlgorithmException if the configured algorithm is not valid.
+   * @throws InvalidKeySpecException  if the preconfigured key spec is invalid.
    */
   public String hashPassword(final String password, final String salt) throws NoSuchAlgorithmException,
       InvalidKeySpecException {
@@ -68,12 +68,12 @@ public class SeguePBKDF2 {
   /**
    * Compute the hash of a string using the preconfigured hashing function.
    *
-   * @param str       - string to hash
-   * @param salt      - random string to use as a salt.
-   * @param keyLength - the key length
+   * @param str       string to hash
+   * @param salt      random string to use as a salt.
+   * @param keyLength the key length
    * @return a byte array of the hash
-   * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
-   * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
+   * @throws NoSuchAlgorithmException if the configured algorithm is not valid.
+   * @throws InvalidKeySpecException  if the preconfigured key spec is invalid.
    */
   public byte[] computeHash(final String str, final String salt, final int keyLength)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -90,7 +90,7 @@ public class SeguePBKDF2 {
    * Helper method to generate a base64 encoded salt.
    *
    * @return generate a base64 encoded secure salt.
-   * @throws NoSuchAlgorithmException - problem locating the algorithm.
+   * @throws NoSuchAlgorithmException problem locating the algorithm.
    */
   public String generateSalt() throws NoSuchAlgorithmException {
     SecureRandom sr = SecureRandom.getInstance(saltingAlgorithm);

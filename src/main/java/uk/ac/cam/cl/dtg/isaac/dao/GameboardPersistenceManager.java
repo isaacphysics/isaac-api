@@ -92,16 +92,11 @@ public class GameboardPersistenceManager {
   /**
    * Creates a new user data manager object.
    *
-   * @param database
-   *            - the database reference used for persistence.
-   * @param contentManager
-   *            - allows us to lookup gameboard content.
-   * @param mapper
-   *            - An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
-   * @param objectMapper
-   *            - An instance of an automapper that can be used for converting objects to and from json.
-   * @param uriManager
-   *            - so we can generate appropriate content URIs.
+   * @param database       the database reference used for persistence.
+   * @param contentManager allows us to lookup gameboard content.
+   * @param mapper         An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
+   * @param objectMapper   An instance of an automapper that can be used for converting objects to and from json.
+   * @param uriManager     so we can generate appropriate content URIs.
    */
   @Inject
   public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
@@ -119,10 +114,9 @@ public class GameboardPersistenceManager {
   /**
    * Find a gameboard by id.
    *
-   * @param gameboardId
-   *            - the id to search for.
+   * @param gameboardId the id to search for.
    * @return the gameboard or null if we can't find it..
-   * @throws SegueDatabaseException  - if there is a problem accessing the database.
+   * @throws SegueDatabaseException  if there is a problem accessing the database.
    */
   public GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
     return this.getGameboardById(gameboardId, true);
@@ -131,13 +125,10 @@ public class GameboardPersistenceManager {
   /**
    * Utility method to allow us to retrieve a gameboard either from temporary storage or permanent.
    *
-   * @param gameboardId
-   *            - gameboard to find
-   * @param fullyPopulate
-   *            - true or false
+   * @param gameboardId   gameboard to find
+   * @param fullyPopulate true or false
    * @return gameboard dto or null if we cannot find the gameboard requested
-   * @throws SegueDatabaseException
-   *             - if there is a problem with the database
+   * @throws SegueDatabaseException if there is a problem with the database
    */
   private GameboardDTO getGameboardById(final String gameboardId, final boolean fullyPopulate)
       throws SegueDatabaseException {
@@ -182,10 +173,9 @@ public class GameboardPersistenceManager {
   /**
    * Find a list of gameboards by their ids.
    *
-   * @param gameboardIds
-   *            - the ids to search for.
+   * @param gameboardIds the ids to search for.
    * @return the gameboards or null if we can't find them.
-   * @throws SegueDatabaseException  - if there is a problem accessing the database.
+   * @throws SegueDatabaseException  if there is a problem accessing the database.
    */
   public List<GameboardDTO> getGameboardsByIds(final List<String> gameboardIds) throws SegueDatabaseException {
     return this.getGameboardsByIds(gameboardIds, true);
@@ -194,13 +184,10 @@ public class GameboardPersistenceManager {
   /**
    * Utility method to allow us to retrieve a gameboard either from temporary storage or permanent.
    *
-   * @param gameboardIds
-   *            - gameboard to find
-   * @param fullyPopulate
-   *            - true or false
+   * @param gameboardIds  gameboard to find
+   * @param fullyPopulate true or false
    * @return gameboard dto or null if we cannot find the gameboard requested
-   * @throws SegueDatabaseException
-   *             - if there is a problem with the database
+   * @throws SegueDatabaseException if there is a problem with the database
    */
   private List<GameboardDTO> getGameboardsByIds(final Collection<String> gameboardIds, final boolean fullyPopulate)
       throws SegueDatabaseException {
@@ -253,11 +240,9 @@ public class GameboardPersistenceManager {
    * resolve any fine grain details about the board. E.g. no question details
    * will be retrieved.
    *
-   * @param gameboardId
-   *            - to retrieve.
+   * @param gameboardId to retrieve.
    * @return a lightly populated gameboard.
-   * @throws SegueDatabaseException
-   *             - if there are problems with the database.
+   * @throws SegueDatabaseException if there are problems with the database.
    */
   public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
     return this.getGameboardById(gameboardId, false);
@@ -268,11 +253,9 @@ public class GameboardPersistenceManager {
    * resolve any fine grain details about the boards. E.g. no question details
    * will be retrieved.
    *
-   * @param gameboardIds
-   *            - to retrieve.
+   * @param gameboardIds to retrieve.
    * @return a list of lightly populated gameboards.
-   * @throws SegueDatabaseException
-   *             - if there are problems with the database.
+   * @throws SegueDatabaseException if there are problems with the database.
    */
   public List<GameboardDTO> getLiteGameboardsByIds(final Collection<String> gameboardIds)
       throws SegueDatabaseException {
@@ -297,9 +280,9 @@ public class GameboardPersistenceManager {
   /**
    * Save a gameboard to persistent storage.
    *
-   * @param gameboard - gameboard to save
+   * @param gameboard gameboard to save
    * @return internal database id for the saved gameboard.
-   * @throws SegueDatabaseException - if there is a problem saving the gameboard in the database.
+   * @throws SegueDatabaseException if there is a problem saving the gameboard in the database.
    */
   public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
       throws SegueDatabaseException {
@@ -333,10 +316,9 @@ public class GameboardPersistenceManager {
   /**
    * Allows a gameboard title to be updated. (assumes persistently stored)
    *
-   * @param gameboard
-   *            - with updated title.
+   * @param gameboard with updated title.
    * @return new gameboard after update.
-   * @throws SegueDatabaseException - if there is a problem setting the title.
+   * @throws SegueDatabaseException if there is a problem setting the title.
    */
   public GameboardDTO updateGameboardTitle(final GameboardDTO gameboard) throws SegueDatabaseException {
     // create a new user to gameboard connection.
@@ -362,7 +344,7 @@ public class GameboardPersistenceManager {
   /**
    * Determine if the gameboard only exists in temporary storage.
    *
-   * @param gameboardIdToTest - the gameboard to check the existence of.
+   * @param gameboardIdToTest the gameboard to check the existence of.
    * @return true if the gameboard with that id exists in permanent storage false if not.
    * @throws SegueDatabaseException if there is a database error.
    */
@@ -409,12 +391,9 @@ public class GameboardPersistenceManager {
   /**
    * Create a link between a user and a gameboard or update the last visited date.
    *
-   * @param userId
-   *            - userId to link
-   * @param gameboardId
-   *            - gameboard to link
-   * @throws SegueDatabaseException
-   *             - if there is a problem persisting the link in the database.
+   * @param userId      userId to link
+   * @param gameboardId gameboard to link
+   * @throws SegueDatabaseException if there is a problem persisting the link in the database.
    */
   public void createOrUpdateUserLinkToGameboard(final Long userId, final String gameboardId)
       throws SegueDatabaseException {
@@ -444,9 +423,9 @@ public class GameboardPersistenceManager {
   /**
    * Allows a link between users and a gameboard to be destroyed.
    *
-   * @param userId - users id.
-   * @param gameboardId - gameboard ids
-   * @throws SegueDatabaseException - if there is an error during the delete operation.
+   * @param userId      users id.
+   * @param gameboardId gameboard ids
+   * @throws SegueDatabaseException if there is an error during the delete operation.
    */
   public void removeUserLinkToGameboard(final Long userId, final Collection<String> gameboardId)
       throws SegueDatabaseException {
@@ -478,13 +457,11 @@ public class GameboardPersistenceManager {
    * Retrieve all gameboards (without underlying Gameboard Items) for a given
    * user.
    *
-   * @param user
-   *            - to search for
+   * @param user to search for
    * @return gameboards as a list - note these gameboards will not have the
    *         questions fully populated as it is expected only summary objects
    *         are required.
-   * @throws SegueDatabaseException
-   *             - if there is an error when accessing the database.
+   * @throws SegueDatabaseException if there is an error when accessing the database.
    */
   public List<GameboardDTO> getGameboardsByUserId(final RegisteredUserDTO user) throws SegueDatabaseException {
     // find all gameboards related to this user.
@@ -522,7 +499,7 @@ public class GameboardPersistenceManager {
   /**
    * Find the list of invalid question ids.
    *
-   * @param gameboardDTO - to check
+   * @param gameboardDTO to check
    * @return a List containing the ideas of any invalid or inaccessible questions - the list will be empty if none.
    */
   public List<String> getInvalidQuestionIdsFromGameboard(final GameboardDTO gameboardDTO) {
@@ -579,7 +556,7 @@ public class GameboardPersistenceManager {
    * This method will attempt to ensure that all gameboards provided have their associated
    * gameboard items populated with meaningful titles.
    *
-   * @param gameboards - list of gameboards to fully augment.
+   * @param gameboards list of gameboards to fully augment.
    * @return augmented gameboards as per inputted list.
    */
   public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
@@ -624,8 +601,7 @@ public class GameboardPersistenceManager {
    * Utility method to get a map of gameboard id to list of users who are connected to it.
    *
    * @return map of gameboard id to list of users
-   * @throws SegueDatabaseException
-   *             - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   public Map<String, List<String>> getBoardToUserIdMapping() throws SegueDatabaseException {
     Map<String, List<String>> results = Maps.newHashMap();
@@ -658,10 +634,8 @@ public class GameboardPersistenceManager {
   /**
    * Utility function to create a gameboard item from a content DTO (Should be a question page).
    *
-   * @param content
-   *            - to convert
-   * @param contentDescriptor
-   *            - a GameboardContentDescriptor with additional information to add to the returned item
+   * @param content           to convert
+   * @param contentDescriptor a GameboardContentDescriptor with additional information to add to the returned item
    * @return the gameboard item with augmented URI.
    */
   public GameboardItem convertToGameboardItem(
@@ -680,8 +654,8 @@ public class GameboardPersistenceManager {
    *
    * @param gameboardToSave a Gameboard DO to save to the database
    * @return the DO being persisted.
-   * @throws JsonProcessingException
-   * @throws SegueDatabaseException
+   * @throws JsonProcessingException if an error occurs while converting gameboard object properties into json strings
+   * @throws SegueDatabaseException if an error occurs while updating the database record
    */
   private GameboardDO saveGameboard(final GameboardDO gameboardToSave)
       throws JsonProcessingException, SegueDatabaseException {
@@ -727,11 +701,9 @@ public class GameboardPersistenceManager {
   /**
    * Convert form a list of gameboard DOs to a list of Gameboard DTOs.
    *
-   * @param gameboardDOs
-   *            to convert
-   * @param populateGameboardItems
-   *            - true if we should fully populate the gameboard DTO with
-   *            gameboard items false if a summary is ok do? i.e. should game board items have titles etc.
+   * @param gameboardDOs           to convert
+   * @param populateGameboardItems true if we should fully populate the gameboard DTO with gameboard items false if
+   *                                 a summary is ok do? i.e. should game board items have titles etc.
    * @return gameboard DTO
    */
   private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
@@ -752,8 +724,7 @@ public class GameboardPersistenceManager {
    * <br>
    * This method relies on the api to fully resolve questions.
    *
-   * @param gameboardDO
-   *            - to convert
+   * @param gameboardDO to convert
    * @return gameboard DTO
    */
   private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
@@ -765,10 +736,8 @@ public class GameboardPersistenceManager {
    * <br>
    * This method relies on the api to fully resolve questions.
    *
-   * @param gameboardDO
-   *            - to convert
-   * @param populateGameboardItems
-   *            - true if we should fully populate the gameboard DTO with
+   * @param gameboardDO            to convert
+   * @param populateGameboardItems true if we should fully populate the gameboard DTO with
    *            gameboard items false if just the question ids will do?
    * @return gameboard DTO
    */
@@ -808,8 +777,7 @@ public class GameboardPersistenceManager {
   /**
    * Convert from a gameboard DTO to a gameboard DO.
    *
-   * @param gameboardDTO
-   *            - DTO to convert.
+   * @param gameboardDTO DTO to convert.
    * @return GameboardDO.
    */
   private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
@@ -865,12 +833,14 @@ public class GameboardPersistenceManager {
   }
 
   /**
-   * @param results - the results from sql.
+   * Parses an sql query ResultSet into a Gameboard object.
+   *
+   * @param results the results from sql.
    * @return a gameboard DO.
-   * @throws SQLException
-   * @throws JsonParseException
-   * @throws JsonMappingException
-   * @throws IOException
+   * @throws SQLException         if a field is missing from the results or another access error occurs
+   * @throws JsonParseException   if an error occurs while parsing json strings into gameboard object properties
+   * @throws JsonMappingException if an error occurs while parsing json strings into gameboard object properties
+   * @throws IOException          ancestor of JsonParseException and JsonMappingException
    */
   private GameboardDO convertFromSQLToGameboardDO(final ResultSet results) throws SQLException, JsonParseException,
       JsonMappingException, IOException {
@@ -902,8 +872,7 @@ public class GameboardPersistenceManager {
   /**
    * Helper method to get a list of question ids from a dto.
    *
-   * @param gameboardDTO
-   *            - to extract.
+   * @param gameboardDTO to extract.
    * @return List of question ids for the gameboard provided.
    */
   private static List<GameboardContentDescriptor> getContentDescriptors(final GameboardDTO gameboardDTO) {

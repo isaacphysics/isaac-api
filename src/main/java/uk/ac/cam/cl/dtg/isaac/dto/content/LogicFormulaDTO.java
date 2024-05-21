@@ -30,36 +30,18 @@ public class LogicFormulaDTO extends ChoiceDTO {
 
   }
 
-  /**
-   * Gets the python expression.
-   *
-   * @return the python expression
-   */
   public final String getPythonExpression() {
     return pythonExpression;
   }
 
-  /**
-   * Sets the python expression.
-   *
-   * @param pythonExpression the python expression to set
-   */
   public final void setPythonExpression(final String pythonExpression) {
     this.pythonExpression = pythonExpression;
   }
 
-  /**
-   * @return Whether this formula requires an exact match. Believe it or not.
-   */
   public boolean requiresExactMatch() {
     return requiresExactMatch;
   }
 
-  /**
-   * Yes, you guessed it. Sets whether this formula requires an exact match.
-   *
-   * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
-   */
   public void setRequiresExactMatch(final boolean requiresExactMatch) {
     this.requiresExactMatch = requiresExactMatch;
   }

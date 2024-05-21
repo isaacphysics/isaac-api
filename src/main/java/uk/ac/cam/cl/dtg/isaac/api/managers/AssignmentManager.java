@@ -58,11 +58,11 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * AssignmentManager.
    *
-   * @param assignmentPersistenceManager - to save assignments
-   * @param groupManager                 - to allow communication with the group manager.
-   * @param emailService                 - service for sending specific emails.
-   * @param gameManager                  - the game manager object
-   * @param properties                   - instance of properties loader
+   * @param assignmentPersistenceManager to save assignments
+   * @param groupManager                 to allow communication with the group manager.
+   * @param emailService                 service for sending specific emails.
+   * @param gameManager                  the game manager object
+   * @param properties                   instance of properties loader
    */
   @Inject
   public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
@@ -78,9 +78,9 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * Get Assignments set for a given user.
    *
-   * @param user - to get the assignments for.
+   * @param user to get the assignments for.
    * @return List of assignments for the given user.
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public Collection<AssignmentDTO> getAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
     List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
@@ -100,9 +100,9 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * Get all assignments for a given group id.
    *
-   * @param groupId - to which the assignments have been assigned
+   * @param groupId to which the assignments have been assigned
    * @return all assignments
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if a database error occurs while retrieving assignments
    */
   public Collection<AssignmentDTO> getAssignmentsByGroup(final Long groupId) throws SegueDatabaseException {
     return this.assignmentPersistenceManager.getAssignmentsByGroupId(groupId);
@@ -113,7 +113,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
    *
    * @param assignmentId to find
    * @return the assignment.
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public AssignmentDTO getAssignmentById(final Long assignmentId) throws SegueDatabaseException {
     return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
@@ -123,9 +123,9 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * create Assignment.
    *
-   * @param newAssignment - to create - will be modified to include new id.
+   * @param newAssignment to create will be modified to include new id.
    * @return the assignment object now with the id field populated.
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public AssignmentDTO createAssignment(final AssignmentDTO newAssignment) throws SegueDatabaseException {
     Validate.isTrue(newAssignment.getId() == null, "The id field must be empty.");
@@ -161,9 +161,9 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * Assignments set by user.
    *
-   * @param user - who set the assignments
+   * @param user who set the assignments
    * @return the assignments.
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
     requireNonNull(user);
@@ -173,10 +173,11 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * Get all assignments for a list of groups.
    *
-   * @param groups                              to include in the search
-   * @param includeAssignmentsScheduledInFuture
+   * @param groups to include in the search
+   * @param includeAssignmentsScheduledInFuture boolean for if we should include assignments that have not yet started
+   *                                            (instead of filtering them out)
    * @return a list of assignments set to the group ids provided.
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public List<AssignmentDTO> getAllAssignmentsForSpecificGroups(
       final Collection<UserGroupDTO> groups, final boolean includeAssignmentsScheduledInFuture)
@@ -201,8 +202,8 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
   /**
    * deleteAssignment.
    *
-   * @param assignment - to delete (must have an id).
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @param assignment to delete (must have an id).
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public void deleteAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
     requireNonNull(assignment);
@@ -216,7 +217,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
    * @param gameboardId to match
    * @param groupId     group id to match
    * @return assignment or null if none matches the parameters provided.
-   * @throws SegueDatabaseException - if we cannot complete a required database operation.
+   * @throws SegueDatabaseException if we cannot complete a required database operation.
    */
   public AssignmentDTO findAssignmentByGameboardAndGroup(final String gameboardId, final Long groupId)
       throws SegueDatabaseException {

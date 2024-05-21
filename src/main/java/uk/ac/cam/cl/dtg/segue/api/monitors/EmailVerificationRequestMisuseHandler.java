@@ -39,9 +39,6 @@ public class EmailVerificationRequestMisuseHandler implements IMisuseHandler {
   public static final Integer HARD_THRESHOLD = 4;
   public static final Integer ACCOUNTING_INTERVAL = 6 * NUMBER_SECONDS_IN_MINUTE;
 
-  /**
-   *
-   */
   @Inject
   public EmailVerificationRequestMisuseHandler() {
 

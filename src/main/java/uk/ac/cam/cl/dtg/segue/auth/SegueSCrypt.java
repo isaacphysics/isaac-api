@@ -47,8 +47,8 @@ public class SegueSCrypt {
   /**
    * Hash the password using the preconfigured hashing function.
    *
-   * @param password - password to hash
-   * @param salt     - random string to use as a salt.
+   * @param password password to hash
+   * @param salt     random string to use as a salt.
    * @return the Base64 encoded hashed password
    */
   public String hashPassword(final String password, final String salt) {
@@ -60,9 +60,9 @@ public class SegueSCrypt {
   /**
    * Compute the hash of a string using the Scrypt hashing function.
    *
-   * @param str       - string to hash
-   * @param salt      - random string to use as a salt.
-   * @param keyLength - the desired output key length
+   * @param str       string to hash
+   * @param salt      random string to use as a salt.
+   * @param keyLength the desired output key length
    * @return a byte array of the hash
    */
   public byte[] computeHash(final String str, final String salt, final int keyLength) {
@@ -76,7 +76,7 @@ public class SegueSCrypt {
    * Helper method to generate a base64 encoded salt.
    *
    * @return generate a base64 encoded secure salt.
-   * @throws NoSuchAlgorithmException - problem locating the algorithm.
+   * @throws NoSuchAlgorithmException problem locating the algorithm.
    */
   public String generateSalt() throws NoSuchAlgorithmException {
     SecureRandom sr = SecureRandom.getInstance(saltingAlgorithm);

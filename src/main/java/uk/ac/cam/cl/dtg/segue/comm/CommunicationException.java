@@ -25,8 +25,9 @@ public class CommunicationException extends Exception {
   private static final long serialVersionUID = 7797028995535006701L;
 
   /**
-   * @param e
-   *            parent exception
+   * Exception constructor.
+   *
+   * @param e parent exception
    */
   public CommunicationException(final Exception e) {
     super(e);

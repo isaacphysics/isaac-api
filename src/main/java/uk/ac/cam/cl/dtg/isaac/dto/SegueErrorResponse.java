@@ -48,10 +48,8 @@ public class SegueErrorResponse implements Serializable {
   /**
    * Constructor for creating a response with just an error code and string message.
    *
-   * @param errorCode
-   *            - for response.
-   * @param msg
-   *            - message to client.
+   * @param errorCode for response.
+   * @param msg       message to client.
    */
   public SegueErrorResponse(final Status errorCode, final String msg) {
     this(errorCode.getStatusCode(), errorCode.toString(), msg, null);
@@ -60,12 +58,9 @@ public class SegueErrorResponse implements Serializable {
   /**
    * Constructor for creating a response with just an error code and string message.
    *
-   * @param errorCode
-   *            - for response.
-   * @param msg
-   *            - message to client.
-   * @param e
-   *            - exception to wrap.
+   * @param errorCode for response.
+   * @param msg       message to client.
+   * @param e         exception to wrap.
    */
   public SegueErrorResponse(final Status errorCode, final String msg, final Exception e) {
     this(errorCode.getStatusCode(), errorCode.toString(), msg, e);
@@ -74,14 +69,10 @@ public class SegueErrorResponse implements Serializable {
   /**
    * Constructor for manually setting all values.
    *
-   * @param responseCode
-   *            - status code e.g. 404
-   * @param responseCodeType
-   *            - the string description of the error code. Eg for 404 Not Found
-   * @param errorMessage
-   *            - any additional information to show to the user.
-   * @param e
-   *            - if an exception has been triggered and should be shown in the response.
+   * @param responseCode     status code e.g. 404
+   * @param responseCodeType the string description of the error code. Eg for 404 Not Found
+   * @param errorMessage     any additional information to show to the user.
+   * @param e                if an exception has been triggered and should be shown in the response.
    */
   public SegueErrorResponse(final Integer responseCode, final String responseCodeType, final String errorMessage,
                             @Nullable final Exception e) {
@@ -159,7 +150,7 @@ public class SegueErrorResponse implements Serializable {
    * <br>
    * This allows you to attach cache control headers or anything else that you may want to do.
    *
-   * @return preconfigured reponse builder.
+   * @return preconfigured response builder.
    */
   public final Response.ResponseBuilder toResponseBuilder() {
     return Response.status(responseCode).entity(this).type("application/json");
@@ -177,10 +168,8 @@ public class SegueErrorResponse implements Serializable {
   /**
    * Allow cache control options to be configured so that we don't have to generate this SegueError everytime.
    *
-   * @param cacheControl
-   *            - a configured cache control object.
-   * @param entityTag
-   *            - an etag to be returned with the error response.
+   * @param cacheControl a configured cache control object.
+   * @param entityTag    an etag to be returned with the error response.
    * @return A cache control configured error response.
    */
   public final Response toResponse(final CacheControl cacheControl, final EntityTag entityTag) {
@@ -197,7 +186,9 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @return a default response for when the user must be logged in to access a resource.
+   * A default response for when the user must be logged in to access a resource.
+   *
+   * @return a configured SegueErrorResponse
    */
   public static Response getNotLoggedInResponse() {
     return new SegueErrorResponse(Status.UNAUTHORIZED, "You must be logged in to access this resource.")
@@ -205,7 +196,9 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @return a default response for when the user does not have the correct access rights to access a resource.
+   * A default response for when the user does not have the correct access rights to access a resource.
+   *
+   * @return a configured SegueErrorResponse
    */
   public static Response getIncorrectRoleResponse() {
     return new SegueErrorResponse(Status.FORBIDDEN, "You do not have the permissions to complete this action")
@@ -213,7 +206,9 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @return a default response for when an endpoint will exist in the future but has not yet been implemented.
+   * A default response for when an endpoint will exist in the future but has not yet been implemented.
+   *
+   * @return a configured SegueErrorResponse
    */
   public static Response getNotImplementedResponse() {
     return new SegueErrorResponse(Status.NOT_IMPLEMENTED, "This endpoint has not yet been implemented")
@@ -221,8 +216,10 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @param message - inform the user how long they will be throttled for.
-   * @return error response.
+   * A default response for when a request is denied due to overuse of an endpoint or resource.
+   *
+   * @param message inform the user how long they will be throttled for
+   * @return a configured SegueErrorResponse
    */
   public static Response getRateThrottledResponse(final String message) {
     final Integer throttledStatusCode = 429;
@@ -230,8 +227,9 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @param message
-   *            - the message for the user.
+   * A default response for when the platform is unable to retrieve a requested resource.
+   *
+   * @param message the message for the user.
    * @return a helper function to get a resource not found response
    */
   public static Response getResourceNotFoundResponse(final String message) {
@@ -239,8 +237,10 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @param message
-   *            - the message for the user.
+   * A default response for when the platform is unable to access a required service (currently only relevant for the
+   * question validator).
+   *
+   * @param message the message for the user.
    * @return a helper function to get a service unavailable response
    */
   public static Response getServiceUnavailableResponse(final String message) {
@@ -250,17 +250,22 @@ public class SegueErrorResponse implements Serializable {
   }
 
   /**
-   * @param message - inform the user how long they will be throttled for.
-   * @return error response.
+   * A default response for when a requested method is not permitted.
+   * Note that this seems to be only referenced in the Jetty configuration currently.
+   *
+   * @param message inform the user how long they will be throttled for.
+   * @return a configured SegueErrorResponse
    */
-  public static Response getMethodNotAllowedReponse(final String message) {
+  public static Response getMethodNotAllowedResponse(final String message) {
     return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, message)
         .toResponse();
   }
 
   /**
-   * @param message - the message for the user.
-   * @return error response.
+   * A default response for when the request is invalid or malformed.
+   *
+   * @param message the message for the user.
+   * @return a configured SegueErrorResponse
    */
   public static Response getBadRequestResponse(final String message) {
     return new SegueErrorResponse(Status.BAD_REQUEST, message).toResponse();

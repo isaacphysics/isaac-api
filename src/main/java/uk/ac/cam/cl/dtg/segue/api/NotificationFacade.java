@@ -62,10 +62,10 @@ public class NotificationFacade extends AbstractSegueFacade {
   /**
    * NotificationFacade.
    *
-   * @param properties         - loader
-   * @param logManager         - log management
-   * @param userManager        - so we can look up user information.
-   * @param notificationPicker - so we can identify which notifications are relevant.
+   * @param properties         loader
+   * @param logManager         log management
+   * @param userManager        so we can look up user information.
+   * @param notificationPicker so we can identify which notifications are relevant.
    */
   @Inject
   public NotificationFacade(final PropertiesLoader properties, final ILogManager logManager,
@@ -76,7 +76,9 @@ public class NotificationFacade extends AbstractSegueFacade {
   }
 
   /**
-   * @param request - for user lookup.
+   * Retrieve notifications for the currently logged-in user.
+   *
+   * @param request for user lookup.
    * @return gets the list of all outstanding notifications.
    */
   @GET
@@ -109,9 +111,9 @@ public class NotificationFacade extends AbstractSegueFacade {
   /**
    * updateNotificationStatus.
    *
-   * @param request          - for user lookup.
-   * @param notificationId   - the id of interest.
-   * @param responseFromUser - the response from the user.
+   * @param request          for user lookup.
+   * @param notificationId   the id of interest.
+   * @param responseFromUser the response from the user.
    * @return success or error.
    */
   @POST

@@ -64,10 +64,12 @@ public class GlossaryFacade extends AbstractSegueFacade {
   private final String contentIndex;
 
   /**
-   * @param properties     - to allow access to system properties.
-   * @param contentManager - so that metadata about content can be accessed.
-   * @param contentIndex   - to access the right version of the content.
-   * @param logManager     - for logging events using the logging api.
+   * Constructor for the GlossaryFacade.
+   *
+   * @param properties     to allow access to system properties.
+   * @param contentManager so that metadata about content can be accessed.
+   * @param contentIndex   to access the right version of the content.
+   * @param logManager     for logging events using the logging api.
    */
   @Inject
   public GlossaryFacade(final PropertiesLoader properties, final GitContentManager contentManager,
@@ -81,8 +83,8 @@ public class GlossaryFacade extends AbstractSegueFacade {
   /**
    * Gets all the glossary terms that are indexed.
    *
-   * @param limit      - Maximum amount of terms to retrieve. Used for pagination.
-   * @param startIndex - Index from which to start retrieving when results exceed limit.
+   * @param limit      Maximum amount of terms to retrieve. Used for pagination.
+   * @param startIndex Index from which to start retrieving when results exceed limit.
    * @return Paginated list of glossary terms.
    */
   @GET
@@ -127,7 +129,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
   /**
    * Gets the current version of the segue application.
    *
-   * @param termId - The ID of the term to retrieve.
+   * @param termId The ID of the term to retrieve.
    * @return segue version as a string wrapped in a response.
    */
   @GET

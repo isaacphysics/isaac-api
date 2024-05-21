@@ -6,6 +6,8 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
+ * Class to manage database transaction connections.
+ *
  * @see ITransaction
  */
 public class PgTransaction implements ITransaction {

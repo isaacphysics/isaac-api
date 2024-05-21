@@ -26,6 +26,8 @@ package uk.ac.cam.cl.dtg.segue.comm;
 public interface ICommunicationMessage {
 
   /**
+   * Get the integer value corresponding to the priority of the email type.
+   *
    * @return the priority of the message
    */
   int getPriority();

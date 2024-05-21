@@ -9,6 +9,8 @@ public class RoleNotAuthorisedException extends Exception {
   private static final long serialVersionUID = -284459943327239344L;
 
   /**
+   * Exception constructor with message for when an action is attempted with a role that is not authorised to do so.
+   *
    * @param message explaining the exception
    */
   public RoleNotAuthorisedException(final String message) {

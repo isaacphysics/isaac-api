@@ -36,36 +36,29 @@ public enum EmailType {
   }
 
   /**
+   * Get the integer value corresponding to the priority of the email type.
+   *
    * @return integer representation of priority
    */
   public int getPriority() {
-    switch (this) {
-      case ADMIN:
-      case SYSTEM:
-      case ASSIGNMENTS:
-      case NEWS_AND_UPDATES:
-      case EVENTS:
-        return this.priority;
-      default:
-        return Integer.MAX_VALUE;
-    }
+    return switch (this) {
+      case ADMIN, SYSTEM, ASSIGNMENTS, NEWS_AND_UPDATES, EVENTS -> this.priority;
+      default -> Integer.MAX_VALUE;
+    };
   }
 
   /**
+   * Check whether the email type can be controlled through preferences. Admin and System emails are always valid,
+   * while other types can be disabled by users.
+   *
    * @return boolean giving the validity of email type as email preference
    */
   public boolean isValidEmailPreference() {
-    switch (this) {
-      case ADMIN:
-      case SYSTEM:
-        return false;
-      case ASSIGNMENTS:
-      case NEWS_AND_UPDATES:
-      case EVENTS:
-        return true;
-      default:
-        return false;
-    }
+    return switch (this) {
+      case ADMIN, SYSTEM -> false;
+      case ASSIGNMENTS, NEWS_AND_UPDATES, EVENTS -> true;
+      default -> false;
+    };
   }
 
 

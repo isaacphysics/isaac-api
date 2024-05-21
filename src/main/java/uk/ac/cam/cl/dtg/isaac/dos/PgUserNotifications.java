@@ -44,8 +44,7 @@ public class PgUserNotifications implements IUserNotifications {
   /**
    * PgUserNotifications.
    *
-   * @param database
-   *            - the postgres client.
+   * @param database the postgres client.
    */
   @Inject
   public PgUserNotifications(final PostgresSqlDb database) {
@@ -73,13 +72,12 @@ public class PgUserNotifications implements IUserNotifications {
   }
 
   /**
-   * @param userId
-   *            - user
-   * @param contentId
-   *            - notification content
+   * Retrieve the notification record for a specific user id and notification id.
+   *
+   * @param userId    user
+   * @param contentId notification content
    * @return userNotification object.
-   * @throws SegueDatabaseException
-   *             - if there is a problem looking up the user notification record requested.
+   * @throws SegueDatabaseException if there is a problem looking up the user notification record requested.
    */
   public IUserNotification getNotification(final Long userId, final String contentId) throws SegueDatabaseException {
     IUserNotification notification = this.getNotificationRecord(userId, contentId);
@@ -92,8 +90,11 @@ public class PgUserNotifications implements IUserNotifications {
   }
 
   /**
+   * Update a notification record if it exists or create one if it does not.
+   *
+   * @param userId user id
    * @param notificationId The id of the notification to insert
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if an error occurs while retrieving or updating the database record
    */
   @Override
   public void saveUserNotification(final Long userId, final String notificationId, final NotificationStatus status)
@@ -108,9 +109,11 @@ public class PgUserNotifications implements IUserNotifications {
   }
 
   /**
-   * @param result - the sql result set to be extracted.
+   * Parse a PgUserNotification object from an sql query ResultSet.
+   *
+   * @param result the sql result set to be extracted.
    * @return a UserNotification object.
-   * @throws SQLException - if bad things happen
+   * @throws SQLException if bad things happen
    */
   private IUserNotification buildPgUserNotifications(final ResultSet result) throws SQLException {
     return new PgUserNotification(result.getLong("user_id"), result.getString("notification_id"),
@@ -118,8 +121,10 @@ public class PgUserNotifications implements IUserNotifications {
   }
 
   /**
-   * @param notification - the notification to insert.
-   * @throws SegueDatabaseException - if it fails.
+   * Add a new user notification record to the database.
+   *
+   * @param notification the notification to insert.
+   * @throws SegueDatabaseException if it fails.
    */
   private void insertNewNotificationRecord(final IUserNotification notification) throws SegueDatabaseException {
     String query = "INSERT INTO user_notifications (user_id, notification_id, status, created) VALUES (?, ?, ?, ?)";
@@ -141,8 +146,10 @@ public class PgUserNotifications implements IUserNotifications {
   }
 
   /**
-   * @param notification - the notification to update.
-   * @throws SegueDatabaseException - if it fails.
+   * Update an existing user notification record in the database.
+   *
+   * @param notification the notification to update.
+   * @throws SegueDatabaseException if it fails.
    */
   private void updateNotificationRecord(final IUserNotification notification) throws SegueDatabaseException {
     String query = "UPDATE user_notifications SET status = ?, created=? WHERE user_id = ? AND notification_id = ?";
@@ -164,10 +171,12 @@ public class PgUserNotifications implements IUserNotifications {
   }
 
   /**
-   * @param userId - user id
-   * @param contentId - the notification id
+   * Retrieve the notification record for a specific user id and notification id.
+   *
+   * @param userId    user id
+   * @param contentId the notification id
    * @return the notification record or null.
-   * @throws SegueDatabaseException - if bad things happen
+   * @throws SegueDatabaseException if bad things happen
    */
   private IUserNotification getNotificationRecord(final Long userId, final String contentId)
       throws SegueDatabaseException {
@@ -184,7 +193,7 @@ public class PgUserNotifications implements IUserNotifications {
           listOfResults.add(buildPgUserNotifications(results));
         }
 
-        if (listOfResults.size() == 0) {
+        if (listOfResults.isEmpty()) {
           return null;
         }
 

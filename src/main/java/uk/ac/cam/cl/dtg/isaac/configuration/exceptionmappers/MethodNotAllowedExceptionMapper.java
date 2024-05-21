@@ -36,6 +36,6 @@ public class MethodNotAllowedExceptionMapper implements ExceptionMapper<jakarta.
   public Response toResponse(final jakarta.ws.rs.NotAllowedException e) {
     String message = String.format("Request %s %s is not allowed", request.getMethod(), request.getRequestURI());
     log.error(message);
-    return SegueErrorResponse.getMethodNotAllowedReponse(message);
+    return SegueErrorResponse.getMethodNotAllowedResponse(message);
   }
 }

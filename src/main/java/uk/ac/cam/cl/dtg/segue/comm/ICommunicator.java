@@ -17,11 +17,11 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 /**
+ * Abstract message handler.
  *
  * @author nr378
  *
- * @param <T>
- *            the type of object it communicates
+ * @param <T> the type of object it communicates
  */
 public interface ICommunicator<T extends ICommunicationMessage> {
 

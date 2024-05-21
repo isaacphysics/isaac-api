@@ -43,10 +43,8 @@ public class PropertiesLoader {
    * This constructor will give attempt to read the contents of the file specified and load each key value pair into
    * memory.
    *
-   * @param propertiesFile
-   *            - the location of the properties file.
-   * @throws IOException
-   *             - if we cannot read the file for whatever reason.
+   * @param propertiesFile the location of the properties file.
+   * @throws IOException if we cannot read the file for whatever reason.
    */
   @Inject
   public PropertiesLoader(final String propertiesFile) throws IOException {
@@ -60,8 +58,7 @@ public class PropertiesLoader {
   /**
    * Attempt to retrieve a property value from the registered propertiesFile.
    *
-   * @param key
-   *            - that the property is listed under.
+   * @param key that the property is listed under.
    * @return value as a String
    */
   public String getProperty(final String key) {
@@ -85,8 +82,7 @@ public class PropertiesLoader {
   /**
    * triggerPropertiesRefresh.
    *
-   * @throws IOException
-   *             - if we cannot load the properties file.
+   * @throws IOException if we cannot load the properties file.
    */
   public synchronized void triggerPropertiesRefresh() throws IOException {
     loadProperties();
@@ -120,8 +116,9 @@ public class PropertiesLoader {
   }
 
   /**
-   * @throws IOException
-   *             if we cannot read the properties file.
+   * Reload properties from the properties file and update the lastRefreshed value to the current time.
+   *
+   * @throws IOException if we cannot read the properties file.
    */
   private synchronized void loadProperties() throws IOException {
     // check to see if this a resource or a file somewhere else
@@ -143,8 +140,8 @@ public class PropertiesLoader {
    * properties, this could cause a NumberFormatException. This method will try to load the property and return the
    * provided fallback value if it fails.
    *
-   * @param key - the identifier for the property to load
-   * @param fallbackValue - an alternative value in the event of failure to parse
+   * @param key           the identifier for the property to load
+   * @param fallbackValue an alternative value in the event of failure to parse
    * @return the loaded value or the fallback value
    */
   public Integer getIntegerPropertyOrFallback(final String key, final Integer fallbackValue) {

@@ -18,7 +18,7 @@ public interface IUserBadgePersistenceManager {
    * @param badgeName   enum of badge to be updated
    * @param transaction object which carries database transaction across multiple functions
    * @return a user badge object
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if an error occurred while retrieving information from the database
    */
   UserBadge getBadge(RegisteredUserDTO user, UserBadgeManager.Badge badgeName, ITransaction transaction)
       throws SegueDatabaseException;
@@ -28,7 +28,7 @@ public interface IUserBadgePersistenceManager {
    *
    * @param badge       a user badge object
    * @param transaction object which carries database transaction across multiple functions
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if an error occurred while updating records in the database
    */
   void updateBadge(UserBadge badge, ITransaction transaction) throws SegueDatabaseException;
 

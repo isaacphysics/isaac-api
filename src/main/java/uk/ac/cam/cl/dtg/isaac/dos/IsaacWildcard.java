@@ -79,8 +79,9 @@ public class IsaacWildcard extends Content {
   }
 
   /**
-   * @param description
-   *            of the wildcard
+   * Set the description.
+   *
+   * @param description of the wildcard
    */
   public void setDescription(final String description) {
     this.description = description;
@@ -102,8 +103,9 @@ public class IsaacWildcard extends Content {
   }
 
   /**
-   * @param url
-   *            - navigation url
+   * Set the navigation url.
+   *
+   * @param url navigation url
    */
   public void setUrl(final String url) {
     this.url = url;

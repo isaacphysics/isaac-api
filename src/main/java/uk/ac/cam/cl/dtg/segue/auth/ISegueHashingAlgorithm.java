@@ -26,11 +26,11 @@ public interface ISegueHashingAlgorithm {
   /**
    * Hash the plain text password provided with a given salt.
    *
-   * @param password - plain text password
-   * @param salt     - salt
+   * @param password plain text password
+   * @param salt     salt
    * @return hashed password
-   * @throws NoSuchAlgorithmException
-   * @throws InvalidKeySpecException
+   * @throws NoSuchAlgorithmException if the configured hashing algorithm is not valid
+   * @throws InvalidKeySpecException  if the preconfigured hashing key spec is invalid
    */
   String hashPassword(String password, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException;
 
@@ -38,7 +38,7 @@ public interface ISegueHashingAlgorithm {
    * Generate a salt value.
    *
    * @return random salt
-   * @throws NoSuchAlgorithmException
+   * @throws NoSuchAlgorithmException if there is no valid provider for the required salting algorithm
    */
   String generateSalt() throws NoSuchAlgorithmException;
 
@@ -52,12 +52,12 @@ public interface ISegueHashingAlgorithm {
   /**
    * Compute a hash as a byte array.
    *
-   * @param str       - string value
-   * @param salt      - salt value
-   * @param keyLength - key length
+   * @param str       string value
+   * @param salt      salt value
+   * @param keyLength key length
    * @return hash as a byte array
-   * @throws NoSuchAlgorithmException
-   * @throws InvalidKeySpecException
+   * @throws NoSuchAlgorithmException if the configured hashing algorithm is not valid
+   * @throws InvalidKeySpecException  if the preconfigured hashing key spec is invalid
    */
   byte[] computeHash(String str, String salt, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException;
 }

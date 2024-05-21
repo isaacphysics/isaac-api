@@ -28,11 +28,10 @@ public class FacebookTokenData {
   private boolean isValid;
 
   /**
+   * Constructor for FacebookTokenData.
    *
-   * @param appId
-   *            - application id
-   * @param isValid
-   *            -
+   * @param appId application id
+   * @param isValid boolean for validity
    */
   @JsonCreator
   public FacebookTokenData(@JsonProperty("app_id") final String appId,
@@ -41,32 +40,18 @@ public class FacebookTokenData {
     this.isValid = isValid;
   }
 
-  /**
-   * @return the appId
-   */
   public String getAppId() {
     return appId;
   }
 
-  /**
-   * @param appId
-   *            the appId to set
-   */
   public void setAppId(final String appId) {
     this.appId = appId;
   }
 
-  /**
-   * @return the isValid
-   */
   public boolean isValid() {
     return isValid;
   }
 
-  /**
-   * @param isValid
-   *            the isValid to set
-   */
   public void setValid(final boolean isValid) {
     this.isValid = isValid;
   }

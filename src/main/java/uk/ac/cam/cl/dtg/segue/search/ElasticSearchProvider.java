@@ -105,7 +105,7 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * Constructor for creating an instance of the ElasticSearchProvider Object.
    *
-   * @param searchClient - the client that the provider should be using.
+   * @param searchClient the client that the provider should be using.
    */
   @Inject
   public ElasticSearchProvider(final RestHighLevelClient searchClient) {
@@ -280,10 +280,10 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
    *
-   * @param address  - address of the cluster to connect to.
-   * @param port     - port that the cluster is running on.
-   * @param username - username for cluster user.
-   * @param password - password for cluster user.
+   * @param address  address of the cluster to connect to.
+   * @param port     port that the cluster is running on.
+   * @param username username for cluster user.
+   * @param password password for cluster user.
    * @return Defaults to http client creation.
    */
   public static RestHighLevelClient getClient(final String address, final int port, final String username,
@@ -388,8 +388,8 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * Utility method to convert sort instructions form external classes into something Elastic search can use.
    *
-   * @param searchRequest    - the request to be augmented.
-   * @param sortInstructions - the instructions to augment.
+   * @param searchRequest    the request to be augmented.
+   * @param sortInstructions the instructions to augment.
    * @return the augmented search request with sort instructions included.
    */
   private SearchSourceBuilder addSortInstructions(final SearchSourceBuilder searchRequest,
@@ -413,7 +413,7 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * Helper method to create elastic search understandable filter instructions.
    *
-   * @param filterInstructions - in the form "fieldName --> instruction key --> instruction value"
+   * @param filterInstructions in the form "fieldName --> instruction key --> instruction value"
    * @return filterbuilder
    */
   public QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
@@ -465,7 +465,7 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * Utility method to generate a BoolMatchQuery based on the parameters provided.
    *
-   * @param fieldsToMatch - the fields that the bool query should match.
+   * @param fieldsToMatch the fields that the bool query should match.
    * @return a bool query configured to match the fields to match.
    */
   private BoolQueryBuilder generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
@@ -519,12 +519,13 @@ public class ElasticSearchProvider implements ISearchProvider {
    * This method does not provide any way of controlling sort order or limiting information returned. It is most
    * useful for doing simple searches with fewer results e.g. by id.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - search index base string to execute the query against
-   *<br>indexType - index type to execute the query against
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
-   * @param query                 - the query to run.
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase - search index base string to execute the query against
+   *                              <br>indexType - index type to execute the query against
+   *                              <br>startIndex - start index for results
+   *                              <br>limit - the maximum number of results to return -1 will attempt to return all
+   *                              results.
+   * @param query                 the query to run.
    * @return list of the search results
    */
   private ResultsWrapper<String> executeBasicQuery(final BasicSearchParameters basicSearchParameters,
@@ -540,13 +541,14 @@ public class ElasticSearchProvider implements ISearchProvider {
    * This method does not provide any way of controlling sort order or limiting information returned. It is most
    * useful for doing simple searches with fewer results e.g. by id.
    *
-   * @param basicSearchParameters - a Data Object containing the following common search parameters:
-   *<br>indexBase - search index base string to execute the query against
-   *<br>indexType - index type to execute the query against
-   *<br>startIndex - start index for results
-   *<br>limit - the maximum number of results to return -1 will attempt to return all results.
-   * @param query                 - the query to run.
-   * @param sortInstructions      - a map of fields to sorting orders (ASC/DESC)
+   * @param basicSearchParameters a Data Object containing the following common search parameters:
+   *                              <br>indexBase - search index base string to execute the query against
+   *                              <br>indexType - index type to execute the query against
+   *                              <br>startIndex - start index for results
+   *                              <br>limit - the maximum number of results to return -1 will attempt to return all
+   *                              results.
+   * @param query                 the query to run.
+   * @param sortInstructions      a map of fields to sorting orders (ASC/DESC)
    * @return list of the search results
    */
   private ResultsWrapper<String> executeBasicQuery(final BasicSearchParameters basicSearchParameters,
@@ -563,12 +565,12 @@ public class ElasticSearchProvider implements ISearchProvider {
    * This method does not provide any way of controlling sort order or limiting information returned. It is most
    * useful for doing simple searches with fewer results e.g. by id.
    *
-   * @param indexBase        - search index base string to execute the query against.
-   * @param indexType        - index type to execute the query against.
-   * @param query            - the query to run.
-   * @param startIndex       - start index for results
-   * @param limit            - the maximum number of results to return -1 will attempt to return all results.
-   * @param sortInstructions - a map of fields to sorting orders (ASC/DESC)
+   * @param indexBase        search index base string to execute the query against.
+   * @param indexType        index type to execute the query against.
+   * @param query            the query to run.
+   * @param startIndex       start index for results
+   * @param limit            the maximum number of results to return -1 will attempt to return all results.
+   * @param sortInstructions a map of fields to sorting orders (ASC/DESC)
    * @return list of the search results
    */
   private ResultsWrapper<String> executeBasicQuery(
@@ -613,8 +615,8 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * A general method for getting the results of a search.
    *
-   * @param typedIndex          - the index within which to search
-   * @param searchSourceBuilder - the search request to send to the cluster.
+   * @param typedIndex          the index within which to search
+   * @param searchSourceBuilder the search request to send to the cluster.
    * @return List of the search results.
    */
   private ResultsWrapper<String> executeQuery(final String typedIndex, final SearchSourceBuilder searchSourceBuilder)
@@ -641,7 +643,7 @@ public class ElasticSearchProvider implements ISearchProvider {
   /**
    * Utility function to support conversion between simple field maps and bool maps.
    *
-   * @param fieldsThatMustMatch - the map that should be converted into a suitable map for querying.
+   * @param fieldsThatMustMatch the map that should be converted into a suitable map for querying.
    * @return Map where each field is using the OR boolean operator.
    */
   private List<GitContentManager.BooleanSearchClause> convertToBoolMap(
@@ -737,15 +739,15 @@ public class ElasticSearchProvider implements ISearchProvider {
   }
 
   /**
-   * This method returns the maximum window size. i.e. the number of results that can be returned in a single result
+   * Returns the maximum window size. i.e. the number of results that can be returned in a single result
    * set without having to do a special scroll query.
    * <br>
    * This is a configurable value but the default Elastic Search value is 10,000.
    * <br>
    * TODO: we may want to selectively upgrade queries to scroll requests if exceeding this limit.
    *
-   * @param indexBase - to look up
-   * @param indexType - type of index as registered with search provider
+   * @param indexBase to look up
+   * @param indexType type of index as registered with search provider
    * @return the configured index max window size or a default,if a request exceeds this an error will be thrown.
    *     (or we should use the scroll api.)
    */

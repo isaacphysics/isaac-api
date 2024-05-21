@@ -22,17 +22,15 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacAnvilQuestionDTO;
 
 /**
- * @author sac92
+ * Anvil question object.
  *
+ * @author sac92
  */
 @DTOMapping(IsaacAnvilQuestionDTO.class)
 @JsonContentType("isaacAnvilQuestion")
 public class IsaacAnvilQuestion extends IsaacQuestionBase {
   private AnvilApp anvilApp;
 
-  /**
-   *
-   */
   public IsaacAnvilQuestion() {
 
   }
@@ -49,8 +47,7 @@ public class IsaacAnvilQuestion extends IsaacQuestionBase {
   /**
    * Sets the anvilApp.
    *
-   * @param anvilApp
-   *            the anvilApp to set
+   * @param anvilApp the anvilApp to set
    */
   public void setAnvilApp(final AnvilApp anvilApp) {
     this.anvilApp = anvilApp;

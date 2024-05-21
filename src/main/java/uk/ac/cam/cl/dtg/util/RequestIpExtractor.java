@@ -27,7 +27,7 @@ public final class RequestIpExtractor {
   private static final Logger log = LoggerFactory.getLogger(RequestIpExtractor.class);
 
   /**
-   It does not make sense to create one of these!
+   It does not make sense to create one of these!.
    */
   private RequestIpExtractor() {
   }
@@ -36,10 +36,10 @@ public final class RequestIpExtractor {
    * Extract client ip address.
    * <br>
    * Solution based upon:
-   * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
+   * <a href="http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet">
+   *   http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet</a>
    *
-   * @param request
-   *            - to attempt to extract a valid IP address from.
+   * @param request to attempt to extract a valid IP address from.
    * @return string representation of the client's ip address, or 0.0.0.0 in case of failure.
    */
   public static String getClientIpAddr(final HttpServletRequest request) {

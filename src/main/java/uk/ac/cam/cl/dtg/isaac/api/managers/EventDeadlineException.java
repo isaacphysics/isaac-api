@@ -8,6 +8,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 public class EventDeadlineException extends Exception {
 
   /**
+   * Exception constructor with message for a passed booking deadline.
+   *
    * @param message explaining the error
    */
   public EventDeadlineException(final String message) {

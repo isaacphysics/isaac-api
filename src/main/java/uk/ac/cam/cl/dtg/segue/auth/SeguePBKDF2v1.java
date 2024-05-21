@@ -20,7 +20,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
  * Represents an instance of a hashing scheme used in Segue.
  * Implemented for backwards compatibility.
  *
- * @deprecated use SeguePBKDF2v2
+ * @deprecated use {@link SegueSCryptv1} instead
  */
 @Deprecated
 public class SeguePBKDF2v1 extends SeguePBKDF2 implements ISegueHashingAlgorithm {

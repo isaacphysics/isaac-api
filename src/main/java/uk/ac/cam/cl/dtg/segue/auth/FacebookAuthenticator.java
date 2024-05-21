@@ -89,8 +89,11 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
   private static GoogleIdTokenVerifier tokenVerifier;
 
   /**
+   * Constructor for the Facebook third-party authenticator.
+   *
    * @param clientId        The registered Facebook client ID
-   * @param clientSecret    The client secret provided by the Facebook api (https://developers.facebook.com/apps/)
+   * @param clientSecret    The client secret provided by the Facebook api
+   *                        (<a href="https://developers.facebook.com/apps/">https://developers.facebook.com/apps/</a>)
    * @param callbackUri     The callback url from the oauth process
    * @param requestedScopes The facebook permissions requested by this application
    * @param requestedFields The facebook user info fields requested by this application

@@ -54,12 +54,12 @@ public class UserGroupDTO {
   /**
    * Fully injected constructor.
    *
-   * @param id          - database id
-   * @param groupName   - name of the group
-   * @param ownerId     - owner of the group
-   * @param created     - date created
-   * @param lastUpdated - the date the group was last updated
-   * @param archived    - if the group has been archived
+   * @param id          database id
+   * @param groupName   name of the group
+   * @param ownerId     owner of the group
+   * @param created     date created
+   * @param lastUpdated the date the group was last updated
+   * @param archived    if the group has been archived
    */
   public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Instant created,
                       final Instant lastUpdated,
@@ -77,7 +77,7 @@ public class UserGroupDTO {
    * Gets the _id.
    *
    * @return the _id
-   * @deprecated - TODO need to remove _id from frontend
+   * @deprecated TODO need to remove _id from frontend
    */
   @JsonProperty("_id")
   @Deprecated
@@ -89,7 +89,7 @@ public class UserGroupDTO {
    * Sets the _id.
    *
    * @param id the _id to set
-   * @deprecated - TODO need to remove _id from frontend
+   * @deprecated TODO need to remove _id from frontend
    */
   @JsonProperty("_id")
   @Deprecated
@@ -224,14 +224,14 @@ public class UserGroupDTO {
   }
 
   /**
-   * @return whether additional managers of this group have owner powers or not
+   * Get whether additional managers of this group have owner powers or not.
    */
   public boolean isAdditionalManagerPrivileges() {
     return this.additionalManagerPrivileges;
   }
 
   /**
-   * @param additionalManagerPrivileges whether additional managers of this group should have owner powers or not
+   * Set whether additional managers of this group should have owner powers or not.
    */
   public void setAdditionalManagerPrivileges(final boolean additionalManagerPrivileges) {
     this.additionalManagerPrivileges = additionalManagerPrivileges;
@@ -259,7 +259,7 @@ public class UserGroupDTO {
    * Get the list of other users who should be able to view this group's data subject to individual permissions being
    * granted.
    *
-   * @return list of user ids
+   * @return set of user summaries
    */
   public Set<UserSummaryWithEmailAddressDTO> getAdditionalManagers() {
     return additionalManagers;
@@ -269,7 +269,7 @@ public class UserGroupDTO {
    * Set the list of other users who should be able to view this group's data subject to individual permissions being
    * granted.
    *
-   * @param additionalManagers - those users who should have access to this group.
+   * @param additionalManagers those users who should have access to this group.
    */
   public void setAdditionalManagers(final Set<UserSummaryWithEmailAddressDTO> additionalManagers) {
     this.additionalManagers = additionalManagers;
@@ -291,10 +291,9 @@ public class UserGroupDTO {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof UserGroupDTO)) {
+    if (!(obj instanceof UserGroupDTO other)) {
       return false;
     }
-    UserGroupDTO other = (UserGroupDTO) obj;
     if (id == null) {
       if (other.id != null) {
         return false;

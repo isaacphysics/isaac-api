@@ -37,11 +37,11 @@ public class UserSettings {
   /**
    * A collection of user settings objects.
    *
-   * @param registeredUser         - the user data
-   * @param userPreferences        - a list of email preferences
-   * @param registeredUserContexts - a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
-   *                                     It is set separately from the user so that we can record the time it was last
-   *                                     set or acknowledged on the server.
+   * @param registeredUser         the user data
+   * @param userPreferences        a list of email preferences
+   * @param registeredUserContexts a list of registered user contexts, i.e. {stage=a_level, exam_board=AQA}.
+   *                               It is set separately from the user so that we can record the time it was last
+   *                               set or acknowledged on the server.
    */
   @JsonCreator
   public UserSettings(@JsonProperty("registeredUser") final RegisteredUser registeredUser,
@@ -54,21 +54,23 @@ public class UserSettings {
   }
 
   /**
-   * @return the passwordCurrent
+   * Get the current password.
    */
   public String getPasswordCurrent() {
     return passwordCurrent;
   }
 
   /**
-   * @param passwordCurrent the passwordCurrent to set
+   * Set the current password.
    */
   public void setPasswordCurrent(final String passwordCurrent) {
     this.passwordCurrent = passwordCurrent;
   }
 
   /**
-   * @return a registered user object
+   * Get the user.
+   *
+   * @return a RegisteredUser
    */
   @JsonProperty("registeredUser")
   public RegisteredUser getRegisteredUser() {
@@ -76,7 +78,9 @@ public class UserSettings {
   }
 
   /**
-   * @param registeredUser the registeredUser to set
+   * Set the user.
+   *
+   * @param registeredUser the RegisteredUser to set
    */
   @JsonProperty("registeredUser")
   public void setRegisteredUser(final RegisteredUser registeredUser) {
@@ -84,7 +88,9 @@ public class UserSettings {
   }
 
   /**
-   * @return a list of user preferences
+   * Get the preferences for the user.
+   *
+   * @return a nested Map of user preferences
    */
   @JsonProperty("userPreferences")
   public Map<String, Map<String, Boolean>> getUserPreferences() {
@@ -92,7 +98,9 @@ public class UserSettings {
   }
 
   /**
-   * @param userPreferences the userPreferences to set
+   * Set the preferences for the user.
+   *
+   * @param userPreferences the userPreferences to set as a nested Map
    */
   @JsonProperty("userPreferences")
   public void setUserPreferences(final Map<String, Map<String, Boolean>> userPreferences) {

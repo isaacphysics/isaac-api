@@ -110,13 +110,13 @@ public class EventBookingManager {
   /**
    * EventBookingManager.
    *
-   * @param bookingPersistenceManager - to allow bookings to be persisted in the database
-   * @param emailManager              - email manager
-   * @param userAssociationManager    - the userAssociationManager manager object
-   * @param propertiesLoader          - Instance of properties Loader
-   * @param groupManager              - Instance of Group Manager
-   * @param userAccountManager        - Instance of User Account Manager, for retrieving users
-   * @param transactionManager        - Instance of Transaction Manager, used for locking database while managing
+   * @param bookingPersistenceManager to allow bookings to be persisted in the database
+   * @param emailManager              email manager
+   * @param userAssociationManager    the userAssociationManager manager object
+   * @param propertiesLoader          Instance of properties Loader
+   * @param groupManager              Instance of Group Manager
+   * @param userAccountManager        Instance of User Account Manager, for retrieving users
+   * @param transactionManager        Instance of Transaction Manager, used for locking database while managing
    *                                        bookings
    */
   @Inject
@@ -139,9 +139,9 @@ public class EventBookingManager {
   /**
    * This will get all bookings for a given user.
    *
-   * @param userId - user of interest.
+   * @param userId user of interest.
    * @return events
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public Map<String, BookingStatus> getAllEventStatesForUser(final Long userId) throws SegueDatabaseException {
     final ImmutableMap.Builder<String, BookingStatus> bookingStatusBuilder = new ImmutableMap.Builder<>();
@@ -156,18 +156,20 @@ public class EventBookingManager {
   /**
    * This will get all reservations made by a given user.
    *
-   * @param userId - user of interest.
+   * @param userId user of interest.
    * @return events
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public List<DetailedEventBookingDTO> getAllEventReservationsForUser(final Long userId) throws SegueDatabaseException {
     return this.bookingPersistenceManager.getEventReservationsByUserId(userId);
   }
 
   /**
-   * @param bookingId - of interest
+   * Get a specific event booking from the booking id.
+   *
+   * @param bookingId of interest
    * @return event booking
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public DetailedEventBookingDTO getDetailedBookingById(final Long bookingId) throws SegueDatabaseException {
     return this.bookingPersistenceManager.getDetailedBookingById(bookingId);
@@ -177,16 +179,18 @@ public class EventBookingManager {
    * Count all bookings in the database.
    *
    * @return event bookings
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public Long getCountOfEventBookings() throws SegueDatabaseException {
     return this.bookingPersistenceManager.countAllBookings();
   }
 
   /**
-   * @param eventId - of interest
+   * Get all event bookings for a specific event from the event id.
+   *
+   * @param eventId of interest
    * @return event bookings
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public List<DetailedEventBookingDTO> getBookingsByEventId(final String eventId) throws SegueDatabaseException {
     return this.bookingPersistenceManager.getBookingsByEventId(eventId);
@@ -198,7 +202,7 @@ public class EventBookingManager {
    * @param eventId the ID of the event
    * @param userId the ID of the user
    * @return the event booking for the specified event and user, or null if no booking is found
-   * @throws SegueDatabaseException - if an error occurs
+   * @throws SegueDatabaseException if an error occurs
    */
   public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId)
       throws SegueDatabaseException {
@@ -208,9 +212,9 @@ public class EventBookingManager {
   /**
    * Retrieves the detailed event booking for the specified event ID.
    *
-   * @param eventId - the ID of the event of interest
+   * @param eventId the ID of the event of interest
    * @return the list of detailed event booking for the specified event, or null if no booking is found
-   * @throws SegueDatabaseException - if an error occurs
+   * @throws SegueDatabaseException if an error occurs
    */
   public List<DetailedEventBookingDTO> adminGetBookingsByEventId(final String eventId) throws SegueDatabaseException {
     return this.bookingPersistenceManager.adminGetBookingsByEventId(eventId);
@@ -219,9 +223,9 @@ public class EventBookingManager {
   /**
    * Retrieves the detailed event bookings for the specified event IDs.
    *
-   * @param eventIds - the list of event IDs of interest
+   * @param eventIds the list of event IDs of interest
    * @return a map of event IDs to their corresponding list of detailed event bookings
-   * @throws SegueDatabaseException - if an error occurs
+   * @throws SegueDatabaseException if an error occurs
    */
   public Map<String, List<DetailedEventBookingDTO>> adminGetBookingsByEventIds(final List<String> eventIds)
       throws SegueDatabaseException {
@@ -297,12 +301,12 @@ public class EventBookingManager {
    * This method will allow users to be booked onto an event providing there is space. If there is no space the user
    * will simply be added to the waiting list.
    *
-   * @param event                      - of interest
-   * @param user                       - user to book on to the event.
-   * @param additionalEventInformation - any additional information for the event organisers (nullable)
+   * @param event                      of interest
+   * @param user                       user to book on to the event.
+   * @param additionalEventInformation any additional information for the event organisers (nullable)
    * @return the newly created booking.
-   * @throws SegueDatabaseException    - if an error occurs.
-   * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
+   * @throws SegueDatabaseException    if an error occurs.
+   * @throws DuplicateBookingException Duplicate booking, only unique bookings.
    */
   public EventBookingDTO createBookingOrAddToWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                                          final Map<String, String> additionalEventInformation)
@@ -349,14 +353,14 @@ public class EventBookingManager {
    * <br>
    * This method will not enforce some of the restrictions such as event deadlines and email verification
    *
-   * @param event                      - of interest
-   * @param user                       - user to book on to the event.
-   * @param additionalEventInformation - any additional information for the event organisers (nullable)
-   * @param status                     - the booking status to create i.e. CONFIRMED, WAITING_LIST etc.
+   * @param event                      of interest
+   * @param user                       user to book on to the event.
+   * @param additionalEventInformation any additional information for the event organisers (nullable)
+   * @param status                     the booking status to create i.e. CONFIRMED, WAITING_LIST etc.
    * @return the newly created booking.
-   * @throws SegueDatabaseException    - if an error occurs.
-   * @throws EventIsFullException      - No space on the event
-   * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
+   * @throws SegueDatabaseException    if an error occurs.
+   * @throws EventIsFullException      No space on the event
+   * @throws DuplicateBookingException Duplicate booking, only unique bookings.
    */
   public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                        final Map<String, String> additionalEventInformation,
@@ -413,15 +417,15 @@ public class EventBookingManager {
    * Attempt to book onto an event.
    * This method will allow attempt to book a onto an event if the rules are not broken.
    *
-   * @param event                      - of interest
-   * @param user                       - user to book on to the event.
-   * @param additionalEventInformation - any additional information for the event organisers (nullable)
+   * @param event                      of interest
+   * @param user                       user to book on to the event.
+   * @param additionalEventInformation any additional information for the event organisers (nullable)
    * @return the newly created booking.
-   * @throws SegueDatabaseException       - if there is a database error
-   * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-   * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
-   * @throws EventIsFullException         - No space on the event
-   * @throws EventDeadlineException       - The deadline for booking has passed.
+   * @throws SegueDatabaseException       if there is a database error
+   * @throws EmailMustBeVerifiedException if this method requires a validated e-mail address.
+   * @throws DuplicateBookingException    Duplicate booking, only unique bookings.
+   * @throws EventIsFullException         No space on the event
+   * @throws EventDeadlineException       The deadline for booking has passed.
    */
   public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                         final Map<String, String> additionalEventInformation)
@@ -497,9 +501,9 @@ public class EventBookingManager {
    * There is no additional event information passed now, this can be filled in later when actual bookings are
    * requested.
    *
-   * @param event         - to reserve the user on
-   * @param users         - to reserve on the event
-   * @param reservingUser - the user making the reservation
+   * @param event         to reserve the user on
+   * @param users         to reserve on the event
+   * @param reservingUser the user making the reservation
    * @return confirmation of reservation
    */
   public List<EventBookingDTO> requestReservations(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
@@ -632,15 +636,15 @@ public class EventBookingManager {
   /**
    * Attempt to book onto the waiting list for an event.
    *
-   * @param event                 - of interest
-   * @param user                  - user to book on to the event.
+   * @param event                 of interest
+   * @param user                  user to book on to the event.
    * @param additionalInformation additional information to be stored with this booking e.g. dietary requirements.
    * @return the newly created booking.
-   * @throws SegueDatabaseException       - if there is a database error
-   * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-   * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
-   * @throws EventIsNotFullException      - There is space on the event
-   * @throws EventDeadlineException       - The deadline for booking has passed.
+   * @throws SegueDatabaseException       if there is a database error
+   * @throws EmailMustBeVerifiedException if this method requires a validated e-mail address.
+   * @throws DuplicateBookingException    Duplicate booking, only unique bookings.
+   * @throws EventIsNotFullException      There is space on the event
+   * @throws EventDeadlineException       The deadline for booking has passed.
    */
   public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                                    final Map<String, String> additionalInformation) throws
@@ -708,12 +712,12 @@ public class EventBookingManager {
   /**
    * Allows an admin user to promote someone from a waiting list or cancellation to a confirmed booking.
    *
-   * @param event   - The event in question.
-   * @param userDTO - The user whose booking should be updated
+   * @param event   The event in question.
+   * @param userDTO The user whose booking should be updated
    * @return the updated booking.
-   * @throws SegueDatabaseException      - if there is a database error
-   * @throws EventIsFullException        - No space on the event
-   * @throws EventBookingUpdateException - Unable to update the event booking.
+   * @throws SegueDatabaseException      if there is a database error
+   * @throws EventIsFullException        No space on the event
+   * @throws EventBookingUpdateException Unable to update the event booking.
    */
   public EventBookingDTO promoteToConfirmedBooking(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO)
       throws SegueDatabaseException, EventBookingUpdateException, EventIsFullException, EventIsCancelledException {
@@ -779,12 +783,12 @@ public class EventBookingManager {
   /**
    * Allows an admin user to record the attendance of a booking as either attended or absent.
    *
-   * @param event    - The event in question.
-   * @param userDTO  - The user whose booking should be updated.
-   * @param attended - Whether the user attended the event or not.
+   * @param event    The event in question.
+   * @param userDTO  The user whose booking should be updated.
+   * @param attended Whether the user attended the event or not.
    * @return the updated booking.
-   * @throws SegueDatabaseException      - Database error.
-   * @throws EventBookingUpdateException - Unable to update the event booking.
+   * @throws SegueDatabaseException      Database error.
+   * @throws EventBookingUpdateException Unable to update the event booking.
    */
   public DetailedEventBookingDTO recordAttendance(final IsaacEventPageDTO event, final RegisteredUserDTO
       userDTO, final boolean attended)
@@ -831,10 +835,10 @@ public class EventBookingManager {
    * <br>
    * It also assumes teachers don't count on student events.
    *
-   * @param event - the event we care about
+   * @param event the event we care about
    * @return the number of places available or Null if there is no limit. If a negative number would be returned the
    *     method will only return 0. This allows for manual overbooking.
-   * @throws SegueDatabaseException - if we cannot contact the database.
+   * @throws SegueDatabaseException if we cannot contact the database.
    */
   public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
     boolean isWaitingListOnly = EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus());
@@ -847,11 +851,11 @@ public class EventBookingManager {
    * <br>
    * It also assumes teachers don't count on student events.
    *
-   * @param event              - the event we care about
-   * @param countOnlyConfirmed - if true only count confirmed bookings (i.e. ignore waiting list ones.
+   * @param event              the event we care about
+   * @param countOnlyConfirmed if true only count confirmed bookings (i.e. ignore waiting list ones.
    * @return the number of places available or Null if there is no limit. If a negative number would be returned
    *     the method will only return 0. This allows for manual overbooking.
-   * @throws SegueDatabaseException - if we cannot contact the database.
+   * @throws SegueDatabaseException if we cannot contact the database.
    */
   private Integer getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
       throws SegueDatabaseException {
@@ -908,10 +912,10 @@ public class EventBookingManager {
   /**
    * Find out if a user is already booked on an event.
    *
-   * @param eventId - of interest
-   * @param userId  - of interest.
+   * @param eventId of interest
+   * @param userId  of interest.
    * @return true if a booking exists false if not
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
     return this.bookingPersistenceManager.isUserBooked(eventId, userId);
@@ -920,11 +924,11 @@ public class EventBookingManager {
   /**
    * Find out if a user has a booking with a given status.
    *
-   * @param eventId       - of interest
-   * @param userId        - of interest.
-   * @param bookingStatus - the status of the booking.
+   * @param eventId       of interest
+   * @param userId        of interest.
+   * @param bookingStatus the status of the booking.
    * @return true if a waiting list booking exists false if not
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public boolean hasBookingWithStatus(final String eventId, final Long userId, final BookingStatus bookingStatus)
       throws SegueDatabaseException {
@@ -939,11 +943,11 @@ public class EventBookingManager {
   /**
    * Find out if a user has a booking with any of the given statuses.
    *
-   * @param eventId         - of interest
-   * @param userId          - of interest.
-   * @param bookingStatuses - the statuses of the booking.
+   * @param eventId         of interest
+   * @param userId          of interest.
+   * @param bookingStatuses the statuses of the booking.
    * @return true if a waiting list booking exists false if not
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public boolean hasBookingWithAnyOfStatuses(final String eventId, final Long userId,
                                              final Set<BookingStatus> bookingStatuses)
@@ -959,10 +963,10 @@ public class EventBookingManager {
   /**
    * Return the booking status for the given user and event IDs.
    *
-   * @param eventId - of interest
-   * @param userId  - of interest.
-   * @return bookingStatus - the status of the booking.
-   * @throws SegueDatabaseException - if an error occurs.
+   * @param eventId of interest
+   * @param userId  of interest.
+   * @return bookingStatus the status of the booking.
+   * @throws SegueDatabaseException if an error occurs.
    */
   public BookingStatus getBookingStatus(final String eventId, final Long userId)
       throws SegueDatabaseException {
@@ -979,10 +983,10 @@ public class EventBookingManager {
    * <br>
    * Note: cancelled bookings no longer occupy space on an events capacity calculations.
    *
-   * @param event - event
-   * @param user  - user to unbook
-   * @throws SegueDatabaseException  - if a database error occurs.
-   * @throws ContentManagerException - if a content error occurs.
+   * @param event event
+   * @param user  user to unbook
+   * @throws SegueDatabaseException  if a database error occurs.
+   * @throws ContentManagerException if a content error occurs.
    */
   public void cancelBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user)
       throws SegueDatabaseException, ContentManagerException {
@@ -1073,9 +1077,9 @@ public class EventBookingManager {
   /**
    * Delete a booking permanently.
    *
-   * @param event - event context
-   * @param user  - user to unbook
-   * @throws SegueDatabaseException - if an error occurs.
+   * @param event event context
+   * @param user  user to unbook
+   * @throws SegueDatabaseException if an error occurs.
    */
   public void deleteBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
     try (ITransaction transaction = transactionManager.getTransaction()) {
@@ -1091,8 +1095,8 @@ public class EventBookingManager {
   /**
    * Expunge additional information fields for all of a given user's bookings i.e. to remove PII.
    *
-   * @param user - user to unbook
-   * @throws SegueDatabaseException - if an error occurs.
+   * @param user user to unbook
+   * @throws SegueDatabaseException if an error occurs.
    */
   public void deleteUsersAdditionalInformationBooking(final RegisteredUserDTO user) throws SegueDatabaseException {
     this.bookingPersistenceManager.deleteAdditionalInformation(user.getId());
@@ -1102,8 +1106,8 @@ public class EventBookingManager {
    * This method will attempt to resend the last email that a user booked on an event should have received.
    * E.g. if their status is confirmed it would be a welcome email, if cancelled it would be a cancellation one.
    *
-   * @param event - event that the user was booked on.
-   * @param user  - user to be emailed.
+   * @param event event that the user was booked on.
+   * @param user  user to be emailed.
    */
   public void resendEventEmail(final IsaacEventPageDTO event, final RegisteredUserDTO user)
       throws SegueDatabaseException, ContentManagerException, EventIsCancelledException {
@@ -1315,8 +1319,8 @@ public class EventBookingManager {
    *
    * @param event the event the user wants to book on to
    * @param user  the user who is trying to be booked onto the event.
-   * @throws SegueDatabaseException - if an error occurs
-   * @throws EventIsFullException   - if the event is full according to the event rules established.
+   * @throws SegueDatabaseException if an error occurs
+   * @throws EventIsFullException   if the event is full according to the event rules established.
    */
   private void ensureCapacity(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws
       SegueDatabaseException, EventIsFullException {
@@ -1330,8 +1334,8 @@ public class EventBookingManager {
    *
    * @param event the event the user wants to book on to
    * @param users the users who are trying to be booked onto the event.
-   * @throws SegueDatabaseException - if an error occurs
-   * @throws EventIsFullException   - if the event is full according to the event rules established.
+   * @throws SegueDatabaseException if an error occurs
+   * @throws EventIsFullException   if the event is full according to the event rules established.
    */
   private void ensureCapacity(final IsaacEventPageDTO event, final List<RegisteredUserDTO> users,
                               final Boolean countOnlyConfirmed) throws SegueDatabaseException, EventIsFullException {
@@ -1387,9 +1391,9 @@ public class EventBookingManager {
    *
    * @param event                  of interest
    * @param user                   user to book on to the event.
-   * @param enforceBookingDeadline - whether or not to enforce the booking deadline of the event
-   * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-   * @throws EventDeadlineException       - The deadline for booking has passed.
+   * @param enforceBookingDeadline whether or not to enforce the booking deadline of the event
+   * @throws EmailMustBeVerifiedException if this method requires a validated e-mail address.
+   * @throws EventDeadlineException       The deadline for booking has passed.
    */
   private void ensureValidEventAndUser(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
       enforceBookingDeadline) throws EmailMustBeVerifiedException, EventDeadlineException {
@@ -1426,8 +1430,8 @@ public class EventBookingManager {
    * <br>
    * Note: This method may return null in the event we cannot communicate with a third party service.
    *
-   * @param event          - the event booked on
-   * @param bookingDetails - the booking details.
+   * @param event          the event booked on
+   * @param bookingDetails the booking details.
    * @return email attachment containing an ics file.
    */
   private EmailAttachment generateEventICSFile(final IsaacEventPageDTO event, final EventBookingDTO bookingDetails) {
@@ -1468,7 +1472,7 @@ public class EventBookingManager {
   /**
    * Helper to generate a url with a pre-generated subject field for the contact page.
    *
-   * @param event - the event of interest
+   * @param event the event of interest
    * @return customised contactUs url for the event.
    */
   private String generateEventContactUsURL(final IsaacEventPageDTO event) {

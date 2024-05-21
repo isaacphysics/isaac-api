@@ -44,15 +44,15 @@ public class AssignmentDTO implements IAssignmentLike {
   /**
    * Complete AssignmentDTO constructor with all dependencies.
    *
-   * @param id                 - unique id for the gameboard
-   * @param gameboardId        - The gameboard to assign as homework.
-   * @param ownerUserId        - User id of the owner of the gameboard.
-   * @param groupId            - Group id who should be assigned the game board.
-   * @param groupName
-   * @param notes
-   * @param creationDate       - the date the assignment was created.
-   * @param dueDate            - the date the assignment is due (should be completed by)
-   * @param scheduledStartDate - the date the assignment should be shown to users/groups that it is set to
+   * @param id                 unique id for the gameboard
+   * @param gameboardId        The gameboard to assign as homework.
+   * @param ownerUserId        User id of the owner of the gameboard.
+   * @param groupId            Group id who should be assigned the game board.
+   * @param groupName          name string for the group to be assigned the game board.
+   * @param notes              any additional information added to the assignment.
+   * @param creationDate       the date the assignment was created.
+   * @param dueDate            the date the assignment is due (should be completed by)
+   * @param scheduledStartDate the date the assignment should be shown to users/groups that it is set to
    */
   public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
                        final String groupName, final String notes, final Instant creationDate, final Instant dueDate,

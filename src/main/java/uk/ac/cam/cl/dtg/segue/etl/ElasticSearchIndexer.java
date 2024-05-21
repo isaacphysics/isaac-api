@@ -52,7 +52,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
   /**
    * Constructor for creating an instance of the ElasticSearchProvider Object.
    *
-   * @param searchClient - the client that the provider should be using.
+   * @param searchClient the client that the provider should be using.
    */
   @Inject
   ElasticSearchIndexer(final RestHighLevelClient searchClient) {
@@ -89,6 +89,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
   }
 
   /**
+   * Perform a bulk elasticsearch for a specified index.
+   *
    * @param indexBase        the index name
    * @param indexType        type of index as registered with search provider
    * @param buildBulkRequest a function that takes an elasticsearch typed index name, and produces a (populated)
@@ -311,8 +313,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
    * <br>
    * This is useful if we want to query the original data without ElasticSearch having messed with it.
    *
-   * @param typedIndex - type suffixed index to send the mapping corrections to.
-   * @param indexType  - type of index as registered with search provider
+   * @param typedIndex type suffixed index to send the mapping corrections to.
+   * @param indexType  type of index as registered with search provider
    */
   private void sendMappingCorrections(final String typedIndex, final String indexType) {
     try {

@@ -160,19 +160,19 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Create an instance of the user manager class.
    *
-   * @param database                  - an IUserDataManager that will support persistence.
-   * @param questionDb                - allows this class to instruct the questionDB to merge an anonymous user with a
-   *                                        registered user.
-   * @param properties                - A property loader
-   * @param providersToRegister       - A map of known authentication providers.
-   * @param dtoMapper                 - the preconfigured DO to DTO object mapper for user objects.
-   * @param emailQueue                - the preconfigured communicator manager for sending e-mails.
-   * @param temporaryUserCache        - temporary user cache for anonymous users
-   * @param logManager                - so that we can log events for users.
-   * @param userAuthenticationManager - for managing sessions, passwords and third-party provider links
-   * @param secondFactorManager       - for configuring 2FA
-   * @param userPreferenceManager     - Allows user preferences to be managed.
-   * @param schoolListReader          - to look up a users school.
+   * @param database                  an IUserDataManager that will support persistence.
+   * @param questionDb                allows this class to instruct the questionDB to merge an anonymous user with a
+   *                                  registered user.
+   * @param properties                A property loader
+   * @param providersToRegister       A map of known authentication providers.
+   * @param dtoMapper                 the preconfigured DO to DTO object mapper for user objects.
+   * @param emailQueue                the preconfigured communicator manager for sending e-mails.
+   * @param temporaryUserCache        temporary user cache for anonymous users
+   * @param logManager                so that we can log events for users.
+   * @param userAuthenticationManager for managing sessions, passwords and third-party provider links
+   * @param secondFactorManager       for configuring 2FA
+   * @param userPreferenceManager     Allows user preferences to be managed.
+   * @param schoolListReader          to look up a users school.
    */
   @Inject
   public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
@@ -222,11 +222,11 @@ public class UserAccountManager implements IUserAccountManager {
    * Users who are already logged will be returned their UserDTO without going through the authentication
    * process.
    *
-   * @param request  - http request that we can attach the session to and save redirect url in.
-   * @param provider - the provider the user wishes to authenticate with.
+   * @param request  http request that we can attach the session to and save redirect url in.
+   * @param provider the provider the user wishes to authenticate with.
    * @return a URI for redirection
-   * @throws IOException                            -
-   * @throws AuthenticationProviderMappingException - as per exception description.
+   * @throws IOException                            if there is an error when contacting the OAuth server
+   * @throws AuthenticationProviderMappingException as per exception description.
    */
   public URI authenticate(final HttpServletRequest request, final String provider)
       throws IOException, AuthenticationProviderMappingException {
@@ -240,12 +240,12 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * Users must already be logged in to use this method otherwise a 401 will be returned.
    *
-   * @param request  - http request that we can attach the session to.
-   * @param provider - the provider the user wishes to authenticate with.
+   * @param request  http request that we can attach the session to.
+   * @param provider the provider the user wishes to authenticate with.
    * @return A redirection URI - also this endpoint ensures that the request has a session attribute on so we know
    *     that this is a link request not a new user.
-   * @throws IOException                            -
-   * @throws AuthenticationProviderMappingException - as per exception description.
+   * @throws IOException                            if there is an error when contacting the OAuth server
+   * @throws AuthenticationProviderMappingException as per exception description.
    */
   public URI initiateLinkAccountToUserFlow(final HttpServletRequest request, final String provider)
       throws IOException, AuthenticationProviderMappingException {
@@ -262,18 +262,18 @@ public class UserAccountManager implements IUserAccountManager {
    * This method will either register a new user and attach the linkedAccount or locate the existing account of the
    * user and create a session for that.
    *
-   * @param request  - http request from the user - should contain url encoded token details.
+   * @param request  http request from the user - should contain url encoded token details.
    * @param response to store the session in our own segue cookie.
-   * @param provider - the provider who has just authenticated the user.
+   * @param provider the provider who has just authenticated the user.
    * @return Response containing the user object. Alternatively a SegueErrorResponse could be returned.
-   * @throws AuthenticationProviderMappingException - if we cannot locate an appropriate authenticator.
-   * @throws SegueDatabaseException                 - if there is a local database error.
-   * @throws IOException                            - Problem reading something
-   * @throws NoUserException                        - If the user doesn't exist with the provider.
-   * @throws AuthenticatorSecurityException         - If there is a security probably with the authenticator.
-   * @throws CrossSiteRequestForgeryException       - as per exception description.
-   * @throws CodeExchangeException                  - as per exception description.
-   * @throws AuthenticationCodeException            - as per exception description.
+   * @throws AuthenticationProviderMappingException if we cannot locate an appropriate authenticator.
+   * @throws SegueDatabaseException                 if there is a local database error.
+   * @throws IOException                            Problem reading something
+   * @throws NoUserException                        If the user doesn't exist with the provider.
+   * @throws AuthenticatorSecurityException         If there is a security probably with the authenticator.
+   * @throws CrossSiteRequestForgeryException       as per exception description.
+   * @throws CodeExchangeException                  as per exception description.
+   * @throws AuthenticationCodeException            as per exception description.
    */
   public RegisteredUserDTO authenticateCallback(final HttpServletRequest request,
                                                 final HttpServletResponse response, final String provider)
@@ -344,20 +344,20 @@ public class UserAccountManager implements IUserAccountManager {
    * This method will attempt to authenticate the user using the provided credentials and if successful will log the
    * user in and create a session.
    *
-   * @param request  - http request that we can attach the session to.
+   * @param request  http request that we can attach the session to.
    * @param response to store the session in our own segue cookie.
-   * @param provider - the provider the user wishes to authenticate with.
-   * @param email    - the email address of the account holder.
-   * @param password - the plain text password.
+   * @param provider the provider the user wishes to authenticate with.
+   * @param email    the email address of the account holder.
+   * @param password the plain text password.
    * @return A response containing the UserDTO object or a SegueErrorResponse.
-   * @throws AuthenticationProviderMappingException    - if we cannot find an authenticator
-   * @throws IncorrectCredentialsProvidedException     - if the password is incorrect
-   * @throws NoCredentialsAvailableException           - If the account exists but does not have a local password
-   * @throws AdditionalAuthenticationRequiredException - If the account has 2FA enabled and we need to initiate that
-   *                                                         flow
-   * @throws MFARequiredButNotConfiguredException      - If the account type requires 2FA to be configured but none is
-   *                                                         enabled for the account
-   * @throws SegueDatabaseException                    - if there is a problem with the database.
+   * @throws AuthenticationProviderMappingException    if we cannot find an authenticator
+   * @throws IncorrectCredentialsProvidedException     if the password is incorrect
+   * @throws NoCredentialsAvailableException           If the account exists but does not have a local password
+   * @throws AdditionalAuthenticationRequiredException If the account has 2FA enabled and we need to initiate that
+   *                                                   flow
+   * @throws MFARequiredButNotConfiguredException      If the account type requires 2FA to be configured but none is
+   *                                                   enabled for the account
+   * @throws SegueDatabaseException                    if there is a problem with the database.
    */
   public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
                                                              final HttpServletResponse response, final String provider,
@@ -394,11 +394,11 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Create a user object. This method allows new user objects to be created.
    *
-   * @param request                - so that we can identify the user
-   * @param userObjectFromClient   - the new user object from the clients' perspective.
-   * @param newPassword            - the new password for the user.
-   * @param userPreferenceObject   - the new preferences for this user
-   * @param registeredUserContexts - a List of User Contexts (stage, exam board)
+   * @param request                so that we can identify the user
+   * @param userObjectFromClient   the new user object from the clients' perspective.
+   * @param newPassword            the new password for the user.
+   * @param userPreferenceObject   the new preferences for this user
+   * @param registeredUserContexts a List of User Contexts (stage, exam board)
    * @return the updated user object.
    */
   public Response createNewUser(final HttpServletRequest request, final RegisteredUser userObjectFromClient,
@@ -452,8 +452,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Convert user-provided preference maps to UserPreference lists.
    *
-   * @param userPreferenceObject - the user-provided preference object
-   * @param userId               - the userId of the user
+   * @param userPreferenceObject the user-provided preference object
+   * @param userId               the userId of the user
    * @return whether the preference is valid
    */
   private List<UserPreference> userPreferenceObjectToList(final Map<String, Map<String, Boolean>> userPreferenceObject,
@@ -517,17 +517,17 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * This method does all of the necessary security checks to determine who is allowed to edit what.
    *
-   * @param request                - so that we can identify the user
-   * @param userObjectFromClient   - the new user object from the clients' perspective.
-   * @param passwordCurrent        - the current password, used if the password has changed
-   * @param newPassword            - the new password, used if the password has changed
-   * @param userPreferenceObject   - the preferences for this user
-   * @param registeredUserContexts - a List of User Contexts (stage, exam board)
+   * @param request                so that we can identify the user
+   * @param userObjectFromClient   the new user object from the clients' perspective.
+   * @param passwordCurrent        the current password, used if the password has changed
+   * @param newPassword            the new password, used if the password has changed
+   * @param userPreferenceObject   the preferences for this user
+   * @param registeredUserContexts a List of User Contexts (stage, exam board)
    * @return the updated user object.
-   * @throws IncorrectCredentialsProvidedException - if the password is incorrect
-   * @throws NoCredentialsAvailableException       - if the account exists but does not have a local password
-   * @throws InvalidKeySpecException               - if the preconfigured key spec is invalid
-   * @throws NoSuchAlgorithmException              - if the configured algorithm is not valid
+   * @throws IncorrectCredentialsProvidedException if the password is incorrect
+   * @throws NoCredentialsAvailableException       if the account exists but does not have a local password
+   * @throws InvalidKeySpecException               if the preconfigured key spec is invalid
+   * @throws NoSuchAlgorithmException              if the configured algorithm is not valid
    */
   public Response updateUserObject(final HttpServletRequest request,
                                    final RegisteredUser userObjectFromClient, final String passwordCurrent,
@@ -658,12 +658,12 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Method to update a user object in our database.
    *
-   * @param updatedUser - the user to update - must contain a user id
-   * @param newPassword - the new password if being changed.
+   * @param updatedUser the user to update - must contain a user id
+   * @param newPassword the new password if being changed.
    * @return the user object as was saved.
-   * @throws InvalidPasswordException      - the password provided does not meet our requirements.
-   * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
-   * @throws SegueDatabaseException        - If there is an internal database error.
+   * @throws InvalidPasswordException      the password provided does not meet our requirements.
+   * @throws MissingRequiredFieldException A required field is missing for the user object so cannot be saved.
+   * @throws SegueDatabaseException        If there is an internal database error.
    */
   public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
       throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
@@ -783,15 +783,15 @@ public class UserAccountManager implements IUserAccountManager {
    * Complete the MFA login process. If the correct TOTPCode is provided we will give the user a full session cookie
    * rather than a partial one.
    *
-   * @param request  - containing the partially logged-in user.
-   * @param response - response will be updated to include fully logged in cookie if TOTPCode is successfully verified
-   * @param totpCode - code to verify
+   * @param request  containing the partially logged-in user.
+   * @param response response will be updated to include fully logged in cookie if TOTPCode is successfully verified
+   * @param totpCode code to verify
    * @return RegisteredUserDTO as they are now considered logged in.
-   * @throws IncorrectCredentialsProvidedException - if the password is incorrect
-   * @throws NoCredentialsAvailableException       - If the account exists but does not have a local password
-   * @throws NoUserLoggedInException               - If the user hasn't completed the first step of the authentication
-   *                                                     process.
-   * @throws SegueDatabaseException                - if there is a problem with the database.
+   * @throws IncorrectCredentialsProvidedException if the password is incorrect
+   * @throws NoCredentialsAvailableException       If the account exists but does not have a local password
+   * @throws NoUserLoggedInException               If the user hasn't completed the first step of the authentication
+   *                                               process.
+   * @throws SegueDatabaseException                if there is a problem with the database.
    */
   public RegisteredUserDTO authenticateMFA(final HttpServletRequest request, final HttpServletResponse response,
                                            final Integer totpCode)
@@ -814,14 +814,14 @@ public class UserAccountManager implements IUserAccountManager {
    * Utility method to ensure that the credentials provided are the current correct ones. If they are invalid an
    * exception will be thrown otherwise nothing will happen.
    *
-   * @param provider - the password provider who will validate the credentials.
-   * @param email    - the email address of the account holder.
-   * @param password - the plain text password.
-   * @throws AuthenticationProviderMappingException - if we cannot find an authenticator
-   * @throws IncorrectCredentialsProvidedException  - if the password is incorrect
-   * @throws NoUserException                        - if the user does not exist
-   * @throws NoCredentialsAvailableException        - If the account exists but does not have a local password
-   * @throws SegueDatabaseException                 - if there is a problem with the database.
+   * @param provider the password provider who will validate the credentials.
+   * @param email    the email address of the account holder.
+   * @param password the plain text password.
+   * @throws AuthenticationProviderMappingException if we cannot find an authenticator
+   * @throws IncorrectCredentialsProvidedException  if the password is incorrect
+   * @throws NoUserException                        if the user does not exist
+   * @throws NoCredentialsAvailableException        If the account exists but does not have a local password
+   * @throws SegueDatabaseException                 if there is a problem with the database.
    */
   public void ensureCorrectPassword(final String provider, final String email, final String password)
       throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
@@ -837,12 +837,12 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * Removes the link between a user and a provider.
    *
-   * @param user           - user to affect.
-   * @param providerString - provider to unassociated.
-   * @throws SegueDatabaseException                 - if there is an error during the database update.
-   * @throws MissingRequiredFieldException          - If the change will mean that the user will be unable to login
-   *                                                      again.
-   * @throws AuthenticationProviderMappingException - if we are unable to locate the authentication provider specified.
+   * @param user           user to affect.
+   * @param providerString provider to unassociated.
+   * @throws SegueDatabaseException                 if there is an error during the database update.
+   * @throws MissingRequiredFieldException          If the change will mean that the user will be unable to login
+   *                                                again.
+   * @throws AuthenticationProviderMappingException if we are unable to locate the authentication provider specified.
    */
   public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
       throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
@@ -853,10 +853,10 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * CheckUserRole matches a list of valid roles.
    *
-   * @param request    - http request so that we can get current users details.
-   * @param validRoles - a Collection of roles that we would want the user to match.
+   * @param request    http request so that we can get current users details.
+   * @param validRoles a Collection of roles that we would want the user to match.
    * @return true if the user is a member of one of the roles in our valid roles list. False if not.
-   * @throws NoUserLoggedInException - if there is no registered user logged in.
+   * @throws NoUserLoggedInException if there is no registered user logged in.
    */
   public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
       throws NoUserLoggedInException {
@@ -868,10 +868,10 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * CheckUserRole matches a list of valid roles.
    *
-   * @param user       - the users details.
-   * @param validRoles - a Collection of roles that we would want the user to match.
+   * @param user       the users details.
+   * @param validRoles a Collection of roles that we would want the user to match.
    * @return true if the user is a member of one of the roles in our valid roles list. False if not.
-   * @throws NoUserLoggedInException - if there is no registered user logged in.
+   * @throws NoUserLoggedInException if there is no registered user logged in.
    */
   public boolean checkUserRole(final RegisteredUserDTO user, final Collection<Role> validRoles)
       throws NoUserLoggedInException {
@@ -891,7 +891,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Determine if there is a user logged in with a valid session.
    *
-   * @param request - to retrieve session information from
+   * @param request to retrieve session information from
    * @return True if the user is logged in and the session is valid, false if not.
    */
   public final boolean isRegisteredUserLoggedIn(final HttpServletRequest request) {
@@ -907,10 +907,10 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * This method will validate the session and will throw a NoUserLoggedInException if invalid.
    *
-   * @param request - to retrieve session information from
+   * @param request to retrieve session information from
    * @return Returns the current UserDTO if we can get it or throw a NoUserLoggedInException
    *         if user is not currently logged in
-   * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
+   * @throws NoUserLoggedInException When the session has expired or there is no user currently logged in.
    */
   public RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
       throws NoUserLoggedInException {
@@ -946,9 +946,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Get the authentication settings of particular user.
    *
-   * @param user - to retrieve settings from
+   * @param user to retrieve settings from
    * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
-   * @throws SegueDatabaseException - If there is an internal database error
+   * @throws SegueDatabaseException If there is an internal database error
    */
   public final UserAuthenticationSettingsDTO getUsersAuthenticationSettings(final RegisteredUserDTO user)
       throws SegueDatabaseException {
@@ -965,9 +965,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Find a list of users based on some user prototype.
    *
-   * @param prototype - partially completed user object to base search on
+   * @param prototype partially completed user object to base search on
    * @return list of registered user dtos.
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   public List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
     List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype));
@@ -978,9 +978,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Find a list of users based on a List of user ids.
    *
-   * @param userIds - partially completed user object to base search on
+   * @param userIds partially completed user object to base search on
    * @return list of registered user dtos.
-   * @throws SegueDatabaseException - if there is a database error.
+   * @throws SegueDatabaseException if there is a database error.
    */
   public List<RegisteredUserDTO> findUsers(final Collection<Long> userIds) throws SegueDatabaseException {
     requireNonNull(userIds);
@@ -996,10 +996,10 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * This function can be used to find user information about a user when given an id.
    *
-   * @param id - the id of the user to search for.
+   * @param id the id of the user to search for.
    * @return the userDTO
-   * @throws NoUserException        - If we cannot find a valid user with the email address provided.
-   * @throws SegueDatabaseException - If there is another database error
+   * @throws NoUserException        If we cannot find a valid user with the email address provided.
+   * @throws SegueDatabaseException If there is another database error
    */
   @Override
   public RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
@@ -1011,11 +1011,11 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * WARNING - Do not expect complete RegisteredUser Objects as data may be missing if you include deleted users
    *
-   * @param id             - the id of the user to search for.
-   * @param includeDeleted - include deleted users in results - true for yes false for no
+   * @param id             the id of the user to search for.
+   * @param includeDeleted include deleted users in results - true for yes false for no
    * @return the userDTO
-   * @throws NoUserException        - If we cannot find a valid user with the email address provided.
-   * @throws SegueDatabaseException - If there is another database error
+   * @throws NoUserException        If we cannot find a valid user with the email address provided.
+   * @throws SegueDatabaseException If there is another database error
    */
   @Override
   public RegisteredUserDTO getUserDTOById(final Long id, final boolean includeDeleted) throws NoUserException,
@@ -1036,10 +1036,10 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * This function can be used to find user information about a user when given an email.
    *
-   * @param email - the e-mail address of the user to search for
+   * @param email the e-mail address of the user to search for
    * @return the userDTO
-   * @throws NoUserException        - If we cannot find a valid user with the email address provided.
-   * @throws SegueDatabaseException - If there is another database error
+   * @throws NoUserException        If we cannot find a valid user with the email address provided.
+   * @throws SegueDatabaseException If there is another database error
    */
   public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException,
       SegueDatabaseException {
@@ -1058,8 +1058,8 @@ public class UserAccountManager implements IUserAccountManager {
    * If the user is currently logged in you will get a RegisteredUserDTO otherwise you will get an AnonymousUserDTO
    * containing a sessionIdentifier and any questionAttempts made by the anonymous user.
    *
-   * @param request - containing session information.
-   * @return AbstractSegueUserDTO - Either a RegisteredUser or an AnonymousUser
+   * @param request containing session information.
+   * @return AbstractSegueUserDTO Either a RegisteredUser or an AnonymousUser
    */
   public AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) throws SegueDatabaseException {
     try {
@@ -1087,15 +1087,15 @@ public class UserAccountManager implements IUserAccountManager {
    * Note: this method is intended for creation of accounts in segue - not for linked account registration.
    *
    * @param request                to enable access to anonymous user information.
-   * @param user                   - the user DO to use for updates - must not contain a user id.
-   * @param newPassword            - new password for the account being created.
-   * @param registeredUserContexts - a List of User Contexts (stage, exam board)
+   * @param user                   the user DO to use for updates - must not contain a user id.
+   * @param newPassword            new password for the account being created.
+   * @param registeredUserContexts a List of User Contexts (stage, exam board)
    * @return the user object as was saved.
-   * @throws InvalidPasswordException      - the password provided does not meet our requirements.
-   * @throws MissingRequiredFieldException - A required field is missing for the user object so cannot be saved.
-   * @throws SegueDatabaseException        - If there is an internal database error.
-   * @throws EmailMustBeVerifiedException  - if a user attempts to sign up with an email that must be verified before it
-   *                                             can be used (i.e. an @isaaccomputerscience.org address).
+   * @throws InvalidPasswordException      the password provided does not meet our requirements.
+   * @throws MissingRequiredFieldException A required field is missing for the user object so cannot be saved.
+   * @throws SegueDatabaseException        If there is an internal database error.
+   * @throws EmailMustBeVerifiedException  if a user attempts to sign up with an email that must be verified before it
+   *                                       can be used (i.e. an @isaaccomputerscience.org address).
    */
   public RegisteredUserDTO createAndSaveUserObject(
       final HttpServletRequest request, final RegisteredUser user, final String newPassword,
@@ -1235,9 +1235,12 @@ public class UserAccountManager implements IUserAccountManager {
   }
 
   /**
-   * @param id            - the user id
-   * @param requestedRole - the new role
-   * @throws SegueDatabaseException - an exception when accessing the database
+   * Updates the role for the user matching to the provided id to the specified role.
+   * Also resets the teacherPending flag to false and sends the appropriate role change notification email to the user.
+   *
+   * @param id            the user id
+   * @param requestedRole the new role
+   * @throws SegueDatabaseException an exception when accessing the database
    */
   public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException, NoUserException {
     requireNonNull(requestedRole);
@@ -1271,9 +1274,12 @@ public class UserAccountManager implements IUserAccountManager {
   }
 
   /**
-   * @param email                            - the user email
-   * @param requestedEmailVerificationStatus - the new email verification status
-   * @throws SegueDatabaseException - an exception when accessing the database
+   * Find the user associated with the provided email address and update their email verification status to the
+   * specified value.
+   *
+   * @param email                            the user email
+   * @param requestedEmailVerificationStatus the new email verification status
+   * @throws SegueDatabaseException an exception when accessing the database
    */
   public void updateUserEmailVerificationStatus(final String email,
                                                 final EmailVerificationStatus requestedEmailVerificationStatus)
@@ -1293,9 +1299,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * This method facilitates the removal of personal user data from Segue.
    *
-   * @param userToDelete - the user to delete.
-   * @throws SegueDatabaseException - if a general database error has occurred.
-   * @throws NoUserException        - if we cannot find the user account specified
+   * @param userToDelete the user to delete.
+   * @throws SegueDatabaseException if a general database error has occurred.
+   * @throws NoUserException        if we cannot find the user account specified
    */
   public void deleteUserAccount(final RegisteredUserDTO userToDelete) throws NoUserException, SegueDatabaseException {
     // check the user exists
@@ -1312,8 +1318,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * This method facilitates the merging of two user accounts.
    *
-   * @param target - the user account to remove.
-   * @param source - the user account to merge into.
+   * @param target the user account to remove.
+   * @param source the user account to merge into.
    * @throws SegueDatabaseException if an error occurs
    */
   public void mergeUserAccounts(final RegisteredUserDTO target, final RegisteredUserDTO source)
@@ -1336,9 +1342,9 @@ public class UserAccountManager implements IUserAccountManager {
    * This method will use an email address to check a local user exists and if so, will send an email with a unique
    * token to allow a password reset. This method does not indicate whether or not the email actually existed.
    *
-   * @param userObject - A user object containing the email address of the user to reset the password for.
+   * @param userObject A user object containing the email address of the user to reset the password for.
    * @return true if the request was successfully submitted or false if the user was not found
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public final boolean resetPasswordRequest(final RegisteredUserDTO userObject)
       throws SegueDatabaseException {
@@ -1366,9 +1372,9 @@ public class UserAccountManager implements IUserAccountManager {
    * This method will use an email address to check a local user exists and if so, will send an email with a unique
    * token to allow a password reset. This method does not indicate whether or not the email actually existed.
    *
-   * @param request - so we can look up the registered user object.
-   * @param email   - The email the user wants to verify.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @param request so we can look up the registered user object.
+   * @param email   The email the user wants to verify.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public final void emailVerificationRequest(final HttpServletRequest request, final String email)
       throws SegueDatabaseException {
@@ -1406,9 +1412,9 @@ public class UserAccountManager implements IUserAccountManager {
    * This method will test if the specified token is a valid password reset token.
    * <br>
    *
-   * @param token - The token to test
+   * @param token The token to test
    * @return true if the reset token is valid
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public final boolean validatePasswordResetToken(final String token) throws SegueDatabaseException {
     // Set user's password
@@ -1421,12 +1427,12 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * processEmailVerification.
    *
-   * @param userId - the user id
-   * @param token  - token used to verify email address
-   * @return - whether the token is valid or not
-   * @throws SegueDatabaseException - exception if token cannot be validated
-   * @throws InvalidTokenException  - if something is wrong with the token provided
-   * @throws NoUserException        - if the user does not exist.
+   * @param userId the user id
+   * @param token  token used to verify email address
+   * @return whether the token is valid or not
+   * @throws SegueDatabaseException exception if token cannot be validated
+   * @throws InvalidTokenException  if something is wrong with the token provided
+   * @throws NoUserException        if the user does not exist.
    */
   public RegisteredUserDTO processEmailVerification(final Long userId, final String token)
       throws SegueDatabaseException, InvalidTokenException, NoUserException {
@@ -1472,12 +1478,12 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * This method will use a unique password reset token to set a new password.
    *
-   * @param token       - the password reset token
-   * @param newPassword - the supplied password
+   * @param token       the password reset token
+   * @param newPassword the supplied password
    * @return the user which has had the password reset.
-   * @throws InvalidTokenException    - If the token provided is invalid.
-   * @throws InvalidPasswordException - If the password provided is invalid.
-   * @throws SegueDatabaseException   - If there is an internal database error.
+   * @throws InvalidTokenException    If the token provided is invalid.
+   * @throws InvalidPasswordException If the password provided is invalid.
+   * @throws SegueDatabaseException   If there is an internal database error.
    */
   public RegisteredUserDTO resetPassword(final String token, final String newPassword)
       throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException, InvalidKeySpecException,
@@ -1488,9 +1494,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Check if account has MFA configured.
    *
-   * @param user - who requested it
+   * @param user who requested it
    * @return true if yes, false if not.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public boolean has2FAConfigured(final RegisteredUserDTO user) throws SegueDatabaseException {
     return this.secondFactorManager.has2FAConfigured(user);
@@ -1499,7 +1505,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Generate a random shared secret - currently not stored against the users account.
    *
-   * @param user - who requested it
+   * @param user who requested it
    * @return TOTPSharedSecret object
    */
   public TOTPSharedSecret getNewSharedSecret(final RegisteredUserDTO user) {
@@ -1509,11 +1515,11 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Activate MFA for user's account by passing secret and code submitted.
    *
-   * @param user          - registered user
-   * @param sharedSecret  - shared secret provided by getNewSharedSecret call
-   * @param codeSubmitted - latest TOTP code to confirm successful recording of secret.
+   * @param user          registered user
+   * @param sharedSecret  shared secret provided by getNewSharedSecret call
+   * @param codeSubmitted latest TOTP code to confirm successful recording of secret.
    * @return true if it is now active on the account, false if secret / TOTP code do not match.
-   * @throws SegueDatabaseException - unable to save secret to account.
+   * @throws SegueDatabaseException unable to save secret to account.
    */
   public boolean activateMFAForUser(final RegisteredUserDTO user, final String sharedSecret,
                                     final Integer codeSubmitted) throws SegueDatabaseException {
@@ -1523,8 +1529,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Deactivate MFA for user's account - should only be used by admins!.
    *
-   * @param user - the User to deactivate 2FA for
-   * @throws SegueDatabaseException - unable to save secret to account.
+   * @param user the User to deactivate 2FA for
+   * @throws SegueDatabaseException unable to save secret to account.
    */
   public void deactivateMFAForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
     this.secondFactorManager.deactivate2FAForUser(user);
@@ -1533,7 +1539,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Helper method to convert a user object into a userSummary DTO with as little detail as possible about the user.
    *
-   * @param userToConvert - full user object.
+   * @param userToConvert full user object.
    * @return a summarised object with minimal personal information
    */
   public UserSummaryDTO convertToUserSummaryObject(final RegisteredUserDTO userToConvert) {
@@ -1543,9 +1549,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Helper method to convert a user object into a more detailed summary object depending on the dto provided.
    *
-   * @param <T>             - The type parameter representing the detailed DTO class
-   * @param userToConvert   - Full user object.
-   * @param detailedDtoClass - The DTO class type into which the user object is to be converted
+   * @param <T>              The type parameter representing the detailed DTO class
+   * @param userToConvert    Full user object.
+   * @param detailedDtoClass The DTO class type into which the user object is to be converted
    * @return a summarised DTO object with details as per the specified detailedDTOClass
    */
   public <T extends UserSummaryDTO> T convertToUserSummary(final RegisteredUserDTO userToConvert,
@@ -1556,7 +1562,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Helper method to convert user objects into cutdown userSummary DTOs.
    *
-   * @param userListToConvert - full user objects.
+   * @param userListToConvert full user objects.
    * @return a list of summarised objects with minimal personal information
    */
   public List<UserSummaryDTO> convertToUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
@@ -1571,8 +1577,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Helper method to convert user objects into cutdown DetailedUserSummary DTOs.
    *
-   * @param userListToConvert - full user objects.
-   * @param detailedDTO       - The level of detail required for the conversion
+   * @param userListToConvert full user objects.
+   * @param detailedDTO       The level of detail required for the conversion
    * @return a list of summarised objects with reduced personal information
    */
   public List<UserSummaryWithEmailAddressDTO> convertToDetailedUserSummaryObjectList(
@@ -1609,10 +1615,10 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Sends verification email for the user's current email address. The destination will match the userDTO's email.
    *
-   * @param userDTO                - user to which the email is to be sent.
-   * @param emailVerificationToken - the generated email verification token.
-   * @throws ContentManagerException - if the email template does not exist.
-   * @throws SegueDatabaseException  - if there is a database exception during the processing of the email.
+   * @param userDTO                user to which the email is to be sent.
+   * @param emailVerificationToken the generated email verification token.
+   * @throws ContentManagerException if the email template does not exist.
+   * @throws SegueDatabaseException  if there is a database exception during the processing of the email.
    */
   private void sendVerificationEmailForCurrentEmail(final RegisteredUserDTO userDTO,
                                                     final String emailVerificationToken)
@@ -1632,11 +1638,11 @@ public class UserAccountManager implements IUserAccountManager {
    * Sends a notice email for email change to the user's current email address and then creates a copy of the user
    * with the new email to send to the sendVerificationEmailForCurrentEmail method.
    *
-   * @param userDTO       - initial user where the notice of change is to be sent.
-   * @param newEmail      - the new email which has been requested to change to.
-   * @param newEmailToken - the generated HMAC token for the new email.
-   * @throws ContentManagerException - if the email template does not exist.
-   * @throws SegueDatabaseException  - if there is a database exception during the processing of the email.
+   * @param userDTO       initial user where the notice of change is to be sent.
+   * @param newEmail      the new email which has been requested to change to.
+   * @param newEmailToken the generated HMAC token for the new email.
+   * @throws ContentManagerException if the email template does not exist.
+   * @throws SegueDatabaseException  if there is a database exception during the processing of the email.
    */
   private void sendVerificationEmailsForEmailChange(final RegisteredUserDTO userDTO,
                                                     final String newEmail,
@@ -1660,11 +1666,11 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Logs the user in and creates the signed sessions.
    *
-   * @param request  - for the session to be attached
-   * @param response - for the session to be attached.
-   * @param user     - the user who is being logged in.
+   * @param request  for the session to be attached
+   * @param response for the session to be attached.
+   * @param user     the user who is being logged in.
    * @return the DTO version of the user.
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
                                       final RegisteredUser user) throws SegueDatabaseException {
@@ -1685,8 +1691,8 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * To complete this the user must also complete MFA authentication.
    *
-   * @param response - response to update cookie information
-   * @param user     - user of interest
+   * @param response response to update cookie information
+   * @param user     user of interest
    */
   private void partialLogInForMFA(final HttpServletResponse response, final RegisteredUser user)
       throws SegueDatabaseException {
@@ -1698,7 +1704,7 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * NOTE: You should not treat users has having logged in using this method as they haven't completed login.
    *
-   * @param request - http request containing the cookie
+   * @param request http request containing the cookie
    * @return the user retrieved using the id extracted from the cookie
    */
   private RegisteredUser retrievePartialLogInForMFA(final HttpServletRequest request) {
@@ -1752,9 +1758,9 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Library method that allows the api to locate a user object from the database based on a given unique id.
    *
-   * @param userId - to search for.
+   * @param userId to search for.
    * @return user or null if we cannot find it.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   private RegisteredUser findUserById(final Long userId) throws SegueDatabaseException {
     if (null == userId) {
@@ -1767,9 +1773,9 @@ public class UserAccountManager implements IUserAccountManager {
    * Library method that allows the api to locate a user object from the database based on a given unique email
    * address.
    *
-   * @param email - to search for.
+   * @param email to search for.
    * @return user or null if we cannot find it.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   public RegisteredUser findUserByEmail(final String email) throws SegueDatabaseException {
     if (null == email) {
@@ -1783,10 +1789,10 @@ public class UserAccountManager implements IUserAccountManager {
    * user.
    *
    * @param federatedAuthenticator the federatedAuthenticator we are using for authentication
-   * @param userFromProvider       - the user object returned by the auth provider.
+   * @param userFromProvider       the user object returned by the auth provider.
    * @return a Segue UserDO that exists in the segue database.
-   * @throws NoUserException        - If we are unable to locate the user id based on the lookup reference provided.
-   * @throws SegueDatabaseException - If there is an internal database error.
+   * @throws NoUserException        If we are unable to locate the user id based on the lookup reference provided.
+   * @throws SegueDatabaseException If there is an internal database error.
    */
   private RegisteredUser registerUserWithFederatedProvider(final AuthenticationProvider federatedAuthenticator,
                                                            final UserFromAuthProvider userFromProvider)
@@ -1831,7 +1837,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * IsUserValid This function will check that the user object is valid.
    *
-   * @param userToValidate - the user to validate.
+   * @param userToValidate the user to validate.
    * @return true if it meets the internal storage requirements, false if not.
    */
   private boolean isUserValid(final RegisteredUser userToValidate) {
@@ -1849,7 +1855,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * This function checks that the name provided is valid.
    *
-   * @param name - the name to validate.
+   * @param name the name to validate.
    * @return true if the name is valid, false otherwise.
    */
   public static boolean isUserNameValid(final String name) {
@@ -1863,8 +1869,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Converts the sensitive UserDO into a limited DTO.
    *
-   * @param user - DO
-   * @return user - DTO
+   * @param user DO
+   * @return user DTO
    */
   private RegisteredUserDTO convertUserDOToUserDTO(final RegisteredUser user) {
     if (null == user) {
@@ -1876,7 +1882,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Converts a list of userDOs into a List of userDTOs.
    *
-   * @param users - list of DOs to convert
+   * @param users list of DOs to convert
    * @return the list of user dtos.
    */
   private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
@@ -1893,7 +1899,7 @@ public class UserAccountManager implements IUserAccountManager {
    * <br>
    * This method will validate the session as well returning null if it is invalid.
    *
-   * @param request - to retrieve session information from
+   * @param request to retrieve session information from
    * @return Returns the current UserDTO if we can get it or null if user is not currently logged in / there is an
    *     invalid session
    */
@@ -1904,7 +1910,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Retrieves anonymous user information if it is available.
    *
-   * @param request - request containing session information.
+   * @param request request containing session information.
    * @return An anonymous user containing any anonymous question attempts (which could be none)
    */
   private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) throws SegueDatabaseException {
@@ -1914,7 +1920,7 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Retrieves anonymous user information if it is available.
    *
-   * @param request - request containing session information.
+   * @param request request containing session information.
    * @return An anonymous user containing any anonymous question attempts (which could be none)
    */
   private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) throws SegueDatabaseException {
@@ -1953,8 +1959,8 @@ public class UserAccountManager implements IUserAccountManager {
   /**
    * Hide the Jetty internals of session IDs and return an anonymous user ID.
    *
-   * @param request - to extract the Jetty session ID
-   * @return - a String suitable for use as an anonymous identifier
+   * @param request to extract the Jetty session ID
+   * @return a String suitable for use as an anonymous identifier
    */
   private String getAnonymousUserIdFromRequest(final HttpServletRequest request) {
     return request.getSession().getId().replace("node0", "");
@@ -1964,7 +1970,7 @@ public class UserAccountManager implements IUserAccountManager {
    * Update the users' last seen field.
    *
    * @param user of interest
-   * @throws SegueDatabaseException - if an error occurs with the update.
+   * @throws SegueDatabaseException if an error occurs with the update.
    */
   private void updateLastSeen(final RegisteredUser user) throws SegueDatabaseException {
     if (user.getLastSeen() == null) {
@@ -1979,6 +1985,8 @@ public class UserAccountManager implements IUserAccountManager {
   }
 
   /**
+   * Generate a verification link to be sent to a new user's email address.
+   *
    * @param userDTO                the userDTO of interest
    * @param emailVerificationToken the verification token
    * @return verification URL
@@ -2008,7 +2016,7 @@ public class UserAccountManager implements IUserAccountManager {
    * @param timeIntervals An array of time ranges (in string format) for which to get the user counts.
    *                      Each time range is used in the SQL query to filter the results.
    * @return map of counts for each role
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   public Map<TimeInterval, Map<Role, Long>> getActiveRolesOverPrevious(final TimeInterval[] timeIntervals)
       throws SegueDatabaseException {
@@ -2019,7 +2027,7 @@ public class UserAccountManager implements IUserAccountManager {
    * Count users' reported genders.
    *
    * @return map of counts for each gender.
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   public Map<Gender, Long> getGenderCount() throws SegueDatabaseException {
     return this.database.getGenderCount();
@@ -2029,7 +2037,7 @@ public class UserAccountManager implements IUserAccountManager {
    * Count users' reported school information.
    *
    * @return map of counts for students who have provided or not provided school information
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   public Map<SchoolInfoStatus, Long> getSchoolInfoStats() throws SegueDatabaseException {
     return this.database.getSchoolInfoStats();
@@ -2039,7 +2047,7 @@ public class UserAccountManager implements IUserAccountManager {
    * Count the number of anonymous users currently in our temporary user cache.
    *
    * @return the number of anonymous users
-   * @throws SegueDatabaseException - if there is a problem with the database.
+   * @throws SegueDatabaseException if there is a problem with the database.
    */
   public Long getNumberOfAnonymousUsers() throws SegueDatabaseException {
     return temporaryUserCache.getCountOfAnonymousUsers();

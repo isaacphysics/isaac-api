@@ -24,6 +24,7 @@ package uk.ac.cam.cl.dtg.util.locations;
  */
 public class PostCode {
 
+  @SuppressWarnings("java:S1700")
   private final String postCode;
   private final Double lat;
   private final Double lon;
@@ -31,12 +32,9 @@ public class PostCode {
   /**
    * A class to hold the structure of a postcode.
    *
-   * @param postCode
-   *            - the string version of the postcode
-   * @param lat
-   *            - the lattitude
-   * @param lon
-   *            - the longitude
+   * @param postCode the string version of the postcode
+   * @param lat      the latitude
+   * @param lon      the longitude
    */
   public PostCode(final String postCode, final Double lat, final Double lon) {
     // Strip whitespace to make comparison easier
@@ -50,22 +48,23 @@ public class PostCode {
     this.lon = lon;
   }
 
-  /**
-   * @return the postCode
-   */
   public String getPostCode() {
     return postCode;
   }
 
   /**
-   * @return the lat
+   * Get the Latitude.
+   *
+   * @return the latitude as a double
    */
   public Double getLat() {
     return lat;
   }
 
   /**
-   * @return the lon
+   * Get the Longitude.
+   *
+   * @return the longitude as a double
    */
   public Double getLon() {
     return lon;

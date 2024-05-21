@@ -159,17 +159,17 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * EventsFacade.
    *
-   * @param properties             - global properties map
-   * @param logManager             - for managing logs.
-   * @param bookingManager         - Instance of Booking Manager
-   * @param userManager            - Instance of User Manager
-   * @param contentManager         - for retrieving event content
-   * @param userBadgeManager       - for updating badge information
-   * @param userAssociationManager - for checking permissions and filtering records
-   * @param groupManager           - Instance of Group Manager
-   * @param userAccountManager     - Instance of User Account Manager, for retrieving users
-   * @param schoolListReader       - for retrieving school information
-   * @param mapper                 - Instance of Mapper Facade, to map between DO and DTO classes
+   * @param properties             global properties map
+   * @param logManager             for managing logs.
+   * @param bookingManager         Instance of Booking Manager
+   * @param userManager            Instance of User Manager
+   * @param contentManager         for retrieving event content
+   * @param userBadgeManager       for updating badge information
+   * @param userAssociationManager for checking permissions and filtering records
+   * @param groupManager           Instance of Group Manager
+   * @param userAccountManager     Instance of User Account Manager, for retrieving users
+   * @param schoolListReader       for retrieving school information
+   * @param mapper                 Instance of Mapper Facade, to map between DO and DTO classes
    */
   @Inject
   public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
@@ -193,16 +193,16 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * REST end point to provide a list of events.
    *
-   * @param request              - this allows us to check to see if a user is currently loggedin.
-   * @param tags                 - a comma separated list of tags to include in the search.
-   * @param startIndex           - the initial index for the first result.
-   * @param limit                - the maximums number of results to return
-   * @param sortOrder            - flag to indicate preferred sort order.
-   * @param showActiveOnly       - true will impose filtering on the results. False will not. Defaults to false.
-   * @param showInactiveOnly     - true will impose filtering on the results. False will not. Defaults to false.
-   * @param showMyBookingsOnly   - true will impose filtering on the results. False will not. Defaults to false.
-   * @param showReservationsOnly - true will impose filtering on the results. False will not. Defaults to false.
-   * @param showStageOnly        - if present, only events with an audience matching this string will be shown
+   * @param request              this allows us to check to see if a user is currently loggedin.
+   * @param tags                 a comma separated list of tags to include in the search.
+   * @param startIndex           the initial index for the first result.
+   * @param limit                the maximums number of results to return
+   * @param sortOrder            flag to indicate preferred sort order.
+   * @param showActiveOnly       true will impose filtering on the results. False will not. Defaults to false.
+   * @param showInactiveOnly     true will impose filtering on the results. False will not. Defaults to false.
+   * @param showMyBookingsOnly   true will impose filtering on the results. False will not. Defaults to false.
+   * @param showReservationsOnly true will impose filtering on the results. False will not. Defaults to false.
+   * @param showStageOnly        if present, only events with an audience matching this string will be shown
    * @return a Response containing a list of events objects or containing a SegueErrorResponse.
    */
   @SuppressWarnings("checkstyle:ParameterNumber")
@@ -330,12 +330,12 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Get Events Booked by user.
    *
-   * @param request     - the http request so we can resolve booking information
-   * @param tags        - the tags we want to filter on
-   * @param currentUser - the currently logged on user.
+   * @param request     the http request so we can resolve booking information
+   * @param tags        the tags we want to filter on
+   * @param currentUser the currently logged on user.
    * @return a list of event pages that the user has been booked
-   * @throws SegueDatabaseException
-   * @throws ContentManagerException
+   * @throws SegueDatabaseException if an error occurs while retrieving booking information
+   * @throws ContentManagerException if an error occurs while retrieving event information
    */
   private ResultsWrapper<ContentDTO> getEventsBookedByUser(final HttpServletRequest request, final List<String> tags,
                                                            final RegisteredUserDTO currentUser)
@@ -368,11 +368,11 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Get Events Reserved by user.
    *
-   * @param request     - the http request so we can resolve booking information
-   * @param currentUser - the currently logged on user.
+   * @param request     the http request so we can resolve booking information
+   * @param currentUser the currently logged on user.
    * @return a list of event pages that the user has been booked
-   * @throws SegueDatabaseException
-   * @throws ContentManagerException
+   * @throws SegueDatabaseException if an error occurs while retrieving booking information
+   * @throws ContentManagerException if an error occurs while retrieving event information
    */
   private ResultsWrapper<ContentDTO> getEventsReservedByUser(final HttpServletRequest request,
                                                              final RegisteredUserDTO currentUser)
@@ -395,8 +395,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * REST end point to retrieve an event by id..
    *
-   * @param request - this allows us to check to see if a user is currently logged-in.
-   * @param eventId - Id of the event of interest.
+   * @param request this allows us to check to see if a user is currently logged-in.
+   * @param eventId Id of the event of interest.
    * @return a Response containing a list of events objects or containing a SegueErrorResponse.
    */
   @GET
@@ -426,7 +426,7 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Count all event bookings.
    *
-   * @param request - so we can determine if the user is logged in
+   * @param request so we can determine if the user is logged in
    * @return a list of booking objects
    */
   @GET
@@ -454,8 +454,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Find a booking by id.
    *
-   * @param request   - for authentication
-   * @param bookingId - the booking of interest.
+   * @param request   for authentication
+   * @param bookingId the booking of interest.
    * @return The booking information.
    */
   @GET
@@ -488,9 +488,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Allow a staff user to promote a existing bookings to confirmed bookings.
    *
-   * @param request               - so we can determine if the user is logged in
-   * @param eventId               - event booking containing updates, must contain primary id.
-   * @param userId                - the user to be promoted.
+   * @param request               so we can determine if the user is logged in
+   * @param eventId               event booking containing updates, must contain primary id.
+   * @param userId                the user to be promoted.
    * @return the updated booking.
    */
   @POST
@@ -547,8 +547,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * gets an admin and selected staff only list of event bookings based on a given event id.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - string id of the event to get bookings for
+   * @param request so we can determine if the user is logged in
+   * @param eventId string id of the event to get bookings for
    * @return list of bookings.
    */
   @GET
@@ -587,9 +587,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * gets a list of event bookings based on a given group id.
    *
-   * @param request - servlet request object for retrieving current user
-   * @param eventId - string id for event to get bookings for
-   * @param groupId - string id for group to retrieve for checking permissions and filtering results
+   * @param request servlet request object for retrieving current user
+   * @param eventId string id for event to get bookings for
+   * @param groupId string id for group to retrieve for checking permissions and filtering results
    * @return a list of EventBookingDTOs if successful or a SegueErrorResponse if not
    */
   @GET
@@ -649,8 +649,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * gets a list of event bookings for all groups owned.
    *
-   * @param request - servlet request object for retrieving current user
-   * @param eventId - string id for event to get bookings for
+   * @param request servlet request object for retrieving current user
+   * @param eventId string id for event to get bookings for
    * @return a list of EventBookingDTOs if successful or a SegueErrorResponse if not
    */
   @GET
@@ -696,8 +696,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Allows authorised users to view a csv of event attendees.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - the event of interest.
+   * @param request so we can determine if the user is logged in
+   * @param eventId the event of interest.
    * @return list of bookings csv.
    */
   @GET
@@ -819,10 +819,10 @@ public class EventsFacade extends AbstractIsaacFacade {
    * - Will attempt to create a waiting list booking if the event is already full.
    * - Must be a Staff user.
    *
-   * @param request               - so we can determine if the user is logged in
-   * @param eventId               - event id
-   * @param userId                - user id
-   * @param additionalInformation - additional information to be stored with this booking e.g. dietary requirements.
+   * @param request               so we can determine if the user is logged in
+   * @param eventId               event id
+   * @param userId                user id
+   * @param additionalInformation additional information to be stored with this booking e.g. dietary requirements.
    * @return the new booking
    */
   @POST
@@ -885,9 +885,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Add event reservations for the given users.
    *
-   * @param request - so we can determine who is making the request
-   * @param eventId - event id
-   * @param userIds - the users to reserve spaces for
+   * @param request so we can determine who is making the request
+   * @param eventId event id
+   * @param userIds the users to reserve spaces for
    * @return the list of bookings/reservations
    */
   @POST
@@ -977,9 +977,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * This function allows cancellation of the reservations for the given users.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - event id
-   * @param userIds - user ids
+   * @param request so we can determine if the user is logged in
+   * @param eventId event id
+   * @param userIds user ids
    * @return a 'No content' response if successful or a SegueErrorResponse if not
    */
   @POST
@@ -1056,9 +1056,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * createBooking for the current user.
    *
-   * @param request               - so we can determine if the user is logged in
-   * @param eventId               - event id
-   * @param additionalInformation - a Map of additional information for use when creating the booking
+   * @param request               so we can determine if the user is logged in
+   * @param eventId               event id
+   * @param additionalInformation a Map of additional information for use when creating the booking
    * @return the new booking if allowed to book.
    */
   @POST
@@ -1137,9 +1137,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Add current user to waiting list for the given event.
    *
-   * @param request               - so we can determine if the user is logged in
-   * @param eventId               - event id
-   * @param additionalInformation - a Map of additional information for use when creating the booking
+   * @param request               so we can determine if the user is logged in
+   * @param eventId               event id
+   * @param additionalInformation a Map of additional information for use when creating the booking
    * @return the new booking
    */
   @POST
@@ -1196,8 +1196,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * This function allows a user who has booked onto an event to cancel their booking.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - event id
+   * @param request so we can determine if the user is logged in
+   * @param eventId event id
    * @return the new booking
    */
   @DELETE
@@ -1213,9 +1213,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * This function allows cancellation of a booking.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - event id
-   * @param userId  - user id
+   * @param request so we can determine if the user is logged in
+   * @param eventId event id
+   * @param userId  user id
    * @return the new booking
    */
   @DELETE
@@ -1286,9 +1286,9 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * This function allows an administrator to attempt to resend the last confirmation email send for a given booking.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - event id
-   * @param userId  - user id
+   * @param request so we can determine if the user is logged in
+   * @param eventId event id
+   * @param userId  user id
    * @return the new booking
    */
   @POST
@@ -1335,9 +1335,9 @@ public class EventsFacade extends AbstractIsaacFacade {
    * <br>
    * This is an admin function to allow staff to delete a booking permanently.
    *
-   * @param request - so we can determine if the user is logged in
-   * @param eventId - event id
-   * @param userId  - user id
+   * @param request so we can determine if the user is logged in
+   * @param eventId event id
+   * @param userId  user id
    * @return the new booking
    */
   @DELETE
@@ -1388,10 +1388,10 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Allow a staff user to record event attendance.
    *
-   * @param request  - so we can determine if the user is logged in
-   * @param eventId  - event booking containing updates, must contain primary id.
-   * @param userId   - the user to be promoted.
-   * @param attended - boolean value representing whether the user was present, true, or absent, false.
+   * @param request  so we can determine if the user is logged in
+   * @param eventId  event booking containing updates, must contain primary id.
+   * @param userId   the user to be promoted.
+   * @param attended boolean value representing whether the user was present, true, or absent, false.
    * @return the updated booking.
    */
   @POST
@@ -1456,10 +1456,10 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * REST end point to provide a list of events.
    *
-   * @param request    - this allows us to check to see if a user is currently logged-in
-   * @param startIndex - the initial index for the first result
-   * @param limit      - the maximums number of results to return
-   * @param filter     - in which way should the results be filtered from a choice defined in the EventFilterOption enum
+   * @param request    this allows us to check to see if a user is currently logged-in
+   * @param startIndex the initial index for the first result
+   * @param limit      the maximums number of results to return
+   * @param filter     in which way should the results be filtered from a choice defined in the EventFilterOption enum
    * @return a Response containing a list of events objects or containing a SegueErrorResponse
    */
   @GET
@@ -1585,12 +1585,12 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * REST end point to provide a summary of events suitable for mapping.
    *
-   * @param request        - this allows us to check to see if a user is currently logged in.
-   * @param tags           - a string of comma-separated tags for use in filtering the search
-   * @param startIndex     - the initial index for the first result.
-   * @param limit          - the maximums number of results to return
-   * @param showActiveOnly - true will impose filtering on the results. False will not. Defaults to false.
-   * @param showStageOnly  - if present, only events with an audience matching this string will be shown
+   * @param request        this allows us to check to see if a user is currently logged in.
+   * @param tags           a string of comma-separated tags for use in filtering the search
+   * @param startIndex     the initial index for the first result.
+   * @param limit          the maximums number of results to return
+   * @param showActiveOnly true will impose filtering on the results. False will not. Defaults to false.
+   * @param showStageOnly  if present, only events with an audience matching this string will be shown
    * @return a Response containing a list of event map summaries or containing a SegueErrorResponse.
    */
   @GET
@@ -1697,7 +1697,7 @@ public class EventsFacade extends AbstractIsaacFacade {
    *
    * @param eventId the id of the event of interest
    * @return the fully populated event dto with user context information.
-   * @throws ContentManagerException - if there is a problem finding the event information
+   * @throws ContentManagerException if there is a problem finding the event information
    * @throws SegueDatabaseException  if there is a database error.
    */
   private IsaacEventPageDTO getRawEventDTOById(final String eventId)
@@ -1724,7 +1724,7 @@ public class EventsFacade extends AbstractIsaacFacade {
    * @param request so we can determine if the user is logged in
    * @param eventId the id of the event of interest
    * @return the fully populated event dto with user context information.
-   * @throws ContentManagerException - if there is a problem finding the event information
+   * @throws ContentManagerException if there is a problem finding the event information
    * @throws SegueDatabaseException  if there is a database error.
    */
   private IsaacEventPageDTO getAugmentedEventDTOById(final HttpServletRequest request, final String eventId)
@@ -1736,10 +1736,10 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * Augment a single event with booking information before we send it out.
    *
-   * @param request       - for user look up
-   * @param possibleEvent - a ContentDTO that should hopefully be an IsaacEventPageDTO.
+   * @param request       for user look up
+   * @param possibleEvent a ContentDTO that should hopefully be an IsaacEventPageDTO.
    * @return an augmented IsaacEventPageDTO.
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if an error occurs while retrieving booking information
    */
   private IsaacEventPageDTO augmentEventWithBookingInformation(final HttpServletRequest request,
                                                                final ContentDTO possibleEvent)
@@ -1770,8 +1770,8 @@ public class EventsFacade extends AbstractIsaacFacade {
   /**
    * A helper method used to determine if the current user booking is confirmed and date of event is today.
    *
-   * @param userBookingStatus - status of the current user's booking
-   * @param date - start date of event from IsaacEventPageDTO.
+   * @param userBookingStatus status of the current user's booking
+   * @param date              start date of event from IsaacEventPageDTO.
    * @return boolean.
    */
 

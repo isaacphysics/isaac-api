@@ -18,27 +18,23 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.time.Instant;
 
-/**
- *
- */
 public class PgUserNotification implements IUserNotification {
   private Long userId;
   private String contentNotificationId;
   private NotificationStatus status;
   private Instant created;
 
-  /**
-   *
-   */
   public PgUserNotification() {
 
   }
 
   /**
-   * @param userId - of the user who has responded
-   * @param contentNotificationId - notification id.
-   * @param status - status of the notification
-   * @param created - date the entry was made.
+   * Constructor for a user notification.
+   *
+   * @param userId                of the user who has responded
+   * @param contentNotificationId notification id.
+   * @param status                status of the notification
+   * @param created               date the entry was made.
    */
   public PgUserNotification(final Long userId, final String contentNotificationId, final NotificationStatus status,
                             final Instant created) {

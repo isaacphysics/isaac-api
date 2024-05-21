@@ -17,6 +17,8 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 /**
+ * Indicates a resource is being misused.
+ *
  * @author sac92
  *
  */

@@ -40,9 +40,6 @@ public class UserSearchMisuseHandler implements IMisuseHandler {
   public static final Integer HARD_THRESHOLD = 300;
   public static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_HOUR;
 
-  /**
-   *
-   */
   @Inject
   public UserSearchMisuseHandler() {
 

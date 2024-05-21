@@ -101,7 +101,7 @@ public class Content extends ContentBase {
   /**
    * Basic constructor to allow communication of a simple value.
    *
-   * @param value
+   * @param value String value to set for content
    */
   public Content(final String value) {
     this.value = value;
@@ -251,11 +251,10 @@ public class Content extends ContentBase {
 
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof Content)) {
+    if (!(o instanceof Content c)) {
       return false;
     }
 
-    Content c = (Content) o;
     boolean result = true;
 
     if (this.getId() != null) {

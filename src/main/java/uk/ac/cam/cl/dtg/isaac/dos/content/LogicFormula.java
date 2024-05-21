@@ -31,34 +31,19 @@ public class LogicFormula extends Choice {
 
   }
 
-  /**
-   * @return the pythonExpression
-   */
   public String getPythonExpression() {
     return pythonExpression;
   }
 
-  /**
-   * @param pythonExpression the pythonExpression to set
-   */
   public void setPythonExpression(final String pythonExpression) {
     this.pythonExpression = pythonExpression;
   }
 
-  /**
-   * @return Whether this formula requires an exact match. Believe it or not.
-   */
   public boolean getRequiresExactMatch() {
     return requiresExactMatch;
   }
 
-  /**
-   * Yes, you guessed it. Sets whether this formula requires an exact match.
-   *
-   * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
-   */
   public void setRequiresExactMatch(final boolean requiresExactMatch) {
     this.requiresExactMatch = requiresExactMatch;
   }
-
 }

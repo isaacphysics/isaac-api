@@ -65,7 +65,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
    * @param request - context
    * @return a redirect to a page listing the available endpoints.
    * @throws URISyntaxException - should never happen as hard coded.
-   * @deprecated
+   * @deprecated marked for potential removal in late 2018
    */
   @GET
   @Path("/")

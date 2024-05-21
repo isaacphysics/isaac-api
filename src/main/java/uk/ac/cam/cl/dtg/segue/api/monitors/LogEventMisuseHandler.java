@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -45,10 +44,10 @@ public class LogEventMisuseHandler implements IMisuseHandler {
   private final EmailManager emailManager;
 
   /**
-   * @param emailManager
-   *            - so we can send e-mails if the threshold limits have been reached.
-   * @param properties
-   *            - so that we can look up properties set.
+   * Constructor for LogEventMisuseHandler.
+   *
+   * @param emailManager so we can send e-mails if the threshold limits have been reached.
+   * @param properties   so that we can look up properties set.
    */
   @Inject
   public LogEventMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {

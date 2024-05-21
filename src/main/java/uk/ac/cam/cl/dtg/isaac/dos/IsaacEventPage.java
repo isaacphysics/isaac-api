@@ -74,6 +74,25 @@ public class IsaacEventPage extends Content {
 
   private String meetingUrl;
 
+  /**
+   * Constructor for IsaacEventPageDTO, taking event-specific properties in addition to those from parent ContentDTO.
+   *
+   * @param date date the event is scheduled to start
+   * @param endDate date the event is scheduled to end
+   * @param bookingDeadline date at which bookings will no longer be accepted
+   * @param prepWorkDeadline date by which preceding tasks should be completed
+   * @param location where the event will occur
+   * @param preResources resources to be provided to attendees before the event
+   * @param postResources resources to be provided to attendees after the event
+   * @param eventThumbnail thumbnail image for event
+   * @param numberOfPlaces maximum number of booking places to allow
+   * @param eventStatus status of event {@link EventStatus}
+   * @param groupReservationLimit limit on student reservations that an individual teacher may request
+   * @param allowGroupReservations whether group bookings are permitted
+   * @param privateEvent if an event should be publicly visible or hidden
+   * @param hub the hub hosting the event
+   * @param meetingUrl link to virtual meeting
+   */
   @JsonCreator
   public IsaacEventPage(@JsonProperty("id") final String id,
                         @JsonProperty("title") final String title,
@@ -372,7 +391,7 @@ public class IsaacEventPage extends Content {
   /**
    * setPreResourceContent.
    *
-   * @param preResourceContent - the preresource content.
+   * @param preResourceContent the preresource content.
    */
   public void setPreResourceContent(final List<Content> preResourceContent) {
     this.preResourceContent = preResourceContent;
@@ -408,7 +427,7 @@ public class IsaacEventPage extends Content {
   /**
    * Set the email event details.
    *
-   * @param emailEventDetails - the text to show in the email token
+   * @param emailEventDetails the text to show in the email token
    */
   public void setEmailEventDetails(final String emailEventDetails) {
     this.emailEventDetails = emailEventDetails;
@@ -427,7 +446,7 @@ public class IsaacEventPage extends Content {
   /**
    * Set the email confirmed booking text for emails.
    *
-   * @param emailConfirmedBookingText - text to show in emails
+   * @param emailConfirmedBookingText text to show in emails
    */
   public void setEmailConfirmedBookingText(final String emailConfirmedBookingText) {
     this.emailConfirmedBookingText = emailConfirmedBookingText;
@@ -445,7 +464,7 @@ public class IsaacEventPage extends Content {
   /**
    * Set the email waiting list text for emails.
    *
-   * @param emailWaitingListBookingText - text to show in email.
+   * @param emailWaitingListBookingText text to show in email.
    */
   public void setEmailWaitingListBookingText(final String emailWaitingListBookingText) {
     this.emailWaitingListBookingText = emailWaitingListBookingText;
@@ -463,7 +482,7 @@ public class IsaacEventPage extends Content {
   /**
    * Set the maximum number of reservations per event that a teacher can request.
    *
-   * @param groupReservationLimit
+   * @param groupReservationLimit integer to set the reservation limit to
    */
   public void setGroupReservationLimit(final Integer groupReservationLimit) {
     this.groupReservationLimit = groupReservationLimit;

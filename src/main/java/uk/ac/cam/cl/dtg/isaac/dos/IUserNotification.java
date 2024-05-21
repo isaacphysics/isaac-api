@@ -33,48 +33,20 @@ public interface IUserNotification {
     ACKNOWLEDGED, POSTPONED, DISABLED, DISMISSED
   }
 
-  /**
-   * @return the user id.
-   */
   Long getUserId();
 
-  /**
-   * @return the notification id
-   */
   String getContentNotificationId();
 
-  /**
-   * @param userId
-   *            the user id to set
-   */
   void setUserId(Long userId);
 
-  /**
-   * @param status
-   *            the status to set
-   */
   void setStatus(NotificationStatus status);
 
-  /**
-   * @return the status of this notification
-   */
   NotificationStatus getStatus();
 
-  /**
-   * @param contentNotificationId
-   *            the notification id
-   */
   void setContentNotificationId(String contentNotificationId);
 
-  /**
-   * @return the date the record of the notification response was created.
-   */
   Instant getCreated();
 
-  /**
-   * @param created
-   *            the date this was created.
-   */
   void setCreated(Instant created);
 
 }

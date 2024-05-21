@@ -53,15 +53,15 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
   /**
    * Full constructor for the User object.
    *
-   * @param givenName               - Equivalent to firstname
-   * @param familyName              - Equivalent to second name
-   * @param email                   - primary e-mail address
-   * @param emailVerificationStatus - verification status of email address
-   * @param dateOfBirth             - date of birth to help with monitoring
-   * @param gender                  - gender of the user
-   * @param registrationDate        - date of registration
-   * @param schoolId                - the list of linked authentication provider accounts.
-   * @param teacherPending          - the teacherPending flag value to set
+   * @param givenName               Equivalent to firstname
+   * @param familyName              Equivalent to second name
+   * @param email                   primary e-mail address
+   * @param emailVerificationStatus verification status of email address
+   * @param dateOfBirth             date of birth to help with monitoring
+   * @param gender                  gender of the user
+   * @param registrationDate        date of registration
+   * @param schoolId                the list of linked authentication provider accounts.
+   * @param teacherPending          the teacherPending flag value to set
    */
   @JsonCreator
   public RegisteredUserDTO(
@@ -232,14 +232,18 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
 
   /**
-   * @return email verification status
+   * Get the verification status of the provided email address.
+   *
+   * @return the EmailVerificationStatus
    */
   public EmailVerificationStatus getEmailVerificationStatus() {
     return this.emailVerificationStatus;
   }
 
   /**
-   * @param emailVerificationStatus the new verification status
+   * Set the verification status of the provided email address.
+   *
+   * @param emailVerificationStatus sets the EmailVerificationStatus
    */
   public void setEmailVerificationStatus(final EmailVerificationStatus emailVerificationStatus) {
     this.emailVerificationStatus = emailVerificationStatus;
@@ -421,10 +425,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof RegisteredUserDTO)) {
+    if (!(obj instanceof RegisteredUserDTO other)) {
       return false;
     }
-    RegisteredUserDTO other = (RegisteredUserDTO) obj;
     if (id == null) {
       if (other.id != null) {
         return false;
@@ -438,7 +441,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
   /**
    * A method that tests if each field in the object is equal to each in the other.
    *
-   * @param obj - to check
+   * @param obj to check
    * @return true if the same false if not.
    */
   public boolean strictEquals(final Object obj) {
@@ -448,10 +451,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof RegisteredUserDTO)) {
+    if (!(obj instanceof RegisteredUserDTO other)) {
       return false;
     }
-    RegisteredUserDTO other = (RegisteredUserDTO) obj;
     if (id == null) {
       if (other.id != null) {
         return false;

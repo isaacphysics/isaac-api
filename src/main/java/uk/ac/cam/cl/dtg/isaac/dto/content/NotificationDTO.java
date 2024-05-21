@@ -20,6 +20,8 @@ import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 
 /**
+ * Notification. This class represents a special content type which can be used to pop up a modal to users on the site.
+ *
  * @author sac92
  */
 public class NotificationDTO extends ContentDTO {
@@ -27,6 +29,8 @@ public class NotificationDTO extends ContentDTO {
   private Instant expiry;
 
   /**
+   * Notification object constructor taking a string value for the notification content.
+   *
    * @param value for the value field
    */
   public NotificationDTO(final String value) {
@@ -34,7 +38,7 @@ public class NotificationDTO extends ContentDTO {
   }
 
   /**
-   *
+   * Notification object constructor that does not assign any initial value for the notification content.
    */
   public NotificationDTO() {
 
@@ -52,8 +56,7 @@ public class NotificationDTO extends ContentDTO {
   /**
    * Sets the externalReference.
    *
-   * @param externalReference
-   *            the externalReference to set
+   * @param externalReference the externalReference to set
    */
   public void setExternalReference(final ExternalReference externalReference) {
     this.externalReference = externalReference;

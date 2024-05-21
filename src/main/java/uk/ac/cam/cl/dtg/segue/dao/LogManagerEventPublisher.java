@@ -48,7 +48,7 @@ public abstract class LogManagerEventPublisher implements ILogManager {
   /**
    * Add listener object to collection of listeners that wish to subscribe to events raised.
    *
-   * @param listener - the listener who wants to subscribe to raised events
+   * @param listener the listener who wants to subscribe to raised events
    */
   public void addListener(final LoggingEventHandler listener) {
 

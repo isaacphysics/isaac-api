@@ -102,19 +102,21 @@ public class QuestionFacade extends AbstractSegueFacade {
   private final IUserStreaksManager userStreaksManager;
 
   /**
-   * @param properties             - the fully configured properties loader for the api.
-   * @param mapperUtils            - The Content mapper object used for polymorphic mapping of content objects.
-   * @param contentManager         - The content version controller used by the api.
-   * @param gameManager            - The manager object responsible for games.
-   * @param contentIndex           - The index string for current content version
-   * @param userManager            - The manager object responsible for users.
-   * @param questionManager        - A question manager object responsible for managing questions and augmenting
+   * Constructor for QuestionFacade.
+   *
+   * @param properties             the fully configured properties loader for the api.
+   * @param mapperUtils            The Content mapper object used for polymorphic mapping of content objects.
+   * @param contentManager         The content version controller used by the api.
+   * @param gameManager            The manager object responsible for games.
+   * @param contentIndex           The index string for current content version
+   * @param userManager            The manager object responsible for users.
+   * @param questionManager        A question manager object responsible for managing questions and augmenting
    *                               questions with user information.
-   * @param logManager             - An instance of the log manager used for recording usage of the CMS.
-   * @param misuseMonitor          - An instance of the misuse monitor for rate limiting answer attempts
-   * @param userBadgeManager       - An instance of the badge manager
-   * @param userStreaksManager     - An instance of the streaks manager to notify users when their answer streak changes
-   * @param userAssociationManager - An instance of the association manager to check for teacher permissions over other
+   * @param logManager             An instance of the log manager used for recording usage of the CMS.
+   * @param misuseMonitor          An instance of the misuse monitor for rate limiting answer attempts
+   * @param userBadgeManager       An instance of the badge manager
+   * @param userStreaksManager     An instance of the streaks manager to notify users when their answer streak changes
+   * @param userAssociationManager An instance of the association manager to check for teacher permissions over other
    *                               users
    */
   @Inject
@@ -142,8 +144,8 @@ public class QuestionFacade extends AbstractSegueFacade {
   /**
    * Warn users attempting to make GET requests to answers that we do not provide these. Log the attempt.
    *
-   * @param request    - the incoming request
-   * @param questionId - the question the user is referring to
+   * @param request    the incoming request
+   * @param questionId the question the user is referring to
    * @return an error message informing the user where to find help.
    */
   @GET
@@ -156,9 +158,9 @@ public class QuestionFacade extends AbstractSegueFacade {
             getProperties().getProperty(HOST_NAME));
     try {
       AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-      if (currentUser instanceof RegisteredUserDTO) {
+      if (currentUser instanceof RegisteredUserDTO registeredUserDTO) {
         log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
-            ((RegisteredUserDTO) currentUser).getId(), sanitiseExternalLogValue(questionId)));
+            registeredUserDTO.getId(), sanitiseExternalLogValue(questionId)));
       } else {
         log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!",
             sanitiseExternalLogValue(questionId)));
@@ -175,11 +177,11 @@ public class QuestionFacade extends AbstractSegueFacade {
   /**
    * Get questions answered by user per month for a given date range.
    *
-   * @param request          - the incoming request
-   * @param userIdOfInterest - The user id that the query is focused on
-   * @param fromDate         - the date to start counting (and the month that will be first in the response map)
-   * @param toDate           - The date to finish counting and the month that will be last in the response map
-   * @param perDay           - Whether to bin by day, instead of by month as default.
+   * @param request          the incoming request
+   * @param userIdOfInterest The user id that the query is focused on
+   * @param fromDate         the date to start counting (and the month that will be first in the response map)
+   * @param toDate           The date to finish counting and the month that will be last in the response map
+   * @param perDay           Whether to bin by day, instead of by month as default.
    * @return an object containing dates (first of each month) mapped to number (number of question attempts)
    */
   @GET
@@ -240,8 +242,8 @@ public class QuestionFacade extends AbstractSegueFacade {
   /**
    * REST end point to provide five random questions.
    *
-   * @param request  - this allows us to check to see if a user is currently logged in.
-   * @param subjects - a comma separated list of subjects
+   * @param request  this allows us to check to see if a user is currently logged in.
+   * @param subjects a comma separated list of subjects
    * @return a Response containing a gameboard object or containing a SegueErrorResponse.
    */
   @GET
@@ -276,9 +278,9 @@ public class QuestionFacade extends AbstractSegueFacade {
   /**
    * Record that a user has answered a question.
    *
-   * @param request    - the servlet request so we can find out if it is a known user.
+   * @param request    the servlet request so we can find out if it is a known user.
    * @param questionId that you are attempting to answer.
-   * @param jsonAnswer - answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
+   * @param jsonAnswer answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
    * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
    */
   @POST
@@ -306,8 +308,8 @@ public class QuestionFacade extends AbstractSegueFacade {
     }
 
     Question question;
-    if (contentBasedOnId instanceof Question) {
-      question = (Question) contentBasedOnId;
+    if (contentBasedOnId instanceof Question questionFromId) {
+      question = questionFromId;
     } else {
       SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
           "No question object found for given id: " + sanitiseExternalLogValue(questionId));
@@ -340,10 +342,10 @@ public class QuestionFacade extends AbstractSegueFacade {
       // the log, but don't save it for the user. Also, return an error.
 
       // We store response.getEntity() in either case so that we can treat them the same in later analysis.
-      if (currentUser instanceof RegisteredUserDTO) {
+      if (currentUser instanceof RegisteredUserDTO registeredUserDTO) {
         try {
           // Monitor misuse on a per-question per-registered user basis, with higher limits:
-          misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
+          misuseMonitor.notifyEvent(registeredUserDTO.getId().toString() + "|" + questionId,
               QuestionAttemptMisuseHandler.class.getSimpleName());
         } catch (SegueResourceMisuseException e) {
           this.getLogManager()
@@ -378,16 +380,15 @@ public class QuestionFacade extends AbstractSegueFacade {
       }
 
       // If we get to this point, this is a valid question attempt. Record it.
-      if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-        questionManager.recordQuestionAttempt(currentUser,
-            (QuestionValidationResponseDTO) response.getEntity());
+      if (response.getEntity() instanceof QuestionValidationResponseDTO questionValidationResponseDTO) {
+        questionManager.recordQuestionAttempt(currentUser, questionValidationResponseDTO);
       }
 
       this.getLogManager().logEvent(currentUser, request, SegueServerLogType.ANSWER_QUESTION, response.getEntity());
 
       // Update the user in case their streak has changed:
-      if (currentUser instanceof RegisteredUserDTO) {
-        this.userStreaksManager.notifyUserOfStreakChange((RegisteredUserDTO) currentUser);
+      if (currentUser instanceof RegisteredUserDTO registeredUserDTO) {
+        this.userStreaksManager.notifyUserOfStreakChange(registeredUserDTO);
       }
 
       return response;
@@ -410,9 +411,9 @@ public class QuestionFacade extends AbstractSegueFacade {
    * A generic question tester where a fake question is created form received choices and evaluated against a series.
    * of example student answers
    *
-   * @param request      - the incoming request
-   * @param questionType - the type of question to construct from the available choices in testJson
-   * @param testJson     - a JSON structure to represent the possible choices and
+   * @param request      the incoming request
+   * @param questionType the type of question to construct from the available choices in testJson
+   * @param testJson     a JSON structure to represent the possible choices and
    * @return a list of test cases matching those that were sent to the endpoint augmented with the validator's results
    */
   @POST
@@ -443,8 +444,8 @@ public class QuestionFacade extends AbstractSegueFacade {
   /**
    * Convert a possible answer into a question specification.
    *
-   * @param request    - the servlet request so we can find out if it is a known user.
-   * @param jsonAnswer - answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
+   * @param request    the servlet request so we can find out if it is a known user.
+   * @param jsonAnswer answer body which will be parsed as a Choice and then converted to a ChoiceDTO.
    * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
    */
   @POST

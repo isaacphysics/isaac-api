@@ -17,6 +17,8 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 /**
+ * Exception for when an IsaacWildcard cannot be found/provided.
+ *
  * @author nr378
  */
 public class NoWildcardException extends InvalidGameboardException {

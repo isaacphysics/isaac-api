@@ -59,10 +59,9 @@ public class Mailer {
   /**
    * Mailer Class.
    *
-   * @param smtpAddress  The address of the smtp server - this implementation assumes
-   *                     that the port is the default (25)
-   * @param mailAddress  The Envelope-From address of the sending account - used for
-   *                     authentication sometimes, and will receive bounce emails.
+   * @param smtpAddress  The address of the smtp server - this implementation assumes that the port is the default (25)
+   * @param mailAddress  The Envelope-From address of the sending account - used for authentication sometimes,
+   *                     and will receive bounce emails.
    * @param smtpPort     The SMTP port.
    * @param smtpUsername The SMTP Username.
    * @param smtpPassword The SMTP Password.
@@ -82,10 +81,10 @@ public class Mailer {
   /**
    * SendMail Utility Method Sends e-mail to a given recipient using the hard-coded MAIL_ADDRESS and SMTP details.
    *
-   * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
-   * @param contents              - The message body
-   * @throws MessagingException - if we cannot send the message for some reason.
-   * @throws AddressException   - if the address is not valid.
+   * @param emailCommonParameters a Data Object containing the basic parameters for setting up an email message
+   * @param contents              The message body
+   * @throws MessagingException if we cannot send the message for some reason.
+   * @throws AddressException   if the address is not valid.
    */
   public void sendPlainTextMail(final EmailCommonParameters emailCommonParameters, final String contents)
       throws MessagingException {
@@ -100,12 +99,12 @@ public class Mailer {
    * Utility method to allow us to send multipart messages using HTML and plain text.
    * <br>
    *
-   * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
-   * @param plainText             - The message body
-   * @param html                  - The message body in html
-   * @param attachments           - list of attachment objects
-   * @throws MessagingException - if we cannot send the message for some reason.
-   * @throws AddressException   - if the address is not valid.
+   * @param emailCommonParameters a Data Object containing the basic parameters for setting up an email message
+   * @param plainText             The message body
+   * @param html                  The message body in html
+   * @param attachments           list of attachment objects
+   * @throws MessagingException if we cannot send the message for some reason.
+   * @throws AddressException   if the address is not valid.
    */
   public void sendMultiPartMail(final EmailCommonParameters emailCommonParameters, final String plainText,
                                 final String html,
@@ -144,9 +143,11 @@ public class Mailer {
   }
 
   /**
-   * @param emailCommonParameters - a Data Object containing the basic parameters for setting up an email message
+   * Construct an email Message object using a collection of common variables.
+   *
+   * @param emailCommonParameters a Data Object containing the basic parameters for setting up an email message
    * @return a newly created message with all of the headers populated.
-   * @throws MessagingException - if there is an error in setting up the message
+   * @throws MessagingException if there is an error in setting up the message
    */
   private Message setupMessage(final EmailCommonParameters emailCommonParameters) throws MessagingException {
     Validate.notEmpty(emailCommonParameters.getRecipient());

@@ -40,9 +40,6 @@ public class TeacherPasswordResetMisuseHandler implements IMisuseHandler {
   private static final Integer HARD_THRESHOLD = 30;
   private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_HOUR;
 
-  /**
-   *
-   */
   @Inject
   public TeacherPasswordResetMisuseHandler() {
 

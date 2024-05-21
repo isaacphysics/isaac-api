@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
+ * A Location object that can contain an address and/or latitude/longitude coordinates.
+ *
  * @author sac92
  *
  */
@@ -29,13 +31,11 @@ public class Location {
   private Double longitude;
 
   /**
+   * Constructor for an address object with address and/or latitude/longitude coordinates.
    *
-   * @param address
-   *            includes postal address information.
-   * @param latitude
-   *            - as a decimal value
-   * @param longitude
-   *            - as a decimal value
+   * @param address   includes postal address information.
+   * @param latitude  as a decimal value
+   * @param longitude as a decimal value
    */
   @JsonCreator
   public Location(@JsonProperty("address") final Address address, @JsonProperty("latitude") final Double latitude,
@@ -109,10 +109,9 @@ public class Location {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof Location)) {
+    if (!(obj instanceof Location other)) {
       return false;
     }
-    Location other = (Location) obj;
     if (address == null) {
       if (other.address != null) {
         return false;

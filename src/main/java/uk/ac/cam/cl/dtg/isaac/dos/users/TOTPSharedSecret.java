@@ -44,29 +44,20 @@ public class TOTPSharedSecret {
   }
 
   /**
-   * @return The user id that the secret was generated for.
+   * Get the user id that the secret was generated for.
    */
   public Long getUserId() {
     return userId;
   }
 
-  /**
-   * @return - the shared secret
-   */
   public String getSharedSecret() {
     return sharedSecret;
   }
 
-  /**
-   * @return the creation date of the secret.
-   */
   public Instant getCreated() {
     return created;
   }
 
-  /**
-   * @return the last updated date of the secret.
-   */
   public Instant getLastUpdated() {
     return lastUpdated;
   }

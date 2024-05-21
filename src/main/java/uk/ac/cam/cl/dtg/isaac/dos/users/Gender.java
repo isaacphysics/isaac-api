@@ -17,6 +17,8 @@
 package uk.ac.cam.cl.dtg.isaac.dos.users;
 
 /**
+ * Enumeration of possible gender options supported by Isaac.
+ *
  * @author Stephen Cummins
  */
 public enum Gender {

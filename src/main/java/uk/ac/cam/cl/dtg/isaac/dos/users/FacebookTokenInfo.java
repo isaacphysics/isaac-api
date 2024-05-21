@@ -27,26 +27,19 @@ public class FacebookTokenInfo {
   private FacebookTokenData data;
 
   /**
+   * Constructor for FacebookTokenInfo.
    *
-   * @param data
-   *            -
+   * @param data a FacebookTokenData object to set
    */
   @JsonCreator
   public FacebookTokenInfo(@JsonProperty("data") final FacebookTokenData data) {
     this.data = data;
   }
 
-  /**
-   * @return the data
-   */
   public FacebookTokenData getData() {
     return data;
   }
 
-  /**
-   * @param data
-   *            the data to set
-   */
   public void setData(final FacebookTokenData data) {
     this.data = data;
   }

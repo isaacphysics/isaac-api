@@ -54,6 +54,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
+ * Class to manage question attempts recorded in the database.
+ *
  * @author sac92
  */
 public class PgQuestionAttempts implements IQuestionAttemptManager {
@@ -64,8 +66,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
   private final ObjectMapper objectMapper;
 
   /**
-   * @param ds           - data source
-   * @param objectMapper - for mapping between DO and DTO
+   * Constructor for PgQuestionAttempts.
+   *
+   * @param ds           data source
+   * @param objectMapper for mapping between DO and DTO
    */
   @Inject
   public PgQuestionAttempts(final PostgresSqlDb ds, final ContentMapperUtils objectMapper) {
@@ -371,9 +375,9 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
   /**
    * Merges any question data stored in the session (this will only happen for anonymous users).
    *
-   * @param anonymousUserId  - containing the question attempts.
-   * @param registeredUserId - the account to merge with.
-   * @throws SegueDatabaseException - if we are unable to locate the questions attempted by this user already.
+   * @param anonymousUserId  containing the question attempts.
+   * @param registeredUserId the account to merge with.
+   * @throws SegueDatabaseException if we are unable to locate the questions attempted by this user already.
    */
   @Override
   public void mergeAnonymousQuestionInformationWithRegisteredUserRecord(final String anonymousUserId,

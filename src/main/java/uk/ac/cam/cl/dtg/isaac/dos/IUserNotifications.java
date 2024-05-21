@@ -27,17 +27,21 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 public interface IUserNotifications {
 
   /**
-   * @param userId - the user id to look up
+   * Retrieve a list of notifications for the specified user id.
+   *
+   * @param userId the user id to look up
    * @return the list of notification records for this user.
-   * @throws SegueDatabaseException - if a database error has occurred.
+   * @throws SegueDatabaseException if a database error has occurred.
    */
   List<IUserNotification> getUserNotifications(Long userId) throws SegueDatabaseException;
 
   /**
-   * @param userId - the user id to save a record for.
+   * Create or update a notification for the specified user id.
+   *
+   * @param userId         the user id to save a record for.
    * @param notificationId to save
-   * @param status to save
-   * @throws SegueDatabaseException - if a database error has occurred.
+   * @param status         to save
+   * @throws SegueDatabaseException if a database error has occurred.
    */
   void saveUserNotification(Long userId, String notificationId, NotificationStatus status)
       throws SegueDatabaseException;

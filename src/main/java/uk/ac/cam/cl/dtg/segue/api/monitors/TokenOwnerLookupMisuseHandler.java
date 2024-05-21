@@ -45,8 +45,10 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
   private final EmailManager emailManager;
 
   /**
-   * @param emailManager - so we can send e-mails if the threshold limits have been reached.
-   * @param properties   - so that we can look up properties set.
+   * Constructor for TokenOwnerLookupMisuseHandler.
+   *
+   * @param emailManager so we can send e-mails if the threshold limits have been reached.
+   * @param properties   so that we can look up properties set.
    */
   @Inject
   public TokenOwnerLookupMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {

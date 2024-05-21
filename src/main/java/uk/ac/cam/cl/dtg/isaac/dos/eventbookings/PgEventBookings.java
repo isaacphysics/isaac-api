@@ -131,6 +131,8 @@ public class PgEventBookings implements EventBookings {
   private static final String TABLE_NAME = "event_bookings";
 
   /**
+   * Constructor for PgEventBookings.
+   *
    * @param ds     connection to the database.
    * @param mapper object mapper
    */
@@ -219,13 +221,13 @@ public class PgEventBookings implements EventBookings {
   /**
    * Update a booking with additional booking information and a reserving user.
    *
-   * @param transaction                - the database transaction to use
-   * @param eventId                    - the id of the event
-   * @param userId                     - the id of the user booked on to the event
-   * @param reservingUserId            - the id of the user making the reservation
-   * @param status                     - the new status to change the booking to
-   * @param additionalEventInformation - additional information required for the event
-   * @throws SegueDatabaseException - if the database goes wrong.
+   * @param transaction                the database transaction to use
+   * @param eventId                    the id of the event
+   * @param userId                     the id of the user booked on to the event
+   * @param reservingUserId            the id of the user making the reservation
+   * @param status                     the new status to change the booking to
+   * @param additionalEventInformation additional information required for the event
+   * @throws SegueDatabaseException if the database goes wrong.
    * @see #updateStatus
    */
   private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
@@ -263,12 +265,12 @@ public class PgEventBookings implements EventBookings {
   /**
    * Update a booking with a reserving user but without additional booking information.
    *
-   * @param transaction     - the database transaction to use
-   * @param eventId         - the id of the event
-   * @param userId          - the id of the user booked on to the event
-   * @param reservingUserId - the id of the user making the reservation
-   * @param status          - the new status to change the booking to
-   * @throws SegueDatabaseException - if the database goes wrong.
+   * @param transaction     the database transaction to use
+   * @param eventId         the id of the event
+   * @param userId          the id of the user booked on to the event
+   * @param reservingUserId the id of the user making the reservation
+   * @param status          the new status to change the booking to
+   * @throws SegueDatabaseException if the database goes wrong.
    * @see #updateStatus
    */
   private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
@@ -299,12 +301,12 @@ public class PgEventBookings implements EventBookings {
   /**
    * Update a booking with additional booking information but without a reserving user.
    *
-   * @param transaction                - the database transaction to use
-   * @param eventId                    - the id of the event
-   * @param userId                     - the id of the user booked on to the event
-   * @param status                     - the new status to change the booking to
-   * @param additionalEventInformation - additional information required for the event
-   * @throws SegueDatabaseException - if the database goes wrong.
+   * @param transaction                the database transaction to use
+   * @param eventId                    the id of the event
+   * @param userId                     the id of the user booked on to the event
+   * @param status                     the new status to change the booking to
+   * @param additionalEventInformation additional information required for the event
+   * @throws SegueDatabaseException if the database goes wrong.
    * @see #updateStatus
    */
   private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
@@ -341,11 +343,11 @@ public class PgEventBookings implements EventBookings {
   /**
    * Update a booking without additional booking information or a reserving user.
    *
-   * @param transaction - the database transaction to use
-   * @param eventId     - the id of the event
-   * @param userId      - the id of the user booked on to the event
-   * @param status      - the new status to change the booking to
-   * @throws SegueDatabaseException - if the database goes wrong.
+   * @param transaction the database transaction to use
+   * @param eventId     the id of the event
+   * @param userId      the id of the user booked on to the event
+   * @param status      the new status to change the booking to
+   * @throws SegueDatabaseException if the database goes wrong.
    * @see #updateStatus
    */
   private void updateBookingStatus(final ITransaction transaction, final String eventId, final Long userId,
@@ -411,8 +413,8 @@ public class PgEventBookings implements EventBookings {
   /**
    * Acquire a globally unique lock on an event for the duration of a transaction.
    *
-   * @param transaction - the database transaction to acquire the lock in.
-   * @param resourceId  - the ID of the event to be locked.
+   * @param transaction the database transaction to acquire the lock in.
+   * @param resourceId  the ID of the event to be locked.
    */
   @Override
   public void lockEventUntilTransactionComplete(final ITransaction transaction, final String resourceId)
@@ -584,10 +586,10 @@ public class PgEventBookings implements EventBookings {
    * <br>
    * Useful for finding all on a waiting list or confirmed.
    *
-   * @param eventId - the event of interest.
-   * @param status  - The event status that should match in the bookings returned. Can be null
+   * @param eventId the event of interest.
+   * @param status  The event status that should match in the bookings returned. Can be null
    * @return an iterable with all the events matching the criteria.
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   @Override
   public Iterable<EventBooking> findAllByEventIdAndStatus(final String eventId, @Nullable final BookingStatus status)
@@ -625,9 +627,9 @@ public class PgEventBookings implements EventBookings {
   /**
    * Find all bookings for events.
    *
-   * @param eventIds - the event of interest.
+   * @param eventIds the event of interest.
    * @return an iterable with all the events matching the criteria.
-   * @throws SegueDatabaseException - if an error occurs.
+   * @throws SegueDatabaseException if an error occurs.
    */
   @Override
   public Iterable<EventBooking> findAllByEventIds(final List<String> eventIds) throws SegueDatabaseException {
@@ -721,9 +723,9 @@ public class PgEventBookings implements EventBookings {
    * <br>
    * Assumes there is a result to read.
    *
-   * @param results - the results to convert
+   * @param results the results to convert
    * @return a new PgEventBooking
-   * @throws SQLException - if an error occurs.
+   * @throws SQLException if an error occurs.
    */
   private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException, SegueDatabaseException {
     return new PgEventBooking(

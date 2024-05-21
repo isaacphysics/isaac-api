@@ -15,7 +15,9 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
   private final InMemoryHostConfig inMemoryHostConfig;
 
   /**
-   * @param config - A Map of config keys to config values (of the sort ordinarily found in ~/.ssh/config),
+   * Constructor for the SSH configuration store, taking a map of configuration parameters.
+   *
+   * @param config A Map of config keys to config values (of the sort ordinarily found in ~/.ssh/config),
    *               which will apply to all sessions using this store regardless of the target host, port or user.
    */
   public ETLInMemorySshConfigStore(final Map<String, List<String>> config) {
@@ -23,9 +25,11 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
   }
 
   /**
-   * @param hostName - ignored, as we will use the same configuration regardless.
-   * @param port     - ignored, as we will use the same configuration regardless.
-   * @param userName - ignored, as we will use the same configuration regardless.
+   * Get a HostConfig object with the current configuration values.
+   *
+   * @param hostName ignored, as we will use the same configuration regardless.
+   * @param port     ignored, as we will use the same configuration regardless.
+   * @param userName ignored, as we will use the same configuration regardless.
    * @return A new InMemoryHostConfig holding the provided configuration options.
    */
   @Override
@@ -46,7 +50,9 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
     private final Map<String, List<String>> config;
 
     /**
-     * @param config - A Map of config keys to config values (of the sort ordinarily found in ~/.ssh/config).
+     * Constructor for the HostConfig object, using a map of parameters.
+     *
+     * @param config A Map of config keys to config values (of the sort ordinarily found in ~/.ssh/config).
      */
     public InMemoryHostConfig(final Map<String, List<String>> config) {
       this.config = config;
@@ -55,7 +61,7 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
     @Override
     public String getValue(final String key) {
       List<String> value = config.get(key);
-      if (null == value || value.size() == 0) {
+      if (null == value || value.isEmpty()) {
         return null;
       }
       return value.get(0);

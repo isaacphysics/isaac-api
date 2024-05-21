@@ -50,19 +50,19 @@ public class RegisteredUser extends AbstractSegueUser {
   /**
    * Full constructor for the User object.
    *
-   * @param id                      - Our database Unique ID
-   * @param givenName               - Equivalent to firstname
-   * @param familyName              - Equivalent to second name
-   * @param email                   - primary e-mail address
-   * @param role                    - role description
-   * @param dateOfBirth             - date of birth to help with monitoring
-   * @param gender                  - gender of the user
-   * @param registrationDate        - date of registration
-   * @param lastUpdated             - the date this user was last updated.
-   * @param emailToVerify           - the most recent email for which a token has been generated
-   * @param emailVerificationToken  - the most recent token generated to verify email addresses
-   * @param emailVerificationStatus - whether the user has verified their email or not
-   * @param teacherPending          - the teacherPending flag value
+   * @param id                      Our database Unique ID
+   * @param givenName               Equivalent to firstname
+   * @param familyName              Equivalent to second name
+   * @param email                   primary e-mail address
+   * @param role                    role description
+   * @param dateOfBirth             date of birth to help with monitoring
+   * @param gender                  gender of the user
+   * @param registrationDate        date of registration
+   * @param lastUpdated             the date this user was last updated.
+   * @param emailToVerify           the most recent email for which a token has been generated
+   * @param emailVerificationToken  the most recent token generated to verify email addresses
+   * @param emailVerificationStatus whether the user has verified their email or not
+   * @param teacherPending          the teacherPending flag value
    */
   @JsonCreator
   public RegisteredUser(
@@ -340,14 +340,18 @@ public class RegisteredUser extends AbstractSegueUser {
   }
 
   /**
-   * @return the emailVerified
+   * Get the verification status of the provided email address.
+   *
+   * @return the EmailVerificationStatus
    */
   public EmailVerificationStatus getEmailVerificationStatus() {
     return emailVerificationStatus;
   }
 
   /**
-   * @param status - sets whether email has been verified
+   * Set the verification status of the provided email address.
+   *
+   * @param status sets the EmailVerificationStatus
    */
   public void setEmailVerificationStatus(final EmailVerificationStatus status) {
     this.emailVerificationStatus = status;
@@ -439,10 +443,9 @@ public class RegisteredUser extends AbstractSegueUser {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof RegisteredUser)) {
+    if (!(obj instanceof RegisteredUser other)) {
       return false;
     }
-    RegisteredUser other = (RegisteredUser) obj;
     if (id == null) {
       if (other.id != null) {
         return false;

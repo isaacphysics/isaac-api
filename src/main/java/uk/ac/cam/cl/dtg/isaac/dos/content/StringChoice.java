@@ -32,6 +32,8 @@ public class StringChoice extends Choice {
   }
 
   /**
+   * Whether to ignore case when checking matches.
+   *
    * @return Whether this string choice should allow any case to match.
    */
   public boolean isCaseInsensitive() {

@@ -28,6 +28,8 @@ import uk.ac.cam.cl.dtg.util.EmailCommonParameters;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
 /**
+ * Class to handle sending of emails.
+ *
  * @author nr378 and Alistair Stead
  */
 public class EmailCommunicator implements ICommunicator<EmailCommunicationMessage> {
@@ -66,8 +68,10 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
   }
 
   /**
-   * @param email - message to be sent. Will be plain text if no HTML is provided
-   * @throws CommunicationException - if email fails to be created and added to queue
+   * Send an email based on the provided EmailCommunicationMessage object.
+   *
+   * @param email message to be sent. Will be plain text if no HTML is provided
+   * @throws CommunicationException if email fails to be created and added to queue
    */
   @Override
   public void sendMessage(final EmailCommunicationMessage email) throws CommunicationException {

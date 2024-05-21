@@ -126,17 +126,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
    *
-   * @param assignmentManager  - Instance of assignment Manager
-   * @param questionManager    - Instance of questions manager
-   * @param userManager        - Instance of User Manager
-   * @param groupManager       - Instance of Group Manager
-   * @param propertiesLoader   - Instance of properties Loader
-   * @param gameManager        - Instance of Game Manager
-   * @param logManager         - Instance of log manager
-   * @param associationManager - So that we can determine what information is allowed to be seen by other users.
-   * @param userBadgeManager   - So that badges can be awarded to do with assignments
-   * @param assignmentService  - for augmenting assignments with assigner information
-   * @param clock              - Instance of Clock for use in date calculations, can be replaced for testing purposes
+   * @param assignmentManager  Instance of assignment Manager
+   * @param questionManager    Instance of questions manager
+   * @param userManager        Instance of User Manager
+   * @param groupManager       Instance of Group Manager
+   * @param propertiesLoader   Instance of properties Loader
+   * @param gameManager        Instance of Game Manager
+   * @param logManager         Instance of log manager
+   * @param associationManager So that we can determine what information is allowed to be seen by other users.
+   * @param userBadgeManager   So that badges can be awarded to do with assignments
+   * @param assignmentService  for augmenting assignments with assigner information
+   * @param clock              Instance of Clock for use in date calculations, can be replaced for testing purposes
    */
   @Inject
   public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
@@ -161,8 +161,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Endpoint that will return a list of boards assigned to the current user.
    *
-   * @param request          - so that we can identify the current user.
-   * @param assignmentStatus - so we know what assignments to return.
+   * @param request          so that we can identify the current user.
+   * @param assignmentStatus so we know what assignments to return.
    * @return List of assignments (maybe empty)
    */
   @GET
@@ -241,8 +241,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
    * Allows the user to fetch a single assignment that they own (or are a group manager of). Returned assignment
    * will contain gameboard and question information.
    *
-   * @param request      - so that we can identify the current user.
-   * @param assignmentId - id of assignment to fetch
+   * @param request      so that we can identify the current user.
+   * @param assignmentId id of assignment to fetch
    * @return AssignmentDTO containing extra information about the gameboard and questions
    */
   @GET
@@ -302,8 +302,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
    * If the user specifies a group ID to narrow the search full objects including questions in gameboards will be
    * returned.
    *
-   * @param request           - so that we can identify the current user.
-   * @param groupIdOfInterest - Optional parameter - If this is specified a fully resolved assignment object will be
+   * @param request           so that we can identify the current user.
+   * @param groupIdOfInterest Optional parameter - If this is specified a fully resolved assignment object will be
    *                          provided otherwise just a lightweight one per assignment will be returned.
    * @return the assignment object.
    */
@@ -391,8 +391,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Allows the user to view results of an assignment they have set.
    *
-   * @param assignmentId - the id of the assignment to be looked up.
-   * @param request      - so that we can identify the current user.
+   * @param assignmentId the id of the assignment to be looked up.
+   * @param request      so that we can identify the current user.
    * @return the assignment object.
    */
   @GET
@@ -475,10 +475,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Allows the user to view results of an assignment they have set as a detailed csv file.
    *
-   * @param assignmentId - the id of the assignment to be looked up.
-   * @param formatMode   - whether to format the file in a special way. Currently only "excel" is supported,
+   * @param assignmentId the id of the assignment to be looked up.
+   * @param formatMode   whether to format the file in a special way. Currently only "excel" is supported,
    *                     to include a UTF-8 BOM to allow Unicode student names to show correctly in Microsoft Excel.
-   * @param request      - so that we can identify the current user.
+   * @param request      so that we can identify the current user.
    * @return the assignment object.
    */
   @GET
@@ -701,10 +701,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Allows the user to download the results of the assignments they have set to a group as a detailed csv file.
    *
-   * @param groupId    - the id of the group to be looked up.
-   * @param formatMode - whether to format the file in a special way. Currently only "excel" is supported,
+   * @param groupId    the id of the group to be looked up.
+   * @param formatMode whether to format the file in a special way. Currently only "excel" is supported,
    *                   to include a UTF-8 BOM to allow Unicode student names to show correctly in Microsoft Excel.
-   * @param request    - so that we can identify the current user.
+   * @param request    so that we can identify the current user.
    * @return the assignment object.
    */
   @GET
@@ -1211,10 +1211,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Allows a user to assign a gameboard to group of users.
    *
-   * @param request                 - so that we can identify the current user.
+   * @param request                 so that we can identify the current user.
    * @param assignmentDTOFromClient a partially completed DTO for the assignment.
    * @return an AssignmentSettingResponseDTO (see assignGameBoards)
-   * @deprecated
+   * @deprecated use assignGameBoards directly instead (path /assign_bulk)
    */
   @POST
   @Path("/assign/")
@@ -1231,9 +1231,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
   /**
    * Allows a user to delete an assignment.
    *
-   * @param request     - so that we can identify the current user.
-   * @param gameboardId - board id belonging to the assignment
-   * @param groupId     - assignee group
+   * @param request     so that we can identify the current user.
+   * @param gameboardId board id belonging to the assignment
+   * @param groupId     assignee group
    * @return confirmation or an error.
    */
   @DELETE

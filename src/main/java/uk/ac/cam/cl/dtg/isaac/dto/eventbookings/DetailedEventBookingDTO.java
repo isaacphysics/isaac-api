@@ -21,7 +21,7 @@ public class DetailedEventBookingDTO extends EventBookingDTO {
   /**
    * Set the additional information for an event booking.
    *
-   * @param additionalInformation
+   * @param additionalInformation a Map of additional information to associate with an event booking
    */
   public void setAdditionalInformation(final Map<String, String> additionalInformation) {
     this.additionalInformation = additionalInformation;

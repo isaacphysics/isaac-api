@@ -39,32 +39,22 @@ public interface ILogManager {
   /**
    * Log an event with the persistence logging framework without looking up the user from the database.
    *
-   * @param user
-   *            - user to log must not be null.
-   * @param httpRequest
-   *            - so we can figure out request specific information e.g. ip address.
-   * @param eventType
-   *            - Type of event that we are interested in.
-   * @param eventDetails
-   *            - Additional information associated with the event - this is expected to be a json deserializable
-   *            object
-   * @throws SegueDatabaseException
+   * @param user         user to log must not be null.
+   * @param httpRequest  so we can figure out request specific information e.g. ip address.
+   * @param eventType    Type of event that we are interested in.
+   * @param eventDetails Additional information associated with the event - this is expected to be a json deserializable
+   *                     object
    */
   void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, LogType eventType, Object eventDetails);
 
   /**
    * Log an arbitrary event from the frontend.
    *
-   * @param user
-   *            - user to log must not be null.
-   * @param httpRequest
-   *            - so we can figure out request specific information e.g. ip address.
-   * @param eventType
-   *            - Type of event that we are interested in.
-   * @param eventDetails
-   *            - Additional information associated with the event - this is expected to be a json deserializable
-   *            object
-   * @throws SegueDatabaseException
+   * @param user         user to log must not be null.
+   * @param httpRequest  so we can figure out request specific information e.g. ip address.
+   * @param eventType    Type of event that we are interested in.
+   * @param eventDetails Additional information associated with the event - this is expected to be a json deserializable
+   *                     object
    */
   void logExternalEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType,
                         Object eventDetails);
@@ -72,14 +62,10 @@ public interface ILogManager {
   /**
    * Log an event with the persistence logging framework without looking up the user from the database.
    *
-   * @param user
-   *            - user to log must not be null.
-   * @param eventType
-   *            - Type of event that we are interested in.
-   * @param eventDetails
-   *            - Additional information associated with the event - this is expected to be a json deserializable
-   *            object
-   * @throws SegueDatabaseException
+   * @param user         user to log must not be null.
+   * @param eventType    Type of event that we are interested in.
+   * @param eventDetails Additional information associated with the event - this is expected to be a json deserializable
+   *                     object
    */
   void logInternalEvent(AbstractSegueUserDTO user, LogType eventType, Object eventDetails);
 
@@ -89,52 +75,41 @@ public interface ILogManager {
    * <br>
    * It assumes that the new userId is a registered user of the system and not anonymous.
    *
-   * @param oldUserId
-   *            - the id of the old anonymous user
-   * @param newUserId
-   *            - the user object of the newly registered user.
+   * @param oldUserId the id of the old anonymous user
+   * @param newUserId the user object of the newly registered user.
    */
   void transferLogEventsToRegisteredUser(String oldUserId, String newUserId);
 
   /**
    * Allows filtering by date range.
    *
-   * @param type
-   *            - string representing the type of event to find.
-   * @param fromDate
-   *            - date to start search
-   * @param toDate
-   *            - date to end search.
+   * @param type     string representing the type of event to find.
+   * @param fromDate date to start search
+   * @param toDate   date to end search.
    * @return all events of the type requested or null if none available. The map should be of type String, Object
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if we cannot retrieve the data from the database.
    */
   Collection<LogEvent> getLogsByType(String type, Instant fromDate, Instant toDate) throws SegueDatabaseException;
 
   /**
    * Allows filtering by date range.
    *
-   * @param type
-   *            - string representing the type of event to find.
-   * @param fromDate
-   *            - date to start search
-   * @param toDate
-   *            - date to end search.
-   * @param usersOfInterest
-   *            - users of interest.
+   * @param type            string representing the type of event to find.
+   * @param fromDate        date to start search
+   * @param toDate          date to end search.
+   * @param usersOfInterest users of interest.
    * @return all events of the type requested or null if none available. The map should be of type String, Object
-   * @throws SegueDatabaseException
-   *             - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
-  Collection<LogEvent> getLogsByType(String type, Instant fromDate, Instant toDate, List<RegisteredUserDTO> usersOfInterest)
-      throws SegueDatabaseException;
+  Collection<LogEvent> getLogsByType(String type, Instant fromDate, Instant toDate,
+                                     List<RegisteredUserDTO> usersOfInterest) throws SegueDatabaseException;
 
   /**
    * Convenience method to find out how many of a particular type of event have been logged.
    *
-   * @param type
-   *            - event type of interest.
+   * @param type event type of interest.
    * @return the number of that type recorded.
-   * @throws SegueDatabaseException
+   * @throws SegueDatabaseException if we cannot retrieve the data from the database.
    */
   Long getLogCountByType(String type) throws SegueDatabaseException;
 
@@ -143,17 +118,12 @@ public interface ILogManager {
    * <br>
    * This is done at the database level to allow efficient use of memory.
    *
-   * @param eventTypes
-   *            - string representing the type of event to find.
-   * @param fromDate
-   *            - date to start search
-   * @param toDate
-   *            - date to end search.
-   * @param usersOfInterest
-   *            - users of interest.
-   * @param binDataByMonth
-   *            - if true then the data will be put into bins by the 1st of the month if false you will get one per
-   *            day that an event occurred.
+   * @param eventTypes      string representing the type of event to find.
+   * @param fromDate        date to start search
+   * @param toDate          date to end search.
+   * @param usersOfInterest users of interest.
+   * @param binDataByMonth  if true then the data will be put into bins by the 1st of the month if false you will get
+   *                        one per day that an event occurred.
    * @return a map of type -- > localDate -- > number of events
    * @throws SegueDatabaseException - if there is a problem contacting the underlying database
    */
@@ -162,6 +132,8 @@ public interface ILogManager {
       throws SegueDatabaseException;
 
   /**
+   * Retrieve a set of all the ip addresses on records of logged events.
+   *
    * @return get a set of all ip addresses ever seen in the log events.
    */
   Set<String> getAllIpAddresses();
@@ -169,10 +141,9 @@ public interface ILogManager {
   /**
    * A more efficient way of getting the last log for all users.
    *
-   * @param qualifyingLogEventType
-   *            - the log event type to include in the data.
+   * @param qualifyingLogEventType the log event type to include in the data.
    * @return where string is the user id and the logevent is the most recent
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   Map<String, Instant> getLastLogDateForAllUsers(String qualifyingLogEventType) throws SegueDatabaseException;
 
@@ -180,7 +151,7 @@ public interface ILogManager {
    * returns a set of event types known about from the db.
    *
    * @return Set of event types.
-   * @throws SegueDatabaseException - if there is a problem contacting the underlying database
+   * @throws SegueDatabaseException if there is a problem contacting the underlying database
    */
   Set<String> getAllEventTypes() throws SegueDatabaseException;
 }

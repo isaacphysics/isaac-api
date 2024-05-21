@@ -42,9 +42,10 @@ public interface IFederatedAuthenticator extends IAuthenticator {
    *            user (e.g. OAuth implementations will map this code to
    *            external tokens to allow api calls to be made).
    * @return User's information contained in a User DTO.
-   * @throws NoUserException
-   * @throws IOException
-   * @throws AuthenticatorSecurityException
+   * @throws NoUserException                a valid user object cannot be obtained
+   * @throws IOException                    if an unexpected communications error occurs
+   * @throws AuthenticatorSecurityException if unable to confirm the security or authenticity of a request or response
+   *     with the provider
    */
   UserFromAuthProvider getUserInfo(String internalProviderReference) throws NoUserException, IOException,
       AuthenticatorSecurityException;

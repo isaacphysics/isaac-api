@@ -21,6 +21,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 /**
+ * Event Booking object.
+ *
  * @author sac92
  *
  */
@@ -51,6 +53,8 @@ public class EventBookingDTO {
   }
 
   /**
+   * Constructor for EventBookingDTO.
+   *
    * @param bookingId
    *            - id of the booking
    * @param userBooked

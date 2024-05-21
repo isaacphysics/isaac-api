@@ -51,6 +51,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
   private final List<EmailAttachment> attachments;
 
   /**
+   * Constructor for an email message object with modified to or from details and/or attachments.
+   *
    * @param userId               (nullable) id of the user
    * @param recipientAddress     address of user
    * @param subject              subject of email
@@ -86,6 +88,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
   }
 
   /**
+   * Simple constructor for an email message object.
+   *
    * @param recipientAddress address of user
    * @param subject          subject of email
    * @param plainTextMessage message in email
@@ -108,72 +112,42 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     this.attachments = null;
   }
 
-  /**
-   * @return the userId
-   */
   public Long getUserId() {
     return userId;
   }
 
-  /**
-   * @return the plain text message
-   */
   public String getPlainTextMessage() {
     return plainTextMessage;
   }
 
-  /**
-   * @return the html message
-   */
   public String getHTMLMessage() {
     return htmlMessage;
   }
 
-  /**
-   * @return the recipientAddress
-   */
   public String getRecipientAddress() {
     return recipientAddress;
   }
 
-  /**
-   * @return the subject
-   */
   public String getSubject() {
     return subject;
   }
 
-  /**
-   * @return overrideFromAddress if set.
-   */
   public String getOverrideFromAddress() {
     return overrideFromAddress;
   }
 
-  /**
-   * @return overrideFromName if set.
-   */
   public String getOverrideFromName() {
     return overrideFromName;
   }
 
-  /**
-   * @return overrideEnvelopeFrom if set.
-   */
   public String getOverrideEnvelopeFrom() {
     return overrideEnvelopeFrom;
   }
 
-  /**
-   * @return replyToAddress if set.
-   */
   public String getReplyToAddress() {
     return replyToAddress;
   }
 
-  /**
-   * @return replyToName if set.
-   */
   public String getReplyToName() {
     return replyToName;
   }
@@ -183,16 +157,10 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     return emailType.getPriority();
   }
 
-  /**
-   * @return the type
-   */
   public EmailType getEmailType() {
     return emailType;
   }
 
-  /**
-   * @return the list of attachments
-   */
   public List<EmailAttachment> getAttachments() {
     return attachments;
   }

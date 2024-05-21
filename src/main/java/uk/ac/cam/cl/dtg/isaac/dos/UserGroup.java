@@ -195,14 +195,14 @@ public class UserGroup {
   }
 
   /**
-   * @return whether additional managers of this group have owner powers or not
+   * Get whether additional managers of this group have owner powers or not.
    */
   public boolean isAdditionalManagerPrivileges() {
     return this.additionalManagerPrivileges;
   }
 
   /**
-   * @param additionalManagerPrivileges whether additional managers of this group should have owner powers or not
+   * Set whether additional managers of this group should have owner powers or not.
    */
   public void setAdditionalManagerPrivileges(final boolean additionalManagerPrivileges) {
     this.additionalManagerPrivileges = additionalManagerPrivileges;

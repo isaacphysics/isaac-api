@@ -38,11 +38,13 @@ public class GroupMembershipDTO {
   }
 
   /**
-   * @param groupId - the group id
-   * @param userId  - the user id
-   * @param status  - the group membership status
-   * @param created - the date the membership object was created
-   * @param updated - the date the membership object was last updated
+   * Constructor for GroupMembershipDTO object to link a user to a group.
+   *
+   * @param groupId the group id
+   * @param userId  the user id
+   * @param status  the group membership status
+   * @param created the date the membership object was created
+   * @param updated the date the membership object was last updated
    */
   public GroupMembershipDTO(final Long groupId, final Long userId, final GroupMembershipStatus status,
                             final Instant created, final Instant updated) {

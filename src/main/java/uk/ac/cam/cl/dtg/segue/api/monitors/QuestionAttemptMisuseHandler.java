@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.util.LogUtils;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 public class QuestionAttemptMisuseHandler implements IMisuseHandler {
@@ -37,7 +36,9 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
 
   /**
-   * @param properties - so that we can look up properties set.
+   * Constructor for QuestionAttemptMisuseHandler.
+   *
+   * @param properties so that we can look up properties set.
    */
   @Inject
   public QuestionAttemptMisuseHandler(final PropertiesLoader properties) {

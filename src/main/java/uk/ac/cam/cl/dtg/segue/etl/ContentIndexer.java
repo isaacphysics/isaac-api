@@ -171,14 +171,14 @@ public class ContentIndexer {
    * <br>
    * Currently, it only looks for json files in the repository.
    *
-   * @param sha                - the version to index.
-   * @param includeUnpublished - boolean controlling if unpublished content should be indexed
-   * @param contentCache       - a map of keys to content objects
-   * @param tagsList           - a set of seen tags
-   * @param allUnits           - a map of units used in numeric questions
-   * @param publishedUnits     - a map of units used in published numeric questions
-   * @param indexProblemCache  - a map of problems found in the indexed content
-   * @throws ContentManagerException -  if the SHA is null or the associated resource cannot be accessed
+   * @param sha                the version to index.
+   * @param includeUnpublished boolean controlling if unpublished content should be indexed
+   * @param contentCache       a map of keys to content objects
+   * @param tagsList           a set of seen tags
+   * @param allUnits           a map of units used in numeric questions
+   * @param publishedUnits     a map of units used in published numeric questions
+   * @param indexProblemCache  a map of problems found in the indexed content
+   * @throws ContentManagerException  if the SHA is null or the associated resource cannot be accessed
    */
   private synchronized void buildGitContentIndex(final String sha,
                                                  final boolean includeUnpublished,
@@ -358,10 +358,10 @@ public class ContentIndexer {
    * This method will also attempt to reconstruct object id's of nested content such that they are unique to the page
    * by default.
    *
-   * @param content             - content to augment
-   * @param canonicalSourceFile - source file to add to child content
-   * @param parentId            - used to construct nested ids for child elements
-   * @param parentPublished     - boolean to set published state based on parent state
+   * @param content             content to augment
+   * @param canonicalSourceFile source file to add to child content
+   * @param parentId            used to construct nested ids for child elements
+   * @param parentPublished     boolean to set published state based on parent state
    * @return Content object with new reference
    */
   private Content augmentChildContent(final Content content, final String canonicalSourceFile,
@@ -514,8 +514,10 @@ public class ContentIndexer {
   }
 
   /**
-   * @param canonicalSourceFile - the canonical path to use for concat operations.
-   * @param originalSrc         - to modify
+   * Concatenate the source of a media content object with its parent source file.
+   *
+   * @param canonicalSourceFile the canonical path to use for concat operations.
+   * @param originalSrc         to modify
    * @return src with relative paths fixed.
    */
   private String fixMediaSrc(final String canonicalSourceFile, final String originalSrc) {
@@ -554,9 +556,9 @@ public class ContentIndexer {
    * Helper method to register problems with content objects.
    * - to which the problem relates
    *
-   * @param c                 - Partial content object to represent the object that has problems.
-   * @param message           - Error message to associate with the problem file / content.
-   * @param indexProblemCache - a map of problems found in the indexed content
+   * @param c                 Partial content object to represent the object that has problems.
+   * @param message           Error message to associate with the problem file / content.
+   * @param indexProblemCache a map of problems found in the indexed content
    */
   private synchronized void registerContentProblem(final Content c, final String message,
                                                    final Map<Content, List<String>> indexProblemCache) {
@@ -578,8 +580,8 @@ public class ContentIndexer {
   /**
    * Helper function to build up a set of used tags for each version.
    *
-   * @param tags     - set of tags to register.
-   * @param tagsList - a set of seen tags
+   * @param tags     set of tags to register.
+   * @param tagsList a set of seen tags
    */
   private synchronized void registerTags(final Set<String> tags, final Set<String> tagsList) {
 
@@ -601,9 +603,9 @@ public class ContentIndexer {
   /**
    * Helper function to accumulate the set of all units used in numeric question answers.
    *
-   * @param q              - numeric question from which to extract units.
-   * @param allUnits       - a map of units used in numeric questions
-   * @param publishedUnits - a map of units used in published numeric questions
+   * @param q              numeric question from which to extract units.
+   * @param allUnits       a map of units used in numeric questions
+   * @param publishedUnits a map of units used in published numeric questions
    */
   private synchronized void registerUnits(final IsaacNumericQuestion q, final Map<String, String> allUnits,
                                           final Map<String, String> publishedUnits) {
@@ -639,12 +641,12 @@ public class ContentIndexer {
   /**
    * This method will send off the information in the git cache to the search provider for indexing.
    *
-   * @param sha               - the version in the git cache to send to the search provider.
-   * @param gitCache          - a map that represents indexed content for a given sha.
-   * @param tagsList          - a set of seen tags
-   * @param allUnits          - a map of units used in numeric questions
-   * @param publishedUnits    - a map of units used in published numeric questions
-   * @param indexProblemCache - a map of problems found in the indexed content
+   * @param sha               the version in the git cache to send to the search provider.
+   * @param gitCache          a map that represents indexed content for a given sha.
+   * @param tagsList          a set of seen tags
+   * @param allUnits          a map of units used in numeric questions
+   * @param publishedUnits    a map of units used in published numeric questions
+   * @param indexProblemCache a map of problems found in the indexed content
    */
   public synchronized void buildElasticSearchIndex(final String sha,
                                                     final Map<String, Content> gitCache,

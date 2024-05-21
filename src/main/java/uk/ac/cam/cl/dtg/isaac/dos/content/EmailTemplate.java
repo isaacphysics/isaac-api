@@ -36,25 +36,8 @@ public class EmailTemplate extends Content {
   private String replyToName;
 
   /**
-   * EmailTemplate.
-   *
-   * @param _id
-   * @param id
-   * @param title
-   * @param subtitle
-   * @param type
-   * @param author
-   * @param encoding
-   * @param canonicalSourceFile
-   * @param layout
-   * @param children
-   * @param value
-   * @param attribution
-   * @param relatedContent
-   * @param published
-   * @param deprecated
-   * @param tags
-   * @param level
+   * EmailTemplate object constructor taking all parameters of the parent Content object type.
+   * Probably of limited use.
    */
   @SuppressWarnings("checkstyle:ParameterName")
   public EmailTemplate(final String _id, final String id, final String title, final String subtitle,
@@ -69,6 +52,8 @@ public class EmailTemplate extends Content {
   }
 
   /**
+   * EmailTemplate object constructor taking a string value for a basic content value.
+   *
    * @param value a string to set as the value
    */
   public EmailTemplate(final String value) {
@@ -76,7 +61,7 @@ public class EmailTemplate extends Content {
   }
 
   /**
-   *
+   * Default constructor.
    */
   public EmailTemplate() {
 
@@ -209,6 +194,8 @@ public class EmailTemplate extends Content {
   }
 
   /**
+   * Get the name of person the email is replying to.
+   *
    * @return the replyToName
    */
   public String getReplyToName() {
@@ -216,6 +203,8 @@ public class EmailTemplate extends Content {
   }
 
   /**
+   * Set the name of person the email is replying to.
+   *
    * @param replyToName the replyToName to set
    */
   public void setReplyToName(final String replyToName) {
