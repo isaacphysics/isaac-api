@@ -92,6 +92,7 @@ public interface IValidator {
    * @return the response JSON, as a HashMap
    * @throws IOException - on failure to communicate with the external validator
    */
+  @SuppressWarnings("unchecked")
   default HashMap<String, Object> getResponseFromExternalValidator(final String externalValidatorUrl,
                                                                    final Map<String, String> requestBody)
       throws IOException {
@@ -103,21 +104,17 @@ public interface IValidator {
     g.close();
     String requestString = sw.toString();
 
-    HttpResponse httpResponse;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
       HttpPost httpPost = new HttpPost(externalValidatorUrl);
 
       httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
       httpPost.addHeader("Content-Type", "application/json");
 
-      httpResponse = httpClient.execute(httpPost);
+      HttpResponse httpResponse = httpClient.execute(httpPost);
+      HttpEntity responseEntity = httpResponse.getEntity();
+      String responseString = EntityUtils.toString(responseEntity);
+      return mapper.readValue(responseString, HashMap.class);
     }
-
-    HttpEntity responseEntity = httpResponse.getEntity();
-    String responseString = EntityUtils.toString(responseEntity);
-    HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
-
-    return response;
   }
 
   /**
