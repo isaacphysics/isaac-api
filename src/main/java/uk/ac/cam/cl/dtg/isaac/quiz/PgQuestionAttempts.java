@@ -79,6 +79,12 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             final String fullQuestionId, final QuestionValidationResponse questionAttempt)
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+                pst.setLong(1, userId.hashCode());
+                pst.executeQuery();
+            }
+
             Map<String, Map<String, List<QuestionValidationResponse>>> userAttempts = this.getAnonymousQuestionAttempts(userId);
 
             if (null == userAttempts) {
@@ -101,12 +107,14 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 if (pst.executeUpdate() == 0) {
                     throw new SegueDatabaseException("Unable to save question attempt.");
                 }
+                conn.commit();
+            } catch (SQLException e) {
+                throw new SegueDatabaseException("Postgres exception", e);
+            } catch (JsonProcessingException e) {
+                throw new SegueDatabaseException("Unable to process json exception", e);
             }
-
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
-        } catch (JsonProcessingException e) {
-            throw new SegueDatabaseException("Unable to process json exception", e);
         }
     }
 
