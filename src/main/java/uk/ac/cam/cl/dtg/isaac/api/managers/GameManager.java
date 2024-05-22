@@ -842,18 +842,19 @@ public class GameManager {
      */
     public List<GameboardItem> getGameboardItemProgress(
             @NotNull final List<ContentDTO> questions,
-            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> userQuestionAttempts,
+            final Map<String, ? extends Map<String, ? extends List<QuestionValidationResponse>>> userQuestionAttempts,
             @Nullable final GameFilter gameFilter) {
 
         return questions.stream()
                 .map(q -> this.gameboardPersistenceManager.convertToGameboardItem(
                         q, new GameboardContentDescriptor(q.getId(), QUESTION_TYPE, AudienceContext.fromFilter(gameFilter))))
-                .peek(questionItem -> {
+                .map(questionItem -> {
                     try {
                         this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
                     } catch (ContentManagerException | ResourceNotFoundException e) {
                         log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
                     }
+                    return questionItem;
                 }).collect(Collectors.toList());
     }
 
@@ -1134,7 +1135,7 @@ public class GameManager {
      * @throws ResourceNotFoundException
      *             - if we cannot find the question specified.
      */
-    public void augmentGameItemWithAttemptInformation(
+    private void augmentGameItemWithAttemptInformation(
             final GameboardItem gameItem,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>>
                     questionAttemptsFromUser)
