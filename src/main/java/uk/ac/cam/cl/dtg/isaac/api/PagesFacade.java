@@ -24,6 +24,7 @@ import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
@@ -55,7 +56,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DefaultValue;
@@ -98,6 +98,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final QuestionManager questionManager;
     private final GitContentManager contentManager;
+    private final UserAttemptManager userAttemptManager;
     private final GameManager gameManager;
 
     /**
@@ -126,7 +127,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
-                       final GameManager gameManager) {
+                       final GameManager gameManager, final UserAttemptManager userAttemptManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -135,6 +136,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.uriManager = uriManager;
         this.questionManager = questionManager;
         this.gameManager = gameManager;
+        this.userAttemptManager = userAttemptManager;
     }
 
     /**
@@ -316,10 +318,16 @@ public class PagesFacade extends AbstractIsaacFacade {
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer startIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) throws SegueDatabaseException {
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
 
-        AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+        AbstractSegueUserDTO user;
+
+        try {
+            user = userManager.getCurrentUser(httpServletRequest);
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e).toResponse();
+        }
 
         if (fasttrack) {
             fieldsToMatch.put(TYPE_FIELDNAME, Set.of(FAST_TRACK_QUESTION_TYPE));
@@ -328,7 +336,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         // defaults
-        int newLimit = DEFAULT_RESULTS_LIMIT;
+        int newLimit = SEARCH_RESULTS_PER_PAGE;
         int newStartIndex = 0;
 
         // options
@@ -385,10 +393,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         int nextSearchStartIndex = newStartIndex;
         Long totalResults = 0L;
 
-        List<ContentSummaryDTO> summarizedResults = null;
-        int resultsReturnedByThisSearch = 0;
+        List<ContentSummaryDTO> summarizedResults;
 
-        for (int iterationLimit = 5; iterationLimit > 0 && combinedResults.size() < SEARCH_RESULTS_PER_PAGE && (newLimit < 0 || combinedResults.size() < newLimit) && (summarizedResults == null || resultsReturnedByThisSearch != 0); iterationLimit--) {
+        for (int iterationLimit = 5; iterationLimit > 0 && (newLimit < 0 || combinedResults.size() < newLimit); iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.searchForContent(
@@ -409,36 +416,34 @@ public class PagesFacade extends AbstractIsaacFacade {
                         showNoFilterContent
                 );
 
-                summarizedResults = this.extractContentSummaryFromList(c.getResults());
-                resultsReturnedByThisSearch = summarizedResults.size();
-                nextSearchStartIndex += resultsReturnedByThisSearch; // add the total number of returned results, including any we will filter out
+                summarizedResults = extractContentSummaryFromList(c.getResults());;
 
-                if (user instanceof RegisteredUserDTO) {
-                    RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
-                    List<String> questionPageIds = summarizedResults.stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
-
-                    Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttempts = questionManager
-                            .getMatchingLightweightQuestionAttempts(Collections.singletonList(registeredUser), questionPageIds)
-                            .getOrDefault(registeredUser.getId(), Collections.emptyMap());
-
-                    for (ContentSummaryDTO result : summarizedResults) {
-                        augmentContentSummaryWithAttemptInformation(result, questionAttempts);
-                    }
-
-                    if (hideCompleted) {
-                        summarizedResults = summarizedResults.stream()
-                                .filter(q -> q.getCorrect() == null || !q.getCorrect())
-                                .collect(Collectors.toList());
-                    }
+                if (summarizedResults.isEmpty()) {
+                    break;
                 }
 
-                combinedResults.addAll(summarizedResults.subList(0, Math.min(summarizedResults.size(), 1 + (newLimit >= 0 ? Math.min(SEARCH_RESULTS_PER_PAGE, newLimit) : SEARCH_RESULTS_PER_PAGE) - combinedResults.size())));
+                nextSearchStartIndex += summarizedResults.size(); // add the total number of returned results, including any we will filter out
+
+                if (user instanceof RegisteredUserDTO) {
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation((RegisteredUserDTO) user, summarizedResults, hideCompleted);
+                }
+
+                if (newLimit < 0 || combinedResults.size() + summarizedResults.size() <= newLimit) {
+                    combinedResults.addAll(summarizedResults);
+                } else {
+                    combinedResults.addAll(summarizedResults.subList(0, 1 + newLimit - combinedResults.size()));
+                }
                 totalResults = c.getTotalResults();
 
             } catch (ContentManagerException e1) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
                         "Error locating the content requested", e1);
                 log.error(error.getErrorMessage(), e1);
+                return error.toResponse();
+            } catch (SegueDatabaseException e2) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                        "SegueDatabaseException whilst trying to retrieve user data", e2);
+                log.error(error.getErrorMessage(), e2);
                 return error.toResponse();
             }
         }
@@ -877,78 +882,21 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @throws ContentManagerException
      *             - an exception when the content is not found
      */
-    private void augmentContentWithRelatedContent(final ContentDTO contentToAugment,
-                                                        @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
+    public void augmentContentWithRelatedContent(final ContentDTO contentToAugment,
+                                                 @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
 
         ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
         if (usersQuestionAttempts != null) {
-            this.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
+            userAttemptManager.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
         }
-    }
-
-    /**
-     * A method which augments related questions with attempt information.
-     *
-     * i.e. sets whether the related content summary has been completed.
-     *
-     * @param content the content to be augmented.
-     * @param usersQuestionAttempts the user's question attempts.
-     */
-    private void augmentRelatedQuestionsWithAttemptInformation(
-            final ContentDTO content,
-            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
-        // Check if all question parts have been answered
-        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
-        if (relatedContentSummaries != null) {
-            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
-                augmentContentSummaryWithAttemptInformation(relatedContentSummary, usersQuestionAttempts);
-            }
-        }
-        // for all children recurse
-        List<ContentBaseDTO> children = content.getChildren();
-        if (children != null) {
-            for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
-                    augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
-                }
-            }
-        }
-    }
-
-    private void augmentContentSummaryWithAttemptInformation(
-            final ContentSummaryDTO contentSummary,
-            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts
-    ) {
-        String questionId = contentSummary.getId();
-        Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
-        boolean questionAnsweredCorrectly = false;
-        if (questionAttempts != null) {
-            for (String relatedQuestionPartId : contentSummary.getQuestionPartIds()) {
-                questionAnsweredCorrectly = false;
-                List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
-                if (questionPartAttempts != null) {
-                    for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
-                        questionAnsweredCorrectly = partAttempt.isCorrect();
-                        if (questionAnsweredCorrectly) {
-                            break; // exit on first correct attempt
-                        }
-                    }
-                }
-                if (!questionAnsweredCorrectly) {
-                    break; // exit on first false question part
-                }
-            }
-        }
-        contentSummary.setCorrect(questionAnsweredCorrectly);
     }
 
     /**
      * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
      * the client instead.
-     * 
+     *
      * @param content
      *            - the content object to summarise
      * @return ContentSummaryDTO.
@@ -968,7 +916,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * Utility method to convert a list of content objects into a list of ContentSummaryDTO Objects.
-     * 
+     *
      * @param contentList
      *            - the list of content to summarise.
      * @return list of shorter ContentSummaryDTO objects.

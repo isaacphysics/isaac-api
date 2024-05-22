@@ -20,6 +20,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -152,6 +153,7 @@ public abstract class IsaacIntegrationTest {
     protected static QuestionManager questionManager;
     protected static QuizManager quizManager;
     protected static PgPasswordDataManager passwordDataManager;
+    protected static UserAttemptManager userAttemptManager;
 
     // Manager dependencies
     protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -335,6 +337,7 @@ public abstract class IsaacIntegrationTest {
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
         quizQuestionAttemptPersistenceManager = new PgQuizQuestionAttemptPersistenceManager(postgresSqlDb, contentMapper);
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
+        userAttemptManager = new UserAttemptManager(questionManager);
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
