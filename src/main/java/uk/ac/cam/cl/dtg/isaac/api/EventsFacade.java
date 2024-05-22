@@ -1493,7 +1493,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         if (filterOption.equals(EventFilterOption.FUTURE)) {
           DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(Instant.now(), null);
           filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
-          sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
         } else if (filterOption.equals(EventFilterOption.RECENT)) {
           Instant oneMonthAgo = ZonedDateTime.now().minus(1L, ChronoUnit.MONTHS).toInstant();
           DateRangeFilterInstruction eventsOverPreviousMonth =
