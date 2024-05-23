@@ -78,8 +78,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public void registerAnonymousQuestionAttempt(final String userId, final String questionPageId,
             final String fullQuestionId, final QuestionValidationResponse questionAttempt)
             throws SegueDatabaseException {
+
+        // Anonymous question attempts are stored in a JSONB object, need to atomically read-and-update this object:
         try (Connection conn = database.getDatabaseConnection()) {
-            conn.setAutoCommit(false);
+            conn.setAutoCommit(false);  // Start a transaction to hold a lock open during.
             try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
                 pst.setLong(1, userId.hashCode());
                 pst.executeQuery();
@@ -113,6 +115,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             } catch (JsonProcessingException e) {
                 throw new SegueDatabaseException("Unable to process json exception", e);
             }
+            // The JDBC driver should automatically reset conn.autoCommit to true.
+            // If an error occurs, here we are not so concerned about committing/rolling back the transaction; so long
+            // as the connection is closed, the lock is released.
+            // (Some datasources may implicitly commit uncommitted changes on close if rollback is not called!)
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
