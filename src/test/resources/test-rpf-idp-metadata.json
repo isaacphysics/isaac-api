@@ -1,6 +1,0 @@
-{
-  "issuer": "https://notreal-auth-v1.raspberrypi.org/",
-  "authorization_endpoint": "https://notreal-auth-v1.raspberrypi.org/oauth2/auth",
-  "token_endpoint": "https://notreal-auth-v1.raspberrypi.org/oauth2/token",
-  "jwks_uri": "https://notreal-auth-v1.raspberrypi.org/.well-known/jwks.json"
-}

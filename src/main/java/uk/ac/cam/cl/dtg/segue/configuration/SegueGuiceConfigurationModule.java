@@ -16,7 +16,6 @@
 
 package uk.ac.cam.cl.dtg.segue.configuration;
 
-import static java.util.Objects.requireNonNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONFIG_LOCATION_SYSTEM_PROPERTY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_LINUX_CONFIG_LOCATION;
@@ -29,11 +28,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_API_SECRET;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_EVENTS_LIST_ID;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_LEGAL_LIST_ID;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.MAILJET_NEWS_LIST_ID;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.RASPBERRYPI_CALLBACK_URI;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.RASPBERRYPI_CLIENT_ID;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.RASPBERRYPI_CLIENT_SECRET;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.RASPBERRYPI_OAUTH_SCOPES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_CONFIG_LOCATION_ENVIRONMENT_PROPERTY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_CONFIG_LOCATION_NOT_SPECIFIED_MESSAGE;
@@ -145,7 +139,6 @@ import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
-import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
@@ -400,30 +393,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
     this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
     mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
-
-    // Raspberry Pi
-    try {
-      // Ensure all the required config properties are present.
-      requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_ID));
-      requireNonNull(globalProperties.getProperty(RASPBERRYPI_CLIENT_SECRET));
-      requireNonNull(globalProperties.getProperty(RASPBERRYPI_CALLBACK_URI));
-      requireNonNull(globalProperties.getProperty(RASPBERRYPI_OAUTH_SCOPES));
-      requireNonNull(globalProperties.getProperty(RASPBERRYPI_LOCAL_IDP_METADATA_PATH));
-
-      // If so, bind them to constants.
-      this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_ID, globalProperties);
-      this.bindConstantToProperty(Constants.RASPBERRYPI_CLIENT_SECRET, globalProperties);
-      this.bindConstantToProperty(Constants.RASPBERRYPI_CALLBACK_URI, globalProperties);
-      this.bindConstantToProperty(Constants.RASPBERRYPI_OAUTH_SCOPES, globalProperties);
-      this.bindConstantToProperty(Constants.RASPBERRYPI_LOCAL_IDP_METADATA_PATH, globalProperties);
-
-      // Register the authenticator.
-      mapBinder.addBinding(AuthenticationProvider.RASPBERRYPI).to(RaspberryPiOidcAuthenticator.class);
-
-    } catch (NullPointerException e) {
-      log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
-          AuthenticationProvider.RASPBERRYPI));
-    }
 
     // Segue local
     mapBinder.addBinding(AuthenticationProvider.SEGUE).to(SegueLocalAuthenticator.class);
