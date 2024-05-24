@@ -46,6 +46,7 @@ public class IsaacEventPageDTO extends ContentDTO {
   private Instant endDate;
   private Instant bookingDeadline;
   private Instant prepWorkDeadline;
+  private Instant publicationDate;
   private Location location;
 
   private List<ExternalReference> preResources;
@@ -85,6 +86,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param endDate date the event is scheduled to end
    * @param bookingDeadline date at which bookings will no longer be accepted
    * @param prepWorkDeadline date by which preceding tasks should be completed
+   * @param publicationDate date of when the event is published on the website
    * @param location where the event will occur
    * @param preResources resources to be provided to attendees before the event
    * @param postResources resources to be provided to attendees after the event
@@ -116,6 +118,7 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("end_date") final Instant endDate,
       @JsonProperty("bookingDeadline") final Instant bookingDeadline,
       @JsonProperty("prepWorkDeadline") final Instant prepWorkDeadline,
+      @JsonProperty("publicationDate") final Instant publicationDate,
       @JsonProperty("location") final Location location,
       @JsonProperty("preResources") final List<ExternalReference> preResources,
       @JsonProperty("postResources") final List<ExternalReference> postResources,
@@ -134,6 +137,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     this.endDate = endDate;
     this.bookingDeadline = bookingDeadline;
     this.prepWorkDeadline = prepWorkDeadline;
+    this.publicationDate = publicationDate;
     this.location = location;
     this.preResources = preResources;
     this.postResources = postResources;
@@ -394,6 +398,24 @@ public class IsaacEventPageDTO extends ContentDTO {
    */
   public void setPrepWorkDeadline(final Instant prepWorkDeadline) {
     this.prepWorkDeadline = prepWorkDeadline;
+  }
+
+  /**
+   * getPublicationDate.
+   *
+   * @return publicationDate.
+   */
+  public Instant getPublicationDate() {
+    return publicationDate;
+  }
+
+  /**
+   * setPublicationDate.
+   *
+   * @param publicationDate the date of the event published.
+   */
+  public void setPublicationDate(final Instant publicationDate) {
+    this.publicationDate = publicationDate;
   }
 
   /**
