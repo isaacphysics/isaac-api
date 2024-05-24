@@ -19,7 +19,7 @@
         <jackson.version>2.17.1</jackson.version>
         <swagger.version>2.2.21</swagger.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty.version>11.0.20</jetty.version>
+        <jetty.version>11.0.21</jetty.version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>1.19.8</testcontainers.version>
