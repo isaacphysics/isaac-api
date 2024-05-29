@@ -401,24 +401,6 @@ public class IsaacEventPageDTO extends ContentDTO {
   }
 
   /**
-   * getPublicationDate.
-   *
-   * @return publicationDate.
-   */
-  public Instant getPublicationDate() {
-    return publicationDate;
-  }
-
-  /**
-   * setPublicationDate.
-   *
-   * @param publicationDate the date of the event published.
-   */
-  public void setPublicationDate(final Instant publicationDate) {
-    this.publicationDate = publicationDate;
-  }
-
-  /**
    * getPreResourceContent.
    *
    * @return the preresource content.
