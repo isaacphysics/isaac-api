@@ -1545,6 +1545,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         List<DetailedEventBookingDTO> bookingsForThisEvent = allBookings.getOrDefault(event.getId(), new ArrayList<>());
         long numberOfConfirmedBookings =
             bookingsForThisEvent.stream().filter(b -> BookingStatus.CONFIRMED.equals(b.getBookingStatus())).count();
+        long numberOfReservedBookings =
+            bookingsForThisEvent.stream().filter(b -> BookingStatus.RESERVED.equals(b.getBookingStatus())).count();
         long numberOfWaitingListBookings =
             bookingsForThisEvent.stream().filter(b -> BookingStatus.WAITING_LIST.equals(b.getBookingStatus())).count();
         long numberAttended =
@@ -1553,6 +1555,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             bookingsForThisEvent.stream().filter(b -> BookingStatus.ABSENT.equals(b.getBookingStatus())).count();
 
         eventOverviewBuilder.put("numberOfConfirmedBookings", numberOfConfirmedBookings);
+        eventOverviewBuilder.put("numberOfReservedBookings", numberOfReservedBookings);
         eventOverviewBuilder.put("numberOfWaitingListBookings", numberOfWaitingListBookings);
         eventOverviewBuilder.put("numberAttended", numberAttended);
         eventOverviewBuilder.put("numberAbsent", numberAbsent);
