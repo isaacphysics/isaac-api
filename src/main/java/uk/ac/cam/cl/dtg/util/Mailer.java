@@ -170,6 +170,7 @@ public class Mailer {
         .getAddress()); // Should only affect Message-ID, since From overridden below
     p.put("mail.smtp.port", smtpPort);
     p.put("mail.smtp.auth", "true");
+    p.put("mail.smtp.ssl.checkserveridentity", "true");
     // Create the jakarta.mail.Session object needed to send the email.
     // These are expensive to create so cache them based on the properties
     // they are configured with (using fact that hashcodes are equal only if objects equal):
