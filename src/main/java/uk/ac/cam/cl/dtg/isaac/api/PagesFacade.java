@@ -422,16 +422,22 @@ public class PagesFacade extends AbstractIsaacFacade {
                     break;
                 }
 
-                nextSearchStartIndex += summarizedResults.size(); // add the total number of returned results, including any we will filter out
-
                 if (user instanceof RegisteredUserDTO) {
-                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation((RegisteredUserDTO) user, summarizedResults, hideCompleted);
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation((RegisteredUserDTO) user, summarizedResults);
+                    if (hideCompleted) {
+                        summarizedResults = summarizedResults.stream()
+                                .filter(q -> q.getCorrect() == null || !q.getCorrect())
+                                .collect(Collectors.toList());
+                    }
                 }
 
                 if (newLimit < 0 || combinedResults.size() + summarizedResults.size() <= newLimit) {
                     combinedResults.addAll(summarizedResults);
+                    nextSearchStartIndex += summarizedResults.size();
                 } else {
-                    combinedResults.addAll(summarizedResults.subList(0, 1 + newLimit - combinedResults.size()));
+                    int remainingResults = 1 + newLimit - combinedResults.size();
+                    combinedResults.addAll(summarizedResults.subList(0, remainingResults));
+                    nextSearchStartIndex += remainingResults;
                 }
                 totalResults = c.getTotalResults();
 

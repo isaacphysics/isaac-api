@@ -85,11 +85,10 @@ public class UserAttemptManager {
      * Augment a list of content summary objects with user attempt information.
      * @param user the user to augment the content summary list for.
      * @param summarizedResults the content summary list to augment.
-     * @param hideCompleted whether to filter out completed content.
      * @return the augmented content summary list.
      * @throws SegueDatabaseException if there is an error retrieving question attempts.
      */
-    public List<ContentSummaryDTO> augmentContentSummaryListWithAttemptInformation(RegisteredUserDTO user, List<ContentSummaryDTO> summarizedResults, boolean hideCompleted) throws SegueDatabaseException {
+    public List<ContentSummaryDTO> augmentContentSummaryListWithAttemptInformation(RegisteredUserDTO user, List<ContentSummaryDTO> summarizedResults) throws SegueDatabaseException {
         List<String> questionPageIds = summarizedResults.stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
 
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttempts =
@@ -98,12 +97,6 @@ public class UserAttemptManager {
 
         for (ContentSummaryDTO result : summarizedResults) {
             augmentContentSummaryWithAttemptInformation(result, questionAttempts);
-        }
-
-        if (hideCompleted) {
-            summarizedResults = summarizedResults.stream()
-                    .filter(q -> q.getCorrect() == null || !q.getCorrect())
-                    .collect(Collectors.toList());
         }
 
         return summarizedResults;
