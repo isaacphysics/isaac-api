@@ -47,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseLockTimoutException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -342,6 +343,12 @@ public class QuestionFacade extends AbstractSegueFacade {
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (SegueDatabaseLockTimoutException e) {
+            // This error isn't great, but it's not bad enough for the full-page error:
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
+            error.setBypassGenericSiteErrorPage(true);
+            log.warn("Lock timeout attempting to save anonymous user question attempt!");
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");

@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseLockTimoutException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -82,9 +83,16 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         // Anonymous question attempts are stored in a JSONB object, need to atomically read-and-update this object:
         try (Connection conn = database.getDatabaseConnection()) {
             conn.setAutoCommit(false);  // Start a transaction to hold a lock open during.
+            // Set a timeout for the lock of 2 seconds:
+            try (Statement st = conn.createStatement()) {
+                st.execute("SET LOCAL lock_timeout = '2s';");
+            }
+            // Try to obtain the per-anon-user lock:
             try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
                 pst.setLong(1, userId.hashCode());
                 pst.executeQuery();
+            } catch (SQLException e) {
+                throw new SegueDatabaseLockTimoutException("Waited too long to record question attempt!");
             }
 
             Map<String, Map<String, List<QuestionValidationResponse>>> userAttempts = this.getAnonymousQuestionAttempts(userId);
