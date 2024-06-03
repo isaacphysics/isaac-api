@@ -17,15 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import org.eclipse.jetty.websocket.api.Callback;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.StatusCode;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketOpen;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import org.eclipse.jetty.websocket.api.exceptions.WebSocketTimeoutException;
+import org.eclipse.jetty.ee9.websocket.api.Session;
+import org.eclipse.jetty.ee9.websocket.api.StatusCode;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketError;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.ee9.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.ee9.websocket.api.exceptions.WebSocketTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlert;
@@ -120,22 +119,6 @@ public class UserAlertsWebSocket implements IAlertListener {
     this.properties = properties;
   }
 
-
-  private static Callback getGenericCallback() {
-    return new Callback() {
-      @Override
-      public void succeed() {
-        Callback.super.succeed();
-      }
-
-      @Override
-      public void fail(Throwable e) {
-        log.warn(CONNECTION_FAILED_MESSAGE, e);
-        Callback.super.fail(e);
-      }
-    };
-  }
-
   /**
    * Handles incoming messages from a connected client.
    *
@@ -145,22 +128,25 @@ public class UserAlertsWebSocket implements IAlertListener {
   @OnWebSocketMessage
   public void onText(final Session session, final String message) {
     Histogram.Timer latencyTimer = null;
+
+
     if (Protocol.ACCEPTED_MESSAGES.contains(message)) {
       latencyTimer = WEBSOCKET_LATENCY_HISTOGRAM.labels(message).startTimer();
     }
 
     try {
       if (message.equals(Protocol.HEARTBEAT)) {
-        session.sendText(objectMapper.writeValueAsString(Map.of(Protocol.HEARTBEAT, System.currentTimeMillis())),
-            getGenericCallback());
+        session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
+            Protocol.HEARTBEAT, System.currentTimeMillis()
+        )));
       } else if (message.equals(Protocol.USER_SNAPSHOT_NUDGE)) {
         sendUserSnapshotData();
       } else {
-        session.close(StatusCode.POLICY_VIOLATION, "Invalid message!", getGenericCallback());
+        session.close(StatusCode.POLICY_VIOLATION, "Invalid message!");
       }
     } catch (IOException e) {
       log.warn(CONNECTION_FAILED_MESSAGE, e);
-      session.close(StatusCode.SERVER_ERROR, "onText IOException", getGenericCallback());
+      session.close(StatusCode.SERVER_ERROR, "onText IOException");
     } finally {
       if (latencyTimer != null) {
         latencyTimer.observeDuration();
@@ -174,7 +160,7 @@ public class UserAlertsWebSocket implements IAlertListener {
    *
    * @param session - contains information about the session to be started
    */
-  @OnWebSocketOpen
+  @OnWebSocketConnect
   public void onOpen(final Session session) {
     try {
       session.setIdleTimeout(Duration.ofSeconds(USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS));
@@ -223,7 +209,7 @@ public class UserAlertsWebSocket implements IAlertListener {
         } else {
           log.debug("User {} attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.",
               connectedUserId);
-          session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER", getGenericCallback());
+          session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER");
           return;
         }
 
@@ -238,18 +224,18 @@ public class UserAlertsWebSocket implements IAlertListener {
         }
       } else {
         log.debug("WebSocket connection failed! Expired or invalid session.");
-        session.close(StatusCode.POLICY_VIOLATION, "Expired or invalid session!", getGenericCallback());
+        session.close(StatusCode.POLICY_VIOLATION, "Expired or invalid session!");
       }
 
     } catch (IOException e) {
       log.warn(CONNECTION_FAILED_MESSAGE, e);
-      session.close(StatusCode.SERVER_ERROR, "onConnect IOException", getGenericCallback());
+      session.close(StatusCode.SERVER_ERROR, "onConnect IOException");
     } catch (NoUserException e) {
       log.debug(CONNECTION_FAILED_MESSAGE, e);
-      session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName(), getGenericCallback());
+      session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName());
     } catch (SegueDatabaseException e) {
       log.warn(CONNECTION_FAILED_MESSAGE, e);
-      session.close(StatusCode.SERVER_ERROR, "onConnect Database Error", getGenericCallback());
+      session.close(StatusCode.SERVER_ERROR, "onConnect Database Error");
     }
   }
 
@@ -318,10 +304,10 @@ public class UserAlertsWebSocket implements IAlertListener {
    */
   private void sendAlert(final IUserAlert alert) {
     try {
-      this.session.sendText(objectMapper.writeValueAsString(Map.of(
+      this.session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
           Protocol.NOTIFICATIONS, List.of(alert),
           Protocol.HEARTBEAT, System.currentTimeMillis()
-      )), getGenericCallback());
+      )));
     } catch (IOException e) {
       log.error("Error sending alert", e);
     }
@@ -334,10 +320,10 @@ public class UserAlertsWebSocket implements IAlertListener {
    * @throws IOException - if the WebSocket is unexpectedly closed or in an invalid state
    */
   private void sendUserSnapshotData() throws IOException {
-    session.sendText(objectMapper.writeValueAsString(Map.of(
+    session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
         Protocol.USER_SNAPSHOT, statisticsManager.getDetailedUserStatistics(connectedUser),
         Protocol.HEARTBEAT, System.currentTimeMillis()
-    )), getGenericCallback());
+    )));
   }
 
   /**
@@ -350,9 +336,9 @@ public class UserAlertsWebSocket implements IAlertListener {
   private void sendInitialNotifications(final long userId) throws SegueDatabaseException, IOException {
     List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(userId);
     if (!persistedAlerts.isEmpty()) {
-      session.sendText(objectMapper.writeValueAsString(Map.of(
+      session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
           Protocol.NOTIFICATIONS, persistedAlerts
-      )), getGenericCallback());
+      )));
     }
   }
 }

@@ -32,7 +32,7 @@ import org.jboss.resteasy.spi.DefaultOptionsMethodException;
  * DefaultOptionsMethodException (which is more useful than a Method NotAllowedException).
  * The issue https://github.com/eclipse/jetty.project/issues/7894 provided some useful
  * context to explain this processing, but the source code in
- * {@link org.eclipse.jetty.ee10.servlets.CrossOriginFilter#doFilter} is also quite clear.
+ * {@link org.eclipse.jetty.ee9.servlets.CrossOriginFilter#doFilter} is also quite clear.
  * <br>
  * We'd like to wrap all unhandled exceptions and log them nicely, hence the handler class
  * UnhandledExceptionMapper. Unfortunately, the DefaultOptionsMethodException is just an

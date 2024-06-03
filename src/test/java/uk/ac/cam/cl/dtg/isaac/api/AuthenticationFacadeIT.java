@@ -8,7 +8,6 @@ import static org.easymock.EasyMock.newCapture;
 import static org.easymock.EasyMock.niceMock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.reset;
-import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_ATTRIBUTE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -97,7 +96,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   void loginCookieSameSite() throws Exception {
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
         ITConstants.TEST_TEACHER_PASSWORD);
-    assertEquals("Lax", teacherLogin.cookie.getAttribute(SAME_SITE_ATTRIBUTE));
+    assertEquals("__SAME_SITE_LAX__", teacherLogin.cookie.getComment());
   }
 
   // See E2E for logout test - response object is mocked in IT tests, preventing retrieval of transformed logout cookie

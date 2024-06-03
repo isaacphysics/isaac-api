@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import static java.time.ZoneOffset.UTC;
 import static java.util.Objects.requireNonNull;
-import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_ATTRIBUTE;
+
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_EXPIRES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
@@ -68,7 +68,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
-import org.eclipse.jetty.websocket.api.UpgradeRequest;
+import org.eclipse.jetty.ee9.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
@@ -112,6 +112,7 @@ import uk.ac.cam.cl.dtg.util.RequestIpExtractor;
 public class UserAuthenticationManager {
   private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
   private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
+  private static final String SAME_SITE_LAX_COMMENT = "__SAME_SITE_LAX__";
 
   private final PropertiesLoader properties;
   private final IUserDataManager database;
@@ -1187,7 +1188,7 @@ public class UserAuthenticationManager {
     authCookie.setPath("/");
     authCookie.setHttpOnly(true);
     authCookie.setSecure(setSecureCookies);
-    authCookie.setAttribute(SAME_SITE_ATTRIBUTE, "Lax");
+    authCookie.setComment(SAME_SITE_LAX_COMMENT);
     return authCookie;
   }
 
@@ -1198,7 +1199,7 @@ public class UserAuthenticationManager {
     logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
     logoutCookie.setHttpOnly(true);
     logoutCookie.setSecure(setSecureCookies);
-    logoutCookie.setAttribute(SAME_SITE_ATTRIBUTE, "Lax");
+    logoutCookie.setComment(SAME_SITE_LAX_COMMENT);
     return logoutCookie;
   }
 
@@ -1209,7 +1210,7 @@ public class UserAuthenticationManager {
         .maxAge(0)
         .httpOnly(true)
         .secure(setSecureCookies)
-        .sameSite(NewCookie.SameSite.LAX)
+        .comment(SAME_SITE_LAX_COMMENT)
         .build();
     return logoutCookie;
   }
