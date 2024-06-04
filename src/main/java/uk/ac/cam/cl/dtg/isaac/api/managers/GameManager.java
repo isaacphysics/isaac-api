@@ -842,7 +842,7 @@ public class GameManager {
      */
     public List<GameboardItem> getGameboardItemProgress(
             @NotNull final List<ContentDTO> questions,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts,
+            final Map<String, ? extends Map<String, ? extends List<QuestionValidationResponse>>> userQuestionAttempts,
             @Nullable final GameFilter gameFilter) {
 
         return questions.stream()

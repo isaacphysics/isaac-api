@@ -24,6 +24,7 @@ import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
@@ -36,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacTopicSummaryPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.SearchResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -96,6 +98,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final QuestionManager questionManager;
     private final GitContentManager contentManager;
+    private final UserAttemptManager userAttemptManager;
     private final GameManager gameManager;
 
     /**
@@ -124,7 +127,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
-                       final GameManager gameManager) {
+                       final GameManager gameManager, final UserAttemptManager userAttemptManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -133,6 +136,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.uriManager = uriManager;
         this.questionManager = questionManager;
         this.gameManager = gameManager;
+        this.userAttemptManager = userAttemptManager;
     }
 
     /**
@@ -312,21 +316,27 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
-            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+            @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-        StringBuilder etagCodeBuilder = new StringBuilder();
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
+
+        AbstractSegueUserDTO user;
+
+        try {
+            user = userManager.getCurrentUser(httpServletRequest);
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e).toResponse();
+        }
 
         if (fasttrack) {
             fieldsToMatch.put(TYPE_FIELDNAME, Set.of(FAST_TRACK_QUESTION_TYPE));
-            etagCodeBuilder.append(FAST_TRACK_QUESTION_TYPE);
         } else {
             fieldsToMatch.put(TYPE_FIELDNAME, Set.of(QUESTION_TYPE));
-            etagCodeBuilder.append(QUESTION_TYPE);
         }
 
         // defaults
-        int newLimit = DEFAULT_RESULTS_LIMIT;
+        int newLimit = SEARCH_RESULTS_PER_PAGE;
         int newStartIndex = 0;
 
         // options
@@ -342,7 +352,6 @@ public class PagesFacade extends AbstractIsaacFacade {
             Set<String> idsList = Set.of(ids.split(","));
             fieldsToMatch.put(ID_FIELDNAME, idsList);
             newLimit = idsList.size();
-            etagCodeBuilder.append(ids);
         }
 
         Map<String, String> fieldNameToValues = new HashMap<>() {
@@ -356,6 +365,10 @@ public class PagesFacade extends AbstractIsaacFacade {
                 this.put(STAGE_FIELDNAME, stages);
                 this.put(DIFFICULTY_FIELDNAME, difficulties);
                 this.put(EXAM_BOARD_FIELDNAME, examBoards);
+                this.put(HIDE_COMPLETED_FIELDNAME, hideCompleted.toString());
+                if (startIndex != null) {
+                    this.put(START_INDEX_FIELDNAME, startIndex.toString());
+                }
             }
         };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
@@ -363,19 +376,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             String queryStringValue = entry.getValue();
             if (queryStringValue != null && !queryStringValue.isEmpty()) {
                 fieldsToMatch.put(fieldName, Set.of(queryStringValue.split(",")));
-                etagCodeBuilder.append(queryStringValue);
             }
-        }
-
-        // Calculate the ETag on last modified date of tags list
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
-                + etagCodeBuilder.toString().hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(request, etag);
-
-        if (cachedResponse != null) {
-            return cachedResponse;
         }
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
@@ -388,40 +389,78 @@ public class PagesFacade extends AbstractIsaacFacade {
             showNoFilterContent = false;
         }
 
-        try {
-            ResultsWrapper<ContentDTO> c;
-            c = contentManager.searchForContent(
-                    validatedSearchString,
-                    fieldsToMatch.get(ID_FIELDNAME),
-                    fieldsToMatch.get(TAGS_FIELDNAME),
-                    fieldsToMatch.get(SUBJECTS_FIELDNAME),
-                    fieldsToMatch.get(FIELDS_FIELDNAME),
-                    fieldsToMatch.get(TOPICS_FIELDNAME),
-                    fieldsToMatch.get(BOOKS_FIELDNAME),
-                    fieldsToMatch.get(LEVEL_FIELDNAME),
-                    fieldsToMatch.get(STAGE_FIELDNAME),
-                    fieldsToMatch.get(DIFFICULTY_FIELDNAME),
-                    fieldsToMatch.get(EXAM_BOARD_FIELDNAME),
-                    fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
-                    newStartIndex,
-                    newLimit,
-                    showNoFilterContent
-            );
+        List<ContentSummaryDTO> combinedResults = new ArrayList<>();
+        int nextSearchStartIndex = newStartIndex;
+        Long totalResults = 0L;
 
-            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
-                    this.extractContentSummaryFromList(c.getResults()),
-                    c.getTotalResults());
+        List<ContentSummaryDTO> summarizedResults;
 
-            return Response.ok(summarizedContent).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                    .build();
+        for (int iterationLimit = 5; iterationLimit > 0 && (newLimit < 0 || combinedResults.size() < newLimit); iterationLimit--) {
+            try {
+                ResultsWrapper<ContentDTO> c;
+                c = contentManager.searchForContent(
+                        validatedSearchString,
+                        fieldsToMatch.get(ID_FIELDNAME),
+                        fieldsToMatch.get(TAGS_FIELDNAME),
+                        fieldsToMatch.get(SUBJECTS_FIELDNAME),
+                        fieldsToMatch.get(FIELDS_FIELDNAME),
+                        fieldsToMatch.get(TOPICS_FIELDNAME),
+                        fieldsToMatch.get(BOOKS_FIELDNAME),
+                        fieldsToMatch.get(LEVEL_FIELDNAME),
+                        fieldsToMatch.get(STAGE_FIELDNAME),
+                        fieldsToMatch.get(DIFFICULTY_FIELDNAME),
+                        fieldsToMatch.get(EXAM_BOARD_FIELDNAME),
+                        fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
+                        nextSearchStartIndex,
+                        newLimit,
+                        showNoFilterContent
+                );
 
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                    "Error locating the content requested", e1);
-            log.error(error.getErrorMessage(), e1);
-            return error.toResponse();
+                summarizedResults = extractContentSummaryFromList(c.getResults());;
+
+                if (summarizedResults.isEmpty()) {
+                    break;
+                }
+
+                if (user instanceof RegisteredUserDTO) {
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation((RegisteredUserDTO) user, summarizedResults);
+                    if (hideCompleted) {
+                        summarizedResults = summarizedResults.stream()
+                                .filter(q -> q.getCorrect() == null || !q.getCorrect())
+                                .collect(Collectors.toList());
+                    }
+                }
+
+                if (newLimit < 0 || combinedResults.size() + summarizedResults.size() <= newLimit) {
+                    combinedResults.addAll(summarizedResults);
+                    nextSearchStartIndex += summarizedResults.size();
+                } else {
+                    int remainingResults = 1 + newLimit - combinedResults.size();
+                    combinedResults.addAll(summarizedResults.subList(0, remainingResults));
+                    nextSearchStartIndex += remainingResults;
+                }
+                totalResults = c.getTotalResults();
+
+            } catch (ContentManagerException e1) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                        "Error locating the content requested", e1);
+                log.error(error.getErrorMessage(), e1);
+                return error.toResponse();
+            } catch (SegueDatabaseException e2) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                        "SegueDatabaseException whilst trying to retrieve user data", e2);
+                log.error(error.getErrorMessage(), e2);
+                return error.toResponse();
+            }
         }
+
+        ResultsWrapper<ContentSummaryDTO> wrappedResults = new SearchResultsWrapper<>(
+                combinedResults,
+                totalResults,
+                nextSearchStartIndex
+        );
+
+        return Response.ok(wrappedResults).build();
     }
 
     /**
@@ -849,71 +888,21 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @throws ContentManagerException
      *             - an exception when the content is not found
      */
-    private void augmentContentWithRelatedContent(final ContentDTO contentToAugment,
-                                                        @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
+    public void augmentContentWithRelatedContent(final ContentDTO contentToAugment,
+                                                 @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {
 
         ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
         if (usersQuestionAttempts != null) {
-            this.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
-        }
-    }
-
-    /**
-     * A method which augments related questions with attempt information.
-     *
-     * i.e. sets whether the related content summary has been completed.
-     *
-     * @param content the content to be augmented.
-     * @param usersQuestionAttempts the user's question attempts.
-     */
-    private void augmentRelatedQuestionsWithAttemptInformation(
-            final ContentDTO content,
-            final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
-        // Check if all question parts have been answered
-        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
-        if (relatedContentSummaries != null) {
-            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
-                String questionId = relatedContentSummary.getId();
-                Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
-                boolean questionAnsweredCorrectly = false;
-                if (questionAttempts != null) {
-                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
-                        questionAnsweredCorrectly = false;
-                        List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
-                        if (questionPartAttempts != null) {
-                            for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
-                                questionAnsweredCorrectly = partAttempt.isCorrect();
-                                if (questionAnsweredCorrectly) {
-                                    break; // exit on first correct attempt
-                                }
-                            }
-                        }
-                        if (!questionAnsweredCorrectly) {
-                            break; // exit on first false question part
-                        }
-                    }
-                }
-                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
-            }
-        }
-        // for all children recurse
-        List<ContentBaseDTO> children = content.getChildren();
-        if (children != null) {
-            for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
-                    augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
-                }
-            }
+            userAttemptManager.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
         }
     }
 
     /**
      * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
      * the client instead.
-     * 
+     *
      * @param content
      *            - the content object to summarise
      * @return ContentSummaryDTO.
@@ -926,13 +915,14 @@ public class PagesFacade extends AbstractIsaacFacade {
         // try auto-mapping
         ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
         contentInfo.setUrl(uriManager.generateApiUrl(content));
+        GitContentManager.populateContentSummaryValues(content, contentInfo);
 
         return contentInfo;
     }
 
     /**
      * Utility method to convert a list of content objects into a list of ContentSummaryDTO Objects.
-     * 
+     *
      * @param contentList
      *            - the list of content to summarise.
      * @return list of shorter ContentSummaryDTO objects.

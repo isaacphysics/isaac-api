@@ -634,6 +634,11 @@ public class GitContentManager {
         return contentDTO;
     }
 
+    public static ContentSummaryDTO populateContentSummaryValues(ContentDTO content, ContentSummaryDTO summary) {
+        generateDerivedSummaryValues(content, summary);
+        return summary;
+    }
+
     public String getCurrentContentSHA() {
         GetResponse shaResponse = contentShaCache.getIfPresent(contentIndex);
         try {
