@@ -8,7 +8,6 @@ import static org.easymock.EasyMock.newCapture;
 import static org.easymock.EasyMock.niceMock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.reset;
-import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_LAX_COMMENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -94,10 +93,10 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
   }
 
   @Test
-  void loginCookieSamesite() throws Exception {
+  void loginCookieSameSite() throws Exception {
     LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
         ITConstants.TEST_TEACHER_PASSWORD);
-    assertEquals(SAME_SITE_LAX_COMMENT, teacherLogin.cookie.getComment());
+    assertEquals("__SAME_SITE_LAX__", teacherLogin.cookie.getComment());
   }
 
   // See E2E for logout test - response object is mocked in IT tests, preventing retrieval of transformed logout cookie
@@ -111,17 +110,20 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       targetUser.setEmail(TEST_STUDENT_EMAIL);
       targetUser.setPassword(TEST_WRONG_PASSWORD);
 
-      Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-          AuthenticationProvider.SEGUE.toString(), targetUser);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+      try (Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+      }
 
-      Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-          AuthenticationProvider.SEGUE.toString(), targetUser);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+      try (Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+      }
 
-      Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-          AuthenticationProvider.SEGUE.toString(), targetUser);
-      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+      try (Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser)) {
+        assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+      }
     }
 
     @Test
@@ -130,19 +132,22 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       targetUser.setPassword(TEST_WRONG_PASSWORD);
 
       targetUser.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
-      Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-          AuthenticationProvider.SEGUE.toString(), targetUser);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+      try (Response firstResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), firstResetResponse.getStatus());
+      }
 
       targetUser.setEmail(TEST_UNKNOWN_USER_TWO_EMAIL);
-      Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-          AuthenticationProvider.SEGUE.toString(), targetUser);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+      try (Response secondResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), secondResetResponse.getStatus());
+      }
 
       targetUser.setEmail(TEST_UNKNOWN_USER_THREE_EMAIL);
-      Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
-          AuthenticationProvider.SEGUE.toString(), targetUser);
-      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+      try (Response thirdResetResponse = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse,
+          AuthenticationProvider.SEGUE.toString(), targetUser)) {
+        assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), thirdResetResponse.getStatus());
+      }
     }
   }
 
@@ -158,17 +163,21 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
       testLocalAuthDTO.setPassword(TEST_STUDENT_PASSWORD);
 
-      Response response =
-          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-      assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-      assertEquals(expectedUser, response.readEntity(RegisteredUserDTO.class));
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(expectedUser, response.readEntity(RegisteredUserDTO.class));
+      }
     }
 
     @Test
     void nullAuthDTO() throws InvalidKeySpecException, NoSuchAlgorithmException {
-      Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", null);
-      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          null)) {
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE,
+            response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
 
     @Test
@@ -177,11 +186,12 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
       testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
-      Response response =
-          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE,
-          response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE,
+            response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
 
     @Test
@@ -190,11 +200,12 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       testLocalAuthDTO.setEmail(TEST_UNKNOWN_USER_ONE_EMAIL);
       testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
-      Response response =
-          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE,
-          response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_INCORRECT_CREDENTIALS_MESSAGE,
+            response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
 
     @Test
@@ -203,10 +214,11 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
       testLocalAuthDTO.setEmail(TEST_ADMIN_EMAIL);
       testLocalAuthDTO.setPassword(TEST_ADMIN_PASSWORD);
 
-      Response response =
-          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_2FA_REQUIRED_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_2FA_REQUIRED_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
 
     @Test
@@ -242,10 +254,11 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
       misuseMonitor.notifyEvent(TEST_IP_ADDRESS, SegueLoginByIPMisuseHandler.class.getSimpleName());
       misuseMonitor.notifyEvent(TEST_IP_ADDRESS, SegueLoginByIPMisuseHandler.class.getSimpleName());
-      Response response =
-          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
 
     @Test
@@ -257,35 +270,37 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
 
       misuseMonitor.notifyEvent(TEST_STUDENT_EMAIL, SegueLoginByEmailMisuseHandler.class.getSimpleName());
       misuseMonitor.notifyEvent(TEST_STUDENT_EMAIL, SegueLoginByEmailMisuseHandler.class.getSimpleName());
-      Response response =
-          authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-      assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
-      assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.TOO_MANY_REQUESTS.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_RATE_THROTTLE_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
     }
 
-  }
+    @ParameterizedTest
+    @MethodSource("invalidAuthDTO")
+    void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
+        throws InvalidKeySpecException, NoSuchAlgorithmException {
+      LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
+      testLocalAuthDTO.setEmail(email);
+      testLocalAuthDTO.setPassword(password);
 
-  @ParameterizedTest
-  @MethodSource("invalidAuthDTO")
-  void authenticateWithCredentialsLocalProviderInvalidAuthDTO(final String email, final String password)
-      throws InvalidKeySpecException, NoSuchAlgorithmException {
-    LocalAuthDTO testLocalAuthDTO = new LocalAuthDTO();
-    testLocalAuthDTO.setEmail(email);
-    testLocalAuthDTO.setPassword(password);
+      try (Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE",
+          testLocalAuthDTO)) {
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE,
+            response.readEntity(SegueErrorResponse.class).getErrorMessage());
+      }
+    }
 
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "SEGUE", testLocalAuthDTO);
-    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_MISSING_CREDENTIALS_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
-  }
-
-  private static Stream<Arguments> invalidAuthDTO() {
-    return Stream.of(
-        Arguments.of(null, TEST_STUDENT_PASSWORD),
-        Arguments.of("", TEST_STUDENT_PASSWORD),
-        Arguments.of(TEST_STUDENT_EMAIL, null),
-        Arguments.of(TEST_STUDENT_EMAIL, "")
-    );
+    private static Stream<Arguments> invalidAuthDTO() {
+      return Stream.of(
+          Arguments.of(null, TEST_STUDENT_PASSWORD),
+          Arguments.of("", TEST_STUDENT_PASSWORD),
+          Arguments.of(TEST_STUDENT_EMAIL, null),
+          Arguments.of(TEST_STUDENT_EMAIL, "")
+      );
+    }
   }
 
   @Test
@@ -306,10 +321,12 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTest {
     testLocalAuthDTO.setEmail(TEST_STUDENT_EMAIL);
     testLocalAuthDTO.setPassword(TEST_WRONG_PASSWORD);
 
-    Response response =
-        authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "OtherProvider", testLocalAuthDTO);
-    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    assertEquals(LOGIN_UNKNOWN_PROVIDER_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    try (
+        Response response = authenticationFacade.authenticateWithCredentials(mockRequest, mockResponse, "OtherProvider",
+            testLocalAuthDTO)) {
+      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+      assertEquals(LOGIN_UNKNOWN_PROVIDER_MESSAGE, response.readEntity(SegueErrorResponse.class).getErrorMessage());
+    }
   }
 
   @Nested
