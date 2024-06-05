@@ -228,8 +228,6 @@ public class IsaacController extends AbstractIsaacFacade {
     /**
      * Rest end point to allow images to be requested from the database.
      *
-     * @param request
-     *            - used for intelligent cache responses.
      * @param httpServletRequest
      *            - used for the Referer header for helpful error messages.
      * @param path
@@ -241,8 +239,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("images/{path:.*}")
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get images from the content database.")
-    public final Response getImageByPath(@Context final Request request,
-                                         @Context final HttpServletRequest httpServletRequest,
+    public final Response getImageByPath(@Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
@@ -380,7 +377,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
             ByteArrayOutputStream fileContent;
             String mimeType;
-            if (Files.getFileExtension(path).toLowerCase() == "pdf") {
+            if (Files.getFileExtension(path).equalsIgnoreCase("pdf")) {
                 mimeType = "application/pdf";
             } else {
                 // if it is an unknown type return an error
