@@ -413,7 +413,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                         fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
                         nextSearchStartIndex,
                         newLimit,
-                        showNoFilterContent
+                        showNoFilterContent,
+                        false
                 );
 
                 summarizedResults = extractContentSummaryFromList(c.getResults());;

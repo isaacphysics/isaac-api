@@ -326,7 +326,7 @@ public class GitContentManager {
             @Nullable final Set<String> topics, @Nullable final Set<String> books,
             @Nullable Set<String> levels, @Nullable Set<String> stages, @Nullable Set<String> difficulties,
             @Nullable Set<String> examBoards, final Set<String> contentTypes, final Integer startIndex,
-            final Integer limit, final boolean showNoFilterContent
+            final Integer limit, final boolean showNoFilterContent, final boolean fuzzySearch
     ) throws ContentManagerException {
 
         // Create a set of search terms from the initial search string
@@ -340,6 +340,7 @@ public class GitContentManager {
             searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
         }
 
+        Strategy strategy = fuzzySearch ? Strategy.FUZZY : Strategy.SIMPLE;
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
                 searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
 
@@ -347,13 +348,20 @@ public class GitContentManager {
                 .includeContentTypes(contentTypes)
 
                 // Fuzzy search term matches
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(strategy))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(strategy))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(strategy))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(strategy))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(strategy))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(strategy))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
+                        .strategy(strategy))
 
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))

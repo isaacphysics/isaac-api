@@ -341,7 +341,10 @@ public class IsaacSearchInstructionBuilder {
                         multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
 
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term));
+                        Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST : 1L;
+                        generatedSubInstructions.add(
+                            new MatchInstruction(searchInField.getField(), term, boost, false)
+                        );
                     }
                 }
             }
