@@ -415,6 +415,9 @@ public final class Constants {
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
 
+    // LLM service properties
+    public static final String OPENAI_API_KEY = "OPENAI_API_KEY";
+
     /*
      * Default values.
      */

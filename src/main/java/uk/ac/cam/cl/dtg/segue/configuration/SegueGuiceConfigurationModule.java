@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.configuration;
 
+import com.azure.ai.openai.OpenAIClient;
+import com.azure.ai.openai.OpenAIClientBuilder;
+import com.azure.core.credential.KeyCredential;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
@@ -204,6 +207,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static ILogManager logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static MailGunEmailManager mailGunEmailManager = null;
+    private static OpenAIClient openAIClient = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
@@ -300,6 +304,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
+
+        // LLM Service
+        this.bindConstantToNullableProperty(OPENAI_API_KEY, globalProperties);
 
         // Additional countries
         this.bindConstantToNullableProperty(Constants.CUSTOM_COUNTRY_CODES, globalProperties);
@@ -463,6 +470,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             }
         }
         return metricsExporter;
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    private static OpenAIClient getOpenAIClient(@Named(OPENAI_API_KEY) final String apiKey) {
+        if (null == openAIClient) {
+            log.info("Creating OpenAIClient");
+            openAIClient = new OpenAIClientBuilder()
+                    .credential(new KeyCredential(apiKey))
+                    .buildClient();
+        }
+        return openAIClient;
     }
 
     /**
