@@ -229,7 +229,10 @@ public class GitContentManager {
 
             if (null == searchResults || searchResults.isEmpty()) {
                 if (!failQuietly) {
-                    log.error(String.format("Failed to locate content with ID '%s' in the cache for content SHA (%s)", id, getCurrentContentSHA()));
+                    log.error(String.format(
+                            "Failed to locate content with ID '%s' in the cache for content SHA (%s)",
+                            id, getCurrentContentSHA()
+                    ));
                 }
                 return null;
             }
@@ -289,7 +292,8 @@ public class GitContentManager {
                                                                             final int startIndex, final int limit)
             throws ContentManagerException {
 
-        String k = "getContentMatchingIds~" + getCurrentContentSHA() + "~" + ids.toString() + "~" + startIndex + "~" + limit;
+        String k = "getContentMatchingIds~" + getCurrentContentSHA()
+                + "~" + ids.toString() + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
 
             Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
@@ -409,7 +413,10 @@ public class GitContentManager {
         Map<String, Constants.SortOrder> sortOrder = null;
         if (searchTerms.isEmpty()) {
             sortOrder = new HashMap<>();
-            sortOrder.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
+            sortOrder.put(
+                    Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    Constants.SortOrder.ASC
+            );
         }
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
@@ -492,8 +499,8 @@ public class GitContentManager {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
-        searchHits = searchProvider.randomisedMatchSearch(contentIndex, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed,
-                this.getBaseFilters());
+        searchHits = searchProvider.randomisedMatchSearch(
+                contentIndex, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed, this.getBaseFilters());
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -543,11 +550,13 @@ public class GitContentManager {
 
     public final Collection<String> getAllUnits() {
         String unitType = Constants.CONTENT_INDEX_TYPE.UNIT.toString();
-        if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.PROD.name())) {
+        if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)
+                .equals(Constants.EnvironmentType.PROD.name())) {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
         try {
-            SearchResponse r = searchProvider.getAllFromIndex(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
+            SearchResponse r = searchProvider.getAllFromIndex(
+                    globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
             SearchHits hits = r.getHits();
             ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
             for (SearchHit hit : hits) {
@@ -731,17 +740,23 @@ public class GitContentManager {
         private final String field;
         private final Constants.BooleanOperator operator;
         private final List<String> values;
-        public BooleanSearchClause(final String field, final Constants.BooleanOperator operator, final List<String> values) {
+
+        public BooleanSearchClause(final String field,
+                                   final Constants.BooleanOperator operator,
+                                   final List<String> values) {
             this.field = field;
             this.operator = operator;
             this.values = values;
         }
+
         public String getField() {
             return this.field;
         }
+
         public Constants.BooleanOperator getOperator() {
             return this.operator;
         }
+
         public List<String> getValues() {
             return this.values;
         }

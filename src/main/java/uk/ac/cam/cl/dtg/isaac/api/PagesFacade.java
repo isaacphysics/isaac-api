@@ -24,9 +24,9 @@ import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -84,7 +84,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Pages Facade
- * 
+ *
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
@@ -103,7 +103,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
-     * 
+     *
      * @param api
      *            - Instance of ContentService
      * @param propertiesLoader
@@ -126,8 +126,9 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Inject
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
-                       final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
-                       final GameManager gameManager, final UserAttemptManager userAttemptManager) {
+                       final UserAccountManager userManager, final URIManager uriManager,
+                       final QuestionManager questionManager, final GameManager gameManager,
+                       final UserAttemptManager userAttemptManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -166,7 +167,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+        fieldsToMatch.put(TYPE_FIELDNAME, List.of(CONCEPT_TYPE));
 
         StringBuilder etagCodeBuilder = new StringBuilder();
 
@@ -174,7 +175,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         if (limit != null) {
             newLimit = limit;
-            etagCodeBuilder.append(limit.toString());
+            etagCodeBuilder.append(limit);
         }
 
         // options
@@ -237,7 +238,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         // Calculate the ETag on current live version of the content:
-        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + conceptId.hashCode()));
+        EntityTag etag = new EntityTag(
+            String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + conceptId.hashCode())
+        );
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
@@ -270,11 +273,15 @@ public class PagesFacade extends AbstractIsaacFacade {
             }
 
         } catch (SegueDatabaseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
+            SegueErrorResponse error = new SegueErrorResponse(
+                Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e
+            );
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (ContentManagerException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e);
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e
+            );
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
@@ -326,7 +333,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             user = userManager.getCurrentUser(httpServletRequest);
         } catch (SegueDatabaseException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e).toResponse();
+            return new SegueErrorResponse(
+                Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e
+            ).toResponse();
         }
 
         if (fasttrack) {
@@ -395,7 +404,9 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         List<ContentSummaryDTO> summarizedResults;
 
-        for (int iterationLimit = 5; iterationLimit > 0 && (newLimit < 0 || combinedResults.size() < newLimit); iterationLimit--) {
+        for (int iterationLimit = 5;
+             iterationLimit > 0 && (newLimit < 0 || combinedResults.size() < newLimit);
+             iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.searchForContent(
@@ -417,14 +428,16 @@ public class PagesFacade extends AbstractIsaacFacade {
                         false
                 );
 
-                summarizedResults = extractContentSummaryFromList(c.getResults());;
+                summarizedResults = extractContentSummaryFromList(c.getResults());
 
                 if (summarizedResults.isEmpty()) {
                     break;
                 }
 
                 if (user instanceof RegisteredUserDTO) {
-                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation((RegisteredUserDTO) user, summarizedResults);
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(
+                            (RegisteredUserDTO) user, summarizedResults
+                    );
                     if (hideCompleted) {
                         summarizedResults = summarizedResults.stream()
                                 .filter(q -> q.getCorrect() == null || !q.getCorrect())
@@ -481,8 +494,9 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get a question page object by ID.")
-    public final Response getQuestion(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @PathParam("question_page_id") final String questionId) {
+    public final Response getQuestion(@Context final Request request,
+                                      @Context final HttpServletRequest httpServletRequest,
+                                      @PathParam("question_page_id") final String questionId) {
 
         if (null == questionId || questionId.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid question id.").toResponse();
@@ -504,26 +518,33 @@ public class PagesFacade extends AbstractIsaacFacade {
                     // For anonymous users, we just load all their question attempts.
                     userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
 
-                    Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+                    Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+                            questionManager.getQuestionAttemptsByUser(user);
                     relatedQuestionAttempts = userQuestionAttempts;
                     questionAttempts = userQuestionAttempts;
 
                 } else {
-                    // For registered users, we can restrict our search to question attempts at this question (for which we
-                    // need full validation responses), and attempts at related questions (for which we only need lightweight
-                    // validation responses).
+                    // For registered users, we can restrict our search to question attempts at this question
+                    // (for which we need full validation responses), and attempts at related questions
+                    // (for which we only need lightweight validation responses).
                     RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
                     userIdForRandomisation = registeredUser.getId().toString();
 
                     List<String> relatedQuestionIds = new ArrayList<>(getRelatedContentIds(content));
-                    relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts(registeredUser, relatedQuestionIds);
+                    relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts(
+                            registeredUser, relatedQuestionIds
+                    );
 
                     questionAttempts = questionManager.getQuestionAttemptsByUserForQuestion(registeredUser, questionId);
                 }
 
                 // Check the cache status:
-                EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode()
-                        + questionId.hashCode() + questionAttempts.toString().hashCode() + relatedQuestionAttempts.toString().hashCode()));
+                EntityTag etag = new EntityTag(String.valueOf(
+                        this.contentManager.getCurrentContentSHA().hashCode()
+                        + questionId.hashCode()
+                        + questionAttempts.toString().hashCode()
+                        + relatedQuestionAttempts.toString().hashCode()
+                ));
                 Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
                 if (cachedResponse != null) {
                     return cachedResponse;
@@ -578,7 +599,8 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "Get a topic summary with a list of related material.")
     public final Response getTopicSummaryPage(@Context final Request request,
-                                                 @Context final HttpServletRequest httpServletRequest, @PathParam("topic_id") final String topicId) {
+                                              @Context final HttpServletRequest httpServletRequest,
+                                              @PathParam("topic_id") final String topicId) {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
@@ -597,7 +619,8 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId, true);
 
-            if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
+            if (!(contentDOById instanceof IsaacTopicSummaryPage
+                    && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate topic summary page with id: %s", summaryPageId));
             }
@@ -612,7 +635,9 @@ public class PagesFacade extends AbstractIsaacFacade {
                 relatedQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
             } else {
                 List<String> relatedQuestionIds = getRelatedContentIds(topicSummaryDTO);
-                relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) user, relatedQuestionIds);
+                relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts(
+                        (RegisteredUserDTO) user, relatedQuestionIds
+                );
             }
 
             this.augmentContentWithRelatedContent(topicSummaryDTO, relatedQuestionAttempts);
@@ -655,7 +680,9 @@ public class PagesFacade extends AbstractIsaacFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load topic summary.", e).toResponse();
+            return new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Failed to load topic summary.", e
+            ).toResponse();
         }
     }
     
@@ -683,7 +710,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         // Calculate the ETag on current live version of the content:
-        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode()));
+        EntityTag etag = new EntityTag(String.valueOf(
+                this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode()
+        ));
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -721,7 +750,9 @@ public class PagesFacade extends AbstractIsaacFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (ContentManagerException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e);
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e
+            );
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
@@ -743,11 +774,14 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get a content page fragment by ID.")
-    public final Response getPageFragment(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-            @PathParam("fragment_id") final String fragmentId) {
+    public final Response getPageFragment(@Context final Request request,
+                                          @Context final HttpServletRequest httpServletRequest,
+                                          @PathParam("fragment_id") final String fragmentId) {
 
         // Calculate the ETag on current live version of the content
-        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode()));
+        EntityTag etag = new EntityTag(String.valueOf(
+            this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode()
+        ));
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
@@ -780,7 +814,9 @@ public class PagesFacade extends AbstractIsaacFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (ContentManagerException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e);
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e
+            );
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
@@ -828,11 +864,11 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
+            fieldsToMatch.put(TYPE_FIELDNAME, List.of(POD_FRAGMENT_TYPE));
+            fieldsToMatch.put(TAGS_FIELDNAME, List.of(subject));
 
             Map<String, SortOrder> sortInstructions = new HashMap<>();
-            sortInstructions.put("id.raw", SortOrder.DESC); // Sort by ID (i.e. most recent; all pod ids should start yyyymmdd)
+            sortInstructions.put("id.raw", SortOrder.DESC); // Sort by ID (i.e. most recent; all pod ids start yyyymmdd)
             // We would ideally also sort by presence of 'featured' tag, tricky with current implementation
 
             ResultsWrapper<ContentDTO> pods = api.findMatchingContent(
@@ -862,7 +898,11 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         if (null != content.getRelatedContent()) {
             // This might include concept page IDs too.
-            relatedContent.addAll(content.getRelatedContent().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList()));
+            relatedContent.addAll(content
+                    .getRelatedContent()
+                    .stream()
+                    .map(ContentSummaryDTO::getId)
+                    .collect(Collectors.toList()));
         }
 
         List<ContentBaseDTO> children = content.getChildren();
@@ -890,8 +930,8 @@ public class PagesFacade extends AbstractIsaacFacade {
      *             - an exception when the content is not found
      */
     public void augmentContentWithRelatedContent(final ContentDTO contentToAugment,
-                                                 @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
-            throws ContentManagerException {
+            @Nullable Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts)
+        throws ContentManagerException {
 
         ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
@@ -961,11 +1001,19 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - the maximums number of results to return
      * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
      */
-    private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
-            @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap, final Integer startIndex, final Integer limit) throws ContentManagerException {
+    private Response.ResponseBuilder listContentObjects(final Map<String,
+                List<String>> fieldsToMatch,
+                @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap,
+                final Integer startIndex,
+                final Integer limit)
+            throws ContentManagerException {
         ResultsWrapper<ContentDTO> c;
 
-        c = api.findMatchingContent(ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap), startIndex, limit);
+        c = api.findMatchingContent(
+                ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap),
+                startIndex,
+                limit
+        );
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
                 this.extractContentSummaryFromList(c.getResults()),

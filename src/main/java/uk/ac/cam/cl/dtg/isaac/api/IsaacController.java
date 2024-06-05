@@ -155,7 +155,8 @@ public class IsaacController extends AbstractIsaacFacade {
             return SegueErrorResponse.getBadRequestResponse("Search string must not be blank.");
         }
         if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
-            return SegueErrorResponse.getBadRequestResponse(String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
+            return SegueErrorResponse.getBadRequestResponse(
+                    String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
         }
 
         // Calculate the ETag on current version of the content
@@ -178,7 +179,8 @@ public class IsaacController extends AbstractIsaacFacade {
             if (currentUser instanceof RegisteredUserDTO) {
                 showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
             }
-            List<String> documentTypes = !types.isEmpty() ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
+            List<String> documentTypes = !types.isEmpty()
+                    ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
             // Return an error if any of the proposed document types are invalid
             if (!SITE_WIDE_SEARCH_VALID_DOC_TYPES.containsAll(documentTypes)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
@@ -203,7 +205,8 @@ public class IsaacController extends AbstractIsaacFacade {
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                     IsaacServerLogType.GLOBAL_SITE_SEARCH, logMap);
 
-            ResultsWrapper<ContentSummaryDTO> results = this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
+            ResultsWrapper<ContentSummaryDTO> results =
+                    this.contentSummarizerService.extractContentSummaryFromResultsWrapper(searchResults);
             return Response.ok(results).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
@@ -238,7 +241,8 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("images/{path:.*}")
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get images from the content database.")
-    public final Response getImageByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+    public final Response getImageByPath(@Context final Request request,
+                                         @Context final HttpServletRequest httpServletRequest,
                                          @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
@@ -257,7 +261,9 @@ public class IsaacController extends AbstractIsaacFacade {
         // If the "early" cache check based on the path and content SHA matches, the file cannot have changed and
         // we don't need to load it to return a 304 Not Modified:
         if (null != rawETag && earlyCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[0])) {
-            return Response.notModified().cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).tag(rawETag).build();
+            return Response.notModified()
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                    .tag(rawETag).build();
         }
 
         // If the content version has changed, we do need to load the file to see if it has been modified:
@@ -290,7 +296,8 @@ public class IsaacController extends AbstractIsaacFacade {
 
             default:
                 // Unsupported filetype, don't allow this.
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file extension requested");
+                SegueErrorResponse error = new SegueErrorResponse(
+                        Status.BAD_REQUEST, "Invalid file extension requested");
                 log.debug(error.getErrorMessage());
                 return error.toResponse();
         }
@@ -298,11 +305,13 @@ public class IsaacController extends AbstractIsaacFacade {
         try {
             fileContent = this.contentManager.getFileBytes(path);
         } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading from file repository", e);
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Error reading from file repository", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (UnsupportedOperationException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the search path provided.", e);
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Multiple files match the search path provided.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
@@ -318,8 +327,11 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // If the "late" cache check based on the file contents matches, the file still has not changed:
         String lateCacheCheckTag = String.valueOf(Arrays.hashCode(fileContentBytes));
-        if (null != rawETag && rawETag.contains(ETAG_SEPARATOR) && lateCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[1])) {
-            return Response.notModified().cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).tag(rawETag).build();
+        if (null != rawETag && rawETag.contains(ETAG_SEPARATOR)
+                && lateCacheCheckTag.equals(rawETag.split(ETAG_SEPARATOR)[1])) {
+            return Response.notModified()
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                    .tag(rawETag).build();
         }
 
         // Otherwise, just return the full image to the client:
@@ -330,6 +342,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
+
     /**
      * Endpoint to allow documents to be requested from the content database.
      *
@@ -346,8 +359,9 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("documents/{path:.*}")
     @Operation(summary = "Get a binary object from the current content version.",
                   description = "This can only be used to get PDF documents from the content database.")
-    public final Response getDocumentByPath(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
-                                         @PathParam("path") final String path) {
+    public final Response getDocumentByPath(@Context final Request request,
+                                            @Context final HttpServletRequest httpServletRequest,
+                                            @PathParam("path") final String path) {
         if (null == path || Files.getFileExtension(path).isEmpty()) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file path or filename.");
             return error.toResponse();
@@ -355,7 +369,6 @@ public class IsaacController extends AbstractIsaacFacade {
 
         try {
             // All users with an Isaac account are allowed to access these resources
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
             // determine if we can use the cache if so return cached response.
             String sha = this.contentManager.getCurrentContentSHA();
@@ -367,29 +380,30 @@ public class IsaacController extends AbstractIsaacFacade {
 
             ByteArrayOutputStream fileContent;
             String mimeType;
-            switch (Files.getFileExtension(path).toLowerCase()) {
-                case "pdf":
-                    mimeType = "application/pdf";
-                    break;
-
-                default:
-                    // if it is an unknown type return an error
-                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file type requested");
-                    return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
+            if (Files.getFileExtension(path).toLowerCase() == "pdf") {
+                mimeType = "application/pdf";
+            } else {
+                // if it is an unknown type return an error
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file type requested");
+                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
             }
 
             fileContent = this.contentManager.getFileBytes(path);
             if (null == fileContent) {
                 String refererHeader = httpServletRequest.getHeader("Referer");
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
+                SegueErrorResponse error = new SegueErrorResponse(
+                        Status.NOT_FOUND, "Unable to locate the file: " + path);
                 log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
                 return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
             }
 
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(DOCUMENT_PATH_LOG_FIELDNAME, path)
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, IsaacServerLogType.DOWNLOAD_FILE, logMap);
+            getLogManager().logEvent(
+                    currentlyLoggedInUser, httpServletRequest, IsaacServerLogType.DOWNLOAD_FILE, logMap);
 
             return Response.ok(fileContent.toByteArray()).type(mimeType)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
@@ -401,7 +415,8 @@ public class IsaacController extends AbstractIsaacFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (UnsupportedOperationException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the path provided.");
+            SegueErrorResponse error = new SegueErrorResponse(
+                    Status.INTERNAL_SERVER_ERROR, "Multiple files match the path provided.");
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (NoUserLoggedInException e) {
@@ -495,13 +510,15 @@ public class IsaacController extends AbstractIsaacFacade {
             // If user is fetching their own progress, or the user is at least a teacher (tutors cannot see their
             // students progress) and has a valid connection with this user...
             if (associationManager.hasTeacherPermission(user, userOfInterestSummary)) {
-                Map<String, Object> userProgressInformation = statsManager.getUserQuestionInformation(userOfInterestFull);
+                Map<String, Object> userProgressInformation =
+                        statsManager.getUserQuestionInformation(userOfInterestFull);
 
-                // augment details with user snapshot data (perhaps one day we will replace the entire endpoint with this call)
+                // augment details with user snapshot data (perhaps one day will replace the endpoint with this call)
                 Map<String, Object> dailyStreakRecord = userStreaksManager.getCurrentStreakRecord(userOfInterestFull);
                 dailyStreakRecord.put("largestStreak", userStreaksManager.getLongestStreak(userOfInterestFull));
 
-                Map<String, Object> weeklyStreakRecord = userStreaksManager.getCurrentWeeklyStreakRecord(userOfInterestFull);
+                Map<String, Object> weeklyStreakRecord =
+                        userStreaksManager.getCurrentWeeklyStreakRecord(userOfInterestFull);
                 weeklyStreakRecord.put("largestStreak", userStreaksManager.getLongestWeeklyStreak(userOfInterestFull));
 
                 Map<String, Object> userSnapshot = ImmutableMap.of(
@@ -514,7 +531,8 @@ public class IsaacController extends AbstractIsaacFacade {
                 this.getLogManager().logEvent(user, request, IsaacServerLogType.VIEW_USER_PROGRESS,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
 
-                return Response.ok(userProgressInformation).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                return Response.ok(userProgressInformation)
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
                         .toResponse();
