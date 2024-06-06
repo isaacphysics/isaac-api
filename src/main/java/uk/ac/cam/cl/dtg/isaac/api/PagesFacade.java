@@ -338,12 +338,6 @@ public class PagesFacade extends AbstractIsaacFacade {
             ).toResponse();
         }
 
-        if (fasttrack) {
-            fieldsToMatch.put(TYPE_FIELDNAME, Set.of(FAST_TRACK_QUESTION_TYPE));
-        } else {
-            fieldsToMatch.put(TYPE_FIELDNAME, Set.of(QUESTION_TYPE));
-        }
-
         // defaults
         int newLimit = SEARCH_RESULTS_PER_PAGE;
         int newStartIndex = 0;
@@ -409,23 +403,13 @@ public class PagesFacade extends AbstractIsaacFacade {
              iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
-                c = contentManager.searchForContent(
+                c = contentManager.questionSearch(
                         validatedSearchString,
-                        fieldsToMatch.get(ID_FIELDNAME),
-                        fieldsToMatch.get(TAGS_FIELDNAME),
-                        fieldsToMatch.get(SUBJECTS_FIELDNAME),
-                        fieldsToMatch.get(FIELDS_FIELDNAME),
-                        fieldsToMatch.get(TOPICS_FIELDNAME),
-                        fieldsToMatch.get(BOOKS_FIELDNAME),
-                        fieldsToMatch.get(LEVEL_FIELDNAME),
-                        fieldsToMatch.get(STAGE_FIELDNAME),
-                        fieldsToMatch.get(DIFFICULTY_FIELDNAME),
-                        fieldsToMatch.get(EXAM_BOARD_FIELDNAME),
-                        fieldsToMatch.getOrDefault(TYPE_FIELDNAME, Set.of(QUESTION_TYPE)),
+                        fieldsToMatch,
+                        fasttrack,
                         nextSearchStartIndex,
                         newLimit,
-                        showNoFilterContent,
-                        false
+                        showNoFilterContent
                 );
 
                 summarizedResults = extractContentSummaryFromList(c.getResults());

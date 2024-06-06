@@ -186,15 +186,12 @@ public class IsaacController extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid document types.").toResponse();
             }
 
-            ResultsWrapper<ContentDTO> searchResults = this.contentManager.searchForContent(
+            ResultsWrapper<ContentDTO> searchResults = this.contentManager.siteWideSearch(
                     searchString,
-                    null, null, null, null, null,
-                    null, null, null, null, null,
                     new HashSet<>(documentTypes),
                     startIndex,
                     limit,
-                    showNoFilterContent,
-                    true
+                    showNoFilterContent
             );
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
