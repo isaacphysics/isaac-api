@@ -359,6 +359,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         Map<String, String> fieldNameToValues = new HashMap<>() {
             {
+                this.put(ID_FIELDNAME, ids);
                 this.put(TAGS_FIELDNAME, tags);
                 this.put(SUBJECTS_FIELDNAME, subjects);
                 this.put(FIELDS_FIELDNAME, fields);
@@ -368,10 +369,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                 this.put(STAGE_FIELDNAME, stages);
                 this.put(DIFFICULTY_FIELDNAME, difficulties);
                 this.put(EXAM_BOARD_FIELDNAME, examBoards);
-                this.put(HIDE_COMPLETED_FIELDNAME, hideCompleted.toString());
-                if (startIndex != null) {
-                    this.put(START_INDEX_FIELDNAME, startIndex.toString());
-                }
             }
         };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
