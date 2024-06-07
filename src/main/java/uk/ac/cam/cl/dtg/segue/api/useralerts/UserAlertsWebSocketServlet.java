@@ -10,8 +10,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
-import org.eclipse.jetty.ee9.websocket.server.JettyWebSocketServlet;
-import org.eclipse.jetty.ee9.websocket.server.JettyWebSocketServletFactory;
+import org.eclipse.jetty.websocket.server.JettyWebSocketServlet;
+import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier;
@@ -44,15 +44,17 @@ public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
       throws ServletException, IOException {
     // We have been seeing malformed WebSocket requests. Add some debug logging to these:
     if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
-      log.debug("WebSocket Upgrade request from {} has incorrect header 'Upgrade: {}', headers: {}, 'Via: {}'.",
-          getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()),
-          request.getHeader("Via"));
+      log.debug(
+          String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s, 'Via: %s'.",
+              getClientIpAddr(request), request.getHeader("Upgrade"),
+              Collections.list(request.getHeaderNames()).toString(),
+              request.getHeader("Via")));
     }
     if (null == request.getHeader("Sec-WebSocket-Key")) {
-      log.warn("WebSocket Upgrade request from {} has missing 'Sec-WebSocket-Key' header."
-              + " 'Sec-WebSocket-Extensions: {}', 'Sec-WebSocket-Version: {}', 'User-Agent: {}'",
+      log.warn(String.format("WebSocket Upgrade request from %s has missing 'Sec-WebSocket-Key' header."
+              + " 'Sec-WebSocket-Extensions: %s', 'Sec-WebSocket-Version: %s', 'User-Agent: %s'",
           getClientIpAddr(request), request.getHeader("Sec-WebSocket-Extensions"),
-          request.getHeader("Sec-WebSocket-Version"), request.getHeader("User-Agent"));
+          request.getHeader("Sec-WebSocket-Version"), request.getHeader("User-Agent")));
       response.setStatus(BAD_REQUEST);
       return;
     }
