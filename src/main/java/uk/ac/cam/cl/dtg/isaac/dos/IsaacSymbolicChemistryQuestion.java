@@ -15,10 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicChemistryQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicChemistryQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
@@ -28,4 +29,20 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @JsonContentType("isaacSymbolicChemistryQuestion")
 @ValidatesWith(IsaacSymbolicChemistryValidator.class)
 public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
+    @JsonProperty("isNuclear")
+    private boolean isNuclear;
+
+    /**
+     * @return whether the question is a nuclear question or not
+     */
+    public boolean isNuclear() {
+        return isNuclear;
+    }
+
+    /**
+     * @param nuclear set whether the question is a nuclear question or not
+     */
+    public void setNuclear(boolean nuclear) {
+        isNuclear = nuclear;
+    }
 }
