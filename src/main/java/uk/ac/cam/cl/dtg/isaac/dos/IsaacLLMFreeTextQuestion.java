@@ -2,24 +2,24 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.isaac.dos.content.LlmFreeTextMarkSchemeEntry;
-import uk.ac.cam.cl.dtg.isaac.dos.content.LlmFreeTextMarkedExample;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacLlmFreeTextQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacLLMFreeTextQuestionDTO;
 
 import java.util.List;
 
-@DTOMapping(IsaacLlmFreeTextQuestionDTO.class)
-@JsonContentType("isaacLlmFreeTextQuestion")
-public class IsaacLlmFreeTextQuestion extends Question {
+@DTOMapping(IsaacLLMFreeTextQuestionDTO.class)
+@JsonContentType("isaacLLMFreeTextQuestion")
+public class IsaacLLMFreeTextQuestion extends Question {
     private String promptInstructionOverride;
-    private List<LlmFreeTextMarkSchemeEntry> markScheme;
+    private List<LLMFreeTextMarkSchemeEntry> markScheme;
     private Integer maxMarks;
     private String additionalMarkingInstructions;
     private String markCalculationInstructions;
-    private List<LlmFreeTextMarkedExample> markedExamples;
+    private List<LLMFreeTextMarkedExample> markedExamples;
 
-    public IsaacLlmFreeTextQuestion() {
+    public IsaacLLMFreeTextQuestion() {
     }
 
     public String getPromptInstructionOverride() {
@@ -29,10 +29,10 @@ public class IsaacLlmFreeTextQuestion extends Question {
         this.promptInstructionOverride = promptInstructionOverride;
     }
 
-    public List<LlmFreeTextMarkSchemeEntry> getMarkScheme() {
+    public List<LLMFreeTextMarkSchemeEntry> getMarkScheme() {
         return markScheme;
     }
-    public void setMarkScheme(List<LlmFreeTextMarkSchemeEntry> markScheme) {
+    public void setMarkScheme(List<LLMFreeTextMarkSchemeEntry> markScheme) {
         this.markScheme = markScheme;
     }
 
@@ -57,10 +57,10 @@ public class IsaacLlmFreeTextQuestion extends Question {
         this.markCalculationInstructions = markCalculationInstructions;
     }
 
-    public List<LlmFreeTextMarkedExample> getMarkedExamples() {
+    public List<LLMFreeTextMarkedExample> getMarkedExamples() {
         return markedExamples;
     }
-    public void setMarkedExamples(List<LlmFreeTextMarkedExample> markedExamples) {
+    public void setMarkedExamples(List<LLMFreeTextMarkedExample> markedExamples) {
         this.markedExamples = markedExamples;
     }
 }
