@@ -49,6 +49,7 @@ public class IsaacSearchInstructionBuilder {
     private static final float PRIORITY_CONTENT_BOOST = 5L;
 
     private List<SearchInField> searchesInFields;
+    public static final Long NO_BOOST = 1L;
     private static final Long FIELD_BOOST = 5L;
     private static final Long FIELD_BOOST_FUZZY = 1L;
     private static final Long WILDCARD_FIELD_BOOST = 1L;
@@ -356,7 +357,8 @@ public class IsaacSearchInstructionBuilder {
                         multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
 
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
-                        Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST : 1L;
+                        Long boost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_FIELD_BOOST : NO_BOOST;
                         generatedSubInstructions.add(
                             new MatchInstruction(searchInField.getField(), term, boost, false)
                         );

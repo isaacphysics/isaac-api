@@ -363,6 +363,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
         try {
             // All users with an Isaac account are allowed to access these resources
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
             // determine if we can use the cache if so return cached response.
             String sha = this.contentManager.getCurrentContentSHA();
@@ -390,8 +391,6 @@ public class IsaacController extends AbstractIsaacFacade {
                 log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
                 return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
             }
-
-            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(DOCUMENT_PATH_LOG_FIELDNAME, path)
