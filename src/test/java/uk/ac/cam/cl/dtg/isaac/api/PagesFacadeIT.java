@@ -173,8 +173,17 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
-        List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
-        assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
+        List<String> questionIDs = responseBody.getResults()
+                .stream()
+                .map(ContentSummaryDTO::getId)
+                .collect(Collectors.toList());
+
+        assertEquals(
+                List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID,
+                        // These pages have "page" in their content thus match "Regression Test _Page_"
+                        ITConstants.EXACT_MATCH_TEST_PAGE_ID, ITConstants.FUZZY_MATCH_TEST_PAGE_ID),
+                questionIDs
+        );
     }
 
     @Test
@@ -201,5 +210,40 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
         List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
         assertEquals(List.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
+    }
+
+    /**
+     * This test searches for a page that has an exact and fuzzy match in the title.
+     *
+     * We expect to only see the exact match page.
+     */
+    @Test
+    public void getQuestionList_searchForPhrase_returnExactlyMatchesPhrase() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
+                "", "Canary", "", "", "", "", "", "", "", "", "", false, false, 0, 1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        List<String> questionIDs = responseBody.getResults()
+                .stream()
+                .map(ContentSummaryDTO::getId)
+                .collect(Collectors.toList());
+        // This should not match the Fuzzy match titled "Catenary"
+        assertEquals(List.of(ITConstants.EXACT_MATCH_TEST_PAGE_ID), questionIDs);
     }
 }
