@@ -64,6 +64,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLLMFreeTextValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
@@ -1324,6 +1325,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return new IsaacSymbolicLogicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacLLMFreeTextValidator getLLMValidator(final AbstractConfigLoader configLoader, final OpenAIClient openAIClient) {
+        return new IsaacLLMFreeTextValidator(configLoader, openAIClient);
     }
 
     /**

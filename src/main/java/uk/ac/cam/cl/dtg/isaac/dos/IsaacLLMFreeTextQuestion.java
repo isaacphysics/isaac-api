@@ -6,11 +6,14 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacLLMFreeTextQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLLMFreeTextValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 import java.util.List;
 
 @DTOMapping(IsaacLLMFreeTextQuestionDTO.class)
 @JsonContentType("isaacLLMFreeTextQuestion")
+@ValidatesWith(IsaacLLMFreeTextValidator.class)
 public class IsaacLLMFreeTextQuestion extends Question {
     private String promptInstructionOverride;
     private List<LLMFreeTextMarkSchemeEntry> markScheme;
@@ -64,3 +67,4 @@ public class IsaacLLMFreeTextQuestion extends Question {
         this.markedExamples = markedExamples;
     }
 }
+
