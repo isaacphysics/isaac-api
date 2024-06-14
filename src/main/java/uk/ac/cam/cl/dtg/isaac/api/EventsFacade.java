@@ -1390,29 +1390,67 @@ public class EventsFacade extends AbstractIsaacFacade {
    *
    * @param request  so we can determine if the user is logged in
    * @param eventId  event booking containing updates, must contain primary id.
-   * @param userId   the user to be promoted.
+   * @param userIds   the user IDs to be promoted.
    * @param attended boolean value representing whether the user was present, true, or absent, false.
    * @return the updated booking.
    */
   @POST
-  @Path("{event_id}/bookings/{user_id}/record_attendance")
+  @Path("{event_id}/bookings/record_attendance")
   @Produces(MediaType.APPLICATION_JSON)
   @GZIP
-  @Operation(summary = "Update the attendance status of a user for an event.")
+  @Operation(summary = "Update the attendance status of users for an event.")
   public final Response recordEventAttendance(@Context final HttpServletRequest request,
                                               @PathParam("event_id") final String eventId,
-                                              @PathParam("user_id") final Long userId,
+                                              final List<Long> userIds,
                                               @QueryParam("attended") final Boolean attended) {
+    List<Long> failedUserIds = new ArrayList<>();
+
+    if (userIds.isEmpty()) {
+      return new SegueErrorResponse(Status.BAD_REQUEST, "No User Ids provided").toResponse();
+    }
+
     try {
       RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
-      RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
       IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
 
       if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
         return SegueErrorResponse.getIncorrectRoleResponse();
       }
 
-      EventBookingDTO eventBookingDTO = this.bookingManager.recordAttendance(event, userOfInterest, attended);
+      for (Long userId : userIds) {
+        recordAttendanceForUser(userId, event, attended, failedUserIds, currentUser, request);
+      }
+
+      if (failedUserIds.isEmpty()) {
+        return Response.ok().build();
+      } else {
+        String errorMessage =
+            String.format("One or more bookings could not be updated: %s", failedUserIds);
+        return new SegueErrorResponse(Status.BAD_REQUEST, errorMessage).toResponse();
+      }
+
+    } catch (NoUserLoggedInException e) {
+      return SegueErrorResponse.getNotLoggedInResponse();
+    } catch (SegueDatabaseException e) {
+      String errorMsg = "Database error occurred while trying to update an event booking";
+      log.error(errorMsg, e);
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+    } catch (ContentManagerException e) {
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+          EXCEPTION_MESSAGE_CONTENT_ERROR_RETRIEVING_BOOKING)
+          .toResponse();
+    } catch (EventIsCancelledException e) {
+      return SegueErrorResponse.getBadRequestResponse("The event is cancelled: event attendance cannot be recorded.");
+    }
+  }
+
+  private void recordAttendanceForUser(Long userId, IsaacEventPageDTO event, Boolean attended,
+                                       List<Long> failedUserIds, RegisteredUserDTO currentUser,
+                                       HttpServletRequest request) throws SegueDatabaseException,
+                                        EventIsCancelledException {
+    try {
+      RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
+      this.bookingManager.recordAttendance(event, userOfInterest, attended);
       this.getLogManager().logEvent(currentUser, request,
           SegueServerLogType.ADMIN_EVENT_ATTENDANCE_RECORDED,
           Map.of(
@@ -1425,31 +1463,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
       if (event.getTags().contains("teacher")) {
         this.userBadgeManager.updateBadge(userOfInterest,
-            UserBadgeManager.Badge.TEACHER_CPD_EVENTS_ATTENDED, eventId);
+            UserBadgeManager.Badge.TEACHER_CPD_EVENTS_ATTENDED, event.getId());
       }
-
-      return Response.ok(eventBookingDTO).build();
-
-    } catch (NoUserLoggedInException e) {
-      return SegueErrorResponse.getNotLoggedInResponse();
-    } catch (SegueDatabaseException e) {
-      String errorMsg = "Database error occurred while trying to update a event booking";
-      log.error(errorMsg, e);
-      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-    } catch (ContentManagerException e) {
-      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-          EXCEPTION_MESSAGE_CONTENT_ERROR_RETRIEVING_BOOKING)
-          .toResponse();
-    } catch (EventBookingUpdateException e) {
-      return new SegueErrorResponse(Status.BAD_REQUEST,
-          "Unable to modify the booking", e)
-          .toResponse();
-    } catch (NoUserException e) {
-      return new SegueErrorResponse(Status.BAD_REQUEST,
-          "The user doesn't exist, so unable to book them onto an event", e)
-          .toResponse();
-    } catch (EventIsCancelledException e) {
-      return SegueErrorResponse.getBadRequestResponse("The event is cancelled, event attendance cannot be recorded.");
+    } catch (EventBookingUpdateException | NoUserException e) {
+      failedUserIds.add(userId);
     }
   }
 
