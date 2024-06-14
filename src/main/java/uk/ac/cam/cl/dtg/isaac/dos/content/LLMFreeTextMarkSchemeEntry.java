@@ -1,11 +1,11 @@
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-public class LlmFreeTextMarkSchemeEntry {
+public class LLMFreeTextMarkSchemeEntry {
     private String jsonField;
     private String shortDescription;
     private Integer marks;
 
-    public LlmFreeTextMarkSchemeEntry() {
+    public LLMFreeTextMarkSchemeEntry() {
     }
 
     public String getJsonField() {

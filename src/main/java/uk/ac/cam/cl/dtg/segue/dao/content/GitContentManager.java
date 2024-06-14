@@ -28,6 +28,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.h2.schema.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -229,7 +230,10 @@ public class GitContentManager {
 
             if (null == searchResults || searchResults.isEmpty()) {
                 if (!failQuietly) {
-                    log.error(String.format("Failed to locate content with ID '%s' in the cache for content SHA (%s)", id, getCurrentContentSHA()));
+                    log.error(String.format(
+                            "Failed to locate content with ID '%s' in the cache for content SHA (%s)",
+                            id, getCurrentContentSHA()
+                    ));
                 }
                 return null;
             }
@@ -289,7 +293,8 @@ public class GitContentManager {
                                                                             final int startIndex, final int limit)
             throws ContentManagerException {
 
-        String k = "getContentMatchingIds~" + getCurrentContentSHA() + "~" + ids.toString() + "~" + startIndex + "~" + limit;
+        String k = "getContentMatchingIds~" + getCurrentContentSHA()
+                + "~" + ids.toString() + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
 
             Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
@@ -319,25 +324,29 @@ public class GitContentManager {
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
-    public final ResultsWrapper<ContentDTO> searchForContent(
+    /** Search the content for specified types that match a given user provided search string from a given index.
+     * This effectively search the entire site for content that matches the provided string.
+     *
+     * @param searchString User provided search string
+     * @param contentTypes The types of content to be returned
+     * @param startIndex Index to start searching from
+     * @param limit The number of questions to match
+     * @param showNoFilterContent Whether nofilter content should be displayed
+     * @return The search hits
+     * @throws ContentManagerException The search may result in a content exception
+     */
+    public final ResultsWrapper<ContentDTO> siteWideSearch(
             @Nullable final String searchString,
-            @Nullable final Set<String> ids, @Nullable final Set<String> tags,
-            @Nullable final Set<String> subjects, @Nullable final Set<String> fields,
-            @Nullable final Set<String> topics, @Nullable final Set<String> books,
-            @Nullable Set<String> levels, @Nullable Set<String> stages, @Nullable Set<String> difficulties,
-            @Nullable Set<String> examBoards, final Set<String> contentTypes, final Integer startIndex,
+            final Set<String> contentTypes, final Integer startIndex,
             final Integer limit, final boolean showNoFilterContent
     ) throws ContentManagerException {
 
-        // Create a set of search terms from the initial search string
+        // Create a set of search terms from the initial search string by splitting on spaces.
         Set<String> searchTerms = new HashSet<>();
         if (searchString != null && !searchString.isBlank()) {
-            searchTerms.add(searchString);
             // If it is a search phrase, also try to match each word individually
-            if (searchString.contains(" ")) {
-                searchTerms.addAll(Arrays.asList(searchString.split(" ")));
-            }
             searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
+            searchTerms.add(searchString);
         }
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
@@ -347,34 +356,106 @@ public class GitContentManager {
                 .includeContentTypes(contentTypes)
 
                 // Fuzzy search term matches
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms).priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
+                        .strategy(Strategy.FUZZY))
 
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
                 .includePastEvents(false);
 
+        // If no search terms were provided, sort by ascending alphabetical order of title.
+        Map<String, Constants.SortOrder> sortOrder = null;
+        if (searchTerms.isEmpty()) {
+            sortOrder = new HashMap<>();
+            sortOrder.put(
+                    Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    Constants.SortOrder.ASC
+            );
+        }
 
-        // Additional per-field filters if specified
-        Map<String, Set<String>> filterFieldNamesToValues = new HashMap<>() {
-            {
-                this.put(ID_FIELDNAME, ids);
-                this.put(TAGS_FIELDNAME, tags);
-                this.put(SUBJECTS_FIELDNAME, subjects);
-                this.put(FIELDS_FIELDNAME, fields);
-                this.put(TOPICS_FIELDNAME, topics);
-                this.put(BOOKS_FIELDNAME, books);
-                this.put(LEVEL_FIELDNAME, levels);
-                this.put(STAGE_FIELDNAME, stages);
-                this.put(DIFFICULTY_FIELDNAME, difficulties);
-                this.put(EXAM_BOARD_FIELDNAME, examBoards);
-            }
-        };
+        ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
+                contentIndex,
+                CONTENT_TYPE,
+                startIndex,
+                limit,
+                searchInstructionBuilder.build(),
+                sortOrder
+        );
+
+        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+
+        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+    }
+
+    /** Search the content for questions (and fasttrack questions) that match a given user provided search string and
+     * filter values starting from a given index.
+     *
+     * @param searchString User provided search string
+     * @param filterFieldNamesToValues Map of filters to a set of values to match
+     * @param fasttrack Whether fasttrack questions should be searched for
+     * @param startIndex Index to start searching from
+     * @param limit The number of questions to match
+     * @param showNoFilterContent Whether nofilter content should be displayed
+     * @return The search hits
+     * @throws ContentManagerException The search may result in a content exception
+     */
+    public final ResultsWrapper<ContentDTO> questionSearch(
+            @Nullable final String searchString,
+            final Map<String, Set<String>> filterFieldNamesToValues,
+            final boolean fasttrack, final Integer startIndex,
+            final Integer limit, final boolean showNoFilterContent
+    ) throws ContentManagerException {
+
+        // Set question type (content type) based on fasttrack status
+        Set<String> contentTypes = new HashSet<>();
+        if (fasttrack) {
+            contentTypes.add(FAST_TRACK_QUESTION_TYPE);
+        } else {
+            contentTypes.add(QUESTION_TYPE);
+        }
+
+        // Create a set of search terms from the initial search string by splitting on spaces.
+        Set<String> searchTerms = new HashSet<>();
+        if (searchString != null && !searchString.isBlank()) {
+            // If it is a search phrase, also try to match each word individually
+            searchTerms = Arrays.stream(searchString.split(" ")).collect(Collectors.toSet());
+            searchTerms.add(searchString);
+        }
+
+        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
+                searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+
+                // Restrict content types
+                .includeContentTypes(contentTypes)
+
+                // Search term matches
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
+                        .strategy(Strategy.SIMPLE));
+
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
@@ -401,7 +482,10 @@ public class GitContentManager {
         Map<String, Constants.SortOrder> sortOrder = null;
         if (searchTerms.isEmpty()) {
             sortOrder = new HashMap<>();
-            sortOrder.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
+            sortOrder.put(
+                    Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    Constants.SortOrder.ASC
+            );
         }
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
@@ -484,8 +568,8 @@ public class GitContentManager {
         ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
-        searchHits = searchProvider.randomisedMatchSearch(contentIndex, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed,
-                this.getBaseFilters());
+        searchHits = searchProvider.randomisedMatchSearch(
+                contentIndex, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed, this.getBaseFilters());
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -535,11 +619,13 @@ public class GitContentManager {
 
     public final Collection<String> getAllUnits() {
         String unitType = Constants.CONTENT_INDEX_TYPE.UNIT.toString();
-        if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(Constants.EnvironmentType.PROD.name())) {
+        if (globalProperties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)
+                .equals(Constants.EnvironmentType.PROD.name())) {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
         try {
-            SearchResponse r = searchProvider.getAllFromIndex(globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
+            SearchResponse r = searchProvider.getAllFromIndex(
+                    globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
             SearchHits hits = r.getHits();
             ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
             for (SearchHit hit : hits) {
@@ -723,17 +809,23 @@ public class GitContentManager {
         private final String field;
         private final Constants.BooleanOperator operator;
         private final List<String> values;
-        public BooleanSearchClause(final String field, final Constants.BooleanOperator operator, final List<String> values) {
+
+        public BooleanSearchClause(final String field,
+                                   final Constants.BooleanOperator operator,
+                                   final List<String> values) {
             this.field = field;
             this.operator = operator;
             this.values = values;
         }
+
         public String getField() {
             return this.field;
         }
+
         public Constants.BooleanOperator getOperator() {
             return this.operator;
         }
+
         public List<String> getValues() {
             return this.values;
         }

@@ -2,12 +2,12 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import java.util.Map;
 
-public class LlmFreeTextMarkedExample {
+public class LLMFreeTextMarkedExample {
     private String answer;
     private Map<String, Integer> marks;
     private Integer marksAwarded;
 
-    public LlmFreeTextMarkedExample() {
+    public LLMFreeTextMarkedExample() {
     }
 
     public String getAnswer() {
