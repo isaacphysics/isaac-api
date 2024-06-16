@@ -10,17 +10,17 @@ import com.azure.ai.openai.models.ChatRequestUserMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.ArrayList;
@@ -53,9 +53,9 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         if (!(question instanceof IsaacLLMFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not a LLM free-text question");
         }
-        if (!(answer instanceof StringChoice)) {
+        if (!(answer instanceof LLMFreeTextChoice)) {
             throw new IllegalArgumentException(
-                    answer.getClass() + " is not of expected type StringChoice for (" + question.getId() + ")");
+                    answer.getClass() + " is not of expected type FreeTextChoice for (" + question.getId() + ")");
         }
     }
 
@@ -124,40 +124,53 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         return new ChatRequestUserMessage(answer.getValue());
     }
 
-    private Map<String, Integer> extractValidatedResponse(
+    private Map<String, Integer> extractValidatedMarks(
             final IsaacLLMFreeTextQuestion question, final ChatCompletions chatCompletions) {
         if (chatCompletions.getChoices().size() != 1) {  // TODO MT throw a more useful user exception
-            throw new IllegalStateException("Expected exactly one choice from the API, got: " + chatCompletions.getChoices().size());
+            throw new IllegalStateException("Expected exactly one choice from LLM completion provider, received: " + chatCompletions.getChoices().size());
         }
         String llmResponse = chatCompletions.getChoices().get(0).getMessage().getContent();
 
         try {
-            Map<String, Object> response = this.mapper.readValue(llmResponse, new TypeReference<HashMap<String, Object>>() {});
-            List<String> validMarkJsonFields = question.getMarkScheme().stream()
-                    .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toList());
-            validMarkJsonFields.add(MARKS_AWARDED_FIELD_NAME);
-            Map<String, Integer> validatedMarks = Maps.newHashMap();
-            for (String validMarkJsonField : validMarkJsonFields) {
-                validatedMarks.put(validMarkJsonField, (Integer) response.getOrDefault(validMarkJsonField, 0));
-            }
+            Map<String, Object> response =
+                    this.mapper.readValue(llmResponse, new TypeReference<HashMap<String, Object>>() {});
 
-            return validatedMarks;
+            List<String> validFieldNames = question.getMarkScheme().stream()
+                    .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toList());
+            validFieldNames.add(MARKS_AWARDED_FIELD_NAME);
+
+            return validFieldNames.stream().collect(Collectors.toMap(
+                    field -> field,
+                    field -> (Integer) response.getOrDefault(field, 0)
+            ));
         } catch (JsonProcessingException e) { // TODO MT throw a more useful user exception
             log.error("Failed to parse response from OpenAI API: " + llmResponse, e);
             throw new IllegalArgumentException("Failed to parse JSON response", e);
         }
     }
 
-    private Content generateFeedback(final IsaacLLMFreeTextQuestion question, final Map<String, Integer> validatedMarks) {
-        try {
-            Content feedback = new Content();
-            feedback.setValue(mapper.writeValueAsString(validatedMarks) + "\n" +
-                    "You scored " + validatedMarks.get(MARKS_AWARDED_FIELD_NAME) + " out of " + question.getMaxMarks());
-            return feedback;
-        } catch (JsonProcessingException e) { // Should not be possible in practise
-            log.error("Failed to generate feedback from validated marks - should not be possible.", e);
-            throw new IllegalArgumentException("Failed to generate feedback from validated marks", e);
-        }
+    private LLMFreeTextQuestionValidationResponse generateQuestionValidationResponse(
+            final IsaacLLMFreeTextQuestion question, final Choice answer, final Map<String, Integer> awardedMarks) {
+        int marksAwarded = awardedMarks.getOrDefault(MARKS_AWARDED_FIELD_NAME, 0);
+        boolean isConsideredCorrect = marksAwarded > 0;
+
+        // We create a fresh copy of the mark scheme with the full description and the awarded mark values.
+        List<LLMFreeTextMarkSchemeEntry> markBreakdown = question.getMarkScheme().stream().map(mark -> {
+            LLMFreeTextMarkSchemeEntry mse = new LLMFreeTextMarkSchemeEntry();
+            mse.setJsonField(mark.getJsonField());
+            mse.setShortDescription(mark.getShortDescription());
+            mse.setMarks(awardedMarks.getOrDefault(mark.getJsonField(), 0));
+            return mse;
+        }).collect(Collectors.toList());
+
+        LLMFreeTextQuestionValidationResponse validationResponse = new LLMFreeTextQuestionValidationResponse(
+                question.getId(), answer, isConsideredCorrect, null, new Date());
+        validationResponse.setMaxMarks(question.getMaxMarks());
+        validationResponse.setMarksAwarded(marksAwarded);
+        validationResponse.setMarkBreakdown(markBreakdown);
+        validationResponse.setAdditionalMarkingInstructions(question.getAdditionalMarkingInstructions());
+        validationResponse.setMarkCalculationInstructions(question.getMarkCalculationInstructions());
+        return validationResponse;
     }
 
     @Override
@@ -173,12 +186,8 @@ public class IsaacLLMFreeTextValidator implements IValidator {
                 configLoader.getProperty(LLM_MARKER_DEFAULT_MODEL_NAME),
                 new ChatCompletionsOptions(questionPrompt).setTemperature(0.0));
 
-        Map<String, Integer> validatedMarks = extractValidatedResponse(freeTextLLMQuestion, chatCompletions);
-        boolean isCorrect = validatedMarks.getOrDefault(MARKS_AWARDED_FIELD_NAME, 0) > 0;
+        Map<String, Integer> awardedMarks = extractValidatedMarks(freeTextLLMQuestion, chatCompletions);
 
-        // TODO MT return a new feedback subtype that preserves more structured information for front-end rendering
-        Content feedback = generateFeedback(freeTextLLMQuestion, validatedMarks);
-
-        return new QuestionValidationResponse(question.getId(), answer, isCorrect, feedback, new Date());
+        return generateQuestionValidationResponse(freeTextLLMQuestion, answer, awardedMarks);
     }
 }

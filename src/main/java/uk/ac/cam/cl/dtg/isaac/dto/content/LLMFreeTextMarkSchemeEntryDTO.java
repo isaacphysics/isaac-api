@@ -1,14 +1,11 @@
-package uk.ac.cam.cl.dtg.isaac.dos.content;
+package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.isaac.dto.content.LLMFreeTextMarkSchemeEntryDTO;
-
-@DTOMapping(LLMFreeTextMarkSchemeEntryDTO.class)
-public class LLMFreeTextMarkSchemeEntry {
+public class LLMFreeTextMarkSchemeEntryDTO {
     private String jsonField;
     private String shortDescription;
     private Integer marks;
 
-    public LLMFreeTextMarkSchemeEntry() {
+    public LLMFreeTextMarkSchemeEntryDTO() {
     }
 
     public String getJsonField() {
