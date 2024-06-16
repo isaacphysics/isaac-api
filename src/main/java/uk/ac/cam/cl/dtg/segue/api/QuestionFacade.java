@@ -285,6 +285,11 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
+            // Prevent users from attempting LLM marked free-text questions without being logged in.
+            if (LLM_FREE_TEXT_QUESTION_TYPE.equals(question.getType()) && currentUser instanceof AnonymousUserDTO) {
+                SegueErrorResponse.getNotLoggedInResponse();
+            }
+
             Response response = this.questionManager.validateAnswer(question, answerFromClientDTO);
 
             // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in

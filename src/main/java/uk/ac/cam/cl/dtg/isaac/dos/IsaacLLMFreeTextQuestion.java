@@ -11,8 +11,10 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 import java.util.List;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LLM_FREE_TEXT_QUESTION_TYPE;
+
 @DTOMapping(IsaacLLMFreeTextQuestionDTO.class)
-@JsonContentType("isaacLLMFreeTextQuestion")
+@JsonContentType(LLM_FREE_TEXT_QUESTION_TYPE)
 @ValidatesWith(IsaacLLMFreeTextValidator.class)
 public class IsaacLLMFreeTextQuestion extends Question {
     private String promptInstructionOverride;
