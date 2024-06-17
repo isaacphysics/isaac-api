@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +129,7 @@ public class ContactFacade extends AbstractSegueFacade {
                             .put("contactUserRole", currentUserRole)
                             .put("contactEmail", form.get("emailAddress"))
                             .put("contactSubject", form.get("subject"))
-                            .put("contactMessage", message)
+                            .put("contactMessage", StringEscapeUtils.escapeHtml4(message))
                             .put("replyToName", String.format("%s %s", form.get("firstName"), form.get("lastName")))
                             .build());
 
