@@ -24,6 +24,8 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -31,8 +33,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
@@ -43,8 +44,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -96,8 +95,9 @@ public class ContactFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Submit a contact form request.")
     public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
-        if (StringUtils.isEmpty(form.get("firstName")) || StringUtils.isEmpty(form.get("lastName")) || StringUtils.isEmpty(form.get("emailAddress"))
-                || StringUtils.isEmpty(form.get("subject")) || StringUtils.isEmpty(form.get("message"))) {
+        if (StringUtils.isEmpty(form.get("firstName")) || StringUtils.isEmpty(form.get("lastName"))
+                || StringUtils.isEmpty(form.get("emailAddress")) || StringUtils.isEmpty(form.get("subject"))
+                || StringUtils.isEmpty(form.get("message"))) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.");
             return error.toResponse();
         }
@@ -133,9 +133,14 @@ public class ContactFacade extends AbstractSegueFacade {
                             .put("replyToName", String.format("%s %s", form.get("firstName"), form.get("lastName")))
                             .build());
 
-            getLogManager().logEvent(userManager.getCurrentUser(request), request, SegueServerLogType.CONTACT_US_FORM_USED,
-                    ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
-                            form.get("emailAddress"), form.get("message"))));
+            getLogManager().logEvent(
+                    userManager.getCurrentUser(request), request, SegueServerLogType.CONTACT_US_FORM_USED,
+                    ImmutableMap.of(
+                            "message", String.format("%s %s (%s) - %s",
+                            form.get("firstName"), form.get("lastName"),
+                            form.get("emailAddress"), form.get("message"))
+                    )
+            );
 
             return Response.ok().build();
         } catch (ContentManagerException e) {
