@@ -21,10 +21,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
@@ -71,6 +73,7 @@ import java.util.Date;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
 /**
@@ -84,13 +87,36 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
+    private static final class NoUserConsentGrantedException extends Exception {
+        NoUserConsentGrantedException(final String message) {
+            super(message);
+        }
+    }
+
     private final ContentMapper mapper;
     private final GitContentManager contentManager;
     private final UserAccountManager userManager;
+    private final AbstractUserPreferenceManager userPreferenceManager;
+
     private final QuestionManager questionManager;
     private final UserAssociationManager userAssociationManager;
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
+
+    private void assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO currentUser)
+            throws SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException {
+        if (currentUser instanceof AnonymousUserDTO) {
+            throw new NoUserLoggedInException();
+        } else if (currentUser instanceof RegisteredUserDTO) {
+            RegisteredUserDTO registeredUser = ((RegisteredUserDTO) currentUser);
+            UserPreference llmProviderConsent = userPreferenceManager.getUserPreference(
+                    IsaacUserPreferences.CONSENT.toString(), LLM_PROVIDER_NAME, registeredUser.getId());
+            if (!llmProviderConsent.getPreferenceValue()) {
+                throw new NoUserConsentGrantedException(
+                        String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME));
+            }
+        }
+    }
 
     /**
      * 
@@ -102,6 +128,8 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            - The content version controller used by the api.
      * @param userManager
      *            - The manager object responsible for users.
+     * @param userPreferenceManager
+     *            - The manager object responsible for user preferences.
      * @param questionManager
      *            - A question manager object responsible for managing questions and augmenting questions with user
      *            information.
@@ -112,7 +140,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Inject
     public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
                           final GitContentManager contentManager, final UserAccountManager userManager,
-                          final QuestionManager questionManager,
+                          final AbstractUserPreferenceManager userPreferenceManager, QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final IUserStreaksManager userStreaksManager,
                           final UserAssociationManager userAssociationManager) {
@@ -122,6 +150,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.mapper = mapper;
         this.contentManager = contentManager;
         this.userManager = userManager;
+        this.userPreferenceManager = userPreferenceManager;
         this.misuseMonitor = misuseMonitor;
         this.userStreaksManager = userStreaksManager;
         this.userAssociationManager = userAssociationManager;
@@ -285,9 +314,9 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
-            // Prevent users from attempting LLM marked free-text questions without being logged in.
-            if (LLM_FREE_TEXT_QUESTION_TYPE.equals(question.getType()) && currentUser instanceof AnonymousUserDTO) {
-                SegueErrorResponse.getNotLoggedInResponse();
+            // Prevent access to LLM marked questions without signing in and consenting to terms.
+            if (LLM_FREE_TEXT_QUESTION_TYPE.equals(question.getType())) {
+                assertUserCanAnswerLLMQuestions(currentUser);
             }
 
             Response response = this.questionManager.validateAnswer(question, answerFromClientDTO);
@@ -361,6 +390,10 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserConsentGrantedException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
         }
     }
 

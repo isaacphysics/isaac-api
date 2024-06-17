@@ -420,6 +420,7 @@ public final class Constants {
     public static final String LLM_MARKER_SUBJECT = "LLM_MARKER_SUBJECT";
     public static final String LLM_MARKER_DEFAULT_MODEL_NAME = "LLM_MARKER_DEFAULT_MODEL_NAME";
     public static final String LLM_FREE_TEXT_QUESTION_TYPE = "isaacLLMFreeTextQuestion";
+    public static final String LLM_PROVIDER_NAME = "OPENAI";
 
     /*
      * Default values.
