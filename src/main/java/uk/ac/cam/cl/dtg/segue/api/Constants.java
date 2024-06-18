@@ -417,6 +417,7 @@ public final class Constants {
 
     // LLM service properties
     public static final String OPENAI_API_KEY = "OPENAI_API_KEY";
+    public static final String LLM_MARKER_FEATURE = "LLM_MARKER_FEATURE";
     public static final String LLM_MARKER_SUBJECT = "LLM_MARKER_SUBJECT";
     public static final String LLM_MARKER_DEFAULT_MODEL_NAME = "LLM_MARKER_DEFAULT_MODEL_NAME";
     public static final String LLM_FREE_TEXT_QUESTION_TYPE = "isaacLLMFreeTextQuestion";

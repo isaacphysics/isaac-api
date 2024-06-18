@@ -104,8 +104,10 @@ public class QuestionFacade extends AbstractSegueFacade {
     private IUserStreaksManager userStreaksManager;
 
     private void assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO currentUser)
-            throws SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException {
-        if (currentUser instanceof AnonymousUserDTO) {
+            throws SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException, ValidatorUnavailableException {
+        if (!"on".equals(this.getProperties().getProperty(LLM_MARKER_FEATURE))) {
+            throw new ValidatorUnavailableException("LLM marked questions are currently unavailable. Please try again later!");
+        } else if (currentUser instanceof AnonymousUserDTO) {
             throw new NoUserLoggedInException();
         } else if (currentUser instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = ((RegisteredUserDTO) currentUser);
@@ -394,6 +396,8 @@ public class QuestionFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserConsentGrantedException e) {
             return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
+        } catch (ValidatorUnavailableException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getMessage());
         }
     }
 
