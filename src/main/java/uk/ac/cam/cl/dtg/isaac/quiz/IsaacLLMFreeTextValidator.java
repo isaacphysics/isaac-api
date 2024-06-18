@@ -47,15 +47,25 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         this.mapper = new ObjectMapper();
     }
 
-    private static void validateInputs(final Question question, final Choice answer) {
+    private void validateInputs(final Question question, final Choice answer) {
+        // Validate question
         Objects.requireNonNull(question);
-        Objects.requireNonNull(answer);
         if (!(question instanceof IsaacLLMFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not a LLM free-text question");
         }
+
+        // Validate answer
+        Objects.requireNonNull(answer);
         if (!(answer instanceof LLMFreeTextChoice)) {
             throw new IllegalArgumentException(
                     answer.getClass() + " is not of expected type FreeTextChoice for (" + question.getId() + ")");
+        }
+        int maxAnswerLength = 4096;
+        try { maxAnswerLength = Integer.parseInt(configLoader.getProperty(LLM_MARKER_MAX_ANSWER_LENGTH)); }
+        catch (NumberFormatException ignored) { /* Use default value */ }
+        if (answer.getValue().length() > maxAnswerLength) {
+            log.error("Answer exceeds maximum length for LLM free-text question marking: " + answer.getValue().length());
+            throw new IllegalArgumentException("Answer is too long for LLM free-text question marking");
         }
     }
 
