@@ -85,25 +85,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PrometheusMetricsExporter;
-import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -935,6 +917,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.getSimpleName(),
                     new IPQuestionAttemptMisuseHandler(emailManager, properties));
+
+            misuseMonitor.registerHandler(LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName(),
+                    new LLMFreeTextQuestionAttemptMisuseHandler(properties));
 
             misuseMonitor.registerHandler(UserSearchMisuseHandler.class.getSimpleName(),
                     new UserSearchMisuseHandler());

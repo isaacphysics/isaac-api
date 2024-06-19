@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.LLMFreeTextQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -103,19 +104,43 @@ public class QuestionFacade extends AbstractSegueFacade {
     private IMisuseMonitor misuseMonitor;
     private IUserStreaksManager userStreaksManager;
 
-    private void assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO currentUser)
-            throws SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException, ValidatorUnavailableException {
+    private void assertUserCanAnswerLLMQuestions(
+            final AbstractSegueUserDTO currentUser, final boolean incrementMisuseCount
+    ) throws
+            SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException,
+            ValidatorUnavailableException, SegueResourceMisuseException
+    {
         if (!"on".equals(this.getProperties().getProperty(LLM_MARKER_FEATURE))) {
-            throw new ValidatorUnavailableException("LLM marked questions are currently unavailable. Please try again later!");
+            throw new ValidatorUnavailableException(
+                    "LLM marked questions are currently unavailable. Please try again later!");
         } else if (currentUser instanceof AnonymousUserDTO) {
             throw new NoUserLoggedInException();
         } else if (currentUser instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = ((RegisteredUserDTO) currentUser);
+
+            // Check for consent
             UserPreference llmProviderConsent = userPreferenceManager.getUserPreference(
                     IsaacUserPreferences.CONSENT.toString(), LLM_PROVIDER_NAME, registeredUser.getId());
             if (!llmProviderConsent.getPreferenceValue()) {
                 throw new NoUserConsentGrantedException(
                         String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME));
+            }
+
+            // Check misuse handler
+            String userId = registeredUser.getId().toString();
+            String llmFreeTextMisuseEventName = LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName();
+            try {
+                if (incrementMisuseCount) {
+                    misuseMonitor.notifyEvent(userId, llmFreeTextMisuseEventName);
+                } else if (misuseMonitor.hasMisused(userId, llmFreeTextMisuseEventName)) {
+                    throw new SegueResourceMisuseException("");
+                }
+            } catch (SegueResourceMisuseException e) {
+                if (incrementMisuseCount) {
+                    log.warn("User " + registeredUser.getId() + " has reached the LLM question attempt limit.");
+                }
+                throw new SegueResourceMisuseException(
+                        "You have made too many attempts at this question part. Please try again later.");
             }
         }
     }
@@ -316,9 +341,9 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
-            // Prevent access to LLM marked questions without signing in and consenting to terms.
+            // Prevent access to LLM marked questions without signing in, consenting to terms and checking misuse.
             if (LLM_FREE_TEXT_QUESTION_TYPE.equals(question.getType())) {
-                assertUserCanAnswerLLMQuestions(currentUser);
+                assertUserCanAnswerLLMQuestions(currentUser, true);
             }
 
             Response response = this.questionManager.validateAnswer(question, answerFromClientDTO);
@@ -398,6 +423,8 @@ public class QuestionFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
         } catch (ValidatorUnavailableException e) {
             return SegueErrorResponse.getServiceUnavailableResponse(e.getMessage());
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse.getRateThrottledResponse(e.getMessage());
         }
     }
 

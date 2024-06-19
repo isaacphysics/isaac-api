@@ -423,6 +423,8 @@ public final class Constants {
     public static final String LLM_MARKER_MAX_ANSWER_LENGTH = "LLM_MARKER_MAX_ANSWER_LENGTH";
     public static final String LLM_FREE_TEXT_QUESTION_TYPE = "isaacLLMFreeTextQuestion";
     public static final String LLM_PROVIDER_NAME = "OPENAI";
+    public static final String LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE = "LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE";
+
 
     /*
      * Default values.
