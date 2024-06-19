@@ -421,6 +421,12 @@ public class ContentIndexer {
                     this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
+            if (inlineRegion.getHints() != null) {
+                for (ContentBase cb : inlineRegion.getHints()) {
+                    Content c = (Content) cb;
+                    this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
+                }
+            }
         }
 
         if (content instanceof Question) {
