@@ -119,7 +119,8 @@ public class ContactFacade extends AbstractSegueFacade {
                 currentUserRole = "N/A";
             }
 
-            String message = form.get("message").replace("\n", "\n<br>");
+            String plainTextMessage = form.get("message");
+            String htmlMessage = StringEscapeUtils.escapeHtml4(plainTextMessage).replace("\n", "\n<br>");
 
             emailManager.sendContactUsFormEmail(this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
                     new ImmutableMap.Builder<String, Object>()
@@ -129,7 +130,8 @@ public class ContactFacade extends AbstractSegueFacade {
                             .put("contactUserRole", currentUserRole)
                             .put("contactEmail", form.get("emailAddress"))
                             .put("contactSubject", form.get("subject"))
-                            .put("contactMessage", StringEscapeUtils.escapeHtml4(message))
+                            .put("contactMessage", plainTextMessage)
+                            .put("contactMessage_HTML", htmlMessage)
                             .put("replyToName", String.format("%s %s", form.get("firstName"), form.get("lastName")))
                             .build());
 
