@@ -436,14 +436,14 @@ public class GameManager {
                 resultToReturn.add(gameboard);
             } else if (!gameboard.isStartedQuestion() && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
                 resultToReturn.add(gameboard);
-            } else if (gameboard.getPercentageCompleted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
+            } else if (gameboard.getPercentageAttempted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
                 resultToReturn.add(gameboard);
             }
 
             // counts
             if (!gameboard.isStartedQuestion()) {
                 totalNotStarted++;
-            } else if (gameboard.getPercentageCompleted() == 100) {
+            } else if (gameboard.getPercentageAttempted() == 100) {
                 totalCompleted++;
             } else if (gameboard.isStartedQuestion()) {
                 totalInProgress++;
@@ -501,16 +501,16 @@ public class GameManager {
                         break;
                     case COMPLETION_FIELDNAME:
                         comparatorForSorting.addComparator((o1, o2) -> {
-                            if (o1.getPercentageCompleted() == null && o2.getPercentageCompleted() == null) {
+                            if (o1.getPercentageAttempted() == null && o2.getPercentageAttempted() == null) {
                                 return 0;
                             }
-                            if (o1.getPercentageCompleted() == null) {
+                            if (o1.getPercentageAttempted() == null) {
                                 return 1;
                             }
-                            if (o2.getPercentageCompleted() == null) {
+                            if (o2.getPercentageAttempted() == null) {
                                 return -1;
                             }
-                            return o1.getPercentageCompleted().compareTo(o2.getPercentageCompleted());
+                            return o1.getPercentageAttempted().compareTo(o2.getPercentageAttempted());
                         }, reverseOrder);
                         break;
                     default:
@@ -800,13 +800,14 @@ public class GameManager {
             return null;
         }
 
-        if (null == questionAttemptsFromUser || gameboardDTO.getContents().size() == 0) {
+        if (null == questionAttemptsFromUser || gameboardDTO.getContents().isEmpty()) {
             return gameboardDTO;
         }
 
         boolean gameboardStarted = false;
         List<GameboardItem> questions = gameboardDTO.getContents();
         int totalNumberOfQuestionsParts = 0;
+        int totalNumberOfAttemptedQuestionParts = 0;
         int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
             try {
@@ -824,10 +825,11 @@ public class GameManager {
             }
             totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
             totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
+            totalNumberOfAttemptedQuestionParts += gameItem.getQuestionPartsCorrect() + gameItem.getQuestionPartsIncorrect();
         }
 
-        float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
-        gameboardDTO.setPercentageCompleted(Math.round(boardPercentage));
+        gameboardDTO.setPercentageAttempted(Math.round(100f * totalNumberOfAttemptedQuestionParts / totalNumberOfQuestionsParts));
+        gameboardDTO.setPercentageCorrect(Math.round(100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts));
 
         return gameboardDTO;
     }

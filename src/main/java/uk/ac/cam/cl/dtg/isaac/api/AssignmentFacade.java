@@ -213,10 +213,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     }
 
                     if (assignmentStatus.equals(GameboardState.COMPLETED)
-                            && assignment.getGameboard().getPercentageCompleted() == 100) {
+                            && assignment.getGameboard().getPercentageAttempted() == 100) {
                         newList.add(assignment);
                     } else if (!assignmentStatus.equals(GameboardState.COMPLETED)
-                            && assignment.getGameboard().getPercentageCompleted() != 100) {
+                            && assignment.getGameboard().getPercentageAttempted() != 100) {
                         newList.add(assignment);
                     }
                 }
@@ -325,7 +325,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     g.setWildCardPosition(null);
                     g.setGameFilter(null);
                     g.setLastVisited(null);
-                    g.setPercentageCompleted(null);
+                    g.setPercentageAttempted(null);
+                    g.setPercentageCorrect(null);
                     g.setCreationMethod(null);
                     g.setCreationDate(null);
                 });
