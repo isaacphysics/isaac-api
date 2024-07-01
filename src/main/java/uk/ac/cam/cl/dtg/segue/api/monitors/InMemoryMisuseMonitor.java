@@ -164,6 +164,24 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         existingHistory.remove(eventLabel);
     }
 
+    public int getRemainingUses(String agentIdentifier, String eventToCheck) {
+        Map<String, Entry<Date, Integer>> agentUsage = nonPersistentDatabase.getIfPresent(agentIdentifier);
+        IMisuseHandler misuseHandler = handlerMap.get(eventToCheck);
+        int maxUsesInInterval = misuseHandler.getHardThreshold();
+
+        if (agentUsage == null || agentUsage.get(eventToCheck) == null) {
+            return maxUsesInInterval;
+        }
+
+        Entry<Date, Integer> entry = agentUsage.get(eventToCheck);
+
+        if (isCountStillFresh(entry.getKey(), misuseHandler.getAccountingIntervalInSeconds())) {
+            return maxUsesInInterval - entry.getValue();
+        } else {
+            return maxUsesInInterval;
+        }
+    }
+
     @Override
     public Map<String, List<MisuseStatisticDTO>> getMisuseStatistics(final long n) {
         Map<String, Map<String, Entry<Date, Integer>>> cache = nonPersistentDatabase.asMap();
