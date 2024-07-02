@@ -415,6 +415,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                     break;
                 }
 
+                List<ContentSummaryDTO> unfilteredSummarizedResults = new ArrayList<>(summarizedResults);
+
                 if (user instanceof RegisteredUserDTO) {
                     summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(
                             (RegisteredUserDTO) user, summarizedResults
@@ -428,11 +430,12 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 if (newLimit < 0 || combinedResults.size() + summarizedResults.size() <= newLimit) {
                     combinedResults.addAll(summarizedResults);
-                    nextSearchStartIndex += summarizedResults.size();
+                    nextSearchStartIndex += unfilteredSummarizedResults.size();
                 } else {
                     int remainingResults = 1 + newLimit - combinedResults.size();
                     combinedResults.addAll(summarizedResults.subList(0, remainingResults));
-                    nextSearchStartIndex += remainingResults;
+                    // we want to skip to the index of the last result added, *including the indices of the filtered results*
+                    nextSearchStartIndex += unfilteredSummarizedResults.indexOf(combinedResults.get(combinedResults.size() - 1));
                 }
                 totalResults = c.getTotalResults();
 
