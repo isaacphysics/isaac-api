@@ -303,9 +303,9 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            questions returned.
      * @param fasttrack
      *            - a flag to indicate whether to search isaacFasttrackQuestions or not.
-     * @param startIndex
+     * @param paramStartIndex
      *            - a string value to be converted into an integer which represents the start index of the results
-     * @param limit
+     * @param paramLimit
      *            - a string value to be converted into an integer that represents the number of results to return.
      * @return A response object which contains a list of questions or an empty list.
      */
@@ -324,8 +324,8 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
-            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer startIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
 
         AbstractSegueUserDTO user;
@@ -339,22 +339,22 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         // defaults
-        int newLimit = SEARCH_RESULTS_PER_PAGE;
-        int newStartIndex = 0;
+        int limit = SEARCH_RESULTS_PER_PAGE;
+        int startIndex = 0;
 
         // options
-        if (limit != null) {
-            newLimit = limit;
+        if (paramLimit != null) {
+            limit = paramLimit;
         }
 
-        if (startIndex != null) {
-            newStartIndex = startIndex;
+        if (paramStartIndex != null) {
+            startIndex = paramStartIndex;
         }
 
         if (ids != null && !ids.isEmpty()) {
             Set<String> idsList = Set.of(ids.split(","));
             fieldsToMatch.put(ID_FIELDNAME, idsList);
-            newLimit = idsList.size();
+            limit = idsList.size();
         }
 
         Map<String, String> fieldNameToValues = new HashMap<>() {
@@ -390,13 +390,13 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         List<ContentSummaryDTO> combinedResults = new ArrayList<>();
-        int nextSearchStartIndex = newStartIndex;
+        int nextSearchStartIndex = startIndex;
         Long totalResults = 0L;
 
         List<ContentSummaryDTO> summarizedResults;
 
         for (int iterationLimit = 5;
-             iterationLimit > 0 && (newLimit < 0 || combinedResults.size() < newLimit);
+             iterationLimit > 0 && (limit < 0 || combinedResults.size() < limit);
              iterationLimit--) {
             try {
                 ResultsWrapper<ContentDTO> c;
@@ -405,7 +405,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                         fieldsToMatch,
                         fasttrack,
                         nextSearchStartIndex,
-                        newLimit,
+                        limit,
                         showNoFilterContent
                 );
 
@@ -428,11 +428,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                     }
                 }
 
-                if (newLimit < 0 || combinedResults.size() + summarizedResults.size() <= newLimit) {
+                if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {
                     combinedResults.addAll(summarizedResults);
                     nextSearchStartIndex += unfilteredSummarizedResults.size();
                 } else {
-                    int remainingResults = newLimit - combinedResults.size();
+                    int remainingResults = limit - combinedResults.size();
                     combinedResults.addAll(summarizedResults.subList(0, remainingResults));
                     // we want to skip to the index of the last result added, *including the indices of the filtered results*.
                     // Because indices start at 0, cannot just add indices; we must add one to get the *number* of items to skip
