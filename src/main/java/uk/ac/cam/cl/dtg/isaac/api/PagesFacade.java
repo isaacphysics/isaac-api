@@ -432,10 +432,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                     combinedResults.addAll(summarizedResults);
                     nextSearchStartIndex += unfilteredSummarizedResults.size();
                 } else {
-                    int remainingResults = 1 + newLimit - combinedResults.size();
+                    int remainingResults = newLimit - combinedResults.size();
                     combinedResults.addAll(summarizedResults.subList(0, remainingResults));
-                    // we want to skip to the index of the last result added, *including the indices of the filtered results*
-                    nextSearchStartIndex += unfilteredSummarizedResults.indexOf(combinedResults.get(combinedResults.size() - 1));
+                    // we want to skip to the index of the last result added, *including the indices of the filtered results*.
+                    // Because indices start at 0, cannot just add indices; we must add one to get the *number* of items to skip
+                    nextSearchStartIndex += unfilteredSummarizedResults.indexOf(combinedResults.get(combinedResults.size() - 1)) + 1;
                 }
                 totalResults = c.getTotalResults();
 
