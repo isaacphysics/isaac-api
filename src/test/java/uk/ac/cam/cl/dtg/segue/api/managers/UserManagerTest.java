@@ -724,8 +724,8 @@ class UserManagerTest {
         Arguments.of(null, false),
         Arguments.of("", false),
         Arguments.of("Matthew*", false),
-        Arguments.of(StringUtils.repeat("a", 256), false),
-        Arguments.of(StringUtils.repeat("a", 255), true)
+        Arguments.of(StringUtils.repeat("a", 51), false),
+        Arguments.of(StringUtils.repeat("a", 50), true)
     );
   }
 }
