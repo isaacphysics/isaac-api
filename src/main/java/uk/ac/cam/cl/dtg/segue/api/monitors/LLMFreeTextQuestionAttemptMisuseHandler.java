@@ -17,8 +17,13 @@ public class LLMFreeTextQuestionAttemptMisuseHandler implements IMisuseHandler {
     @Inject
     public LLMFreeTextQuestionAttemptMisuseHandler(final AbstractConfigLoader properties) {
         String overrideThresholdString = properties.getProperty(Constants.LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE);
+
         if (null != overrideThresholdString) {
-            this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
+            try {
+                this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
+            } catch (NumberFormatException e) {
+                log.error("Failed to parse override threshold value: " + overrideThresholdString);
+            }
         }
     }
 

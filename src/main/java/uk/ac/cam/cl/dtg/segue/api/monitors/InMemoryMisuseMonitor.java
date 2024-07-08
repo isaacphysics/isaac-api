@@ -164,6 +164,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         existingHistory.remove(eventLabel);
     }
 
+    @Override
     public int getRemainingUses(String agentIdentifier, String eventToCheck) {
         Map<String, Entry<Date, Integer>> agentUsage = nonPersistentDatabase.getIfPresent(agentIdentifier);
         IMisuseHandler misuseHandler = handlerMap.get(eventToCheck);
