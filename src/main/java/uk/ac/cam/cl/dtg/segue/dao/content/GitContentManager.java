@@ -28,10 +28,10 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.h2.schema.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -785,7 +785,7 @@ public class GitContentManager {
      * @param questionPartIds a list to track the question part IDs in the content and its children.
      */
     private static void collateQuestionPartIds(final ContentDTO content, final List<String> questionPartIds) {
-        if (content instanceof QuestionDTO) {
+        if (content instanceof QuestionDTO && !(content instanceof IsaacQuickQuestionDTO)) {
             questionPartIds.add(content.getId());
         }
         List<ContentBaseDTO> children = content.getChildren();
