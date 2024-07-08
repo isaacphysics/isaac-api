@@ -103,12 +103,12 @@ public class QuestionFacade extends AbstractSegueFacade {
 
     private final QuestionManager questionManager;
     private final UserAssociationManager userAssociationManager;
-    private IMisuseMonitor misuseMonitor;
-    private IUserStreaksManager userStreaksManager;
+    private final IMisuseMonitor misuseMonitor;
+    private final IUserStreaksManager userStreaksManager;
 
     /**
      * This method checks whether a user can answer LLM marked questions and, if not, throws an exception indicating why.
-     * As well as this it returns a type narrowed version of the current user, as it is one of the conditions.
+     * As well as this, it returns a type narrowed version of the current user, as it is one of the conditions.
      * @param user - the user to check.
      * @return the passed in user, narrowed to a RegisteredUserDTO.
      * @throws ValidatorUnavailableException - if the LLM marker feature is not enabled by configuration.
@@ -287,7 +287,13 @@ public class QuestionFacade extends AbstractSegueFacade {
      * Check if a user can answer a particular question type.
      * Initially only used for LLM questions, but could be used for future question types which require expensive
      * operations to verify or mark.
-     * Response includes reason for rejection if the user is not allowed to answer the question type.
+     * HTTP error codes are used to indicate the reason a user cannot answer a question.
+     * @param request
+     *            - the servlet request to can find out if it is a known user.
+     * @param questionType
+     *            - the type of question to check if the user can attempt.
+     * @return Response containing a map with a single key "remainingAttempts" and the number of attempts remaining for
+     *         the user to attempt the question type.
      */
     @GET
     @Path("{question_type}/can_attempt")
