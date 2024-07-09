@@ -434,7 +434,9 @@ public class GameManager {
                 resultToReturn.add(gameboard);
             } else if (!gameboard.isStartedQuestion() && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
                 resultToReturn.add(gameboard);
-            } else if (gameboard.getPercentageAttempted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
+            } else if (gameboard.getPercentageAttempted() == 100 && showOnly.equals(GameboardState.ALL_ATTEMPTED)) {
+                resultToReturn.add(gameboard);
+            } else if (gameboard.getPercentageCorrect() == 100 && showOnly.equals(GameboardState.ALL_CORRECT)) {
                 resultToReturn.add(gameboard);
             }
 

@@ -98,7 +98,7 @@ public final class Constants {
      * GameboardState Represents the potential states of a gameboard.
      */
     public enum GameboardState {
-        COMPLETED, IN_PROGRESS, NOT_ATTEMPTED
+        ALL_CORRECT, ALL_ATTEMPTED, IN_PROGRESS, NOT_ATTEMPTED
     }
 
     // field names

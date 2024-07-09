@@ -570,8 +570,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         GameboardState gameboardShowCriteria = null;
         if (showCriteria != null) {
             switch (showCriteria.toLowerCase()) {
-                case "completed":
-                    gameboardShowCriteria = GameboardState.COMPLETED;
+                case "all_correct":
+                    gameboardShowCriteria = GameboardState.ALL_CORRECT;
+                    break;
+                case "all_attempted":
+                    gameboardShowCriteria = GameboardState.ALL_ATTEMPTED;
                     break;
                 case "in_progress":
                     gameboardShowCriteria = GameboardState.IN_PROGRESS;
