@@ -914,7 +914,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
                         currentlyLoggedInUser.getFamilyName()))
                     .append(stringWriter.toString())
-                    .append("\n\nN.B.\n\"The percentages are for question  parts attempted correctly, not question pages.\"\n");
+                    .append("\n\nN.B.\n\"The percentages are for question parts attempted correctly, not question pages.\"\n");
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, IsaacServerLogType.DOWNLOAD_GROUP_PROGRESS_CSV,
                     ImmutableMap.of("groupId", groupId));
