@@ -166,8 +166,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *
      * @param request
      *            - so that we can identify the current user.
-     * @param assignmentStatus
-     *            - so we know what assignments to return.
      * @return List of assignments (maybe empty)
      */
     @GET
@@ -175,8 +173,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all boards assigned to the current user.")
-    public Response getAssignments(@Context final HttpServletRequest request,
-                                   @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
+    public Response getAssignments(@Context final HttpServletRequest request) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             // TODO (scheduled-assignments): push this logic into the manager!
@@ -200,28 +197,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             this.assignmentService.augmentAssignerSummaries(assignments);
-
-            // if they have filtered the list we should only send out the things they wanted.
-            if (assignmentStatus != null) {
-                List<AssignmentDTO> newList = Lists.newArrayList();
-                // we want to populate gameboard details for the assignment DTO.
-                for (AssignmentDTO assignment : assignments) {
-                    if (assignment.getGameboard() == null || assignment.getGameboard().getContents().size() == 0) {
-                        log.warn(String.format("Skipping broken gameboard '%s' for assignment (%s)!",
-                                assignment.getGameboardId(), assignment.getId()));
-                        continue;
-                    }
-
-                    if (assignmentStatus.equals(GameboardState.COMPLETED)
-                            && assignment.getGameboard().getPercentageCompleted() == 100) {
-                        newList.add(assignment);
-                    } else if (!assignmentStatus.equals(GameboardState.COMPLETED)
-                            && assignment.getGameboard().getPercentageCompleted() != 100) {
-                        newList.add(assignment);
-                    }
-                }
-                assignments = newList;
-            }
 
             return Response.ok(assignments)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -325,7 +300,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     g.setWildCardPosition(null);
                     g.setGameFilter(null);
                     g.setLastVisited(null);
-                    g.setPercentageCompleted(null);
+                    g.setPercentageAttempted(null);
+                    g.setPercentageCorrect(null);
                     g.setCreationMethod(null);
                     g.setCreationDate(null);
                 });
