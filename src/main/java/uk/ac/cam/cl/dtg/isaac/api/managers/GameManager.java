@@ -419,7 +419,7 @@ public class GameManager {
 
         List<GameboardDTO> resultToReturn = Lists.newArrayList();
 
-        long totalCompleted = 0L;
+        long totalAllAttempted = 0L;
         long totalInProgress = 0L;
         long totalNotStarted = 0L;
 
@@ -446,7 +446,7 @@ public class GameManager {
             if (!gameboard.isStartedQuestion()) {
                 totalNotStarted++;
             } else if (gameboard.getPercentageAttempted() == 100) {
-                totalCompleted++;
+                totalAllAttempted++;
             } else if (gameboard.isStartedQuestion()) {
                 totalInProgress++;
             }
@@ -541,7 +541,7 @@ public class GameManager {
         this.gameboardPersistenceManager.augmentGameboardItems(sublistOfGameboards);
 
         return new GameboardListDTO(sublistOfGameboards, (long) resultToReturn.size(),
-                totalNotStarted, totalInProgress, totalCompleted);
+                totalNotStarted, totalInProgress, totalAllAttempted);
     }
 
     /**

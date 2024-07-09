@@ -624,7 +624,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 IsaacServerLogType.VIEW_MY_BOARDS_PAGE,
                 ImmutableMap.builder().put("totalBoards", gameboards.getTotalResults())
                         .put("notStartedTotal", gameboards.getTotalNotStarted())
-                        .put("completedTotal", gameboards.getTotalCompleted())
+                        .put("allAttemptedTotal", gameboards.getTotalAllAttempted())
                         .put("inProgressTotal", gameboards.getTotalInProgress()).build());
 
         return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
