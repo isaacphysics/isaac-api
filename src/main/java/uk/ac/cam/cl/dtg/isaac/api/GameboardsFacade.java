@@ -593,8 +593,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     case "title":
                         parsedSortInstructions.add(immutableEntry(TITLE_FIELDNAME, s));
                         break;
-                    case "completion":
-                        parsedSortInstructions.add(immutableEntry(COMPLETION_FIELDNAME, s));
+                    case "attempted":
+                        parsedSortInstructions.add(immutableEntry(PERCENTAGE_ATTEMPTED_FIELDNAME, s));
+                        break;
+                    case "correct":
+                        parsedSortInstructions.add(immutableEntry(PERCENTAGE_CORRECT_FIELDNAME, s));
                         break;
                     default:
                         return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry we do not recognise the sort instruction "

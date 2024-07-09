@@ -501,7 +501,7 @@ public class GameManager {
                             return o1.getTitle().compareTo(o2.getTitle());
                         }, reverseOrder);
                         break;
-                    case COMPLETION_FIELDNAME:
+                    case PERCENTAGE_ATTEMPTED_FIELDNAME:
                         comparatorForSorting.addComparator((o1, o2) -> {
                             if (o1.getPercentageAttempted() == null && o2.getPercentageAttempted() == null) {
                                 return 0;
@@ -513,6 +513,20 @@ public class GameManager {
                                 return -1;
                             }
                             return o1.getPercentageAttempted().compareTo(o2.getPercentageAttempted());
+                        }, reverseOrder);
+                        break;
+                    case PERCENTAGE_CORRECT_FIELDNAME:
+                        comparatorForSorting.addComparator((o1, o2) -> {
+                            if (o1.getPercentageCorrect() == null && o2.getPercentageCorrect() == null) {
+                                return 0;
+                            }
+                            if (o1.getPercentageCorrect() == null) {
+                                return 1;
+                            }
+                            if (o2.getPercentageCorrect() == null) {
+                                return -1;
+                            }
+                            return o1.getPercentageCorrect().compareTo(o2.getPercentageCorrect());
                         }, reverseOrder);
                         break;
                     default:

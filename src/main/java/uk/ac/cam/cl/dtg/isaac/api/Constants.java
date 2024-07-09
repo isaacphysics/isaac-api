@@ -105,7 +105,8 @@ public final class Constants {
     public static final String CREATED_DATE_FIELDNAME = "created";
     public static final String VISITED_DATE_FIELDNAME = "lastVisited";
 
-    public static final String COMPLETION_FIELDNAME = "percentageAttempted";
+    public static final String PERCENTAGE_ATTEMPTED_FIELDNAME = "percentageAttempted";
+    public static final String PERCENTAGE_CORRECT_FIELDNAME = "percentageCorrect";
 
     public static final String GAMEBOARD_ID_FKEY = "gameboardId";
     public static final String GAMEBOARD_ID_FKEYS = "gameboardIds";
