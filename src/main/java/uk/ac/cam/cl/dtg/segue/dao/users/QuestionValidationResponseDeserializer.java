@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -84,6 +85,8 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
             // We don't actually use this validation response type for all ItemChoices, but it should
             // be safe to use regardless of the "true" type because the null values will be excluded.
             return mapper.readValue(jsonString, ItemValidationResponse.class);
+        } else if (questionResponseType.equals("llmFreeTextChoice")) {
+            return mapper.readValue(jsonString, LLMFreeTextQuestionValidationResponse.class);
         } else {
             return mapper.readValue(jsonString, QuestionValidationResponse.class);
         }

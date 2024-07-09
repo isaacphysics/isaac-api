@@ -28,6 +28,9 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
 
     private static final Logger log = LoggerFactory.getLogger(IPQuestionAttemptMisuseHandler.class);
 
+    public static final String DEFAULT_FEEDBACK_MESSAGE =
+            "Too many question attempts! Please either create an account, log in, or try again later.";
+
     private static final Integer SOFT_THRESHOLD = 120;  // Two attempts per minute for an hour, or 24 anonymous users.
     private static final Integer HARD_THRESHOLD = 240;  // One every fifteen seconds for an hour; far too high!
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;

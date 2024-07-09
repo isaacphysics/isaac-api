@@ -415,6 +415,17 @@ public final class Constants {
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
 
+    // LLM service properties
+    public static final String OPENAI_API_KEY = "OPENAI_API_KEY";
+    public static final String LLM_MARKER_FEATURE = "LLM_MARKER_FEATURE";
+    public static final String LLM_MARKER_SUBJECT = "LLM_MARKER_SUBJECT";
+    public static final String LLM_MARKER_DEFAULT_MODEL_NAME = "LLM_MARKER_DEFAULT_MODEL_NAME";
+    public static final String LLM_MARKER_MAX_ANSWER_LENGTH = "LLM_MARKER_MAX_ANSWER_LENGTH";
+    public static final String LLM_FREE_TEXT_QUESTION_TYPE = "isaacLLMFreeTextQuestion";
+    public static final String LLM_PROVIDER_NAME = "OPENAI";
+    public static final String LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE = "LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE";
+
+
     /*
      * Default values.
      */

@@ -195,7 +195,8 @@ public final class Constants {
         USER_CONSISTENCY_WARNING_SHOWN,
         REVIEW_TEACHER_CONNECTIONS,
         REPORT_CONTENT_ACCORDION_SECTION,
-        REPORT_CONTENT_PAGE
+        REPORT_CONTENT_PAGE,
+        LLM_FREE_TEXT_QUESTION_FEEDBACK
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
@@ -206,7 +207,7 @@ public final class Constants {
     }};
 
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
+        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, CONSENT
     }
 
     /**

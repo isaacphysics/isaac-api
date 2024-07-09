@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
 import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
@@ -29,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.StringChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.RegexPattern;
+import uk.ac.cam.cl.dtg.isaac.dto.LLMFreeTextChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.CoordinateChoiceDTO;
@@ -79,6 +81,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, StringChoiceDTO.class);
         } else if (source instanceof RegexPattern) {
             return super.mapperFacade.map(source, RegexPatternDTO.class);
+        } else if (source instanceof LLMFreeTextChoice) {
+            return super.mapperFacade.map(source, LLMFreeTextChoiceDTO.class);
         } else if (source instanceof FreeTextRule) {
             return super.mapperFacade.map(source, FreeTextRuleDTO.class);
         } else if (source instanceof ParsonsChoice) {
@@ -117,6 +121,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, StringChoice.class);
         } else if (source instanceof RegexPatternDTO) {
             return super.mapperFacade.map(source, RegexPattern.class);
+        } else if (source instanceof LLMFreeTextChoiceDTO) {
+            return super.mapperFacade.map(source, LLMFreeTextChoice.class);
         } else if (source instanceof FreeTextRuleDTO) {
             return super.mapperFacade.map(source, FreeTextRule.class);
         } else if (source instanceof ParsonsChoiceDTO) {
