@@ -132,7 +132,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             // Check for consent
             UserPreference llmProviderConsent = userPreferenceManager.getUserPreference(
                     IsaacUserPreferences.CONSENT.toString(), LLM_PROVIDER_NAME, registeredUser.getId());
-            if (!llmProviderConsent.getPreferenceValue()) {
+            if (llmProviderConsent == null || !llmProviderConsent.getPreferenceValue()) {
                 throw new NoUserConsentGrantedException(
                         String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME));
             }
