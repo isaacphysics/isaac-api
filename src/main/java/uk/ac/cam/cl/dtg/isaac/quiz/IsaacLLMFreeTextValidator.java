@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -157,6 +158,23 @@ public class IsaacLLMFreeTextValidator implements IValidator {
     }
 
     /**
+     * Retrieves completions from the OpenAI API for a given question prompt.
+     * The try-catch block is used to catch the possible runtime exceptions thrown by the OpenAI API.
+     * @param questionPrompt the prompt to send to the OpenAI API.
+     * @return the completions from the OpenAI API or null if there was an error.
+     */
+    private @Nullable ChatCompletions retrieveCompletionsFromOpenAI(final List<ChatRequestMessage> questionPrompt) {
+        try {
+            return openAIClient.getChatCompletions(
+                    configLoader.getProperty(LLM_MARKER_DEFAULT_MODEL_NAME),
+                    new ChatCompletionsOptions(questionPrompt).setTemperature(0.0));
+        } catch (Exception e) {
+            log.error("Failed to retrieve completions from OpenAI API", e);
+            return null;
+        }
+    }
+
+    /**
      * Extracts the marks awarded from the response from the OpenAI API.
      * We expect the response to have one choice which is a valid JSON object representing the marks to the attempt.
      * If additional fields are present in the JSON response, we ignore them.
@@ -167,7 +185,11 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @return a map of the marks awarded for each field in the mark scheme.
      */
     private Map<String, Integer> extractValidatedMarks(
-            final IsaacLLMFreeTextQuestion question, final ChatCompletions chatCompletions) {
+            final IsaacLLMFreeTextQuestion question, @Nullable final ChatCompletions chatCompletions) {
+        if (chatCompletions == null) {
+            // Error logged previously when we have more context.
+            return zeroMarkResult;
+        }
         if (chatCompletions.getChoices().size() != 1) {
             log.error("Expected exactly one choice from LLM completion provider, received: "
                     + chatCompletions.getChoices().stream().map(c -> c.getMessage().getContent())
@@ -242,9 +264,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
         questionPrompt.add(extractUserAttemptAtQuestion(answer));
 
-        ChatCompletions chatCompletions = openAIClient.getChatCompletions(
-                configLoader.getProperty(LLM_MARKER_DEFAULT_MODEL_NAME),
-                new ChatCompletionsOptions(questionPrompt).setTemperature(0.0));
+        ChatCompletions chatCompletions = retrieveCompletionsFromOpenAI(questionPrompt);
 
         Map<String, Integer> awardedMarks = extractValidatedMarks(freeTextLLMQuestion, chatCompletions);
 
