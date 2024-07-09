@@ -506,7 +506,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @param sortInstructions
      *            - the criteria to use for sorting. Default is reverse chronological by created date.
      * @param showCriteria
-     *            - e.g. completed,incompleted
+     *            - e.g. all_correct, all_attempted
      * @return a Response containing a list of gameboard objects or a noContent Response.
      */
     @GET
