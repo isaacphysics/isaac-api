@@ -174,7 +174,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Inject
     public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
                           final GitContentManager contentManager, final UserAccountManager userManager,
-                          final AbstractUserPreferenceManager userPreferenceManager, QuestionManager questionManager,
+                          final AbstractUserPreferenceManager userPreferenceManager, final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final IUserStreaksManager userStreaksManager,
                           final UserAssociationManager userAssociationManager) {
