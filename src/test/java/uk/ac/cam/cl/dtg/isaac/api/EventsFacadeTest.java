@@ -82,8 +82,7 @@ class EventsFacadeTest {
     this.mapper = createMock(MainObjectMapper.class);
     this.eventsFacade =
         new EventsFacade(this.properties, this.logManager, this.bookingManager, this.userManager, this.contentManager,
-            this.userBadgeManager, this.userAssociationManager, this.groupManager,
-            this.userAccountManager, this.schoolListReader, this.mapper);
+            this.userBadgeManager, this.userAssociationManager, this.groupManager, this.schoolListReader, this.mapper);
     this.mockRequest = createMock(HttpServletRequest.class);
     this.eventId = "example_event";
     this.mockUser = new RegisteredUserDTO();

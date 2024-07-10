@@ -151,7 +151,6 @@ public class EventsFacade extends AbstractIsaacFacade {
   private final GitContentManager contentManager;
   private final UserBadgeManager userBadgeManager;
   private final UserAssociationManager userAssociationManager;
-  private final UserAccountManager userAccountManager;
   private final SchoolListReader schoolListReader;
 
   private final MainObjectMapper mapper;
@@ -167,7 +166,6 @@ public class EventsFacade extends AbstractIsaacFacade {
    * @param userBadgeManager       for updating badge information
    * @param userAssociationManager for checking permissions and filtering records
    * @param groupManager           Instance of Group Manager
-   * @param userAccountManager     Instance of User Account Manager, for retrieving users
    * @param schoolListReader       for retrieving school information
    * @param mapper                 Instance of Mapper Facade, to map between DO and DTO classes
    */
@@ -176,7 +174,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                       final EventBookingManager bookingManager, final UserAccountManager userManager,
                       final GitContentManager contentManager,
                       final UserBadgeManager userBadgeManager, final UserAssociationManager userAssociationManager,
-                      final GroupManager groupManager, final UserAccountManager userAccountManager,
+                      final GroupManager groupManager,
                       final SchoolListReader schoolListReader, final MainObjectMapper mapper) {
     super(properties, logManager);
     this.bookingManager = bookingManager;
@@ -185,7 +183,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     this.userBadgeManager = userBadgeManager;
     this.userAssociationManager = userAssociationManager;
     this.groupManager = groupManager;
-    this.userAccountManager = userAccountManager;
     this.schoolListReader = schoolListReader;
     this.mapper = mapper;
   }
@@ -745,7 +742,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         UserSummaryDTO resultUser = booking.getUserBooked();
         RegisteredUserDTO resultRegisteredUser;
         try {
-          resultRegisteredUser = this.userAccountManager.getUserDTOById(resultUser.getId());
+          resultRegisteredUser = this.userManager.getUserDTOById(resultUser.getId());
         } catch (NoUserException e) {
           // Possibly a deleted user, silently skipping.
           continue;
