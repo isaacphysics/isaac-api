@@ -62,7 +62,6 @@ import uk.ac.cam.cl.dtg.segue.api.SessionValidator;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserBadgeManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.AuditMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
@@ -129,7 +128,6 @@ public class IsaacApplicationRegister extends Application {
 
       // initialise filters
       this.singletons.add(injector.getInstance(PerformanceMonitor.class));
-      this.singletons.add(injector.getInstance(AuditMonitor.class));
       this.singletons.add(injector.getInstance(SessionValidator.class));
       this.singletons.add(injector.getInstance(ExceptionSanitiser.class));
 
