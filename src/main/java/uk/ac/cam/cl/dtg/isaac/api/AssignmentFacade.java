@@ -417,14 +417,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             userSummary,
                             correctQuestionParts,
                             incorrectQuestionParts,
-                            states.toArray(new GameboardItemState[0])
+                            states
                     ));
                 } else {
                     result.add(new AssignmentProgressDTO(
                             userSummary,
-                            Lists.newArrayList(),
-                            Lists.newArrayList(),
-                            new GameboardItemState[0]
+                            Collections.emptyList(),
+                            Collections.emptyList(),
+                            Collections.emptyList()
                     ));
                 }
             }

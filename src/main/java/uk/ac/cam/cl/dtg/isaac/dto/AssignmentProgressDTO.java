@@ -12,7 +12,7 @@ public class AssignmentProgressDTO {
     public UserSummaryDTO user;
     public List<Integer> correctPartResults;
     public List<Integer> incorrectPartResults;
-    public Constants.GameboardItemState[] results;
+    public List<Constants.GameboardItemState> results;
 
     /**
      * Complete AssignmentProgressDTO constructor with all dependencies.
@@ -25,7 +25,7 @@ public class AssignmentProgressDTO {
      * @param results
      *            - Array of results.
      */
-    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, Constants.GameboardItemState[] results) {
+    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, List<Constants.GameboardItemState> results) {
         this.user = user;
         this.correctPartResults = correctPartResults;
         this.incorrectPartResults = incorrectPartResults;
@@ -59,11 +59,11 @@ public class AssignmentProgressDTO {
         this.incorrectPartResults = incorrectPartResults;
     }
 
-    public Constants.GameboardItemState[] getResults() {
+    public List<Constants.GameboardItemState> getResults() {
         return results;
     }
 
-    public void setResults(Constants.GameboardItemState[] results) {
+    public void setResults(List<Constants.GameboardItemState> results) {
         this.results = results;
     }
 }
