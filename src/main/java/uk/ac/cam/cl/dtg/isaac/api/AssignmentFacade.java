@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentProgressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
@@ -391,12 +392,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
-
-            List<ImmutableMap<String, Object>> result = Lists.newArrayList();
-            final String userString = "user";
-            final String resultsString = "results";
-            final String correctPartString = "correctPartResults";
-            final String incorrectPartString = "incorrectPartResults";
+            List<AssignmentProgressDTO> result = new ArrayList<>(groupMembers.size());
 
             if (gameboard.getContents().isEmpty()) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Assignment gameboard has no questions, or its questions no longer exist. Cannot fetch assignment progress.").toResponse();
@@ -417,11 +413,19 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
                     }
-                    result.add(ImmutableMap.of(userString, userSummary, resultsString, states,
-                            correctPartString, correctQuestionParts, incorrectPartString, incorrectQuestionParts));
+                    result.add(new AssignmentProgressDTO(
+                            userSummary,
+                            correctQuestionParts,
+                            incorrectQuestionParts,
+                            states
+                    ));
                 } else {
-                    result.add(ImmutableMap.of(userString, userSummary, resultsString, Lists.newArrayList(),
-                            correctPartString, Lists.newArrayList(), incorrectPartString, Lists.newArrayList()));
+                    result.add(new AssignmentProgressDTO(
+                            userSummary,
+                            Collections.emptyList(),
+                            Collections.emptyList(),
+                            Collections.emptyList()
+                    ));
                 }
             }
 
