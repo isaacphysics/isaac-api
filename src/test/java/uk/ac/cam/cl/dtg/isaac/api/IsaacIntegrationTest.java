@@ -58,6 +58,8 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -343,6 +345,8 @@ public abstract class IsaacIntegrationTest {
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
         misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(), new RegistrationMisuseHandler(emailManager, properties));
         misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(), new EmailVerificationMisuseHandler());
+        misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(), new TeacherPasswordResetMisuseHandler());
+        misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.getSimpleName(), new TokenOwnerLookupMisuseHandler(emailManager, properties));
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
