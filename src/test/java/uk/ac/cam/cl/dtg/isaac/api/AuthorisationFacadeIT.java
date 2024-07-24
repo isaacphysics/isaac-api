@@ -3,8 +3,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import com.google.common.collect.ImmutableMap;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentProgressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -270,13 +270,13 @@ public class AuthorisationFacadeIT extends IsaacIntegrationTest {
             assertEquals(Response.Status.OK.getStatusCode(), markbookResponse.getStatus());
 
             @SuppressWarnings("unchecked")
-            List<ImmutableMap<String, Object>> markbook = (List<ImmutableMap<String, Object>>) markbookResponse.getEntity();
+            List<AssignmentProgressDTO> markbook = (List<AssignmentProgressDTO>) markbookResponse.getEntity();
 
-            for (ImmutableMap<String, Object> studentResults : markbook) {
-                UserSummaryDTO userSummary = (UserSummaryDTO) studentResults.get("user");
+            for (AssignmentProgressDTO studentResults : markbook) {
+                UserSummaryDTO userSummary = studentResults.getUser();
                 assert userSummary != null;
                 if (userSummary.getId() == ALICE_STUDENT_ID) {
-                    List<?> results = (List<?>) studentResults.get("results");
+                    List<Constants.GameboardItemState> results = studentResults.getResults();
                     assertTrue(results != null && results.isEmpty());
                     break;
                 }
