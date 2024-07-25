@@ -111,7 +111,7 @@ public class ContactFacade extends AbstractSegueFacade {
         currentUserRole = "N/A";
       }
 
-      String message = form.get("message").replace("\n", "\n<br>");
+      String message = form.get("message").replace("\n", System.lineSeparator());
 
       emailManager.sendContactUsFormEmail(this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
           new ImmutableMap.Builder<String, Object>()
