@@ -6,7 +6,7 @@ Configuration:
       - name: Console_Appender
         target: SYSTEM_OUT
         PatternLayout:
-          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %m%n"
+          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %encode{%m}{CRLF}%n"
 
   Loggers:
 
