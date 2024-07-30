@@ -456,6 +456,9 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
                         .strategy(Strategy.SIMPLE));
 
+        // FIXME: Make this and PageFacade agnostic
+        // It doesn't need to know about books, just have required tags
+        // It doesn't need to know about subject, field or topic, just have atLeastOne tags
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
@@ -464,7 +467,7 @@ public class GitContentManager {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
                             .strategy(Strategy.SIMPLE)
                             .required(true));
-                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME)
+                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME)
                         .contains(entry.getKey())) {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
                             .strategy(Strategy.SIMPLE)
