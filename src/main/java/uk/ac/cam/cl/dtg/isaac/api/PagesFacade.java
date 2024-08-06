@@ -322,6 +322,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
+            @QueryParam("questionCategories") final String questionCategories,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
@@ -369,6 +370,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 this.put(STAGE_FIELDNAME, stages);
                 this.put(DIFFICULTY_FIELDNAME, difficulties);
                 this.put(EXAM_BOARD_FIELDNAME, examBoards);
+                this.put(CATEGORIES_FIELDNAME, questionCategories);
             }
         };
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
