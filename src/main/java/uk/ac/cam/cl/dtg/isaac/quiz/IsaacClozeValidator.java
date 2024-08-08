@@ -168,8 +168,11 @@ public class IsaacClozeValidator implements IValidator {
                     itemMatches.add(itemMatch);
                 }
 
-                // If this is the first correct choice, the status of each item might be useful feedback:
-                if (null == itemsCorrect && itemChoice.isCorrect() && detailedItemFeedback) {
+                // Set the 'list of correctness of each item' to match the feedback corresponding to the ItemChoice
+                // that matches the most items.
+                if (detailedItemFeedback && itemChoice.isCorrect() && (null == itemsCorrect
+                        || itemsCorrect.stream().filter(i -> i).count() < itemMatches.stream().filter(i -> i).count()
+                    )) {
                     itemsCorrect = itemMatches;
                 }
 
