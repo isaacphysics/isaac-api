@@ -69,7 +69,8 @@ public class IsaacSearchInstructionBuilder {
     public enum Strategy {
         SIMPLE,
         DEFAULT,
-        FUZZY
+        FUZZY,
+        SUBSTRING
     }
 
 
@@ -343,6 +344,15 @@ public class IsaacSearchInstructionBuilder {
                                 new MatchInstruction(searchInField.getField(), term, boost, false));
                         generatedSubInstructions.add(
                                 new MatchInstruction(searchInField.getField(), term, fuzzyBoost, true));
+
+                    } else if (searchInField.getStrategy() == Strategy.SUBSTRING) {
+                        Long boost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
+
+                        generatedSubInstructions.add(
+                                new MatchInstruction(searchInField.getField(), term, boost, false));
+                        generatedSubInstructions.add(
+                                new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
 
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         Long boost = searchInField.getPriority() == Priority.HIGH

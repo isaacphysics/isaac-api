@@ -442,19 +442,19 @@ public class GitContentManager {
 
                 // Search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.SUMMARY_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.SIMPLE));
+                        .strategy(Strategy.SUBSTRING));
 
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
@@ -467,7 +467,7 @@ public class GitContentManager {
                 } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME)
                         .contains(entry.getKey())) {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
-                            .strategy(Strategy.SIMPLE)
+                            .strategy(Strategy.SUBSTRING)
                             .atLeastOne(true));
                 } else {
                     boolean applyOrFilterBetweenValues = ID_FIELDNAME.equals(entry.getKey());
