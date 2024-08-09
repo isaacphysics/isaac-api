@@ -34,4 +34,16 @@ public class InvalidPasswordException extends Exception {
     public InvalidPasswordException(final String message) {
         super(message);
     }
+
+    /**
+     * Generate a consistent error message for password length exceptions.
+     *
+     * @param minLength - the minimum required password length.
+     * @return an InvalidPasswordException with an error message stating the length requirement.
+     */
+    public static InvalidPasswordException getPasswordLengthException(final int minLength) {
+        return new InvalidPasswordException(
+                String.format("Password must be at least %s characters in length.", minLength)
+        );
+    }
 }
