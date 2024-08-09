@@ -747,8 +747,8 @@ public class UserAuthenticationManager {
             throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
         }
 
-        if (newPassword.length() < 6) {
-            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
+        if (newPassword.length() < MINIMUM_PASSWORD_LENGTH) {
+            throw InvalidPasswordException.getPasswordLengthException(MINIMUM_PASSWORD_LENGTH);
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders

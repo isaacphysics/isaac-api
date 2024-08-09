@@ -319,6 +319,7 @@ public final class Constants {
     public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
 
     // Local authentication specific stuff
+    public static final int MINIMUM_PASSWORD_LENGTH = 8;
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
