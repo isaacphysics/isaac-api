@@ -1195,6 +1195,13 @@ CREATE INDEX question_attempts_by_user_question_page ON public.question_attempts
 
 
 --
+-- Name: quiz_assignments_group_quiz; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX quiz_assignments_group_quiz ON public.quiz_assignments USING btree (group_id, quiz_id);
+
+
+--
 -- Name: quiz_attempts_index_by_quiz_id_and_user_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
