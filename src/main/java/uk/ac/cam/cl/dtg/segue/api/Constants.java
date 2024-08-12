@@ -454,6 +454,7 @@ public final class Constants {
     public static final String SUBJECTS_FIELDNAME = "subjects";
     public static final String FIELDS_FIELDNAME = "fields";
     public static final String TOPICS_FIELDNAME = "topics";
+    public static final String CATEGORIES_FIELDNAME = "categories";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
     public static final String DATE_FIELDNAME = "date";
