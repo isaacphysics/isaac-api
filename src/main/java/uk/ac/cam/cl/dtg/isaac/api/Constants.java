@@ -187,7 +187,6 @@ public final class Constants {
         VIEW_MY_ASSIGNMENTS,
         VIEW_GAMEBOARD_BY_ID,
         VIEW_GITHUB_CODE,
-        ACCEPT_COOKIES,
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
         CLIENT_SIDE_ERROR,
@@ -196,7 +195,8 @@ public final class Constants {
         REVIEW_TEACHER_CONNECTIONS,
         REPORT_CONTENT_ACCORDION_SECTION,
         REPORT_CONTENT_PAGE,
-        LLM_FREE_TEXT_QUESTION_FEEDBACK
+        LLM_FREE_TEXT_QUESTION_FEEDBACK,
+        RESEARCH_NOTIFICATION_DISMISSED,
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
