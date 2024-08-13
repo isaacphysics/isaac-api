@@ -8,7 +8,7 @@ RUN mvn dependency:go-offline
 COPY . /isaac-api
 RUN mvn package -Dmaven.test.skip=true -Dsegue.version=$BUILD_VERSION $MVN_PACKAGE_PARAM
 
-FROM jetty:11.0.20-jdk17-eclipse-temurin
+FROM jetty:12.0.11-jdk17-eclipse-temurin
 USER root
 RUN mkdir /isaac-logs
 RUN chmod 755 /isaac-logs
@@ -18,8 +18,7 @@ COPY --from=base /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-ap
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
 
-COPY resources/jetty.xml /usr/local/jetty/etc/
-COPY resources/start.ini /var/lib/jetty/
+ADD resources/start.d/ $JETTY_BASE/start.d/
 
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty

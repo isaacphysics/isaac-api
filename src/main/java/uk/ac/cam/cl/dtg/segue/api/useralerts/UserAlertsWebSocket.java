@@ -5,8 +5,6 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.WEBSOCKET_LATENCY
 import static uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils.getSharedBasicObjectMapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Striped;
@@ -14,18 +12,19 @@ import com.google.inject.Inject;
 import io.prometheus.client.Histogram;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.StatusCode;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import org.eclipse.jetty.websocket.api.exceptions.WebSocketTimeoutException;
+import org.eclipse.jetty.ee9.websocket.api.Session;
+import org.eclipse.jetty.ee9.websocket.api.StatusCode;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketError;
+import org.eclipse.jetty.ee9.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.ee9.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.ee9.websocket.api.exceptions.WebSocketTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlert;
@@ -46,7 +45,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  *
  * @author Dan Underwood
  */
-@WebSocket(idleTimeout = USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS)
+@WebSocket
 public class UserAlertsWebSocket implements IAlertListener {
   private static class Protocol {
     static final String HEARTBEAT = "heartbeat";
@@ -120,7 +119,6 @@ public class UserAlertsWebSocket implements IAlertListener {
     this.properties = properties;
   }
 
-
   /**
    * Handles incoming messages from a connected client.
    *
@@ -130,13 +128,15 @@ public class UserAlertsWebSocket implements IAlertListener {
   @OnWebSocketMessage
   public void onText(final Session session, final String message) {
     Histogram.Timer latencyTimer = null;
+
+
     if (Protocol.ACCEPTED_MESSAGES.contains(message)) {
       latencyTimer = WEBSOCKET_LATENCY_HISTOGRAM.labels(message).startTimer();
     }
 
     try {
       if (message.equals(Protocol.HEARTBEAT)) {
-        session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+        session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
             Protocol.HEARTBEAT, System.currentTimeMillis()
         )));
       } else if (message.equals(Protocol.USER_SNAPSHOT_NUDGE)) {
@@ -161,8 +161,9 @@ public class UserAlertsWebSocket implements IAlertListener {
    * @param session - contains information about the session to be started
    */
   @OnWebSocketConnect
-  public void onConnect(final Session session) {
+  public void onOpen(final Session session) {
     try {
+      session.setIdleTimeout(Duration.ofSeconds(USER_ALERTS_WEBSOCKET_IDLE_TIMEOUT_SECONDS));
       this.session = session;
 
       RegisteredUser validUserFromSession = userAuthenticationManager.getUserFromSession(session.getUpgradeRequest());
@@ -256,7 +257,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     Lock userLock = userLocks.get(connectedUserId);
     userLock.lock();
     try {
-      Set unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
+      Set<UserAlertsWebSocket> unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
       unsafeUsersSockets.remove(this);
       numberOfUserSockets = unsafeUsersSockets.size();
       removeUser = numberOfUserSockets == 0;
@@ -303,8 +304,8 @@ public class UserAlertsWebSocket implements IAlertListener {
    */
   private void sendAlert(final IUserAlert alert) {
     try {
-      this.session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
-          Protocol.NOTIFICATIONS, ImmutableList.of(alert),
+      this.session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
+          Protocol.NOTIFICATIONS, List.of(alert),
           Protocol.HEARTBEAT, System.currentTimeMillis()
       )));
     } catch (IOException e) {
@@ -319,7 +320,7 @@ public class UserAlertsWebSocket implements IAlertListener {
    * @throws IOException - if the WebSocket is unexpectedly closed or in an invalid state
    */
   private void sendUserSnapshotData() throws IOException {
-    session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+    session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
         Protocol.USER_SNAPSHOT, statisticsManager.getDetailedUserStatistics(connectedUser),
         Protocol.HEARTBEAT, System.currentTimeMillis()
     )));
@@ -335,7 +336,7 @@ public class UserAlertsWebSocket implements IAlertListener {
   private void sendInitialNotifications(final long userId) throws SegueDatabaseException, IOException {
     List<IUserAlert> persistedAlerts = userAlerts.getUserAlerts(userId);
     if (!persistedAlerts.isEmpty()) {
-      session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of(
+      session.getRemote().sendString(objectMapper.writeValueAsString(Map.of(
           Protocol.NOTIFICATIONS, persistedAlerts
       )));
     }
