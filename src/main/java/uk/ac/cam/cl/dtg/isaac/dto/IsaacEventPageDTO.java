@@ -57,6 +57,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   private List<ExternalReference> postResources;
   private List<ContentDTO> postResourceContent;
+  private List<ExternalReference> eventSurvey;
 
   private ImageDTO eventThumbnail;
 
@@ -90,6 +91,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param location where the event will occur
    * @param preResources resources to be provided to attendees before the event
    * @param postResources resources to be provided to attendees after the event
+   * @param eventSurvey a survey will be sent to attendees after the event
    * @param eventThumbnail thumbnail image for event
    * @param numberOfPlaces maximum number of booking places to allow
    * @param eventStatus status of event {@link EventStatus}
@@ -122,6 +124,7 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("location") final Location location,
       @JsonProperty("preResources") final List<ExternalReference> preResources,
       @JsonProperty("postResources") final List<ExternalReference> postResources,
+      @JsonProperty("eventSurvey") final List<ExternalReference> eventSurvey,
       @JsonProperty("eventThumbnail") final ImageDTO eventThumbnail,
       @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
       @JsonProperty("EventStatus") final EventStatus eventStatus,
@@ -141,6 +144,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     this.location = location;
     this.preResources = preResources;
     this.postResources = postResources;
+    this.eventSurvey = eventSurvey;
     this.eventThumbnail = eventThumbnail;
     this.numberOfPlaces = numberOfPlaces;
     this.eventStatus = eventStatus;
@@ -303,6 +307,26 @@ public class IsaacEventPageDTO extends ContentDTO {
    */
   public void setPostResources(final List<ExternalReference> postResources) {
     this.postResources = postResources;
+  }
+
+  /**
+   * Gets the eventSurvey.
+   *
+   * @return the eventSurvey
+   */
+  @JsonIgnore
+  public List<ExternalReference> getEventSurvey() {
+    return eventSurvey;
+  }
+
+  /**
+   * Sets the eventSurvey.
+   *
+   * @param eventSurvey
+   *            the eventSurvey to set
+   */
+  public void setEventSurvey(final List<ExternalReference> eventSurvey) {
+    this.eventSurvey = eventSurvey;
   }
 
   /**

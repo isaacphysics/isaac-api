@@ -197,6 +197,11 @@ public class EventNotificationEmailManager {
             if (postResourcesPresent) {
               commitAndSendStatusFilteredEmail(event, "post", "event_feedback");
             }
+            // New logic for sending survey email
+            boolean shouldSendSurvey = true; // Define your criteria for sending surveys
+            if (shouldSendSurvey) {
+              commitAndSendStatusFilteredEmail(event, "survey", "event_survey");
+            }
           }
         }
       }
