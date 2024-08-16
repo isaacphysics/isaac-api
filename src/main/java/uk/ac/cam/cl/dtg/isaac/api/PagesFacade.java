@@ -323,12 +323,12 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @QueryParam("questionCategories") final String questionCategories,
+            @QueryParam("statuses") final String statuses,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
-            @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
-
+        Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
 
         try {
@@ -381,6 +381,16 @@ public class PagesFacade extends AbstractIsaacFacade {
             }
         }
 
+        try {
+            filterByStatuses = Arrays.stream(statuses.split(","))
+                    .map(CompletionState::valueOf)
+                    .collect(Collectors.toSet());
+        } catch (IllegalArgumentException e) {
+            return new SegueErrorResponse(
+                    Status.BAD_REQUEST, "Invalid question statuses to filter by provided.", e
+            ).toResponse();
+        }
+
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
         // Show content tagged as "nofilter" if the user is staff
@@ -423,11 +433,9 @@ public class PagesFacade extends AbstractIsaacFacade {
                     summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(
                             (RegisteredUserDTO) user, summarizedResults
                     );
-                    if (hideCompleted) {
-                        summarizedResults = summarizedResults.stream()
-                                .filter(q -> q.getCorrect() == null || !q.getCorrect())
-                                .collect(Collectors.toList());
-                    }
+                    summarizedResults = summarizedResults.stream()
+                            .filter(q -> filterByStatuses.contains(q.getState()))
+                            .collect(Collectors.toList());
                 }
 
                 if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {

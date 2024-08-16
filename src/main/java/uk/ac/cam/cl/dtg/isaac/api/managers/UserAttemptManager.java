@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CompletionState.*;
+
 /**
  * A class to augment content with user attempt information.
  */
@@ -61,11 +63,13 @@ public class UserAttemptManager {
         String questionId = contentSummary.getId();
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
         boolean questionAnsweredCorrectly = false;
+        boolean attempted = false;
         if (questionAttempts != null) {
             for (String relatedQuestionPartId : contentSummary.getQuestionPartIds()) {
                 questionAnsweredCorrectly = false;
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
                 if (questionPartAttempts != null) {
+                    attempted = true;
                     for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
                         questionAnsweredCorrectly = partAttempt.isCorrect();
                         if (questionAnsweredCorrectly) {
@@ -78,7 +82,9 @@ public class UserAttemptManager {
                 }
             }
         }
-        contentSummary.setCorrect(questionAnsweredCorrectly);
+        contentSummary.setState(attempted
+                ? questionAnsweredCorrectly ? ALL_CORRECT : IN_PROGRESS
+                : NOT_ATTEMPTED);
     }
 
     /**

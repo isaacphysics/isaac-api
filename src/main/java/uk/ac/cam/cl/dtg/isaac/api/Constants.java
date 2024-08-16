@@ -72,6 +72,10 @@ public final class Constants {
         PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED;
     }
 
+    public enum CompletionState {
+        ALL_CORRECT, IN_PROGRESS, NOT_ATTEMPTED
+    }
+
     public enum QuestionPartState {
         CORRECT, INCORRECT, NOT_ATTEMPTED;
     }

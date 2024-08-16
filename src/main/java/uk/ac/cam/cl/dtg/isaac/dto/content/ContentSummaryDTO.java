@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Lists;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.CompletionState;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class ContentSummaryDTO {
     private String level;
     private List<String> tags;
     private String url;
-    private Boolean correct;
+    private CompletionState state;
     private List<String> questionPartIds;
     private String supersededBy;
     private Boolean deprecated;
@@ -207,18 +208,18 @@ public class ContentSummaryDTO {
      *
      * @return correct
      */
-    public Boolean getCorrect() {
-        return this.correct;
+    public CompletionState getState() {
+        return this.state;
     }
 
     /**
      * Sets whether the question has been completed correctly.
      *
-     * @param correct
+     * @param state
      *            the value to set completion
      */
-    public void setCorrect(final Boolean correct) {
-        this.correct = correct;
+    public void setState(final CompletionState state) {
+        this.state = state;
     }
 
     /**
