@@ -82,9 +82,15 @@ public class UserAttemptManager {
                 }
             }
         }
-        contentSummary.setState(attempted
-                ? questionAnsweredCorrectly ? ALL_CORRECT : IN_PROGRESS
-                : NOT_ATTEMPTED);
+        if (attempted) {
+            if (questionAnsweredCorrectly) {
+                contentSummary.setState(ALL_CORRECT);
+            } else {
+                contentSummary.setState(IN_PROGRESS);
+            }
+        } else {
+            contentSummary.setState(NOT_ATTEMPTED);
+        }
     }
 
     /**

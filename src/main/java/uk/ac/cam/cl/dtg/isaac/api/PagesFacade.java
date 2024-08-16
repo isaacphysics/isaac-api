@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -382,9 +383,14 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            filterByStatuses = Arrays.stream(statuses.split(","))
-                    .map(CompletionState::valueOf)
-                    .collect(Collectors.toSet());
+            if (Objects.equals(statuses, "")) {
+                // If no statuses apply assume all statuses
+                filterByStatuses = Set.of(CompletionState.values());
+            } else {
+                filterByStatuses = Arrays.stream(statuses.split(","))
+                        .map(CompletionState::valueOf)
+                        .collect(Collectors.toSet());
+            }
         } catch (IllegalArgumentException e) {
             return new SegueErrorResponse(
                     Status.BAD_REQUEST, "Invalid question statuses to filter by provided.", e
