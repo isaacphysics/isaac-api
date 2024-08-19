@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -13,8 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CompletionState.*;
 
 /**
  * A class to augment content with user attempt information.
@@ -84,12 +83,12 @@ public class UserAttemptManager {
         }
         if (attempted) {
             if (questionAnsweredCorrectly) {
-                contentSummary.setState(ALL_CORRECT);
+                contentSummary.setState(Constants.CompletionState.ALL_CORRECT);
             } else {
-                contentSummary.setState(IN_PROGRESS);
+                contentSummary.setState(Constants.CompletionState.IN_PROGRESS);
             }
         } else {
-            contentSummary.setState(NOT_ATTEMPTED);
+            contentSummary.setState(Constants.CompletionState.NOT_ATTEMPTED);
         }
     }
 
