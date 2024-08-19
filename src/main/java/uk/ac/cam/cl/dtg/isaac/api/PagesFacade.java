@@ -383,7 +383,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            if (Objects.equals(statuses, "")) {
+            if (null == statuses || Objects.equals(statuses, "")) {
                 // If no statuses apply assume all statuses
                 filterByStatuses = Set.of(CompletionState.values());
             } else {
