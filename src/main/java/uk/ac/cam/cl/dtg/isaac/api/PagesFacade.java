@@ -381,6 +381,10 @@ public class PagesFacade extends AbstractIsaacFacade {
             }
         }
 
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return SegueErrorResponse.getBadRequestResponse(
+                    String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
+        }
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
         // Show content tagged as "nofilter" if the user is staff
