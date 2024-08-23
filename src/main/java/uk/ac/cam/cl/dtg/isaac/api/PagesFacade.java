@@ -389,8 +389,10 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             if (null == statuses) {
+                // If statuses isn't a URL param, we won't augment or filter!
                 filterByStatuses = null;
             } else if (statuses.isEmpty()) {
+                // If statuses is blank, that shouldn't mean "please match nothing at all"; make it match everything.
                 filterByStatuses = CompletionState.getAllStates();
             } else {
                 filterByStatuses = Arrays.stream(statuses.split(","))
