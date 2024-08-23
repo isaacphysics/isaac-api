@@ -332,6 +332,11 @@ public class PagesFacade extends AbstractIsaacFacade {
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
 
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return SegueErrorResponse.getBadRequestResponse(
+                    String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
+        }
+
         try {
             user = userManager.getCurrentUser(httpServletRequest);
         } catch (SegueDatabaseException e) {
