@@ -6,6 +6,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -99,12 +100,20 @@ public class UserAttemptManager {
      * @return the augmented content summary list.
      * @throws SegueDatabaseException if there is an error retrieving question attempts.
      */
-    public List<ContentSummaryDTO> augmentContentSummaryListWithAttemptInformation(RegisteredUserDTO user, List<ContentSummaryDTO> summarizedResults) throws SegueDatabaseException {
-        List<String> questionPageIds = summarizedResults.stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+    public List<ContentSummaryDTO> augmentContentSummaryListWithAttemptInformation(AbstractSegueUserDTO user, List<ContentSummaryDTO> summarizedResults) throws SegueDatabaseException {
 
-        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttempts =
-                questionManager.getMatchingLightweightQuestionAttempts(Collections.singletonList(user), questionPageIds)
-                        .getOrDefault(user.getId(), Collections.emptyMap());
+        Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttempts;
+
+        if (user instanceof RegisteredUserDTO) {
+            // Load only relevant attempts:
+            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+            List<String> questionPageIds = summarizedResults.stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+            questionAttempts = questionManager.getMatchingLightweightQuestionAttempts(Collections.singletonList(registeredUser), questionPageIds)
+                    .getOrDefault(registeredUser.getId(), Collections.emptyMap());
+        } else {
+            // For anon users, all attempts are in one place so just load all:
+            questionAttempts = questionManager.getQuestionAttemptsByUser(user);
+        }
 
         for (ContentSummaryDTO result : summarizedResults) {
             augmentContentSummaryWithAttemptInformation(result, questionAttempts);

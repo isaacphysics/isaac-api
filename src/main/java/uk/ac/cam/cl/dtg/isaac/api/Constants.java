@@ -73,7 +73,9 @@ public final class Constants {
     }
 
     public enum CompletionState {
-        ALL_CORRECT, IN_PROGRESS, NOT_ATTEMPTED
+        ALL_CORRECT, IN_PROGRESS, NOT_ATTEMPTED;
+
+        public static final Set<CompletionState> ALL_STATES = Set.of(CompletionState.values());
     }
 
     public enum QuestionPartState {

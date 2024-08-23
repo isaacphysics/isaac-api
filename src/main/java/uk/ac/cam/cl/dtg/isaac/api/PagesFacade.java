@@ -388,18 +388,17 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            if (null == statuses || Objects.equals(statuses, "")) {
-                // If no statuses apply assume all statuses
-                filterByStatuses = Set.of(CompletionState.values());
+            if (null == statuses) {
+                filterByStatuses = null;
+            } else if (statuses.isEmpty()) {
+                filterByStatuses = CompletionState.ALL_STATES;
             } else {
                 filterByStatuses = Arrays.stream(statuses.split(","))
                         .map(CompletionState::valueOf)
                         .collect(Collectors.toSet());
             }
         } catch (IllegalArgumentException e) {
-            return new SegueErrorResponse(
-                    Status.BAD_REQUEST, "Invalid question statuses to filter by provided.", e
-            ).toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid question status filter provided.").toResponse();
         }
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
@@ -442,13 +441,15 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 List<ContentSummaryDTO> unfilteredSummarizedResults = new ArrayList<>(summarizedResults);
 
-                if (user instanceof RegisteredUserDTO) {
-                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(
-                            (RegisteredUserDTO) user, summarizedResults
-                    );
-                    summarizedResults = summarizedResults.stream()
-                            .filter(q -> filterByStatuses.contains(q.getState()))
-                            .collect(Collectors.toList());
+                if (null != filterByStatuses) {
+                    // Only augment when filtering by statuses:
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(user, summarizedResults);
+                    // Optimise out unnecessary filtering:
+                    if (!filterByStatuses.equals(CompletionState.ALL_STATES)) {
+                        summarizedResults = summarizedResults.stream()
+                                .filter(q -> filterByStatuses.contains(q.getState()))
+                                .collect(Collectors.toList());
+                    }
                 }
 
                 if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {
