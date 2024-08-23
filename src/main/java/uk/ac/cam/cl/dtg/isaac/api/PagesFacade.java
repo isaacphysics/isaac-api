@@ -391,7 +391,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             if (null == statuses) {
                 filterByStatuses = null;
             } else if (statuses.isEmpty()) {
-                filterByStatuses = CompletionState.ALL_STATES;
+                filterByStatuses = CompletionState.getAllStates();
             } else {
                 filterByStatuses = Arrays.stream(statuses.split(","))
                         .map(CompletionState::valueOf)
@@ -445,7 +445,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     // Only augment when filtering by statuses:
                     summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(user, summarizedResults);
                     // Optimise out unnecessary filtering:
-                    if (!filterByStatuses.equals(CompletionState.ALL_STATES)) {
+                    if (!filterByStatuses.equals(CompletionState.getAllStates())) {
                         summarizedResults = summarizedResults.stream()
                                 .filter(q -> filterByStatuses.contains(q.getState()))
                                 .collect(Collectors.toList());
