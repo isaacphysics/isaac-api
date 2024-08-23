@@ -404,12 +404,14 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
-        // Show content tagged as "nofilter" if the user is staff
-        boolean showNoFilterContent;
+        // Show content tagged as "nofilter" if the user is staff:
+        boolean showNoFilterContent = false;
         try {
-            showNoFilterContent = isUserStaff(userManager, httpServletRequest);
+            if (user instanceof RegisteredUserDTO) {
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
+            }
         } catch (NoUserLoggedInException e) {
-            showNoFilterContent = false;
+            // This cannot happen!
         }
 
         List<ContentSummaryDTO> combinedResults = new ArrayList<>();
