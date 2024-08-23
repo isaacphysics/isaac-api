@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -61,11 +62,13 @@ public class UserAttemptManager {
         String questionId = contentSummary.getId();
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
         boolean questionAnsweredCorrectly = false;
+        boolean attempted = false;
         if (questionAttempts != null) {
             for (String relatedQuestionPartId : contentSummary.getQuestionPartIds()) {
                 questionAnsweredCorrectly = false;
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
                 if (questionPartAttempts != null) {
+                    attempted = true;
                     for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
                         questionAnsweredCorrectly = partAttempt.isCorrect();
                         if (questionAnsweredCorrectly) {
@@ -78,7 +81,15 @@ public class UserAttemptManager {
                 }
             }
         }
-        contentSummary.setCorrect(questionAnsweredCorrectly);
+        if (attempted) {
+            if (questionAnsweredCorrectly) {
+                contentSummary.setState(Constants.CompletionState.ALL_CORRECT);
+            } else {
+                contentSummary.setState(Constants.CompletionState.IN_PROGRESS);
+            }
+        } else {
+            contentSummary.setState(Constants.CompletionState.NOT_ATTEMPTED);
+        }
     }
 
     /**
