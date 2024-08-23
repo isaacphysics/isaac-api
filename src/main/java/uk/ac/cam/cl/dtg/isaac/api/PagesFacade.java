@@ -388,28 +388,31 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            if (null == statuses || Objects.equals(statuses, "")) {
-                // If no statuses apply assume all statuses
-                filterByStatuses = Set.of(CompletionState.values());
+            if (null == statuses) {
+                // If statuses isn't a URL param, we won't augment or filter!
+                filterByStatuses = null;
+            } else if (statuses.isEmpty()) {
+                // If statuses is blank, that shouldn't mean "please match nothing at all"; make it match everything.
+                filterByStatuses = CompletionState.getAllStates();
             } else {
                 filterByStatuses = Arrays.stream(statuses.split(","))
                         .map(CompletionState::valueOf)
                         .collect(Collectors.toSet());
             }
         } catch (IllegalArgumentException e) {
-            return new SegueErrorResponse(
-                    Status.BAD_REQUEST, "Invalid question statuses to filter by provided.", e
-            ).toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid question status filter provided.").toResponse();
         }
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
-        // Show content tagged as "nofilter" if the user is staff
-        boolean showNoFilterContent;
+        // Show content tagged as "nofilter" if the user is staff:
+        boolean showNoFilterContent = false;
         try {
-            showNoFilterContent = isUserStaff(userManager, httpServletRequest);
+            if (user instanceof RegisteredUserDTO) {
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
+            }
         } catch (NoUserLoggedInException e) {
-            showNoFilterContent = false;
+            // This cannot happen!
         }
 
         List<ContentSummaryDTO> combinedResults = new ArrayList<>();
@@ -440,13 +443,15 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 List<ContentSummaryDTO> unfilteredSummarizedResults = new ArrayList<>(summarizedResults);
 
-                if (user instanceof RegisteredUserDTO) {
-                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(
-                            (RegisteredUserDTO) user, summarizedResults
-                    );
-                    summarizedResults = summarizedResults.stream()
-                            .filter(q -> filterByStatuses.contains(q.getState()))
-                            .collect(Collectors.toList());
+                if (null != filterByStatuses) {
+                    // Only augment when filtering by statuses:
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(user, summarizedResults);
+                    // Optimise out unnecessary filtering:
+                    if (!filterByStatuses.equals(CompletionState.getAllStates())) {
+                        summarizedResults = summarizedResults.stream()
+                                .filter(q -> filterByStatuses.contains(q.getState()))
+                                .collect(Collectors.toList());
+                    }
                 }
 
                 if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {
