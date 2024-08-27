@@ -246,4 +246,57 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // This should not match the Fuzzy match titled "Catenary"
         assertEquals(List.of(ITConstants.EXACT_MATCH_TEST_PAGE_ID), questionIDs);
     }
+
+    @Test
+    public void getQuestionList_searchForSupersededPageAsStudent_returnsPageThatSupersedesOnly() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
+                "", "Convival", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        // Check only the supersedes result is contained
+        List<String> ids = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+        assertEquals(List.of(ITConstants.SEARCH_TEST_SUPERSEDES_ID), ids);
+    }
+
+    public void getQuestionList_searchForSupersededPageAsTeacher_returnsBoth() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(createNiceMock(Request.class), searchRequest,
+                "", "Convival", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        // Check superseded and supersedes results are contained
+        List<String> ids = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+        assertEquals(List.of(ITConstants.SEARCH_TEST_SUPERSEDES_ID, ITConstants.SEARCH_TEST_SUPERSEDED_BY_ID), ids);
+    }
 }
