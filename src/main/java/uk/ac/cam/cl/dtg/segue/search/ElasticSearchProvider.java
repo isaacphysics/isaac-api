@@ -704,6 +704,8 @@ public class ElasticSearchProvider implements ISearchProvider {
             return QueryBuilders.multiMatchQuery(multiMatchInstruction.getField(), multiMatchInstruction.getValue())
                     .boost(multiMatchInstruction.getBoost()).type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)
                     .prefixLength(2);
+        } else if (matchInstruction instanceof ExistsInstruction) {
+            return QueryBuilders.existsQuery(((ExistsInstruction) matchInstruction).getField());
         } else {
                 throw new SegueSearchException(
                         "Processing match instruction which is not supported: " + matchInstruction.getClass());

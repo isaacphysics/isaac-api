@@ -416,7 +416,7 @@ public class GitContentManager {
             @Nullable final String searchString,
             final Map<String, Set<String>> filterFieldNamesToValues,
             final boolean fasttrack, final Integer startIndex,
-            final Integer limit, final boolean showNoFilterContent
+            final Integer limit, final boolean showNoFilterContent, final boolean showSupersededContent
     ) throws ContentManagerException {
 
         // Set question type (content type) based on fasttrack status
@@ -437,6 +437,9 @@ public class GitContentManager {
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
                 searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+
+                // Filter superseded questions if necessary:
+                .excludeSupersededContent(!showSupersededContent)
 
                 // Restrict content types
                 .includeContentTypes(contentTypes)

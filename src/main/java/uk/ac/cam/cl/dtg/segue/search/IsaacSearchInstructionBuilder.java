@@ -42,6 +42,7 @@ public class IsaacSearchInstructionBuilder {
     private final boolean includeOnlyPublishedContent;
     private final boolean excludeRegressionTestContent;
     private final boolean excludeNofilterContent;
+    private boolean excludeSupersededContent;
     private boolean includePastEvents;
 
     private Set<String> includedContentTypes;
@@ -117,6 +118,7 @@ public class IsaacSearchInstructionBuilder {
 
         this.excludeNofilterContent = excludeNofilterContent;
         this.includePastEvents = false;
+        this.excludeSupersededContent = false;
     }
 
     /**
@@ -145,6 +147,11 @@ public class IsaacSearchInstructionBuilder {
 
         // Exclude deprecated content
         instruction.mustNot(new MatchInstruction(Constants.DEPRECATED_FIELDNAME, "true"));
+
+        // Exclude superseded content
+        if (this.excludeSupersededContent) {
+            instruction.mustNot(new ExistsInstruction(Constants.SUPERSEDED_BY_FIELDNAME));
+        }
 
         return instruction;
     }
@@ -200,6 +207,11 @@ public class IsaacSearchInstructionBuilder {
      */
     public IsaacSearchInstructionBuilder includePastEvents(final boolean includePastEvents) {
         this.includePastEvents = includePastEvents;
+        return this;
+    }
+
+    public IsaacSearchInstructionBuilder excludeSupersededContent(final boolean excludeSupersededContent) {
+        this.excludeSupersededContent = excludeSupersededContent;
         return this;
     }
 
