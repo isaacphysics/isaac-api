@@ -207,6 +207,7 @@ public final class Constants {
         REPORT_CONTENT_PAGE,
         LLM_FREE_TEXT_QUESTION_FEEDBACK,
         RESEARCH_NOTIFICATION_DISMISSED,
+        QUESTION_FINDER_SEARCH
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
