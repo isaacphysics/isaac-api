@@ -405,11 +405,13 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
-        // Show content tagged as "nofilter" if the user is staff:
+        // Show "nofilter" content to staff, superseded content to teachers:
         boolean showNoFilterContent = false;
+        boolean showSupersededContent = false;
         try {
             if (user instanceof RegisteredUserDTO) {
                 showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
+                showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
             }
         } catch (NoUserLoggedInException e) {
             // This cannot happen!
@@ -432,7 +434,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                         fasttrack,
                         nextSearchStartIndex,
                         limit,
-                        showNoFilterContent
+                        showNoFilterContent,
+                        showSupersededContent
                 );
 
                 summarizedResults = extractContentSummaryFromList(c.getResults());
