@@ -903,7 +903,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     foundUsers = Collections.emptyList();
                 }
             } else {
-                foundUsers = this.userManager.findUsers(userPrototype); // this isn't filtering by email verification status
+                foundUsers = this.userManager.findUsers(userPrototype);
             }
             Map<Long, RegisteredUserDTO> userMapById = foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
 
