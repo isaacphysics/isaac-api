@@ -307,6 +307,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         if (null != prototype.getRole()) {
             fieldsOfInterest.put("role", prototype.getRole().name());
         }
+        if (null != prototype.getEmailVerificationStatus()) {
+            fieldsOfInterest.put("email_verification_status", prototype.getEmailVerificationStatus().name());
+        }
 
         // Build optional WHERE clause:
         StringBuilder sb = new StringBuilder();

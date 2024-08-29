@@ -808,6 +808,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
+     * @param emailVerificationStatus
+     *            - if searching by email verification status
      * @return a userDTO or a segue error response
      */
     @GET
@@ -820,7 +822,8 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final String schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN,
+            @QueryParam("emailVerificationStatus") @Nullable final EmailVerificationStatus emailVerificationStatus) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -886,6 +889,10 @@ public class AdminFacade extends AbstractSegueFacade {
                 userPrototype.setSchoolId(schoolURN);
             }
 
+            if (null != emailVerificationStatus) {
+                userPrototype.setEmailVerificationStatus(emailVerificationStatus);
+            }
+
             List<RegisteredUserDTO> foundUsers;
 
             // If a unique email address (without wildcards) provided, look up using this email immediately:
@@ -896,7 +903,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     foundUsers = Collections.emptyList();
                 }
             } else {
-                foundUsers = this.userManager.findUsers(userPrototype);
+                foundUsers = this.userManager.findUsers(userPrototype); // this isn't filtering by email verification status
             }
             Map<Long, RegisteredUserDTO> userMapById = foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
 
