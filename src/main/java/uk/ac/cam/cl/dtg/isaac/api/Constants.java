@@ -227,6 +227,15 @@ public final class Constants {
     public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, Calendar.JUNE, 12, 0, 0, 0); // 12/06/2023
 
     /**
+     * Feedback messages
+     */
+    public static final String FEEDBACK_NO_ANSWER_PROVIDED = "You did not provide an answer.";
+    public static final String FEEDBACK_UNRECOGNISED_FORMAT = "Your answer is not in a recognised format.";
+    public static final String FEEDBACK_UNRECOGNISED_ITEMS = "Your answer contained unrecognised items.";
+    public static final String FEEDBACK_NO_CORRECT_ANSWERS = "This question does not have any correct answers.";
+    public static final String FEEDBACK_NO_CHOICES = "This question does not have any items to choose from.";
+
+    /**
      * Private constructor to prevent this class being created.
      */
     private Constants() {
