@@ -100,7 +100,6 @@ import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -369,12 +368,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
         mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
-
-        // Twitter
-        this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
-        this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
-        mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
 
         // Raspberry Pi
         try {
