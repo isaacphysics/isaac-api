@@ -30,6 +30,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -415,7 +416,7 @@ public class GitContentManager {
             @Nullable final String searchString,
             final Map<String, Set<String>> filterFieldNamesToValues,
             final boolean fasttrack, final Integer startIndex,
-            final Integer limit, final boolean showNoFilterContent
+            final Integer limit, final boolean showNoFilterContent, final boolean showSupersededContent
     ) throws ContentManagerException {
 
         // Set question type (content type) based on fasttrack status
@@ -436,6 +437,9 @@ public class GitContentManager {
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(
                 searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+
+                // Filter superseded questions if necessary:
+                .excludeSupersededContent(!showSupersededContent)
 
                 // Restrict content types
                 .includeContentTypes(contentTypes)
@@ -776,30 +780,9 @@ public class GitContentManager {
      *                The values of this instance could be changed by this method.
      */
     private static void generateDerivedSummaryValues(final ContentDTO content, final ContentSummaryDTO summary) {
-        List<String> questionPartIds = Lists.newArrayList();
-        GitContentManager.collateQuestionPartIds(content, questionPartIds);
+        List<QuestionDTO> questionParts = GameManager.getAllMarkableQuestionPartsDFSOrder(content);
+        List<String> questionPartIds = questionParts.stream().map(QuestionDTO::getId).collect(Collectors.toList());
         summary.setQuestionPartIds(questionPartIds);
-    }
-
-    /**
-     * Recursively walk through the content object and its children to populate the questionPartIds list with the IDs
-     * of any content of type QuestionDTO.
-     * @param content the content page and, on recursive invocations, its children.
-     * @param questionPartIds a list to track the question part IDs in the content and its children.
-     */
-    private static void collateQuestionPartIds(final ContentDTO content, final List<String> questionPartIds) {
-        if (content instanceof QuestionDTO && !(content instanceof IsaacQuickQuestionDTO)) {
-            questionPartIds.add(content.getId());
-        }
-        List<ContentBaseDTO> children = content.getChildren();
-        if (children != null) {
-            for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
-                    collateQuestionPartIds(childContent, questionPartIds);
-                }
-            }
-        }
     }
 
     /**

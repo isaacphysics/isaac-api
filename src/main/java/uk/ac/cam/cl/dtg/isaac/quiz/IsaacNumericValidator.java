@@ -31,7 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 
 /**
@@ -42,7 +42,7 @@ public class IsaacNumericValidator implements IValidator {
 
     protected static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
     protected static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
-    protected static final String DEFAULT_NO_ANSWER_VALIDATION_RESPONSE = "You did not provide an answer.";
+    protected static final String DEFAULT_NO_ANSWER_VALIDATION_RESPONSE = FEEDBACK_NO_ANSWER_PROVIDED;
     protected static final String DEFAULT_NO_UNIT_VALIDATION_RESPONSE = "You did not choose any units. To give an answer with no units, select \"None\".";
     private static final String INVALID_NEGATIVE_STANDARD_FORM = ".*?10-([0-9]+).*?";
 
@@ -77,7 +77,7 @@ public class IsaacNumericValidator implements IValidator {
                     + question.getCanonicalSourceFile());
 
             return new QuantityValidationResponse(question.getId(), answerFromUser, false,
-                            new Content("This question does not have any correct answers"),
+                            new Content(FEEDBACK_NO_CORRECT_ANSWERS),
                             false, false, new Date());
         }
 

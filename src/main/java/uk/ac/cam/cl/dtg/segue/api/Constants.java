@@ -319,6 +319,7 @@ public final class Constants {
     public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
 
     // Local authentication specific stuff
+    public static final int MINIMUM_PASSWORD_LENGTH = 8;
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
@@ -466,6 +467,7 @@ public final class Constants {
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
     public static final String DEPRECATED_FIELDNAME = "deprecated";
+    public static final String SUPERSEDED_BY_FIELDNAME = "supersededBy";
     public static final String PUBLISHED_FIELDNAME = "published";
 
     public static final String STAGE_FIELDNAME = "audience.stage";

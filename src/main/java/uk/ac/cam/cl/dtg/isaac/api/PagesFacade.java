@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -323,13 +324,18 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
             @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
             @QueryParam("questionCategories") final String questionCategories,
+            @QueryParam("statuses") final String statuses,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
-            @DefaultValue("false") @QueryParam("hideCompleted") final Boolean hideCompleted,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
-
+        Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
+
+        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+            return SegueErrorResponse.getBadRequestResponse(
+                    String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
+        }
 
         try {
             user = userManager.getCurrentUser(httpServletRequest);
@@ -381,14 +387,34 @@ public class PagesFacade extends AbstractIsaacFacade {
             }
         }
 
+        try {
+            if (null == statuses) {
+                // If statuses isn't a URL param, we won't augment or filter!
+                filterByStatuses = null;
+            } else if (statuses.isEmpty()) {
+                // If statuses is blank, that shouldn't mean "please match nothing at all"; make it match everything.
+                filterByStatuses = CompletionState.getAllStates();
+            } else {
+                filterByStatuses = Arrays.stream(statuses.split(","))
+                        .map(CompletionState::valueOf)
+                        .collect(Collectors.toSet());
+            }
+        } catch (IllegalArgumentException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid question status filter provided.").toResponse();
+        }
+
         String validatedSearchString = searchString.isBlank() ? null : searchString;
 
-        // Show content tagged as "nofilter" if the user is staff
-        boolean showNoFilterContent;
+        // Show "nofilter" content to staff, superseded content to teachers:
+        boolean showNoFilterContent = false;
+        boolean showSupersededContent = false;
         try {
-            showNoFilterContent = isUserStaff(userManager, httpServletRequest);
+            if (user instanceof RegisteredUserDTO) {
+                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
+                showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
+            }
         } catch (NoUserLoggedInException e) {
-            showNoFilterContent = false;
+            // This cannot happen!
         }
 
         List<ContentSummaryDTO> combinedResults = new ArrayList<>();
@@ -408,7 +434,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                         fasttrack,
                         nextSearchStartIndex,
                         limit,
-                        showNoFilterContent
+                        showNoFilterContent,
+                        showSupersededContent
                 );
 
                 summarizedResults = extractContentSummaryFromList(c.getResults());
@@ -419,13 +446,13 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 List<ContentSummaryDTO> unfilteredSummarizedResults = new ArrayList<>(summarizedResults);
 
-                if (user instanceof RegisteredUserDTO) {
-                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(
-                            (RegisteredUserDTO) user, summarizedResults
-                    );
-                    if (hideCompleted) {
+                if (null != filterByStatuses) {
+                    // Only augment when filtering by statuses:
+                    summarizedResults = userAttemptManager.augmentContentSummaryListWithAttemptInformation(user, summarizedResults);
+                    // Optimise out unnecessary filtering:
+                    if (!filterByStatuses.equals(CompletionState.getAllStates())) {
                         summarizedResults = summarizedResults.stream()
-                                .filter(q -> q.getCorrect() == null || !q.getCorrect())
+                                .filter(q -> filterByStatuses.contains(q.getState()))
                                 .collect(Collectors.toList());
                     }
                 }
