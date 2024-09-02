@@ -216,6 +216,9 @@ public class IsaacSymbolicLogicValidator implements IValidator {
                     closestMatch = logicFormulaChoice;
                     closestMatchType = MatchType.EXACT;
                     break;
+                } else if (matchType == MatchType.SYMBOLIC && !logicFormulaChoice.getRequiresExactMatch()) {
+                    closestMatch = logicFormulaChoice;
+                    closestMatchType = MatchType.SYMBOLIC;
                 } else if (matchType.compareTo(closestMatchType) > 0) {
                     if (logicFormulaChoice.getRequiresExactMatch() && logicFormulaChoice.isCorrect()) {
                         closestMatch = logicFormulaChoice;
