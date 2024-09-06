@@ -21,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
@@ -70,11 +71,11 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         IMisuseMonitor misuseMonitor = createMock(IMisuseMonitor.class);
         IUserStreaksManager userStreaksManager = createMock(IUserStreaksManager.class);
         UserAssociationManager userAssociationManager = createMock(UserAssociationManager.class);
-
+        AbstractUserPreferenceManager userPreferencesManager = createMock(AbstractUserPreferenceManager.class);
         questionManager = createMock(QuestionManager.class);
 
-        questionFacade = new QuestionFacade(properties, contentMapper, contentManager,
-            userManager, questionManager, logManager, misuseMonitor, userStreaksManager, userAssociationManager);
+        questionFacade = new QuestionFacade(properties, contentMapper, contentManager, userManager, userPreferencesManager,
+                questionManager, logManager, misuseMonitor, userStreaksManager, userAssociationManager);
 
         expect(contentManager.getCurrentContentSHA()).andStubReturn(contentIndex);
         expect(contentManager.getContentDOById(questionDO.getId())).andStubReturn(questionDO);

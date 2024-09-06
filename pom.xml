@@ -10,26 +10,26 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v3.15.6-SNAPSHOT</segue.version>
-        <log4j.version>2.22.1</log4j.version>
-        <resteasy.version>6.2.8.Final</resteasy.version>
+        <segue.version>v3.16.6-SNAPSHOT</segue.version>
+        <log4j.version>2.23.1</log4j.version>
+        <resteasy.version>6.2.9.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
-        <oauth-client.version>1.35.0</oauth-client.version>
-        <jackson.version>2.17.0</jackson.version>
+        <oauth-client.version>1.36.0</oauth-client.version>
+        <jackson.version>2.17.2</jackson.version>
         <jackson-databind.version>2.17.0</jackson-databind.version>
         <powermock.version>2.0.9</powermock.version>
         <junit-4.version>4.13.2</junit-4.version>
-        <junit-5.version>5.10.2</junit-5.version>
+        <junit-5.version>5.10.3</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty-version>11.0.20</jetty-version>
+        <jetty-version>11.0.22</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <testcontainers.version>1.20.0</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <dependency-check.version>9.1.0</dependency-check.version>
+        <dependency-check.version>9.2.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
@@ -59,6 +59,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-ai-openai</artifactId>
+            <version>1.0.0-beta.8</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <version>3.30.2-GA</version>
@@ -67,7 +73,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.1.0-M2</version>
+            <version>6.1.0</version>
         </dependency>
 
         <dependency>
@@ -140,7 +146,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.1.0-jre</version>
+            <version>33.2.1-jre</version>
         </dependency>
 
         <dependency>
@@ -163,7 +169,7 @@
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.44.1</version>
+            <version>1.44.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -175,12 +181,6 @@
                     <groupId>com.google.guava</groupId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.twitter4j</groupId>
-            <artifactId>twitter4j-core</artifactId>
-            <version>4.0.7</version>
         </dependency>
 
         <dependency>
@@ -305,7 +305,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
+            <version>3.15.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -380,7 +380,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.17.20</version>
+            <version>7.17.21</version>
         </dependency>
 
         <dependency>
@@ -699,14 +699,6 @@
     <!-- This block pins versions of indirect dependencies - useful to address security issues -->
     <!-- TODO: When doing dependency updates, please make sure these are still necessary, and remove them if not -->
     <dependencyManagement>
-        <dependencies>
-
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-core</artifactId>
-                <version>3.8.6</version>
-            </dependency>
-        </dependencies>
     </dependencyManagement>
 
     <!-- Profiles configuration -->

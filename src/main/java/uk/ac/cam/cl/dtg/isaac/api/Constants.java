@@ -72,6 +72,16 @@ public final class Constants {
         PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED;
     }
 
+    public enum CompletionState {
+        ALL_CORRECT, IN_PROGRESS, NOT_ATTEMPTED;
+
+        private static final Set<CompletionState> allStates = Set.of(CompletionState.values());
+
+        public static Set<CompletionState> getAllStates() {
+            return allStates;
+        }
+    }
+
     public enum QuestionPartState {
         CORRECT, INCORRECT, NOT_ATTEMPTED;
     }
@@ -98,14 +108,15 @@ public final class Constants {
      * GameboardState Represents the potential states of a gameboard.
      */
     public enum GameboardState {
-        COMPLETED, IN_PROGRESS, NOT_ATTEMPTED
+        ALL_CORRECT, ALL_ATTEMPTED, IN_PROGRESS, NOT_ATTEMPTED
     }
 
     // field names
     public static final String CREATED_DATE_FIELDNAME = "created";
     public static final String VISITED_DATE_FIELDNAME = "lastVisited";
 
-    public static final String COMPLETION_FIELDNAME = "percentageCompleted";
+    public static final String PERCENTAGE_ATTEMPTED_FIELDNAME = "percentageAttempted";
+    public static final String PERCENTAGE_CORRECT_FIELDNAME = "percentageCorrect";
 
     public static final String GAMEBOARD_ID_FKEY = "gameboardId";
     public static final String GAMEBOARD_ID_FKEYS = "gameboardIds";
@@ -119,6 +130,7 @@ public final class Constants {
     public static final String ALL_BOARDS = "ALL";
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 12;
+    public static final Integer SEARCH_RESULTS_PER_PAGE = 30;
     public static final Integer SEARCH_MAX_WINDOW_SIZE = 10000;
     public static final Integer GAMEBOARD_MAX_TITLE_LENGTH = 255;
 
@@ -185,7 +197,6 @@ public final class Constants {
         VIEW_MY_ASSIGNMENTS,
         VIEW_GAMEBOARD_BY_ID,
         VIEW_GITHUB_CODE,
-        ACCEPT_COOKIES,
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
         CLIENT_SIDE_ERROR,
@@ -193,7 +204,10 @@ public final class Constants {
         USER_CONSISTENCY_WARNING_SHOWN,
         REVIEW_TEACHER_CONNECTIONS,
         REPORT_CONTENT_ACCORDION_SECTION,
-        REPORT_CONTENT_PAGE
+        REPORT_CONTENT_PAGE,
+        LLM_FREE_TEXT_QUESTION_FEEDBACK,
+        RESEARCH_NOTIFICATION_DISMISSED,
+        QUESTION_FINDER_SEARCH
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
@@ -204,13 +218,22 @@ public final class Constants {
     }};
 
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING
+        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, CONSENT
     }
 
     /**
      * Quiz constants
      */
     public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, Calendar.JUNE, 12, 0, 0, 0); // 12/06/2023
+
+    /**
+     * Feedback messages
+     */
+    public static final String FEEDBACK_NO_ANSWER_PROVIDED = "You did not provide an answer.";
+    public static final String FEEDBACK_UNRECOGNISED_FORMAT = "Your answer is not in a recognised format.";
+    public static final String FEEDBACK_UNRECOGNISED_ITEMS = "Your answer contained unrecognised items.";
+    public static final String FEEDBACK_NO_CORRECT_ANSWERS = "This question does not have any correct answers.";
+    public static final String FEEDBACK_NO_CHOICES = "This question does not have any items to choose from.";
 
     /**
      * Private constructor to prevent this class being created.

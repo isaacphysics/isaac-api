@@ -394,7 +394,6 @@ public class ContentIndexer {
             for (ContentBase cb : content.getChildren()) {
                 if (cb instanceof Content) {
                     Content c = (Content) cb;
-
                     this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
@@ -402,8 +401,7 @@ public class ContentIndexer {
 
         if (content instanceof Choice) {
             Choice choice = (Choice) content;
-            this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile,
-                    newParentId, parentPublished);
+            this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile, newParentId, parentPublished);
         }
 
         // hack to get cards to count as children:
@@ -423,11 +421,17 @@ public class ContentIndexer {
                     this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
+            if (inlineRegion.getHints() != null) {
+                for (ContentBase cb : inlineRegion.getHints()) {
+                    Content c = (Content) cb;
+                    this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
+                }
+            }
         }
 
-        // TODO: hack to get hints to apply as children
         if (content instanceof Question) {
             Question question = (Question) content;
+
             if (question.getHints() != null) {
                 for (ContentBase cb : question.getHints()) {
                     Content c = (Content) cb;
@@ -435,32 +439,20 @@ public class ContentIndexer {
                 }
             }
 
-            // Augment question answers
             if (question.getAnswer() != null) {
                 Content answer = (Content) question.getAnswer();
-                if (answer.getChildren() != null) {
-                    for (ContentBase cb : answer.getChildren()) {
-                        Content c = (Content) cb;
-                        this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
-                    }
-                }
+                this.augmentChildContent(answer, canonicalSourceFile, newParentId, parentPublished);
             }
 
             if (question.getDefaultFeedback() != null) {
                 Content defaultFeedback = question.getDefaultFeedback();
-                if (defaultFeedback.getChildren() != null) {
-                    for (ContentBase cb : defaultFeedback.getChildren()) {
-                        Content c = (Content) cb;
-                        this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
-                    }
-                }
+                this.augmentChildContent(defaultFeedback, canonicalSourceFile, newParentId, parentPublished);
             }
 
             if (content instanceof ChoiceQuestion) {
                 ChoiceQuestion choiceQuestion = (ChoiceQuestion) content;
                 if (choiceQuestion.getChoices() != null) {
-                    for (ContentBase cb : choiceQuestion.getChoices()) {
-                        Content c = (Content) cb;
+                    for (Content c : choiceQuestion.getChoices()) {
                         this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                     }
                 }

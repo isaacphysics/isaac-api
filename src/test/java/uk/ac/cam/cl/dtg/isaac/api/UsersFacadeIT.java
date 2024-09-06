@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -18,10 +19,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.ExamBoard;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
@@ -34,6 +38,9 @@ import java.util.Set;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ALICE_STUDENT_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_TEACHER_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_TEACHER_PASSWORD;
 
 
 public class UsersFacadeIT extends IsaacIntegrationTest {
@@ -812,5 +819,53 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         // check role was not changed in DB
         assertEquals(user.getRole(), pgUsers.getById(user.getId()).getRole());
+    }
+
+
+    @Test
+    public void generatePasswordResetTokenForOtherUser_teacherResetsStudentPassword_studentReceiveResetEmail() throws Exception {
+        // Arrange
+        // inject EmailManager mock to verify email sent
+        EmailManager dummyEmailManager = createMock(EmailManager.class);
+        UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(
+                pgUsers, properties, providersToRegister, dummyEmailManager);
+        UserAccountManager userAccountManager = new UserAccountManager(
+                pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers,
+                logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
+        UsersFacade usersFacadeForTest = new UsersFacade(properties, userAccountManager, logManager,
+                userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
+
+        // create email template
+        EmailTemplateDTO template = new EmailTemplateDTO("password reset test");
+
+        // setup capture
+        Capture<Map<String, Object>> capturedEmailValues = newCapture();
+
+        // setup mock
+        expect(dummyEmailManager.getEmailTemplateDTO("email-template-password-reset")).andReturn(template);
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), eq(template), capture(capturedEmailValues), anyObject());
+        expectLastCall().once();
+
+        replay(dummyEmailManager);
+
+        // Log in as teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest resetPasswordRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(resetPasswordRequest);
+
+        // Act
+        Response resetPasswordResponse = usersFacadeForTest.generatePasswordResetTokenForOtherUser(
+                createMock(Request.class), resetPasswordRequest, ALICE_STUDENT_ID);
+
+        String resetLink = (String) capturedEmailValues.getValue().get("resetURL");
+        String[] splitResetLink = resetLink.split("/");
+        String token = splitResetLink[splitResetLink.length-1];
+
+        Response validatePasswordResponse = usersFacadeForTest.validatePasswordResetRequest(token);
+
+        // Assert
+        // check statuses OK
+        assertEquals(Response.Status.OK.getStatusCode(), resetPasswordResponse.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), validatePasswordResponse.getStatus());
     }
 }

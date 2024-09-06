@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TYPE_FILTER;
 
 public class IsaacControllerIT extends IsaacIntegrationTest {
@@ -141,5 +143,37 @@ public class IsaacControllerIT extends IsaacIntegrationTest {
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
         assertEquals(Set.of(ITConstants.SEARCH_TEST_EVENT_ID), questionIDs);
+    }
+
+    /**
+     * This test searches for a page that has an exact and fuzzy match in the title.
+     *
+     * We expect to see both pages.
+     */
+    @Test
+    public void searchEndpoint_searchForPhrase_returnFuzzyMatchesPhrase() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = isaacControllerFacade.search(
+                createNiceMock(Request.class), searchRequest, "Canary", QUESTION_TYPE, 0,  -1);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        List<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
+        // Fuzzy match is titled Catenary, whereas exact match is titled Canary
+        assertEquals(List.of(ITConstants.EXACT_MATCH_TEST_PAGE_ID, ITConstants.FUZZY_MATCH_TEST_PAGE_ID), questionIDs);
     }
 }

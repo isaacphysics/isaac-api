@@ -42,6 +42,7 @@ public class IsaacSearchInstructionBuilder {
     private final boolean includeOnlyPublishedContent;
     private final boolean excludeRegressionTestContent;
     private final boolean excludeNofilterContent;
+    private boolean excludeSupersededContent;
     private boolean includePastEvents;
 
     private Set<String> includedContentTypes;
@@ -49,6 +50,7 @@ public class IsaacSearchInstructionBuilder {
     private static final float PRIORITY_CONTENT_BOOST = 5L;
 
     private List<SearchInField> searchesInFields;
+    public static final Long NO_BOOST = 1L;
     private static final Long FIELD_BOOST = 5L;
     private static final Long FIELD_BOOST_FUZZY = 1L;
     private static final Long WILDCARD_FIELD_BOOST = 1L;
@@ -68,13 +70,14 @@ public class IsaacSearchInstructionBuilder {
     public enum Strategy {
         SIMPLE,
         DEFAULT,
-        FUZZY
+        FUZZY,
+        SUBSTRING
     }
 
 
     /**
-     * Builder for a {@code BooleanInstruction} defining a search through the content. The final instruction is structured
-     * like so:
+     * Builder for a {@code BooleanInstruction} defining a search through the content.
+     * The final instruction is structured like so:
      * > Master instruction
      *     > Base instruction
      *        - Exclude any content with "deprecated" in field "tags"
@@ -99,8 +102,10 @@ public class IsaacSearchInstructionBuilder {
      * @param excludeRegressionTestContent Exclude regression test content from the results.
      * @param excludeNofilterContent Exclude 'nofilter' content from the results.
      */
-    public IsaacSearchInstructionBuilder(final ISearchProvider searchProvider, final boolean includeOnlyPublishedContent,
-                                         final boolean excludeRegressionTestContent, final boolean excludeNofilterContent) {
+    public IsaacSearchInstructionBuilder(final ISearchProvider searchProvider,
+                                         final boolean includeOnlyPublishedContent,
+                                         final boolean excludeRegressionTestContent,
+                                         final boolean excludeNofilterContent) {
         this.searchProvider = searchProvider;
 
         this.searchesInFields = new ArrayList<>();
@@ -113,6 +118,7 @@ public class IsaacSearchInstructionBuilder {
 
         this.excludeNofilterContent = excludeNofilterContent;
         this.includePastEvents = false;
+        this.excludeSupersededContent = false;
     }
 
     /**
@@ -141,6 +147,11 @@ public class IsaacSearchInstructionBuilder {
 
         // Exclude deprecated content
         instruction.mustNot(new MatchInstruction(Constants.DEPRECATED_FIELDNAME, "true"));
+
+        // Exclude superseded content
+        if (this.excludeSupersededContent) {
+            instruction.mustNot(new ExistsInstruction(Constants.SUPERSEDED_BY_FIELDNAME));
+        }
 
         return instruction;
     }
@@ -199,6 +210,11 @@ public class IsaacSearchInstructionBuilder {
         return this;
     }
 
+    public IsaacSearchInstructionBuilder excludeSupersededContent(final boolean excludeSupersededContent) {
+        this.excludeSupersededContent = excludeSupersededContent;
+        return this;
+    }
+
     /**
      * Builds and returns the final BooleanMatchInstruction reflecting the builder's settings.
      *
@@ -233,7 +249,8 @@ public class IsaacSearchInstructionBuilder {
             // Optionally add instruction to match only events that have not yet taken place
             if (contentType.equals(EVENT_TYPE) && !includePastEvents) {
                 LocalDate today = LocalDate.now();
-                long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
+                long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond()
+                        * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
                 contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
             }
 
@@ -265,16 +282,18 @@ public class IsaacSearchInstructionBuilder {
     /**
      * Augments {@code instruction} with the field search instructions specified via {@code searchFor()}.
      *
-     * @param instruction A BooleanMatchInstruction for a particular content type to augment with the field-search instructions.
+     * @param instruction A BooleanMatchInstruction for a particular content type to augment with the field-search
+     *                    instructions.
      * @param searchesInFields A list of {@code SearchInField}s encapsulating fields and terms to search for, as well as
      *                         the strategy and priority to use for each.
-     * @param contentType The content type {@code instruction} relates to, so we can decide how/whether to process certain
-     *                    field searches.
-     *                    (todo: Consider replacing with content-type-specific implementations of this method that process
-     *                    only fields relevant to the content type. Alternatively, this class could provide
+     * @param contentType The content type {@code instruction} relates to, so we can decide how/whether to process
+     *                    certain field searches.
+     *                    (todo: Consider replacing with content-type-specific implementations of this method that
+     *                    process only fields relevant to the content type. Alternatively, this class could provide
      *                    content-type-specific search builders to clients.)
      */
-    private void addSearchesInFieldsToInstruction(final BooleanInstruction instruction, final List<SearchInField> searchesInFields,
+    private void addSearchesInFieldsToInstruction(final BooleanInstruction instruction,
+                                                  final List<SearchInField> searchesInFields,
                                                   final String contentType) {
 
         // Multi-match and nested instructions are grouped together across searchInField instances.
@@ -287,7 +306,9 @@ public class IsaacSearchInstructionBuilder {
             List<AbstractInstruction> generatedSubInstructions = Lists.newArrayList();
 
             // Special fields
-            if (Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME).collect(Collectors.toList()).contains(searchInField.getField())) {
+            if (Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME)
+                    .collect(Collectors.toList())
+                    .contains(searchInField.getField())) {
                 // Address fields
                 // Non-event content types ignore this
                 if (!Objects.equals(contentType, EVENT_TYPE)) {
@@ -300,8 +321,10 @@ public class IsaacSearchInstructionBuilder {
                 for (String addressField : Constants.ADDRESS_FIELDNAMES) {
                     for (String term : searchInField.getTerms()) {
                         String field = addressPath + nestedFieldConnector + addressField;
-                        generatedSubInstructions.add(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST, false));
-                        generatedSubInstructions.add(new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY, true));
+                        generatedSubInstructions.add(
+                                new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST, false));
+                        generatedSubInstructions.add(
+                                new MatchInstruction(field, term, EVENT_ADDRESS_FIELD_BOOST_FUZZY, true));
                     }
                 }
             } else if (Constants.NESTED_QUERY_FIELDS.contains(searchInField.getField())) {
@@ -324,24 +347,43 @@ public class IsaacSearchInstructionBuilder {
                 // Generic fields
                 for (String term : searchInField.getTerms()) {
                     if (searchInField.getStrategy() == Strategy.DEFAULT) {
-                        Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
-                        Long fuzzyBoost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_FIELD_BOOST_FUZZY : FIELD_BOOST_FUZZY;
+                        Long boost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
+                        Long fuzzyBoost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_FIELD_BOOST_FUZZY : FIELD_BOOST_FUZZY;
 
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, false));
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, fuzzyBoost, true));
+                        generatedSubInstructions.add(
+                                new MatchInstruction(searchInField.getField(), term, boost, false));
+                        generatedSubInstructions.add(
+                                new MatchInstruction(searchInField.getField(), term, fuzzyBoost, true));
+
+                    } else if (searchInField.getStrategy() == Strategy.SUBSTRING) {
+                        Long boost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
+
+                        generatedSubInstructions.add(
+                                new MatchInstruction(searchInField.getField(), term, boost, false));
+                        generatedSubInstructions.add(
+                                new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
 
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
-                        Long boost = searchInField.getPriority() == Priority.HIGH ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
+                        Long boost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
 
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
-                        generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
+                        generatedSubInstructions.add(
+                                new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
                         // Use a multi-match instruction, and ensure multi-match instructions for a particular term are
                         // grouped together
                         multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
                         multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
 
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term));
+                        Long boost = searchInField.getPriority() == Priority.HIGH
+                                ? HIGH_PRIORITY_FIELD_BOOST : NO_BOOST;
+                        generatedSubInstructions.add(
+                            new MatchInstruction(searchInField.getField(), term, boost, false)
+                        );
                     }
                 }
             }

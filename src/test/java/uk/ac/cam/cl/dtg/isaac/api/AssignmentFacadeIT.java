@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentProgressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
@@ -494,19 +495,20 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check status code is OK
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), assignmentProgressResponse.getStatus());
 
-        @SuppressWarnings("unchecked") ArrayList<Map<String, Object>> responseData =
-                (ArrayList<Map<String, Object>>) assignmentProgressResponse.getEntity();
+        @SuppressWarnings("unchecked") ArrayList<AssignmentProgressDTO> responseData =
+                (ArrayList<AssignmentProgressDTO>) assignmentProgressResponse.getEntity();
 
         // check the expected users are contained
         Assertions.assertEquals(2, responseData.size());
-        Assertions.assertEquals(ITConstants.ALICE_STUDENT_ID, ((UserSummaryDTO) responseData.get(0).get("user")).getId());
-        Assertions.assertEquals(ITConstants.BOB_STUDENT_ID, ((UserSummaryDTO) responseData.get(1).get("user")).getId());
+        Assertions.assertEquals(ITConstants.ALICE_STUDENT_ID, responseData.get(0).getUser().getId());
+        Assertions.assertEquals(ITConstants.BOB_STUDENT_ID, responseData.get(1).getUser().getId());
 
         // check the progress response contains the right fields
-        Assertions.assertTrue(responseData.get(0).containsKey("user"));
-        Assertions.assertTrue(responseData.get(0).containsKey("results"));
-        Assertions.assertTrue(responseData.get(0).containsKey("correctPartResults"));
-        Assertions.assertTrue(responseData.get(0).containsKey("incorrectPartResults"));
+        AssignmentProgressDTO progressDTO = responseData.get(0);
+        Assertions.assertNotNull(progressDTO.getUser());
+        Assertions.assertNotNull(progressDTO.getResults());
+        Assertions.assertNotNull(progressDTO.getCorrectPartResults());
+        Assertions.assertNotNull(progressDTO.getIncorrectPartResults());
     }
 
     @Test
@@ -527,19 +529,20 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check status code is OK
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), assignmentProgressResponse.getStatus());
 
-        @SuppressWarnings("unchecked") ArrayList<Map<String, Object>> responseData =
-                (ArrayList<Map<String, Object>>) assignmentProgressResponse.getEntity();
+        @SuppressWarnings("unchecked") ArrayList<AssignmentProgressDTO> responseData =
+                (ArrayList<AssignmentProgressDTO>) assignmentProgressResponse.getEntity();
 
         // check the expected users are contained
         Assertions.assertEquals(2, responseData.size());
-        Assertions.assertEquals(ITConstants.BOB_STUDENT_ID, ((UserSummaryDTO) responseData.get(0).get("user")).getId());
-        Assertions.assertEquals(ITConstants.CHARLIE_STUDENT_ID, ((UserSummaryDTO) responseData.get(1).get("user")).getId());
+        Assertions.assertEquals(ITConstants.BOB_STUDENT_ID, responseData.get(0).getUser().getId());
+        Assertions.assertEquals(ITConstants.CHARLIE_STUDENT_ID, responseData.get(1).getUser().getId());
 
         // check the progress response contains the right fields
-        Assertions.assertTrue(responseData.get(0).containsKey("user"));
-        Assertions.assertTrue(responseData.get(0).containsKey("results"));
-        Assertions.assertTrue(responseData.get(0).containsKey("correctPartResults"));
-        Assertions.assertTrue(responseData.get(0).containsKey("incorrectPartResults"));
+        AssignmentProgressDTO progressDTO = responseData.get(0);
+        Assertions.assertNotNull(progressDTO.getUser());
+        Assertions.assertNotNull(progressDTO.getResults());
+        Assertions.assertNotNull(progressDTO.getCorrectPartResults());
+        Assertions.assertNotNull(progressDTO.getIncorrectPartResults());
     }
 
     @Test

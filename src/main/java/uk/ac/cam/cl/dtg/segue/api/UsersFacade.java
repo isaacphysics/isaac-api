@@ -254,13 +254,6 @@ public class UsersFacade extends AbstractSegueFacade {
                 misuseMonitor.notifyEvent(ipAddress, RegistrationMisuseHandler.class.getSimpleName());
                 SegueMetrics.USER_REGISTRATION_ATTEMPT.inc();
 
-                // Add some logging for what ought to be an impossible case; that of a registration attempt coming from a client
-                // which has not made any other authenticated/logged request to Isaac beforehand.
-                // This _might_ be suspicious, and this logging will help establish that.
-                if (request.getSession() == null || request.getSession().getAttribute(ANONYMOUS_USER) == null) {
-                    log.error(String.format("Registration attempt from (%s) for (%s) without corresponding anonymous user!", ipAddress, registeredUser.getEmail()));
-                }
-
                 Response newUserResponse;
                 if (Role.TEACHER.equals(registeredUser.getRole()) && Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
                     // For teacher sign-ups where teachers should not default to student role, use a caveat login until email is verified.

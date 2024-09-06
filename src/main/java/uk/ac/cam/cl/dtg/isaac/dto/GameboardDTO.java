@@ -45,7 +45,8 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
 
     private GameboardCreationMethod creationMethod;
 
-    private Integer percentageCompleted;
+    private Integer percentageAttempted;
+    private Integer percentageCorrect;
     private Date lastVisited;
 
     // indicates whether or not a question in this board has at least been marked as in progress
@@ -296,22 +297,41 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
     }
 
     /**
-     * Gets the percentageCompleted.
+     * Gets the percentageAttempted.
      * 
-     * @return the percentageCompleted
+     * @return the percentageAttempted
      */
-    public Integer getPercentageCompleted() {
-        return percentageCompleted;
+    public Integer getPercentageAttempted() {
+        return percentageAttempted;
     }
 
     /**
-     * Sets the percentageCompleted.
+     * Sets the percentageAttempted.
      * 
-     * @param percentageCompleted
-     *            the percentageCompleted to set
+     * @param percentageAttempted
+     *            the percentageAttempted to set
      */
-    public void setPercentageCompleted(final Integer percentageCompleted) {
-        this.percentageCompleted = percentageCompleted;
+    public void setPercentageAttempted(final Integer percentageAttempted) {
+        this.percentageAttempted = percentageAttempted;
+    }
+
+    /**
+     * Gets the percentageCorrect.
+     *
+     * @return the percentageCorrect
+     */
+    public Integer getPercentageCorrect() {
+        return percentageCorrect;
+    }
+
+    /**
+     * Sets the percentageCorrect.
+     *
+     * @param percentageCorrect
+     *            the percentageCorrect to set
+     */
+    public void setPercentageCorrect(final Integer percentageCorrect) {
+        this.percentageCorrect = percentageCorrect;
     }
 
     /**
@@ -386,7 +406,8 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
                 ", tags=" + tags +
                 ", isSavedToCurrentUser=" + isSavedToCurrentUser +
                 ", creationMethod=" + creationMethod +
-                ", percentageCompleted=" + percentageCompleted +
+                ", percentageAttempted=" + percentageAttempted +
+                ", percentageCorrect=" + percentageCorrect +
                 ", lastVisited=" + lastVisited +
                 ", startedQuestion=" + startedQuestion +
                 ']';

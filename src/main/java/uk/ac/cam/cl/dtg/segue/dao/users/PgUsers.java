@@ -307,6 +307,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         if (null != prototype.getRole()) {
             fieldsOfInterest.put("role", prototype.getRole().name());
         }
+        if (null != prototype.getEmailVerificationStatus()) {
+            fieldsOfInterest.put("email_verification_status", prototype.getEmailVerificationStatus().name());
+        }
 
         // Build optional WHERE clause:
         StringBuilder sb = new StringBuilder();
@@ -895,6 +898,10 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     /**
      * Helper function to remove PII and set tombstone flag for a Registered User.
      * Note: This function mutates the object that it was provided.
+     *
+     * This method performs the same action as the script
+     *     src/main/resources/db_scripts/scheduled/archive-users-transaction.sql
+     * and changes here should be reflected there.
      */
     private static void removePIIFromUserDO(RegisteredUser user) {
         user.setFamilyName(null);

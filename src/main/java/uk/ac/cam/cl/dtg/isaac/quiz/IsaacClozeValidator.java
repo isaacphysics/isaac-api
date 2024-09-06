@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Validator that only provides functionality to validate Cloze questions.
  */
@@ -75,28 +77,28 @@ public class IsaacClozeValidator implements IValidator {
         if (null == clozeQuestion.getChoices() || clozeQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any correct answers!");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         } else if (null == clozeQuestion.getItems() || clozeQuestion.getItems().isEmpty()) {
             log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any items to choose from!");
+            feedback = new Content(FEEDBACK_NO_CHOICES);
         }
 
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback) {
             if (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty()) {
-                feedback = new Content("You did not provide an answer.");
+                feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
             } else if (submittedChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
-                feedback = new Content("Your answer is not in a recognised format!");
+                feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
             } else {
                 allowedItemIds = Stream.concat(Stream.of(NULL_CLOZE_ITEM_ID), clozeQuestion.getItems().stream().map(Item::getId)).collect(Collectors.toSet());
                 submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
                 if (!allowedItemIds.containsAll(submittedItemIds)) {
-                    feedback = new Content("Your answer contained unrecognised items.");
+                    feedback = new Content(FEEDBACK_UNRECOGNISED_ITEMS);
                 } else if (submittedItemIds.stream().allMatch(NULL_CLOZE_ITEM_ID::equals)) {
                     // At least one item in the list must be non-null, else this is a blank submission!
-                    feedback = new Content("You did not provide an answer!");
+                    feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
                 }
             }
         }
@@ -168,8 +170,11 @@ public class IsaacClozeValidator implements IValidator {
                     itemMatches.add(itemMatch);
                 }
 
-                // If this is the first correct choice, the status of each item might be useful feedback:
-                if (null == itemsCorrect && itemChoice.isCorrect() && detailedItemFeedback) {
+                // Set the 'list of correctness of each item' to match the feedback corresponding to the ItemChoice
+                // that matches the most items.
+                if (detailedItemFeedback && itemChoice.isCorrect() && (null == itemsCorrect
+                        || itemsCorrect.stream().filter(i -> i).count() < itemMatches.stream().filter(i -> i).count()
+                    )) {
                     itemsCorrect = itemMatches;
                 }
 

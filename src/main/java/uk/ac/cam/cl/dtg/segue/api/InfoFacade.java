@@ -249,7 +249,7 @@ public class InfoFacade extends AbstractSegueFacade {
             httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
         } catch (IOException | InterruptedException e) {
-            log.warn("Error when pinging for status: ", e);
+            log.warn(String.format("Error when pinging for status: %s", e));
         }
 
         // FIXME: should we inspect the response body?

@@ -808,6 +808,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
+     * @param emailVerificationStatus
+     *            - if searching by email verification status
      * @return a userDTO or a segue error response
      */
     @GET
@@ -820,7 +822,8 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final String schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN,
+            @QueryParam("emailVerificationStatus") @Nullable final EmailVerificationStatus emailVerificationStatus) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -884,6 +887,10 @@ public class AdminFacade extends AbstractSegueFacade {
             
             if (null != schoolURN) {
                 userPrototype.setSchoolId(schoolURN);
+            }
+
+            if (null != emailVerificationStatus) {
+                userPrototype.setEmailVerificationStatus(emailVerificationStatus);
             }
 
             List<RegisteredUserDTO> foundUsers;

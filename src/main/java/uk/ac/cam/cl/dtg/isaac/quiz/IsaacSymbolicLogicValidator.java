@@ -34,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Validator that provides functionality to validate symbolic logic questions.
  *
@@ -94,13 +96,13 @@ public class IsaacSymbolicLogicValidator implements IValidator {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            feedback = new Content("This question does not have any correct answers");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         // STEP 1: Did they provide an answer?
 
         if (null == feedback && (null == submittedLogicFormula.getPythonExpression() || submittedLogicFormula.getPythonExpression().isEmpty())) {
-            feedback = new Content("You did not provide an answer");
+            feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
         }
 
         // STEP 2: Otherwise, Does their answer match a choice exactly?
@@ -214,6 +216,9 @@ public class IsaacSymbolicLogicValidator implements IValidator {
                     closestMatch = logicFormulaChoice;
                     closestMatchType = MatchType.EXACT;
                     break;
+                } else if (matchType == MatchType.SYMBOLIC && !logicFormulaChoice.getRequiresExactMatch()) {
+                    closestMatch = logicFormulaChoice;
+                    closestMatchType = MatchType.SYMBOLIC;
                 } else if (matchType.compareTo(closestMatchType) > 0) {
                     if (logicFormulaChoice.getRequiresExactMatch() && logicFormulaChoice.isCorrect()) {
                         closestMatch = logicFormulaChoice;

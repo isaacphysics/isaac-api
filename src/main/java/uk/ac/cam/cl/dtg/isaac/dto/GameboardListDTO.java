@@ -23,14 +23,14 @@ import java.util.List;
 public class GameboardListDTO extends ResultsWrapper<GameboardDTO> {
     private Long totalNotStarted;
     private Long totalInProgress;
-    private Long totalCompleted;
+    private Long totalAllAttempted;
 
     /**
      * Default constructor for an empty results set.
      */
     public GameboardListDTO() {
         super();
-        this.totalCompleted = 0L;
+        this.totalAllAttempted = 0L;
         this.totalInProgress = 0L;
         this.totalNotStarted = 0L;
     }
@@ -43,28 +43,28 @@ public class GameboardListDTO extends ResultsWrapper<GameboardDTO> {
      * @param totalResults
      *            - the total results which could be requested by the server - assuming that the results returned is a
      *            subset of all results that could be returned.
-     * @param totalCompleted
-     *            - The total number of gameboards in the completed state.
+     * @param totalAllAttempted
+     *            - The total number of gameboards that are all attempted.
      * @param totalInProgress
      *            - The total number of gameboards in the in progress state.
      * @param totalNotStarted
      *            - The total number of gameboards in the not started state.
      */
     public GameboardListDTO(final List<GameboardDTO> results, final Long totalResults, final Long totalNotStarted,
-            final Long totalInProgress, final Long totalCompleted) {
+            final Long totalInProgress, final Long totalAllAttempted) {
         super(results, totalResults);
-        this.totalCompleted = totalCompleted;
+        this.totalAllAttempted = totalAllAttempted;
         this.totalInProgress = totalInProgress;
         this.totalNotStarted = totalNotStarted;
     }
 
     /**
-     * Gets the totalCompleted.
+     * Gets the totalAllAttempted count.
      * 
-     * @return the totalCompleted
+     * @return the totalAllAttempted
      */
-    public Long getTotalCompleted() {
-        return totalCompleted;
+    public Long getTotalAllAttempted() {
+        return totalAllAttempted;
     }
 
     /**

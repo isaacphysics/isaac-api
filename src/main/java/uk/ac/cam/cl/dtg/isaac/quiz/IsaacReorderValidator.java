@@ -32,6 +32,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Validator that provides functionality to validate reorder questions. It is essentially a copy of the cloze question
  * validator.
@@ -69,25 +71,25 @@ public class IsaacReorderValidator implements IValidator {
         if (null == reorderQuestion.getChoices() || reorderQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any correct answers!");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         } else if (null == reorderQuestion.getItems() || reorderQuestion.getItems().isEmpty()) {
             log.error("ReorderQuestion does not have any items. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any items to choose from!");
+            feedback = new Content(FEEDBACK_NO_CHOICES);
         }
 
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback) {
             if (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty()) {
-                feedback = new Content("You did not provide an answer.");
+                feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
             } else if (submittedChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
-                feedback = new Content("Your answer is not in a recognised format!");
+                feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
             } else {
                 Set<String> allowedItemIds = reorderQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
                 submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
                 if (!allowedItemIds.containsAll(submittedItemIds)) {
-                    feedback = new Content("Your answer contained unrecognised items.");
+                    feedback = new Content(FEEDBACK_UNRECOGNISED_ITEMS);
                 }
             }
         }

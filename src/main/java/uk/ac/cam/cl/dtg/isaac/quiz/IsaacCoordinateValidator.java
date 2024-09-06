@@ -52,13 +52,13 @@ public class IsaacCoordinateValidator implements IValidator {
         if (null == coordinateQuestion.getChoices() || coordinateQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any correct answers!");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer.");
+            feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
         }
 
         // Check that all the items in the submitted answer are CoordinateItems.
@@ -66,7 +66,7 @@ public class IsaacCoordinateValidator implements IValidator {
             if (!(item instanceof CoordinateItem)) {
                 log.error("Expected list of CoordinateItems, but found a different type of item in choice for question id: "
                         + coordinateQuestion.getId());
-                feedback = new Content("You did not provide a valid answer.");
+                feedback = new Content(FEEDBACK_UNRECOGNISED_ITEMS);
                 break;
             }
         }
