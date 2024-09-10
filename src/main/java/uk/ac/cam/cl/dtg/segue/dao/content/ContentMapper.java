@@ -344,9 +344,6 @@ public class ContentMapper {
      * @return ObjectMapper that has been configured to handle the segue recursive object model.
      */
     public ObjectMapper generateNewPreconfiguredContentMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
         ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
         contentDeserializer.registerTypeMap(jsonTypes);
 
@@ -368,9 +365,10 @@ public class ContentMapper {
         contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
         contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
-        contentDeserializerModule.addDeserializer(
-                LLMMarkingExpression.class, new LLMMarkingExpressionDeserializer(objectMapper));
+        contentDeserializerModule.addDeserializer(LLMMarkingExpression.class, new LLMMarkingExpressionDeserializer());
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.registerModule(contentDeserializerModule);
         
         return objectMapper;

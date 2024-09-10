@@ -14,15 +14,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingVariable;
 import java.io.IOException;
 
 public class LLMMarkingExpressionDeserializer extends JsonDeserializer<LLMMarkingExpression> {
-    private final ObjectMapper objectMapper;
-
-    public LLMMarkingExpressionDeserializer(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
     @Override
     public LLMMarkingExpression deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
             throws IOException {
+        ObjectMapper objectMapper = (ObjectMapper) jsonParser.getCodec();
         ObjectNode root = objectMapper.readTree(jsonParser);
 
         if (null == root.get("type")) {
