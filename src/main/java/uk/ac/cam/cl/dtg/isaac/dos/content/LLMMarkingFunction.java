@@ -2,6 +2,9 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import java.util.List;
 
+/**
+ * LLM marking functions represent the functions that can be applied to the arguments in the LLM marking formulae.
+ */
 @JsonContentType("LLMMarkingFunction")
 public class LLMMarkingFunction extends LLMMarkingExpression {
     private String type;
@@ -11,9 +14,11 @@ public class LLMMarkingFunction extends LLMMarkingExpression {
     public LLMMarkingFunction() {
     }
 
+    @Override
     public String getType() {
         return type;
     }
+    @Override
     public void setType(String type) {
         this.type = type;
     }

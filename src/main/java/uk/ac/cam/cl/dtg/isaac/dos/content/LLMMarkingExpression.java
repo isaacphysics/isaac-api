@@ -5,4 +5,5 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
  */
 public abstract class LLMMarkingExpression {
     abstract String getType();
+    abstract void setType(String type);
 }
