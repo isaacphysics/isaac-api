@@ -21,8 +21,8 @@ public class LLMMarkingExpressionDeserializer extends JsonDeserializer<LLMMarkin
         ObjectNode root = objectMapper.readTree(jsonParser);
 
         if (null == root.get("type")) {
-            throw new JsonMappingException(
-                    "Error: unable to parse content as there is no type property within the json input.");
+            throw JsonMappingException.from(
+                    jsonParser, "Error: unable to parse content - no type property within the json input.");
         }
 
         String contentType = root.get("type").textValue();
@@ -35,7 +35,8 @@ public class LLMMarkingExpressionDeserializer extends JsonDeserializer<LLMMarkin
             case "LLMMarkingConstant":
                 return objectMapper.readValue(root.toString(), LLMMarkingConstant.class);
             default:
-                throw new JsonMappingException(
+                throw JsonMappingException.from(
+                        jsonParser,
                         String.format("Error: unable to parse LLM marking expression. Unhandled type: %s", contentType));
         }
     }
