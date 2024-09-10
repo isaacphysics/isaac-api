@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -353,10 +354,10 @@ public class ContentMapper {
         ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer, itemDeserializer);
 
         QuestionValidationResponseDeserializer validationResponseDeserializer 
-            = new QuestionValidationResponseDeserializer(
-                contentDeserializer, choiceDeserializer);
+            = new QuestionValidationResponseDeserializer(contentDeserializer, choiceDeserializer);
 
-        IsaacQuestionBaseDeserializer isaacQuestionBaseDeserializer = new IsaacQuestionBaseDeserializer(contentDeserializer);
+        IsaacQuestionBaseDeserializer isaacQuestionBaseDeserializer =
+                new IsaacQuestionBaseDeserializer(contentDeserializer);
 
         SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
         contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
@@ -364,6 +365,7 @@ public class ContentMapper {
         contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
         contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
+        contentDeserializerModule.addDeserializer(LLMMarkingExpression.class, new LLMMarkingExpressionDeserializer());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
