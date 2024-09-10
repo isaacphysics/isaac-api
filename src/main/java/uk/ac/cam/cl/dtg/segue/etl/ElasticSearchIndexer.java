@@ -104,6 +104,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                         log.error("Unable to index the following item: " + itemResponse.getFailureMessage());
                     }
                 }
+                throw new SegueSearchException("Error during bulk index operation, some items failed!");
             }
         } catch (ElasticsearchException | IOException e) {
             throw new SegueSearchException("Error during bulk index operation.", e);

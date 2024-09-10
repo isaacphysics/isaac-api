@@ -33,6 +33,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Validator that only provides functionality to validate Parsons questions.
  */
@@ -66,19 +68,19 @@ public class IsaacParsonsValidator implements IValidator {
         if (null == parsonsQuestion.getChoices() || parsonsQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any correct answers!");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         if (null == parsonsQuestion.getItems() || parsonsQuestion.getItems().isEmpty()) {
             log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
-            feedback = new Content("This question does not have any items to choose from!");
+            feedback = new Content(FEEDBACK_NO_CHOICES);
         }
 
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content("You did not provide an answer.");
+            feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
         }
 
         Set<String> submittedItemIdSet = null;
@@ -87,7 +89,7 @@ public class IsaacParsonsValidator implements IValidator {
             submittedItemIdSet = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             allowedItemIds = parsonsQuestion.getItems().stream().map(Item::getId).collect(Collectors.toSet());
             if (!allowedItemIds.containsAll(submittedItemIdSet)) {
-                feedback = new Content("You did not provide a valid answer; it contained unrecognised items!");
+                feedback = new Content(FEEDBACK_UNRECOGNISED_ITEMS);
             }
         }
 

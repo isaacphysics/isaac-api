@@ -15,16 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
 import uk.ac.cam.cl.dtg.isaac.dos.TestQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
@@ -42,11 +45,13 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.LLMFreeTextQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseLockTimoutException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -68,7 +73,9 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdFromQuestionId;
 
@@ -83,13 +90,67 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
+    private static final class NoUserConsentGrantedException extends Exception {
+        NoUserConsentGrantedException(final String message) {
+            super(message);
+        }
+    }
+
     private final ContentMapper mapper;
     private final GitContentManager contentManager;
     private final UserAccountManager userManager;
+    private final AbstractUserPreferenceManager userPreferenceManager;
+
     private final QuestionManager questionManager;
     private final UserAssociationManager userAssociationManager;
-    private IMisuseMonitor misuseMonitor;
-    private IUserStreaksManager userStreaksManager;
+    private final IMisuseMonitor misuseMonitor;
+    private final IUserStreaksManager userStreaksManager;
+
+    /**
+     * This method checks whether a user can answer LLM marked questions and, if not, throws an exception indicating why.
+     * As well as this, it returns a type narrowed version of the current user, as it is one of the conditions.
+     * @param user - the user to check.
+     * @return the passed in user, narrowed to a RegisteredUserDTO.
+     * @throws ValidatorUnavailableException - if the LLM marker feature is not enabled by configuration.
+     * @throws NoUserLoggedInException - if the user is not logged in.
+     * @throws NoUserConsentGrantedException - if the user has not consented to sending their attempts to the LLM provider.
+     * @throws SegueResourceMisuseException - if the user has exceeded the number of attempts they can make over a period of time.
+     * @throws SegueDatabaseException - if there is an unexpected problem with the database.
+     */
+    private RegisteredUserDTO assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO user) throws
+            SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException,
+            ValidatorUnavailableException, SegueResourceMisuseException
+    {
+        if (!"on".equals(this.getProperties().getProperty(LLM_MARKER_FEATURE))) {
+            throw new ValidatorUnavailableException(
+                    "LLM marked questions are currently unavailable. Please try again later!");
+        } else if (user instanceof AnonymousUserDTO) {
+            throw new NoUserLoggedInException();
+        } else if (user instanceof RegisteredUserDTO) {
+            RegisteredUserDTO registeredUser = ((RegisteredUserDTO) user);
+
+            // Check for consent
+            UserPreference llmProviderConsent = userPreferenceManager.getUserPreference(
+                    IsaacUserPreferences.CONSENT.toString(), LLM_PROVIDER_NAME, registeredUser.getId());
+            if (llmProviderConsent == null || !llmProviderConsent.getPreferenceValue()) {
+                throw new NoUserConsentGrantedException(
+                        String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME));
+            }
+
+            // Check misuse handler
+            String userId = registeredUser.getId().toString();
+            String llmFreeTextMisuseEventName = LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName();
+            if (misuseMonitor.getRemainingUses(userId, llmFreeTextMisuseEventName) <= 0) {
+                log.warn("User " + userId + " has reached the LLM question attempt limit.");
+                throw new SegueResourceMisuseException(
+                        "You have exceeded the number of attempts you can make on LLM marked free-text questions. " +
+                        "Please try again later.");
+            }
+        }
+
+        assert user instanceof RegisteredUserDTO; // We've already checked for AnonymousUserDTO above.
+        return (RegisteredUserDTO) user;
+    }
 
     /**
      * 
@@ -101,6 +162,8 @@ public class QuestionFacade extends AbstractSegueFacade {
      *            - The content version controller used by the api.
      * @param userManager
      *            - The manager object responsible for users.
+     * @param userPreferenceManager
+     *            - The manager object responsible for user preferences.
      * @param questionManager
      *            - A question manager object responsible for managing questions and augmenting questions with user
      *            information.
@@ -111,7 +174,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Inject
     public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
                           final GitContentManager contentManager, final UserAccountManager userManager,
-                          final QuestionManager questionManager,
+                          final AbstractUserPreferenceManager userPreferenceManager, final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final IUserStreaksManager userStreaksManager,
                           final UserAssociationManager userAssociationManager) {
@@ -121,6 +184,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.mapper = mapper;
         this.contentManager = contentManager;
         this.userManager = userManager;
+        this.userPreferenceManager = userPreferenceManager;
         this.misuseMonitor = misuseMonitor;
         this.userStreaksManager = userStreaksManager;
         this.userAssociationManager = userAssociationManager;
@@ -219,6 +283,69 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * Check if a user can answer a particular question type.
+     * Initially only used for LLM questions, but could be used for future question types which require expensive
+     * operations to verify or mark.
+     * HTTP error codes are used to indicate the reason a user cannot answer a question.
+     * @param request
+     *            - the servlet request to can find out if it is a known user.
+     * @param questionType
+     *            - the type of question to check if the user can attempt.
+     * @return Response containing a map with a single key "remainingAttempts" and the number of attempts remaining for
+     *         the user to attempt the question type.
+     */
+    @GET
+    @Path("{question_type}/can_attempt")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Check if a user can attempt a question of a certain type.")
+    public Response canAttemptQuestionType(@Context final HttpServletRequest request,
+                                           @PathParam("question_type") final String questionType) {
+        Map<String, Object> response = Maps.newHashMap();
+        SegueErrorResponse error = null;
+
+        try {
+            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+
+            // Anonymous users are rate limited across all questions rather than per question as is the case for registered users.
+            boolean isAnonymousUser = currentUser instanceof AnonymousUserDTO;
+            if (isAnonymousUser && misuseMonitor.hasMisused(RequestIPExtractor.getClientIpAddr(request),
+                    IPQuestionAttemptMisuseHandler.class.getSimpleName())) {
+                throw new SegueResourceMisuseException(IPQuestionAttemptMisuseHandler.DEFAULT_FEEDBACK_MESSAGE);
+            }
+
+            // Prevent access to LLM marked questions without signing in, consenting to terms and checking misuse.
+            if (LLM_FREE_TEXT_QUESTION_TYPE.equals(questionType)) {
+                RegisteredUserDTO registeredUser = assertUserCanAnswerLLMQuestions(currentUser);
+                int remainingAttempts = misuseMonitor.getRemainingUses(
+                        registeredUser.getId().toString(),
+                        LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName());
+                response.put("remainingAttempts", remainingAttempts);
+            }
+
+            // If we get to this point, the user can attempt the question.
+            return Response.ok(response).build();
+
+        } catch (ValidatorUnavailableException e) {
+            error = new SegueErrorResponse(Status.SERVICE_UNAVAILABLE, e.getMessage());
+            error.setBypassGenericSiteErrorPage(true);
+        } catch (NoUserLoggedInException e) {
+            error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
+            error.setBypassGenericSiteErrorPage(true);
+        } catch (NoUserConsentGrantedException e) {
+            error = new SegueErrorResponse(Status.FORBIDDEN, e.getMessage());
+            error.setBypassGenericSiteErrorPage(true);
+        } catch (SegueResourceMisuseException e) {
+            error = new SegueErrorResponse(Status.TOO_MANY_REQUESTS, e.getMessage());
+            error.setBypassGenericSiteErrorPage(true);
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst checking if user can attempt a question type.";
+            log.error(message, e);
+            error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message);
+        }
+        return error.toResponse();
+    }
 
     /**
      * Record that a user has answered a question.
@@ -284,6 +411,14 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
+            // Prevent access to LLM marked questions without signing in, consenting to terms and checking misuse.
+            if (LLM_FREE_TEXT_QUESTION_TYPE.equals(question.getType())) {
+                RegisteredUserDTO registeredUser = assertUserCanAnswerLLMQuestions(currentUser);
+                misuseMonitor.notifyEvent(
+                        registeredUser.getId().toString(),
+                        LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName());
+            }
+
             Response response = this.questionManager.validateAnswer(question, answerFromClientDTO);
 
             // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in
@@ -319,8 +454,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                             IPQuestionAttemptMisuseHandler.class.getSimpleName());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, SegueServerLogType.QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
-                    String message = "Too many question attempts! Please either create an account, log in, or try again later.";
-                    return SegueErrorResponse.getRateThrottledResponse(message);
+                    return SegueErrorResponse.getRateThrottledResponse(IPQuestionAttemptMisuseHandler.DEFAULT_FEEDBACK_MESSAGE);
                 }
             }
 
@@ -343,12 +477,26 @@ public class QuestionFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad request - " + e.getMessage(), e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        } catch (SegueDatabaseLockTimoutException e) {
+            // This error isn't great, but it's not bad enough for the full-page error:
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
+            error.setBypassGenericSiteErrorPage(true);
+            log.warn("Lock timeout attempting to save anonymous user question attempt!");
+            return error.toResponse();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to save question attempt. Try again later!");
             log.error("Unable to to record question attempt.", e);
             return error.toResponse();
         } catch (ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserConsentGrantedException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
+        } catch (ValidatorUnavailableException e) {
+            return SegueErrorResponse.getServiceUnavailableResponse(e.getMessage());
+        } catch (SegueResourceMisuseException e) {
+            return SegueErrorResponse.getRateThrottledResponse(e.getMessage());
         }
     }
 

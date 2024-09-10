@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Validator that only provides functionality to validate graph questions.
  *
@@ -63,7 +65,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                 + question.getCanonicalSourceFile());
 
-            feedback = new Content("This question does not have any correct answers");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         // STEP 1: Did they provide an answer at all?
@@ -71,14 +73,14 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
         GraphAnswer graphAnswer = null;
 
         if (null == feedback && (null == answer.getValue() || answer.getValue().isEmpty())) {
-            feedback = new Content("You did not provide an answer");
+            feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
         } else {
             try {
                 graphAnswer = objectMapper.readValue(answer.getValue(), GraphAnswer.class);
             } catch (IOException e) {
                 log.error("Expected a GraphAnswer, but couldn't parse it for question id: "
                     + graphSketcherQuestion.getId(), e);
-                feedback = new Content("Your graph could not be read");
+                feedback = new Content("Your graph could not be read.");
             }
         }
 

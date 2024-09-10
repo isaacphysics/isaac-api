@@ -319,6 +319,7 @@ public final class Constants {
     public static final String RASPBERRYPI_LOCAL_IDP_METADATA_PATH = "RASPBERRYPI_LOCAL_IDP_METADATA_PATH";
 
     // Local authentication specific stuff
+    public static final int MINIMUM_PASSWORD_LENGTH = 8;
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
     public static final String LOCAL_AUTH_GROUP_MANAGER_INITIATED_FIELDNAME = "groupManagerInitiated";
@@ -415,6 +416,17 @@ public final class Constants {
     // Metrics Component
     public static final String API_METRICS_EXPORT_PORT = "API_METRICS_EXPORT_PORT";
 
+    // LLM service properties
+    public static final String OPENAI_API_KEY = "OPENAI_API_KEY";
+    public static final String LLM_MARKER_FEATURE = "LLM_MARKER_FEATURE";
+    public static final String LLM_MARKER_SUBJECT = "LLM_MARKER_SUBJECT";
+    public static final String LLM_MARKER_DEFAULT_MODEL_NAME = "LLM_MARKER_DEFAULT_MODEL_NAME";
+    public static final String LLM_MARKER_MAX_ANSWER_LENGTH = "LLM_MARKER_MAX_ANSWER_LENGTH";
+    public static final String LLM_FREE_TEXT_QUESTION_TYPE = "isaacLLMFreeTextQuestion";
+    public static final String LLM_PROVIDER_NAME = "OPENAI";
+    public static final String LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE = "LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE";
+
+
     /*
      * Default values.
      */
@@ -443,6 +455,7 @@ public final class Constants {
     public static final String SUBJECTS_FIELDNAME = "subjects";
     public static final String FIELDS_FIELDNAME = "fields";
     public static final String TOPICS_FIELDNAME = "topics";
+    public static final String CATEGORIES_FIELDNAME = "categories";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
     public static final String DATE_FIELDNAME = "date";
@@ -454,11 +467,14 @@ public final class Constants {
     public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
     public static final String DEPRECATED_FIELDNAME = "deprecated";
+    public static final String SUPERSEDED_BY_FIELDNAME = "supersededBy";
     public static final String PUBLISHED_FIELDNAME = "published";
 
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
     public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
+    public static final String HIDE_COMPLETED_FIELDNAME = "hideCompleted";
+    public static final String START_INDEX_FIELDNAME = "startIndex";
     public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 

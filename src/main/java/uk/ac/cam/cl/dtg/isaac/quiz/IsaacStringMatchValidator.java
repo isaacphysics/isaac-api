@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Validator that only provides functionality to validate String Match questions.
  */
@@ -66,13 +68,13 @@ public class IsaacStringMatchValidator implements IValidator {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            feedback = new Content("This question does not have any correct answers");
+            feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         // STEP 1: Did they provide an answer at all?
 
         if (null == feedback && (null == userAnswer.getValue() || userAnswer.getValue().isEmpty())) {
-            feedback = new Content("You did not provide an answer");
+            feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
         }
 
         // STEP 2: If they did, does their answer match a known answer?

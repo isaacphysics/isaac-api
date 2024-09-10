@@ -95,6 +95,17 @@ public interface IMisuseMonitor {
     void registerHandler(String eventToHandle, IMisuseHandler handler);
 
     /**
+     * Allows us to get the remaining uses for a specific user and event.
+     *
+     * @param agentIdentifier
+     *            - a unique identifier for the agent using the resource.
+     * @param eventToCheck
+     *            - string to indicate which resource we are interested in.
+     * @return the number of attempts remaining before the hard threshold is reached.
+     */
+    int getRemainingUses(String agentIdentifier, String eventToCheck);
+
+    /**
      * Allows us to reset the misuse log for a specific user and event.
      * 
      * @param agentIdentifier

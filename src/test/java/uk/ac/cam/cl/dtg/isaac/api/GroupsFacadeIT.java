@@ -18,17 +18,21 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.BeforeEach;
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +60,13 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
                 "DELETE FROM group_additional_managers WHERE group_id in (?, ?);");
         pst.setInt(1, (int) TEST_TEACHERS_AB_GROUP_ID);
         pst.setInt(2, (int) TEST_TUTORS_AB_GROUP_ID);
+        pst.executeUpdate();
+
+        // reset group members in DB, so the same groups can be re-used across test cases
+        pst = postgresSqlDb.getDatabaseConnection().prepareStatement(
+                "UPDATE group_memberships SET status=?, updated=? WHERE user_id = 7 AND group_id = 1");
+        pst.setString(1, GroupMembershipStatus.ACTIVE.name());
+        pst.setTimestamp(2, new Timestamp(new Date().getTime()));
         pst.executeUpdate();
     }
 
@@ -186,5 +197,69 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) addManagerResponse.getEntity();
         assertEquals("You must have a teacher account to add additional group managers to your groups.", responseBody.getErrorMessage());
+    }
+
+    @Test
+    public void removeUserFromGroup_teacherDeletesStudentFromGroup_studentRemovedFromGroup() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
+        HttpServletRequest removeStudentRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(removeStudentRequest);
+
+        // Act
+        Response removeStudentResponse = groupsFacade.removeUserFromGroup(
+                removeStudentRequest, createMock(Request.class), TEST_TEACHERS_AB_GROUP_ID, ALICE_STUDENT_ID);
+
+        // Assert
+        // check status code
+        assertEquals(Response.Status.OK.getStatusCode(), removeStudentResponse.getStatus());
+
+        assertFalse(groupManager.getUsersInGroup(groupManager.getGroupById(TEST_TEACHERS_AB_GROUP_ID)).stream()
+                .map(RegisteredUserDTO::getId)
+                .anyMatch(id -> id == ALICE_STUDENT_ID));
+    }
+
+    @Test
+    public void removeUserFromGroup_nonManagerDeletesStudentFromGroup_fails() throws Exception {
+
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TUTOR_EMAIL,
+                ITConstants.TEST_TUTOR_PASSWORD);
+        HttpServletRequest removeStudentRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(removeStudentRequest);
+
+        // Act
+        Response removeStudentResponse = groupsFacade.removeUserFromGroup(
+                removeStudentRequest, createMock(Request.class), TEST_TEACHERS_AB_GROUP_ID, ALICE_STUDENT_ID);
+
+        // Assert
+        // check status code
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), removeStudentResponse.getStatus());
+    }
+
+    @Test
+    public void removeUserFromGroup_teacherDeletesStudentFromGroup_teacherConnectionRemains() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, ITConstants.TEST_TEACHER_EMAIL,
+                ITConstants.TEST_TEACHER_PASSWORD);
+        HttpServletRequest removeStudentRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(removeStudentRequest);
+
+        // Act
+        Response removeStudentResponse = groupsFacade.removeUserFromGroup(
+                removeStudentRequest, createMock(Request.class), TEST_TEACHERS_AB_GROUP_ID, ALICE_STUDENT_ID);
+
+        // Assert
+        // check status code
+        assertEquals(Response.Status.OK.getStatusCode(), removeStudentResponse.getStatus());
+
+        assertTrue(userAssociationManager.hasTeacherPermission(
+                userAccountManager.getUserDTOById(TEST_TEACHER_ID),
+                userAccountManager.getUserDTOById(ALICE_STUDENT_ID)
+        ));
     }
 }

@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.configuration;
 
+import com.azure.ai.openai.OpenAIClient;
+import com.azure.ai.openai.OpenAIClientBuilder;
+import com.azure.core.credential.KeyCredential;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
@@ -61,6 +64,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLLMFreeTextValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
@@ -81,25 +85,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StubExternalAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMetricsExporter;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PrometheusMetricsExporter;
-import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SendEmailMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.UserSearchMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -114,7 +100,6 @@ import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -204,6 +189,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static ILogManager logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static MailGunEmailManager mailGunEmailManager = null;
+    private static OpenAIClient openAIClient = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static IMetricsExporter metricsExporter = null;
     private static StatisticsManager statsManager = null;
@@ -301,6 +287,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         this.bindConstantToProperty(Constants.API_METRICS_EXPORT_PORT, globalProperties);
 
+        // LLM Service
+        this.bindConstantToNullableProperty(OPENAI_API_KEY, globalProperties);
+
         // Additional countries
         this.bindConstantToNullableProperty(Constants.CUSTOM_COUNTRY_CODES, globalProperties);
         this.bindConstantToNullableProperty(Constants.PRIORITY_COUNTRY_CODES, globalProperties);
@@ -380,12 +369,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
         mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
 
-        // Twitter
-        this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
-        this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
-        mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
-
         // Raspberry Pi
         try {
             // Ensure all the required config properties are present.
@@ -463,6 +446,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             }
         }
         return metricsExporter;
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    private static OpenAIClient getOpenAIClient(@Named(OPENAI_API_KEY) final String apiKey) {
+        if (null == openAIClient) {
+            log.info("Creating OpenAIClient");
+            openAIClient = new OpenAIClientBuilder()
+                    .credential(new KeyCredential(apiKey))
+                    .buildClient();
+        }
+        return openAIClient;
     }
 
     /**
@@ -915,6 +911,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.getSimpleName(),
                     new IPQuestionAttemptMisuseHandler(emailManager, properties));
 
+            misuseMonitor.registerHandler(LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName(),
+                    new LLMFreeTextQuestionAttemptMisuseHandler(properties));
+
             misuseMonitor.registerHandler(UserSearchMisuseHandler.class.getSimpleName(),
                     new UserSearchMisuseHandler());
 
@@ -1304,6 +1303,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return new IsaacSymbolicLogicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
                 properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacLLMFreeTextValidator getLLMValidator(final AbstractConfigLoader configLoader, final OpenAIClient openAIClient) {
+        return new IsaacLLMFreeTextValidator(configLoader, openAIClient);
     }
 
     /**

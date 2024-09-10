@@ -248,6 +248,8 @@ public class Mailer {
         msg.setFrom(fromAddress);
         msg.setRecipients(RecipientType.TO, receivers);
         msg.setSubject(subject);
+        // Disable Outlook reactions to automated emails:
+        msg.setHeader("x-ms-reactions", "disallow");
 
         if (null != replyTo) {
             msg.setReplyTo(new InternetAddress[]{replyTo});

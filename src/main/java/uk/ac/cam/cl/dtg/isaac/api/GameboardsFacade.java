@@ -506,7 +506,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * @param sortInstructions
      *            - the criteria to use for sorting. Default is reverse chronological by created date.
      * @param showCriteria
-     *            - e.g. completed,incompleted
+     *            - e.g. all_correct, all_attempted
      * @return a Response containing a list of gameboard objects or a noContent Response.
      */
     @GET
@@ -554,8 +554,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         GameboardState gameboardShowCriteria = null;
         if (showCriteria != null) {
             switch (showCriteria.toLowerCase()) {
-                case "completed":
-                    gameboardShowCriteria = GameboardState.COMPLETED;
+                case "all_correct":
+                    gameboardShowCriteria = GameboardState.ALL_CORRECT;
+                    break;
+                case "all_attempted":
+                    gameboardShowCriteria = GameboardState.ALL_ATTEMPTED;
                     break;
                 case "in_progress":
                     gameboardShowCriteria = GameboardState.IN_PROGRESS;
@@ -590,8 +593,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     case "title":
                         parsedSortInstructions.add(immutableEntry(TITLE_FIELDNAME, s));
                         break;
-                    case "completion":
-                        parsedSortInstructions.add(immutableEntry(COMPLETION_FIELDNAME, s));
+                    case "attempted":
+                        parsedSortInstructions.add(immutableEntry(PERCENTAGE_ATTEMPTED_FIELDNAME, s));
+                        break;
+                    case "correct":
+                        parsedSortInstructions.add(immutableEntry(PERCENTAGE_CORRECT_FIELDNAME, s));
                         break;
                     default:
                         return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry we do not recognise the sort instruction "
@@ -621,7 +627,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 IsaacServerLogType.VIEW_MY_BOARDS_PAGE,
                 ImmutableMap.builder().put("totalBoards", gameboards.getTotalResults())
                         .put("notStartedTotal", gameboards.getTotalNotStarted())
-                        .put("completedTotal", gameboards.getTotalCompleted())
+                        .put("allAttemptedTotal", gameboards.getTotalAllAttempted())
                         .put("inProgressTotal", gameboards.getTotalInProgress()).build());
 
         return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();

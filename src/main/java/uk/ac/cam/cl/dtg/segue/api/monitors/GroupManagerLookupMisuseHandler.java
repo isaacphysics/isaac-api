@@ -78,12 +78,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        final String subject = "Soft Threshold limit reached for GroupManagerLookup endpoint";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                                                subject, message, message, EmailType.ADMIN);
-        emailManager.addSystemEmailToQueue(e);
         log.warn("Soft threshold limit: " + message);
-
     }
 
     @Override

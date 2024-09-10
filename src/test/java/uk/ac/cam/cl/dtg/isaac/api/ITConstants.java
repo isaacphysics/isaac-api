@@ -94,6 +94,10 @@ public final class ITConstants {
     // Questions
     public static final String REGRESSION_TEST_PAGE_ID = "_regression_test_";
     public static final String ASSIGNMENT_TEST_PAGE_ID = "_assignment_test";
+    public static final String EXACT_MATCH_TEST_PAGE_ID = "_exact_match_test_";
+    public static final String FUZZY_MATCH_TEST_PAGE_ID = "_fuzzy_match_test_";
+    public static final String SEARCH_TEST_SUPERSEDED_BY_ID = "superseded_by";
+    public static final String SEARCH_TEST_SUPERSEDES_ID = "supersedes";
 
     // Gameboards
     public static final String ASSIGNMENTS_TEST_EXISTING_TEACHER_AB_GAMEBOARD_ID = "9313cadd-d4ce-420f-9331-300e3067b45f";

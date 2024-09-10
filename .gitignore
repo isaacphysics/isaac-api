@@ -8,4 +8,3 @@ target
 grafana
 prometheus/data
 .DS_Store
-src/test/resources/isaac-test-es-data.tar.gz

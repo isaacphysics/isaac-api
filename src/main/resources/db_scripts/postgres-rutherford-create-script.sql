@@ -34,6 +34,24 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: archived_users; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.archived_users (
+    id integer NOT NULL,
+    family_name text,
+    given_name text,
+    email text,
+    date_of_birth date,
+    school_other text,
+    expired timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.archived_users OWNER TO rutherford;
+
+
+--
 -- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -816,6 +834,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: archived_users expired_users_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.archived_users
+    ADD CONSTRAINT archived_users_pk PRIMARY KEY (id);
+
+
+--
 -- Name: group_additional_managers ck_user_group_manager; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1169,6 +1195,13 @@ CREATE INDEX question_attempts_by_user_question_page ON public.question_attempts
 
 
 --
+-- Name: quiz_assignments_group_quiz; Type: INDEX; Schema: public; Owner: rutherford
+--
+
+CREATE INDEX quiz_assignments_group_quiz ON public.quiz_assignments USING btree (group_id, quiz_id);
+
+
+--
 -- Name: quiz_attempts_index_by_quiz_id_and_user_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
@@ -1236,6 +1269,14 @@ CREATE INDEX user_streak_targets_by_user_id ON public.user_streak_targets USING 
 --
 
 CREATE INDEX users_id_role ON public.users USING btree (id, role);
+
+
+--
+-- Name: archived_users expired_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.archived_users
+    ADD CONSTRAINT archived_users_fk FOREIGN KEY (id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
