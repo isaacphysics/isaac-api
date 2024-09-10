@@ -6,7 +6,7 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 @JsonContentType("LLMMarkingConstant")
 public class LLMMarkingConstant extends LLMMarkingExpression {
     private String type;
-    private String value;
+    private Integer value;
 
     public LLMMarkingConstant() {
     }
@@ -20,10 +20,10 @@ public class LLMMarkingConstant extends LLMMarkingExpression {
         this.type = type;
     }
 
-    public String getValue() {
+    public Integer getValue() {
         return value;
     }
-    public void setValue(String value) {
+    public void setValue(Integer value) {
         this.value = value;
     }
 }

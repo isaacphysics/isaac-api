@@ -7,8 +7,12 @@ import java.util.List;
  */
 @JsonContentType("LLMMarkingFunction")
 public class LLMMarkingFunction extends LLMMarkingExpression {
+    public enum FunctionName {
+        SUM, MIN, MAX
+    }
+
     private String type;
-    private String name;
+    private FunctionName name;
     private List<LLMMarkingExpression> arguments;
 
     public LLMMarkingFunction() {
@@ -23,10 +27,10 @@ public class LLMMarkingFunction extends LLMMarkingExpression {
         this.type = type;
     }
 
-    public String getName() {
+    public FunctionName getName() {
         return name;
     }
-    public void setName(String name) {
+    public void setName(FunctionName name) {
         this.name = name;
     }
 
