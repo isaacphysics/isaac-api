@@ -15,6 +15,11 @@ services:
     image: ucamcldtg/chemistry-checker
     restart: unless-stopped
 
+  chemistry-checker-js:
+    container_name: chemistry-checker-js
+    image: ghcr.io/isaacphysics/chemistry-checker-js
+    restart: unless-stopped
+
 networks:
   default:
     external:

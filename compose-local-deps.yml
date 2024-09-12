@@ -11,14 +11,12 @@ services:
     ports:
       - "5000:5000"
 
-  chemistry-checker:
+  chemistry-checker-js:
     network_mode: bridge
-    container_name: chemistry-checker
-    image: ucamcldtg/chemistry-checker
+    container_name: chemistry-checker-js
+    image: ghcr.io/isaacphysics/chemistry-checker-js
     ports:
-      - "5001:5000"
-    volumes:
-      - ../.m2:/root/.m2:rw
+      - "5002:5002"
 
   elasticsearch:
     network_mode: bridge
