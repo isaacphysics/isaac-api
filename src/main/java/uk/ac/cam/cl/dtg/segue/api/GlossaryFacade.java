@@ -123,7 +123,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
 
         if (null != startIndex) {
             startIndexOfResults = Integer.parseInt(startIndex);
-            if (startIndexOfResults < 1) {
+            if (startIndexOfResults < 0) {
                 return SegueErrorResponse.getBadRequestResponse("Glossary term search start index invalid!");
             }
         } else {
