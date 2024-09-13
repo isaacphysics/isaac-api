@@ -112,22 +112,26 @@ public class GlossaryFacade extends AbstractSegueFacade {
         int resultsLimit;
         int startIndexOfResults;
 
-        if (null != limit) {
-            resultsLimit = Integer.parseInt(limit);
-            if (resultsLimit > SEARCH_MAX_WINDOW_SIZE || resultsLimit < 1) {
-                return SegueErrorResponse.getBadRequestResponse("Glossary term search limit invalid!");
+        try {
+            if (null != limit) {
+                resultsLimit = Integer.parseInt(limit);
+                if (resultsLimit > SEARCH_MAX_WINDOW_SIZE || resultsLimit < 1) {
+                    return SegueErrorResponse.getBadRequestResponse("Glossary term search limit invalid!");
+                }
+            } else {
+                resultsLimit = DEFAULT_RESULTS_LIMIT;
             }
-        } else {
-            resultsLimit = DEFAULT_RESULTS_LIMIT;
-        }
 
-        if (null != startIndex) {
-            startIndexOfResults = Integer.parseInt(startIndex);
-            if (startIndexOfResults < 0) {
-                return SegueErrorResponse.getBadRequestResponse("Glossary term search start index invalid!");
+            if (null != startIndex) {
+                startIndexOfResults = Integer.parseInt(startIndex);
+                if (startIndexOfResults < 0) {
+                    return SegueErrorResponse.getBadRequestResponse("Glossary term search start_index invalid!");
+                }
+            } else {
+                startIndexOfResults = 0;
             }
-        } else {
-            startIndexOfResults = 0;
+        } catch (NumberFormatException e) {
+            return SegueErrorResponse.getBadRequestResponse("Invalid limit or start_index provided!");
         }
 
         // Get from server cache, else load and cache:
