@@ -446,7 +446,7 @@ public class GitContentManager {
 
                 // Search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
