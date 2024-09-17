@@ -10,6 +10,7 @@ import com.azure.ai.openai.models.ChatRequestUserMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
@@ -49,7 +50,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
             "",
             "asdkvnarl ifuvbnerpi vunkbjnrirutnblkrjnhbsiusdpocmscd dcj dciujnargybae"
     );
-    private static final Map<String, Integer> zeroMarkResult = Map.of(MARK_TOTAL_FIELD_NAME, 0);
+    private static final Map<String, Integer> zeroMarkResult = ImmutableMap.of(MARK_TOTAL_FIELD_NAME, 0);
 
     private final AbstractConfigLoader configLoader;
     private final ObjectMapper mapper;
