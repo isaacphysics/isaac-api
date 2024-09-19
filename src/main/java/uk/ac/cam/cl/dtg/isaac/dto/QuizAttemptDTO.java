@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.DO_HASHCODE_PRIME;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
@@ -33,6 +34,7 @@ public class QuizAttemptDTO implements IHasQuizSummary {
   private ContentSummaryDTO quizSummary; // We only need the title really.
   @Nullable
   private Long quizAssignmentId;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant startDate;
   @Nullable
   private Instant completedDate;

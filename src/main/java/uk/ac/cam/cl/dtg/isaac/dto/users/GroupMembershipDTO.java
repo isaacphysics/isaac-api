@@ -16,8 +16,10 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
+import uk.ac.cam.cl.dtg.isaac.dto.LongToInstantConverter;
 
 
 /**
@@ -27,7 +29,9 @@ public class GroupMembershipDTO {
   private Long groupId;
   private Long userId;
   private GroupMembershipStatus status;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant updated;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant created;
 
   /**

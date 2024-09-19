@@ -16,6 +16,7 @@
 
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +35,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
   private Long ownerUserId;
   private UserSummaryDTO assignerSummary;
   private Instant creationDate;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant dueDate;
   private QuizFeedbackMode quizFeedbackMode;
 

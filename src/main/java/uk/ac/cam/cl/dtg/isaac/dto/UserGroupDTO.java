@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.api.client.util.Sets;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
@@ -35,7 +36,9 @@ public class UserGroupDTO {
   private Long id;
   private String groupName;
   private Long ownerId;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant created;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant lastUpdated;
   private String token;
   private boolean archived;
