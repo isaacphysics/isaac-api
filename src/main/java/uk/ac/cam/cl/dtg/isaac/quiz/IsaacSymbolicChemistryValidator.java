@@ -364,9 +364,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // Input is nuclear, but atomic/mass numbers are invalid.
                 feedback = new Content("Check your atomic/mass numbers!");
 
-            } else if (closestMatch != null && closestMatch.isCorrect()) {
+            } else if (closestMatch != null && closestMatch.isCorrect() && closestResponse != null) {
 
                 // Weak match to a correct answer.
+                // closestResponse contains flags for generic mistakes from the Chemistry Checker.
+                // If any of these flags are false, provide feedback on the matched mistake.
 
                 if (closestResponse.get("sameElements").equals(false)) {
 
