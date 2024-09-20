@@ -192,6 +192,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     req.put("test", submittedFormula.getMhchemExpression());
                     req.put("description", chemistryQuestion.getId());
                     req.put("allowPermutations", String.valueOf(chemistryQuestion.allowPermutations()));
+                    req.put("questionID", question.getId());
 
                     if (chemistryQuestion.isNuclear()) {
                         response = getResponseFromExternalValidator(nuclearValidatorUrl, req);
@@ -367,22 +368,30 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                 // Weak match to a correct answer.
 
-                if (!((String) closestResponse.get("expectedType")).contains("nuclear")
-                        && closestResponse.get("sameState").equals(false)) {
+                if (closestResponse.get("sameElements").equals(false)) {
 
-                    // Wrong state symbols
-                    feedback = new Content("Check your state symbols!");
+                    // Wrong element/compound
+                    feedback = new Content("Check your elements!");
 
                 } else if (closestResponse.get("sameCoefficient").equals(false)) {
 
                     // Wrong coefficients
                     feedback = new Content("Check your coefficients!");
 
+                } else if (!isNuclear && closestResponse.get("sameState").equals(false)) {
+
+                    // Wrong state symbols
+                    feedback = new Content("Check your state symbols!");
+
                 } else if (!isNuclear && closestResponse.get("sameArrow").equals(false)) {
 
                     // Wrong arrow
                     feedback = new Content("What type of reaction is this?");
 
+                } else if (!isNuclear && closestResponse.get("sameBrackets").equals(false)) {
+
+                    // Wrong brackets
+                    feedback = new Content("Check your brackets!");
                 }
             }
         }
