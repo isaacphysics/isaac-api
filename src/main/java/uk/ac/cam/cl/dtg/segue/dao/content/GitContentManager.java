@@ -446,7 +446,7 @@ public class GitContentManager {
 
                 // Search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
@@ -474,7 +474,7 @@ public class GitContentManager {
                 } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME)
                         .contains(entry.getKey())) {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
-                            .strategy(Strategy.SUBSTRING)
+                            .strategy(Strategy.SIMPLE)
                             .atLeastOne(true));
                 } else {
                     boolean applyOrFilterBetweenValues = ID_FIELDNAME.equals(entry.getKey());

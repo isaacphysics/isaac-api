@@ -16,7 +16,8 @@
 
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.google.api.client.util.Lists;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,14 +37,20 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COLLECTOR;
 
 /**
  * Glossary Facade
@@ -57,6 +64,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 
     private final GitContentManager contentManager;
+    private final Cache<String, ResultsWrapper<ContentDTO>> termCache;
 
     /**
      * @param properties     - to allow access to system properties.
@@ -68,6 +76,9 @@ public class GlossaryFacade extends AbstractSegueFacade {
                           final ILogManager logManager) {
         super(properties, logManager);
         this.contentManager = contentManager;
+
+        this.termCache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(5, TimeUnit.MINUTES).build();
+        CACHE_METRICS_COLLECTOR.addCache("glossary_facade_terms_cache", termCache);
     }
 
     /**
@@ -83,39 +94,62 @@ public class GlossaryFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get all the glossary terms that are indexed.")
-    public final Response getTerms(@QueryParam("start_index") final String startIndex,
+    public final Response getTerms(@Context final Request request, @QueryParam("start_index") final String startIndex,
                                    @QueryParam("limit") final String limit) {
 
-        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("glossaryTerm")));
+        // Create cache key for use both in browser and server caching:
+        String currentContentSHA = this.contentManager.getCurrentContentSHA();
+        String cacheKey = String.format("terms@%s-%s+%s", currentContentSHA, startIndex, limit);
 
-        ResultsWrapper<ContentDTO> c;
+        // Calculate the ETag for result browser caching:
+        EntityTag etag = new EntityTag(cacheKey.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_HOUR);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        // Check validity of limit and offset:
+        int resultsLimit;
+        int startIndexOfResults;
+
         try {
-            int resultsLimit;
-            int startIndexOfResults;
-
             if (null != limit) {
                 resultsLimit = Integer.parseInt(limit);
+                if (resultsLimit > SEARCH_MAX_WINDOW_SIZE || resultsLimit < 1) {
+                    return SegueErrorResponse.getBadRequestResponse("Glossary term search limit invalid!");
+                }
             } else {
                 resultsLimit = DEFAULT_RESULTS_LIMIT;
             }
 
             if (null != startIndex) {
                 startIndexOfResults = Integer.parseInt(startIndex);
+                if (startIndexOfResults < 0) {
+                    return SegueErrorResponse.getBadRequestResponse("Glossary term search start_index invalid!");
+                }
             } else {
                 startIndexOfResults = 0;
             }
-
-            c = this.contentManager.findByFieldNames(fieldsToMatch, startIndexOfResults, resultsLimit);
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content acquisition error.", e).toResponse();
+        } catch (NumberFormatException e) {
+            return SegueErrorResponse.getBadRequestResponse("Invalid limit or start_index provided!");
         }
-        // Calculate the ETag on last modified date of tags list
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
-        return Response.ok(c).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true)).build();
+
+        // Get from server cache, else load and cache:
+        try {
+            ResultsWrapper<ContentDTO> c = termCache.get(cacheKey, () -> {
+                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Collections.singletonList(
+                        new GitContentManager.BooleanSearchClause(
+                                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("glossaryTerm"))
+                );
+
+                return this.contentManager.findByFieldNames(fieldsToMatch, startIndexOfResults, resultsLimit);
+            });
+
+            return Response.ok(c).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
+        } catch (ExecutionException e) {
+            log.warn("Error loading glossary terms!", e);  // Sadly need full stack trace here, since errors are nested!
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error loading glossary terms!").toResponse();
+        }
     }
 
     /**

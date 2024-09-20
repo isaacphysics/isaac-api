@@ -4,6 +4,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
+import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacLLMFreeTextQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLLMFreeTextValidator;
@@ -23,6 +24,7 @@ public class IsaacLLMFreeTextQuestion extends Question {
     private String additionalMarkingInstructions;
     private String markCalculationInstructions;
     private List<LLMFreeTextMarkedExample> markedExamples;
+    private LLMMarkingExpression markingFormula;
 
     public IsaacLLMFreeTextQuestion() {
     }
@@ -68,5 +70,11 @@ public class IsaacLLMFreeTextQuestion extends Question {
     public void setMarkedExamples(List<LLMFreeTextMarkedExample> markedExamples) {
         this.markedExamples = markedExamples;
     }
-}
 
+    public LLMMarkingExpression getMarkingFormula() {
+        return markingFormula;
+    }
+    public void setMarkingFormula(LLMMarkingExpression markingFormula) {
+        this.markingFormula = markingFormula;
+    }
+}

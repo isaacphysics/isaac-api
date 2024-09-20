@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicChemistryQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacOldSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 /**
@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
  */
 @DTOMapping(IsaacSymbolicChemistryQuestionDTO.class)
 @JsonContentType("isaacSymbolicChemistryQuestion")
-@ValidatesWith(IsaacSymbolicChemistryValidator.class)
+@ValidatesWith(IsaacOldSymbolicChemistryValidator.class)
 public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
     @JsonProperty("isNuclear")
     private boolean isNuclear;
