@@ -232,7 +232,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
 
-            GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
+            GameboardDTO unAugmentedGameboard = gameManager.getLiteGameboard(gameboardId);
             if (null == unAugmentedGameboard) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
                         .toResponse();
