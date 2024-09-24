@@ -191,7 +191,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     req.put("target", formulaChoice.getMhchemExpression());
                     req.put("test", submittedFormula.getMhchemExpression());
                     req.put("description", chemistryQuestion.getId());
-                    req.put("allowPermutations", String.valueOf(chemistryQuestion.allowPermutations()));
+                    req.put("allowPermutations", String.valueOf(chemistryQuestion.getAllowPermutations()));
                     req.put("questionID", question.getId());
 
                     if (chemistryQuestion.isNuclear()) {

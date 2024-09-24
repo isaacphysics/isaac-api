@@ -50,7 +50,7 @@ public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
     /**
      * @return whether the question allows compound permutations e.g. C10H22 == CH3(CH2)8CH3
      */
-    public boolean allowPermutations() { return allowPermutations; }
+    public boolean getAllowPermutations() { return allowPermutations; }
 
     /**
      * @param allowPermutations set whether the question allows compound permutations e.g. C10H22 == CH3(CH2)8CH3
