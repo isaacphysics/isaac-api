@@ -31,7 +31,6 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
     @JsonProperty("isNuclear")
     private boolean isNuclear;
-    @JsonProperty("allowPermutations")
     private boolean allowPermutations;
 
     /**
