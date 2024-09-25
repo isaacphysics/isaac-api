@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
     @JsonProperty("isNuclear")
     private boolean isNuclear;
+    private boolean allowPermutations;
 
     /**
      * @return whether the question is a nuclear question or not
@@ -44,5 +45,17 @@ public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
      */
     public void setNuclear(boolean nuclear) {
         isNuclear = nuclear;
+    }
+
+    /**
+     * @return whether the question allows compound permutations e.g. C10H22 == CH3(CH2)8CH3
+     */
+    public boolean getAllowPermutations() { return allowPermutations; }
+
+    /**
+     * @param allowPermutations set whether the question allows compound permutations e.g. C10H22 == CH3(CH2)8CH3
+     */
+    public void setAllowPermutations(boolean allowPermutations) {
+        this.allowPermutations = allowPermutations;
     }
 }
