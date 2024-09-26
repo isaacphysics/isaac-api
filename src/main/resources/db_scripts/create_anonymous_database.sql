@@ -223,6 +223,7 @@ CREATE TABLE anonymous.logged_events AS
         'VIEW_SUPERSEDED_BY_QUESTION',
         -- Concept usage:
         'VIEW_CONCEPT', 'CONCEPT_SECTION_OPEN', 'QUICK_QUESTION_TAB_VIEW', 'VIEW_GITHUB_CODE',
+        'QUESTION_CONFIDENCE_BEFORE', 'QUESTION_CONFIDENCE_AFTER',
         -- Page usage:
         'VIEW_PAGE', 'VIEW_PAGE_FRAGMENT',
         -- Assignment usage:
