@@ -226,19 +226,6 @@ public class GroupManager {
     }
 
     /**
-     * get all groups by owner.
-     *
-     * @param ownerUser
-     *            - the owner of the groups to search for.
-     * @return List of groups or empty list.
-     * @throws SegueDatabaseException if there is a db error
-     */
-    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) throws SegueDatabaseException {
-        Objects.requireNonNull(ownerUser);
-        return convertGroupsToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId()));
-    }
-
-    /**
      * getAllGroupsOwnedAndManagedByUser.
      *
      * This method will get all groups that a user could have an interest in.

@@ -43,20 +43,6 @@ public interface IAssignmentPersistenceManager {
     List<AssignmentDTO> getAssignmentsByGroupId(Long groupId) throws SegueDatabaseException;
 
     /**
-     * Retrieve all Assignments for a given group and set by a given user.
-     * 
-     * @param assignmentOwnerId
-     *            - to search for
-     * @param groupId
-     *            - to search for
-     * @return assignments as a list
-     * @throws SegueDatabaseException
-     *             - if there is an error when accessing the database.
-     */
-    List<AssignmentDTO> getAssignmentsByOwnerIdAndGroupId(Long assignmentOwnerId, Long groupId)
-            throws SegueDatabaseException;
-
-    /**
      * getAssignmentsByGameboardAndGroup.
      * 
      * @param gameboardId
@@ -70,17 +56,6 @@ public interface IAssignmentPersistenceManager {
      */
     List<AssignmentDTO> getAssignmentsByGameboardAndGroup(String gameboardId, Long groupId)
             throws SegueDatabaseException;
-
-    /**
-     * getAssignmentsByOwner.
-     * 
-     * @param ownerId
-     *            - the user id who might have assigned the gameboard.
-     * @return list of assignments
-     * @throws SegueDatabaseException
-     *             - if there is an error when accessing the database.
-     */
-    List<AssignmentDTO> getAssignmentsByOwner(Long ownerId) throws SegueDatabaseException;
 
     /**
      * getAssignmentsByGroupList.

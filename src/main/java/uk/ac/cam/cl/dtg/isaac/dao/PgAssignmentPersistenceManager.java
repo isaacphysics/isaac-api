@@ -161,33 +161,6 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
     }
 
     @Override
-    public List<AssignmentDTO> getAssignmentsByOwnerIdAndGroupId(final Long assignmentOwnerId, final Long groupId)
-            throws SegueDatabaseException {
-
-        String query = "SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ? ORDER BY creation_date";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
-            pst.setLong(1, assignmentOwnerId);
-            pst.setLong(2, groupId);
-            
-            try (ResultSet results = pst.executeQuery()) {
-
-                List<AssignmentDTO> listOfResults = Lists.newArrayList();
-
-                while (results.next()) {
-                    listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
-                }
-
-                return listOfResults;
-            }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to find assignment by group", e);
-        }
-    }
-
-
-    @Override
     public List<AssignmentDTO> getAssignmentsByGameboardAndGroup(final String gameboardId, final Long groupId)
             throws SegueDatabaseException {
         String query = "SELECT * FROM assignments WHERE gameboard_id = ? AND group_id = ? ORDER BY creation_date";
@@ -209,29 +182,6 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Unable to find assignment by gameboard and group", e);
-        }
-    }
-
-    @Override
-    public List<AssignmentDTO> getAssignmentsByOwner(final Long ownerId) throws SegueDatabaseException {
-        String query = "SELECT * FROM assignments WHERE owner_user_id = ? ORDER BY creation_date";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
-            pst.setLong(1, ownerId);
-            
-            try (ResultSet results = pst.executeQuery()) {
-
-                List<AssignmentDTO> listOfResults = Lists.newArrayList();
-
-                while (results.next()) {
-                    listOfResults.add(this.convertToAssignmentDTO(this.convertFromSQLToAssignmentDO(results)));
-                }
-
-                return listOfResults;
-            }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to find assignment by owner", e);
         }
     }
 

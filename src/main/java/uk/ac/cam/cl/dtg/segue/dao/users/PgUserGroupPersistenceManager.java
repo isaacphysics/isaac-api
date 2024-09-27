@@ -192,12 +192,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
         this.setUsersGroupMembershipStatus(userId, groupId, GroupMembershipStatus.DELETED);
     }
 
-
-    @Override
-    public List<UserGroup> getGroupsByOwner(final Long ownerUserId) throws SegueDatabaseException {
-        return this.getGroupsByOwner(ownerUserId, null);
-    }
-
     @Override
     public List<UserGroup> getGroupsByOwner(final Long ownerUserId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {
         String pstString = "SELECT * FROM groups WHERE owner_id = ?";
@@ -209,11 +203,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
 
         return getGroupsBySQLPst(pstString, ownerUserId, archivedGroupsOnly);
 
-    }
-
-    @Override
-    public List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId) throws SegueDatabaseException {
-        return this.getGroupsByAdditionalManager(additionalManagerId, null);
     }
 
     @Override

@@ -504,41 +504,6 @@ public class GameboardPersistenceManager {
     }
 
     /**
-     * Utility method to get a map of gameboard id to list of users who are connected to it.
-     * 
-     * @return map of gameboard id to list of users
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    public Map<String, List<String>> getBoardToUserIdMapping() throws SegueDatabaseException {
-        Map<String, List<String>> results = Maps.newHashMap();
-
-        String query = "SELECT gameboard_id, user_id FROM user_gameboards;";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-             ResultSet sqlResults = pst.executeQuery();
-        ) {
-            while (sqlResults.next()) {
-                String gameboardId = sqlResults.getString("gameboard_id");
-                String userId = sqlResults.getString("user_id");
-
-                if (results.containsKey(gameboardId)) {
-                    results.get(gameboardId).add(userId);
-                } else {
-                    List<String> users = Lists.newArrayList();
-                    users.add(userId);
-                    results.put(gameboardId, users);
-                }
-            }
-            
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to find assignment by id", e);
-        }
-
-        return results;
-    }
-
-    /**
      * Utility function to create a gameboard item from a content DTO (Should be a question page).
      * 
      * @param content
