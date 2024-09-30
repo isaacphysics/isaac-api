@@ -34,17 +34,6 @@ import jakarta.annotation.Nullable;
 public interface IUserGroupPersistenceManager {
 
     /**
-     * Get all groups by owner.
-     *
-     * @param ownerUserId
-     *            the owner Id to find all groups for.
-     * @return List of groups belonging to owner user.
-     * @throws SegueDatabaseException
-     *             - if we cannot contact the database.
-     */
-    List<UserGroup> getGroupsByOwner(Long ownerUserId) throws SegueDatabaseException;
-
-    /**
      * Get groups by owner.
      * 
      * @param ownerUserId
@@ -235,16 +224,6 @@ public interface IUserGroupPersistenceManager {
      * @throws SegueDatabaseException on database failure
      */
     Map<Long, Set<Long>> getAdditionalManagerSetsByGroupIds(final Collection<Long> groupIds) throws SegueDatabaseException;
-
-    /**
-     * Get groups by additional manager id.
-     *
-     * @param additionalManagerId
-     *            the additional Manager Id to find all groups for.
-     * @throws SegueDatabaseException
-     *             - if we cannot contact the database.
-     */
-    List<UserGroup> getGroupsByAdditionalManager(final Long additionalManagerId) throws SegueDatabaseException;
 
     /**
      * Get groups by additional manager id

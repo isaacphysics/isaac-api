@@ -611,24 +611,6 @@ public class GameManager {
     }
 
     /**
-     * @return useful for providing an indication of how many people are sharing boards.
-     * @throws SegueDatabaseException
-     *             - if there is a problem updating the gameboard.
-     */
-    public Map<String, Integer> getNumberOfConnectedUsersByGameboard() 
-            throws SegueDatabaseException {
-        Map<String, List<String>> boardToUserIdMapping = this.gameboardPersistenceManager.getBoardToUserIdMapping();
-
-        Map<String, Integer> result = Maps.newTreeMap();
-
-        for (java.util.Map.Entry<String, List<String>> e : boardToUserIdMapping.entrySet()) {
-            result.put(e.getKey(), e.getValue().size());
-        }
-
-        return result;
-    }
-
-    /**
      * Update the gameboards title.
      * 
      * @param gameboardWithUpdatedTitle
