@@ -35,6 +35,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 
@@ -147,7 +148,7 @@ public class SegueJobService implements ServletContextListener {
             log.info("Registered Quartz job ({}). Current jobs registered ({}): ", jobToRegister.getJobKey(), localRegisteredJobs.size());
         } else {
             CronTrigger existingTrigger = (CronTrigger) scheduler.getTrigger(cronTrigger.getKey());
-            if (!existingTrigger.equals(cronTrigger)) {
+            if (!Objects.equals(existingTrigger.getCronExpression(), cronTrigger.getCronExpression())) {
                 // FIXME - this does not update the job details, e.g. if the SQL file name changes.
                 scheduler.rescheduleJob(cronTrigger.getKey(), cronTrigger);
                 log.info("Re-registered Quartz job ({}). Current jobs registered ({}): ", jobToRegister.getJobKey(), localRegisteredJobs.size());
