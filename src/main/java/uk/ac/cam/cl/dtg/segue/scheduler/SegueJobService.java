@@ -16,9 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
 import com.google.inject.Inject;
-import jakarta.annotation.Nullable;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -31,10 +28,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
+import jakarta.annotation.Nullable;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 
@@ -58,7 +59,7 @@ public class SegueJobService implements ServletContextListener {
     public SegueJobService(final PostgresSqlDb database, final List<SegueScheduledJob> allKnownJobs,
                            @Nullable final List<SegueScheduledJob> jobsToRemove) {
         this.allKnownJobs = allKnownJobs;
-        this.jobsToRemove =jobsToRemove;
+        this.jobsToRemove = jobsToRemove;
         this.localRegisteredJobs = new ArrayList<>();
         StdSchedulerFactory stdSchedulerFactory = new StdSchedulerFactory();
 
@@ -107,9 +108,9 @@ public class SegueJobService implements ServletContextListener {
         localRegisteredJobs.remove(jobToRemove);
 
         if (deletionNeeded) {
-            log.info(String.format("Removed existing job: %s", jobToRemove.getJobKey()));
+            log.info("Removed existing job: {}", jobToRemove.getJobKey());
         } else {
-            log.info(String.format("Skipping removal of non-registered job: %s", jobToRemove.getJobKey()));
+            log.info("Skipping removal of non-registered job: {}", jobToRemove.getJobKey());
         }
     }
 
@@ -142,13 +143,18 @@ public class SegueJobService implements ServletContextListener {
 
         scheduler.getContext().put(jobToRegister.getExecutableTask().getClass().getName(), jobToRegister.getExecutionContext());
 
-        if (!scheduler.checkExists(job.getKey())) {
+        if (!scheduler.checkExists(job.getKey()) || !scheduler.checkExists(cronTrigger.getKey())) {
             scheduler.scheduleJob(job, cronTrigger);
-            log.info(String.format("Registered job (%s) to segue job execution service. Current jobs registered (%s): ", jobToRegister.getJobKey(), localRegisteredJobs.size()));
+            log.info("Registered Quartz job ({}). Current jobs registered ({}): ", jobToRegister.getJobKey(), localRegisteredJobs.size());
         } else {
-            // FIXME - this does not update the job details, e.g. if the SQL file name changes.
-            scheduler.rescheduleJob(cronTrigger.getKey(), cronTrigger);
-            log.info(String.format("Re-registered job (%s) to segue job execution service. Current jobs registered (%s): ", jobToRegister.getJobKey(), localRegisteredJobs.size()));
+            CronTrigger existingTrigger = (CronTrigger) scheduler.getTrigger(cronTrigger.getKey());
+            if (!Objects.equals(existingTrigger.getCronExpression(), cronTrigger.getCronExpression())) {
+                // FIXME - this does not update the job details, e.g. if the SQL file name changes.
+                scheduler.rescheduleJob(cronTrigger.getKey(), cronTrigger);
+                log.info("Re-registered Quartz job ({}). Current jobs registered ({}): ", jobToRegister.getJobKey(), localRegisteredJobs.size());
+            } else {
+                log.info("Skipping re-registering existing Quartz job ({}). Current jobs registered ({}): ", jobToRegister.getJobKey(), localRegisteredJobs.size());
+            }
         }
 
         localRegisteredJobs.add(jobToRegister);
