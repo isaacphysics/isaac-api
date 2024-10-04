@@ -17,11 +17,11 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacOldSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 
 @JsonContentType("isaacSymbolicChemistryQuestion")
-@ValidatesWith(IsaacSymbolicChemistryValidator.class)
+@ValidatesWith(IsaacOldSymbolicChemistryValidator.class)
 public class IsaacSymbolicChemistryQuestionDTO extends IsaacSymbolicQuestionDTO {
     @JsonProperty("isNuclear")
     private boolean isNuclear;
