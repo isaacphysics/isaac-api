@@ -193,7 +193,6 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     req.put("description", chemistryQuestion.getId());
                     req.put("allowPermutations", String.valueOf(chemistryQuestion.getAllowPermutations()));
                     req.put("allowScalingCoefficients", String.valueOf(chemistryQuestion.getAllowScalingCoefficients()));
-                    
                     req.put("questionID", question.getId());
 
                     if (chemistryQuestion.isNuclear()) {
