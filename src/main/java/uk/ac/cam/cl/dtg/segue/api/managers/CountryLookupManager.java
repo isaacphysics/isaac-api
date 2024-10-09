@@ -38,8 +38,9 @@ public class CountryLookupManager {
      *
      * @param customCountryCodes A map of custom country codes and display names to be included, which can be empty.
      */
-    public CountryLookupManager(Map<String, String> customCountryCodes, List<String> priorityCountryCodes) {
-        allCountryCodesAndNames = getAllCountryCodesAndNames(customCountryCodes);
+    public CountryLookupManager(Map<String, String> customCountryCodes, List<String> priorityCountryCodes,
+                                List<String> removedCountryCodes) {
+        allCountryCodesAndNames = getAllCountryCodesAndNames(customCountryCodes, removedCountryCodes);
         priorityCountryCodesAndNames = getPriorityCountryCodesAndNames(allCountryCodesAndNames, priorityCountryCodes);
     }
 
@@ -73,10 +74,12 @@ public class CountryLookupManager {
         return priorityCountryCodesAndNames;
     }
 
-    private static Map<String, String> getAllCountryCodesAndNames(Map<String, String> customCountries) {
+    private static Map<String, String> getAllCountryCodesAndNames(Map<String, String> customCountries,
+                                                                  List<String> removedCountryCodes) {
         // Merge custom and ISO country maps.
         return Stream.of(getISOCountryCodesAndNames(), customCountries)
                 .flatMap(map -> map.entrySet().stream())
+                .filter(e -> !removedCountryCodes.contains(e.getKey()))
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
