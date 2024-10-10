@@ -217,15 +217,15 @@ public class GroupManager {
      */
     private void orderUsersByName(final List<RegisteredUserDTO> users) {
         // Remove apostrophes so that string containing them are ordered in the same way as in Excel.
-        // I.e. we want that "O'Aaa" < "Obbb" < "O'ccc"
+        // I.e. we want that "O'Aaa" < "Obbb" < "O'Ccc"
         Comparator<String> excelStringOrder = Comparator.nullsLast((String a, String b) ->
                 String.CASE_INSENSITIVE_ORDER.compare(a.replaceAll("'", ""), b.replaceAll("'", "")));
 
-        // If two names differ only by an apostrophe (i.e. "O'A" and "Oa"), this will leave them in whatever order
-        // they started in, which may not be desired.
+        // If names differ only by an apostrophe (i.e. "O'A" and "Oa"), break ties using name including any apostrophes:
         users.sort(Comparator
                 .comparing(RegisteredUserDTO::getFamilyName, excelStringOrder)
-                .thenComparing(RegisteredUserDTO::getGivenName, excelStringOrder));
+                .thenComparing(RegisteredUserDTO::getGivenName, excelStringOrder)
+                .thenComparing(RegisteredUserDTO::getFamilyName));
     }
 
     /**
