@@ -150,8 +150,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
 
         GameboardDTO gameboard = newAssignment.getGameboard();
-        final String gameboardURL = String.format("https://%s/assignment/%s", properties.getProperty(HOST_NAME),
-                gameboard.getId());
+        final String gameboardURL = getAssignmentLikeUrl(newAssignment);
 
         // If there is no date to schedule the assignment for, or the start date is in the past...
         if (null == newAssignment.getScheduledStartDate()) {
@@ -241,7 +240,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
 
     @Override
     public String getAssignmentLikeUrl(AssignmentDTO existingAssignment) {
-        return String.format("https://%s/assignment/%s",
+        return String.format("https://%s/assignment/%s?utm_source=notification-email",
                         properties.getProperty(HOST_NAME),
                         existingAssignment.getGameboardId());
     }

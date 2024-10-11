@@ -205,7 +205,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
 
     @Override
     public String getAssignmentLikeUrl(QuizAssignmentDTO assignment) {
-        return String.format("https://%s/test/assignment/%s",
+        return String.format("https://%s/test/assignment/%s?utm_source=notification-email",
             properties.getProperty(HOST_NAME),
             assignment.getId());
     }

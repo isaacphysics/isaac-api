@@ -50,7 +50,7 @@ public class ScheduledQuizAssignmentsEmailJob implements Job {
         if (sendAssignmentEmail) {
             try {
                 IsaacQuizDTO quiz = quizManager.findQuiz(quizAssignment.getQuizId());
-                String quizURL = String.format("https://%s/test/assignment/%s", properties.getProperty(HOST_NAME), quizAssignment.getId());
+                String quizURL = String.format("https://%s/test/assignment/%s?utm_source=notification-email", properties.getProperty(HOST_NAME), quizAssignment.getId());
                 emailService.sendAssignmentEmailToGroup(quizAssignment, quiz, ImmutableMap.of("quizURL", quizURL),
                         "email-template-group-quiz-assignment");
             } catch (SegueDatabaseException | ContentManagerException e) {
