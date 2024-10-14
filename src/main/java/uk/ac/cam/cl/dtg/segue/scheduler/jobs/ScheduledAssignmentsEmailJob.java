@@ -49,8 +49,8 @@ public class ScheduledAssignmentsEmailJob implements Job {
         if (sendAssignmentEmail) {
             try {
                 GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
-                final String gameboardURL = String.format("https://%s/assignment/%s", this.properties.getProperty(HOST_NAME),
-                        gameboard.getId());
+                final String gameboardURL = String.format("https://%s/assignment/%s?utm_source=notification-email",
+                        this.properties.getProperty(HOST_NAME), gameboard.getId());
                 this.emailService.sendAssignmentEmailToGroup(assignment, gameboard, ImmutableMap.of("gameboardURL", gameboardURL),
                         "email-template-group-assignment");
             } catch (SegueDatabaseException e) {
