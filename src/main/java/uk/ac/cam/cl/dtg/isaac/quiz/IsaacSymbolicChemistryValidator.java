@@ -324,9 +324,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             if (containsError) {
 
                 // User input contains error terms.
-                // FIXME: This currently clashes with determining whether the submitted answer was the wrong type
-                // Inequality should be changed to not allow Nuclear syntax in Chemistry questions and vice versa
-                feedback = new Content("Your answer contains invalid syntax!");
+                feedback = new Content("Your answer is not chemically valid!");
 
             } else if (closestMatch != null && closestMatchType == MatchType.EXACT) {
 
@@ -337,27 +335,27 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             } else if (isNuclear && !chemistryQuestion.isNuclear()) {
 
                 // Nuclear/Chemistry mismatch in all correct answers.
-                feedback = new Content("This question is about Chemistry.");
+                feedback = new Content("This question is about Chemistry!");
 
-            } else if (chemistryQuestion.isNuclear() && !isNuclear) {
+            } else if (!isNuclear && chemistryQuestion.isNuclear() ) {
 
                 // Nuclear/Chemistry mismatch in all correct answers.
-                feedback = new Content("This question is about Nuclear Physics.");
+                feedback = new Content("This question is about Nuclear Physics!");
 
             } else if (!isEquation && allEquation) {
 
                 // Equation/Expression mismatch in all correct answers.
-                feedback = new Content("Your answer is an expression but we expected an equation.");
+                feedback = new Content("Your answer is an expression but we expected an equation!");
 
             } else if (isEquation && allExpression) {
 
                 // Equation/Expression mismatch in all correct answers.
-                feedback = new Content("Your answer is an equation or a term but we expected an expression.");
+                feedback = new Content("Your answer is an equation or a term but we expected an expression!");
 
             } else if (isEquation && balancedKnownFlag && !isBalanced) {
 
                 // Input is an unbalanced equation.
-                feedback = new Content("Your equation is unbalanced.");
+                feedback = new Content("Your equation is unbalanced!");
 
             } else if (isNuclear && validityKnownFlag && !isValid) {
 
@@ -373,7 +371,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 if (closestResponse.get("sameElements").equals(false)) {
 
                     // Wrong element/compound
-                    feedback = new Content("Check your elements!");
+                    feedback = new Content("Check that you have all the correct atoms present and in the right place!");
 
                 } else if (closestResponse.get("sameCoefficient").equals(false)) {
 
@@ -388,7 +386,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 } else if (!isNuclear && closestResponse.get("sameArrow").equals(false)) {
 
                     // Wrong arrow
-                    feedback = new Content("What type of reaction is this?");
+                    feedback = new Content("Check your reaction arrow!");
 
                 } else if (!isNuclear && closestResponse.get("sameBrackets").equals(false)) {
 
