@@ -151,4 +151,12 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * @return - the validity of the token
      */
     boolean isValidEmailVerificationToken(final RegisteredUser user, final String token);
+
+    /**
+     * Create a secure random value for an account deletion token.
+     *
+     * @return the token in String form.
+     * @throws NoSuchAlgorithmException if the preferred password hashing algorithm cannot provide a secret value.
+     */
+    String createAccountDeletionTokenSecret() throws NoSuchAlgorithmException;
 }

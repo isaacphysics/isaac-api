@@ -26,6 +26,7 @@ import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.AccountDeletionToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -55,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
@@ -96,10 +98,11 @@ public class UserAuthenticationManager {
 
     private final AbstractConfigLoader properties;
     private final IUserDataManager database;
+    private final IDeletionTokenPersistenceManager deletionTokenPersistenceManager;
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
     private final boolean checkOriginHeader;
-    
+
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 
     /**
@@ -113,7 +116,7 @@ public class UserAuthenticationManager {
      * @param emailQueue
      */
     @Inject
-    public UserAuthenticationManager(final IUserDataManager database,
+    public UserAuthenticationManager(final IUserDataManager database, final IDeletionTokenPersistenceManager deletionTokenPersistenceManager,
                                      final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final EmailManager emailQueue) {
         Objects.requireNonNull(properties.getProperty(HMAC_SALT));
@@ -122,6 +125,7 @@ public class UserAuthenticationManager {
         Objects.requireNonNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
+        this.deletionTokenPersistenceManager = deletionTokenPersistenceManager;
        
         this.properties = properties;
 
@@ -751,6 +755,29 @@ public class UserAuthenticationManager {
         authenticator.setOrChangeUsersPassword(user, newPassword);
         return user;
     }
+
+    public AccountDeletionToken createAccountDeletionTokenForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
+
+        String token;
+        try {
+            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                    .get(AuthenticationProvider.SEGUE);
+
+            token = authenticator.createAccountDeletionTokenSecret();
+        } catch (NoSuchAlgorithmException e) {
+            throw new SegueDatabaseException("Failed to create account deletion token", e);
+        }
+
+        // Valid for 7 days:
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date()); // Initialises the calendar to the current date/time
+        c.add(Calendar.DATE, 7);
+
+        AccountDeletionToken deletionToken = new AccountDeletionToken(user.getId(), token, c.getTime());
+
+        return deletionTokenPersistenceManager.saveAccountDeletionToken(deletionToken);
+    }
+
     
     /**
      * This method will send a message to a user explaining that they only use a federated authenticator.

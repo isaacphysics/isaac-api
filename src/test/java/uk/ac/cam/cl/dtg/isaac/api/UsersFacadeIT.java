@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
@@ -827,8 +828,9 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         // Arrange
         // inject EmailManager mock to verify email sent
         EmailManager dummyEmailManager = createMock(EmailManager.class);
+        IDeletionTokenPersistenceManager dummyDeletionTokenManager = createMock(IDeletionTokenPersistenceManager.class);
         UserAuthenticationManager userAuthenticationManager = new UserAuthenticationManager(
-                pgUsers, properties, providersToRegister, dummyEmailManager);
+                pgUsers, dummyDeletionTokenManager, properties, providersToRegister, dummyEmailManager);
         UserAccountManager userAccountManager = new UserAccountManager(
                 pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers,
                 logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);

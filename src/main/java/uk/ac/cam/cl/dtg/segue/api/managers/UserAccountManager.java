@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.users.AccountDeletionToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
@@ -1612,6 +1613,21 @@ public class UserAccountManager implements IUserAccountManager {
         emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
     }
 
+
+    public void sendAccountDeletionEmail(RegisteredUserDTO userDTO) throws ContentManagerException, SegueDatabaseException {
+
+        AccountDeletionToken token = userAuthenticationManager.createAccountDeletionTokenForUser(userDTO);
+
+        EmailTemplateDTO emailVerificationTemplate = emailManager.getEmailTemplateDTO("email-template-account-deletion");
+        Map<String, Object> emailTokens = ImmutableMap.of(
+                "accountDeletionURL", this.generateAccountDeletionURL(userDTO, token.getToken())
+        );
+
+        log.info("Sending account deletion message to {}", userDTO.getEmail());
+
+        emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
+    }
+
     /**
      * Sends a notice email for email change to the user's current email address and then creates a copy of the user
      * with the new email to send to the sendVerificationEmailForCurrentEmail method.
@@ -1987,6 +2003,16 @@ public class UserAccountManager implements IUserAccountManager {
         String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
 
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
+    }
+
+    private String generateAccountDeletionURL(final RegisteredUserDTO userDTO, final String deletionToken) {
+        List<NameValuePair> urlParamPairs = Lists.newArrayList();
+        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
+        urlParamPairs.add(
+                new BasicNameValuePair("token", deletionToken));
+        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
+
+        return String.format("https://%s/deleteaccount?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
     /**
