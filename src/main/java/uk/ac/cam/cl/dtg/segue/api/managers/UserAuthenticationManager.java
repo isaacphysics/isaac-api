@@ -322,19 +322,6 @@ public class UserAuthenticationManager {
         }
     }
 
-    /**
-     * Checks to see if a user has valid way to authenticate with Segue.
-     *
-     * @param user - to check
-     * @return true means the user should have a means of authenticating with their account as far as we are concerned
-     */
-    public boolean hasLocalCredentials(RegisteredUser user) throws SegueDatabaseException {
-        IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        return passwordAuthenticator.hasPasswordRegistered(user);
-    }
-
     public void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
             throws NoCredentialsAvailableException, SegueDatabaseException, NoSuchAlgorithmException, InvalidKeySpecException {
         IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
