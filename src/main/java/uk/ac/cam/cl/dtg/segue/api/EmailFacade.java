@@ -223,8 +223,8 @@ public class EmailFacade extends AbstractSegueFacade {
     @Path("/users/verifyemail/{userid}/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Verify an email verification token is valid for use.")
-    public Response validateEmailVerificationRequest(@Context final HttpServletRequest request,
+    @Operation(summary = "Use an email verification token to verify an email address for an account.")
+    public Response completeEmailVerificationRequest(@Context final HttpServletRequest request,
                                                      @Context final HttpServletResponse response,
                                                      @PathParam("userid") final Long userId,
                                                      @PathParam("token") final String token) {
