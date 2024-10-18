@@ -26,6 +26,7 @@ public class IsaacSymbolicChemistryQuestionDTO extends IsaacSymbolicQuestionDTO 
     @JsonProperty("isNuclear")
     private boolean isNuclear;
     private boolean allowPermutations;
+    private boolean allowScalingCoefficients;
 
     /**
      * @return whether the question is a nuclear question or not
@@ -51,5 +52,17 @@ public class IsaacSymbolicChemistryQuestionDTO extends IsaacSymbolicQuestionDTO 
      */
     public void setAllowPermutations(boolean allowPermutations) {
         this.allowPermutations = allowPermutations;
+    }
+
+    /**
+     * @return whether the question allows coefficients to be multiplied e.g. 10 H2 + 5 O2 -> 10 H2O
+     */
+    public boolean getAllowScalingCoefficients() { return allowScalingCoefficients; }
+
+    /**
+     * @param allowScalingCoefficients set whether the question allows coefficients to be multiplied e.g. 10 H2 + 5 O2 -> 10 H2O
+     */
+    public void setAllowScalingCoefficients(boolean allowScalingCoefficients) {
+        this.allowScalingCoefficients = allowScalingCoefficients;
     }
 }
