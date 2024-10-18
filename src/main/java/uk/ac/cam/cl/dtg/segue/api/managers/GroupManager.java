@@ -181,7 +181,8 @@ public class GroupManager {
 
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
         // Sort the users by name
-        return this.orderUsersByName(users);
+        this.orderUsersByName(users);
+        return users;
     }
 
     /**
@@ -214,15 +215,17 @@ public class GroupManager {
      * @param users
      *            - list of users.
      */
-    private List<RegisteredUserDTO> orderUsersByName(final List<RegisteredUserDTO> users) {
-        // Replaces apostrophes with tildes so that string containing them are ordered in the same way as in
-        // Excel. i.e. we want that "O'Sully" > "Ogbobby"
+    private void orderUsersByName(final List<RegisteredUserDTO> users) {
+        // Remove apostrophes so that string containing them are ordered in the same way as in Excel.
+        // I.e. we want that "O'Aaa" < "Obbb" < "O'Ccc"
         Comparator<String> excelStringOrder = Comparator.nullsLast((String a, String b) ->
-                String.CASE_INSENSITIVE_ORDER.compare(a.replaceAll("'", "~"), b.replaceAll("'", "~")));
-        return users.stream()
-                .sorted(Comparator.comparing(RegisteredUserDTO::getGivenName, excelStringOrder))
-                .sorted(Comparator.comparing(RegisteredUserDTO::getFamilyName, excelStringOrder))
-                .collect(Collectors.toList());
+                String.CASE_INSENSITIVE_ORDER.compare(a.replaceAll("'", ""), b.replaceAll("'", "")));
+
+        // If names differ only by an apostrophe (i.e. "O'A" and "Oa"), break ties using name including any apostrophes:
+        users.sort(Comparator
+                .comparing(RegisteredUserDTO::getFamilyName, excelStringOrder)
+                .thenComparing(RegisteredUserDTO::getGivenName, excelStringOrder)
+                .thenComparing(RegisteredUserDTO::getFamilyName));
     }
 
     /**
