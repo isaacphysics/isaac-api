@@ -56,11 +56,13 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -334,6 +336,40 @@ public class EmailFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException | ContentManagerException e) {
             log.warn("Failed to create and send an account deletion email!", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error sending account deletion message.", e).toResponse();
+        }
+    }
+
+    /**
+     * Endpoint to delete an account using an account deletion token.
+     *
+     * @param request - to get the current user from.
+     * @param token - the deletion token previously sent to the account email.
+     * @return a 204 No Content on success, or an error.
+     */
+    @DELETE
+    @Path("/users/deleteaccount")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Complete an account deletion request using a deletion token.",
+               description = "The user must be logged in to the account to delete to complete this action.")
+    public Response completeAccountDeletion(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response,
+                                            @QueryParam("token") final String token) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+
+            userManager.confirmDeletionTokenAndDeleteAccount(currentUser, token);
+
+            userManager.logUserOut(request, response);
+
+            this.getLogManager().logEvent(currentUser, request, SegueServerLogType.ACCOUNT_DELETION_REQUEST_COMPLETE, Maps.newHashMap());
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException | NoUserException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (InvalidTokenException e) {
+            return SegueErrorResponse.getBadRequestResponse("Account deletion token is invalid or expired!");
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to delete account!", e).toResponse();
         }
     }
 

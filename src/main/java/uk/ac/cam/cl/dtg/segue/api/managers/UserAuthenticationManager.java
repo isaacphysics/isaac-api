@@ -756,6 +756,13 @@ public class UserAuthenticationManager {
         return user;
     }
 
+    /**
+     *  Create and save an account deletion token for the specified user.
+     *
+     * @param user - the user requesting deletion.
+     * @return - the deletion token to send to the user.
+     * @throws SegueDatabaseException - on database error.
+     */
     public AccountDeletionToken createAccountDeletionTokenForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
 
         String token;
@@ -778,6 +785,23 @@ public class UserAuthenticationManager {
         return deletionTokenPersistenceManager.saveAccountDeletionToken(deletionToken);
     }
 
+    /**
+     * Check a deletion token is correct and not expired for a specific user.
+     *
+     * @param user          - the user requesting deletion.
+     * @param deletionToken - the token.
+     * @return - whether the token is valid to use.
+     * @throws SegueDatabaseException - on database error.
+     */
+    public boolean isValidAccountDeletionToken(final RegisteredUserDTO user, final String deletionToken) throws SegueDatabaseException {
+        Objects.requireNonNull(user);
+        Objects.requireNonNull(deletionToken);
+
+        AccountDeletionToken adt = deletionTokenPersistenceManager.getAccountDeletionToken(user.getId());
+
+        Date now = new Date();
+        return adt.getToken().equals(deletionToken) && adt.getTokenExpiry().after(now);
+    }
     
     /**
      * This method will send a message to a user explaining that they only use a federated authenticator.

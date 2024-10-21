@@ -1613,19 +1613,46 @@ public class UserAccountManager implements IUserAccountManager {
         emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
     }
 
-
+    /**
+     * Send an account deletion token email to a user's registered email address.
+     *
+     * N.B. This method does not check that a user's account email is valid!
+     *
+     * @param userDTO - the user to email.
+     * @throws ContentManagerException - if the email template cannot be found.
+     * @throws SegueDatabaseException  - on database error.
+     */
     public void sendAccountDeletionEmail(RegisteredUserDTO userDTO) throws ContentManagerException, SegueDatabaseException {
 
         AccountDeletionToken token = userAuthenticationManager.createAccountDeletionTokenForUser(userDTO);
 
         EmailTemplateDTO emailVerificationTemplate = emailManager.getEmailTemplateDTO("email-template-account-deletion");
         Map<String, Object> emailTokens = ImmutableMap.of(
-                "accountDeletionURL", this.generateAccountDeletionURL(userDTO, token.getToken())
+                "accountDeletionURL", this.generateAccountDeletionURL(token.getToken())
         );
 
         log.info("Sending account deletion message to {}", userDTO.getEmail());
 
         emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
+    }
+
+    /**
+     * Use a deletion token to delete a user's account.
+     *
+     * @param userDTO - the user requesting deletion.
+     * @param token   - the deletion token emailed to the user.
+     * @throws SegueDatabaseException - on database error.
+     * @throws InvalidTokenException  - if the token is incorrect or expired.
+     * @throws NoUserException        - if the user cannot be found.
+     */
+    public void confirmDeletionTokenAndDeleteAccount(final RegisteredUserDTO userDTO, final String token)
+            throws SegueDatabaseException, InvalidTokenException, NoUserException {
+
+        if (!userAuthenticationManager.isValidAccountDeletionToken(userDTO, token)) {
+            throw new InvalidTokenException();
+        }
+
+        deleteUserAccount(userDTO);
     }
 
     /**
@@ -2005,9 +2032,8 @@ public class UserAccountManager implements IUserAccountManager {
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
-    private String generateAccountDeletionURL(final RegisteredUserDTO userDTO, final String deletionToken) {
+    private String generateAccountDeletionURL(final String deletionToken) {
         List<NameValuePair> urlParamPairs = Lists.newArrayList();
-        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
         urlParamPairs.add(
                 new BasicNameValuePair("token", deletionToken));
         String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");

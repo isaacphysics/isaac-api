@@ -302,7 +302,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         // Use a cryptographically secure random value.
         // Removing bad URL chars will reduce the entropy by ~ 1/32th on average (= padding doesn't count).
-        // We do this for password reset tokens too. Tokens are rate limited and time-bound, this should be okay.
+        // We do this for password reset tokens too. Tokens are login-protected and time-bound, this should be okay.
         return this.preferredAlgorithm.generateSalt().replace("=", "")
                 .replace("/", "").replace("+", "");
     }
