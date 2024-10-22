@@ -242,7 +242,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM users WHERE id = ?");
+        sb.append("SELECT * FROM users LEFT JOIN user_last_seen ON users.id=user_last_seen.user_id");
+        sb.append(" WHERE id = ?");
         if (!includeDeletedUsers) {
             sb.append(" AND NOT deleted");
         }
@@ -265,7 +266,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     @Override
     public RegisteredUser getByEmail(final String email) throws SegueDatabaseException {
         Validate.notBlank(email);
-        String query = "SELECT * FROM users WHERE lower(email)=lower(?) AND NOT deleted";
+        String query = "SELECT * FROM users LEFT JOIN user_last_seen ON users.id=user_last_seen.user_id"
+                + " WHERE lower(email)=lower(?) AND NOT deleted";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
@@ -335,7 +337,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
             index++;
         }
 
-        String query = "SELECT * FROM users" + sb.toString() + " ORDER BY family_name, given_name";
+        String query = "SELECT * FROM users LEFT JOIN user_last_seen ON users.id=user_last_seen.user_id"
+                + sb + " ORDER BY family_name, given_name";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
@@ -365,7 +368,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-        String query = "SELECT * FROM users WHERE id = ANY(?) AND NOT deleted ORDER BY family_name, given_name";
+        String query = "SELECT * FROM users LEFT JOIN user_last_seen ON users.id=user_last_seen.user_id "
+                + "WHERE id = ANY(?) AND NOT deleted ORDER BY family_name, given_name";
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
@@ -599,12 +603,12 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
         Objects.requireNonNull(user);
 
-        String query = "UPDATE users SET last_seen = ? WHERE id = ?";
+        String query = "INSERT INTO user_last_seen VALUES (?, ?) ON CONFLICT (user_id) DO UPDATE SET last_seen = EXCLUDED.last_seen";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setTimestamp(1, new java.sql.Timestamp(date.getTime()));
-            pst.setLong(2, user.getId());
+            pst.setLong(1, user.getId());
+            pst.setTimestamp(2, new java.sql.Timestamp(date.getTime()));
             pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
@@ -741,7 +745,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
         String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
                 + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
-                + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
+                + " email_verification_status = ?, email_verification_token = ?, email_to_verify = ?,"
                 + " registered_contexts = ?, registered_contexts_last_confirmed = ?, country_code = ?, teacher_account_pending = ? WHERE id = ?;";
 
         List<String> userContextsJsonb = Lists.newArrayList();
@@ -754,30 +758,32 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
         try (PreparedStatement pst = conn.prepareStatement(query)) {
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
-            setValueHelper(pst, 1, userToCreate.getFamilyName());
-            setValueHelper(pst, 2, userToCreate.getGivenName());
-            setValueHelper(pst, 3, userToCreate.getEmail());
-            setValueHelper(pst, 4, userToCreate.getRole());
-            setValueHelper(pst, 5, userToCreate.getDateOfBirth());
-            setValueHelper(pst, 6, userToCreate.getGender());
-            setValueHelper(pst, 7, userToCreate.getRegistrationDate());
-            setValueHelper(pst, 8, userToCreate.getSchoolId());
-            setValueHelper(pst, 9, userToCreate.getSchoolOther());
-            setValueHelper(pst, 10, userToCreate.getLastUpdated());
-            setValueHelper(pst, 11, userToCreate.getEmailVerificationStatus());
-            setValueHelper(pst, 12, userToCreate.getLastSeen());
-            setValueHelper(pst, 13, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 14, userToCreate.getEmailToVerify());
-            pst.setArray(15, userContexts);
-            setValueHelper(pst, 16, userToCreate.getRegisteredContextsLastConfirmed());
-            setValueHelper(pst, 17, userToCreate.getCountryCode());
-            setValueHelper(pst, 18, userToCreate.getTeacherAccountPending());
-            setValueHelper(pst, 19, userToCreate.getId());
+            int index = 1;
+            setValueHelper(pst, index++, userToCreate.getFamilyName());
+            setValueHelper(pst, index++, userToCreate.getGivenName());
+            setValueHelper(pst, index++, userToCreate.getEmail());
+            setValueHelper(pst, index++, userToCreate.getRole());
+            setValueHelper(pst, index++, userToCreate.getDateOfBirth());
+            setValueHelper(pst, index++, userToCreate.getGender());
+            setValueHelper(pst, index++, userToCreate.getRegistrationDate());
+            setValueHelper(pst, index++, userToCreate.getSchoolId());
+            setValueHelper(pst, index++, userToCreate.getSchoolOther());
+            setValueHelper(pst, index++, userToCreate.getLastUpdated());
+            setValueHelper(pst, index++, userToCreate.getEmailVerificationStatus());
+            setValueHelper(pst, index++, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, index++, userToCreate.getEmailToVerify());
+            pst.setArray(index++, userContexts);
+            setValueHelper(pst, index++, userToCreate.getRegisteredContextsLastConfirmed());
+            setValueHelper(pst, index++, userToCreate.getCountryCode());
+            setValueHelper(pst, index++, userToCreate.getTeacherAccountPending());
+            setValueHelper(pst, index++, userToCreate.getId());
 
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
             }
+
+            updateUserLastSeen(userToCreate, userToCreate.getLastSeen());
 
             return this.getById(existingUserRecord.getId());
         } finally {
