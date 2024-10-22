@@ -466,25 +466,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
         }
     }
 
-
-    @Override
-    public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
-        String query = "SELECT * FROM users WHERE email_verification_token = ? AND NOT deleted";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
-            pst.setString(1, token);
-
-            try (ResultSet results = pst.executeQuery()) {
-                return this.findOneUser(results);
-            }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
-        } catch (JsonProcessingException e) {
-            throw new SegueDatabaseException(JSONB_PROCESSING_ERROR_MESSAGE, e);
-        }
-    }
-
     @Override
     public RegisteredUser createOrUpdateUser(final RegisteredUser user) throws SegueDatabaseException {
 
