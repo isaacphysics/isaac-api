@@ -557,7 +557,7 @@ public final class Constants {
     public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
 
     public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
-    public static final int LAST_SEEN_UPDATE_FREQUENCY_MINUTES = 5;
+    public static final int LAST_SEEN_UPDATE_FREQUENCY_MINUTES = 15;
 
     /**
      * Redirect response field name.
