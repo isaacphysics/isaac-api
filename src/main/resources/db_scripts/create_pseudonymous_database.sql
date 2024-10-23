@@ -59,8 +59,6 @@ CREATE TABLE anonymous.user_credentials AS
 
 -- user_totp ignored
 
--- user_email_preferences ignored
-
 -- user_notifications ignored
 
 -- user_alerts ignored
