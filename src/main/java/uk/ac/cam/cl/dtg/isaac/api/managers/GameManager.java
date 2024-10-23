@@ -148,6 +148,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
+    @Deprecated
     public GameboardDTO generateRandomGameboard(
             final String title, final List<String> subjects, final List<String> fields, final List<String> topics,
             final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
@@ -988,6 +989,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
+    @Deprecated
     private List<GameboardItem> getSelectedGameboardQuestions(final GameFilter gameFilter,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts)
             throws ContentManagerException {

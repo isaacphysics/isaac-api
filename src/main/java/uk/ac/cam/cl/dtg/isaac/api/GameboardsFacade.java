@@ -144,6 +144,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - a comma separated list of question categories
      * @return a Response containing a gameboard object or containing a SegueErrorResponse.
      */
+    @Deprecated
     @GET
     @Path("gameboards")
     @Produces(MediaType.APPLICATION_JSON)
@@ -180,6 +181,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         }
 
         try {
+            log.warn("Method generateTemporaryGameboard was called by an API request!");
             AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 
