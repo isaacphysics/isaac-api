@@ -324,7 +324,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             if (containsError) {
 
                 // User input contains error terms.
-                feedback = new Content("Your answer is not chemically valid!");
+                feedback = new Content("We are unable to interpret your answer; it may not be chemically valid or be in a format we don't recognise.");
 
             } else if (closestMatch != null && closestMatchType == MatchType.EXACT) {
 
