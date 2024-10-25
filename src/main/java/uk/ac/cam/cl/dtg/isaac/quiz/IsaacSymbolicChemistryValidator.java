@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -54,6 +55,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
     private final String chemistryValidatorUrl;
     private final String nuclearValidatorUrl;
+
+    private final Set<String> VALID_ERROR_FEEDBACK = Set.of(
+            "Division by zero is undefined!",
+            "Your answer contains invalid syntax!"
+    );
 
     public IsaacSymbolicChemistryValidator(final String hostname, final String port) {
         this.nuclearValidatorUrl =  "http://" + hostname + ":" + port + "/nuclear/check";
@@ -192,6 +198,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     req.put("test", submittedFormula.getMhchemExpression());
                     req.put("description", chemistryQuestion.getId());
                     req.put("allowPermutations", String.valueOf(chemistryQuestion.getAllowPermutations()));
+                    req.put("allowScalingCoefficients", String.valueOf(chemistryQuestion.getAllowScalingCoefficients()));
                     req.put("questionID", question.getId());
 
                     if (chemistryQuestion.isNuclear()) {
@@ -212,9 +219,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                                     + "\" with symbolic chemistry checker: " + response.get("error"));
                         }
 
+                        closestMatch = formulaChoice;
+                        closestResponse = response;
                         containsError = true;
-                        // If parsing was unsuccessful the student provided the wrong type
-                        isNuclear = !chemistryQuestion.isNuclear();
                         break;
                     }
 
@@ -324,9 +331,12 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             if (containsError) {
 
                 // User input contains error terms.
-                // FIXME: This currently clashes with determining whether the submitted answer was the wrong type
-                // Inequality should be changed to not allow Nuclear syntax in Chemistry questions and vice versa
-                feedback = new Content("Your answer contains invalid syntax!");
+                if (closestResponse != null && VALID_ERROR_FEEDBACK.contains((String) closestResponse.get("error"))) {
+                    feedback = new Content((String) closestResponse.get("error"));
+                } else {
+                    // Default error message
+                    feedback = new Content("Your answer contains invalid syntax!");
+                }
 
             } else if (closestMatch != null && closestMatchType == MatchType.EXACT) {
 
