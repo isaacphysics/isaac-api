@@ -58,6 +58,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
     private final Set<String> VALID_ERROR_FEEDBACK = Set.of(
             "Division by zero is undefined!",
+            "Check that all atoms have a mass and atomic number!",
             "We are unable to interpret your answer; it may not be chemically valid or be in a format we don't recognise."
     );
 
@@ -335,7 +336,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     feedback = new Content((String) closestResponse.get("error"));
                 } else {
                     // Default error message
-                    feedback = new Content("Your answer contains invalid syntax!");
+                    feedback = new Content("We are unable to interpret your answer; it may not be chemically valid or be in a format we don't recognise.");
                 }
 
             } else if (closestMatch != null && closestMatchType == MatchType.EXACT) {
