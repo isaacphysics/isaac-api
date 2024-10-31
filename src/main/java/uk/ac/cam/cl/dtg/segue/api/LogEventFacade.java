@@ -110,7 +110,8 @@ public class LogEventFacade extends AbstractSegueFacade {
         // Temporarily log log event types which are not included in our accepted list of client log types.
         // After a few weeks we should fail on the case where it is an unknown type.
         if (!ISAAC_CLIENT_LOG_TYPES.contains(eventType)) {
-            log.error(String.format("Warning: Log Event '%s' is not included in ISAAC_CLIENT_LOG_TYPES", eventType));
+            log.error("Warning: Log Event '{}' is not included in ISAAC_CLIENT_LOG_TYPES", eventType);
+            return SegueErrorResponse.getBadRequestResponse("Invalid log message!");
         }
         
         try {

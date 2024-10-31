@@ -270,14 +270,6 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 
 
 --
--- Data for Name: user_email_preferences; Type: TABLE DATA; Schema: public; Owner: rutherford
---
-
-COPY public.user_email_preferences (user_id, email_preference, email_preference_status) FROM stdin;
-\.
-
-
---
 -- Data for Name: user_gameboards; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 

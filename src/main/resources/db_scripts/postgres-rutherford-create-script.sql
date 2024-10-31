@@ -604,19 +604,6 @@ CREATE TABLE public.user_credentials (
 ALTER TABLE public.user_credentials OWNER TO rutherford;
 
 --
--- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford
---
-
-CREATE TABLE public.user_email_preferences (
-    user_id integer NOT NULL,
-    email_preference integer NOT NULL,
-    email_preference_status boolean
-);
-
-
-ALTER TABLE public.user_email_preferences OWNER TO rutherford;
-
---
 -- Name: user_gameboards; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -1050,14 +1037,6 @@ ALTER TABLE ONLY public.user_credentials
 
 
 --
--- Name: user_email_preferences user_id_email_preference_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
---
-
-ALTER TABLE ONLY public.user_email_preferences
-    ADD CONSTRAINT user_id_email_preference_pk PRIMARY KEY (user_id, email_preference);
-
-
---
 -- Name: user_totp user_id_mfa_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1437,14 +1416,6 @@ ALTER TABLE ONLY public.user_associations
 
 ALTER TABLE ONLY public.user_notifications
     ADD CONSTRAINT "user_id fkey" FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: user_email_preferences user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
---
-
-ALTER TABLE ONLY public.user_email_preferences
-    ADD CONSTRAINT user_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
