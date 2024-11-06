@@ -15,17 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.annotation.Nullable;
+import jakarta.ws.rs.NotAllowedException;
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
 
 /**
  * A wrapper object used to indicate an error has occurred to the client using the API. 
@@ -187,9 +187,9 @@ public class SegueErrorResponse implements Serializable {
     @Override
     public final String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Error Code: " + responseCode.toString() + " ");
-        sb.append("Error Message: " + responseCode.toString() + " ");
-        sb.append('\n' + this.getAdditionalErrorInformation());
+        sb.append("Error Code: ").append(responseCode.toString()).append(" ");
+        sb.append("Error Message: '").append(errorMessage).append("' ");
+        sb.append('\n').append(this.getAdditionalErrorInformation());
         return sb.toString();
     }
 
@@ -222,13 +222,11 @@ public class SegueErrorResponse implements Serializable {
      * @return error response.
      */
     public static Response getRateThrottledResponse(final String message) {
-        final Integer throttledStatusCode = 429;
-        return new SegueErrorResponse(throttledStatusCode, "Too Many Requests", message, null).toResponse();
+        return new SegueErrorResponse(Status.TOO_MANY_REQUESTS, message).toResponse();
     }
 
     /**
-     * @param message
-     *            - the message for the user.
+     * @param message - the message for the user.
      * @return a helper function to get a resource not found response
      */
     public static Response getResourceNotFoundResponse(final String message) {
@@ -236,8 +234,7 @@ public class SegueErrorResponse implements Serializable {
     }
 
     /**
-     * @param message
-     *            - the message for the user.
+     * @param message the message for the user.
      * @return a helper function to get a service unavailable response
      */
     public static Response getServiceUnavailableResponse(final String message) {
@@ -247,11 +244,27 @@ public class SegueErrorResponse implements Serializable {
     }
 
     /**
-     * @param message - inform the user how long they will be throttled for.
+     * @param message - the message for the user
+     * @param exception - the NotAllowedException containing a Response with the necessary Allow header
+     *                    for a 405 Method Not Allowed.
      * @return error response.
      */
-    public static Response getMethodNotAllowedReponse(final String message) {
-        return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, message)
+    public static Response getMethodNotAllowedReponse(final String message, final NotAllowedException exception) {
+        Response.ResponseBuilder r = new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, message).toResponseBuilder();
+
+        // A valid 405 must have an "Allow" header with the allowed methods; extract from the exception:
+        if (null != exception.getResponse() && null != exception.getResponse().getHeaders()) {
+            r.header("Allow", exception.getResponse().getHeaders().getFirst("Allow"));
+        }
+        return r.build();
+    }
+
+    /**
+     * @param contentType - the unsupported content type provided
+     * @return error response.
+     */
+    public static Response getUnsupportedContentTypeReponse(final String contentType) {
+        return new SegueErrorResponse(Status.UNSUPPORTED_MEDIA_TYPE, String.format("%s not supported!", contentType))
                 .toResponse();
     }
 
