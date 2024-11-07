@@ -48,23 +48,23 @@ public class UnhandledExceptionMapper implements ExceptionMapper<Exception> {
         // Since we are catching /all/ exceptions here, we have to do these ourselves (but this lets them be JSON too).
         if (e.getCause() instanceof URISyntaxException || e instanceof BadRequestException) {
             // 400: This happens on malformed or malicious URLs being provided.
-            log.error("{}: {}", e.getClass().getSimpleName(), e.getMessage());
+            log.warn("{}: {}", e.getClass().getSimpleName(), e.getMessage());
             return SegueErrorResponse.getBadRequestResponse("Malformed request!");
 
         } else if (e instanceof NotFoundException) {
             // 404: This happens if an endpoint does not match, e.g. after endpoint scanning.
-            log.error("Endpoint for {} {} not found", request.getMethod(), request.getRequestURI());
+            log.warn("Endpoint for {} {} not found", request.getMethod(), request.getRequestURI());
             return SegueErrorResponse.getResourceNotFoundResponse("Endpoint not found.");
 
         } else if (e instanceof NotAllowedException) {
             // 405: This happens on e.g. a POST to a GET endpoint.
-            log.error("Request {} {} is not allowed", request.getMethod(), request.getRequestURI());
+            log.warn("Request {} {} is not allowed", request.getMethod(), request.getRequestURI());
             String message = String.format("Method %s not supported.", request.getMethod());
             return SegueErrorResponse.getMethodNotAllowedResponse(message, (NotAllowedException) e);
 
         } else if (e instanceof NotSupportedException) {
             // 415: This happens on invalid or missing Content-Type.
-            log.error("Content Type {} for {} {} is not allowed", request.getContentType(), request.getMethod(), request.getRequestURI());
+            log.warn("Content Type {} for {} {} is not allowed", request.getContentType(), request.getMethod(), request.getRequestURI());
             return SegueErrorResponse.getUnsupportedContentTypeResponse(request.getContentType());
         }
 
