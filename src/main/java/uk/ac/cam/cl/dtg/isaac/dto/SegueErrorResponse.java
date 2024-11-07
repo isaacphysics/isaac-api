@@ -249,7 +249,7 @@ public class SegueErrorResponse implements Serializable {
      *                    for a 405 Method Not Allowed.
      * @return error response.
      */
-    public static Response getMethodNotAllowedReponse(final String message, final NotAllowedException exception) {
+    public static Response getMethodNotAllowedResponse(final String message, final NotAllowedException exception) {
         Response.ResponseBuilder r = new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, message).toResponseBuilder();
 
         // A valid 405 must have an "Allow" header with the allowed methods; extract from the exception:
@@ -263,7 +263,7 @@ public class SegueErrorResponse implements Serializable {
      * @param contentType - the unsupported content type provided
      * @return error response.
      */
-    public static Response getUnsupportedContentTypeReponse(final String contentType) {
+    public static Response getUnsupportedContentTypeResponse(final String contentType) {
         return new SegueErrorResponse(Status.UNSUPPORTED_MEDIA_TYPE, String.format("%s not supported!", contentType))
                 .toResponse();
     }

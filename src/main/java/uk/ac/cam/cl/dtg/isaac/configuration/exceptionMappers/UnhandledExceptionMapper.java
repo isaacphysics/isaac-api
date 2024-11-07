@@ -60,12 +60,12 @@ public class UnhandledExceptionMapper implements ExceptionMapper<Exception> {
             // 405: This happens on e.g. a POST to a GET endpoint.
             log.error("Request {} {} is not allowed", request.getMethod(), request.getRequestURI());
             String message = String.format("Method %s not supported.", request.getMethod());
-            return SegueErrorResponse.getMethodNotAllowedReponse(message, (NotAllowedException) e);
+            return SegueErrorResponse.getMethodNotAllowedResponse(message, (NotAllowedException) e);
 
         } else if (e instanceof NotSupportedException) {
             // 415: This happens on invalid or missing Content-Type.
             log.error("Content Type {} for {} {} is not allowed", request.getContentType(), request.getMethod(), request.getRequestURI());
-            return SegueErrorResponse.getUnsupportedContentTypeReponse(request.getContentType());
+            return SegueErrorResponse.getUnsupportedContentTypeResponse(request.getContentType());
         }
 
         // Otherwise a completely generic error message that leaks little information:
