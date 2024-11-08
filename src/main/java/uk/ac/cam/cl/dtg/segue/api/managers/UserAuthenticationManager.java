@@ -775,10 +775,10 @@ public class UserAuthenticationManager {
             throw new SegueDatabaseException("Failed to create account deletion token", e);
         }
 
-        // Valid for 7 days:
+        // Valid for 1 day:
         Calendar c = Calendar.getInstance();
         c.setTime(new Date()); // Initialises the calendar to the current date/time
-        c.add(Calendar.DATE, 7);
+        c.add(Calendar.DATE, 1);
 
         AccountDeletionToken deletionToken = new AccountDeletionToken(user.getId(), token, c.getTime());
 
