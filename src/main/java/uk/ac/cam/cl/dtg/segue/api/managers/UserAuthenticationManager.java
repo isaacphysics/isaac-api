@@ -799,6 +799,11 @@ public class UserAuthenticationManager {
 
         AccountDeletionToken adt = deletionTokenPersistenceManager.getAccountDeletionToken(user.getId());
 
+        if (null == adt) {
+            // The current user has no token at all:
+            return false;
+        }
+
         Date now = new Date();
         return adt.getToken().equals(deletionToken) && adt.getTokenExpiry().after(now);
     }
