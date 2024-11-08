@@ -56,8 +56,7 @@ public class PgDeletionTokenPersistenceManager extends AbstractPgDataManager imp
 
         String query = "INSERT INTO user_deletion_tokens(user_id, token, token_expiry, created, last_updated)"
                 + " VALUES (?, ?, ?, ?, ?) ON CONFLICT ON CONSTRAINT pk_user_deletion_tokens DO UPDATE"
-                + " SET token=EXCLUDED.token, token_expiry=EXCLUDED.token_expiry, created=EXCLUDED.created,"
-                + " last_updated=EXCLUDED.last_updated";
+                + " SET token=EXCLUDED.token, token_expiry=EXCLUDED.token_expiry, last_updated=EXCLUDED.last_updated";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
