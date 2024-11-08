@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.9 (Debian 12.9-1.pgdg110+1)
--- Dumped by pg_dump version 12.9 (Debian 12.9-1.pgdg110+1)
+-- Dumped from database version 16.2 (Debian 16.2-1.pgdg120+2)
+-- Dumped by pg_dump version 16.2 (Debian 16.2-1.pgdg120+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -81,7 +81,7 @@ CREATE SEQUENCE public.assignments_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.assignments_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.assignments_id_seq OWNER TO rutherford;
 
 --
 -- Name: assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -99,7 +99,7 @@ CREATE TABLE public.event_bookings (
     event_id text NOT NULL,
     created timestamp without time zone NOT NULL,
     user_id integer NOT NULL,
-    reserved_by integer DEFAULT NULL,
+    reserved_by integer,
     status text DEFAULT 'CONFIRMED'::text NOT NULL,
     updated timestamp without time zone,
     additional_booking_information jsonb,
@@ -121,7 +121,7 @@ CREATE SEQUENCE public.event_bookings_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.event_bookings_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.event_bookings_id_seq OWNER TO rutherford;
 
 --
 -- Name: event_bookings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -151,7 +151,7 @@ ALTER TABLE public.external_accounts OWNER TO rutherford;
 CREATE TABLE public.gameboards (
     id character varying NOT NULL,
     title text,
-    contents jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
+    contents jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
     wildcard jsonb,
     wildcard_position integer,
     game_filter jsonb,
@@ -223,7 +223,7 @@ CREATE SEQUENCE public.groups_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.groups_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.groups_id_seq OWNER TO rutherford;
 
 --
 -- Name: groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -260,7 +260,7 @@ CREATE SEQUENCE public.ip_location_history_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.ip_location_history_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.ip_location_history_id_seq OWNER TO rutherford;
 
 --
 -- Name: ip_location_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -326,7 +326,7 @@ CREATE SEQUENCE public.logged_events_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.logged_events_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.logged_events_id_seq OWNER TO rutherford;
 
 --
 -- Name: logged_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -364,7 +364,7 @@ CREATE SEQUENCE public.question_attempts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.question_attempts_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.question_attempts_id_seq OWNER TO rutherford;
 
 --
 -- Name: question_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -404,7 +404,7 @@ CREATE SEQUENCE public.quiz_assignments_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.quiz_assignments_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.quiz_assignments_id_seq OWNER TO rutherford;
 
 --
 -- Name: quiz_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -441,7 +441,7 @@ CREATE SEQUENCE public.quiz_attempts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.quiz_attempts_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.quiz_attempts_id_seq OWNER TO rutherford;
 
 --
 -- Name: quiz_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -478,7 +478,7 @@ CREATE SEQUENCE public.quiz_question_attempts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.quiz_question_attempts_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.quiz_question_attempts_id_seq OWNER TO rutherford;
 
 --
 -- Name: quiz_question_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -539,7 +539,7 @@ CREATE SEQUENCE public.user_alerts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.user_alerts_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.user_alerts_id_seq OWNER TO rutherford;
 
 --
 -- Name: user_alerts; Type: TABLE; Schema: public; Owner: rutherford
@@ -602,6 +602,21 @@ CREATE TABLE public.user_credentials (
 
 
 ALTER TABLE public.user_credentials OWNER TO rutherford;
+
+--
+-- Name: user_deletion_tokens; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.user_deletion_tokens (
+    user_id integer NOT NULL,
+    token text NOT NULL,
+    token_expiry timestamp without time zone NOT NULL,
+    created timestamp without time zone NOT NULL,
+    last_updated timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.user_deletion_tokens OWNER TO rutherford;
 
 --
 -- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford
@@ -718,7 +733,7 @@ CREATE TABLE public.users (
     registration_date timestamp without time zone,
     school_id text,
     school_other text,
-    registered_contexts jsonb[] DEFAULT array[]::jsonb[] NOT NULL,
+    registered_contexts jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
     registered_contexts_last_confirmed timestamp without time zone,
     last_updated timestamp without time zone,
     email_verification_status character varying(255),
@@ -727,7 +742,7 @@ CREATE TABLE public.users (
     email_verification_token text,
     session_token integer DEFAULT 0 NOT NULL,
     deleted boolean DEFAULT false NOT NULL,
-    country_code character varying(255) DEFAULT NULL,
+    country_code character varying(255) DEFAULT NULL::character varying,
     teacher_account_pending boolean DEFAULT false NOT NULL
 );
 
@@ -746,7 +761,7 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.users_id_seq OWNER TO rutherford;
+ALTER SEQUENCE public.users_id_seq OWNER TO rutherford;
 
 --
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
@@ -834,7 +849,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: archived_users expired_users_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: archived_users archived_users_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY public.archived_users
@@ -935,6 +950,14 @@ ALTER TABLE ONLY public.user_notifications
 
 ALTER TABLE ONLY public.user_associations_tokens
     ADD CONSTRAINT only_one_token_per_user_per_group UNIQUE (owner_user_id, group_id);
+
+
+--
+-- Name: user_deletion_tokens pk_user_deletion_tokens; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_deletion_tokens
+    ADD CONSTRAINT pk_user_deletion_tokens PRIMARY KEY (user_id);
 
 
 --
@@ -1272,7 +1295,7 @@ CREATE INDEX users_id_role ON public.users USING btree (id, role);
 
 
 --
--- Name: archived_users expired_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+-- Name: archived_users archived_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY public.archived_users
@@ -1325,6 +1348,14 @@ ALTER TABLE ONLY public.external_accounts
 
 ALTER TABLE ONLY public.group_additional_managers
     ADD CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_deletion_tokens fk_user_deletion_tokens_users_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_deletion_tokens
+    ADD CONSTRAINT fk_user_deletion_tokens_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
