@@ -99,6 +99,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         boolean containsError = false;                  // Whether student answer contains any error terms.
         boolean isEquation = false;                     // Whether student answer is equation or not.
         boolean isBalanced = false;                     // Whether student answer has balanced equation.
+        boolean isChargeBalanced = false;               // Whether student answer has equation with balanced charge.
         boolean isNuclear = false;                      // Whether student answer has nuclear terms.
         boolean isValid = false;                        // Whether student answer has valid atomic numbers.
 
@@ -210,7 +211,6 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     // If successfully parsed the submitted answer is the same type
                     isNuclear = chemistryQuestion.isNuclear();
 
-                    // TODO: Have informative errors (such as parsing error, formula mismatch, etc.)
                     if (response.get("containsError").equals(true)) {
                         if (response.containsKey("error")) {
 
@@ -248,6 +248,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                         // Check if equation (physical/chemical) is balanced.
                         isBalanced = response.get("isBalanced").equals(true);
+                        isChargeBalanced = response.get("isChargeBalanced").equals(true);
                         balancedKnownFlag = true;
                     }
 
@@ -370,6 +371,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // Input is an unbalanced equation.
                 feedback = new Content("Your equation is unbalanced!");
 
+            } else if (isEquation && balancedKnownFlag && !isChargeBalanced) {
+
+                // Input is an equation with unbalanced charge
+                feedback = new Content("Your equation's charge is unbalanced!");
+
             } else if (isNuclear && validityKnownFlag && !isValid) {
 
                 // Input is nuclear, but atomic/mass numbers are invalid.
@@ -390,6 +396,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                     // Wrong coefficients
                     feedback = new Content("Check your coefficients!");
+
+                } else if (!isNuclear && closestResponse.get("sameCharge").equals(false)) {
+
+                    // Wrong charge
+                    feedback = new Content("Check your charges!");
 
                 } else if (!isNuclear && closestResponse.get("sameState").equals(false)) {
 
