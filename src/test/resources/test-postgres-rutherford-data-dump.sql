@@ -270,6 +270,16 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 
 
 --
+-- Data for Name: user_deletion_tokens; Type: TABLE DATA; Schema: public; Owner: rutherford
+--
+
+COPY public.user_deletion_tokens (user_id, token, token_expiry, created, last_updated) FROM stdin;
+7	someFakeDeletionToken	3000-01-01 00:00:00	2024-11-08 15:28:05	2024-11-08 15:28:11
+8	someExpiredDeletionToken	1970-01-01 00:00:00	2024-11-08 17:05:43	2024-11-08 17:05:50
+\.
+
+
+--
 -- Data for Name: user_email_preferences; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
