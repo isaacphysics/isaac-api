@@ -67,6 +67,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.quiz.ValidationUtils.reformatNumberForParsing;
+import static uk.ac.cam.cl.dtg.isaac.quiz.ValidationUtils.stringValueToDouble;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -1034,9 +1036,9 @@ public class ContentIndexer {
                 if (choice instanceof Quantity) {
                     Quantity quantity = (Quantity) choice;
 
-                    // Check valid number by parsing in the same way as IsaacNumericValidator::stringValueToDouble:
+                    // Check valid number by parsing in the same way ValidationUtils does:
                     try {
-                        new BigDecimal(quantity.getValue()).doubleValue();
+                        stringValueToDouble(reformatNumberForParsing(quantity.getValue()));
                     } catch (NumberFormatException e) {
                         this.registerContentProblem(content,
                                 "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()

@@ -116,11 +116,21 @@ public final class ValidationUtils {
      * Return a double equivalent to value.
      *
      * @param value - number, as String, to convert to double
-     * @param log                        - logger
+     * @param log - logger for debug tracing
      * @return the converted number.
      */
     private static double stringValueToDouble(final String value, final Logger log) {
         log.debug("\t[stringValueToDouble]");
+        return stringValueToDouble(value);
+    }
+
+    /**
+     * Return a double equivalent to value.
+     *
+     * @param value - number, as String, to convert to double
+     * @return the converted number.
+     */
+    public static double stringValueToDouble(final String value) {
         return new BigDecimal(value).doubleValue();
     }
 
@@ -152,7 +162,7 @@ public final class ValidationUtils {
      * @param numberToFormat - number in some unambiguous standard form.
      * @return - number in engineering standard form e.g. "3.4e3"
      */
-    static String reformatNumberForParsing(final String numberToFormat) {
+    public static String reformatNumberForParsing(final String numberToFormat) {
         String reformattedNumber = numberToFormat.trim().replace("−", "-");
         reformattedNumber = reformattedNumber.replaceFirst(PREFIXED_POWER_OF_TEN_REGEX, "e${exp1}${exp2}");
         reformattedNumber = reformattedNumber.replaceFirst(BARE_POWER_OF_TEN_REGEX, "1e${exp1}${exp2}");
