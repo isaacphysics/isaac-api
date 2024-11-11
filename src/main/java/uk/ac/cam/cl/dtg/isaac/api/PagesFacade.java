@@ -379,7 +379,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                 this.put(EXAM_BOARD_FIELDNAME, examBoards);
                 this.put(CATEGORIES_FIELDNAME, questionCategories);
                 this.put(STATUSES_FIELDNAME, statuses);
-                this.put(FASTTRACK_FIELDNAME, fasttrack.toString());
                 this.put(START_INDEX_FIELDNAME, String.valueOf(finalStartIndex));
             }
         };
