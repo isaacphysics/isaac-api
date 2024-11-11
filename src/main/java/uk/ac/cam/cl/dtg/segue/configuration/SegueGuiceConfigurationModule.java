@@ -296,6 +296,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         // Additional countries
         this.bindConstantToNullableProperty(Constants.CUSTOM_COUNTRY_CODES, globalProperties);
         this.bindConstantToNullableProperty(Constants.PRIORITY_COUNTRY_CODES, globalProperties);
+        this.bindConstantToNullableProperty(Constants.REMOVED_COUNTRY_CODES, globalProperties);
 
         this.bind(String.class).toProvider(() -> {
             // Any binding to String without a matching @Named annotation will always get the empty string
@@ -935,11 +936,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private CountryLookupManager getCountryLookupManager(
             @Nullable @Named(Constants.CUSTOM_COUNTRY_CODES) final String customCountryCodes,
-            @Nullable @Named(Constants.PRIORITY_COUNTRY_CODES) final String priorityCountryCodes
+            @Nullable @Named(Constants.PRIORITY_COUNTRY_CODES) final String priorityCountryCodes,
+            @Nullable @Named(Constants.REMOVED_COUNTRY_CODES) final String removedCountryCodes
     ) {
         if (null == countryLookupManager) {
             Map<String, String> customCountryCodesMap = new HashMap<>();
             List<String> priorityCountryCodesList = new ArrayList<>();
+            List<String> removedCountryCodesList = new ArrayList<>();
 
             if (null != customCountryCodes) {
                 for (String country : customCountryCodes.split(",")) {
@@ -952,7 +955,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 priorityCountryCodesList = List.of(priorityCountryCodes.split(","));
             }
 
-            countryLookupManager = new CountryLookupManager(customCountryCodesMap, priorityCountryCodesList);
+            if (null != removedCountryCodes) {
+                removedCountryCodesList = List.of(removedCountryCodes.split(","));
+            }
+
+            countryLookupManager = new CountryLookupManager(customCountryCodesMap, priorityCountryCodesList, removedCountryCodesList);
             log.info("Creating singleton of CountryLookupManager");
         }
         return countryLookupManager;

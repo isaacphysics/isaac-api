@@ -30,20 +30,26 @@ public class GroupManagerTest extends AbstractManagerTest {
     @Test
     public void orderUsersByName_ordersBySurnamePrimarily() throws Exception {
         List<RegisteredUserDTO> users = Stream.of(
-                new RegisteredUserDTO("A", "Ab", "aab@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
-                new RegisteredUserDTO("B", "Ar", "bar@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false),
-                new RegisteredUserDTO("C", "Ax", "caz@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
-                new RegisteredUserDTO(null, "Ax", "NONEax@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false),
-                new RegisteredUserDTO("A", "Ba", "dba@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false),
-                new RegisteredUserDTO("B", "Bb", "ebb@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
-                new RegisteredUserDTO("C", "Bf", "fbf@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false),
-                new RegisteredUserDTO("A", null, "aNONE@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false)
+                new RegisteredUserDTO("A",  "Ab",  "a1@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("B",  "Ar",  "a2@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("C",  "Ax",  "a3@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO(null, "Ax",  "a4@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("A",  "Ba",  "b1@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("B",  "Bb",  "b2@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("C",  "Bf",  "b3@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("A",  "O'A", "o1@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("A",  "Obe", "o2@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("A",  "O'c", "o3@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("A",  "Oc",  "o4@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO("A",  null,  "-1@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false),
+                new RegisteredUserDTO(null, null,  "--@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false)
         ).peek(user -> user.setId((long) ("" + user.getGivenName() + user.getFamilyName()).hashCode())).collect(Collectors.toList());
 
         List<RegisteredUserDTO> shuffledUsers = new ArrayList<>(users);
         Collections.shuffle(shuffledUsers);
 
-        List<RegisteredUserDTO> sortedUsers = Whitebox.invokeMethod(groupManager, "orderUsersByName", shuffledUsers);
-        assertEquals(users, sortedUsers);
+        assertNotEquals(users, shuffledUsers);
+        Whitebox.invokeMethod(groupManager, "orderUsersByName", shuffledUsers);
+        assertEquals(users, shuffledUsers);
     }
 }

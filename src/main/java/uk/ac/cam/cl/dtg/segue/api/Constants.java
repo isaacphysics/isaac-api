@@ -559,7 +559,7 @@ public final class Constants {
     public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
 
     public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
-    public static final int LAST_SEEN_UPDATE_FREQUENCY_MINUTES = 5;
+    public static final int LAST_SEEN_UPDATE_FREQUENCY_MINUTES = 15;
 
     /**
      * Redirect response field name.
@@ -601,6 +601,7 @@ public final class Constants {
 
     public static final String CUSTOM_COUNTRY_CODES = "CUSTOM_COUNTRY_CODES";
     public static final String PRIORITY_COUNTRY_CODES = "PRIORITY_COUNTRY_CODES";
+    public static final String REMOVED_COUNTRY_CODES = "REMOVED_COUNTRY_CODES";
 
     public static final String ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES = "ALLOW_SELF_TEACHER_ACCOUNT_UPGRADES";
 

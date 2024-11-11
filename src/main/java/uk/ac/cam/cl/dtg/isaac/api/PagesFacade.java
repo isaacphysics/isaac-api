@@ -332,7 +332,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
 
-        if (searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
+        if (null != searchString && searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
             return SegueErrorResponse.getBadRequestResponse(
                     String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
         }
@@ -403,7 +403,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid question status filter provided.").toResponse();
         }
 
-        String validatedSearchString = searchString.isBlank() ? null : searchString;
+        String validatedSearchString = (null == searchString || searchString.isBlank()) ? null : searchString;
 
         // Show "nofilter" content to staff, superseded content to teachers:
         boolean showNoFilterContent = false;
