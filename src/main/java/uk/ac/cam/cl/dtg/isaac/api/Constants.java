@@ -161,6 +161,7 @@ public final class Constants {
         DOWNLOAD_GROUP_PROGRESS_CSV,
         DOWNLOAD_FILE,
         GLOBAL_SITE_SEARCH,
+        QUESTION_FINDER_SEARCH,
         SET_NEW_ASSIGNMENT,
         SET_NEW_QUIZ_ASSIGNMENT,
         UPDATE_QUIZ_DEADLINE,
@@ -207,7 +208,6 @@ public final class Constants {
         REPORT_CONTENT_PAGE,
         LLM_FREE_TEXT_QUESTION_FEEDBACK,
         RESEARCH_NOTIFICATION_DISMISSED,
-        QUESTION_FINDER_SEARCH
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 

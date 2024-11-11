@@ -473,7 +473,9 @@ public final class Constants {
     public static final String STAGE_FIELDNAME = "audience.stage";
     public static final String DIFFICULTY_FIELDNAME = "audience.difficulty";
     public static final String EXAM_BOARD_FIELDNAME = "audience.examBoard";
-    public static final String HIDE_COMPLETED_FIELDNAME = "hideCompleted";
+    public static final String SEARCH_STRING_FIELDNAME = "searchString";
+    public static final String STATUSES_FIELDNAME = "statuses";
+    public static final String FASTTRACK_FIELDNAME = "fasttrack";
     public static final String START_INDEX_FIELDNAME = "startIndex";
     public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);

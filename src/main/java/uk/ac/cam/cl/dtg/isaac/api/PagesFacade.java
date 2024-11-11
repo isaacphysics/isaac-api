@@ -364,6 +364,27 @@ public class PagesFacade extends AbstractIsaacFacade {
             limit = idsList.size();
         }
 
+        int finalStartIndex = startIndex;
+        // Not an ImmutableMap since we may have null values
+        Map<String, String> logEntry = new HashMap<>() {
+            {
+                this.put(SEARCH_STRING_FIELDNAME, searchString);
+                this.put(TAGS_FIELDNAME, tags);
+                this.put(FIELDS_FIELDNAME, fields);
+                this.put(SUBJECTS_FIELDNAME, subjects);
+                this.put(TOPICS_FIELDNAME, topics);
+                this.put(BOOKS_FIELDNAME, books);
+                this.put(STAGE_FIELDNAME, stages);
+                this.put(DIFFICULTY_FIELDNAME, difficulties);
+                this.put(EXAM_BOARD_FIELDNAME, examBoards);
+                this.put(CATEGORIES_FIELDNAME, questionCategories);
+                this.put(STATUSES_FIELDNAME, statuses);
+                this.put(FASTTRACK_FIELDNAME, fasttrack.toString());
+                this.put(START_INDEX_FIELDNAME, String.valueOf(finalStartIndex));
+            }
+        };
+        this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
+
         Map<String, String> fieldNameToValues = new HashMap<>() {
             {
                 this.put(ID_FIELDNAME, ids);
