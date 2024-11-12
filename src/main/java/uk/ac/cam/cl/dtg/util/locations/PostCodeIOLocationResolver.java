@@ -48,8 +48,8 @@ import java.util.Map;
 public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private static final Logger log = LoggerFactory.getLogger(PostCodeIOLocationResolver.class);
 
-    private final String postcodeUrl = "https://api.postcodes.io/postcodes"; // For complete postcodes
-    private final String outcodeUrl = "https://api.postcodes.io/outcodes"; // For partial postcodes (e.g. CB3)
+    private final String postCodeUrl = "https://api.postcodes.io/postcodes"; // For complete postcodes
+    private final String outCodeUrl = "https://api.postcodes.io/outcodes"; // For partial postcodes (e.g. CB3)
     private final int POSTCODEIO_MAX_REQUESTS = 100;
     
     private final LocationHistory locationHistory;
@@ -190,12 +190,12 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
         List<String> completePostCodes = Lists.newArrayList();
 
         // Just filter by length, the regex for this would be too complex
-        for (String postcode : unknownPostCodes) {
-            if (postcode.length() > 4) {
-                completePostCodes.add(postcode);
+        for (String postCode : unknownPostCodes) {
+            if (postCode.length() > 4) {
+                completePostCodes.add(postCode);
             }
             else {
-                outCodes.add(postcode);
+                outCodes.add(postCode);
             }
         }
 
@@ -218,34 +218,35 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         String requestJson = sb.toString();
 
-        HashMap<String, Object> postcodeResponse;
-        HashMap<String, Object> outcodeResponse = new HashMap<>();
+        HashMap<String, Object> postCodeResponse;
+        HashMap<String, Object> outCodeResponse = new HashMap<>();
 
         try {
             java.net.http.HttpClient httpClient = HttpClient.newHttpClient();
             HttpRequest httpRequest;
+            java.net.http.HttpResponse<String> httpResponse;
             ObjectMapper objectMapper = new ObjectMapper();
 
             // Complete postcodes can be requested in bulk
             httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(postcodeUrl))
+                    .uri(URI.create(postCodeUrl))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestJson))
                     .build();
-            java.net.http.HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            postcodeResponse = objectMapper.readValue(httpResponse.body(), HashMap.class);
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            postCodeResponse = objectMapper.readValue(httpResponse.body(), HashMap.class);
 
             // Outcodes can only be requested one at a time
             if (!outCodes.isEmpty()) {
                 String url;
-                for (String outcode : outCodes) {
-                    url = outcodeUrl + "/" + outcode;
+                for (String outCode : outCodes) {
+                    url = outCodeUrl + "/" + outCode;
                     httpRequest = HttpRequest.newBuilder()
                             .uri(URI.create(url))
                             .GET()
                             .build();
                     httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-                    outcodeResponse.putAll(objectMapper.readValue(httpResponse.body(), HashMap.class));
+                    outCodeResponse.putAll(objectMapper.readValue(httpResponse.body(), HashMap.class));
                 }
             }
 
@@ -260,11 +261,11 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
         }
 
         List<PostCode> returnList = Lists.newArrayList();
-        int responseCode = (int) postcodeResponse.get("status");
+        int responseCode = (int) postCodeResponse.get("status");
         if (responseCode == Response.Status.OK.getStatusCode()) {
-            ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) postcodeResponse
+            ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) postCodeResponse
                     .get("result");
-            responseResult.add(outcodeResponse);
+            responseResult.add(outCodeResponse);
 
             for (Map<String, Object> item : responseResult) {
                 HashMap<String, Object> postCodeDetails = (HashMap<String, Object>) item.get("result");
@@ -272,15 +273,15 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
                 if (postCodeDetails != null) {
                     Double sourceLat = (Double) postCodeDetails.get("latitude");
                     Double sourceLon = (Double) postCodeDetails.get("longitude");
-                    String postcodeStr;
+                    String postCodeStr;
                     if (item.get("query") != null) {
-                        postcodeStr = (String) item.get("query");
+                        postCodeStr = (String) item.get("query");
                     }
                     else {
-                        postcodeStr = (String) postCodeDetails.get("outcode");
+                        postCodeStr = (String) postCodeDetails.get("outcode");
                     }
-                    PostCode postcode = new PostCode(postcodeStr, sourceLat, sourceLon);
-                    returnList.add(postcode);
+                    PostCode postCode = new PostCode(postCodeStr, sourceLat, sourceLon);
+                    returnList.add(postCode);
                 }
             }
         }
