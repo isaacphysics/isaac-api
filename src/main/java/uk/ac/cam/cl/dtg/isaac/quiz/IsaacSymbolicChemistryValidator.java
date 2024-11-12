@@ -248,7 +248,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                         // Check if equation (physical/chemical) is balanced.
                         isBalanced = response.get("isBalanced").equals(true);
-                        isChargeBalanced = response.get("isChargeBalanced").equals(true);
+                        if (!isNuclear) {
+                            isChargeBalanced = response.get("isChargeBalanced").equals(true);
+                        }
                         balancedKnownFlag = true;
                     }
 
@@ -371,7 +373,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // Input is an unbalanced equation.
                 feedback = new Content("Your equation is unbalanced!");
 
-            } else if (isEquation && balancedKnownFlag && !isChargeBalanced) {
+            } else if (!isNuclear && isEquation && balancedKnownFlag && !isChargeBalanced) {
 
                 // Input is an equation with unbalanced charge
                 feedback = new Content("Your equation's charge is unbalanced!");
