@@ -81,7 +81,9 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
@@ -300,10 +302,11 @@ public abstract class IsaacIntegrationTest {
         GitDb gitDb = new GitDb(git);
         contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, properties);
         logManager = createNiceMock(ILogManager.class);
+        IDeletionTokenPersistenceManager deletionTokenPersistenceManager = new PgDeletionTokenPersistenceManager(postgresSqlDb);
 
         emailManager = new EmailManager(communicator, userPreferenceManager, properties, contentManager, logManager, globalTokens);
 
-        userAuthenticationManager = new UserAuthenticationManager(pgUsers, properties, providersToRegister, emailManager);
+        userAuthenticationManager = new UserAuthenticationManager(pgUsers, deletionTokenPersistenceManager, properties, providersToRegister, emailManager);
         secondFactorManager = createMock(SegueTOTPAuthenticator.class);
         // We don't care for MFA here so we can safely disable it
         try {
@@ -408,7 +411,9 @@ public abstract class IsaacIntegrationTest {
 
     protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
         HttpServletRequest request = createNiceMock(HttpServletRequest.class);
+        HttpSession session = createNiceMock(HttpSession.class);
         expect(request.getCookies()).andReturn(cookies).anyTimes();
+        expect(request.getSession()).andReturn(session).anyTimes();
         return request;
     }
 

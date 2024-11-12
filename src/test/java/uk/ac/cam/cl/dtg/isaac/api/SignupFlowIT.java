@@ -56,7 +56,7 @@ public class SignupFlowIT extends IsaacIntegrationTest {
 
         // Act
         // make request
-        Response verifyEmailResponse = emailFacade.validateEmailVerificationRequest(verificationRequest, response,
+        Response verifyEmailResponse = emailFacade.completeEmailVerificationRequest(verificationRequest, response,
                 TEST_UNVERIFIED_CAVEAT_ID, integrationTestUsers.TEST_UNVERIFIED_CAVEAT.getEmailVerificationToken()
                         .substring(0, Constants.TRUNCATED_TOKEN_LENGTH));
 

@@ -61,10 +61,12 @@ public final class ITConstants {
     public static final String ALICE_STUDENT_EMAIL = "alice-student@test.com";
     public static final String ALICE_STUDENT_PASSWORD = "test1234";
     public static final long ALICE_STUDENT_ID = 7L;
+    public static final String ALICE_STUDENT_VALID_DELETION_TOKEN = "someFakeDeletionToken";
 
     public static final String BOB_STUDENT_EMAIL = "bob-student@test.com";
     public static final String BOB_STUDENT_PASSWORD = "test1234";
     public static final long BOB_STUDENT_ID = 8L;
+    public static final String BOB_STUDENT_EXPIRED_DELETION_TOKEN = "someExpiredDeletionToken";
 
     public static final String CHARLIE_STUDENT_EMAIL = "charlie-student@test.com";
     public static final String CHARLIE_STUDENT_PASSWORD = "test1234";

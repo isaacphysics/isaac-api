@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
@@ -99,6 +100,7 @@ public class UserManagerTest {
     private SegueLocalAuthenticator dummyLocalAuth;
 
     private ISecondFactorAuthenticator dummySecondFactorAuthenticator;
+    private IDeletionTokenPersistenceManager dummyDeletionTokenManager;
 
     private AbstractUserPreferenceManager dummyUserPreferenceManager;
 
@@ -129,6 +131,7 @@ public class UserManagerTest {
         this.dummyLogManager = createMock(ILogManager.class);
 
         this.dummySecondFactorAuthenticator = createMock(ISecondFactorAuthenticator.class);
+        this.dummyDeletionTokenManager = createMock(IDeletionTokenPersistenceManager.class);
 
         this.dummyUserPreferenceManager = createMock(AbstractUserPreferenceManager.class);
 
@@ -789,14 +792,14 @@ public class UserManagerTest {
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {
-        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, dummyProvidersMap, dummyQueue);
+        return new UserAuthenticationManager(dummyDatabase, dummyDeletionTokenManager, dummyPropertiesLoader, dummyProvidersMap, dummyQueue);
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager(AuthenticationProvider provider, IAuthenticator authenticator) {
         HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
         providerMap.put(provider, authenticator);
         providerMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
-        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyQueue);
+        return new UserAuthenticationManager(dummyDatabase, dummyDeletionTokenManager, dummyPropertiesLoader, providerMap, dummyQueue);
     }
 
     private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)

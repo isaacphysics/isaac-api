@@ -26,6 +26,7 @@ import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.AccountDeletionToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -55,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
@@ -96,10 +98,11 @@ public class UserAuthenticationManager {
 
     private final AbstractConfigLoader properties;
     private final IUserDataManager database;
+    private final IDeletionTokenPersistenceManager deletionTokenPersistenceManager;
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
     private final boolean checkOriginHeader;
-    
+
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 
     /**
@@ -113,7 +116,7 @@ public class UserAuthenticationManager {
      * @param emailQueue
      */
     @Inject
-    public UserAuthenticationManager(final IUserDataManager database,
+    public UserAuthenticationManager(final IUserDataManager database, final IDeletionTokenPersistenceManager deletionTokenPersistenceManager,
                                      final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                      final EmailManager emailQueue) {
         Objects.requireNonNull(properties.getProperty(HMAC_SALT));
@@ -122,6 +125,7 @@ public class UserAuthenticationManager {
         Objects.requireNonNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
+        this.deletionTokenPersistenceManager = deletionTokenPersistenceManager;
        
         this.properties = properties;
 
@@ -320,19 +324,6 @@ public class UserAuthenticationManager {
             throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
                  + "raw credentials for the given provider: " + provider);
         }
-    }
-
-    /**
-     * Checks to see if a user has valid way to authenticate with Segue.
-     *
-     * @param user - to check
-     * @return true means the user should have a means of authenticating with their account as far as we are concerned
-     */
-    public boolean hasLocalCredentials(RegisteredUser user) throws SegueDatabaseException {
-        IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        return passwordAuthenticator.hasPasswordRegistered(user);
     }
 
     public void upgradeUsersPasswordHashAlgorithm(final Long userId, final String chainedHashingAlgorithmName)
@@ -763,6 +754,58 @@ public class UserAuthenticationManager {
         // Set user's password
         authenticator.setOrChangeUsersPassword(user, newPassword);
         return user;
+    }
+
+    /**
+     *  Create and save an account deletion token for the specified user.
+     *
+     * @param user - the user requesting deletion.
+     * @return - the deletion token to send to the user.
+     * @throws SegueDatabaseException - on database error.
+     */
+    public AccountDeletionToken createAccountDeletionTokenForUser(final RegisteredUserDTO user) throws SegueDatabaseException {
+
+        String token;
+        try {
+            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                    .get(AuthenticationProvider.SEGUE);
+
+            token = authenticator.createAccountDeletionTokenSecret();
+        } catch (NoSuchAlgorithmException e) {
+            throw new SegueDatabaseException("Failed to create account deletion token", e);
+        }
+
+        // Valid for 1 day:
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date()); // Initialises the calendar to the current date/time
+        c.add(Calendar.DATE, 1);
+
+        AccountDeletionToken deletionToken = new AccountDeletionToken(user.getId(), token, c.getTime());
+
+        return deletionTokenPersistenceManager.saveAccountDeletionToken(deletionToken);
+    }
+
+    /**
+     * Check a deletion token is correct and not expired for a specific user.
+     *
+     * @param user          - the user requesting deletion.
+     * @param deletionToken - the token.
+     * @return - whether the token is valid to use.
+     * @throws SegueDatabaseException - on database error.
+     */
+    public boolean isValidAccountDeletionToken(final RegisteredUserDTO user, final String deletionToken) throws SegueDatabaseException {
+        Objects.requireNonNull(user);
+        Objects.requireNonNull(deletionToken);
+
+        AccountDeletionToken adt = deletionTokenPersistenceManager.getAccountDeletionToken(user.getId());
+
+        if (null == adt) {
+            // The current user has no token at all:
+            return false;
+        }
+
+        Date now = new Date();
+        return adt.getToken().equals(deletionToken) && adt.getTokenExpiry().after(now);
     }
     
     /**

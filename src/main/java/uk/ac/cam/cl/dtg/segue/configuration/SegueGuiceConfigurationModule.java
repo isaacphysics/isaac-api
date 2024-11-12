@@ -114,12 +114,14 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IExternalAccountDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.ITOTPDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgExternalAccountPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgTOTPDataManager;
@@ -428,6 +430,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(ITOTPDataManager.class).to(PgTOTPDataManager.class);
 
         bind(ISecondFactorAuthenticator.class).to(SegueTOTPAuthenticator.class);
+
+        bind(IDeletionTokenPersistenceManager.class).to(PgDeletionTokenPersistenceManager.class);
     }
 
 
@@ -730,11 +734,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final AbstractConfigLoader properties,
+    private UserAuthenticationManager getUserAuthenticationManager(final IUserDataManager database, final IDeletionTokenPersistenceManager deletionTokenPersistenceManager,
+                                              final AbstractConfigLoader properties,
                                               final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                               final EmailManager emailQueue) {
         if (null == userAuthenticationManager) {
-            userAuthenticationManager = new UserAuthenticationManager(database, properties, providersToRegister, emailQueue);
+            userAuthenticationManager = new UserAuthenticationManager(database, deletionTokenPersistenceManager, properties, providersToRegister, emailQueue);
             log.info("Creating singleton of UserAuthenticationManager");
         }
 
