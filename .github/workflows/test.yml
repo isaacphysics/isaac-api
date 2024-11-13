@@ -30,6 +30,7 @@ jobs:
     - name: Test with Maven
       run: mvn -B verify --file pom.xml
     - name: Add coverage to PR
+      if: github.actor != 'dependabot[bot]'
       id: jacoco
       uses: madrapps/jacoco-report@v1.6.1
       with:
