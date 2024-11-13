@@ -353,7 +353,8 @@ public class EmailFacade extends AbstractSegueFacade {
                description = "The user must be logged in to the account to delete to complete this action.")
     public Response completeAccountDeletion(@Context final HttpServletRequest request,
                                             @Context final HttpServletResponse response,
-                                            @QueryParam("token") final String token) {
+                                            @QueryParam("token") final String token,
+                                            final Map<String, String> additionalInfo) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
@@ -361,7 +362,9 @@ public class EmailFacade extends AbstractSegueFacade {
 
             userManager.logUserOut(request, response);
 
-            this.getLogManager().logEvent(currentUser, request, SegueServerLogType.ACCOUNT_DELETION_REQUEST_COMPLETE, Maps.newHashMap());
+            Map<String, String> logData = ImmutableMap.of("reason", additionalInfo.get("reason"));
+
+            this.getLogManager().logEvent(currentUser, request, SegueServerLogType.ACCOUNT_DELETION_REQUEST_COMPLETE, logData);
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException | NoUserException e) {
