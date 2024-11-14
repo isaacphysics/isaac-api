@@ -199,7 +199,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             }
         }
 
-        if (completePostCodes.size() > POSTCODEIO_MAX_REQUESTS) {
+        if (completePostCodes.size() + outCodes.size() > POSTCODEIO_MAX_REQUESTS) {
             throw new IllegalArgumentException(String.format("Number of postcodes cannot be bigger than %d!",
                     POSTCODEIO_MAX_REQUESTS));
         }
