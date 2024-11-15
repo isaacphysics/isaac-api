@@ -64,6 +64,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -171,6 +172,10 @@ public class ContentIndexer {
         List<String> allContentTypes = Arrays.stream(CONTENT_INDEX_TYPE.values())
                 .map(CONTENT_INDEX_TYPE::toString).collect(Collectors.toList());
         es.addOrMoveIndexAlias(alias, version, allContentTypes);
+    }
+
+    void deleteAllUnaliasedIndices(final AtomicInteger indexingJobsInProgress) {
+        es.deleteAllUnaliasedIndices(indexingJobsInProgress);
     }
 
     /**

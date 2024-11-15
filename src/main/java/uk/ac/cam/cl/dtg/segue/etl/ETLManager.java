@@ -8,6 +8,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.util.WriteablePropertiesLoader;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Ian on 01/11/2016.
@@ -20,6 +21,8 @@ class ETLManager {
 
     private final ArrayBlockingQueue<String> newVersionQueue;
     private final WriteablePropertiesLoader contentIndicesStore;
+
+    private static final AtomicInteger indexingJobsInProgress = new AtomicInteger();
 
 
     @Inject
@@ -69,12 +72,19 @@ class ETLManager {
     void setNamedVersion(final String alias, final String version) throws Exception {
         log.info("Requested new aliased version: " + alias + " - " + version);
 
-        indexer.loadAndIndexContent(version);
-        log.info("Indexed version " + version + ". Setting alias '" + alias + "'.");
-        indexer.setNamedVersion(alias, version);
+        indexingJobsInProgress.incrementAndGet();
+        try {
+            indexer.loadAndIndexContent(version);
+            log.info("Indexed version {}. Setting alias '{}'.", version, alias);
+            indexer.setNamedVersion(alias, version);
 
-        // Store the alias to file so that we can recover after wiping ElasticSearch.
-        this.contentIndicesStore.saveProperty(alias, version);
+            // Store the alias to file so that we can recover after wiping ElasticSearch.
+            this.contentIndicesStore.saveProperty(alias, version);
+
+            indexer.deleteAllUnaliasedIndices(indexingJobsInProgress);
+        } finally {
+            indexingJobsInProgress.decrementAndGet();
+        }
     }
 
     private class NewVersionIndexer implements Runnable {
