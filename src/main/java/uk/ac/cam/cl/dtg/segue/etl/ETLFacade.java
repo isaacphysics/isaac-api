@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -15,7 +16,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 /**
  *
