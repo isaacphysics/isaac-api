@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by Ian on 01/11/2016.
  */
-class ETLManager {
-    private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
+public class ETLManager {
+    private static final Logger log = LoggerFactory.getLogger(ETLManager.class);
     private static final String LATEST_INDEX_ALIAS = "latest";
 
     private final ContentIndexer indexer;
@@ -38,7 +38,7 @@ class ETLManager {
             try {
                 this.setNamedVersion(k, contentIndicesStore.getProperty(k));
             } catch (Exception e) {
-                log.error("Could not set content index alias " + k + " on startup.", e);
+                log.error("Could not set content index alias {} on startup.", k, e);
             }
         }
 
@@ -62,7 +62,7 @@ class ETLManager {
     }
 
     void notifyNewVersion(final String version) {
-        log.info("Notified of new version: " + version);
+        log.info("Notified of new version: {}", version);
 
         // This is the only place we write to newVersionQueue, so the offer should always succeed.
         this.newVersionQueue.clear();
@@ -70,7 +70,7 @@ class ETLManager {
     }
 
     void setNamedVersion(final String alias, final String version) throws Exception {
-        log.info("Requested new aliased version: " + alias + " - " + version);
+        log.info("Requested new aliased version: {} - {}", alias, version);
 
         indexingJobsInProgress.incrementAndGet();
         try {
@@ -98,14 +98,14 @@ class ETLManager {
                     // Block here until there is something to index.
                     log.info("Indexer going to sleep, waiting for new version alert.");
                     String newVersion = newVersionQueue.take();
-                    log.info("Indexer got new version: " + newVersion + ". Attempting to index.");
+                    log.info("Indexer got new version: {}. Attempting to index.", newVersion);
 
                     try {
                         setNamedVersion(LATEST_INDEX_ALIAS, newVersion);
                     } catch (VersionLockedException e) {
                         log.warn("Could not index new version, someone is already indexing it. Ignoring.");
                     } catch (Exception e) {
-                        log.warn("Indexing version " + newVersion + " failed for some reason. Moving on.");
+                        log.warn("Indexing version {} failed for some reason. Moving on.", newVersion);
                         e.printStackTrace();
                     }
                 }

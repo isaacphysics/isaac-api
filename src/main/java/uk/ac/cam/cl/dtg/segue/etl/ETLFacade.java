@@ -51,7 +51,7 @@ public class ETLFacade extends AbstractSegueFacade {
             log.info("Finished processing ETL request");
             return Response.ok().build();
         } catch (Exception e) {
-            log.error("Failed to set alias version:" + e.getMessage());
+            log.error("Failed to set alias version: {}", e.getMessage());
             log.info("Finished processing ETL request");
             return Response.serverError().entity(e.getMessage()).build();
         }
