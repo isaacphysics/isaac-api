@@ -196,7 +196,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
             ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
                     .put(TYPE_FIELDNAME, types)
-                    .put("searchString", searchString)
+                    .put(SEARCH_STRING_FIELDNAME, searchString)
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
 
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
