@@ -366,39 +366,35 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         int finalStartIndex = startIndex;
         // Not an ImmutableMap since we may have null values
-        Map<String, String> logEntry = new HashMap<>() {
-            {
-                this.put(SEARCH_STRING_FIELDNAME, searchString);
-                this.put(TAGS_FIELDNAME, tags);
-                this.put(FIELDS_FIELDNAME, fields);
-                this.put(SUBJECTS_FIELDNAME, subjects);
-                this.put(TOPICS_FIELDNAME, topics);
-                this.put(BOOKS_FIELDNAME, books);
-                this.put(STAGE_FIELDNAME, stages);
-                this.put(DIFFICULTY_FIELDNAME, difficulties);
-                this.put(EXAM_BOARD_FIELDNAME, examBoards);
-                this.put(CATEGORIES_FIELDNAME, questionCategories);
-                this.put(QUESTION_STATUSES_FIELDNAME, statuses);
-                this.put(START_INDEX_FIELDNAME, String.valueOf(finalStartIndex));
-            }
-        };
+        Map<String, String> logEntry = new HashMap<>();
+        logEntry.put(SEARCH_STRING_FIELDNAME, searchString);
+        logEntry.put(TAGS_FIELDNAME, tags);
+        logEntry.put(FIELDS_FIELDNAME, fields);
+        logEntry.put(SUBJECTS_FIELDNAME, subjects);
+        logEntry.put(TOPICS_FIELDNAME, topics);
+        logEntry.put(BOOKS_FIELDNAME, books);
+        logEntry.put(STAGE_FIELDNAME, stages);
+        logEntry.put(DIFFICULTY_FIELDNAME, difficulties);
+        logEntry.put(EXAM_BOARD_FIELDNAME, examBoards);
+        logEntry.put(CATEGORIES_FIELDNAME, questionCategories);
+        logEntry.put(QUESTION_STATUSES_FIELDNAME, statuses);
+        logEntry.put(START_INDEX_FIELDNAME, String.valueOf(finalStartIndex));
+
         this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
 
-        Map<String, String> fieldNameToValues = new HashMap<>() {
-            {
-                this.put(ID_FIELDNAME, ids);
-                this.put(TAGS_FIELDNAME, tags);
-                this.put(SUBJECTS_FIELDNAME, subjects);
-                this.put(FIELDS_FIELDNAME, fields);
-                this.put(TOPICS_FIELDNAME, topics);
-                this.put(BOOKS_FIELDNAME, books);
-                this.put(LEVEL_FIELDNAME, level);
-                this.put(STAGE_FIELDNAME, stages);
-                this.put(DIFFICULTY_FIELDNAME, difficulties);
-                this.put(EXAM_BOARD_FIELDNAME, examBoards);
-                this.put(CATEGORIES_FIELDNAME, questionCategories);
-            }
-        };
+        Map<String, String> fieldNameToValues = new HashMap<>();
+        fieldNameToValues.put(ID_FIELDNAME, ids);
+        fieldNameToValues.put(TAGS_FIELDNAME, tags);
+        fieldNameToValues.put(SUBJECTS_FIELDNAME, subjects);
+        fieldNameToValues.put(FIELDS_FIELDNAME, fields);
+        fieldNameToValues.put(TOPICS_FIELDNAME, topics);
+        fieldNameToValues.put(BOOKS_FIELDNAME, books);
+        fieldNameToValues.put(LEVEL_FIELDNAME, level);
+        fieldNameToValues.put(STAGE_FIELDNAME, stages);
+        fieldNameToValues.put(DIFFICULTY_FIELDNAME, difficulties);
+        fieldNameToValues.put(EXAM_BOARD_FIELDNAME, examBoards);
+        fieldNameToValues.put(CATEGORIES_FIELDNAME, questionCategories);
+
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
             String fieldName = entry.getKey();
             String queryStringValue = entry.getValue();
