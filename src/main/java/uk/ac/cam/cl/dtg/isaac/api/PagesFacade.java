@@ -76,7 +76,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -365,18 +364,18 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         // Not an ImmutableMap since we may have null values
-        Map<String, String> logEntry = new HashMap<>();
+        Map<String, Object> logEntry = new HashMap<>();
         logEntry.put(SEARCH_STRING_FIELDNAME, searchString);
-        logEntry.put(TAGS_FIELDNAME, tags);
-        logEntry.put(FIELDS_FIELDNAME, fields);
-        logEntry.put(SUBJECTS_FIELDNAME, subjects);
-        logEntry.put(TOPICS_FIELDNAME, topics);
-        logEntry.put(BOOKS_FIELDNAME, books);
-        logEntry.put(STAGE_FIELDNAME, stages);
-        logEntry.put(DIFFICULTY_FIELDNAME, difficulties);
-        logEntry.put(EXAM_BOARD_FIELDNAME, examBoards);
-        logEntry.put(CATEGORIES_FIELDNAME, questionCategories);
-        logEntry.put(QUESTION_STATUSES_FIELDNAME, statuses);
+        logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
+        logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
+        logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
+        logEntry.put(BOOKS_FIELDNAME, csvParamToLogValue(books));
+        logEntry.put(STAGES_FIELDNAME, csvParamToLogValue(stages));
+        logEntry.put(DIFFICULTIES_FIELDNAME, csvParamToLogValue(difficulties));
+        logEntry.put(EXAM_BOARDS_FIELDNAME, csvParamToLogValue(examBoards));
+        logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
+        logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
+        logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
         logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
 
         this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
@@ -1049,5 +1048,17 @@ public class PagesFacade extends AbstractIsaacFacade {
                 c.getTotalResults());
 
         return Response.ok(summarizedContent);
+    }
+
+    /**
+     * Convert an optional comma-separated URL parameter into a value suitable for logging.
+     * @param urlParam - the URL parameter value, potentially null or empty.
+     * @return
+     */
+    private Object csvParamToLogValue(final String urlParam) {
+        if (null == urlParam || urlParam.isEmpty()) {
+            return null;
+        }
+        return urlParam.split(",");
     }
 }
