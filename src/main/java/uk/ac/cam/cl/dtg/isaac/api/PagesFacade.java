@@ -364,7 +364,6 @@ public class PagesFacade extends AbstractIsaacFacade {
             limit = idsList.size();
         }
 
-        int finalStartIndex = startIndex;
         // Not an ImmutableMap since we may have null values
         Map<String, String> logEntry = new HashMap<>();
         logEntry.put(SEARCH_STRING_FIELDNAME, searchString);
@@ -378,7 +377,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         logEntry.put(EXAM_BOARD_FIELDNAME, examBoards);
         logEntry.put(CATEGORIES_FIELDNAME, questionCategories);
         logEntry.put(QUESTION_STATUSES_FIELDNAME, statuses);
-        logEntry.put(START_INDEX_FIELDNAME, String.valueOf(finalStartIndex));
+        logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
 
         this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
 
