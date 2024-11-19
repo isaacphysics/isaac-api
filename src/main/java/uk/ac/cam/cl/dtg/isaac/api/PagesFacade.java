@@ -76,7 +76,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -364,21 +363,36 @@ public class PagesFacade extends AbstractIsaacFacade {
             limit = idsList.size();
         }
 
-        Map<String, String> fieldNameToValues = new HashMap<>() {
-            {
-                this.put(ID_FIELDNAME, ids);
-                this.put(TAGS_FIELDNAME, tags);
-                this.put(SUBJECTS_FIELDNAME, subjects);
-                this.put(FIELDS_FIELDNAME, fields);
-                this.put(TOPICS_FIELDNAME, topics);
-                this.put(BOOKS_FIELDNAME, books);
-                this.put(LEVEL_FIELDNAME, level);
-                this.put(STAGE_FIELDNAME, stages);
-                this.put(DIFFICULTY_FIELDNAME, difficulties);
-                this.put(EXAM_BOARD_FIELDNAME, examBoards);
-                this.put(CATEGORIES_FIELDNAME, questionCategories);
-            }
-        };
+        // Not an ImmutableMap since we may have null values
+        Map<String, Object> logEntry = new HashMap<>();
+        logEntry.put(SEARCH_STRING_FIELDNAME, searchString);
+        logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
+        logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
+        logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
+        logEntry.put(BOOKS_FIELDNAME, csvParamToLogValue(books));
+        logEntry.put(STAGES_FIELDNAME, csvParamToLogValue(stages));
+        logEntry.put(DIFFICULTIES_FIELDNAME, csvParamToLogValue(difficulties));
+        logEntry.put(EXAM_BOARDS_FIELDNAME, csvParamToLogValue(examBoards));
+        logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
+        logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
+        logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
+        logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
+
+        this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
+
+        Map<String, String> fieldNameToValues = new HashMap<>();
+        fieldNameToValues.put(ID_FIELDNAME, ids);
+        fieldNameToValues.put(TAGS_FIELDNAME, tags);
+        fieldNameToValues.put(SUBJECTS_FIELDNAME, subjects);
+        fieldNameToValues.put(FIELDS_FIELDNAME, fields);
+        fieldNameToValues.put(TOPICS_FIELDNAME, topics);
+        fieldNameToValues.put(BOOKS_FIELDNAME, books);
+        fieldNameToValues.put(LEVEL_FIELDNAME, level);
+        fieldNameToValues.put(STAGE_FIELDNAME, stages);
+        fieldNameToValues.put(DIFFICULTY_FIELDNAME, difficulties);
+        fieldNameToValues.put(EXAM_BOARD_FIELDNAME, examBoards);
+        fieldNameToValues.put(CATEGORIES_FIELDNAME, questionCategories);
+
         for (Map.Entry<String, String> entry : fieldNameToValues.entrySet()) {
             String fieldName = entry.getKey();
             String queryStringValue = entry.getValue();
@@ -1034,5 +1048,17 @@ public class PagesFacade extends AbstractIsaacFacade {
                 c.getTotalResults());
 
         return Response.ok(summarizedContent);
+    }
+
+    /**
+     * Convert an optional comma-separated URL parameter into a value suitable for logging.
+     * @param urlParam - the URL parameter value, potentially null or empty.
+     * @return
+     */
+    private Object csvParamToLogValue(final String urlParam) {
+        if (null == urlParam || urlParam.isEmpty()) {
+            return null;
+        }
+        return urlParam.split(",");
     }
 }
