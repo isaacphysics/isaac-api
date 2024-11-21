@@ -17,9 +17,9 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -101,7 +101,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 // process failures by iterating through each bulk response item
                 for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
                     if (itemResponse.isFailed()) {
-                        log.error("Unable to index the following item: " + itemResponse.getFailureMessage());
+                        log.error("Unable to index the following item: {}", itemResponse.getFailureMessage());
                     }
                 }
                 throw new SegueSearchException("Error during bulk index operation, some items failed!");
@@ -149,7 +149,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         try {
             IndexRequest request = new IndexRequest(typedIndex).id(uniqueId).source(content, XContentType.JSON);
             IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
-            log.debug("Document: " + indexResponse.getId() + " indexed.");
+            log.debug("Document: {} indexed.", indexResponse.getId());
 
         } catch (ElasticsearchException | IOException e) {
             throw new SegueSearchException("Error during index operation.", e);
@@ -162,11 +162,10 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
     boolean expungeTypedIndexFromSearchCache(final String typedIndex) {
         try {
-            log.info("Sending delete request to ElasticSearch for search index: " + typedIndex);
+            log.info("Sending delete request to ElasticSearch for search index: {}", typedIndex);
             client.indices().delete(new DeleteIndexRequest(typedIndex), RequestOptions.DEFAULT);
         } catch (ElasticsearchException | IOException e) {
-            log.error("ElasticSearch exception while trying to delete index " + typedIndex + ", it might not have existed.",
-                    e);
+            log.error("ElasticSearch exception while trying to delete index {}, it might not have existed.", typedIndex, e);
             return false;
         }
 
@@ -195,7 +194,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                         client.indices().getAlias(new GetAliasesRequest().aliases(typedAlias + "_previous"), RequestOptions.DEFAULT)
                         .getAliases());
             } catch (IOException e) {
-                log.error(String.format("Failed to retrieve existing previous alias %s, not moving alias!", typedAlias + "_previous"));
+                log.error("Failed to retrieve existing previous alias {}, not moving alias!", typedAlias + "_previous");
                 continue;
             }
 
@@ -216,7 +215,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                         client.indices().getAlias(new GetAliasesRequest().aliases(typedAlias), RequestOptions.DEFAULT)
                         .getAliases());
             } catch (IOException e) {
-                log.error(String.format("Failed to retrieve existing alias %s, not moving alias!", typedAlias));
+                log.error("Failed to retrieve existing alias {}, not moving alias!", typedAlias);
                 continue;
             }
 
@@ -231,7 +230,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             }
 
             if (indexWithCurrent != null && indexWithCurrent.equals(typedIndexTarget)) {
-                log.info("Not moving alias '" + typedAlias + "' - it already points to the right index.");
+                log.info("Not moving alias '{}' - it already points to the right index.", typedAlias);
             } else {
                 IndicesAliasesRequest request = new IndicesAliasesRequest();
 
@@ -267,32 +266,28 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 try {
                     client.indices().updateAliases(request, RequestOptions.DEFAULT);
                 } catch (IOException e) {
-                    log.error(String.format("Failed to update alias %s", typedAlias), e);
+                    log.error("Failed to update alias {}", typedAlias, e);
                     continue;
                 }
             }
 
         }
-        this.expungeOldIndices();
         return true;
     }
 
-    private boolean expungeOldIndices() {
-        // This deletes any indices that don't have aliases pointing to them.
-        // If you want an index kept, make sure it has an alias!
+    void deleteAllUnaliasedIndices() {
+        // Deleting all unalisaed indices is not a safe operation if alias or index updates are in-progress!
         try {
             GetIndexResponse indices = client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT);
             ImmutableMap<String, List<AliasMetadata>> aliases = ImmutableMap.copyOf(indices.getAliases());
             for (String index : indices.getIndices()) {
                 if (!aliases.containsKey(index) || aliases.get(index).isEmpty()) {
-                    log.info("Index " + index + " has no aliases. Removing.");
+                    log.info("Index {} has no aliases. Removing.", index);
                     this.expungeTypedIndexFromSearchCache(index);
                 }
             }
-            return true;
         } catch (IOException e) {
             log.error("Failed to expunge old indices", e);
-            return false;
         }
     }
 
@@ -320,7 +315,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // Add mapping to specify raw, un-analyzed fields
             for (String fieldName : this.rawFieldsListByType.getOrDefault(indexType, Collections.emptyList())) {
-                log.debug("Sending raw mapping correction for " + fieldName + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+                log.debug("Sending raw mapping correction for {}." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, fieldName);
                 mappingBuilder
                         .startObject(fieldName)
                             .field("type", "text")
@@ -336,7 +331,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // Add mapping to specify nested object fields
             for (String fieldName : this.nestedFieldsByType.getOrDefault(indexType, Collections.emptyList())) {
-                log.debug("Sending mapping correction for nested field " + fieldName);
+                log.debug("Sending mapping correction for nested field {}", fieldName);
                 mappingBuilder.startObject(fieldName).field("type", "nested").endObject();
             }
 
