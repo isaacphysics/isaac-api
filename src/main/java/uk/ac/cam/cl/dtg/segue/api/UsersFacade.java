@@ -141,8 +141,6 @@ public class UsersFacade extends AbstractSegueFacade {
     /**
      * Get the details of the currently logged in user.
      *
-     * @param request
-     *            - request information used for caching.
      * @param httpServletRequest
      *            - the request which may contain session information.
      * @param response
@@ -153,8 +151,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/current_user")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get information about the current user.")
-    public Response getCurrentUserEndpoint(@Context final Request request,
-                                           @Context final HttpServletRequest httpServletRequest,
+    public Response getCurrentUserEndpoint(@Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse response) {
         try {
             RegisteredUserDTO currentUser;
@@ -167,21 +164,11 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
-            int sessionExpiryHashCode = 0;
             if (null != sessionExpiry) {
-                sessionExpiryHashCode = sessionExpiry.hashCode();
                 response.setDateHeader("X-Session-Expires", sessionExpiry.getTime());
             }
 
-            // Calculate the ETag based on the user we just retrieved and the session expiry:
-            EntityTag etag = new EntityTag(currentUser.toString().hashCode() + sessionExpiryHashCode + "");
-            Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(currentUser).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+            return Response.ok(currentUser).cacheControl(getCacheControlNoStore()).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
