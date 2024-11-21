@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -276,22 +275,10 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         return true;
     }
 
-    void deleteAllUnaliasedIndices(final AtomicInteger indexingJobsInProgress) {
+    void deleteAllUnaliasedIndices() {
         // Deleting all unalisaed indices is not a safe operation if alias or index updates are in-progress!
         try {
-            // Check no other indexing jobs are running before we query ES to get index list:
-            boolean safeToDelete = indexingJobsInProgress.get() == 1;
-            // Get (optimistically) indices and their aliases:
             GetIndexResponse indices = client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT);
-            // Check no indexing jobs have started since we started querying ES, since that may be slow:
-            safeToDelete = safeToDelete && indexingJobsInProgress.get() == 1;
-
-
-            // Only if safe to do so, delete unaliased indices.
-            if (!safeToDelete) {
-                log.warn("Attempt to delete unaliased indices prevented due to concurrent indexing job!");
-                return;
-            }
             ImmutableMap<String, List<AliasMetadata>> aliases = ImmutableMap.copyOf(indices.getAliases());
             for (String index : indices.getIndices()) {
                 if (!aliases.containsKey(index) || aliases.get(index).isEmpty()) {

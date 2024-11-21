@@ -8,7 +8,8 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.util.WriteablePropertiesLoader;
 
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by Ian on 01/11/2016.
@@ -22,7 +23,7 @@ public class ETLManager {
     private final ArrayBlockingQueue<String> newVersionQueue;
     private final WriteablePropertiesLoader contentIndicesStore;
 
-    private static final AtomicInteger indexingJobsInProgress = new AtomicInteger();
+    private static final ReadWriteLock indexerLock = new ReentrantReadWriteLock();
 
 
     @Inject
@@ -72,7 +73,8 @@ public class ETLManager {
     void setNamedVersion(final String alias, final String version) throws Exception {
         log.info("Requested new aliased version: {} - {}", alias, version);
 
-        indexingJobsInProgress.incrementAndGet();
+        // Adding new indices can be done in parallel; take a read lock:
+        indexerLock.readLock().lock();
         try {
             indexer.loadAndIndexContent(version);
             log.info("Indexed version {}. Setting alias '{}'.", version, alias);
@@ -80,10 +82,19 @@ public class ETLManager {
 
             // Store the alias to file so that we can recover after wiping ElasticSearch.
             this.contentIndicesStore.saveProperty(alias, version);
-
-            indexer.deleteAllUnaliasedIndices(indexingJobsInProgress);
         } finally {
-            indexingJobsInProgress.decrementAndGet();
+            indexerLock.readLock().unlock();
+        }
+
+        // Removing unused indices must not be done in parallel; take a write lock if available, else skip:
+        if (indexerLock.writeLock().tryLock()) {
+            try {
+                indexer.deleteAllUnaliasedIndices();
+            } finally {
+                indexerLock.writeLock().unlock();
+            }
+        } else {
+            log.warn("Attempt to delete unaliased indices prevented due to concurrent indexing job!");
         }
     }
 
