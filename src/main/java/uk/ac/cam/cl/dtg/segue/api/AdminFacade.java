@@ -816,7 +816,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response findUsers(@Context final HttpServletRequest httpServletRequest, @Context final Request request,
+    public Response findUsers(@Context final HttpServletRequest httpServletRequest,
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
@@ -965,15 +965,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 }
             }
 
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(foundUsers.size() + foundUsers.toString().hashCode()
-                    + userPrototype.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(request, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
             int searchResultsLimit;
             try {
                 searchResultsLimit = Integer.parseInt(this.getProperties().getProperty(Constants.SEARCH_RESULTS_HARD_LIMIT));
@@ -990,8 +981,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     currentUser.getRole(), currentUser.getEmail(), userPrototype));
 
             return Response.ok(this.userManager.convertToDetailedUserSummaryObjectList(foundUsers, UserSummaryForAdminUsersDTO.class))
-                    .tag(etag)
-                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .cacheControl(getCacheControlNoStore())
                     .build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -1031,7 +1021,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     currentUser.getEmail(), userId));
 
             return Response.ok(this.userManager.getUserDTOById(userId))
-                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+                    .cacheControl(getCacheControlNoStore()).build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.").toResponse();
