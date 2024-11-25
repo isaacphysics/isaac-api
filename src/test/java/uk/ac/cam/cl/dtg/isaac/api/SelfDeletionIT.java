@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableMap;
 import org.easymock.Capture;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.api.EmailFacade;
@@ -44,7 +45,7 @@ public class SelfDeletionIT extends IsaacIntegrationTest {
                 contentManager, misuseMonitor);
 
         // Attempt to use a valid token:
-        Response apiResponse = emailFacade.completeAccountDeletion(deletionConfirmationRequest, response, ALICE_STUDENT_VALID_DELETION_TOKEN);
+        Response apiResponse = emailFacade.completeAccountDeletion(deletionConfirmationRequest, response, ALICE_STUDENT_VALID_DELETION_TOKEN, ImmutableMap.of("reason", "other"));
 
         // Check request succeeded:
         assertEquals(Response.Status.NO_CONTENT.getStatusCode(), apiResponse.getStatus());
@@ -84,7 +85,7 @@ public class SelfDeletionIT extends IsaacIntegrationTest {
                 contentManager, misuseMonitor);
 
         // Attempt to use a expired token:
-        Response apiResponse = emailFacade.completeAccountDeletion(deletionConfirmationRequest, response, BOB_STUDENT_EXPIRED_DELETION_TOKEN);
+        Response apiResponse = emailFacade.completeAccountDeletion(deletionConfirmationRequest, response, BOB_STUDENT_EXPIRED_DELETION_TOKEN, ImmutableMap.of("reason", "other"));
 
         // Check request did nothing:
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), apiResponse.getStatus());
@@ -113,7 +114,7 @@ public class SelfDeletionIT extends IsaacIntegrationTest {
                 contentManager, misuseMonitor);
 
         // Attempt to use someone else's valid token:
-        Response apiResponse = emailFacade.completeAccountDeletion(deletionConfirmationRequest, response, ALICE_STUDENT_VALID_DELETION_TOKEN);
+        Response apiResponse = emailFacade.completeAccountDeletion(deletionConfirmationRequest, response, ALICE_STUDENT_VALID_DELETION_TOKEN, ImmutableMap.of("reason", "other"));
 
         // Check request did nothing:
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), apiResponse.getStatus());
