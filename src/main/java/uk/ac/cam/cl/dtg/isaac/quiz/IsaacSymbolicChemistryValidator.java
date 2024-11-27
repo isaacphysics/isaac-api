@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -99,6 +100,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         boolean allTypeMismatch = true;                 // Whether type of answer matches one of the correct answers
         boolean allEquation = true;
         boolean allExpression = true;
+        boolean allTerm = true;
         boolean containsError = false;                  // Whether student answer contains any error terms.
         boolean isEquation = false;                     // Whether student answer is equation or not.
         boolean isBalanced = false;                     // Whether student answer has balanced equation.
@@ -106,7 +108,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         boolean isNuclear = false;                      // Whether student answer has nuclear terms.
         boolean isValid = false;                        // Whether student answer has valid atomic numbers.
 
-        String receivedType;                            // Type of student answer.
+        String receivedType = "";                       // Type of student answer.
 
         // STEP 0: Do we even have any answers for this question? Always do this check, because we know we
         //         won't have feedback yet.
@@ -237,6 +239,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         String expectedType = (String) response.get("expectedType");
                         allExpression = allExpression && expectedType.contains("expr");
                         allEquation = allEquation && expectedType.contains("statement");
+                        allTerm = allTerm && expectedType.contains("term");
                     }
 
                     // Identify the type of student answer.
@@ -351,15 +354,15 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // Nuclear/Chemistry mismatch in all correct answers.
                 feedback = new Content("This question is about Nuclear Physics!");
 
-            } else if (!isEquation && allEquation) {
+            } else if (closestResponse != null && (!receivedType.contains("statement") && allEquation || !receivedType.contains("expr") && allExpression || !receivedType.contains("term") && allTerm)) {
+                Map<String, String> map = new HashMap<>();
+                map.put("statement", "an equation");
+                map.put("expr", "an expression");
+                map.put("term", "a term");
 
-                // Equation/Expression mismatch in all correct answers.
-                feedback = new Content("Your answer is an expression but we expected an equation!");
-
-            } else if (isEquation && allExpression) {
-
-                // Equation/Expression mismatch in all correct answers.
-                feedback = new Content("Your answer is an equation or a term but we expected an expression!");
+                // Term/Expression/Equation mismatch in all correct answers.
+                feedback = new Content("Your answer is " + map.get(closestResponse.get("receivedType"))
+                                           + " but we expected " + map.get(closestResponse.get("expectedType")) + "!");
 
             } else if (isEquation && balancedKnownFlag && !isBalanced) {
 
