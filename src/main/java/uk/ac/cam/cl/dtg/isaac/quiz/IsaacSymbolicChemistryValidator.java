@@ -54,6 +54,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         WEAK4,
         WEAK5,
         WEAK6,
+        WEAK7,
         EXACT
     }
 
@@ -272,20 +273,22 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Input is semantically equivalent to correct answer.
                         matchType = MatchType.EXACT;
                     } else {
-                        if (response.get("sameElements").equals(false)) {
+                        if (response.get("typeMismatch").equals(true)) {
                             matchType = MatchType.WEAK0;
-                        } else if (response.get("sameCoefficient").equals(false)) {
+                        } else if (response.get("sameElements").equals(false)) {
                             matchType = MatchType.WEAK1;
-                        } else if (!isNuclear && response.get("sameCharge").equals(false)) {
+                        } else if (response.get("sameCoefficient").equals(false)) {
                             matchType = MatchType.WEAK2;
-                        } else if (!isNuclear && response.get("sameState").equals(false)) {
+                        } else if (!isNuclear && response.get("sameCharge").equals(false)) {
                             matchType = MatchType.WEAK3;
-                        } else if (!isNuclear && response.get("sameArrow").equals(false)) {
+                        } else if (!isNuclear && response.get("sameState").equals(false)) {
                             matchType = MatchType.WEAK4;
-                        } else if (!isNuclear && response.get("sameBrackets").equals(false)) {
+                        } else if (!isNuclear && response.get("sameArrow").equals(false)) {
                             matchType = MatchType.WEAK5;
-                        } else {
+                        } else if (!isNuclear && response.get("sameBrackets").equals(false)) {
                             matchType = MatchType.WEAK6;
+                        } else {
+                            matchType = MatchType.WEAK7;
                         }
                     }
 
@@ -354,7 +357,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // Nuclear/Chemistry mismatch in all correct answers.
                 feedback = new Content("This question is about Nuclear Physics!");
 
-            } else if (closestResponse != null && (!receivedType.contains("statement") && allEquation || !receivedType.contains("expr") && allExpression || !receivedType.contains("term") && allTerm)) {
+            } else if (closestResponse != null && (!receivedType.contains("statement") && allEquation
+                    || !receivedType.contains("expr") && allExpression || !receivedType.contains("term") && allTerm)) {
                 Map<String, String> map = new HashMap<>();
                 map.put("statement", "an equation");
                 map.put("expr", "an expression");
@@ -379,7 +383,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // Input is nuclear, but atomic/mass numbers are invalid.
                 feedback = new Content("Check your atomic/mass numbers!");
 
-            } else if (closestMatch != null && closestMatch.isCorrect() && closestResponse != null) {
+            } else if (closestMatch != null && closestMatch.isCorrect() && closestResponse != null
+                    && closestResponse.get("typeMismatch").equals(false)) {
 
                 // Weak match to a correct answer.
                 // closestResponse contains flags for generic mistakes from the Chemistry Checker.
@@ -387,32 +392,32 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                 if (closestResponse.get("sameElements").equals(false)) {
 
-                    // Wrong element/compound - MatchType.WEAK0
+                    // Wrong element/compound - MatchType.WEAK1
                     feedback = new Content("Check that you have all the correct atoms present and in the right place!");
 
                 } else if (closestResponse.get("sameCoefficient").equals(false)) {
 
-                    // Wrong coefficients - MatchType.WEAK1
+                    // Wrong coefficients - MatchType.WEAK2
                     feedback = new Content("Check your coefficients!");
 
                 } else if (!isNuclear && closestResponse.get("sameCharge").equals(false)) {
 
-                    // Wrong charge - MatchType.WEAK2
+                    // Wrong charge - MatchType.WEAK3
                     feedback = new Content("Check your charges!");
 
                 } else if (!isNuclear && closestResponse.get("sameState").equals(false)) {
 
-                    // Wrong state symbols - MatchType.WEAK3
+                    // Wrong state symbols - MatchType.WEAK4
                     feedback = new Content("Check your state symbols!");
 
                 } else if (!isNuclear && closestResponse.get("sameArrow").equals(false)) {
 
-                    // Wrong arrow - MatchType.WEAK4
+                    // Wrong arrow - MatchType.WEAK5
                     feedback = new Content("Check your reaction arrow!");
 
                 } else if (!isNuclear && closestResponse.get("sameBrackets").equals(false)) {
 
-                    // Wrong brackets - MatchType.WEAK5
+                    // Wrong brackets - MatchType.WEAK6
                     feedback = new Content("Check your brackets!");
                 }
             }
