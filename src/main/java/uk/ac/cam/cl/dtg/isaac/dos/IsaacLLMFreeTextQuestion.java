@@ -25,6 +25,7 @@ public class IsaacLLMFreeTextQuestion extends Question {
     private String markCalculationInstructions;
     private List<LLMFreeTextMarkedExample> markedExamples;
     private LLMMarkingExpression markingFormula;
+    private String markingFormulaString;
 
     public IsaacLLMFreeTextQuestion() {
     }
@@ -76,5 +77,12 @@ public class IsaacLLMFreeTextQuestion extends Question {
     }
     public void setMarkingFormula(LLMMarkingExpression markingFormula) {
         this.markingFormula = markingFormula;
+    }
+
+    public String getMarkingFormulaString() {
+        return markingFormulaString;
+    }
+    public void setMarkingFormulaString(String markingFormulaString) {
+        this.markingFormulaString = markingFormulaString;
     }
 }
