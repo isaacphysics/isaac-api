@@ -393,9 +393,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 if (closestResponse.get("sameElements").equals(false)) {
 
                     // Wrong element/compound - MatchType.WEAK1
-
-                    // Temporarily disabled
-                    // feedback = new Content("Check that you have all the correct atoms present and in the right place!");
+                    feedback = new Content("Check that you have all the correct atoms present and in the right place!");
 
                 } else if (closestResponse.get("sameCoefficient").equals(false)) {
 
