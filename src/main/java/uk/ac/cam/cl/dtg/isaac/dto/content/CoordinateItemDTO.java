@@ -1,7 +1,12 @@
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
+import java.util.List;
+
 public class CoordinateItemDTO extends ItemDTO {
+    private List<String> coordinates;
+    @Deprecated
     private String x;
+    @Deprecated
     private String y;
 
     /**
@@ -14,6 +19,7 @@ public class CoordinateItemDTO extends ItemDTO {
      * @param x
      * @param y
      */
+    @Deprecated
     public CoordinateItemDTO(final String x, final String y) {
         this.x = x;
         this.y = y;
@@ -22,6 +28,7 @@ public class CoordinateItemDTO extends ItemDTO {
     /**
      * @return the x
      */
+    @Deprecated
     public String getX() {
         return x;
     }
@@ -29,6 +36,7 @@ public class CoordinateItemDTO extends ItemDTO {
     /**
      * @param x the x to set
      */
+    @Deprecated
     public void setX(final String x) {
         this.x = x;
     }
@@ -36,6 +44,7 @@ public class CoordinateItemDTO extends ItemDTO {
     /**
      * @return the y
      */
+    @Deprecated
     public String getY() {
         return y;
     }
@@ -43,7 +52,20 @@ public class CoordinateItemDTO extends ItemDTO {
     /**
      * @param y the y to set
      */
+    @Deprecated
     public void setY(final String y) {
         this.y = y;
+    }
+
+    public CoordinateItemDTO(List<String> coordinates) {
+        this.coordinates = coordinates;
+    }
+
+    public List<String> getCoordinates() {
+        return coordinates;
+    }
+
+    public void setCoordinates(List<String> coordinates) {
+        this.coordinates = coordinates;
     }
 }
