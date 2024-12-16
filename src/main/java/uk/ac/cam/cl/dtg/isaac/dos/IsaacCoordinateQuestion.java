@@ -1,11 +1,12 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacCoordinateQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacCoordinateValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
+
+import java.util.List;
 
 /**
  * Content DO for IsaacCoordinateQuestions.
@@ -16,13 +17,15 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @ValidatesWith(IsaacCoordinateValidator.class)
 public class IsaacCoordinateQuestion extends IsaacQuestionBase {
 
-    // If no number of coordinates is specified, we assume any number of coordinates in a choice is valid.
-    private Integer numberOfCoordinates;
+    private Integer numberOfCoordinates;  // If not specified, we assume any number of coordinates is allowed.
+    private Integer numberOfDimensions;
 
-    // If ordered is true, then the order of the coordinates in a choice matters.
-    private Boolean ordered;
+    private Boolean ordered;  // If true, the order of the coordinates in a choice matters.
+    @Deprecated
     private String placeholderXValue;
+    @Deprecated
     private String placeholderYValue;
+    private List<String> placeholderValues;
     private Integer significantFiguresMin;
     private Integer significantFiguresMax;
 
@@ -32,6 +35,14 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
 
     public void setNumberOfCoordinates(final Integer numberOfCoordinates) {
         this.numberOfCoordinates = numberOfCoordinates;
+    }
+
+    public Integer getNumberOfDimensions() {
+        return numberOfDimensions;
+    }
+
+    public void setNumberOfDimensions(Integer numberOfDimensions) {
+        this.numberOfDimensions = numberOfDimensions;
     }
 
     public Boolean getOrdered() {
@@ -80,19 +91,31 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
         this.significantFiguresMax = significantFigures;
     }
 
+    @Deprecated
     public String getPlaceholderXValue() {
         return placeholderXValue;
     }
 
+    @Deprecated
     public void setPlaceholderXValue(String placeholderXValue) {
         this.placeholderXValue = placeholderXValue;
     }
 
+    @Deprecated
     public String getPlaceholderYValue() {
         return placeholderYValue;
     }
 
+    @Deprecated
     public void setPlaceholderYValue(String placeholderYValue) {
         this.placeholderYValue = placeholderYValue;
+    }
+
+    public List<String> getPlaceholderValues() {
+        return placeholderValues;
+    }
+
+    public void setPlaceholderValues(List<String> placeholderValues) {
+        this.placeholderValues = placeholderValues;
     }
 }
