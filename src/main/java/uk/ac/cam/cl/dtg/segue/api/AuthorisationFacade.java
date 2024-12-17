@@ -456,12 +456,13 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             // ensure the user is logged in
             currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
-            AssociationToken associationToken = this.associationManager.lookupTokenDetails(currentRegisteredUser, token);
-
-            UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
                     TokenOwnerLookupMisuseHandler.class.getSimpleName());
+
+            AssociationToken associationToken = this.associationManager.lookupTokenDetails(currentRegisteredUser, token);
+
+            UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
             // add owner
