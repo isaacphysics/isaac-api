@@ -153,12 +153,16 @@ public class IsaacCoordinateValidator implements IValidator {
                             feedback = new Content("You did not provide a complete answer.");
                         }
                         else {
-                            Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
-                                    significantFiguresMin, significantFiguresMax, log);
-
-                            valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                            if (ValidationUtils.tooFewSignificantFigures(submittedValue, significantFiguresMin, log) || ValidationUtils.tooManySignificantFigures(submittedValue, significantFiguresMax, log)) {
+                                feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
+                            }
+                            else {
+                                // Value is non-empty with correct sig figs, now check actual correctness:
+                                Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
+                                        significantFiguresMin, significantFiguresMax, log);
+                                valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                            }
                         }
-
                         if (!valuesMatch) {
                             allItemsMatch = false;
                             // Exit early on mismatch:
