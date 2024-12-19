@@ -150,7 +150,7 @@ public class IsaacCoordinateValidator implements IValidator {
                         boolean valuesMatch = false;
 
                         if (submittedValue.isEmpty()) {
-                            feedback = new Content("You did not provide a complete answer.");
+                            feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
                         }
                         else {
                             if (ValidationUtils.tooFewSignificantFigures(submittedValue, significantFiguresMin, log) || ValidationUtils.tooManySignificantFigures(submittedValue, significantFiguresMax, log)) {
