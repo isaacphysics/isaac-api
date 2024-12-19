@@ -278,8 +278,8 @@ WHERE event_details->>'newSchoolOther' IS NOT NULL;
 
 -- School data, no PII:
 
-CREATE TABLE anonymous.schools_2022 AS
-SELECT * FROM public.schools_2022;
+CREATE TABLE anonymous.schools_2024 AS
+SELECT * FROM public.schools_2024;
 
 RETURN true;
 END;
