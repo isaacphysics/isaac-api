@@ -204,7 +204,7 @@ public class IsaacCoordinateValidator implements IValidator {
                 String valueA = a.getCoordinates().get(i);
                 String valueB = b.getCoordinates().get(i);
                 if (valueA.isEmpty() || valueB.isEmpty()) {
-                    return 0;
+                    return valueA.compareTo(valueB);
                 }
                 if (!ValidationUtils.compareNumericValues(valueA, valueB, 3, ValidationUtils.ComparisonType.EQUAL_TO, log)) {
                     return ValidationUtils.compareNumericValues(valueA, valueB, 3, ValidationUtils.ComparisonType.LESS_THAN, log) ? -1 : 1;
