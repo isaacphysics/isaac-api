@@ -140,8 +140,8 @@ FROM anonymous.users
                JOIN anonymous.users AS student ON user_associations.user_id_granting_permission = student.id
                JOIN anonymous.users AS teacher ON user_associations.user_id_receiving_permission = teacher.id
       GROUP BY teacher_id) AS from_connections ON users.id = from_connections.teacher_id
-         LEFT JOIN anonymous.schools_2022 AS schools ON users.school_id = schools.school_id
-         LEFT JOIN anonymous.schools_2022 AS connections_schools
+         LEFT JOIN anonymous.schools_2024 AS schools ON users.school_id = schools.school_id
+         LEFT JOIN anonymous.schools_2024 AS connections_schools
                    ON from_connections.mode_school_id = connections_schools.school_id
 
      -- Add deprivation data
