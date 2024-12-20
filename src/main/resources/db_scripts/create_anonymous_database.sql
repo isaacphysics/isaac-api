@@ -281,6 +281,11 @@ WHERE event_details->>'newSchoolOther' IS NOT NULL;
 CREATE TABLE anonymous.schools_2024 AS
 SELECT * FROM public.schools_2024;
 
+-- Content data table, no PII:
+
+CREATE TABLE anonymous.content_data AS
+    SELECT * FROM public.content_data;
+
 RETURN true;
 END;
 $$
