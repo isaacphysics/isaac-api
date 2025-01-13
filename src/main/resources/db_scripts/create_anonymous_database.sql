@@ -221,6 +221,8 @@ CREATE TABLE anonymous.logged_events AS
         'VIEW_RELATED_CONCEPT', 'VIEW_RELATED_QUESTION',
         'VIDEO_ENDED', 'VIDEO_PAUSE', 'VIDEO_PLAY',
         'VIEW_SUPERSEDED_BY_QUESTION',
+        -- Quiz usage:
+        'ANSWER_QUIZ_QUESTION',
         -- Concept usage:
         'VIEW_CONCEPT', 'CONCEPT_SECTION_OPEN', 'QUICK_QUESTION_TAB_VIEW', 'VIEW_GITHUB_CODE',
         'QUESTION_CONFIDENCE_BEFORE', 'QUESTION_CONFIDENCE_AFTER',
@@ -232,6 +234,7 @@ CREATE TABLE anonymous.logged_events AS
         'CREATE_USER_ASSOCIATION', 'RELEASE_USER_ASSOCIATION', 'REVOKE_USER_ASSOCIATION',
         'CREATE_USER_GROUP', 'DELETE_USER_GROUP', 'ADD_ADDITIONAL_GROUP_MANAGER', 'DELETE_ADDITIONAL_GROUP_MANAGER',
         'SET_NEW_ASSIGNMENT', 'DELETE_ASSIGNMENT', 'VIEW_BOARD_BUILDER', 'CREATE_GAMEBOARD', 'CLONE_GAMEBOARD',
+        'SET_NEW_QUIZ_ASSIGNMENT', 'DELETE_QUIZ_ASSIGNMENT', 'UPDATE_QUIZ_FEEDBACK_MODE', 'UPDATE_QUIZ_DEADLINE',
         'VIEW_ASSIGNMENT_PROGRESS', 'DOWNLOAD_ASSIGNMENT_PROGRESS_CSV', 'DOWNLOAD_GROUP_PROGRESS_CSV', 'VIEW_USER_PROGRESS',
         -- Event related usage:
         'ADMIN_EVENT_ATTENDANCE_RECORDED', 'ADMIN_EVENT_BOOKING_CANCELLED', 'ADMIN_EVENT_BOOKING_CONFIRMED',
@@ -263,6 +266,10 @@ UPDATE anonymous.logged_events
 UPDATE anonymous.logged_events
     SET event_details=jsonb_set(event_details, '{assignmentId}', to_jsonb(anonymise(event_details->>'assignmentId', hash_salt)))
     WHERE event_details->>'assignmentId' IS NOT NULL;
+-- quizAssignmentId
+UPDATE anonymous.logged_events
+SET event_details=jsonb_set(event_details, '{quizAssignmentId}', to_jsonb(anonymise(event_details->>'quizAssignmentId', hash_salt)))
+WHERE event_details->>'quizAssignmentId' IS NOT NULL;
 -- token
 UPDATE anonymous.logged_events
     SET event_details=event_details - 'token'
