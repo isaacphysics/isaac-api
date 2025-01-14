@@ -85,7 +85,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             conn.setAutoCommit(false);  // Start a transaction to hold a lock open during.
             // Set a timeout for the lock of 2 seconds:
             try (Statement st = conn.createStatement()) {
-                st.execute("SET LOCAL lock_timeout = '2s';");
+                st.execute("SET LOCAL lock_timeout = '1s';");
             }
             // Try to obtain the per-anon-user lock:
             try (PreparedStatement pst = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
