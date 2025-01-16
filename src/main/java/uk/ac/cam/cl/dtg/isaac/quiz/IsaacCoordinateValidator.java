@@ -151,12 +151,10 @@ public class IsaacCoordinateValidator implements IValidator {
 
                         if (submittedValue.isEmpty()) {
                             feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
-                        }
-                        else {
+                        } else {
                             if (ValidationUtils.tooFewSignificantFigures(submittedValue, significantFiguresMin, log) || ValidationUtils.tooManySignificantFigures(submittedValue, significantFiguresMax, log)) {
                                 feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
-                            }
-                            else {
+                            } else {
                                 // Value is non-empty with correct sig figs, now check actual correctness:
                                 Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
                                         significantFiguresMin, significantFiguresMax, log);
