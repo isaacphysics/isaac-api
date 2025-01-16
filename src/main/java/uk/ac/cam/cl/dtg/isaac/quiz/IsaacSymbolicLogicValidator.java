@@ -244,10 +244,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
                         responseCorrect = false;
                         responseMatchType = closestMatchType;
 
-                        log.info("User submitted an answer that was close to an exact match, but not exact "
-                                + "for question " + symbolicLogicQuestion.getId() + ". Choice: "
-                                + closestMatch.getPythonExpression() + ", submitted: "
-                                + submittedLogicFormula.getPythonExpression());
+                        log.debug("User submitted an answer that was close to an exact match, but not exact for question {}. Choice: {}, submitted: {}",
+                                symbolicLogicQuestion.getId(), closestMatch.getPythonExpression(), submittedLogicFormula.getPythonExpression());
                     } else {
                         // This is weak match to a wrong answer; we can't use the feedback for the choice.
                     }
