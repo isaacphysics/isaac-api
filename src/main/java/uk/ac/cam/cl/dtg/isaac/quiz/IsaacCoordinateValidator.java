@@ -147,11 +147,20 @@ public class IsaacCoordinateValidator implements IValidator {
                         String choiceValue = choiceItem.getCoordinates().get(dimensionIndex);
                         String submittedValue = submittedItem.getCoordinates().get(dimensionIndex);
 
-                        Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
-                                significantFiguresMin, significantFiguresMax, log);
+                        boolean valuesMatch = false;
 
-                        boolean valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
-
+                        if (submittedValue.isEmpty()) {
+                            feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
+                        } else {
+                            if (ValidationUtils.tooFewSignificantFigures(submittedValue, significantFiguresMin, log) || ValidationUtils.tooManySignificantFigures(submittedValue, significantFiguresMax, log)) {
+                                feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
+                            } else {
+                                // Value is non-empty with correct sig figs, now check actual correctness:
+                                Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
+                                        significantFiguresMin, significantFiguresMax, log);
+                                valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                            }
+                        }
                         if (!valuesMatch) {
                             allItemsMatch = false;
                             // Exit early on mismatch:
@@ -192,6 +201,9 @@ public class IsaacCoordinateValidator implements IValidator {
             for (int i = 0; i < numDimensions; i++) {
                 String valueA = a.getCoordinates().get(i);
                 String valueB = b.getCoordinates().get(i);
+                if (valueA.isEmpty() || valueB.isEmpty()) {
+                    return valueA.compareTo(valueB);
+                }
                 if (!ValidationUtils.compareNumericValues(valueA, valueB, 3, ValidationUtils.ComparisonType.EQUAL_TO, log)) {
                     return ValidationUtils.compareNumericValues(valueA, valueB, 3, ValidationUtils.ComparisonType.LESS_THAN, log) ? -1 : 1;
                 }

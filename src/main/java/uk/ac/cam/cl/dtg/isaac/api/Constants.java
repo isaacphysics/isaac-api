@@ -230,6 +230,7 @@ public final class Constants {
      * Feedback messages
      */
     public static final String FEEDBACK_NO_ANSWER_PROVIDED = "You did not provide an answer.";
+    public static final String FEEDBACK_INCOMPLETE_ANSWER = "You did not provide a complete answer.";
     public static final String FEEDBACK_UNRECOGNISED_FORMAT = "Your answer is not in a recognised format.";
     public static final String FEEDBACK_UNRECOGNISED_ITEMS = "Your answer contained unrecognised items.";
     public static final String FEEDBACK_NO_CORRECT_ANSWERS = "This question does not have any correct answers.";
