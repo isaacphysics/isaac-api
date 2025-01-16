@@ -30,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -1014,19 +1013,18 @@ public class IsaacNumericValidatorTest {
      * @throws Exception - if we can't execute the private method.
      */
     private void verifyCorrectNumberOfSigFigsNoRange(List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) throws Exception {
-        IsaacNumericValidator test = new IsaacNumericValidator();
         for (String number : numbersToTest) {
 
             for (Integer sigFig : sigFigsToPass) {
-                boolean tooFew = Whitebox.<Boolean>invokeMethod(test, "tooFewSignificantFigures", number, sigFig);
+                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
                 assertFalse("Unexpected too few sig fig for " + number + " @ " + sigFig + "sf", tooFew);
-                boolean tooMany = Whitebox.<Boolean>invokeMethod(test, "tooManySignificantFigures", number, sigFig);
+                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
                 assertFalse("Unexpected too many sig fig for " + number + " @ " + sigFig + "sf", tooMany);
             }
 
             for (Integer sigFig : sigFigsToFail) {
-                boolean tooFew = Whitebox.<Boolean>invokeMethod(test, "tooFewSignificantFigures", number, sigFig);
-                boolean tooMany = Whitebox.<Boolean>invokeMethod(test, "tooManySignificantFigures", number, sigFig);
+                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
                 boolean incorrectSigFig = tooMany || tooFew;
                 assertTrue("Expected incorrect sig fig for " + number + " @ " + sigFig + "sf", incorrectSigFig);
             }
