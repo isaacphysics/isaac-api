@@ -393,7 +393,7 @@ public class QuestionManager {
     }
 
     /**
-     * getQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
+     * getLightweightQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
      *
      * Attempts will not be augmented with the full attempt JSON data.
      *
