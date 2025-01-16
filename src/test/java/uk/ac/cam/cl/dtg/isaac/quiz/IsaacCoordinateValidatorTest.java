@@ -56,6 +56,7 @@ public class IsaacCoordinateValidatorTest {
         // Set up the question object:
         someCoordinateQuestion = new IsaacCoordinateQuestion();
         someCoordinateQuestion.setNumberOfDimensions(2);
+        someCoordinateQuestion.setSignificantFiguresMin(1);
         someCoordinateQuestion.setOrdered(true);
 
         List<Choice> answerList = Lists.newArrayList();
@@ -134,6 +135,7 @@ public class IsaacCoordinateValidatorTest {
         IsaacCoordinateQuestion coordinateQuestion = new IsaacCoordinateQuestion();
         coordinateQuestion.setNumberOfDimensions(2);
         coordinateQuestion.setNumberOfCoordinates(1);  // If this is set, expect feedback on mismatch.
+        coordinateQuestion.setSignificantFiguresMin(1);
 
         CoordinateChoice correctChoice = new CoordinateChoice();
         correctChoice.setItems(List.of(item1));
