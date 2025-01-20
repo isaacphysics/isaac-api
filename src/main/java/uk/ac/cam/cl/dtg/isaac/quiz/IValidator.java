@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +31,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +109,7 @@ public interface IValidator {
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(externalValidatorUrl))
+                    .timeout(Duration.ofMillis(1000))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestString))
                     .build();

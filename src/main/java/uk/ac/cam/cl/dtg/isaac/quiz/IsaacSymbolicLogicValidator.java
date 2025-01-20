@@ -208,7 +208,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
                 } catch (IOException e) {
                     log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
-                    throw new ValidatorUnavailableException("We are having problems marking Logic Questions."
+                    throw new ValidatorUnavailableException("We are having problems marking logic questions."
                             + " Please try again later!");
                 }
 
