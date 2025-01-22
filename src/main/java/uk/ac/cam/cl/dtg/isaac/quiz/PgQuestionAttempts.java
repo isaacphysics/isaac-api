@@ -264,7 +264,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                      + " WHERE user_id = ANY(?) ORDER BY \"timestamp\" ASC";
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
-                = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));
+                = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newLinkedHashMap()));
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query)) {
@@ -282,7 +282,12 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
-    
+
+    @Override
+    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getLightweightQuestionAttempts(Long userId) throws SegueDatabaseException {
+        return this.getLightweightQuestionAttemptsByUsers(Collections.singletonList(userId)).getOrDefault(userId, Collections.emptyMap());
+    }
+
     @Override
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
         getMatchingLightweightQuestionAttempts(final List<Long> userIds, final List<String> allQuestionPageIds)
@@ -461,10 +466,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             Long userId = results.getLong("user_id");
 
             Map<String, Map<String, List<LightweightQuestionValidationResponse>>> mapOfQuestionAttemptsByPage
-                    = mapToAugment.computeIfAbsent(userId, k -> Maps.newHashMap());
+                    = mapToAugment.computeIfAbsent(userId, k -> Maps.newLinkedHashMap());
 
             Map<String, List<LightweightQuestionValidationResponse>> attemptsForThisQuestionPage
-                    = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newHashMap());
+                    = mapOfQuestionAttemptsByPage.computeIfAbsent(questionPageId, k -> Maps.newLinkedHashMap());
 
             List<LightweightQuestionValidationResponse> listOfResponses
                     = attemptsForThisQuestionPage.computeIfAbsent(questionId, k -> Lists.newArrayList());

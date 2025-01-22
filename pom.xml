@@ -11,26 +11,28 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <segue.version>v3.16.20-SNAPSHOT</segue.version>
-        <log4j.version>2.23.1</log4j.version>
-        <resteasy.version>6.2.9.Final</resteasy.version>
+        <log4j.version>2.24.3</log4j.version>
+        <resteasy.version>6.2.11.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
-        <oauth-client.version>1.36.0</oauth-client.version>
-        <jackson.version>2.17.2</jackson.version>
-        <jackson-databind.version>2.17.0</jackson-databind.version>
+        <oauth-client.version>1.37.0</oauth-client.version>
+        <jackson.version>2.18.2</jackson.version>
+        <jackson-databind.version>2.18.2</jackson-databind.version>
         <powermock.version>2.0.9</powermock.version>
         <junit-4.version>4.13.2</junit-4.version>
-        <junit-5.version>5.10.3</junit-5.version>
+        <junit-5.version>5.11.4</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty-version>11.0.22</jetty-version>
+        <jetty-version>11.0.24</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>1.20.0</testcontainers.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <dependency-check.version>9.2.0</dependency-check.version>
+        <dependency-check.version>12.0.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
+        <swagger-core.version>2.2.27</swagger-core.version>
+        <jgit.version>6.10.0.202406032230-r</jgit.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
     </properties>
@@ -50,7 +52,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>2.2</version>
+            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>org.isaacphysics.thirdparty</groupId>
@@ -61,7 +63,7 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-ai-openai</artifactId>
-            <version>1.0.0-beta.8</version>
+            <version>1.0.0-beta.13</version>
         </dependency>
 
         <dependency>
@@ -129,12 +131,12 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>6.9.0.202403050737-r</version>
+            <version>${jgit.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
-            <version>6.9.0.202403050737-r</version>
+            <version>${jgit.version}</version>
         </dependency>
 
         <dependency>
@@ -146,7 +148,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.2.1-jre</version>
+            <version>33.4.0-jre</version>
         </dependency>
 
         <dependency>
@@ -169,7 +171,7 @@
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.44.2</version>
+            <version>1.45.3</version>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -192,12 +194,12 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-jaxrs2-jakarta</artifactId>
-            <version>2.2.21</version>
+            <version>${swagger-core.version}</version>
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
-            <version>2.2.21</version>
+            <version>${swagger-core.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -305,27 +307,27 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.15.0</version>
+            <version>3.17.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-            <version>4.4</version>
+            <version>4.5.0-M3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.11.0</version>
+            <version>1.13.0</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
-            <version>1.8.0</version>
+            <version>1.9.0</version>
         </dependency>
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
-            <version>2.3.2</version>
+            <version>2.5.0</version>
         </dependency>
 
         <dependency>
@@ -362,19 +364,19 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
+            <version>42.7.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-dbcp2</artifactId>
-            <version>2.12.0</version>
+            <version>2.13.0</version>
         </dependency>
 
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.12.7</version>
+            <version>2.13.0</version>
         </dependency>
 
         <dependency>
@@ -386,7 +388,7 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>5.9</version>
+            <version>5.10</version>
         </dependency>
         <dependency>
             <groupId>net.sf.biweekly</groupId>
@@ -445,13 +447,13 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.78.1</version>
+            <version>1.80</version>
         </dependency>
 
         <dependency>
             <groupId>com.maxmind.geoip2</groupId>
             <artifactId>geoip2</artifactId>
-            <version>4.2.0</version>
+            <version>4.2.1</version>
         </dependency>
 
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we

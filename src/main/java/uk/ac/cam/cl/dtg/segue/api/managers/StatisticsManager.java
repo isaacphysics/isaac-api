@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.Stage;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -206,15 +206,14 @@ public class StatisticsManager implements IStatisticsManager {
         LocalDate lastDayOfPreviousAcademicYear =
                 now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
 
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager.getQuestionAttemptsByUser(userOfInterest);
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsByUser = questionManager.getLightweightQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
 
         // Loop through each Question attempted:
-        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
+        for (Entry<String, Map<String, List<LightweightQuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
             ContentDTO contentDTO = questionMap.get(question.getKey());
             if (!(contentDTO instanceof IsaacQuestionPageDTO)) {
-                log.warn(String.format("Excluding unknown question (%s) from user progress statistics for user (%s)!",
-                        question.getKey(), userOfInterest.getId()));
+                log.warn("Excluding unknown question ({}) from user progress statistics for user ({})!", question.getKey(), userOfInterest.getId());
                 // This content is missing, or it is not a question page; either way, exclude it.
                 continue;
             }
@@ -236,7 +235,7 @@ public class StatisticsManager implements IStatisticsManager {
                     LocalDate mostRecentAttemptAtThisQuestionPart = null;
 
                     // Loop through each attempt at the Question Part if they have attempted it:
-                    for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
+                    for (LightweightQuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
                         LocalDate dateAttempted = LocalDateTime.ofInstant(
                                 validationResponse.getDateAttempted().toInstant(), ZoneId.systemDefault()).toLocalDate();
                         if (mostRecentAttemptAtThisQuestionPart == null || dateAttempted.isAfter(mostRecentAttemptAtThisQuestionPart)) {

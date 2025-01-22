@@ -32,6 +32,8 @@ public class SeguePage extends Content {
     private String summary;
     private Boolean deprecated;
     private String supersededBy;
+    private String permissions;
+    private String notes;
 
     @JsonCreator
     public SeguePage(@JsonProperty("id") String id,
@@ -42,14 +44,16 @@ public class SeguePage extends Content {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
             @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("supersededBy") String supersededBy,
-            @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level) {
+            @JsonProperty("tags") Set<String> tags, @JsonProperty("permissions") String permissions,
+            @JsonProperty("notes") String notes, @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.deprecated = deprecated;
         this.supersededBy = supersededBy;
+        this.permissions = permissions;
+        this.notes = notes;
 
     }
 

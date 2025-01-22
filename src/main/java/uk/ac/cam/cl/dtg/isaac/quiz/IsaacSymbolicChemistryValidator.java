@@ -296,7 +296,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     log.error(
                             "Failed to check formula with chemistry checker. Is the server running? Not trying again."
                     );
-                    throw new ValidatorUnavailableException("We are having problems marking Chemistry Questions."
+                    throw new ValidatorUnavailableException("We are having problems marking chemistry equation questions."
                             + " Please try again later!");
                 }
 

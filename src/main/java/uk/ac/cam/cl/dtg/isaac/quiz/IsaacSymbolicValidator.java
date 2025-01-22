@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.io.IOException;
+import java.net.http.HttpTimeoutException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -208,8 +209,12 @@ public class IsaacSymbolicValidator implements IValidator {
                     }
 
                 } catch (IOException e) {
-                    log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
-                    throw new ValidatorUnavailableException("We are having problems marking Symbolic Questions."
+                    if (e instanceof HttpTimeoutException) {
+                        log.error("Timeout waiting for symbolic checker! Not trying again.");
+                    } else {
+                        log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
+                    }
+                    throw new ValidatorUnavailableException("We are having problems marking symbolic questions."
                             + " Please try again later!");
                 }
 
@@ -242,10 +247,8 @@ public class IsaacSymbolicValidator implements IValidator {
                         responseCorrect = false;
                         responseMatchType = closestMatchType;
 
-                        log.info("User submitted an answer that was close to an exact match, but not exact "
-                                + "for question " + symbolicQuestion.getId() + ". Choice: "
-                                + closestMatch.getPythonExpression() + ", submitted: "
-                                + submittedFormula.getPythonExpression());
+                        log.debug("User submitted an answer that was close to an exact match, but not exact for question {}. Choice: {}, submitted: {}",
+                                symbolicQuestion.getId(), closestMatch.getPythonExpression(), submittedFormula.getPythonExpression());
                     } else {
                         // This is weak match to a wrong answer; we can't use the feedback for the choice.
                     }

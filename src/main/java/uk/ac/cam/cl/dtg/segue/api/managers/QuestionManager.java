@@ -393,6 +393,23 @@ public class QuestionManager {
     }
 
     /**
+     * getLightweightQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
+     *
+     * Attempts will not be augmented with the full attempt JSON data.
+     *
+     * @param user
+     *            - with the session information included.
+     * @return map of question attempts (QuestionPageId -> QuestionID -> [LightweightQuestionValidationResponse] or an empty map.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getLightweightQuestionAttemptsByUser(final RegisteredUserDTO user)
+            throws SegueDatabaseException {
+        return this.questionAttemptPersistenceManager.getLightweightQuestionAttempts(user.getId());
+    }
+
+
+    /**
      * Return all the attempts of a user at a specified page ID prefix.
      *
      * The map returned by this method is in the same format as {@link #getQuestionAttemptsByUser(AbstractSegueUserDTO)}

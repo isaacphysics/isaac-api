@@ -1,14 +1,14 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.TimeInterval;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * IQuestionAttemptManager. Objects implementing this interface are responsible for recording question attempts
@@ -44,6 +44,18 @@ public interface IQuestionAttemptManager {
      *             - If there is a database error.
      */
     Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts(final Long userId)
+            throws SegueDatabaseException;
+
+    /**
+     * Get a users question attempts in lightweight form, without full answer data.
+     *
+     * @param userId
+     *            - the id of the user to search for.
+     * @return the questionAttempts map or an empty map if the user has not yet registered any attempts.
+     * @throws SegueDatabaseException
+     *             - If there is a database error.
+     */
+    Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getLightweightQuestionAttempts(final Long userId)
             throws SegueDatabaseException;
 
     /**
