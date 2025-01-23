@@ -1,6 +1,6 @@
 ARG BUILD_TARGET="production"
 
-FROM maven:3.9.4-eclipse-temurin-11 AS builder
+FROM maven:3.9.9-eclipse-temurin-11 AS builder
 
 ARG BUILD_TARGET
 ARG BUILD_VERSION
