@@ -65,7 +65,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLLMFreeTextValidator;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacOldSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicLogicValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
@@ -1302,21 +1301,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
                 properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
-    }
-
-    /**
-     * Gets an instance of the older chemistry question validator.
-     *
-     * @return IsaacOldSymbolicChemistryValidator preconfigured to work with the specified checker.
-     */
-    @Deprecated
-    @Provides
-    @Singleton
-    @Inject
-    private static IsaacOldSymbolicChemistryValidator getOldSymbolicChemistryValidator(AbstractConfigLoader properties) {
-
-        return new IsaacOldSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_OLD_HOST),
-                properties.getProperty(Constants.CHEMISTRY_CHECKER_OLD_PORT));
     }
 
     /**
