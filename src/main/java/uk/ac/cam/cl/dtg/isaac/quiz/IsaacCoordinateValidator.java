@@ -42,9 +42,7 @@ public class IsaacCoordinateValidator implements IValidator {
         IsaacCoordinateQuestion coordinateQuestion = (IsaacCoordinateQuestion) question;
         CoordinateChoice submittedChoice = (CoordinateChoice) answer;
 
-        // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
-        int significantFiguresMax = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
-        int significantFiguresMin = Objects.requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        boolean shouldValidateWithSigFigs = null != coordinateQuestion.getSignificantFiguresMin() && null != coordinateQuestion.getSignificantFiguresMax();
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -151,16 +149,21 @@ public class IsaacCoordinateValidator implements IValidator {
 
                         if (submittedValue.isEmpty()) {
                             feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
-                        } else {
-                            if (ValidationUtils.tooFewSignificantFigures(submittedValue, significantFiguresMin, log) || ValidationUtils.tooManySignificantFigures(submittedValue, significantFiguresMax, log)) {
+                        } else if (shouldValidateWithSigFigs) {
+                            Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
+                                    coordinateQuestion.getSignificantFiguresMin(), coordinateQuestion.getSignificantFiguresMax(), log);
+
+                            boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMin(), log);
+                            boolean tooManySF = ValidationUtils.tooManySignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMax(), log);
+                            if (tooFewSF || tooManySF) {
                                 feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
                             } else {
-                                // Value is non-empty with correct sig figs, now check actual correctness:
-                                Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
-                                        significantFiguresMin, significantFiguresMax, log);
                                 valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
                             }
+                        } else {
+                            valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
                         }
+
                         if (!valuesMatch) {
                             allItemsMatch = false;
                             // Exit early on mismatch:

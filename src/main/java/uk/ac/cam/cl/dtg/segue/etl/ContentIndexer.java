@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -1145,6 +1146,26 @@ public class ContentIndexer {
                         continue;
                     }
                     numberItems = items;
+                }
+            }
+        }
+
+        if (content instanceof IsaacCoordinateQuestion) {
+            IsaacCoordinateQuestion q = (IsaacCoordinateQuestion) content;
+
+            if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
+                // Both bounds need to be present, or both not present
+                this.registerContentProblem(content, String.format("Coordinate Question: %s has only one significant figure bound."
+                        + " Sig figs will be ignored for this question; add both min and max to fix this.", q.getId()),
+                        indexProblemCache);
+            } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
+                // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
+                if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
+                        || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
+                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has broken "
+                            + "significant figure rules! The upper bound may be below the lower bound, or "
+                            + "either bound might be less than 1 - the question will be unanswerable unless "
+                            + "this is fixed.", indexProblemCache);
                 }
             }
         }
