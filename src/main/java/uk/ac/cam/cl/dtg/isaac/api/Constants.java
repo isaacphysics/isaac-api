@@ -198,6 +198,7 @@ public final class Constants {
         VIEW_MY_ASSIGNMENTS,
         VIEW_GAMEBOARD_BY_ID,
         VIEW_GITHUB_CODE,
+        VIEW_GLOSSARY_PAGE,
         LEAVE_GAMEBOARD_BUILDER,
         SAVE_GAMEBOARD,
         CLIENT_SIDE_ERROR,
