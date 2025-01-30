@@ -82,6 +82,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +109,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.CompetitionEntryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -964,6 +966,105 @@ public class EventsFacade extends AbstractIsaacFacade {
           "One of the users requested is already booked or reserved on this event."
               + " Unable to create a duplicate booking.")
           .toResponse();
+    } catch (NoUserException e) {
+      return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
+    } catch (EventIsCancelledException e) {
+      return SegueErrorResponse.getBadRequestResponse(EXCEPTION_MESSAGE_CANNOT_BOOK_CANCELLED_EVENT);
+    }
+  }
+
+  /**
+   * Add competition reservations for the given users.
+   *
+   * @param request so we can determine who is making the request
+   * @param eventId event ID
+   * @param entryDTO DTO containing candidate IDs and submission link
+   * @return the list of bookings/reservations
+   */
+  @POST
+  @Path("{event_id}/competitionEntries")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Add event reservations in the competition for the given users.")
+  public final Response createCompetitionEntry(@Context final HttpServletRequest request,
+                                               @PathParam("event_id") final String eventId,
+                                               final CompetitionEntryDTO entryDTO) {
+    RegisteredUserDTO reservingUser;
+    IsaacEventPageDTO event;
+    Map<String, String> additionalInformation = new HashMap<>();
+
+
+    try {
+      event = this.getRawEventDTOById(eventId);
+    } catch (SegueDatabaseException | ContentManagerException e) {
+      event = null;
+    }
+    if (null == event) {
+      return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
+    }
+    if (!EventBookingManager.eventAllowsGroupBookings(event)) {
+      return new SegueErrorResponse(Status.FORBIDDEN, "This event does not accept group bookings.").toResponse();
+    }
+
+    List<RegisteredUserDTO> usersToReserve = Lists.newArrayList();
+    try {
+      reservingUser = userManager.getCurrentRegisteredUser(request);
+      additionalInformation.put("submissionURL", entryDTO.getSubmissionURL());
+      additionalInformation.put("groupName", entryDTO.getGroupName());
+      additionalInformation.put("teacherName", reservingUser.getGivenName() + " " + reservingUser.getFamilyName());
+      additionalInformation.put("teacherId", reservingUser.getId().toString());
+      additionalInformation.put("school", reservingUser.getSchoolId());
+
+      // Tutors cannot yet manage event bookings for their tutees, so shouldn't be added to this list
+      if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN)
+          .contains(reservingUser.getRole())) {
+        return SegueErrorResponse.getIncorrectRoleResponse();
+      }
+
+      List<EventBookingDTO> bookings = new ArrayList<>();
+      // Enforce permission
+      for (Long userId : entryDTO.getEntrantIds()) {
+        RegisteredUserDTO userToReserve = userManager.getUserDTOById(userId);
+        if (userAssociationManager.hasPermission(reservingUser, userToReserve)) {
+          usersToReserve.add(userToReserve);
+          BookingStatus status = bookingManager.getBookingStatus(event.getId(), userToReserve.getId());
+          if (null != status) {
+            bookingManager.deleteBooking(event, userToReserve);
+          }
+          bookings.add(
+              bookingManager.createBooking(event, userToReserve, additionalInformation, BookingStatus.CONFIRMED)
+          );
+        } else {
+          return new SegueErrorResponse(Status.FORBIDDEN,
+              "You do not have permission to book or reserve some of these users onto this event.")
+              .toResponse();
+        }
+      }
+
+      this.getLogManager().logEvent(reservingUser, request,
+          SegueServerLogType.EVENT_RESERVATIONS_CREATED,
+          Map.of(
+              EVENT_ID_FKEY_FIELDNAME, event.getId(),
+              USER_ID_FKEY_FIELDNAME, reservingUser.getId(),
+              USER_ID_LIST_FKEY_FIELDNAME, entryDTO.getEntrantIds().toArray(),
+              BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
+          ));
+
+      return Response.ok(this.mapper.mapList(bookings, EventBookingDTO.class, EventBookingDTO.class)).build();
+
+    } catch (NoUserLoggedInException e) {
+      return SegueErrorResponse.getNotLoggedInResponse();
+    } catch (SegueDatabaseException e) {
+      String errorMsg = "Database error occurred while trying to reserve space for a user onto an event.";
+      log.error(errorMsg, e);
+      return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+    } catch (EventIsFullException e) {
+      return new SegueErrorResponse(Status.CONFLICT,
+          "There are not enough spaces available for this event. Please try again with fewer users.")
+          .toResponse();
+    } catch (DuplicateBookingException e) {
+      return SegueErrorResponse.getBadRequestResponse(
+                "One of the users requested is already booked or reserved on this event."
+                  + " Unable to create a duplicate booking.");
     } catch (NoUserException e) {
       return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate one of the users specified.");
     } catch (EventIsCancelledException e) {

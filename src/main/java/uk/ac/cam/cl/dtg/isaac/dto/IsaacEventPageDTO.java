@@ -76,6 +76,9 @@ public class IsaacEventPageDTO extends ContentDTO {
   private Boolean allowGroupReservations;
 
   private Boolean privateEvent;
+
+  private Boolean competitionEvent;
+
   private Hub hub;
 
   private String meetingUrl;
@@ -131,6 +134,7 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("groupReservationLimit") final Integer groupReservationLimit,
       @JsonProperty("allowGroupReservations") final Boolean allowGroupReservations,
       @JsonProperty("privateEvent") final Boolean privateEvent,
+      @JsonProperty("competitionEvent") final Boolean competitionEvent,
       @JsonProperty("hub") final Hub hub,
       @JsonProperty("meetingUrl") final String meetingUrl) {
     super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
@@ -152,6 +156,7 @@ public class IsaacEventPageDTO extends ContentDTO {
         groupReservationLimit != null ? groupReservationLimit : EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
     this.allowGroupReservations = allowGroupReservations;
     this.privateEvent = privateEvent;
+    this.competitionEvent = competitionEvent;
     this.hub = hub;
     this.meetingUrl = meetingUrl;
   }
@@ -574,6 +579,14 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   public void setPrivateEvent(Boolean privateEvent) {
     this.privateEvent = privateEvent;
+  }
+
+  public Boolean isCompetitionEvent() {
+    return competitionEvent;
+  }
+
+  public void setCompetitionEvent(Boolean competitionEvent) {
+    this.competitionEvent = competitionEvent;
   }
 
   public Hub getHub() {
