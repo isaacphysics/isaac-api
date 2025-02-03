@@ -441,7 +441,6 @@ public class GameboardPersistenceManager {
 
         for (ContentDTO c : questionsForGameboard) {
             GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-            questionInfo.setUri(uriManager.generateApiUrl(c));
             gameboardReadyQuestions.put(c.getId(), questionInfo);
         }
 
@@ -517,7 +516,6 @@ public class GameboardPersistenceManager {
             questionInfo.setContentType(contentDescriptor.getContentType());
             questionInfo.setCreationContext(contentDescriptor.getContext());
         }
-        questionInfo.setUri(uriManager.generateApiUrl(content));
         return questionInfo;
     }
 
