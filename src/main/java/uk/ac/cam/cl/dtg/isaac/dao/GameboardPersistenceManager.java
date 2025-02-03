@@ -601,19 +601,6 @@ public class GameboardPersistenceManager {
      *
      * @param gameboardDO
      *            - to convert
-     * @return gameboard DTO
-     */
-    private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
-        return this.convertToGameboardDTO(gameboardDO, true);
-    }
-
-    /**
-     * Convert form a gameboard DO to a Gameboard DTO.
-     *
-     * This method relies on the api to fully resolve questions.
-     *
-     * @param gameboardDO
-     *            - to convert
      * @param populateGameboardItems
      *            - true if we should fully populate the gameboard DTO with
      *            gameboard items false if just the question ids will do?
@@ -730,7 +717,7 @@ public class GameboardPersistenceManager {
         
         // first try temporary storage
         if (this.gameboardNonPersistentStorage.getIfPresent(gameboardId) != null) {
-            return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
+            return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId), fullyPopulate);
         }
 
         String query = "SELECT * FROM gameboards WHERE id = ?;";
@@ -785,7 +772,7 @@ public class GameboardPersistenceManager {
         for (String gameboardId : gameboardIds) {
             GameboardDO cachedGameboard = this.gameboardNonPersistentStorage.getIfPresent(gameboardId);
             if (null != cachedGameboard) {
-                cachedGameboards.add(this.convertToGameboardDTO(cachedGameboard));
+                cachedGameboards.add(this.convertToGameboardDTO(cachedGameboard, fullyPopulate));
             } else {
                 gameboardIdsForQuery.add(gameboardId);
             }
