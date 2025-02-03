@@ -9,6 +9,7 @@ import java.util.Objects;
 @JsonContentType("coordinateItem")
 public class CoordinateItem extends Item {
     private List<String> coordinates;
+    // These two are needed to load old attempts out of the database:
     @Deprecated
     private String x;
     @Deprecated
