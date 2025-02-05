@@ -4,6 +4,7 @@ import java.util.List;
 
 public class CoordinateItemDTO extends ItemDTO {
     private List<String> coordinates;
+    // These two are needed to load old attempts out of the database:
     @Deprecated
     private String x;
     @Deprecated
