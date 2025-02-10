@@ -975,31 +975,29 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
                                                         final HttpServletResponse response, final RegisteredUser user, final String newPassword,
-                                                        final boolean rememberMe, final Set<AuthenticationCaveat> sessionCaveats) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException,
-            EmailMustBeVerifiedException, InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
-        Validate.isTrue(user.getId() == null,
-                "When creating a new user the user id must not be set.");
+                                                        final boolean rememberMe, final Set<AuthenticationCaveat> sessionCaveats)
+            throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException, EmailMustBeVerifiedException,
+            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
 
-        if (this.findUserByEmail(user.getEmail()) != null) {
-            throw new DuplicateAccountException();
-        }
+        Validate.isTrue(user.getId() == null, "When creating a new user the user id must not be set.");
+
+        MapperFacade mapper = this.dtoMapper;
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
+
+        // We want to map via a DTO first to make sure that the user cannot set fields that aren't exposed to them:
+        RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
+        RegisteredUser userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
+
+        // -----  Validate the user object and details:  -----
+
+        // Ensure password is valid.
+        authenticator.ensureValidPassword(newPassword);
 
         // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
         if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
-            log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
+            log.warn("User attempted to register with Isaac email address '{}'!", user.getEmail());
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
-
-        RegisteredUser userToSave;
-        MapperFacade mapper = this.dtoMapper;
-
-        // We want to map to DTO first to make sure that the user cannot
-        // change fields that aren't exposed to them
-        RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
-
-        // This is a new registration
-        userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
 
         // Set defaults
         // keep teacher role if requested and direct teacher signup allowed
@@ -1016,7 +1014,7 @@ public class UserAccountManager implements IUserAccountManager {
         userToSave.setLastUpdated(new Date());
 
         // Before save we should validate the user for mandatory fields.
-        if (!this.isUserValid(userToSave)) {
+        if (!this.isUserEmailValid(userToSave)) {
             throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
 
@@ -1024,7 +1022,6 @@ public class UserAccountManager implements IUserAccountManager {
         if (!isUserNameValid(user.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
-
         if (!isUserNameValid(user.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
@@ -1034,18 +1031,20 @@ public class UserAccountManager implements IUserAccountManager {
             throw new UnknownCountryCodeException("The country provided is not known.");
         }
 
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
+        // Critically, and after other validation, check this is not a duplicate registration attempt:
+        if (this.findUserByEmail(user.getEmail()) != null) {
+            throw new DuplicateAccountException();
+        }
 
+        // -----  Save the user object:  -----
+
+        // Create and set a verification token:
         authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
 
-        // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
-        authenticator.ensureValidPassword(newPassword);
-
-        // save the user to get the userId
+        // Save the user to get the userId
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
 
-        // create password for the user
+        // Save password for the user
         authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
 
         // send an email confirmation and set up verification
@@ -1163,7 +1162,7 @@ public class UserAccountManager implements IUserAccountManager {
         // Before save we should validate the user for mandatory fields.
         // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
         // invalid email, and (b) that users with an invalid email can change their email to a valid one!
-        if (!this.isUserValid(userToSave)) {
+        if (!this.isUserEmailValid(userToSave)) {
             throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
 
@@ -1859,7 +1858,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param userToValidate - the user to validate.
      * @return true if it meets the internal storage requirements, false if not.
      */
-    private boolean isUserValid(final RegisteredUser userToValidate) {
+    private boolean isUserEmailValid(final RegisteredUser userToValidate) {
         return userToValidate.getEmail() != null && !userToValidate.getEmail().isEmpty()
                 && userToValidate.getEmail().matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)");
     }
