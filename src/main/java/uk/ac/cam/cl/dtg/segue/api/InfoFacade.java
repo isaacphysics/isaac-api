@@ -102,19 +102,20 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
      */
     @GET
-    @Path("segue_environment")
+    @Path("/segue_environment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get the mode that the API is currently running in: DEV or PROD.")
     public final Response getSegueEnvironment(@Context final Request request) {
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
+        String environment = this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT);
+
+        EntityTag etag = new EntityTag(environment.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_THIRTY_DAYS);
         if (cachedResponse != null) {
             return cachedResponse;
         }
 
-        ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueEnvironment",
-                this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT)).build();
+        ImmutableMap<String, String> result = ImmutableMap.of("segueEnvironment", environment);
 
         return Response.ok(result).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_THIRTY_DAYS, true)).tag(etag)
                 .build();
