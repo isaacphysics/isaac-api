@@ -76,7 +76,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return segue version as a string wrapped in a response.
      */
     @GET
-    @Path("segue_version")
+    @Path("/segue_version")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the currently running API build version.")
     public final Response getSegueAppVersion() {
@@ -119,7 +119,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("symbolic_checker/ping")
+    @Path("/symbolic_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the symbolic question checker is running.")
     public Response pingEqualityChecker() {
@@ -134,7 +134,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("chemistry_checker/ping")
+    @Path("/chemistry_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the chemistry question checker is running.")
     public Response pingChemistryChecker() {
@@ -149,7 +149,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("etl/ping")
+    @Path("/etl/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the content indexer is running.")
     public Response pingETLServer() {
@@ -164,7 +164,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("elasticsearch/ping")
+    @Path("/elasticsearch/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether elasticsearch is running.")
     public Response pingElasticSearch() {
@@ -179,7 +179,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("quartz/ping")
+    @Path("/quartz/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether Quartz job scheduler is currently running.")
     public Response pingQuartzScheduler() {
