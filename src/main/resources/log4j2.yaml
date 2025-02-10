@@ -13,7 +13,7 @@ Configuration:
       - name: Console_Appender
         target: SYSTEM_OUT
         PatternLayout:
-          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %m%n"
+          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %encode{%m}{CRLF}%n"
 
     RollingFile:
       - name: Isaac_Appender
@@ -23,7 +23,7 @@ Configuration:
           TimeBasedTriggeringPolicy:
             interval: 10
         PatternLayout:
-          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %m%n"
+          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c{1}:%L - %encode{%m}{CRLF}%n"
 
       - name: Perf_Appender
         fileName: ${LOG_PATH_VAR}/perf-${LOG_FILE_SUFFIX}.log
@@ -32,7 +32,7 @@ Configuration:
           TimeBasedTriggeringPolicy:
             interval: 10
         PatternLayout:
-          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %m%n"
+          pattern: "[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %encode{%m}{CRLF}%n"
 
       - name: Audit_Appender
         fileName: ${LOG_PATH_VAR}/audit-${LOG_FILE_SUFFIX}.log
@@ -41,7 +41,7 @@ Configuration:
           TimeBasedTriggeringPolicy:
             interval: 10
         PatternLayout:
-          pattern: "%d{yyyy-MM-dd HH:mm:ss},%m%n"
+          pattern: "%d{yyyy-MM-dd HH:mm:ss},%encode{%m}{CRLF}%n"
 
   Loggers:
       Root:
