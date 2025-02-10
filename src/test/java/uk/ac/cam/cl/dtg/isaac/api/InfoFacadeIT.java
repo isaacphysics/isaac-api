@@ -11,7 +11,8 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.easymock.EasyMock.createNiceMock;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 // NOTE: This was a proof of concept but I'm not too sure we actually need this entire test suite.
@@ -22,7 +23,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() throws RuntimeException, IOException {
         SegueJobService segueJobService = createNiceMock(SegueJobService.class); // new SegueJobService(new ArrayList<>(), postgresSqlDb);
-        infoFacade = new InfoFacade(properties, contentManager, segueJobService, logManager);
+        infoFacade = new InfoFacade(properties, segueJobService, logManager);
     }
 
     @Test
@@ -50,24 +51,6 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
             assertNotNull(entity);
             assertNotNull(entity.get("segueEnvironment"));
             assertEquals("DEV", entity.get("segueEnvironment"));
-        }
-    }
-
-    @Test
-    public void getLiveVersion_respondsOK() {
-        // /info/content_version/live_version
-        Response response = infoFacade.getLiveVersionInfo();
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-    }
-
-    @Test
-    public void getLiveVersion_respondsWithCorrectVersion() {
-        // /info/content_version/live_version
-        Response response = infoFacade.getLiveVersionInfo();
-        if (response.getEntity() instanceof ImmutableMap) {
-            ImmutableMap<String, String> entity = (ImmutableMap<String, String>) response.getEntity();
-            assertNotNull(entity);
-            assertNotNull(entity.get("liveVersion"));
         }
     }
 

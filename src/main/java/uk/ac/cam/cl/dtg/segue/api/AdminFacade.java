@@ -94,6 +94,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1141,6 +1142,58 @@ public class AdminFacade extends AbstractSegueFacade {
     }
 
     /**
+     * This method return a json response containing version related information.
+     *
+     * @param request - to determine access rights.
+     *
+     * @return a version info as json response
+     */
+    @GET
+    @Path("/live_version")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the current content version commit SHA.")
+    public final Response getLiveVersionInfo(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            ImmutableMap<String, String> result = ImmutableMap.of(
+                    "liveVersion", this.contentManager.getCurrentContentSHA());
+
+            return Response.ok(result).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * This method return a json response containing version related information.
+     *
+     * @param request - to determine access rights.
+     *
+     * @return a version info as json response
+     */
+    @GET
+    @Path("/live_version/cached")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get all currently indexed content versions' commit SHAs.")
+    public final Response getCachedVersions(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            ImmutableMap<String, Collection<String>> result = ImmutableMap.of(
+                    "cachedVersions", this.contentManager.getCachedContentSHAList());
+
+            return Response.ok(result).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
      * This method will allow the live version served by the site to be changed.
      *
      * @param request
@@ -1152,6 +1205,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @POST
     @Path("/live_version/{version}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Set a content version as the live version by commit SHA.")
     public synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
                                                    @PathParam("version") final String version) {
 
