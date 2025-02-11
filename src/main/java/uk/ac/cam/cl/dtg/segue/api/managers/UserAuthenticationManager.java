@@ -1163,6 +1163,9 @@ public class UserAuthenticationManager {
         }
 
         String sessionHMAC = sessionInformation.get(HMAC);
+        if (null == sessionHMAC) {
+            return false;
+        }
 
         String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, caveatFlags);
         return MessageDigest.isEqual(ourHMAC.getBytes(), sessionHMAC.getBytes());
