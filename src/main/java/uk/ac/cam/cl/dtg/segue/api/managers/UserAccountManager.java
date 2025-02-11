@@ -1014,7 +1014,7 @@ public class UserAccountManager implements IUserAccountManager {
         userToSave.setLastUpdated(new Date());
 
         // Before save we should validate the user for mandatory fields.
-        if (!this.isUserEmailValid(userToSave)) {
+        if (!isUserEmailValid(userToSave.getEmail())) {
             throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
 
@@ -1162,7 +1162,7 @@ public class UserAccountManager implements IUserAccountManager {
         // Before save we should validate the user for mandatory fields.
         // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
         // invalid email, and (b) that users with an invalid email can change their email to a valid one!
-        if (!this.isUserEmailValid(userToSave)) {
+        if (!isUserEmailValid(userToSave.getEmail())) {
             throw new MissingRequiredFieldException("The email address provided is invalid.");
         }
 
@@ -1853,14 +1853,14 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * IsUserValid This function will check that the user object is valid.
+     * This function will check that the user's email address is valid.
      *
-     * @param userToValidate - the user to validate.
+     * @param email - the user email to validate.
      * @return true if it meets the internal storage requirements, false if not.
      */
-    private boolean isUserEmailValid(final RegisteredUser userToValidate) {
-        return userToValidate.getEmail() != null && !userToValidate.getEmail().isEmpty()
-                && userToValidate.getEmail().matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)");
+    private static boolean isUserEmailValid(final String email) {
+        return email != null && !email.isEmpty()
+                && email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)");
     }
 
     /**
@@ -1869,7 +1869,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param name - the name to validate.
      * @return true if the name is valid, false otherwise.
      */
-    public static final boolean isUserNameValid(final String name) {
+    public static boolean isUserNameValid(final String name) {
         return null != name && name.length() <= USER_NAME_MAX_LENGTH && !USER_NAME_FORBIDDEN_CHARS_REGEX.matcher(name).find()
                 && !name.isEmpty();
     }
