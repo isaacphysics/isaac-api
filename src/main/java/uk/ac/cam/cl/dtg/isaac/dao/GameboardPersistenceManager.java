@@ -441,7 +441,6 @@ public class GameboardPersistenceManager {
 
         for (ContentDTO c : questionsForGameboard) {
             GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-            questionInfo.setUri(uriManager.generateApiUrl(c));
             gameboardReadyQuestions.put(c.getId(), questionInfo);
         }
 
@@ -517,7 +516,6 @@ public class GameboardPersistenceManager {
             questionInfo.setContentType(contentDescriptor.getContentType());
             questionInfo.setCreationContext(contentDescriptor.getContext());
         }
-        questionInfo.setUri(uriManager.generateApiUrl(content));
         return questionInfo;
     }
 
@@ -592,19 +590,6 @@ public class GameboardPersistenceManager {
         }
 
         return gameboardDTOs;
-    }
-
-    /**
-     * Convert form a gameboard DO to a Gameboard DTO.
-     *
-     * This method relies on the api to fully resolve questions.
-     *
-     * @param gameboardDO
-     *            - to convert
-     * @return gameboard DTO
-     */
-    private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
-        return this.convertToGameboardDTO(gameboardDO, true);
     }
 
     /**
@@ -730,7 +715,7 @@ public class GameboardPersistenceManager {
         
         // first try temporary storage
         if (this.gameboardNonPersistentStorage.getIfPresent(gameboardId) != null) {
-            return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
+            return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId), fullyPopulate);
         }
 
         String query = "SELECT * FROM gameboards WHERE id = ?;";
@@ -785,7 +770,7 @@ public class GameboardPersistenceManager {
         for (String gameboardId : gameboardIds) {
             GameboardDO cachedGameboard = this.gameboardNonPersistentStorage.getIfPresent(gameboardId);
             if (null != cachedGameboard) {
-                cachedGameboards.add(this.convertToGameboardDTO(cachedGameboard));
+                cachedGameboards.add(this.convertToGameboardDTO(cachedGameboard, fullyPopulate));
             } else {
                 gameboardIdsForQuery.add(gameboardId);
             }

@@ -13,11 +13,6 @@ public class IsaacCoordinateQuestionDTO extends IsaacQuestionBaseDTO {
 
     private List<String> placeholderValues;
 
-    @Deprecated
-    private String placeholderXValue;
-    @Deprecated
-    private String placeholderYValue;
-
     public Integer getNumberOfCoordinates() {
         return numberOfCoordinates;
     }
@@ -40,26 +35,6 @@ public class IsaacCoordinateQuestionDTO extends IsaacQuestionBaseDTO {
 
     public void setOrdered(final Boolean ordered) {
         this.ordered = ordered;
-    }
-
-    @Deprecated
-    public String getPlaceholderXValue() {
-        return placeholderXValue;
-    }
-
-    @Deprecated
-    public void setPlaceholderXValue(String placeholderXValue) {
-        this.placeholderXValue = placeholderXValue;
-    }
-
-    @Deprecated
-    public String getPlaceholderYValue() {
-        return placeholderYValue;
-    }
-
-    @Deprecated
-    public void setPlaceholderYValue(String placeholderYValue) {
-        this.placeholderYValue = placeholderYValue;
     }
 
     public List<String> getPlaceholderValues() {

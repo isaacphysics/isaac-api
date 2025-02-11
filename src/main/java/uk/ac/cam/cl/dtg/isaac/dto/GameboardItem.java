@@ -34,7 +34,6 @@ public class GameboardItem {
     private String title;
     private String subtitle;
     private String description;
-    private String uri;
     private List<String> tags;
     private List<AudienceContext> audience;
     private AudienceContext creationContext;
@@ -92,7 +91,6 @@ public class GameboardItem {
         this.setTitle(original.getTitle());
         this.setSubtitle(original.getSubtitle());
         this.setDescription(original.getDescription());
-        this.setUri(original.getUri());
         this.setAudience(original.getAudience());
         this.setLevel(original.getLevel());
         this.setDifficulty(original.getDifficulty());
@@ -179,25 +177,6 @@ public class GameboardItem {
      */
     public final void setDescription(final String description) {
         this.description = description;
-    }
-
-    /**
-     * Gets the uri.
-     *
-     * @return the uri
-     */
-    public final String getUri() {
-        return uri;
-    }
-
-    /**
-     * Sets the uri.
-     *
-     * @param uri
-     *            the uri to set
-     */
-    public final void setUri(final String uri) {
-        this.uri = uri;
     }
 
     /**

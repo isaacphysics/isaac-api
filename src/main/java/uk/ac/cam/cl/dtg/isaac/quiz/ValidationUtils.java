@@ -249,4 +249,34 @@ public final class ValidationUtils {
         }
     }
 
+    /**
+     * Verify if an answer given is to too few significant figures.
+     *
+     * @param valueToCheck      - the value as a string from the user to check.
+     * @param minAllowedSigFigs - the minimum number of significant figures that is expected for the answer to be correct.
+     * @return true if too few, false if not.
+     */
+    public static boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs, final Logger log) {
+        log.debug("\t[tooFewSignificantFigures]");
+
+        ValidationUtils.SigFigResult sigFigsFromUser = ValidationUtils.extractSignificantFigures(valueToCheck, log);
+
+        return sigFigsFromUser.sigFigsMax < minAllowedSigFigs;
+    }
+
+    /**
+     * Verify if an answer given is to too many significant figures.
+     *
+     * @param valueToCheck      - the value as a string from the user to check.
+     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
+     * @return true if too many, false if not.
+     */
+    public static boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs, final Logger log) {
+        log.debug("\t[tooManySignificantFigures]");
+
+        ValidationUtils.SigFigResult sigFigsFromUser = ValidationUtils.extractSignificantFigures(valueToCheck, log);
+
+        return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
+    }
+
 }

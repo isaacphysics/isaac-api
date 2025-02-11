@@ -69,6 +69,7 @@ import java.io.IOException;
 import java.net.HttpCookie;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
@@ -1162,9 +1163,12 @@ public class UserAuthenticationManager {
         }
 
         String sessionHMAC = sessionInformation.get(HMAC);
+        if (null == sessionHMAC) {
+            return false;
+        }
 
         String ourHMAC = calculateSessionHMAC(hmacKey, supposedUserId, sessionDate, userSessionToken, caveatFlags);
-        return ourHMAC.equals(sessionHMAC);
+        return MessageDigest.isEqual(ourHMAC.getBytes(), sessionHMAC.getBytes());
     }
 
     private String getJSessionIdFromRequest(final HttpServletRequest request) throws InvalidSessionException {

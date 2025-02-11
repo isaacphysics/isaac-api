@@ -131,7 +131,7 @@ public class IsaacNumericValidator implements IValidator {
 
             // Step 2 - do sig fig checking (unless specified otherwise by question):
             if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
-                if (tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin)) {
+                if (ValidationUtils.tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin, log)) {
                     // If too few sig figs then give feedback about this.
 
                     // If we have unit information available put it in our response.
@@ -146,7 +146,7 @@ public class IsaacNumericValidator implements IValidator {
                     bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                             false, validUnits, new Date());
                 }
-                if (tooManySignificantFigures(answerFromUser.getValue(), significantFiguresMax)
+                if (ValidationUtils.tooManySignificantFigures(answerFromUser.getValue(), significantFiguresMax, log)
                         && bestResponse.isCorrect()) {
                     // If (and only if) _correct_, but to too many sig figs, give feedback about this.
 
@@ -311,36 +311,6 @@ public class IsaacNumericValidator implements IValidator {
         } else {
             return bestResponse;
         }
-    }
-
-    /**
-     * Helper method to verify if the answer given is to too few significant figures.
-     *
-     * @param valueToCheck      - the value as a string from the user to check.
-     * @param minAllowedSigFigs - the minimum number of significant figures that is expected for the answer to be correct.
-     * @return true if too few, false if not.
-     */
-    private boolean tooFewSignificantFigures(final String valueToCheck, final int minAllowedSigFigs) {
-        log.debug("\t[tooFewSignificantFigures]");
-
-        ValidationUtils.SigFigResult sigFigsFromUser = ValidationUtils.extractSignificantFigures(valueToCheck, log);
-
-        return sigFigsFromUser.sigFigsMax < minAllowedSigFigs;
-    }
-
-    /**
-     * Helper method to verify if the answer given is to too many significant figures.
-     *
-     * @param valueToCheck      - the value as a string from the user to check.
-     * @param maxAllowedSigFigs - the maximum number of significant figures that is expected for the answer to be correct.
-     * @return true if too many, false if not.
-     */
-    private boolean tooManySignificantFigures(final String valueToCheck, final int maxAllowedSigFigs) {
-        log.debug("\t[tooManySignificantFigures]");
-
-        ValidationUtils.SigFigResult sigFigsFromUser = ValidationUtils.extractSignificantFigures(valueToCheck, log);
-
-        return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
     }
 
     /**

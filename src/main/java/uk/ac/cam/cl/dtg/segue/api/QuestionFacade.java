@@ -513,10 +513,16 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Test a list of choices with some expected answer values")
+    @Operation(summary = "Test a list of choices with some expected answer values.",
+               description = "At present only isaacFreeTextQuestions are supported.")
     public Response testQuestion(@Context final HttpServletRequest request,
                                  @QueryParam("type") final String questionType, final String testJson) {
         try {
+            // TODO: review whether this endpoint is still required?
+            if (null == questionType || !questionType.equals("isaacFreeTextQuestion")) {
+                return SegueErrorResponse.getBadRequestResponse("Only isaacFreeTextQuestions are supported.");
+            }
+
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             if (!isUserStaff(userManager, currentUser)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();

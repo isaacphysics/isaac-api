@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
@@ -42,7 +41,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Collection;
 import java.util.Objects;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -57,24 +55,18 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 @Tag(name = "/info")
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
-
-    private final GitContentManager contentManager;
     private final SegueJobService segueJobService;
 
     /**
      * @param properties
      *            - to allow access to system properties.
-     * @param contentManager
-     *            - So that metadata about content can be accessed.
      * @param logManager
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
-                      final SegueJobService segueJobService,
+    public InfoFacade(final AbstractConfigLoader properties, final SegueJobService segueJobService,
                       final ILogManager logManager) {
         super(properties, logManager);
-        this.contentManager = contentManager;
         this.segueJobService = segueJobService;
     }
 
@@ -84,7 +76,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return segue version as a string wrapped in a response.
      */
     @GET
-    @Path("segue_version")
+    @Path("/segue_version")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the currently running API build version.")
     public final Response getSegueAppVersion() {
@@ -102,55 +94,23 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
      */
     @GET
-    @Path("segue_environment")
+    @Path("/segue_environment")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get the mode that the API is currently running in: DEV or PROD.")
     public final Response getSegueEnvironment(@Context final Request request) {
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
+        String environment = this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT);
+
+        EntityTag etag = new EntityTag(environment.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_THIRTY_DAYS);
         if (cachedResponse != null) {
             return cachedResponse;
         }
 
-        ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueEnvironment",
-                this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT)).build();
+        ImmutableMap<String, String> result = ImmutableMap.of("segueEnvironment", environment);
 
         return Response.ok(result).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_THIRTY_DAYS, true)).tag(etag)
                 .build();
-    }
-
-    /**
-     * This method return a json response containing version related information.
-     * 
-     * @return a version info as json response
-     */
-    @GET
-    @Path("content_versions/live_version")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get the current content version commit SHA.")
-    public final Response getLiveVersionInfo() {
-        ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("liveVersion",
-                this.contentManager.getCurrentContentSHA()).build();
-
-        return Response.ok(result).build();
-    }
-
-    /**
-     * This method return a json response containing version related information.
-     * 
-     * @return a version info as json response
-     */
-    @GET
-    @Path("content_versions/cached")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get all currently indexed content commit SHAs.")
-    public final Response getCachedVersions() {
-
-        ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "cachedVersions", this.contentManager.getCachedContentSHAList()).build();
-
-        return Response.ok(result).build();
     }
 
     /**
@@ -159,7 +119,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("symbolic_checker/ping")
+    @Path("/symbolic_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the symbolic question checker is running.")
     public Response pingEqualityChecker() {
@@ -174,7 +134,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("chemistry_checker/ping")
+    @Path("/chemistry_checker/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the chemistry question checker is running.")
     public Response pingChemistryChecker() {
@@ -189,7 +149,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("etl/ping")
+    @Path("/etl/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether the content indexer is running.")
     public Response pingETLServer() {
@@ -204,7 +164,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("elasticsearch/ping")
+    @Path("/elasticsearch/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether elasticsearch is running.")
     public Response pingElasticSearch() {
@@ -219,7 +179,7 @@ public class InfoFacade extends AbstractSegueFacade {
      * @return json success true or false
      */
     @GET
-    @Path("quartz/ping")
+    @Path("/quartz/ping")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Check whether Quartz job scheduler is currently running.")
     public Response pingQuartzScheduler() {
