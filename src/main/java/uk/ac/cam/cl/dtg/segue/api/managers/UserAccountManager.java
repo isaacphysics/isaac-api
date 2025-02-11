@@ -994,7 +994,7 @@ public class UserAccountManager implements IUserAccountManager {
         authenticator.ensureValidPassword(newPassword);
 
         // Ensure nobody registers with Isaac email addresses. Users can change emails to restricted ones by verifying them, however.
-        if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(user.getEmail()).find()) {
+        if (null != restrictedSignupEmailRegex && restrictedSignupEmailRegex.matcher(userToSave.getEmail()).find()) {
             log.warn("User attempted to register with Isaac email address '{}'!", user.getEmail());
             throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
@@ -1019,10 +1019,10 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // validate names
-        if (!isUserNameValid(user.getGivenName())) {
+        if (!isUserNameValid(userToSave.getGivenName())) {
             throw new InvalidNameException("The given name provided is an invalid length or contains forbidden characters.");
         }
-        if (!isUserNameValid(user.getFamilyName())) {
+        if (!isUserNameValid(userToSave.getFamilyName())) {
             throw new InvalidNameException("The family name provided is an invalid length or contains forbidden characters.");
         }
 
@@ -1032,7 +1032,7 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         // Critically, and after other validation, check this is not a duplicate registration attempt:
-        if (this.findUserByEmail(user.getEmail()) != null) {
+        if (this.findUserByEmail(userToSave.getEmail()) != null) {
             throw new DuplicateAccountException();
         }
 
