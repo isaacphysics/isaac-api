@@ -15,10 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
+import uk.ac.cam.cl.dtg.util.DropZone;
+
+import java.util.List;
+
 /**
  * Figure DTO.
  *
  */
 public class FigureDTO extends ImageDTO {
+    private List<DropZone> dropZones;
 
+    public List<DropZone> getDropZones() {
+        return dropZones;
+    }
+
+    public void setDropZones(List<DropZone> dropZones) {
+        this.dropZones = dropZones;
+    }
 }

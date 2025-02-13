@@ -16,6 +16,9 @@
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.FigureDTO;
+import uk.ac.cam.cl.dtg.util.DropZone;
+
+import java.util.List;
 
 /**
  * Figure class is a specialisation of an Image.
@@ -23,5 +26,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.FigureDTO;
 @DTOMapping(FigureDTO.class)
 @JsonContentType("figure")
 public class Figure extends Image {
+    private List<DropZone> dropZones;
 
+    public List<DropZone> getDropZones() {
+        return dropZones;
+    }
+
+    public void setDropZones(List<DropZone> dropZones) {
+        this.dropZones = dropZones;
+    }
 }
