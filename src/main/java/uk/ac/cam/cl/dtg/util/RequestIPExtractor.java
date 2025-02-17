@@ -49,27 +49,15 @@ public final class RequestIPExtractor {
             log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
             ip = ip.substring(ip.lastIndexOf(',') + 1).trim();
         }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            // Isaac adds this custom header which could be used:
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            // A reverse proxy can add this custom header which could be used:
             ip = request.getHeader("X-Real-IP");
         }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_CLIENT_IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            // In production, this will usually be the router address which may be unhelpful.
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            // Behind a reverse proxy, this will usually be the router address which may be unhelpful.
             ip = request.getRemoteAddr();
         }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             // We *must* return a *valid* inet field for postgres! Null would be
             // acceptable, but is used for internal log events; 'unknown' is not allowed!
             // So if all else fails, use the impossible source address '0.0.0.0' to mark this.
