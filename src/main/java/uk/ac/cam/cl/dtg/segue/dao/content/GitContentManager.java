@@ -471,7 +471,7 @@ public class GitContentManager {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
                             .strategy(Strategy.SIMPLE)
                             .required(true));
-                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME)
+                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME, TAGS_FIELDNAME)
                         .contains(entry.getKey())) {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
                             .strategy(Strategy.SIMPLE)
