@@ -453,10 +453,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Get the quiz
             IsaacQuizDTO quiz = quizManager.findQuiz(quizId);
 
-            // TODO: Remove this deprecated check:
-            if (!quiz.getVisibleToStudents()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
-            }
             // Check it is visible to this user's role:
             if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
