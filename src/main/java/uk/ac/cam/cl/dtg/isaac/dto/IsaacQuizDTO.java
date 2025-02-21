@@ -36,8 +36,6 @@ import java.util.Set;
  */
 @JsonContentType("isaacQuiz")
 public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleOrId {
-    @Deprecated
-    private boolean visibleToStudents;
     private List<String> hiddenFromRoles;
     private QuizFeedbackMode defaultFeedbackMode;
     private ContentDTO rubric;
@@ -67,7 +65,6 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
             @JsonProperty("supersededBy") String supersededBy,
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("level") Integer level,
-            @JsonProperty("visibleToStudents") boolean visibleToStudents,
             @JsonProperty("hiddenFromRoles") List<String> hiddenFromRoles,
             @JsonProperty("defaultFeedbackMode") QuizFeedbackMode defaultFeedbackMode,
             @JsonProperty("rubric") ContentDTO rubric) {
@@ -75,7 +72,6 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, deprecated, supersededBy, tags, level);
 
-        this.visibleToStudents = visibleToStudents;
         this.hiddenFromRoles = hiddenFromRoles;
         this.defaultFeedbackMode = defaultFeedbackMode;
         this.rubric = rubric;
@@ -86,16 +82,6 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
      */
     public IsaacQuizDTO() {
 
-    }
-
-    @Deprecated
-    public boolean getVisibleToStudents() {
-        return visibleToStudents;
-    }
-
-    @Deprecated
-    public void setVisibleToStudents(boolean visibleToStudents) {
-        this.visibleToStudents = visibleToStudents;
     }
 
     public List<String> getHiddenFromRoles() {

@@ -34,8 +34,6 @@ import java.util.Set;
 @DTOMapping(IsaacQuizDTO.class)
 @JsonContentType("isaacQuiz")
 public class IsaacQuiz extends SeguePage {
-    @Deprecated
-    private boolean visibleToStudents;
     private List<String> hiddenFromRoles;
     private Content rubric;
 
@@ -59,14 +57,12 @@ public class IsaacQuiz extends SeguePage {
             @JsonProperty("permissions") String permissions,
             @JsonProperty("notes") String notes,
             @JsonProperty("level") Integer level,
-            @JsonProperty("visibleToStudents") boolean visibleToStudents,
             @JsonProperty("hiddenFromRoles") List<String> hiddenFromRoles,
             @JsonProperty("rubric") Content rubric) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, deprecated, supersededBy, tags, permissions, notes, level);
 
-        this.visibleToStudents = visibleToStudents;
         this.hiddenFromRoles = hiddenFromRoles;
         this.rubric = rubric;
     }
@@ -76,16 +72,6 @@ public class IsaacQuiz extends SeguePage {
      */
     public IsaacQuiz() {
 
-    }
-
-    @Deprecated
-    public boolean getVisibleToStudents() {
-        return visibleToStudents;
-    }
-
-    @Deprecated
-    public void setVisibleToStudents(boolean visibleToStudents) {
-        this.visibleToStudents = visibleToStudents;
     }
 
     public Content getRubric() {
