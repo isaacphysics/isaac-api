@@ -16,10 +16,6 @@
 
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,24 +26,21 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 
 public class QuizFacadeIT extends IsaacIntegrationTest {
@@ -144,7 +137,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     /**
-     * Tests that quizzes with visibleToStudents=false and hiddenFromRoles=[TUTOR] are not considered available to a tutor.
+     * Tests that quizzes with hiddenFromRoles=[TUTOR] are not considered available to a tutor.
      */
     @Test
     public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNonInvisibleToStudentOrHiddenFromRoleQuizzes() throws Exception {

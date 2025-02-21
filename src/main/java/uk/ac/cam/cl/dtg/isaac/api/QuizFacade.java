@@ -194,8 +194,6 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // Tutors cannot see quizzes that are invisible to students
-            boolean showOnlyStudentVisibleQuizzes = !isUserTeacherOrAbove(userManager, user);
             String userRoleString = user.getRole().name();
 
             // Cache the list of quizzes based on current content version, user's role, and startIndex:
@@ -213,7 +211,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes, userRoleString, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -365,7 +363,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param httpServletRequest - so that we can extract user information.
      * @param quizAssignmentId   - the ID of the quiz assignment for this user.
      * @return a QuizAttemptDTO
-     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
+     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visible to the user's role to be attempted freely.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}/attempt")
@@ -425,7 +423,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Start a quiz attempt for a free quiz (one that is visibleToStudents).
+     * Start a quiz attempt for a free quiz (one that is visible to the user's role).
      *
      * This checks that quiz has not already been assigned. (When a quiz has been set to a student,
      * they are locked out of all previous feedback for that quiz and prevented from starting the
