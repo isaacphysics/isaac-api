@@ -1011,8 +1011,10 @@ public class EventsFacade extends AbstractIsaacFacade {
       additionalInformation.put("submissionURL", entryDTO.getSubmissionURL());
       additionalInformation.put("groupName", entryDTO.getGroupName());
       additionalInformation.put("teacherName", reservingUser.getGivenName() + " " + reservingUser.getFamilyName());
+      additionalInformation.put("teacherEmail", reservingUser.getEmail());
       additionalInformation.put("teacherId", reservingUser.getId().toString());
       additionalInformation.put("school", reservingUser.getSchoolId());
+      additionalInformation.put("schoolName", reservingUser.getSchoolOther());
 
       // Tutors cannot yet manage event bookings for their tutees, so shouldn't be added to this list
       if (!Arrays.asList(Role.TEACHER, Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN)
