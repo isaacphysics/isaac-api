@@ -176,7 +176,7 @@ CREATE TABLE anonymous.student_engagement_v2_events AS
             OR event_type = 'VIEW_HINT' AND event_details ->> 'hintIndex' = '0'
         )
     UNION
-        (SELECT user_id, timestamp from workshop_join_events);
+        (SELECT user_id, timestamp from anonymous.workshop_join_events);
 
 CREATE TABLE anonymous.teacher_engagement_v2_events AS
     SELECT user_id, timestamp
@@ -202,4 +202,4 @@ CREATE TABLE anonymous.teacher_engagement_v2_events AS
             OR event_type = 'VIEW_HINT' AND event_details ->> 'hintIndex' = '0'
         )
     UNION
-        (SELECT user_id, timestamp from workshop_join_events);
+        (SELECT user_id, timestamp from anonymous.workshop_join_events);
