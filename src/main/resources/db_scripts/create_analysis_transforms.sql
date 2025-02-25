@@ -151,8 +151,8 @@ FROM anonymous.users
 
 CREATE TABLE  workshop_join_events AS (
     SELECT memberships.user_id, memberships.created AS timestamp
-    FROM group_memberships AS memberships
-        JOIN groups ON groups.id = memberships.group_id
+    FROM anonymous.group_memberships AS memberships
+        JOIN anonymous.groups ON groups.id = memberships.group_id
     WHERE groups.owner_id = '7fd4393b821465bfc25cdf6e0d43811f949723169c79c1a28ad710d4d8db2dee'
 );
 
