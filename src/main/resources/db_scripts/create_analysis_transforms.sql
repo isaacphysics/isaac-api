@@ -149,7 +149,7 @@ FROM anonymous.users
          LEFT JOIN anonymous.nspl21_postcodes AS postcodes ON schools.postcode = postcodes.pcd
          LEFT JOIN anonymous.imd_deprivation AS imd_deprivation ON postcodes.lsoa21 = imd_deprivation.lsoa_code;
 
-CREATE TABLE  workshop_join_events AS (
+CREATE TABLE anonymous.workshop_join_events AS (
     SELECT memberships.user_id, memberships.created AS timestamp
     FROM anonymous.group_memberships AS memberships
         JOIN anonymous.groups ON groups.id = memberships.group_id
