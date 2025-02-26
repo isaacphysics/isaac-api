@@ -1074,6 +1074,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is a problem accessing the content repository.
      */
+    @Deprecated
     public List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
             final Long randomSeed) throws ContentManagerException {
         // get some questions

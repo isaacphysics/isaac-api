@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -561,6 +560,7 @@ public class GitContentManager {
         return finalResults;
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit
@@ -568,6 +568,7 @@ public class GitContentManager {
         return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit, @Nullable final Long randomSeed
