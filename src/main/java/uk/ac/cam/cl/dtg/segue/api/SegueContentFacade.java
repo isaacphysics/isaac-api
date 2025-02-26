@@ -19,18 +19,10 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import jakarta.annotation.Nullable;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -39,9 +31,7 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -49,17 +39,14 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 /**
  * Segue Content Facade
  * 
- * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
- * the Segue api for use only on the Rutherford site.
+ * This facade lists metadata about content on the platform.
  * 
  */
 @Path("/content")
 @Tag(name = "/content")
 public class SegueContentFacade extends AbstractSegueFacade {
-    private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
     private final GitContentManager contentManager;
-    private final ContentService contentService;
 
     /**
      * @param properties
@@ -72,94 +59,10 @@ public class SegueContentFacade extends AbstractSegueFacade {
      */
     @Inject
     public SegueContentFacade(final AbstractConfigLoader properties, final GitContentManager contentManager,
-                              final ILogManager logManager, final ContentService contentService) {
+                              final ILogManager logManager) {
         super(properties, logManager);
 
         this.contentManager = contentManager;
-        this.contentService = contentService;
-    }
-
-    /**
-     * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
-     *
-     * @param fieldsToMatch
-     *            - List of Boolean search clauses that must be true for the returned content.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
-     */
-    public final ResultsWrapper<ContentDTO> findMatchingContent(final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
-
-        return contentService.findMatchingContent(fieldsToMatch, startIndex, limit);
-    }
-
-    /**
-     * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied. Providing the results in a
-     * randomised order.
-     *
-     * This method is the same as {@link #findMatchingContentRandomOrder(List, Integer, Integer, Long)} but uses
-     * a default random seed.
-     *
-     * @param fieldsToMatch
-     *            - List of Boolean search clauses that must be true for the returned content.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
-     */
-    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            final Integer startIndex, final Integer limit) {
-        return this.findMatchingContentRandomOrder(fieldsToMatch, startIndex, limit, null);
-    }
-
-    /**
-     * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied. Providing the results in a
-     * randomised order.
-     *
-     * @param fieldsToMatch
-     *            - List of Boolean search clauses that must be true for the returned content.
-     * @param startIndex
-     *            - the start index for the search results.
-     * @param limit
-     *            - the max number of results to return.
-     * @param randomSeed
-     *            - to allow some control over the random order of the results.
-     * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing null if none found.
-     */
-    public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-            final List<GitContentManager.BooleanSearchClause> fieldsToMatch,
-            final Integer startIndex, final Integer limit, final Long randomSeed) {
-
-        Integer newLimit = DEFAULT_RESULTS_LIMIT;
-        Integer newStartIndex = 0;
-        if (limit != null) {
-            newLimit = limit;
-        }
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
-
-        ResultsWrapper<ContentDTO> c = null;
-
-        // Deserialize object into POJO of specified type, providing one exists.
-        try {
-            c = this.contentManager.findByFieldNamesRandomOrder(fieldsToMatch, newStartIndex,
-                    newLimit, randomSeed);
-        } catch (IllegalArgumentException e) {
-            log.error("Unable to map content object.", e);
-            throw e;
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-        }
-
-        return c;
     }
 
     /**
