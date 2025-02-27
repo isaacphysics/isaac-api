@@ -391,6 +391,7 @@ public class GitContentManager {
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
+                null,
                 sortOrder
         );
 
@@ -413,9 +414,10 @@ public class GitContentManager {
      */
     public final ResultsWrapper<ContentDTO> questionSearch(
             @Nullable final String searchString,
+            @Nullable final Long randomSeed,
             final Map<String, Set<String>> filterFieldNamesToValues,
-            final boolean fasttrack, final Integer startIndex,
-            final Integer limit, final boolean showNoFilterContent, final boolean showSupersededContent
+            final Integer startIndex, final Integer limit,
+            final boolean fasttrack, final boolean showNoFilterContent, final boolean showSupersededContent
     ) throws ContentManagerException {
 
         // Set question type (content type) based on fasttrack status
@@ -484,9 +486,9 @@ public class GitContentManager {
             }
         }
 
-        // If no search terms were provided, sort by ascending alphabetical order of title.
+        // If no search terms or random seed, sort by ascending alphabetical order of title.
         Map<String, Constants.SortOrder> sortOrder = null;
-        if (searchTerms.isEmpty()) {
+        if (searchTerms.isEmpty() && null == randomSeed) {
             sortOrder = new HashMap<>();
             sortOrder.put(
                     Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -500,6 +502,7 @@ public class GitContentManager {
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
+                randomSeed,
                 sortOrder
         );
 

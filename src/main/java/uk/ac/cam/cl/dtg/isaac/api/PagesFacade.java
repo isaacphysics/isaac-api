@@ -289,9 +289,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to provide a list of questions.
-     * 
-     * @param request
-     *            - used to determine if we can return a cache response.
+     *
      * @param ids
      *            - the ids of the concepts to request.
      * @param searchString
@@ -314,19 +312,19 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all question page objects matching the provided criteria.")
-    public final Response getQuestionList(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest,
+    public final Response getQuestionList(@Context final HttpServletRequest httpServletRequest,
             @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
-            @QueryParam("subjects") final String subjects,
-            @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
+            @QueryParam("subjects") final String subjects, @QueryParam("fields") final String fields,
+            @QueryParam("topics") final String topics,
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
-            @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
-            @QueryParam("questionCategories") final String questionCategories,
+            @QueryParam("examBoards") final String examBoards,
+            @QueryParam("books") final String books, @QueryParam("questionCategories") final String questionCategories,
             @QueryParam("statuses") final String statuses,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit) {
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit,
+            @QueryParam("randomSeed") final Long randomSeed) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
@@ -444,10 +442,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.questionSearch(
                         validatedSearchString,
+                        randomSeed,
                         fieldsToMatch,
-                        fasttrack,
                         nextSearchStartIndex,
                         limit,
+                        fasttrack,
                         showNoFilterContent,
                         showSupersededContent
                 );
