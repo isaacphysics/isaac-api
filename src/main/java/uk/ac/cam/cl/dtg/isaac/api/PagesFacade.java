@@ -335,9 +335,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         // TODO: the limit ought to be lower when filtering by attempt status
-        if (null != paramLimit && paramLimit > MAX_SEARCH_RESULT_LIMIT) {
+        if (null != paramLimit && (paramLimit > MAX_SEARCH_RESULT_LIMIT || paramLimit <= 0)) {
             log.warn("Question search requested {} results!", paramLimit);
-            return SegueErrorResponse.getBadRequestResponse("Maximum search result limit exceeded!");
+            return SegueErrorResponse.getBadRequestResponse("Unsupported search result limit!");
         }
 
         try {
