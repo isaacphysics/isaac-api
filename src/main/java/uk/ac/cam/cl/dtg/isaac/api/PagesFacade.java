@@ -334,6 +334,12 @@ public class PagesFacade extends AbstractIsaacFacade {
                     String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
         }
 
+        // TODO: the limit ought to be lower when filtering by attempt status
+        if (null != paramLimit && paramLimit > MAX_SEARCH_RESULT_LIMIT) {
+            log.warn("Question search requested {} results!", paramLimit);
+            return SegueErrorResponse.getBadRequestResponse("Maximum search result limit exceeded!");
+        }
+
         try {
             user = userManager.getCurrentUser(httpServletRequest);
         } catch (SegueDatabaseException e) {
@@ -375,6 +381,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
         logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
         logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
+        logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
 
         this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
 

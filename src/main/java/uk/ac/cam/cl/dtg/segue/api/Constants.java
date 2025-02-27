@@ -442,6 +442,7 @@ public final class Constants {
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
+    public static final Integer MAX_SEARCH_RESULT_LIMIT = 350;
 
     public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
 
@@ -481,6 +482,7 @@ public final class Constants {
     public static final String SEARCH_STRING_FIELDNAME = "searchString";
     public static final String QUESTION_STATUSES_FIELDNAME = "questionStatuses";
     public static final String START_INDEX_FIELDNAME = "startIndex";
+    public static final String LIMIT_FIELDNAME = "limit";
     public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
