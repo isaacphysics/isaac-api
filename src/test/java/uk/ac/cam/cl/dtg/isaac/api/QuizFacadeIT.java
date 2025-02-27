@@ -140,7 +140,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
      * Tests that quizzes with hiddenFromRoles=[TUTOR] are not considered available to a tutor.
      */
     @Test
-    public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNonInvisibleToStudentOrHiddenFromRoleQuizzes() throws Exception {
+    public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNoHiddenFromRoleQuizzes() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult teacherLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
@@ -155,11 +155,11 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check status code is OK
         assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
 
-        // check invisible-to-student and hidden-from-tutor-role quizzes are not returned as available
+        // check hidden-from-tutor-role quizzes are not returned as available
         @SuppressWarnings("unchecked") ResultsWrapper<QuizSummaryDTO> responseBody =
                 (ResultsWrapper<QuizSummaryDTO>) getQuizzesResponse.getEntity();
         assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_QUIZ_ID)));
-        assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
         assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
     }
 
@@ -183,28 +183,6 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check the quiz is returned for preview
         IsaacQuizDTO responseBody = (IsaacQuizDTO) previewQuizResponse.getEntity();
         assertEquals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID, responseBody.getId());
-    }
-
-    @Test
-    public void previewQuizEndpoint_previewHiddenFromRoleStudentQuizAsTutor_fails() throws Exception {
-        // Arrange
-        // log in as Tutor, create request
-        LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
-        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
-        replay(assignQuizRequest);
-
-        // Act
-        // make request
-        Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), assignQuizRequest,
-                QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID);
-
-        // Assert
-        // check status code is FORBIDDEN
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), previewQuizResponse.getStatus());
-
-        // check an error message was returned
-        SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
-        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
     }
 
     @Test

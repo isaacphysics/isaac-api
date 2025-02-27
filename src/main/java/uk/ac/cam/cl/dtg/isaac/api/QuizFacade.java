@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
@@ -334,12 +333,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quiz = quizQuestionManager.augmentQuestionsForPreview(quiz);
 
-            // Check this user is actually allowed to preview this quiz. A tutor counts as both a student and teacher
-            // in this check
-            if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
-                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR)
-                    || (quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR))
-            ) {
+            // Check this user is actually allowed to preview this quiz.
+            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
