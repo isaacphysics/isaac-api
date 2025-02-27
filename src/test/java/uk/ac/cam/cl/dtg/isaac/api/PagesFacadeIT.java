@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 
 public class PagesFacadeIT extends IsaacIntegrationTest{
@@ -56,7 +57,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", "", false, 0, -1, null);
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null);
 
         // Assert
         // check status code is OK
@@ -82,7 +83,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", "", "", "", "", "", "", false, 0, -1, null);
+                ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null);
 
         // Assert
         // check status code is OK
@@ -108,7 +109,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", "", true, 0, -1, null);
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", "", true, 0, MAX_SEARCH_RESULT_LIMIT, null);
 
         // Assert
         // check status code is OK
@@ -135,7 +136,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
                 String.format("%s,%s", ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), "",
-                "", "", "", "", "", "", "", "", "", "", "", false, 0, -1, null);
+                "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null);
 
         // Assert
         // check status code is OK
@@ -161,7 +162,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                "", "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, -1, null);
+                "", "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null);
 
         // Assert
         // check status code is OK
