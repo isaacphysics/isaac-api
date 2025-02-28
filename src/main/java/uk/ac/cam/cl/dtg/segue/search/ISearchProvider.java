@@ -17,9 +17,9 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
@@ -108,9 +108,10 @@ public interface ISearchProvider {
             final String... fields
     ) throws SegueSearchException;
 
-    public ResultsWrapper<String> nestedMatchSearch(
+    ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
+            @NotNull final BooleanInstruction matchInstruction, @Nullable Long randomSeed,
+            @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException;
 
     /**
