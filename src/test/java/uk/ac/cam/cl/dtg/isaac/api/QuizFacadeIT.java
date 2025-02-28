@@ -16,10 +16,6 @@
 
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,24 +26,21 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 
 public class QuizFacadeIT extends IsaacIntegrationTest {
@@ -144,10 +137,10 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     }
 
     /**
-     * Tests that quizzes with visibleToStudents=false and hiddenFromRoles=[TUTOR] are not considered available to a tutor.
+     * Tests that quizzes with hiddenFromRoles=[TUTOR] are not considered available to a tutor.
      */
     @Test
-    public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNonInvisibleToStudentOrHiddenFromRoleQuizzes() throws Exception {
+    public void getAvailableQuizzesEndpoint_getQuizzesAsTutor_returnsNoHiddenFromRoleQuizzes() throws Exception {
         // Arrange
         // log in as Tutor, create request
         LoginResult teacherLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
@@ -162,11 +155,11 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check status code is OK
         assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
 
-        // check invisible-to-student and hidden-from-tutor-role quizzes are not returned as available
+        // check hidden-from-tutor-role quizzes are not returned as available
         @SuppressWarnings("unchecked") ResultsWrapper<QuizSummaryDTO> responseBody =
                 (ResultsWrapper<QuizSummaryDTO>) getQuizzesResponse.getEntity();
         assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_QUIZ_ID)));
-        assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID)));
         assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
     }
 
@@ -190,28 +183,6 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check the quiz is returned for preview
         IsaacQuizDTO responseBody = (IsaacQuizDTO) previewQuizResponse.getEntity();
         assertEquals(QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID, responseBody.getId());
-    }
-
-    @Test
-    public void previewQuizEndpoint_previewHiddenFromRoleStudentQuizAsTutor_fails() throws Exception {
-        // Arrange
-        // log in as Tutor, create request
-        LoginResult tutorLogin = loginAs(httpSession, TEST_TUTOR_EMAIL, TEST_TUTOR_PASSWORD);
-        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{tutorLogin.cookie});
-        replay(assignQuizRequest);
-
-        // Act
-        // make request
-        Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), assignQuizRequest,
-                QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID);
-
-        // Assert
-        // check status code is FORBIDDEN
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), previewQuizResponse.getStatus());
-
-        // check an error message was returned
-        SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
-        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
     }
 
     @Test
