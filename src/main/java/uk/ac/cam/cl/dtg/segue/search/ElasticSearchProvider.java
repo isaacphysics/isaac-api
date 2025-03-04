@@ -161,16 +161,27 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> nestedMatchSearch(
-            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
+    public ResultsWrapper<String> nestedMatchSearch(final String indexBase, final String indexType,
+                                                    final Integer startIndex, final Integer limit,
+                                                    @NotNull final BooleanInstruction matchInstruction,
+                                                    @Nullable final Long randomSeed,
+                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException {
+
         if (null == indexBase || null == indexType) {
             log.warn("A required field is missing. Unable to execute search.");
             throw new SegueSearchException("A required field is missing. Unable to execute search.");
         }
 
-        BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
+        QueryBuilder query = this.processMatchInstructions(matchInstruction);
+
+        if (null == sortOrder && null != randomSeed) {
+            RandomScoreFunctionBuilder randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
+            randomScoreFunctionBuilder.seed(randomSeed);
+            randomScoreFunctionBuilder.setField("_seq_no");
+            query = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
+        }
+
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
     }
 
