@@ -533,7 +533,7 @@ public final class Constants {
   public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
   public static final int EVENT_DATE_EPOCH_MULTIPLIER = 1000;
-  public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 14;
+  public static final Integer EVENT_RESERVATION_CLOSE_INTERVAL_DAYS = 3;
   public static final Integer EVENT_GROUP_RESERVATION_DEFAULT_LIMIT = 10;
 
   /**

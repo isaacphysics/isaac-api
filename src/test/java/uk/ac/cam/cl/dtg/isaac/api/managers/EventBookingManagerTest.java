@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import static java.time.ZoneId.getAvailableZoneIds;
 import static java.time.ZoneOffset.UTC;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
@@ -26,13 +27,18 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.easymock.EasyMock;
+import org.easymock.IArgumentMatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -901,7 +907,7 @@ class EventBookingManagerTest {
           .andReturn(null).once();
       expect(dummyEventBookingPersistenceManager
           .createBooking(eq(dummyTransaction), eq(testCase.event.getId()), eq(testCase.student1.getId()),
-              eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), anyObject()))
+              eq(testCase.teacher.getId()), eq(BookingStatus.RESERVED), reservationCloseDateMatcher()))
           .andReturn(testCase.student1Booking).once();
 
       expect(dummyEventBookingPersistenceManager
@@ -1859,5 +1865,32 @@ class EventBookingManagerTest {
     IsaacEventPageDTO testEvent = prepareIsaacEventPageDto("someEventId", numberOfPlaces, tags, someFutureDate);
     testEvent.setEmailEventDetails("Some Details");
     return testEvent;
+  }
+
+  private static Map<String, String> reservationCloseDateMatcher() {
+    EasyMock.reportMatcher(new IArgumentMatcher() {
+
+      @Override
+      public boolean matches(Object argument) {
+        if (argument instanceof Map<?, ?> map) {
+          Object reservationClosedDate = map.get("reservationCloseDate");
+
+          if (reservationClosedDate instanceof String) {
+            LocalDate comparisonDate = LocalDate.parse((String) reservationClosedDate, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
+            Instant expectedDate = Instant.now().plus(3, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+            comparisonDate.atStartOfDay(ZoneId.of("Europe/London"));
+            Instant actualDate = ZonedDateTime.parse((String) reservationClosedDate).toInstant().truncatedTo(ChronoUnit.DAYS);
+            return expectedDate.equals(actualDate);
+          }
+        }
+        return false;
+      }
+
+      @Override
+      public void appendTo(StringBuffer buffer) {
+        buffer.append("Expected close date wrong: ");
+      }
+    });
+    return null;
   }
 }
