@@ -141,16 +141,18 @@ public class MailJetApiClientWrapper {
    * @param firstName               - first name of user for contact details
    * @param role                    - role of user for contact details
    * @param emailVerificationStatus - verification status of user for contact details
+   * @param stage                   - stages of GCSE or ALevel
    * @throws MailjetException - if underlying MailjetClient throws an exception
    */
   public void updateUserProperties(final String mailjetId, final String firstName, final String role,
-                                   final String emailVerificationStatus) throws MailjetException {
+                                   final String emailVerificationStatus, String stage) throws MailjetException {
     requireNonNull(mailjetId);
     MailjetRequest request = new MailjetRequest(Contactdata.resource, mailjetId)
         .property(Contactdata.DATA, new JSONArray()
             .put(new JSONObject().put("Name", "firstname").put("value", firstName))
             .put(new JSONObject().put("Name", "role").put("value", role))
             .put(new JSONObject().put("Name", "verification_status").put("value", emailVerificationStatus))
+            .put(new JSONObject().put("Name", "stage").put("value", stage))
         );
     MailjetResponse response = mailjetClient.put(request);
     if (response.getTotal() != 1) {

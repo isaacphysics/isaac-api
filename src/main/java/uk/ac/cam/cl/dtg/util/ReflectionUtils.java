@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -78,4 +79,12 @@ public class ReflectionUtils {
   public static <T> Set<Class<? extends T>> getSubTypes(Set<Class<?>> classes, Class<T> parentClass) {
     return classes.stream().filter(parentClass::isAssignableFrom).map(c -> (Class<T>) c).collect(Collectors.toSet());
   }
+
+  public static <T> T invokePrivateMethod(Object object, String methodName, Class<?>[] parameterTypes, Object[] args)
+      throws Exception {
+    Method method = object.getClass().getDeclaredMethod(methodName, parameterTypes);
+    method.setAccessible(true);
+    return (T) method.invoke(object, args);
+  }
+
 }

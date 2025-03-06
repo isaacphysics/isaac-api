@@ -30,12 +30,14 @@ public class UserExternalAccountChanges {
   private EmailVerificationStatus emailVerificationStatus;
   private Boolean allowsNewsEmails;
   private Boolean allowsEventsEmails;
+  private String stage;
 
   public UserExternalAccountChanges(final Long userId, final String providerUserId, final String accountEmail,
                                     final Role role,
                                     final String givenName, final Boolean deleted,
                                     final EmailVerificationStatus emailVerificationStatus,
-                                    final Boolean allowsNewsEmails, final Boolean allowsEventsEmails) {
+                                    final Boolean allowsNewsEmails, final Boolean allowsEventsEmails,
+                                    final String stage) {
     this.userId = userId;
     this.providerUserId = providerUserId;
     this.accountEmail = accountEmail;
@@ -45,6 +47,7 @@ public class UserExternalAccountChanges {
     this.emailVerificationStatus = emailVerificationStatus;
     this.allowsNewsEmails = allowsNewsEmails;
     this.allowsEventsEmails = allowsEventsEmails;
+    this.stage = stage;
   }
 
   public Long getUserId() {
@@ -119,4 +122,11 @@ public class UserExternalAccountChanges {
     this.allowsEventsEmails = allowsEventsEmails;
   }
 
+  public String getStage() {
+    return stage;
+  }
+
+  public void setStage(final String stage) {
+    this.stage = stage;
+  }
 }

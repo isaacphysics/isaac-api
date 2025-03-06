@@ -146,7 +146,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
       throws SegueDatabaseException, MailjetException {
     Long userId = userRecord.getUserId();
     mailjetApi.updateUserProperties(mailjetId, userRecord.getGivenName(), userRecord.getRole().toString(),
-        userRecord.getEmailVerificationStatus().toString());
+        userRecord.getEmailVerificationStatus().toString(), userRecord.getStage());
 
     MailJetSubscriptionAction newsStatus = (userRecord.allowsNewsEmails() != null
         && userRecord.allowsNewsEmails()) ? MailJetSubscriptionAction.FORCE_SUBSCRIBE :

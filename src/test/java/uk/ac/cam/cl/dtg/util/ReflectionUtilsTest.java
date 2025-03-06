@@ -39,4 +39,25 @@ class ReflectionUtilsTest {
     Set<Class<? extends AbstractSegueUser>> filteredClasses = getSubTypes(classes, AbstractSegueUser.class);
     assertEquals(expectedFilteredClasses, filteredClasses);
   }
+
+  @Test
+  void invokePrivateMethod_ShouldCallPrivateMethod() throws Exception {
+    TestClass testObject = new TestClass();
+
+    String result = ReflectionUtils.invokePrivateMethod(
+        testObject,
+        "privateMethod",
+        new Class<?>[]{String.class},
+        new Object[]{"test input"}
+    );
+
+    assertEquals("test input processed", result);
+  }
+
+  // This private class is used for testing the invokePrivateMethod
+  private static class TestClass {
+    private String privateMethod(String input) {
+      return input + " processed";
+    }
+  }
 }
