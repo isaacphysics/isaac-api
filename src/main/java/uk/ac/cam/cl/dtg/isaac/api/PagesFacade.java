@@ -651,7 +651,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             // Load the summary page:
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
-            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
             if (!(contentDOById instanceof IsaacTopicSummaryPage
                     && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {

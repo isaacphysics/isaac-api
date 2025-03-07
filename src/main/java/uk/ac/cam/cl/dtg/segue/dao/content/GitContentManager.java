@@ -187,6 +187,20 @@ public class GitContentManager {
     }
 
     /**
+     * Get a DTO object from a DO object.
+     *
+     * This method merely wraps {@link ContentMapper#getDTOByDO(Content)}, and will trust the content of the DO.
+     * Only use for DO objects obtained from {@link #getContentDOById(String)} when the DTO is also required,
+     * to avoid the potential cache-miss and ElasticSearch round-trip of {@link #getContentById(String)}.
+     *
+     * @param content - the DO object to convert.
+     * @return the DTO form of the object.
+     */
+    public final ContentDTO getContentDTOByDO(final Content content) {
+        return this.mapper.getDTOByDO(content);
+    }
+
+    /**
      *  Get a DO object by its ID or return null.
      *
      *  This may return a cached object, and will temporarily cache the object
