@@ -50,7 +50,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * database.
  */
 @Path("/log")
-@Tag(name = "/log")
+@Tag(name = "LogEventFacade", description = "/log")
 public class LogEventFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(LogEventFacade.class);
 

@@ -108,7 +108,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  * Quiz Facade.
  */
 @Path("/quiz")
-@Tag(name = "/quiz")
+@Tag(name = "QuizFacade", description = "/quiz")
 public class QuizFacade extends AbstractIsaacFacade {
     private final GitContentManager contentManager;
     private final QuizManager quizManager;

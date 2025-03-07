@@ -76,7 +76,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/")
-@Tag(name = "/")
+@Tag(name = "IsaacController", description = "/")
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
     private static final String ETAG_SEPARATOR = "/";

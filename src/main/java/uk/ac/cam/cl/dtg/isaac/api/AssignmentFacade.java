@@ -67,7 +67,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -101,7 +100,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  *
  */
 @Path("/assignments")
-@Tag(name = "/assignments")
+@Tag(name = "AssignmentFacade", description = "/assignments")
 public class AssignmentFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 

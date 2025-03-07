@@ -102,7 +102,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Events Facade.
  */
 @Path("/events")
-@Tag(name = "/events")
+@Tag(name = "EventsFacade", description = "/events")
 public class EventsFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(EventsFacade.class);
 

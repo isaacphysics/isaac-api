@@ -21,10 +21,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import jakarta.ws.rs.GET;
@@ -48,7 +48,7 @@ import java.util.List;
  * 
  */
 @Path("/schools")
-@Tag(name = "/schools")
+@Tag(name = "SchoolLookupServiceFacade", description = "/schools")
 public class SchoolLookupServiceFacade {
     private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
 

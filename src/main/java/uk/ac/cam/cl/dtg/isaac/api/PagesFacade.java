@@ -88,7 +88,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
-@Tag(name = "/pages")
+@Tag(name = "PagesFacade", description = "/pages")
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 

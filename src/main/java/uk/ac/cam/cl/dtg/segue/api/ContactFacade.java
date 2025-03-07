@@ -51,7 +51,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Contact Facade.
  */
 @Path("/contact")
-@Tag(name = "/contact")
+@Tag(name = "ContactFacade", description = "/contact")
 public class ContactFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(ContactFacade.class);
 

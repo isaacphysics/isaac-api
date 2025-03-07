@@ -59,7 +59,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COL
  *
  */
 @Path("/glossary")
-@Tag(name = "/glossary")
+@Tag(name = "GlossaryFacade", description = "/glossary")
 public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 

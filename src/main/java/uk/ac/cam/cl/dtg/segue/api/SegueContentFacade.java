@@ -43,7 +43,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/content")
-@Tag(name = "/content")
+@Tag(name = "SegueContentFacade", description = "/content")
 public class SegueContentFacade extends AbstractSegueFacade {
 
     private final GitContentManager contentManager;
