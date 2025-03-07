@@ -7,6 +7,7 @@ public class BookSectionDTO extends ContentDTO {
 
     private String label;
     private String gameboardId;
+    private String bookPageId;
 
     public String getLabel() {
         return label;
@@ -22,5 +23,13 @@ public class BookSectionDTO extends ContentDTO {
 
     public void setGameboardId(String gameboardId) {
         this.gameboardId = gameboardId;
+    }
+
+    public String getBookPageId() {
+        return bookPageId;
+    }
+
+    public void setBookPageId(String bookPageId) {
+        this.bookPageId = bookPageId;
     }
 }

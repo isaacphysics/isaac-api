@@ -11,6 +11,7 @@ public class BookSection extends Content {
 
     private String label;
     private String gameboardId;
+    private String bookPageId;
 
     public String getLabel() {
         return label;
@@ -26,5 +27,13 @@ public class BookSection extends Content {
 
     public void setGameboardId(String gameboardId) {
         this.gameboardId = gameboardId;
+    }
+
+    public String getBookPageId() {
+        return bookPageId;
+    }
+
+    public void setBookPageId(String bookPageId) {
+        this.bookPageId = bookPageId;
     }
 }
