@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -863,7 +863,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
      */
     @GET
-    @Path("/books/{book_id}")
+    @Path("/books/index/{book_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "Get a book index page by ID.")
@@ -880,7 +880,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             ContentDTO contentDTO = contentManager.getContentById(bookId, true);
-            if (contentDTO instanceof IsaacBookPageDTO) {
+            if (contentDTO instanceof IsaacBookIndexPageDTO) {
                 // Unlikely we want to augment with related content here!
 
                 // Log the page view:
@@ -895,8 +895,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                         .tag(etag)
                         .build();
             } else {
-                log.warn("Unable to locate a book page with the id '{}'!", bookId);
-                return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate a book page with the id specified!");
+                log.warn("Unable to locate a book index page with the id '{}'!", bookId);
+                return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate a book index page with the id specified!");
             }
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while processing request.");

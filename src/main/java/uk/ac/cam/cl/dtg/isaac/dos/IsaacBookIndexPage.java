@@ -5,17 +5,17 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Image;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 
 import java.util.List;
 
 /**
- * Book Page DO.
+ * BookIndex Page DO.
  *
  */
-@DTOMapping(IsaacBookPageDTO.class)
-@JsonContentType("isaacBookPage")
-public class IsaacBookPage extends SeguePage {
+@DTOMapping(IsaacBookIndexPageDTO.class)
+@JsonContentType("isaacBookIndexPage")
+public class IsaacBookIndexPage extends SeguePage {
     private String label;
     private Image coverImage;
     private List<BookChapter> chapters;
@@ -23,7 +23,7 @@ public class IsaacBookPage extends SeguePage {
     /**
      * Default constructor for Jackson.
      */
-    public IsaacBookPage() {
+    public IsaacBookIndexPage() {
     }
 
     public String getLabel() {

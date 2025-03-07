@@ -8,11 +8,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import java.util.List;
 
 /**
- * IsaacQuestion Page DTO.
+ * BookIndex Page DTO.
  *
  */
-@JsonContentType("isaacQuestionPage")
-public class IsaacBookPageDTO extends SeguePageDTO {
+@JsonContentType("isaacBookIndexPage")
+public class IsaacBookIndexPageDTO extends SeguePageDTO {
     private String label;
     private ImageDTO coverImage;
     private List<BookChapterDTO> chapters;
@@ -20,7 +20,7 @@ public class IsaacBookPageDTO extends SeguePageDTO {
     /**
      * Default constructor for Jackson.
      */
-    public IsaacBookPageDTO() {
+    public IsaacBookIndexPageDTO() {
     }
 
     public String getLabel() {
