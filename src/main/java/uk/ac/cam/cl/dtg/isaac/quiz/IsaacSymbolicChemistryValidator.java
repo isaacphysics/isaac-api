@@ -331,7 +331,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
             // STEP 4: Decide on what response to give to user
 
-            if (containsError) {
+            if (!isNuclear && containsError) {
 
                 // User input contains error terms.
                 if (closestResponse != null && VALID_ERROR_FEEDBACK.contains((String) closestResponse.get("error"))) {
@@ -346,6 +346,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 // There is an exact match to a choice.
                 feedback = (Content) closestMatch.getExplanation();
                 responseCorrect = closestMatch.isCorrect();
+
+            } else if (isNuclear) {
+
+                // Temporarily removing nuclear question feedback while we decide on the specific wording
+                feedback = new Content("");
 
             } else if (isNuclear && !chemistryQuestion.isNuclear()) {
 
