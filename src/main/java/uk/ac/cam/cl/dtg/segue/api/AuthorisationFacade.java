@@ -68,7 +68,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/authorisations")
-@Tag(name = "/authorisations")
+@Tag(name = "AuthorisationFacade", description = "/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;

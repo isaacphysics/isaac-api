@@ -88,7 +88,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
-@Tag(name = "/pages")
+@Tag(name = "PagesFacade", description = "/pages")
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
@@ -289,9 +289,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to provide a list of questions.
-     * 
-     * @param request
-     *            - used to determine if we can return a cache response.
+     *
      * @param ids
      *            - the ids of the concepts to request.
      * @param searchString
@@ -314,19 +312,19 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all question page objects matching the provided criteria.")
-    public final Response getQuestionList(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest,
+    public final Response getQuestionList(@Context final HttpServletRequest httpServletRequest,
             @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
-            @QueryParam("subjects") final String subjects,
-            @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
+            @QueryParam("subjects") final String subjects, @QueryParam("fields") final String fields,
+            @QueryParam("topics") final String topics,
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
-            @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
-            @QueryParam("questionCategories") final String questionCategories,
+            @QueryParam("examBoards") final String examBoards,
+            @QueryParam("books") final String books, @QueryParam("questionCategories") final String questionCategories,
             @QueryParam("statuses") final String statuses,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit) {
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit,
+            @QueryParam("randomSeed") final Long randomSeed) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
@@ -334,6 +332,12 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (null != searchString && searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
             return SegueErrorResponse.getBadRequestResponse(
                     String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
+        }
+
+        // TODO: the limit ought to be lower when filtering by attempt status
+        if (null != paramLimit && (paramLimit > MAX_SEARCH_RESULT_LIMIT || paramLimit <= 0)) {
+            log.warn("Question search requested {} results!", paramLimit);
+            return SegueErrorResponse.getBadRequestResponse("Unsupported search result limit!");
         }
 
         try {
@@ -377,6 +381,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
         logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
         logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
+        logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
 
         this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
 
@@ -444,10 +449,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.questionSearch(
                         validatedSearchString,
+                        randomSeed,
                         fieldsToMatch,
-                        fasttrack,
                         nextSearchStartIndex,
                         limit,
+                        fasttrack,
                         showNoFilterContent,
                         showSupersededContent
                 );
@@ -645,7 +651,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             // Load the summary page:
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
-            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
             if (!(contentDOById instanceof IsaacTopicSummaryPage
                     && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {

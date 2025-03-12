@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -185,6 +184,20 @@ public class GitContentManager {
      */
     public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
         return this.mapper.getDTOByDO(this.getContentDOById(id, failQuietly));
+    }
+
+    /**
+     * Get a DTO object from a DO object.
+     *
+     * This method merely wraps {@link ContentMapper#getDTOByDO(Content)}, and will trust the content of the DO.
+     * Only use for DO objects obtained from {@link #getContentDOById(String)} when the DTO is also required,
+     * to avoid the potential cache-miss and ElasticSearch round-trip of {@link #getContentById(String)}.
+     *
+     * @param content - the DO object to convert.
+     * @return the DTO form of the object.
+     */
+    public final ContentDTO getContentDTOByDO(final Content content) {
+        return this.mapper.getDTOByDO(content);
     }
 
     /**
@@ -392,6 +405,7 @@ public class GitContentManager {
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
+                null,
                 sortOrder
         );
 
@@ -414,9 +428,10 @@ public class GitContentManager {
      */
     public final ResultsWrapper<ContentDTO> questionSearch(
             @Nullable final String searchString,
+            @Nullable final Long randomSeed,
             final Map<String, Set<String>> filterFieldNamesToValues,
-            final boolean fasttrack, final Integer startIndex,
-            final Integer limit, final boolean showNoFilterContent, final boolean showSupersededContent
+            final Integer startIndex, final Integer limit,
+            final boolean fasttrack, final boolean showNoFilterContent, final boolean showSupersededContent
     ) throws ContentManagerException {
 
         // Set question type (content type) based on fasttrack status
@@ -485,9 +500,9 @@ public class GitContentManager {
             }
         }
 
-        // If no search terms were provided, sort by ascending alphabetical order of title.
+        // If no search terms or random seed, sort by ascending alphabetical order of title.
         Map<String, Constants.SortOrder> sortOrder = null;
-        if (searchTerms.isEmpty()) {
+        if (searchTerms.isEmpty() && null == randomSeed) {
             sortOrder = new HashMap<>();
             sortOrder.put(
                     Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -501,6 +516,7 @@ public class GitContentManager {
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
+                randomSeed,
                 sortOrder
         );
 
@@ -561,6 +577,7 @@ public class GitContentManager {
         return finalResults;
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit
@@ -568,6 +585,7 @@ public class GitContentManager {
         return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit, @Nullable final Long randomSeed

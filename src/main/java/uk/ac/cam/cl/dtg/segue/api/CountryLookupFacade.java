@@ -29,7 +29,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 @Path("/countries")
-@Tag(name = "/countries")
+@Tag(name = "CountryLookupFacade", description = "/countries")
 public class CountryLookupFacade {
 
     private final CountryLookupManager countryLookupManager;

@@ -21,22 +21,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.IHasQuizSummary;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
@@ -61,7 +60,6 @@ public class QuizManager {
     private final ContentService contentService;
     private final GitContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
-    private final ContentMapper mapper;
 
     /**
      * Creates a quiz manager.
@@ -74,32 +72,23 @@ public class QuizManager {
      *            - so we can fetch specific content.
      * @param contentSummarizerService
      *            - so we can summarize content with links
-     * @param mapper
-     *            - so we can convert cached content DOs to DTOs.
      */
     @Inject
     public QuizManager(final AbstractConfigLoader properties, final ContentService contentService,
                        final GitContentManager contentManager,
-                       final ContentSummarizerService contentSummarizerService,
-                       final ContentMapper mapper) {
+                       final ContentSummarizerService contentSummarizerService) {
         this.properties = properties;
         this.contentService = contentService;
         this.contentManager = contentManager;
         this.contentSummarizerService = contentSummarizerService;
-        this.mapper = mapper;
     }
 
-    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(boolean onlyVisibleToStudents, String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
+    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
 
         List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
 
-        // TODO: remove deprecated onlyVisibleToStudents check and argument!
-        if (onlyVisibleToStudents) {
-            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                    VISIBLE_TO_STUDENTS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(Boolean.toString(true))));
-        }
         if (null != visibleToRole) {
             fieldsToMatch.add(new GitContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,
                     BooleanOperator.NOT, Collections.singletonList(visibleToRole)));
@@ -125,7 +114,7 @@ public class QuizManager {
         }
 
         if (cachedContent instanceof IsaacQuiz) {
-            ContentDTO contentDTO = this.mapper.getDTOByDO(cachedContent);
+            ContentDTO contentDTO = contentManager.getContentDTOByDO(cachedContent);
 
             if (contentDTO instanceof IsaacQuizDTO) {
                 return (IsaacQuizDTO) contentDTO;

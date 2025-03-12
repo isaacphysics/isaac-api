@@ -86,7 +86,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  * 
  */
 @Path("/questions")
-@Tag(name = "/questions")
+@Tag(name = "QuestionFacade", description = "/questions")
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 

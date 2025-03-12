@@ -114,7 +114,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/admin")
-@Tag(name = "/admin")
+@Tag(name = "AdminFacade", description = "/admin")
 public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 

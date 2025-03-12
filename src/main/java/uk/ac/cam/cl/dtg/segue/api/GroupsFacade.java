@@ -74,7 +74,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/groups")
-@Tag(name = "/groups")
+@Tag(name = "GroupsFacade", description = "/groups")
 public class GroupsFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
 

@@ -52,7 +52,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/info")
-@Tag(name = "/info")
+@Tag(name = "InfoFacade", description = "/info")
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
     private final SegueJobService segueJobService;

@@ -82,7 +82,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Alistair Stead
  */
 @Path("/")
-@Tag(name = "/email")
+@Tag(name = "EmailFacade", description = "/email")
 public class EmailFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
 

@@ -83,7 +83,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/auth")
-@Tag(name = "/auth")
+@Tag(name = "AuthenticationFacade", description = "/auth")
 public class AuthenticationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFacade.class);
 
