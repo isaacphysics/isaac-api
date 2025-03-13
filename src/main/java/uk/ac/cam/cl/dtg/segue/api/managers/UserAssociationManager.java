@@ -215,18 +215,17 @@ public class UserAssociationManager {
 
     /**
      * createAssociationWithToken.
-     * 
-     * @param token
-     *            - The token which links to a user (receiving permission) and possibly a group.
-     * @param userGrantingPermission
-     *            - the user who wishes to grant permissions to another.
+     *
+     * @param token                  - The token which links to a user (receiving permission) and possibly a group.
+     * @param userGrantingPermission - the user who wishes to grant permissions to another.
+     * @param addToGroup             - whether to add the user granting permission to the associated group.
      * @return The association token object
-     * @throws SegueDatabaseException
-     *             - If an error occurred while interacting with the database.
-     * @throws InvalidUserAssociationTokenException
-     *             - If the token provided is invalid.
+     * @throws SegueDatabaseException               - If an error occurred while interacting with the database.
+     * @throws InvalidUserAssociationTokenException - If the token provided is invalid.
      */
-    public AssociationToken createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
+    public AssociationToken createAssociationWithToken(final String token,
+                                                       final RegisteredUserDTO userGrantingPermission,
+                                                       boolean addToGroup)
             throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
         Objects.requireNonNull(userGrantingPermission);
@@ -239,9 +238,11 @@ public class UserAssociationManager {
 
         UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
 
-        userGroupManager.addUserToGroup(group, userGrantingPermission);
-        log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
-                lookedupToken.getGroupId()));
+        if (addToGroup) {
+            userGroupManager.addUserToGroup(group, userGrantingPermission);
+            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
+                    lookedupToken.getGroupId()));
+        }
 
         // add owner association
         if (!associationDatabase.hasValidAssociation(group.getOwnerId(), userGrantingPermission.getId())) {

@@ -141,7 +141,7 @@ public class UserAssociationManagerTest {
         replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
 
         try {
-            managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
+            managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess, true);
         } catch (InvalidUserAssociationTokenException e) {
             e.printStackTrace();
             fail("InvalidUserAssociationTokenException is unexpected");
@@ -185,7 +185,7 @@ public class UserAssociationManagerTest {
         replay(dummyAssociationDataManager, dummyGroupDataManager, groupToAddUserTo);
 
         try {
-            managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
+            managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess, true);
         } catch (InvalidUserAssociationTokenException e) {
             e.printStackTrace();
             fail("InvalidUserAssociationTokenException is unexpected");
@@ -218,7 +218,7 @@ public class UserAssociationManagerTest {
         replay(dummyAssociationDataManager, dummyGroupDataManager);
 
         try {
-            managerUnderTest.createAssociationWithToken(someBadToken, someRegisteredUserGrantingAccess);
+            managerUnderTest.createAssociationWithToken(someBadToken, someRegisteredUserGrantingAccess, true);
             fail("An exception was expected");
         } catch (InvalidUserAssociationTokenException e) {
             // this is a success as the exception was expected.
