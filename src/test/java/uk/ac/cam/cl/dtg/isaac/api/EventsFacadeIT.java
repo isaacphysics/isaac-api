@@ -60,7 +60,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
         // Check that we retrieved the expected amount of results
-        assertEquals(8, results.size());
+        assertEquals(10, results.size());
         // NOTE: We may end up having more events in the dataset than the limit specified in the call.
         //       In this case, we need to check for the limit up here and then check if the response object tells us
         //       that there are more, and how many there are.
