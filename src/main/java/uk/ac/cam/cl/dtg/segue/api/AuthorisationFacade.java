@@ -513,7 +513,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
+            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user, true);
 
             UserGroupDTO group = groupManager.getGroupById(associationToken.getGroupId());
             List<Long> usersApproved = new ArrayList<>();

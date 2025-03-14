@@ -691,10 +691,9 @@ public class EventBookingManager {
             transaction.commit();
         }
 
-        // Auto add user to the event group if the event is a special Waiting List Only type event
-        if (EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus())) {
-            addUserToEventGroup(event, user);
-        }
+        // Grant the owner of the event group, if there is one, access to the user's data.
+        // For WAITING_LIST_ONLY events, also add the user to the event group.
+        createEventUserAssociation(event, user, EventStatus.WAITING_LIST_ONLY.equals(event.getEventStatus()));
 
         try {
             String emailTemplateContentId;
@@ -1379,10 +1378,26 @@ public class EventBookingManager {
      */
     private void addUserToEventGroup(final IsaacEventPageDTO event, final RegisteredUserDTO user)
             throws SegueDatabaseException {
-        // auto add them to the group and grant the owner permission
+        createEventUserAssociation(event, user, true);
+    }
+
+    /**
+     * Helper method to create the user association made when a user books on an event, and optionally add them to the
+     * group.
+     *
+     * @param event          context
+     * @param user           to add
+     * @param addUserToGroup If false, create the user association with the group owner without adding the user to the
+     *                       group.
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    private void createEventUserAssociation(final IsaacEventPageDTO event, final RegisteredUserDTO user,
+                                            boolean addUserToGroup) throws SegueDatabaseException {
+        // grant the group owner associated with the event permission, and optionally add user to group
         if (event.getIsaacGroupToken() != null && !event.getIsaacGroupToken().isEmpty()) {
             try {
-                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+                this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user,
+                        addUserToGroup);
             } catch (InvalidUserAssociationTokenException e) {
                 log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
                         user.getEmail(), event.getIsaacGroupToken()));

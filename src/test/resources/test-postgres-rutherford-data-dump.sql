@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.2 (Debian 16.2-1.pgdg120+2)
--- Dumped by pg_dump version 16.2 (Debian 16.2-1.pgdg120+2)
+-- Dumped from database version 16.8 (Debian 16.8-1.pgdg120+1)
+-- Dumped by pg_dump version 16.8 (Debian 16.8-1.pgdg120+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -21,7 +21,6 @@ SET row_security = off;
 --
 
 COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth, gender, registration_date, school_id, school_other, registered_contexts, registered_contexts_last_confirmed, last_updated, email_verification_status, last_seen, email_to_verify, email_verification_token, session_token, deleted, country_code, teacher_account_pending) FROM stdin;
-11	\N	Student	Erika	erika-student@test.com	STUDENT	\N	FEMALE	2022-07-03 17:34:07		A Manually Entered School	{}	\N	2022-07-05 17:34:31	VERIFIED	2022-08-09 10:53:44.547	erika-student@test.com	\N	0	f	\N	f
 4	\N	Editor	Test Editor	test-editor@test.com	CONTENT_EDITOR	\N	PREFER_NOT_TO_SAY	2019-08-01 12:50:32.631	133801	\N	{}	\N	2021-03-09 16:46:26.28	VERIFIED	2022-08-09 10:54:30.095	test-editor@test.com	nAAK4xSBuAPRejM4YPNfTKRDGK4Oa1VuL3EMmJburjE	0	f	\N	f
 3	\N	Event Manager	Test Event	test-event@test.com	EVENT_MANAGER	\N	OTHER	2019-08-01 12:43:14.583	133801	\N	{}	\N	2021-03-09 16:47:03.77	VERIFIED	2022-08-09 10:54:42.013	test-event@test.com	QlIS3PVS33I8jmMo3JPQgIn2xaKe4gFgwXfH4qiI8	0	f	\N	f
 1	\N	Progress	Test Progress	test-progress@test.com	STUDENT	\N	FEMALE	2019-08-01 12:28:22.869	130615	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"ocr\\"}"}	2021-10-04 14:10:37.441	2021-11-05 10:52:13.018	VERIFIED	2022-08-09 10:54:55.362	test-progress@test.com	scIF1UJeYyGRGwGrwGNUyIWuZxKBrQHd8evcAeZk	0	f	\N	f
@@ -37,6 +36,8 @@ COPY public.users (id, _id, family_name, given_name, email, role, date_of_birth,
 8	\N	Student	Bob	bob-student@test.com	STUDENT	\N	MALE	2022-07-05 17:32:41	110158	\N	{}	\N	2022-07-05 17:32:57	VERIFIED	2024-04-18 14:54:24.371	bob-student@test.com	\N	0	f	\N	f
 17	\N	Teacher	Harry	harry-teacher@test.com	TEACHER	\N	\N	2024-04-18 14:49:03.655	\N	N/A	{}	\N	2024-04-18 14:49:03.655	VERIFIED	2024-04-18 15:10:29.993	harry-teacher@test.com	GPnv0HAq4u2j2AvDSpxGVTaXgEa5yNWwTD0o0lBn3M	0	f	GB-SCT	f
 7	\N	Student	Alice	alice-student@test.com	STUDENT	1991-01-01	FEMALE	2022-07-05 17:31:12	\N	A Manually Entered School	{"{\\"stage\\": \\"all\\", \\"examBoard\\": \\"all\\"}"}	2022-07-06 10:52:35.922	2022-07-06 10:52:36.056	VERIFIED	2024-04-18 15:11:01.813	alice-student@test.com	\N	0	f	\N	f
+11	\N	Student	Erika	erika-student@test.com	STUDENT	\N	FEMALE	2022-07-03 17:34:07		A Manually Entered School	{}	\N	2022-07-05 17:34:31	VERIFIED	2025-03-13 14:24:19.229	erika-student@test.com	\N	0	f	\N	f
+18	\N	Event Leader	Test	test-event-leader@test.com	EVENT_LEADER	\N	\N	2025-03-13 14:27:51.104	\N	\N	{"{\\"stage\\": \\"all\\", \\"examBoard\\": null}"}	2025-03-13 14:28:10.676	2025-03-13 14:28:10.713	VERIFIED	2025-03-13 16:45:34.456	test-event-leader@test.com	OmKFbkVStS9d6eSj0ukLzpwxoulf9X8EKAjUKptFmI	0	f	\N	f
 \.
 
 
@@ -70,6 +71,8 @@ COPY public.groups (id, group_name, owner_id, created, archived, group_status, l
 2	BC Group (Dave)	10	2022-07-06 15:37:32	f	ACTIVE	\N	f	f
 4	AB Group 2 (Test Tutor)	12	2022-12-12 14:48:40.245	f	ACTIVE	2022-12-12 14:48:40.245	f	f
 5	AB Group 3 (Harry Teacher)	17	2024-04-18 14:53:56.312	f	ACTIVE	2024-04-18 14:53:56.312	f	f
+7	Waiting list only event Group (Event Leader)	18	2025-03-13 16:46:42.747	f	ACTIVE	2025-03-13 16:46:42.747	f	f
+6	Open/expired event Group (Event Leader)	18	2025-03-13 14:37:19.818	f	ACTIVE	2025-03-13 14:37:19.818	f	f
 \.
 
 
@@ -250,6 +253,8 @@ BCTOK8	8	2
 BCTOK9	9	2
 VJ94X2	12	4
 BRUHB7	17	5
+648FL9	18	6
+UAZFNZ	18	7
 \.
 
 
@@ -274,6 +279,7 @@ COPY public.user_credentials (user_id, password, secure_salt, security_scheme, r
 14	IzlHJX0RyCeY/k7YLQR27VZowm9SxTUVZbkLgZRi2Q6hnGzrEQUwh9fewOo73pyt+WAQJ5URPZ7azUhHu1RXWA==	7S8zRdqDuVK9E7KQj58TmA==	SegueSCryptv1	\N	\N	2023-07-10 08:57:03.393026+00	2023-07-10 08:57:03.391+00
 15	1OJ/FMVDtXI7gcC/t575nqtjDlzZLHvdEA3zgTGPdRzss2aK2B8o/HaQPy3OkjaAt5XWHA307g69G20qMYKRVQ==	yCg4zei908HorrK7y5orHg==	SegueSCryptv1	\N	\N	2024-02-05 09:44:51.738573+00	2024-02-05 09:44:51.737+00
 17	TLq64li1MO0CnX5Il38lpNVKMrpfkLNHjIEYmVHjr9zVUfz6QIq/R5zMfXslOyL0EZn4Gk1ku7WPLpWIRfOd/w==	V4Qq8IEsjT20s2ohupm3xQ==	SegueSCryptv1	\N	\N	2024-04-18 13:49:04.093301+00	2024-04-18 13:49:04.093+00
+18	HZUdfrm2IU26zdMTxJPyIj1m217U9IfR7PDgDT3Ll3YO2hk9fDkQRxfPWnpbZlRoBgSolY6BASuodiarEiZDAg==	AwrRRqjuWJ/takwF1eYfQw==	SegueSCryptv1	\N	\N	2025-03-13 14:27:51.395516+00	2025-03-13 14:27:51.455+00
 \.
 
 
@@ -326,6 +332,9 @@ COPY public.user_preferences (user_id, preference_type, preference_name, prefere
 5	BOOLEAN_NOTATION	ENG	f	2022-08-03 12:08:57.777349
 5	BOOLEAN_NOTATION	MATH	t	2022-08-03 12:08:57.777349
 5	DISPLAY_SETTING	HIDE_NON_AUDIENCE_CONTENT	t	2022-08-03 12:08:57.777349
+18	EMAIL_PREFERENCE	ASSIGNMENTS	t	2025-03-13 14:27:51.722346
+18	EMAIL_PREFERENCE	NEWS_AND_UPDATES	t	2025-03-13 14:28:10.731825
+18	EMAIL_PREFERENCE	EVENTS	t	2025-03-13 14:28:10.731825
 \.
 
 
@@ -460,7 +469,7 @@ SELECT pg_catalog.setval('public.event_bookings_id_seq', 4, true);
 -- Name: groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.groups_id_seq', 5, true);
+SELECT pg_catalog.setval('public.groups_id_seq', 7, true);
 
 
 --
@@ -516,7 +525,7 @@ SELECT pg_catalog.setval('public.user_alerts_id_seq', 1, false);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: rutherford
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 17, true);
+SELECT pg_catalog.setval('public.users_id_seq', 18, true);
 
 
 --

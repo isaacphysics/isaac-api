@@ -42,6 +42,10 @@ public final class ITConstants {
     public static final String GARY_EVENTMANAGER_PASSWORD = "test1234";
     public static final long GARY_EVENTMANAGER_ID = 14L;
 
+    public static final String TEST_EVENTLEADER_EMAIL = "test-event-leader@test.com";
+    public static final String TEST_EVENTLEADER_PASSWORD = "test1234";
+    public static final long TEST_EVENTLEADER_ID = 18L;
+
     public static final String TEST_TEACHER_EMAIL = "test-teacher@test.com";
     public static final String TEST_TEACHER_PASSWORD = "test1234";
     public static final long TEST_TEACHER_ID = 5L;
@@ -92,6 +96,8 @@ public final class ITConstants {
     public static final long DAVE_TEACHERS_BC_GROUP_ID = 2L;
     public static final long TEST_TUTORS_AB_GROUP_ID = 4L;
     public static final long HARRY_TEACHERS_AB_GROUP_ID = 5L;
+    public static final long TEST_EVENT_LEADERS_OPEN_GROUP_ID = 6L;
+    public static final long TEST_EVENT_LEADERS_WAITING_LIST_GROUP_ID = 7L;
 
     // Questions
     public static final String REGRESSION_TEST_PAGE_ID = "_regression_test_";
