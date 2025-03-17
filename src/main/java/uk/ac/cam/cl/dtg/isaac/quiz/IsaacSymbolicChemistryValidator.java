@@ -388,7 +388,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             } else if (isNuclear && validityKnownFlag && !isValid) {
 
                 // Input is nuclear, but atomic/mass numbers are invalid.
-                feedback = new Content("Check your mass numbers/proton numbers/charge!");
+                feedback = new Content("Check your mass numbers/proton numbers/charges!");
 
             } else if (closestMatch != null && closestMatch.isCorrect() && closestResponse != null
                     && closestResponse.get("typeMismatch").equals(false)) {
