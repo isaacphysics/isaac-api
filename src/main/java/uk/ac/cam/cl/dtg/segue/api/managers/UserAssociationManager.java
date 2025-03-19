@@ -225,7 +225,7 @@ public class UserAssociationManager {
      */
     public AssociationToken createAssociationWithToken(final String token,
                                                        final RegisteredUserDTO userGrantingPermission,
-                                                       boolean addToGroup)
+                                                       final boolean addToGroup)
             throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
         Objects.requireNonNull(userGrantingPermission);
