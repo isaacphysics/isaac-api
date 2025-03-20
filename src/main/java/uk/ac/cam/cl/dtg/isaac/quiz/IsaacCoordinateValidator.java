@@ -78,9 +78,13 @@ public class IsaacCoordinateValidator implements IValidator {
         // Then cast the submitted items to CoordinateItems.
         List<CoordinateItem> submittedItems = submittedChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
 
-        // Check if any coordinates are missing
+        // Check if any coordinates are invalid or missing:
         if (submittedItems.stream().anyMatch(i -> null == i.getCoordinates() || i.getCoordinates().size() != coordinateQuestion.getNumberOfDimensions())) {
             feedback = new Content("You did not provide the expected number of dimensions in your answer.");
+        }
+
+        if (submittedItems.stream().anyMatch(i -> null == i.getCoordinates() || i.getCoordinates().stream().anyMatch(String::isEmpty))) {
+            feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
         }
 
         if (null != coordinateQuestion.getNumberOfCoordinates() && submittedItems.size() != coordinateQuestion.getNumberOfCoordinates()) {
