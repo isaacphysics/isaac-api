@@ -885,7 +885,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
                 // Log the page view:
                 getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-                        IsaacServerLogType.VIEW_BOOK_PAGE, ImmutableMap.of(
+                        IsaacServerLogType.VIEW_BOOK_INDEX_PAGE, ImmutableMap.of(
                                 PAGE_ID_LOG_FIELDNAME, bookId,
                                 CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
                         ));
