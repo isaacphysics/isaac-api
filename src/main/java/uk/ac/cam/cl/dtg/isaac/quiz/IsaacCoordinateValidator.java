@@ -131,49 +131,53 @@ public class IsaacCoordinateValidator implements IValidator {
 
                 // Check that the items in the submitted answer match the items in the choice numerically
 
-                // If the question is unordered, then we need to (paradoxically) order the items to compare them.
-                if (null == coordinateQuestion.getOrdered() || !coordinateQuestion.getOrdered()) {
-                    choiceItems = orderCoordinates(choiceItems);
-                    submittedItems = orderCoordinates(submittedItems);
-                }
-
                 boolean allItemsMatch = true;
+                try {
+                    // If the question is unordered, then we need to (paradoxically) order the items to compare them.
+                    if (null == coordinateQuestion.getOrdered() || !coordinateQuestion.getOrdered()) {
+                        choiceItems = orderCoordinates(choiceItems);
+                        submittedItems = orderCoordinates(submittedItems);
+                    }
 
-                // For each coordinate in the list of coordinates:
-                //    (labelled loop to allow short circuiting)
-                outerloop: for (int coordIndex = 0; coordIndex < choiceItems.size(); coordIndex++) {
-                    CoordinateItem choiceItem = choiceItems.get(coordIndex);
-                    CoordinateItem submittedItem = submittedItems.get(coordIndex);
-                    // Check that each dimension has the same coordinate value as the choice:
-                    for (int dimensionIndex = 0; dimensionIndex < coordinateQuestion.getNumberOfDimensions(); dimensionIndex++) {
-                        String choiceValue = choiceItem.getCoordinates().get(dimensionIndex);
-                        String submittedValue = submittedItem.getCoordinates().get(dimensionIndex);
+                    // For each coordinate in the list of coordinates:
+                    //    (labelled loop to allow short circuiting)
+                    outerloop: for (int coordIndex = 0; coordIndex < choiceItems.size(); coordIndex++) {
+                        CoordinateItem choiceItem = choiceItems.get(coordIndex);
+                        CoordinateItem submittedItem = submittedItems.get(coordIndex);
+                        // Check that each dimension has the same coordinate value as the choice:
+                        for (int dimensionIndex = 0; dimensionIndex < coordinateQuestion.getNumberOfDimensions(); dimensionIndex++) {
+                            String choiceValue = choiceItem.getCoordinates().get(dimensionIndex);
+                            String submittedValue = submittedItem.getCoordinates().get(dimensionIndex);
 
-                        boolean valuesMatch = false;
+                            boolean valuesMatch = false;
 
-                        if (submittedValue.isEmpty()) {
-                            feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
-                        } else if (shouldValidateWithSigFigs) {
-                            Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
-                                    coordinateQuestion.getSignificantFiguresMin(), coordinateQuestion.getSignificantFiguresMax(), log);
+                            if (submittedValue.isEmpty()) {
+                                feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
+                            } else if (shouldValidateWithSigFigs) {
+                                Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
+                                        coordinateQuestion.getSignificantFiguresMin(), coordinateQuestion.getSignificantFiguresMax(), log);
 
-                            boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMin(), log);
-                            boolean tooManySF = ValidationUtils.tooManySignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMax(), log);
-                            if (tooFewSF || tooManySF) {
-                                feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
+                                boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMin(), log);
+                                boolean tooManySF = ValidationUtils.tooManySignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMax(), log);
+                                if (tooFewSF || tooManySF) {
+                                    feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
+                                } else {
+                                    valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                                }
                             } else {
-                                valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                                valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
                             }
-                        } else {
-                            valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
-                        }
 
-                        if (!valuesMatch) {
-                            allItemsMatch = false;
-                            // Exit early on mismatch:
-                            break outerloop;
+                            if (!valuesMatch) {
+                                allItemsMatch = false;
+                                // Exit early on mismatch:
+                                break outerloop;
+                            }
                         }
                     }
+                } catch (NumberFormatException e) {
+                    feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
+                    break;
                 }
 
                 if (allItemsMatch) {
