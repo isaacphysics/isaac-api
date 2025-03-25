@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -851,6 +852,64 @@ public class PagesFacade extends AbstractIsaacFacade {
             SegueErrorResponse error = new SegueErrorResponse(
                     Status.INTERNAL_SERVER_ERROR, "Error locating the content requested", e
             );
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
+
+    /**
+     * Endpoint that gets a single book index page from the given id.
+     *
+     * @param request
+     *            - so that we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param bookId
+     *            as a string
+     * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/books/index/{book_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a book index page by ID.")
+    public final Response getBookPage(@Context final Request request,
+                                          @Context final HttpServletRequest httpServletRequest,
+                                          @PathParam("book_id") final String bookId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + bookId.hashCode()));
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        try {
+            ContentDTO contentDTO = contentManager.getContentById(bookId, true);
+            if (contentDTO instanceof IsaacBookIndexPageDTO) {
+                // Unlikely we want to augment with related content here!
+
+                // Log the page view:
+                getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                        IsaacServerLogType.VIEW_BOOK_INDEX_PAGE, ImmutableMap.of(
+                                PAGE_ID_LOG_FIELDNAME, bookId,
+                                CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                        ));
+
+                return Response.ok(contentDTO)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .tag(etag)
+                        .build();
+            } else {
+                log.warn("Unable to locate a book index page with the id '{}'!", bookId);
+                return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate a book index page with the id specified!");
+            }
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while processing request.");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested");
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
