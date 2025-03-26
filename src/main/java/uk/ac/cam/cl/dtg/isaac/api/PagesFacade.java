@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.IsaacBookDetailPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
@@ -43,6 +44,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.IsaacBookDetailPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
@@ -73,12 +75,15 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -912,6 +917,80 @@ public class PagesFacade extends AbstractIsaacFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested");
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        }
+    }
+
+    /**
+     *   Endpoint that gets a single book detail page from the given id.
+     *
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param bookPageId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/books/page/{book_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a single book details page by ID.")
+    public final Response getBookDetailPage(@Context final Request request,
+                                              @Context final HttpServletRequest httpServletRequest,
+                                              @PathParam("book_page_id") final String bookPageId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + bookPageId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        try {
+            // Load the summary page:
+            Content contentDOById = this.contentManager.getContentDOById(bookPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
+
+            if (!(contentDOById instanceof IsaacBookDetailPage
+                    && contentDTOById instanceof IsaacBookDetailPageDTO)) {
+                return SegueErrorResponse.getResourceNotFoundResponse(String.format(
+                        "Unable to locate book detail page with id: %s", bookPageId));
+            }
+            IsaacBookDetailPage bookPageDO = (IsaacBookDetailPage) contentDOById;
+            IsaacBookDetailPageDTO bookPageDTO = (IsaacBookDetailPageDTO) contentDTOById;
+
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+
+            // Augment related content:
+            this.augmentContentWithRelatedContent(bookPageDTO, Collections.emptyMap());
+
+            // Augment linked gameboards using the list in the DO:
+            // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
+            List<String> gameboardIds = Objects.requireNonNullElse(bookPageDO.getGameboards(), Collections.emptyList());
+            List<String> additionalGameboardIds = Objects.requireNonNullElse(bookPageDO.getExtensionGameboards(), Collections.emptyList());
+            List<String> allGameboardIds = Stream.of(gameboardIds, additionalGameboardIds)
+                    .flatMap(Collection::stream).collect(Collectors.toList());
+            List<GameboardDTO> linkedGameboards = gameManager.getGameboards(allGameboardIds);
+
+            bookPageDTO.setGameboards(linkedGameboards.stream().filter(gb -> gameboardIds.contains(gb.getId())).collect(Collectors.toList()));
+            bookPageDTO.setExtensionGameboards(linkedGameboards.stream().filter(gb -> additionalGameboardIds.contains(gb.getId())).collect(Collectors.toList()));
+
+            // Log the request:
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, bookPageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_BOOK_DETAIL_PAGE, logEntry);
+
+
+            return Response.status(Status.OK).entity(bookPageDTO)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load book detail page.").toResponse();
         }
     }
 
