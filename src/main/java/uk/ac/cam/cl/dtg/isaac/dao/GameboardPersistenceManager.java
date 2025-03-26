@@ -783,10 +783,6 @@ public class GameboardPersistenceManager {
                     listOfResults.add(this.convertFromSQLToGameboardDO(results));
                 }
 
-                if (listOfResults.size() == 0) {
-                    return null;
-                }
-
                 List<GameboardDTO> databaseGameboards = listOfResults.stream().map(r -> this.convertToGameboardDTO(r, fullyPopulate)).collect(Collectors.toList());
 
                 return Stream.of(cachedGameboards, databaseGameboards).flatMap(Collection::stream).collect(Collectors.toList());
