@@ -16,7 +16,7 @@ public class BookSection extends Content {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -24,7 +24,7 @@ public class BookSection extends Content {
         return bookPageId;
     }
 
-    public void setBookPageId(String bookPageId) {
+    public void setBookPageId(final String bookPageId) {
         this.bookPageId = bookPageId;
     }
 }

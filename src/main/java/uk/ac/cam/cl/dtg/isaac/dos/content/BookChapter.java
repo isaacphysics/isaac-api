@@ -18,7 +18,7 @@ public class BookChapter extends Content {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -26,7 +26,7 @@ public class BookChapter extends Content {
         return sections;
     }
 
-    public void setSections(List<BookSection> sections) {
+    public void setSections(final List<BookSection> sections) {
         this.sections = sections;
     }
 }
