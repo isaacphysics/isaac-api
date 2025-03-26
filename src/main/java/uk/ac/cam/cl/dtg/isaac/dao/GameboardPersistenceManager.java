@@ -28,7 +28,6 @@ import com.google.inject.Inject;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
@@ -87,8 +86,6 @@ public class GameboardPersistenceManager {
 
     private final GitContentManager contentManager;
 
-    private final URIManager uriManager;
-
     /**
      * Creates a new user data manager object.
      * 
@@ -100,18 +97,14 @@ public class GameboardPersistenceManager {
      *            - An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
      * @param objectMapper
      *            - An instance of an automapper that can be used for converting objects to and from json.
-     * 
-     * @param uriManager
-     *            - so we can generate appropriate content URIs.
      */
     @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                       final MapperFacade mapper, final ContentMapper objectMapper, final URIManager uriManager) {
+                                       final MapperFacade mapper, final ContentMapper objectMapper) {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;
         this.objectMapper = objectMapper.getSharedContentObjectMapper();;
-        this.uriManager = uriManager;
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
                 .expireAfterAccess(GAMEBOARD_TTL_MINUTES, TimeUnit.MINUTES).<String, GameboardDO> build();
     }
