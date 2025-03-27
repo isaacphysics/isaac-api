@@ -14,7 +14,7 @@ public class BookChapterDTO extends ContentDTO {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -22,7 +22,7 @@ public class BookChapterDTO extends ContentDTO {
         return sections;
     }
 
-    public void setSections(List<BookSectionDTO> sections) {
+    public void setSections(final List<BookSectionDTO> sections) {
         this.sections = sections;
     }
 }

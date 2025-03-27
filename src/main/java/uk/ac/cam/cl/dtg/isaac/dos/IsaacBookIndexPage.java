@@ -30,7 +30,7 @@ public class IsaacBookIndexPage extends SeguePage {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -38,7 +38,7 @@ public class IsaacBookIndexPage extends SeguePage {
         return chapters;
     }
 
-    public void setChapters(List<BookChapter> chapters) {
+    public void setChapters(final List<BookChapter> chapters) {
         this.chapters = chapters;
     }
 
@@ -46,7 +46,7 @@ public class IsaacBookIndexPage extends SeguePage {
         return coverImage;
     }
 
-    public void setCoverImage(Image coverImage) {
+    public void setCoverImage(final Image coverImage) {
         this.coverImage = coverImage;
     }
 }

@@ -27,7 +27,7 @@ public class IsaacBookIndexPageDTO extends SeguePageDTO {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -35,7 +35,7 @@ public class IsaacBookIndexPageDTO extends SeguePageDTO {
         return chapters;
     }
 
-    public void setChapters(List<BookChapterDTO> chapters) {
+    public void setChapters(final List<BookChapterDTO> chapters) {
         this.chapters = chapters;
     }
 
@@ -43,7 +43,7 @@ public class IsaacBookIndexPageDTO extends SeguePageDTO {
         return coverImage;
     }
 
-    public void setCoverImage(ImageDTO coverImage) {
+    public void setCoverImage(final ImageDTO coverImage) {
         this.coverImage = coverImage;
     }
 }

@@ -12,7 +12,7 @@ public class BookSectionDTO extends ContentDTO {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -20,7 +20,7 @@ public class BookSectionDTO extends ContentDTO {
         return bookPageId;
     }
 
-    public void setBookPageId(String bookPageId) {
+    public void setBookPageId(final String bookPageId) {
         this.bookPageId = bookPageId;
     }
 }
