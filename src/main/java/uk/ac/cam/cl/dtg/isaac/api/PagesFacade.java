@@ -373,9 +373,8 @@ public class PagesFacade extends AbstractIsaacFacade {
             limit = idsList.size();
         }
 
-        // Not an ImmutableMap since we may have null values
+        // Not an ImmutableMap since we may have null values, which will get nicely excluded from JSON.
         Map<String, Object> logEntry = new HashMap<>();
-        logEntry.put(SEARCH_STRING_FIELDNAME, searchString);
         logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
         logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
         logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
@@ -386,8 +385,13 @@ public class PagesFacade extends AbstractIsaacFacade {
         logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
         logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
         logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
+        logEntry.put("levels", csvParamToLogValue(level));
+        logEntry.put("questionIds", csvParamToLogValue(ids));
         logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
         logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
+        logEntry.put(SEARCH_STRING_FIELDNAME, !Objects.equals(searchString, "") ? searchString : null);
+        logEntry.put("fasttrack", Objects.equals(fasttrack, true) ? String.valueOf(fasttrack) : null);
+        logEntry.put("randomSeed", null != randomSeed ? String.valueOf(randomSeed) : null);
 
         this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
 
