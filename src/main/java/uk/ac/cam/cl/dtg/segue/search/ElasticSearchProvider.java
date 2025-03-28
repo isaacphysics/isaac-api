@@ -37,6 +37,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -45,6 +46,7 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -179,7 +181,10 @@ public class ElasticSearchProvider implements ISearchProvider {
             RandomScoreFunctionBuilder randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
             randomScoreFunctionBuilder.seed(randomSeed);
             randomScoreFunctionBuilder.setField("_seq_no");
-            query = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
+            FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
+            // Don't use the base query's result ranking at all, only use this random weighting:
+            functionScoreQuery.boostMode(CombineFunction.REPLACE);
+            query = functionScoreQuery;
         }
 
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
