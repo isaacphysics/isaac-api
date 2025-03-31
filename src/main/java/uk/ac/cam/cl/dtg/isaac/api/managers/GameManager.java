@@ -553,7 +553,7 @@ public class GameManager {
         List<GameboardDTO> sublistOfGameboards = resultToReturn.subList(startIndex, toIndex);
 
         // fully augment only those we are returning.
-        this.gameboardPersistenceManager.augmentGameboardItems(sublistOfGameboards);
+        this.gameboardPersistenceManager.augmentGameboardItemsWithContentData(sublistOfGameboards);
 
         return new GameboardListDTO(sublistOfGameboards, (long) resultToReturn.size(),
                 totalNotStarted, totalInProgress, totalAllAttempted);

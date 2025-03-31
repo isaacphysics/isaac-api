@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
@@ -1232,12 +1231,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-                                                                              final GitContentManager contentManager, final MapperFacade mapper, final ContentMapper objectMapper,
-                                                                              final URIManager uriManager) {
+    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
+                                                                              final MapperFacade mapper, final ContentMapper objectMapper) {
         if (null == gameboardPersistenceManager) {
-            gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-                    objectMapper, uriManager);
+            gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 
