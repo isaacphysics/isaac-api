@@ -174,6 +174,7 @@ public final class Constants {
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
         VIEW_QUESTION,
+        VIEW_QUIZ_RUBRIC,
         VIEW_QUIZ_SECTION,
         VIEW_TOPIC_SUMMARY_PAGE,
         VIEW_USER_PROGRESS,

@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
@@ -295,7 +296,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Preview a quiz. Only available to tutors and above.
+     * Preview the full contents of a quiz. Only available to tutors and above.
      *
      * @param request            - so we can deal with caching.
      * @param httpServletRequest - so that we can extract user information.
@@ -306,7 +307,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/{quizId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Preview an individual test.")
+    @Operation(summary = "Preview the full contents of a test.",
+            description = "Students may not preview tests.")
     public final Response previewQuiz(@Context final Request request,
                                       @Context final HttpServletRequest httpServletRequest,
                                       @PathParam("quizId") final String quizId) {
@@ -345,6 +347,66 @@ public class QuizFacade extends AbstractIsaacFacade {
             return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+
+    /**
+     * View a quiz and its rubric without starting a free attempt.
+     *
+     * Students cannot preview tests, but they may wish to use the rubric to decide whether to attempt
+     * the quiz or not. The lightweight summaries provided by the overview endpoint
+     * {@link QuizFacade#getAvailableQuizzes(Request, HttpServletRequest)} do not contain the rubric because
+     * it can be quite large.
+     *
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizId             - the ID of the quiz the user wishes to attempt.
+     * @return a DetailedQuizSummaryDTO
+     */
+    @POST
+    @Path("/{quizId}/rubric")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "View the rubric of a test.",
+            description = "This does not start a free test attempt for this test.")
+    public final Response viewQuizRubric(@Context final Request request,
+                                         @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("quizId") final String quizId) {
+        try {
+            if (null == quizId || quizId.isEmpty()) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test id.").toResponse();
+            }
+
+            EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + quizId.hashCode()));
+            Response cachedResponse = generateCachedResponse(request, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            // Get the quiz summary
+            DetailedQuizSummaryDTO quiz = quizManager.getQuizSummary(quizId);
+
+            // Check it is visible to this user's role:
+            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This test cannot be attempted freely, so no preview is available.").toResponse();
+            }
+
+            // Log the request:
+            ImmutableMap<String, String> logEntry = ImmutableMap.of(
+                    QUIZ_ID_FKEY, quizId,
+                    CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_QUIZ_RUBRIC, logEntry);
+
+            return Response.ok(quiz)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .tag(etag).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst loading a test summary", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
         }
     }
 
