@@ -87,6 +87,7 @@ public class IsaacEventPage extends SeguePage {
                           @JsonProperty("tags") Set<String> tags,
                           @JsonProperty("permissions") String permissions,
                           @JsonProperty("notes") String notes,
+                          @JsonProperty("teacherNotes") String teacherNotes,
                           @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
                           @JsonProperty("bookingDeadline") Date bookingDeadline,
                           @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
@@ -99,7 +100,8 @@ public class IsaacEventPage extends SeguePage {
                           @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
                           @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
-                null, relatedContent, published, deprecated, supersededBy, tags, permissions, notes, null);
+                null, relatedContent, published, deprecated, supersededBy, tags, permissions, notes,
+                teacherNotes, null);
 
         this.date = date;
         this.end_date = end_date;

@@ -56,12 +56,14 @@ public class IsaacQuiz extends SeguePage {
             @JsonProperty("tags") Set<String> tags,
             @JsonProperty("permissions") String permissions,
             @JsonProperty("notes") String notes,
+            @JsonProperty("teacherNotes") String teacherNotes,
             @JsonProperty("level") Integer level,
             @JsonProperty("hiddenFromRoles") List<String> hiddenFromRoles,
             @JsonProperty("rubric") Content rubric) {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
-                relatedContent, published, deprecated, supersededBy, tags, permissions, notes, level);
+                relatedContent, published, deprecated, supersededBy, tags, permissions, notes,
+                teacherNotes, level);
 
         this.hiddenFromRoles = hiddenFromRoles;
         this.rubric = rubric;

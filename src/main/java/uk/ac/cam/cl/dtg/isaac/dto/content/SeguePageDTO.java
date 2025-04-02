@@ -30,6 +30,7 @@ public class SeguePageDTO extends ContentDTO {
     private String summary;
     private Boolean deprecated;
     private String supersededBy;
+    private String teacherNotes;
 
     @JsonCreator
     public SeguePageDTO(@JsonProperty("id") String id,
@@ -40,14 +41,15 @@ public class SeguePageDTO extends ContentDTO {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
-            @JsonProperty("supersededBy") String supersededBy,
-            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
+            @JsonProperty("supersededBy") String supersededBy, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("teacherNotes") String teacherNotes, @JsonProperty("level") Integer level) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.deprecated = deprecated;
         this.supersededBy = supersededBy;
+        this.teacherNotes = teacherNotes;
 
     }
 
@@ -77,6 +79,14 @@ public class SeguePageDTO extends ContentDTO {
     @JsonIgnore(false) // Override the parent class decorator!
     public String getCanonicalSourceFile() {
         return this.canonicalSourceFile;
+    }
+
+    public String getTeacherNotes() {
+        return teacherNotes;
+    }
+
+    public void setTeacherNotes(final String teacherNotes) {
+        this.teacherNotes = teacherNotes;
     }
 
     public Boolean getDeprecated() {
