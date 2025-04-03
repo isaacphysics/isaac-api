@@ -1424,9 +1424,12 @@ public class UserAccountManager implements IUserAccountManager {
                             Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
 
                     if (Objects.equals(currentUser.getId(), userId)) {
-                        // The logged-in user has verified themselves - update their session caveats
+                        // The logged-in user has verified themselves - update their session and send confirmation email
                         userAuthenticationManager.removeCaveatFromUserSession(request, response, user,
                                 AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION);
+                        emailManager.sendTemplatedEmailToUser(currentUser,
+                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"), ImmutableMap.of(),
+                                EmailType.SYSTEM);
                     } else {
                         log.debug("Logged-in user doesn't match user to verify, session caveats for logged-in user will"
                                 + " not be updated.");
@@ -1435,6 +1438,8 @@ public class UserAccountManager implements IUserAccountManager {
                     log.debug("No logged-in user for whom to update caveats.");
                 } catch (IOException e) {
                     log.debug("Failed to update session caveats due to malformed session cookie.");
+                } catch (final ContentManagerException e) {
+                    log.debug("Failed to send teacher account confirmation email");
                 }
             }
 
