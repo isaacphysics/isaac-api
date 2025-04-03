@@ -45,10 +45,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
             @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
             @JsonProperty("deprecated") Boolean deprecated,
             @JsonProperty("level") Integer level, @JsonProperty("difficulty") Integer difficulty,
-            @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy) {
+            @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy,
+            @JsonProperty("teacherNotes") String teacherNotes) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, supersededBy, tags, level);
+                attribution, relatedContent, published, deprecated, supersededBy, tags, teacherNotes, level);
 
         this.passMark = passMark;
         this.difficulty = difficulty;

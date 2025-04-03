@@ -110,6 +110,7 @@ public class IsaacEventPageDTO extends SeguePageDTO {
                              @JsonProperty("version") boolean published,
                              @JsonProperty("deprecated") Boolean deprecated,
                              @JsonProperty("supersededBy") String supersededBy,
+                             @JsonProperty("teacherNotes") String teacherNotes,
                              @JsonProperty("tags") Set<String> tags,
                              @JsonProperty("date") Date date,
                              @JsonProperty("end_date") Date end_date,
@@ -124,7 +125,7 @@ public class IsaacEventPageDTO extends SeguePageDTO {
                              @JsonProperty("groupReservationLimit") Integer groupReservationLimit,
                              @JsonProperty("allowGroupReservations") Boolean allowGroupReservations) {
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
-                relatedContent, published, deprecated, supersededBy, tags, null);
+                relatedContent, published, deprecated, supersededBy, tags, teacherNotes, null);
 
         this.date = date;
         this.end_date = end_date;

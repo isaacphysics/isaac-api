@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 @JsonContentType("isaacPageFragment")
 public class IsaacPageFragment extends Content {
     private String summary;
+    private String teacherNotes;
 
     /**
      * Gets the summary.
@@ -42,5 +43,24 @@ public class IsaacPageFragment extends Content {
      */
     public final void setSummary(final String summary) {
         this.summary = summary;
+    }
+
+    /**
+     * Gets the teacherNotes.
+     *
+     * @return the teacherNotes
+     */
+    public String getTeacherNotes() {
+        return teacherNotes;
+    }
+
+    /**
+     * Sets the teacherNotes.
+     *
+     * @param teacherNotes
+     *            the teacherNotes to set
+     */
+    public void setTeacherNotes(final String teacherNotes) {
+        this.teacherNotes = teacherNotes;
     }
 }
