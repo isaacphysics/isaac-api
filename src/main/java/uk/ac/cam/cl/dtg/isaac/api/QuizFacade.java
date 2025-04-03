@@ -363,7 +363,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param quizId             - the ID of the quiz the user wishes to attempt.
      * @return a DetailedQuizSummaryDTO
      */
-    @POST
+    @GET
     @Path("/{quizId}/rubric")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
