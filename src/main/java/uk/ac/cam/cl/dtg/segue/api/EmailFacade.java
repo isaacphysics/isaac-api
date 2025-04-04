@@ -222,7 +222,7 @@ public class EmailFacade extends AbstractSegueFacade {
      * @param token  - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
-    @GET
+    @POST
     @Path("/users/verifyemail/{userid}/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
