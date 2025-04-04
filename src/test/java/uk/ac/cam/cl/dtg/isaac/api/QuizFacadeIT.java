@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 
 import jakarta.servlet.http.Cookie;
@@ -206,4 +207,49 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
         assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
     }
+
+    @Test
+    public void viewQuizRubricEndpoint_viewRubricAvailableToRoleStudent_succeeds() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ALICE_STUDENT_EMAIL, ALICE_STUDENT_PASSWORD);
+        HttpServletRequest viewQuizRubricRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(viewQuizRubricRequest);
+
+        // Act
+        // make request
+        Response viewQuizRubricResponse = quizFacade.viewQuizRubric(createNiceMock(Request.class), viewQuizRubricRequest,
+                QUIZ_TEST_QUIZ_ID);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), viewQuizRubricResponse.getStatus());
+
+        // check the quiz is returned for preview
+        DetailedQuizSummaryDTO responseBody = (DetailedQuizSummaryDTO) viewQuizRubricResponse.getEntity();
+        assertEquals(QUIZ_TEST_QUIZ_ID, responseBody.getId());
+    }
+
+    @Test
+    public void viewQuizRubricEndpoint_viewRubricHiddenFromRoleStudent_fails() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ALICE_STUDENT_EMAIL, ALICE_STUDENT_PASSWORD);
+        HttpServletRequest viewQuizRubricRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(viewQuizRubricRequest);
+
+        // Act
+        // make request
+        Response viewQuizRubricResponse = quizFacade.viewQuizRubric(createNiceMock(Request.class), viewQuizRubricRequest,
+                QUIZ_HIDDEN_FROM_ROLE_STUDENTS_QUIZ_ID);
+
+        // Assert
+        // check status code is FORBIDDEN
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), viewQuizRubricResponse.getStatus());
+
+        // check an error message was returned
+        SegueErrorResponse responseBody = (SegueErrorResponse) viewQuizRubricResponse.getEntity();
+        assertEquals("This test cannot be attempted freely, so no preview is available.", responseBody.getErrorMessage());
+    }
 }
+

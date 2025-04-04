@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
@@ -124,6 +125,17 @@ public class QuizManager {
         } else {
             throw new ContentManagerException("Expected an IsaacQuiz (id=" + quizId + "), got a " + cachedContent.getType());
         }
+    }
+
+    /**
+     *  Get a detailed quiz summary object by quiz ID.
+     *
+     * @param quizId - the quiz to summarise.
+     * @return a quiz summary containing the rubric of the quiz.
+     * @throws ContentManagerException if the quiz is not found.
+     */
+    public DetailedQuizSummaryDTO getQuizSummary(final String quizId) throws ContentManagerException {
+        return (DetailedQuizSummaryDTO) contentSummarizerService.extractContentSummary(this.findQuiz(quizId), DetailedQuizSummaryDTO.class);
     }
 
     /**
