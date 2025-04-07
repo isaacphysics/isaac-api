@@ -1401,12 +1401,6 @@ public class UserAccountManager implements IUserAccountManager {
             throw new NoUserException("No user found with this userId!");
         }
 
-        if (!userId.equals(user.getId())) {
-            log.warn(String.format("Received an invalid email token request by (%s) - provided bad userid",
-                    user.getId()));
-            throw new InvalidTokenException();
-        }
-
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
         if (evStatus == EmailVerificationStatus.VERIFIED
                 && user.getEmail().equals(user.getEmailToVerify())) {
