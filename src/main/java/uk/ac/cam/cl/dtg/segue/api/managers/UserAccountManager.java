@@ -1401,12 +1401,6 @@ public class UserAccountManager implements IUserAccountManager {
             throw new NoUserException("No user found with this userId!");
         }
 
-        if (!userId.equals(user.getId())) {
-            log.warn(String.format("Received an invalid email token request by (%s) - provided bad userid",
-                    user.getId()));
-            throw new InvalidTokenException();
-        }
-
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
         if (evStatus == EmailVerificationStatus.VERIFIED
                 && user.getEmail().equals(user.getEmailToVerify())) {
@@ -1416,15 +1410,24 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         if (authenticator.isValidEmailVerificationToken(user, token)) {
-            // If a direct-sign-up teacher user has just verified themselves, remove the caveat from their session
+            // If a direct-sign-up teacher user has just verified themselves:
             if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
                     && Role.TEACHER.equals(user.getRole()) && user.getTeacherAccountPending()) {
+                // Send them a teacher welcome email
                 try {
+                    emailManager.sendTemplatedEmailToUser(this.convertUserDOToUserDTO(user),
+                            emailManager.getEmailTemplateDTO("email-template-teacher-welcome"), ImmutableMap.of(),
+                            EmailType.SYSTEM);
+                } catch (final ContentManagerException e) {
+                    log.debug("Failed to send teacher welcome email after email verification.");
+                }
+
+                try {
+                    // If this is the current user, update their session to remove caveat
                     RegisteredUserDTO currentUser = this.getCurrentPartiallyIdentifiedUser(request,
                             Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
 
                     if (Objects.equals(currentUser.getId(), userId)) {
-                        // The logged-in user has verified themselves - update their session caveats
                         userAuthenticationManager.removeCaveatFromUserSession(request, response, user,
                                 AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION);
                     } else {
