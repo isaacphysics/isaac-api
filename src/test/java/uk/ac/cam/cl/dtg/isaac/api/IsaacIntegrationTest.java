@@ -230,7 +230,7 @@ public abstract class IsaacIntegrationTest {
     @BeforeAll
     public static void setUpClass() throws Exception {
         // Initialise Postgres - we will create a new, clean instance for each test class.
-        postgres = new PostgreSQLContainer<>("postgres:12")
+        postgres = new PostgreSQLContainer<>("postgres:16")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withUsername("rutherford")
                 .withFileSystemBind(getClassLoaderResourcePath("db_scripts/postgres-rutherford-create-script.sql"), "/docker-entrypoint-initdb.d/00-isaac-create.sql")
