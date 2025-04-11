@@ -31,4 +31,30 @@ public class LLMFreeTextMarkSchemeEntry {
     public void setMarks(Integer marks) {
         this.marks = marks;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof LLMFreeTextMarkSchemeEntry)) {
+            return false;
+        }
+
+        LLMFreeTextMarkSchemeEntry other = (LLMFreeTextMarkSchemeEntry) obj;
+        boolean result = true;
+        if (this.jsonField != null) {
+            result = result && this.jsonField.equals(other.getJsonField());
+        }
+        if (this.marks != null) {
+            result = result && this.marks.equals(other.getMarks());
+        }
+        if (this.shortDescription != null) {
+            result = result && this.shortDescription.equals(other.getShortDescription());
+        }
+        return result;
+    }
 }
