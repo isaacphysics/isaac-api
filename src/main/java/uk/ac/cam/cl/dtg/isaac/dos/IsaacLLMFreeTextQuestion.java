@@ -32,17 +32,6 @@ public class IsaacLLMFreeTextQuestion extends Question {
     public IsaacLLMFreeTextQuestion() {
     }
 
-    public IsaacLLMFreeTextQuestion(String promptInstructionOverride, List<LLMFreeTextMarkSchemeEntry> markScheme,
-                                    Integer maxMarks, String additionalMarkingInstructions,
-                                    List<LLMFreeTextMarkedExample> markedExamples, LLMMarkingExpression markingFormula) {
-        this.setPromptInstructionOverride(promptInstructionOverride);
-        this.setMarkScheme(markScheme);
-        this.setMaxMarks(maxMarks);
-        this.setAdditionalMarkingInstructions(additionalMarkingInstructions);
-        this.setMarkedExamples(markedExamples);
-        this.setMarkingFormula(markingFormula);
-    }
-
     public String getPromptInstructionOverride() {
         return promptInstructionOverride;
     }

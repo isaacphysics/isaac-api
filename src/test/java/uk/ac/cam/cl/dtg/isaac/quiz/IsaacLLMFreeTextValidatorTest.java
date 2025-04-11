@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingConstant;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingFunction;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingVariable;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
@@ -58,6 +59,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Test class for the user manager class.
@@ -67,6 +69,7 @@ import static org.powermock.api.easymock.PowerMock.replayAll;
 @PrepareForTest({OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class})
 @PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacLLMFreeTextValidatorTest {
+    private AbstractConfigLoader propertiesForTest;
     private IsaacLLMFreeTextValidator validator;
     private IsaacLLMFreeTextQuestion llmFreeTextQuestionOneMark;
     private IsaacLLMFreeTextQuestion llmFreeTextQuestionTwoMarks;
@@ -85,7 +88,7 @@ public class IsaacLLMFreeTextValidatorTest {
      */
     @Before
     public final void setUp() throws Exception {
-        AbstractConfigLoader propertiesForTest = new YamlLoader(
+        propertiesForTest = new YamlLoader(
                 "src/test/resources/segue-integration-test-config.yaml," +
                         "src/test/resources/segue-unit-test-llm-validator-override.yaml"
         );
@@ -114,7 +117,7 @@ public class IsaacLLMFreeTextValidatorTest {
                         .put("reasonFoo", 0).put("reasonBar", 0).put("reasonFizz", 1)));
         List<LLMFreeTextMarkedExample> markedExamplesOneMark = generateMarkedExamples(jsonMarkedExamplesOneMark);
 
-        llmFreeTextQuestionOneMark = new IsaacLLMFreeTextQuestion(null, markScheme, 1, null, markedExamplesOneMark, null);
+        llmFreeTextQuestionOneMark = createLLMFreeTextQuestion(markScheme, 1, markedExamplesOneMark, null);
 
         // Set up a question object with a default marking formula worth two marks:
         JSONArray jsonMarkedExamplesTwoMarks = new JSONArray()
@@ -124,14 +127,14 @@ public class IsaacLLMFreeTextValidatorTest {
                         .put("reasonFoo", 0).put("reasonBar", 0).put("reasonFizz", 1)));
         List<LLMFreeTextMarkedExample> markedExamplesTwoMarks = generateMarkedExamples(jsonMarkedExamplesTwoMarks);
 
-        llmFreeTextQuestionTwoMarks = new IsaacLLMFreeTextQuestion(null, markScheme, 2, null, markedExamplesOneMark, null);
+        llmFreeTextQuestionTwoMarks = createLLMFreeTextQuestion(markScheme, 2, markedExamplesTwoMarks, null);
     }
 
     /*
         Test that a one-mark answer for a default marking formula one-mark question gets recognised as correct
      */
     @Test
-    public final void isaacLLMFreeTextValidator_CorrectOneMarkAnswer_MarkSchemeShouldIncludeMark() {
+    public final void isaacLLMFreeTextValidator_OneMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMark() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
         c.setValue("Foo");
@@ -159,7 +162,7 @@ public class IsaacLLMFreeTextValidatorTest {
         Test that a three-mark answer for a default marking formula one-mark question gets recognised as correct
      */
     @Test
-    public final void isaacLLMFreeTextValidator_CorrectThreeMarkAnswer_MarkSchemeShouldIncludeMarks() {
+    public final void isaacLLMFreeTextValidator_OneMarkQuestionThreeMarkAnswer_MarkSchemeShouldIncludeMarks() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
         c.setValue("Foo");
@@ -187,7 +190,7 @@ public class IsaacLLMFreeTextValidatorTest {
         Test that a zero-mark answer for a one-mark question gets recognised as incorrect
     */
     @Test
-    public final void isaacLLMFreeTextValidator_IncorrectZeroMarkAnswer_MarkSchemeShouldIncludeNoMarks() {
+    public final void isaacLLMFreeTextValidator_OneMarkQuestionZeroMarkAnswer_MarkSchemeShouldIncludeNoMarks() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
         c.setValue("Buzz");
@@ -215,7 +218,7 @@ public class IsaacLLMFreeTextValidatorTest {
         Test that a two-mark answer for a default marking formula two-mark question gets recognised as correct
     */
     @Test
-    public final void isaacLLMFreeTextValidator_CorrectTwoMarkAnswer_MarkSchemeShouldIncludeMarks() {
+    public final void isaacLLMFreeTextValidator_TwoMarkQuestionTwoMarkAnswer_MarkSchemeShouldIncludeMarks() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
         c.setValue("Foo Bar");
@@ -239,9 +242,78 @@ public class IsaacLLMFreeTextValidatorTest {
         assertEquals((long) response.getMarksAwarded(), 2);
     }
 
+    /*
+        Test that a one-mark answer for a default marking formula two-mark question receives exactly one mark
+    */
+    @Test
+    public final void isaacLLMFreeTextValidator_TwoMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMarks() {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        c.setValue("Foo");
+
+        // Set up mocked OpenAI response to the user answer
+        setUpMockResponse("{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}");
+
+        // Test response
+        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionTwoMarks, c);
+
+        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
+                .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
+        );
+        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+
+        assertTrue(response.isCorrect());
+        assertTrue(expectedMarks.containsAll(awardedMarks));
+        assertTrue(awardedMarks.containsAll(expectedMarks));
+        assertEquals((long) response.getMarksAwarded(), 1);
+    }
+
+    /*
+        Test that an answer exceeding the maximum answer length is rejected
+    */
+    @Test
+    public final void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        int maxAnswerLength = Integer.parseInt(propertiesForTest.getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
+        c.setValue(String.join("", Collections.nCopies((maxAnswerLength/10 + 1), "Repeat Me ")));
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Answer is too long for LLM free-text question marking");
+
+        // This should throw an exception:
+        validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
+    }
+
     // --- Helper Functions ---
 
-    public List<LLMFreeTextMarkSchemeEntry> generateMarkScheme(JSONArray jsonMarkScheme) {
+    /**
+     * Helper method for the isaacLLMFreeTextValidator tests,
+     * mocks given response as if generated by the OpenAI client
+     *
+     * @param llmResponse      - mock message to return from client
+     */
+    private void setUpMockResponse(String llmResponse) {
+        // Mock each layer of the response generated by the client's model
+        EasyMock.expect(chatResponseMessage.getContent() ).andReturn(llmResponse);
+        EasyMock.expect(chatChoice.getMessage() ).andReturn(chatResponseMessage);
+        EasyMock.expect(chatCompletions.getChoices() ).andReturn(Collections.singletonList(chatChoice)).times(2);
+        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andReturn(chatCompletions);
+
+        // Set all mocked objects into replay mode
+        replayAll();
+    }
+
+    /**
+     * Helper method for the isaacLLMFreeTextValidator tests,
+     * generates a list of marks and their values from json input
+     *
+     * @param jsonMarkScheme      - a JSON array containing marks in the format {"jsonField": markName, "marks": markValue}
+     * @return A list of marks with corresponding "jsonField" and "marks" fields
+     */
+    private List<LLMFreeTextMarkSchemeEntry> generateMarkScheme(JSONArray jsonMarkScheme) {
         List<LLMFreeTextMarkSchemeEntry> markScheme = new LinkedList<>();
 
         for (int i = 0; i < jsonMarkScheme.length(); i++) {
@@ -258,7 +330,15 @@ public class IsaacLLMFreeTextValidatorTest {
         return markScheme;
     }
 
-    public List<LLMFreeTextMarkedExample> generateMarkedExamples(JSONArray jsonMarkedExamples) {
+    /**
+     * Helper method for the isaacLLMFreeTextValidator tests,
+     * generates a list of marked example answers from json input
+     *
+     * @param jsonMarkedExamples      - a JSON array containing examples in the format:
+     *                                  {"answer": exampleAnswer, "marksAwarded: exampleValue, "marks": {...exampleMarkScheme...}}
+     * @return A list of marked examples with corresponding "answer", "marksAwarded", and "marks" fields
+     */
+    private List<LLMFreeTextMarkedExample> generateMarkedExamples(JSONArray jsonMarkedExamples) {
         List<LLMFreeTextMarkedExample> markedExamples = new LinkedList<>();
 
         for (int i = 0; i < jsonMarkedExamples.length(); i++) {
@@ -269,7 +349,7 @@ public class IsaacLLMFreeTextValidatorTest {
             example.setAnswer(jsonMarkedExample.getString("answer"));
             example.setMarksAwarded(jsonMarkedExample.getInt("marksAwarded"));
 
-            // Extract each of the individual json fields under "marks" to add to the marked example
+            // Extract each of the individual marks from json to add to the marked example
             JSONObject jsonMarkedExampleMarks = jsonMarkedExample.getJSONObject("marks");
             HashMap<String, Integer> marks = new HashMap<>();
             jsonMarkedExampleMarks.keys().forEachRemaining(mark -> {
@@ -284,15 +364,27 @@ public class IsaacLLMFreeTextValidatorTest {
         return markedExamples;
     }
 
-    public final void setUpMockResponse(String llmResponse) {
-        // Mock each layer of the response generated by the client's model
-        EasyMock.expect(chatResponseMessage.getContent() ).andReturn(llmResponse).anyTimes();
-        EasyMock.expect(chatChoice.getMessage() ).andReturn(chatResponseMessage).anyTimes();
-        EasyMock.expect(chatCompletions.getChoices() ).andReturn(Collections.singletonList(chatChoice)).anyTimes();
-        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andReturn(chatCompletions).anyTimes();
+    /**
+     * Helper method for the isaacLLMFreeTextValidator tests,
+     * generates an IsaacLLMFreeTextQuestion with provided marking information
+     *
+     * @param markScheme              - Each available mark for the question and its corresponding value
+     * @param maxMarks                - Maximum available number of marks for the question
+     * @param markedExamples          - Example marked answers to the question
+     * @param markingFormula          - Formula used to calculate the mark total.
+     *                                  If null, defaults to MIN(maxMarks, SUM(... all marks ...))
+     * @return The new IsaacLLMFreeTextQuestion
+     */
+    private IsaacLLMFreeTextQuestion createLLMFreeTextQuestion(List<LLMFreeTextMarkSchemeEntry> markScheme,
+                                    Integer maxMarks,
+                                    List<LLMFreeTextMarkedExample> markedExamples, LLMMarkingExpression markingFormula) {
+        IsaacLLMFreeTextQuestion question = new IsaacLLMFreeTextQuestion();
+        question.setMarkScheme(markScheme);
+        question.setMaxMarks(maxMarks);
+        question.setMarkedExamples(markedExamples);
+        question.setMarkingFormula(markingFormula);
 
-        // Set all mocked objects into replay mode
-        replayAll();
+        return question;
     }
 
     //  --- LLMMarkingElement Syntax Sugar ---
