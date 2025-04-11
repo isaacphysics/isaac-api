@@ -147,7 +147,7 @@ public class IsaacLLMFreeTextValidatorTest {
                         .put("advantageOne", 1).put("advantageTwo", 0).put("disadvantageOne", 1).put("disadvantageTwo", 1)));
         List<LLMFreeTextMarkedExample> markedExamplesAdvantageDisadvantage = generateMarkedExamples(jsonMarkedExamplesAdvantageDisadvantage);
 
-        llmFreeTextQuestionAdvantageDisadvantage = createLLMFreeTextQuestion(markSchemeAdvantageDisadvantage, 2, markedExamplesAdvantageDisadvantage, advantageDisadvantageMarkingFormula(markSchemeAdvantageDisadvantage));
+        llmFreeTextQuestionAdvantageDisadvantage = createLLMFreeTextQuestion(markSchemeAdvantageDisadvantage, 2, markedExamplesAdvantageDisadvantage, advantageDisadvantageMarkingFormula);
 
         // Set up a question object with an point/explanation marking formula worth two marks:
         JSONArray jsonMarkSchemePointExplanation = new JSONArray()
@@ -164,7 +164,7 @@ public class IsaacLLMFreeTextValidatorTest {
                         .put("pointOne", 0).put("pointTwo", 1).put("explanationOne", 0).put("explanationTwo", 1)));
         List<LLMFreeTextMarkedExample> markedExamplesPointExplanation = generateMarkedExamples(jsonMarkedExamplesPointExplanation);
 
-        llmFreeTextQuestionPointExplanation = createLLMFreeTextQuestion(markSchemePointExplanation, 2, markedExamplesPointExplanation, pointExplanationMarkingFormula(markSchemePointExplanation));
+        llmFreeTextQuestionPointExplanation = createLLMFreeTextQuestion(markSchemePointExplanation, 2, markedExamplesPointExplanation, pointExplanationMarkingFormula);
     }
 
     /*
@@ -655,62 +655,58 @@ public class IsaacLLMFreeTextValidatorTest {
         return variable;
     }
 
-    //  --- Useful Example Marking Formulas ---
+    //  --- Useful Example Marking Formulae ---
 
     /*
        - advantageDisadvantage = SUM(MAX(... All Advantage Marks ...), MAX(... All Disadvantage Marks ...))
        Labelled here and in documentation as advantage/disadvantage, although this structure can also be used
        for any two mutually exclusive categories each required to get full marks
     */
-    private static LLMMarkingFunction advantageDisadvantageMarkingFormula(List<LLMFreeTextMarkSchemeEntry> markScheme) {
-        return markingFormulaFunction("SUM",
-                Arrays.asList(
-                        markingFormulaFunction("MAX",
-                                Arrays.asList(
-                                        markingFormulaVariable("advantageOne"),
-                                        markingFormulaVariable("advantageTwo")
-                                )
-                        ),
-                        markingFormulaFunction("MAX",
-                                Arrays.asList(
-                                        markingFormulaVariable("disadvantageOne"),
-                                        markingFormulaVariable("disadvantageTwo")
-                                )
-                        )
-                )
-        );
-    }
+    private final LLMMarkingFunction advantageDisadvantageMarkingFormula = markingFormulaFunction("SUM",
+            Arrays.asList(
+                    markingFormulaFunction("MAX",
+                            Arrays.asList(
+                                    markingFormulaVariable("advantageOne"),
+                                    markingFormulaVariable("advantageTwo")
+                            )
+                    ),
+                    markingFormulaFunction("MAX",
+                            Arrays.asList(
+                                    markingFormulaVariable("disadvantageOne"),
+                                    markingFormulaVariable("disadvantageTwo")
+                            )
+                    )
+            )
+    );
 
     /*
         - pointExplanation = SUM(MAX(pointOne, pointTwo, ... pointN), MAX(MIN(pointOne, explanationOne), MIN(pointTwo, explanationTwo), ... MIN(pointN, explanationN))
         Used for questions where a point is a prerequisite for its matching explanation
     */
-    private static LLMMarkingFunction pointExplanationMarkingFormula(List<LLMFreeTextMarkSchemeEntry> markScheme) {
-        return markingFormulaFunction("SUM",
-                Arrays.asList(
-                        markingFormulaFunction("MAX",
-                                Arrays.asList(
-                                        markingFormulaVariable("pointOne"),
-                                        markingFormulaVariable("pointTwo")
-                                )
-                        ),
-                        markingFormulaFunction("MAX",
-                                Arrays.asList(
-                                        markingFormulaFunction("MIN",
-                                            Arrays.asList(
-                                                    markingFormulaVariable("pointOne"),
-                                                    markingFormulaVariable("explanationOne")
-                                            )
-                                        ),
-                                        markingFormulaFunction("MIN",
-                                                Arrays.asList(
-                                                        markingFormulaVariable("pointTwo"),
-                                                        markingFormulaVariable("explanationTwo")
-                                                )
+    private final LLMMarkingFunction pointExplanationMarkingFormula = markingFormulaFunction("SUM",
+            Arrays.asList(
+                    markingFormulaFunction("MAX",
+                            Arrays.asList(
+                                    markingFormulaVariable("pointOne"),
+                                    markingFormulaVariable("pointTwo")
+                            )
+                    ),
+                    markingFormulaFunction("MAX",
+                            Arrays.asList(
+                                    markingFormulaFunction("MIN",
+                                        Arrays.asList(
+                                                markingFormulaVariable("pointOne"),
+                                                markingFormulaVariable("explanationOne")
                                         )
-                                )
-                        )
-                )
-        );
-    }
+                                    ),
+                                    markingFormulaFunction("MIN",
+                                            Arrays.asList(
+                                                    markingFormulaVariable("pointTwo"),
+                                                    markingFormulaVariable("explanationTwo")
+                                            )
+                                    )
+                            )
+                    )
+            )
+    );
 }
