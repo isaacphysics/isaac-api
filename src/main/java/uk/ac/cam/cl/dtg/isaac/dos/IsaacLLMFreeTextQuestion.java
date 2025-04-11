@@ -22,12 +22,25 @@ public class IsaacLLMFreeTextQuestion extends Question {
     private List<LLMFreeTextMarkSchemeEntry> markScheme;
     private Integer maxMarks;
     private String additionalMarkingInstructions;
+    @Deprecated
     private String markCalculationInstructions;
     private List<LLMFreeTextMarkedExample> markedExamples;
     private LLMMarkingExpression markingFormula;
+    @Deprecated
     private String markingFormulaString;
 
     public IsaacLLMFreeTextQuestion() {
+    }
+
+    public IsaacLLMFreeTextQuestion(String promptInstructionOverride, List<LLMFreeTextMarkSchemeEntry> markScheme,
+                                    Integer maxMarks, String additionalMarkingInstructions,
+                                    List<LLMFreeTextMarkedExample> markedExamples, LLMMarkingExpression markingFormula) {
+        this.setPromptInstructionOverride(promptInstructionOverride);
+        this.setMarkScheme(markScheme);
+        this.setMaxMarks(maxMarks);
+        this.setAdditionalMarkingInstructions(additionalMarkingInstructions);
+        this.setMarkedExamples(markedExamples);
+        this.setMarkingFormula(markingFormula);
     }
 
     public String getPromptInstructionOverride() {
@@ -58,9 +71,11 @@ public class IsaacLLMFreeTextQuestion extends Question {
         this.additionalMarkingInstructions = additionalMarkingInstructions;
     }
 
+    @Deprecated
     public String getMarkCalculationInstructions() {
         return markCalculationInstructions;
     }
+    @Deprecated
     public void setMarkCalculationInstructions(String markCalculationInstructions) {
         this.markCalculationInstructions = markCalculationInstructions;
     }
@@ -79,9 +94,11 @@ public class IsaacLLMFreeTextQuestion extends Question {
         this.markingFormula = markingFormula;
     }
 
+    @Deprecated
     public String getMarkingFormulaString() {
         return markingFormulaString;
     }
+    @Deprecated
     public void setMarkingFormulaString(String markingFormulaString) {
         this.markingFormulaString = markingFormulaString;
     }
