@@ -22,9 +22,11 @@ public class IsaacLLMFreeTextQuestion extends Question {
     private List<LLMFreeTextMarkSchemeEntry> markScheme;
     private Integer maxMarks;
     private String additionalMarkingInstructions;
+    @Deprecated
     private String markCalculationInstructions;
     private List<LLMFreeTextMarkedExample> markedExamples;
     private LLMMarkingExpression markingFormula;
+    @Deprecated
     private String markingFormulaString;
 
     public IsaacLLMFreeTextQuestion() {
@@ -58,9 +60,11 @@ public class IsaacLLMFreeTextQuestion extends Question {
         this.additionalMarkingInstructions = additionalMarkingInstructions;
     }
 
+    @Deprecated
     public String getMarkCalculationInstructions() {
         return markCalculationInstructions;
     }
+    @Deprecated
     public void setMarkCalculationInstructions(String markCalculationInstructions) {
         this.markCalculationInstructions = markCalculationInstructions;
     }
@@ -79,9 +83,11 @@ public class IsaacLLMFreeTextQuestion extends Question {
         this.markingFormula = markingFormula;
     }
 
+    @Deprecated
     public String getMarkingFormulaString() {
         return markingFormulaString;
     }
+    @Deprecated
     public void setMarkingFormulaString(String markingFormulaString) {
         this.markingFormulaString = markingFormulaString;
     }
