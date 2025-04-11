@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonParseException;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
@@ -73,6 +74,8 @@ public class IsaacLLMFreeTextValidatorTest {
     private IsaacLLMFreeTextValidator validator;
     private IsaacLLMFreeTextQuestion llmFreeTextQuestionOneMark;
     private IsaacLLMFreeTextQuestion llmFreeTextQuestionTwoMarks;
+    private IsaacLLMFreeTextQuestion llmFreeTextQuestionAdvantageDisadvantage;
+    private IsaacLLMFreeTextQuestion llmFreeTextQuestionPointExplanation;
 
     // Mocks
     private OpenAIClient client;
@@ -102,7 +105,7 @@ public class IsaacLLMFreeTextValidatorTest {
 
         validator = new IsaacLLMFreeTextValidator(propertiesForTest, client);
 
-        // Set up mark scheme with three available marks
+        // Set up generic mark scheme with three available marks
         JSONArray jsonMarkScheme = new JSONArray()
                 .put(new JSONObject().put("jsonField", "reasonFoo").put("shortDescription", "Foo reason").put("marks", 1))
                 .put(new JSONObject().put("jsonField", "reasonBar").put("shortDescription", "Bar reason").put("marks", 1))
@@ -128,6 +131,40 @@ public class IsaacLLMFreeTextValidatorTest {
         List<LLMFreeTextMarkedExample> markedExamplesTwoMarks = generateMarkedExamples(jsonMarkedExamplesTwoMarks);
 
         llmFreeTextQuestionTwoMarks = createLLMFreeTextQuestion(markScheme, 2, markedExamplesTwoMarks, null);
+
+        // Set up a question object with an advantage/disadvantage marking formula worth two marks:
+        JSONArray jsonMarkSchemeAdvantageDisadvantage = new JSONArray()
+                .put(new JSONObject().put("jsonField", "advantageOne").put("shortDescription", "Advantage reason").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "advantageTwo").put("shortDescription", "Another advantage reason").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "disadvantageOne").put("shortDescription", "Disadvantage reason").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "disadvantageTwo").put("shortDescription", "Another disadvantage reason").put("marks", 1));
+        List<LLMFreeTextMarkSchemeEntry> markSchemeAdvantageDisadvantage = generateMarkScheme(jsonMarkSchemeAdvantageDisadvantage);
+
+        JSONArray jsonMarkedExamplesAdvantageDisadvantage = new JSONArray()
+                .put(new JSONObject().put("answer", "Advantage").put("marksAwarded", 1).put("marks", new JSONObject()
+                        .put("advantageOne", 1).put("advantageTwo", 0).put("disadvantageOne", 0).put("disadvantageTwo", 0)))
+                .put(new JSONObject().put("answer", "Disadvantage Disadvantage").put("marksAwarded", 1).put("marks", new JSONObject()
+                        .put("advantageOne", 1).put("advantageTwo", 0).put("disadvantageOne", 1).put("disadvantageTwo", 1)));
+        List<LLMFreeTextMarkedExample> markedExamplesAdvantageDisadvantage = generateMarkedExamples(jsonMarkedExamplesAdvantageDisadvantage);
+
+        llmFreeTextQuestionAdvantageDisadvantage = createLLMFreeTextQuestion(markSchemeAdvantageDisadvantage, 2, markedExamplesAdvantageDisadvantage, advantageDisadvantageMarkingFormula(markSchemeAdvantageDisadvantage));
+
+        // Set up a question object with an point/explanation marking formula worth two marks:
+        JSONArray jsonMarkSchemePointExplanation = new JSONArray()
+                .put(new JSONObject().put("jsonField", "pointOne").put("shortDescription", "First point").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "pointTwo").put("shortDescription", "Second point").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "explanationOne").put("shortDescription", "Explaining first point").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "explanationTwo").put("shortDescription", "Explaining second point").put("marks", 1));
+        List<LLMFreeTextMarkSchemeEntry> markSchemePointExplanation = generateMarkScheme(jsonMarkSchemePointExplanation);
+
+        JSONArray jsonMarkedExamplesPointExplanation = new JSONArray()
+                .put(new JSONObject().put("answer", "Explanation").put("marksAwarded", 0).put("marks", new JSONObject()
+                        .put("pointOne", 0).put("pointTwo", 0).put("explanationOne", 1).put("explanationTwo", 0)))
+                .put(new JSONObject().put("answer", "Point2 Explanation2").put("marksAwarded", 2).put("marks", new JSONObject()
+                        .put("pointOne", 0).put("pointTwo", 1).put("explanationOne", 0).put("explanationTwo", 1)));
+        List<LLMFreeTextMarkedExample> markedExamplesPointExplanation = generateMarkedExamples(jsonMarkedExamplesPointExplanation);
+
+        llmFreeTextQuestionPointExplanation = createLLMFreeTextQuestion(markSchemePointExplanation, 2, markedExamplesPointExplanation, pointExplanationMarkingFormula(markSchemePointExplanation));
     }
 
     /*
@@ -271,6 +308,94 @@ public class IsaacLLMFreeTextValidatorTest {
     }
 
     /*
+        Tests that an answer containing an advantage and a disadvantage mark for a two-mark
+        advantage/disadvantage question receives two marks
+    */
+    @Test
+    public final void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionADMarks_MarkTotalShouldBeTwo() {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        c.setValue("Advantage Disadvantage");
+
+        // Set up mocked OpenAI response to the user answer
+        setUpMockResponse("{\"advantageOne\": 1, \"advantageTwo\": 0, \"disadvantageOne\": 1, \"disadvantageTwo\": 0}");
+
+        // Test response
+        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionAdvantageDisadvantage, c);
+
+        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
+                .put(new JSONObject().put("jsonField", "advantageOne").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "advantageTwo").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "disadvantageOne").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "disadvantageTwo").put("marks", 0))
+        );
+        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+
+        assertTrue(response.isCorrect());
+        assertTrue(expectedMarks.containsAll(awardedMarks));
+        assertTrue(awardedMarks.containsAll(expectedMarks));
+        assertEquals((long) response.getMarksAwarded(), 2);
+    }
+
+    /*
+        Tests that an answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark
+    */
+    @Test
+    public final void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionDMarks_MarkTotalShouldBeOne() {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        c.setValue("Disadvantage");
+
+        // Set up mocked OpenAI response to the user answer
+        setUpMockResponse("{\"advantageOne\": 0, \"advantageTwo\": 0, \"disadvantageOne\": 1, \"disadvantageTwo\": 0}");
+
+        // Test response
+        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionAdvantageDisadvantage, c);
+
+        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
+                .put(new JSONObject().put("jsonField", "advantageOne").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "advantageTwo").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "disadvantageOne").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "disadvantageTwo").put("marks", 0))
+        );
+        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+
+        assertTrue(response.isCorrect());
+        assertTrue(expectedMarks.containsAll(awardedMarks));
+        assertTrue(awardedMarks.containsAll(expectedMarks));
+        assertEquals((long) response.getMarksAwarded(), 1);
+    }
+
+    /*
+       Tests that an answer containing two advantages mark for a two-mark advantage/disadvantage question receives one mark
+   */
+    @Test
+    public final void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionAAMarks_MarkTotalShouldBeOne() {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        c.setValue("Advantage Advantage");
+
+        // Set up mocked OpenAI response to the user answer
+        setUpMockResponse("{\"advantageOne\": 1, \"advantageTwo\": 1, \"disadvantageOne\": 0, \"disadvantageTwo\": 0}");
+
+        // Test response
+        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionAdvantageDisadvantage, c);
+
+        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
+                .put(new JSONObject().put("jsonField", "advantageOne").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "advantageTwo").put("marks", 1))
+                .put(new JSONObject().put("jsonField", "disadvantageOne").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "disadvantageTwo").put("marks", 0))
+        );
+        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+
+        assertTrue(response.isCorrect());
+        assertTrue(expectedMarks.containsAll(awardedMarks));
+        assertTrue(awardedMarks.containsAll(expectedMarks));
+        assertEquals((long) response.getMarksAwarded(), 1);
+    }
+
+    /*
         Test that an answer exceeding the maximum answer length is rejected
     */
     @Test
@@ -286,6 +411,35 @@ public class IsaacLLMFreeTextValidatorTest {
         // This should throw an exception:
         validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
     }
+
+    /*
+        Test that a response from the client not in the expected json format returns zero marks
+    */
+    @Test
+    public final void isaacLLMFreeTextValidator_ResponseInvalidFormat_MarkSchemeShouldIncludeNoMarks() {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        c.setValue("Foo Bar Fizz");
+
+        // Set up mocked OpenAI response to the user answer
+        setUpMockResponse("Not a valid JSON response");
+
+        // Test response
+        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
+
+        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
+                .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 0))
+                .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
+        );
+        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+
+        assertFalse(response.isCorrect());
+        assertTrue(expectedMarks.containsAll(awardedMarks));
+        assertTrue(awardedMarks.containsAll(expectedMarks));
+        assertEquals((long) response.getMarksAwarded(), 0);
+    }
+
 
     // --- Helper Functions ---
 
@@ -332,7 +486,7 @@ public class IsaacLLMFreeTextValidatorTest {
 
     /**
      * Helper method for the isaacLLMFreeTextValidator tests,
-     * generates a list of marked example answers from json input
+     * generates a list of marked example answers (consisting of a written answer and its marks) from json input
      *
      * @param jsonMarkedExamples      - a JSON array containing examples in the format:
      *                                  {"answer": exampleAnswer, "marksAwarded: exampleValue, "marks": {...exampleMarkScheme...}}
@@ -416,32 +570,34 @@ public class IsaacLLMFreeTextValidatorTest {
 
     //  --- Useful Example Marking Formulas ---
 
-    // advantageDisadvantage = SUM(MAX(... All Advantage Marks ...), MAX(... All Disadvantage Marks ...))
+    /*
+       - advantageDisadvantage = SUM(MAX(... All Advantage Marks ...), MAX(... All Disadvantage Marks ...))
+       Labelled here and in documentation as advantage/disadvantage, but this structure can be used
+       for any two mutually exclusive categories
+    */
     private static LLMMarkingFunction advantageDisadvantageMarkingFormula(List<LLMFreeTextMarkSchemeEntry> markScheme) {
-        List<LLMMarkingExpression> markingVariablesDisadvantage = new LinkedList<>();
-        List<LLMMarkingExpression> markingVariablesAdvantage = new LinkedList<>();
-        for (LLMFreeTextMarkSchemeEntry mark : markScheme) {
-            String variableName = mark.getJsonField();
-            if (variableName.contains("disadvantage")) {
-                markingVariablesDisadvantage.add(markingFormulaVariable(variableName));
-            } else if (variableName.contains("advantage")) {
-                markingVariablesAdvantage.add(markingFormulaVariable(variableName));
-            }
-        }
-
         return markingFormulaFunction("SUM",
                 Arrays.asList(
                         markingFormulaFunction("MAX",
-                                markingVariablesAdvantage
+                                Arrays.asList(
+                                        markingFormulaVariable("advantageOne"),
+                                        markingFormulaVariable("advantageTwo")
+                                )
                         ),
-                        markingFormulaFunction("SUM",
-                                markingVariablesDisadvantage
+                        markingFormulaFunction("MAX",
+                                Arrays.asList(
+                                        markingFormulaVariable("disadvantageOne"),
+                                        markingFormulaVariable("disadvantageTwo")
+                                )
                         )
                 )
         );
     }
 
-    // pointExplanation = SUM(MAX(pointOne, pointTwo, ... pointN), MAX(MIN(pointOne, explanationOne), MIN(pointTwo, explanationTwo), ... MIN(pointN, explanationN))
+    /*
+        - pointExplanation = SUM(MAX(pointOne, pointTwo, ... pointN), MAX(MIN(pointOne, explanationOne), MIN(pointTwo, explanationTwo), ... MIN(pointN, explanationN))
+        Used for questions where a point is a prerequisite for its matching explanation
+    */
     private static LLMMarkingFunction pointExplanationMarkingFormula(List<LLMFreeTextMarkSchemeEntry> markScheme) {
         return markingFormulaFunction("SUM",
                 Arrays.asList(
