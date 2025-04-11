@@ -488,7 +488,9 @@ public class IsaacLLMFreeTextValidatorTest {
     public final void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
-        int maxAnswerLength = Integer.parseInt(propertiesForTest.getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
+        int maxAnswerLength = 4096;
+        try { maxAnswerLength = Integer.parseInt(propertiesForTest.getProperty(LLM_MARKER_MAX_ANSWER_LENGTH)); }
+        catch (NumberFormatException ignored) { /* Use default value */ }
         c.setValue(String.join("", Collections.nCopies((maxAnswerLength/10 + 1), "Repeat Me ")));
 
         expectedException.expect(IllegalArgumentException.class);
