@@ -53,7 +53,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -415,7 +414,7 @@ public class GameboardPersistenceManager {
                 gameboardDO.getContents().stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList())));
 
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
+                TYPE_FIELDNAME, Constants.BooleanOperator.OR, QUESTION_PAGE_TYPES));
 
         // Search for questions that match the ids.       
         ResultsWrapper<ContentDTO> results;

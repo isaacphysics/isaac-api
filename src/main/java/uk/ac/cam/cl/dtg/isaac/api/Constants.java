@@ -15,17 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_SERVER_LOG_TYPES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Utility class to provide common isaac-specific constants.
@@ -53,6 +53,9 @@ public final class Constants {
     public static final String REGRESSION_TEST_TAG = "regression_test";
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
+
+    public static final List<String> QUESTION_PAGE_TYPES = List.of(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE);
+    public static final Set<String> QUESTION_PAGE_TYPES_SET = new HashSet<>(QUESTION_PAGE_TYPES);
 
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
             QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);

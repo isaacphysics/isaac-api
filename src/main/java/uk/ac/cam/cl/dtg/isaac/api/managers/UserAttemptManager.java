@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * A class to augment content with user attempt information.
  */
@@ -60,6 +62,12 @@ public class UserAttemptManager {
     private void augmentContentSummaryWithAttemptInformation(
             final ContentSummaryDTO contentSummary,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
+
+        if (!QUESTION_PAGE_TYPES_SET.contains(contentSummary.getType())) {
+            // Do not augment non-question pages.
+            return;
+        }
+
         String questionId = contentSummary.getId();
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
         boolean questionAnsweredCorrectly = false;
