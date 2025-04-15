@@ -337,6 +337,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
+                    assignment.setGroupName(group.getGroupName());
                 }
 
                 return Response.ok(allAssignmentsSetToGroup)
