@@ -40,6 +40,8 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
@@ -83,6 +85,115 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         List<?> responseBody = (List<?>) createQuizResponse.getEntity();
         AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
         assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertNotNull(status.getAssignmentId());  // Should be a created assignment.
+        assertNull(status.getErrorMessage());  // Should not be an error.
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_assignQuizDueInPast_fails() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, null,
+                        DateUtils.addDays(new Date(), -5),
+                        null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check the quiz was assigned successfully
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertEquals("The quiz cannot be due in the past.", status.getErrorMessage());
+        assertNull(status.getAssignmentId());  // Should not be a created assignment.
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_assignDuplicateQuizAsTeacherAfterFirstDue_succeeds() throws Exception {
+        // Arrange
+        // Create an existing quiz for the group, bypassing all verification logic, set 7 days ago, due 2 days ago:
+        QuizAssignmentDTO existingQuiz = new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, TEST_TEACHER_ID,
+                TEST_TEACHERS_AB_GROUP_ID, DateUtils.addDays(new Date(), -7),  DateUtils.addDays(new Date(), -2),
+                null, QuizFeedbackMode.DETAILED_FEEDBACK);
+        quizAssignmentPersistenceManager.saveAssignment(existingQuiz);
+
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, null, DateUtils.addDays(new Date(), 5),
+                        null, QuizFeedbackMode.DETAILED_FEEDBACK)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check the quiz was assigned successfully
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertNotNull(status.getAssignmentId());  // Should be a created assignment.
+        assertNull(status.getErrorMessage());  // Should not be an error.
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_assignDuplicateQuizAsTeacher_fails() throws Exception {
+        // Arrange
+        // Create an existing quiz for the group, bypassing all verification logic, set 1 day ago, due 7 days time:
+        QuizAssignmentDTO existingQuiz = new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID, TEST_TEACHER_ID,
+                TEST_TEACHERS_AB_GROUP_ID, DateUtils.addDays(new Date(), -1),  DateUtils.addDays(new Date(), 7),
+                null, QuizFeedbackMode.DETAILED_FEEDBACK);
+        quizAssignmentPersistenceManager.saveAssignment(existingQuiz);
+
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, null, DateUtils.addDays(new Date(), 5),
+                        null, QuizFeedbackMode.DETAILED_FEEDBACK)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check the quiz was assigned successfully
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertNull(status.getAssignmentId());  // Should not be a created assignment.
+        assertEquals("You cannot reassign a test until the due date has passed.", status.getErrorMessage());
     }
 
     @Test

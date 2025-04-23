@@ -26,18 +26,13 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.resetToNice;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.replay;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
@@ -68,54 +63,6 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
             teacher.getId(), studentGroup.getId(),
             somePastDate, someFutureDate, null,
             QuizFeedbackMode.OVERALL_MARK);
-    }
-
-    @Test
-    public void createAssignment() throws SegueDatabaseException, ContentManagerException {
-        Long returnedId = 0xF00L;
-
-        withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.emptyList());
-            expect(m.saveAssignment(newAssignment)).andReturn(returnedId);
-        });
-        withMock(emailService, m -> m.sendAssignmentEmailToGroup(eq(newAssignment), eq(studentQuiz), anyObject(), eq("email-template-group-quiz-assignment")));
-
-        QuizAssignmentDTO createdAssignment = quizAssignmentManager.createAssignment(newAssignment);
-
-        assertEquals(returnedId, createdAssignment.getId());
-        assertTrue(new Date().getTime() - createdAssignment.getCreationDate().getTime() < 1000);
-    }
-
-    @Test
-    public void createAnotherAssignmentAfterFirstIsDueSucceeds() throws SegueDatabaseException, ContentManagerException {
-
-        withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(overdueAssignment));
-            expect(m.saveAssignment(newAssignment)).andReturn(0L);
-        });
-        resetToNice(emailService);
-
-        quizAssignmentManager.createAssignment(newAssignment);
-    }
-
-    @Test(expected = DueBeforeNowException.class)
-    public void createAssignmentFailsInThePast() throws SegueDatabaseException, ContentManagerException {
-        newAssignment.setDueDate(somePastDate);
-
-        quizAssignmentManager.createAssignment(newAssignment);
-    }
-
-    @Test(expected = DuplicateAssignmentException.class)
-    public void createDuplicateAssignmentFails() throws SegueDatabaseException, ContentManagerException {
-
-        withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
-        });
-
-        quizAssignmentManager.createAssignment(newAssignment);
     }
 
     @Test
