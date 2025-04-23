@@ -68,6 +68,10 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         Objects.requireNonNull(question);
         if (!(question instanceof IsaacLLMFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not a LLM free-text question");
+        } else {
+            if (((IsaacLLMFreeTextQuestion) question).getMaxMarks() == null) {
+                ((IsaacLLMFreeTextQuestion) question).setMaxMarks(0);
+            }
         }
 
         // Validate answer
