@@ -86,8 +86,13 @@ public class IsaacLLMFreeTextValidator implements IValidator {
     }
 
     private String generatePromptSystemMessage(final IsaacLLMFreeTextQuestion question) {
+        String llmMarkerSubject = configLoader.getProperty(LLM_MARKER_SUBJECT);
+        if (llmMarkerSubject == null) {
+            llmMarkerSubject = "";
+        }
+
         String contextAndInstructions = "You are a principal examiner marking A Level and GCSE "
-            + String.format("%s questions.\n", this.configLoader.getProperty(LLM_MARKER_SUBJECT))
+            + String.format("%s questions.\n", llmMarkerSubject)
             + "You do not like vagueness in student answers.\n"
             + "You follow a standard procedure when marking a question attempt and write your responses as JSON:\n"
             + "```\n"
