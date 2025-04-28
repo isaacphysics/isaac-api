@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.scheduler.jobs;
 
 import com.google.inject.Injector;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -33,6 +34,7 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@DisallowConcurrentExecution
 public class SyncMailjetUsersJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(SyncMailjetUsersJob.class);
 
