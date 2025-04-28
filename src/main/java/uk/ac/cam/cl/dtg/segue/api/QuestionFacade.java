@@ -90,7 +90,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
-    private static final class NoUserConsentGrantedException extends Exception {
+    public static final class NoUserConsentGrantedException extends Exception {
         NoUserConsentGrantedException(final String message) {
             super(message);
         }

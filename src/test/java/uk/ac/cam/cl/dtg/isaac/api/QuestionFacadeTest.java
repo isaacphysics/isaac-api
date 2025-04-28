@@ -15,7 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -24,9 +26,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -41,6 +45,10 @@ import jakarta.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
@@ -55,6 +63,9 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
     private AbstractUserPreferenceManager userPreferenceManager;
     private IMisuseMonitor misuseMonitor;
     private QuestionFacade questionFacade;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private void setUpQuestionFacade() throws ContentManagerException {
         Request requestForCaching = createMock(Request.class);
@@ -81,14 +92,17 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void answerQuestionNotAvailableForQuizQuestions() throws ContentManagerException {
+        // Arrange
         properties = createMock(AbstractConfigLoader.class);
         expect(properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name());
         setUpQuestionFacade();
 
+        // Act
         String jsonAnswer = "jsonAnswer";
         forEndpoint((questionId) -> () -> questionFacade.answerQuestion(httpServletRequest, questionId, jsonAnswer),
             with(question.getId(),
                 beforeUserCheck(
+                    // Assert
                     failsWith(Status.FORBIDDEN)
                 )
             )
@@ -96,23 +110,97 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
     }
 
     /*
-        Test that a consenting user with valid client settings is able to answer LLMFreeTextQuestions
+        Test that a user with invalid config settings is unable to answer LLMFreeTextQuestions
     */
     @Test
-    public final void assertUserCanAnswerLLMQuestions_ConsentingUser_ShouldReturnOkayResponse() throws Exception {
+    public final void assertUserCanAnswerLLMQuestions_InvalidSettings_ShouldThrowException() throws Exception {
+        // Arrange
         properties = createMock(AbstractConfigLoader.class);
-        expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
-
-        misuseMonitor = createMock(IMisuseMonitor.class);
-        expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(100);
-
-        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
-        UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
-        expect(userPreferenceManager.getUserPreference("CONSENT", "OPENAI", adminUser.getId())).andReturn(userPreference);
+        expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("off"));
 
         setUpQuestionFacade();
 
-        RegisteredUserDTO r = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
-        System.out.println(r);
+        expectedException.expect(ValidatorUnavailableException.class);
+        expectedException.expectMessage("LLM marked questions are currently unavailable. Please try again later!");
+
+        // Act
+        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
+
+        //Assert
+        assertNull(outUser);
+    }
+
+    /*
+    Test that a non-consenting user is unable to answer LLMFreeTextQuestions
+*/
+    @Test
+    public final void assertUserCanAnswerLLMQuestions_NonConsentingUser_ShouldThrowException() throws Exception {
+        // Arrange
+        properties = createMock(AbstractConfigLoader.class);
+        expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
+        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", false);
+        expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
+
+        setUpQuestionFacade();
+
+        expectedException.expect(QuestionFacade.NoUserConsentGrantedException.class);
+        expectedException.expectMessage(String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME));
+
+        // Act
+        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
+
+        //Assert
+        assertNull(outUser);
+    }
+
+    /*
+        Test that a user with no available question attempts is unable to answer LLMFreeTextQuestions
+    */
+    @Test
+    public final void assertUserCanAnswerLLMQuestions_NoUses_ShouldThrowException() throws Exception {
+        // Arrange
+        properties = createMock(AbstractConfigLoader.class);
+        expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
+        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
+        expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
+        misuseMonitor = createMock(IMisuseMonitor.class);
+        expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(0);
+
+        setUpQuestionFacade();
+
+        expectedException.expect(SegueResourceMisuseException.class);
+        expectedException.expectMessage("You have exceeded the number of attempts you can make on LLM marked free-text questions. Please try again later.");
+
+        // Act
+        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
+
+        //Assert
+        assertNull(outUser);
+    }
+
+    /*
+        Test that a consenting user with valid config settings is able to answer LLMFreeTextQuestions
+    */
+    @Test
+    public final void assertUserCanAnswerLLMQuestions_ConsentingUser_ShouldReturnOkayResponse() throws Exception {
+        // Arrange
+        properties = createMock(AbstractConfigLoader.class);
+        expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
+        misuseMonitor = createMock(IMisuseMonitor.class);
+        expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(30);
+        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
+        expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
+
+        setUpQuestionFacade();
+
+        // Act
+        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
+
+        // Assert
+        assertThat(outUser, instanceOf(RegisteredUserDTO.class));
+        assertEquals(adminUser.getId(), outUser.getId());
     }
 }
