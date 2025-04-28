@@ -34,6 +34,7 @@ import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
@@ -71,7 +72,7 @@ public class SchoolListReader {
       modificationDate = searchProvider.getById(
               SCHOOLS_INDEX_BASE, SchoolsIndexType.METADATA.toString(), "sourceFile").getSource().get("lastModified")
           .toString();
-    } catch (SegueSearchException e) {
+    } catch (SegueSearchException | ElasticsearchStatusException e) {
       log.error("Failed to retrieve school list modification date", e);
       modificationDate = "unknown";
     }
