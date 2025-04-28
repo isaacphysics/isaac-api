@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -23,6 +22,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -43,40 +44,33 @@ import static org.easymock.EasyMock.expect;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GitContentManager.class)
 @PowerMockIgnore("javax.management.*")
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
+    private AbstractConfigLoader properties;
+    private AbstractUserPreferenceManager userPreferenceManager;
+    private IMisuseMonitor misuseMonitor;
     private QuestionFacade questionFacade;
 
-    private Request requestForCaching;
-
-    private QuestionManager questionManager;
-
-    @Before
-    public void setUp() throws ContentManagerException {
-        requestForCaching = createMock(Request.class);
+    private void setUpQuestionFacade() throws ContentManagerException {
+        Request requestForCaching = createMock(Request.class);
         expect(requestForCaching.evaluatePreconditions((EntityTag) anyObject())).andStubReturn(null);
 
-        AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
-        expect(properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name());
-
-        ILogManager logManager = createNiceMock(ILogManager.class); // We don't care about logging.
         GitContentManager contentManager = createMock(GitContentManager.class);
+        ILogManager logManager = createNiceMock(ILogManager.class); // We don't care about logging.
         ContentMapper contentMapper = createMock(ContentMapper.class);
-
-        String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-        IMisuseMonitor misuseMonitor = createMock(IMisuseMonitor.class);
+        QuestionManager questionManager = createMock(QuestionManager.class);
         IUserStreaksManager userStreaksManager = createMock(IUserStreaksManager.class);
         UserAssociationManager userAssociationManager = createMock(UserAssociationManager.class);
-        AbstractUserPreferenceManager userPreferencesManager = createMock(AbstractUserPreferenceManager.class);
-        questionManager = createMock(QuestionManager.class);
 
-        questionFacade = new QuestionFacade(properties, contentMapper, contentManager, userManager, userPreferencesManager,
+        questionFacade = new QuestionFacade(properties, contentMapper, contentManager, userManager, userPreferenceManager,
                 questionManager, logManager, misuseMonitor, userStreaksManager, userAssociationManager);
 
+        String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
         expect(contentManager.getCurrentContentSHA()).andStubReturn(contentIndex);
         expect(contentManager.getContentDOById(questionDO.getId())).andStubReturn(questionDO);
         expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
@@ -86,7 +80,11 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
     }
 
     @Test
-    public void answerQuestionNotAvailableForQuizQuestions() {
+    public void answerQuestionNotAvailableForQuizQuestions() throws ContentManagerException {
+        properties = createMock(AbstractConfigLoader.class);
+        expect(properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name());
+        setUpQuestionFacade();
+
         String jsonAnswer = "jsonAnswer";
         forEndpoint((questionId) -> () -> questionFacade.answerQuestion(httpServletRequest, questionId, jsonAnswer),
             with(question.getId(),
@@ -95,5 +93,26 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
                 )
             )
         );
+    }
+
+    /*
+        Test that a consenting user with valid client settings is able to answer LLMFreeTextQuestions
+    */
+    @Test
+    public final void assertUserCanAnswerLLMQuestions_ConsentingUser_ShouldReturnOkayResponse() throws Exception {
+        properties = createMock(AbstractConfigLoader.class);
+        expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
+
+        misuseMonitor = createMock(IMisuseMonitor.class);
+        expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(100);
+
+        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
+        expect(userPreferenceManager.getUserPreference("CONSENT", "OPENAI", adminUser.getId())).andReturn(userPreference);
+
+        setUpQuestionFacade();
+
+        RegisteredUserDTO r = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
+        System.out.println(r);
     }
 }

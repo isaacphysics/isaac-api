@@ -541,7 +541,7 @@ public class IsaacLLMFreeTextValidatorTest {
         c.setValue("Foo Bar Fizz");
 
         // Set up mocked OpenAI exception response to the user answer
-        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andThrow(new RuntimeException("Test Exception"));
+        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andThrow(new RuntimeException("Test OpenAI Exception"));
         replay(client);
 
         expectedException.expect(ValidatorUnavailableException.class);

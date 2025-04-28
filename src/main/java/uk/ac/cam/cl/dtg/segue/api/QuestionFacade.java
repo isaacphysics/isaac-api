@@ -117,7 +117,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      * @throws SegueResourceMisuseException - if the user has exceeded the number of attempts they can make over a period of time.
      * @throws SegueDatabaseException - if there is an unexpected problem with the database.
      */
-    private RegisteredUserDTO assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO user) throws
+    public RegisteredUserDTO assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO user) throws
             SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException,
             ValidatorUnavailableException, SegueResourceMisuseException
     {
