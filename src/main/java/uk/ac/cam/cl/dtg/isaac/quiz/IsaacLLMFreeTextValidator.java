@@ -69,6 +69,10 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         if (!(question instanceof IsaacLLMFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not a LLM free-text question");
         }
+        if (((IsaacLLMFreeTextQuestion) question).getMaxMarks() == null) {
+            log.error("Question has missing maximum marks field: " + question.getId());
+            throw new IllegalArgumentException(question.getId() + " cannot be answered correctly");
+        }
 
         // Validate answer
         Objects.requireNonNull(answer);
