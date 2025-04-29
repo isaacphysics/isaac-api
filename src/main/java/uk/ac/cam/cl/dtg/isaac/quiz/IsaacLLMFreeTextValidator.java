@@ -71,7 +71,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         }
         if (((IsaacLLMFreeTextQuestion) question).getMaxMarks() == null) {
             log.error("Question has missing maximum marks field: " + question.getId());
-            throw new IllegalArgumentException(question.getId() + " cannot be answered correctly");
+            throw new IllegalArgumentException("This question cannot be answered correctly");
         }
 
         // Validate answer

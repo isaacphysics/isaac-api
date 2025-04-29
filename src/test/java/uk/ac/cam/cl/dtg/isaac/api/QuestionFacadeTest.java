@@ -15,9 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -48,7 +46,7 @@ import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
@@ -63,9 +61,6 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
     private AbstractUserPreferenceManager userPreferenceManager;
     private IMisuseMonitor misuseMonitor;
     private QuestionFacade questionFacade;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private void setUpQuestionFacade() throws ContentManagerException {
         Request requestForCaching = createMock(Request.class);
@@ -97,12 +92,11 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         expect(properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name());
         setUpQuestionFacade();
 
-        // Act
+        // Act & Assert
         String jsonAnswer = "jsonAnswer";
         forEndpoint((questionId) -> () -> questionFacade.answerQuestion(httpServletRequest, questionId, jsonAnswer),
             with(question.getId(),
                 beforeUserCheck(
-                    // Assert
                     failsWith(Status.FORBIDDEN)
                 )
             )
@@ -120,14 +114,13 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
 
         setUpQuestionFacade();
 
-        expectedException.expect(ValidatorUnavailableException.class);
-        expectedException.expectMessage("LLM marked questions are currently unavailable. Please try again later!");
+        // Act & Assert
+        ValidatorUnavailableException exception = assertThrows(
+                ValidatorUnavailableException.class,
+                () -> questionFacade.assertUserCanAnswerLLMQuestions(adminUser)
+        );
 
-        // Act
-        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
-
-        //Assert
-        assertNull(outUser);
+        assertEquals("LLM marked questions are currently unavailable. Please try again later!", exception.getMessage());
     }
 
     /*
@@ -138,20 +131,20 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         // Arrange
         properties = createMock(AbstractConfigLoader.class);
         expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
+
         userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", false);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
 
         setUpQuestionFacade();
 
-        expectedException.expect(QuestionFacade.NoUserConsentGrantedException.class);
-        expectedException.expectMessage(String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME));
+        // Act & Assert
+        QuestionFacade.NoUserConsentGrantedException exception = assertThrows(
+                QuestionFacade.NoUserConsentGrantedException.class,
+                () -> questionFacade.assertUserCanAnswerLLMQuestions(adminUser)
+        );
 
-        // Act
-        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
-
-        //Assert
-        assertNull(outUser);
+        assertEquals(String.format("You must consent to sending your attempts to %s.", LLM_PROVIDER_NAME), exception.getMessage());
     }
 
     /*
@@ -162,22 +155,23 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         // Arrange
         properties = createMock(AbstractConfigLoader.class);
         expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
+
         userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
+
         misuseMonitor = createMock(IMisuseMonitor.class);
         expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(0);
 
         setUpQuestionFacade();
 
-        expectedException.expect(SegueResourceMisuseException.class);
-        expectedException.expectMessage("You have exceeded the number of attempts you can make on LLM marked free-text questions. Please try again later.");
+        // Act & Assert
+        SegueResourceMisuseException exception = assertThrows(
+                SegueResourceMisuseException.class,
+                () -> questionFacade.assertUserCanAnswerLLMQuestions(adminUser)
+        );
 
-        // Act
-        RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
-
-        //Assert
-        assertNull(outUser);
+        assertEquals("You have exceeded the number of attempts you can make on LLM marked free-text questions. Please try again later.", exception.getMessage());
     }
 
     /*
