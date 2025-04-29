@@ -24,9 +24,7 @@ import org.easymock.EasyMock;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -39,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingFunction;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingVariable;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
@@ -54,7 +53,7 @@ import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
@@ -80,9 +79,6 @@ public class IsaacLLMFreeTextValidatorTest {
     private ChatCompletions chatCompletions;
     private ChatChoice chatChoice;
     private ChatResponseMessage chatResponseMessage;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     /**
      * Initial configuration of tests.
@@ -510,10 +506,10 @@ public class IsaacLLMFreeTextValidatorTest {
     }
 
     /*
-        Test that an answer exceeding the maximum answer length is handled with an exception and no other response is output
+        Test that an answer exceeding the maximum answer length is handled with an exception
     */
     @Test
-    public final void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() throws Exception {
+    public final void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
         int maxAnswerLength = 4096;
@@ -522,33 +518,63 @@ public class IsaacLLMFreeTextValidatorTest {
         } catch (final NumberFormatException ignored) { /* Use default value */ }
         c.setValue(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Answer is too long for LLM free-text question marking");
+        // Test response:
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c)
+        );
 
-        // Test response
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
-        assertNull(response);
+        assertEquals("Answer is too long for LLM free-text question marking", exception.getMessage());
     }
 
     /*
         Test that an error from the client (e.g. timeout, rate limit, out of credits) is handled with an exception
-        and no other response is output
     */
     @Test
-    public final void isaacLLMFreeTextValidator_ResponseError_ExceptionShouldBeThrown() throws Exception {
+    public final void isaacLLMFreeTextValidator_ResponseError_ExceptionShouldBeThrown() {
         // Set up user answer:
         LLMFreeTextChoice c = new LLMFreeTextChoice();
         c.setValue("Foo Bar Fizz");
 
-        // Set up mocked OpenAI exception response to the user answer
+        // Set up mocked OpenAI exception response to the user answer:
         EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andThrow(new RuntimeException("Test OpenAI Exception"));
         replay(client);
 
-        expectedException.expect(ValidatorUnavailableException.class);
+        // Test response:
+        ValidatorUnavailableException exception = assertThrows(
+                ValidatorUnavailableException.class,
+                () -> validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c)
+        );
 
-        // Test response
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
-        assertNull(response);
+        assertEquals("We are having problems marking LLM marked questions. Please try again later!", exception.getMessage());
+    }
+
+    /*
+        Test that an invalid question (i.e. missing maxMarks field/not LLMFreeTextQuestion) is handled with an exception
+    */
+    @Test
+    public final void isaacLLMFreeTextValidator_InvalidQuestion_ExceptionShouldBeThrown()  {
+        // Set up user answer:
+        LLMFreeTextChoice c = new LLMFreeTextChoice();
+        c.setValue("Foo Bar Fizz");
+
+        IsaacLLMFreeTextQuestion invalidQuestionFields = createLLMFreeTextQuestion(null, null, null, null);
+        Question invalidQuestionType = new Question();
+
+        // Test response:
+        IllegalArgumentException exceptionFields = assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validateQuestionResponse(invalidQuestionFields, c)
+        );
+
+        assertEquals("This question cannot be answered correctly", exceptionFields.getMessage());
+
+        IllegalArgumentException exceptionType = assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validateQuestionResponse(invalidQuestionType, c)
+        );
+
+        assertEquals(invalidQuestionType.getId() + " is not a LLM free-text question", exceptionType.getMessage());
     }
 
     // --- Helper Functions ---
