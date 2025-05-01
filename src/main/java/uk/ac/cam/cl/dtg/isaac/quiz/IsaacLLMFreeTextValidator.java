@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -90,10 +91,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
     }
 
     private String generatePromptSystemMessage(final IsaacLLMFreeTextQuestion question) {
-        String llmMarkerSubject = configLoader.getProperty(LLM_MARKER_SUBJECT);
-        if (llmMarkerSubject == null) {
-            llmMarkerSubject = "";
-        }
+        String llmMarkerSubject = Optional.ofNullable(configLoader.getProperty(LLM_MARKER_SUBJECT)).orElse("");
 
         String contextAndInstructions = "You are a principal examiner marking A Level and GCSE "
             + String.format("%s questions.\n", llmMarkerSubject)
