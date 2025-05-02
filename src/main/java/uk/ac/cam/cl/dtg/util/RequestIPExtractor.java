@@ -26,6 +26,8 @@ import jakarta.servlet.http.HttpServletRequest;
 public final class RequestIPExtractor {
     private static final Logger log = LoggerFactory.getLogger(RequestIPExtractor.class);
 
+    private static boolean remoteIpWarningShown = false;
+
     /**
         It does not make sense to create one of these!
      */
@@ -46,16 +48,27 @@ public final class RequestIPExtractor {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip != null && ip.contains(",")) {
             // If X-Forwarded-For contains multiple comma-separated IP addresses, we want only the last one.
-            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
+            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '{}'", ip);
             ip = ip.substring(ip.lastIndexOf(',') + 1).trim();
         }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             // A reverse proxy can add this custom header which could be used:
             ip = request.getHeader("X-Real-IP");
         }
+
+        // If we have previously used the remote IP directly, but later see proxy headers, warn about danger:
+        if (remoteIpWarningShown && ip != null && !ip.isEmpty()) {
+            log.warn("X-Real-IP or X-Forwarded-For set unexpectedly on request. The logged IP address may be untrusted!");
+        }
+
+        // If no IP address extracted, use the remote IP address directly (useful for local dev):
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            // Behind a reverse proxy, this will usually be the router address which may be unhelpful.
+            // Behind a reverse proxy, this will usually be the address of the proxy, which will hide the true client!
             ip = request.getRemoteAddr();
+            if (!remoteIpWarningShown) {
+                log.warn("API appears to be running without a reverse proxy. Using raw remote IP addresses for logging!");
+                remoteIpWarningShown = true;
+            }
         }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             // We *must* return a *valid* inet field for postgres! Null would be
