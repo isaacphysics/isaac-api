@@ -20,11 +20,10 @@ import com.azure.ai.openai.models.ChatChoice;
 import com.azure.ai.openai.models.ChatCompletions;
 import com.azure.ai.openai.models.ChatCompletionsOptions;
 import com.azure.ai.openai.models.ChatResponseMessage;
+
 import org.easymock.EasyMock;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -33,20 +32,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
-import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
-import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
-import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingFunction;
-import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingVariable;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.isA;
@@ -59,522 +50,223 @@ import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-/**
- * Test class for the user manager class.
- *
- */
+import static uk.ac.cam.cl.dtg.isaac.QuestionFactory.*;
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class})
-@PowerMockIgnore({"jakarta.ws.*"})
+@PrepareForTest({ OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class })
+@PowerMockIgnore({ "jakarta.ws.*" })
 public class IsaacLLMFreeTextValidatorTest {
-    private AbstractConfigLoader propertiesForTest;
-    private IsaacLLMFreeTextValidator validator;
-    private IsaacLLMFreeTextQuestion llmFreeTextQuestionOneMark;
-    private IsaacLLMFreeTextQuestion llmFreeTextQuestionTwoMarks;
-    private IsaacLLMFreeTextQuestion llmFreeTextQuestionAdvantageDisadvantage;
-    private IsaacLLMFreeTextQuestion llmFreeTextQuestionPointExplanation;
-
-    // Mocks
-    private OpenAIClient client;
-    private ChatCompletions chatCompletions;
-    private ChatChoice chatChoice;
-    private ChatResponseMessage chatResponseMessage;
-
-    /**
-     * Initial configuration of tests.
-     */
-    @Before
-    public final void setUp() throws Exception {
-        propertiesForTest = new YamlLoader(
-            "src/test/resources/segue-integration-test-config.yaml,"
-            + "src/test/resources/segue-unit-test-llm-validator-override.yaml"
-        );
-
-        // Create mock objects for the open AI client and each layer of the response it provides
-        // These must be PowerMocked since the classes are final in the Azure OpenAI library
-        client = createMock(OpenAIClient.class);
-        chatCompletions = createMock(ChatCompletions.class);
-        chatChoice = createMock(ChatChoice.class);
-        chatResponseMessage = createMock(ChatResponseMessage.class);
-
-        validator = new IsaacLLMFreeTextValidator(propertiesForTest, client);
-
-        // Set up generic mark scheme with three available marks:
-        JSONArray jsonMarkScheme = new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("shortDescription", "Foo reason").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("shortDescription", "Bar reason").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("shortDescription", "Fizz reason").put("marks", 1));
-        List<LLMFreeTextMarkSchemeEntry> markScheme = generateMarkScheme(jsonMarkScheme);
-
-        // Set up a question object with a default marking formula worth one mark:
-        JSONArray jsonMarkedExamplesOneMark = new JSONArray()
-            .put(new JSONObject().put("answer", "Foo and Bar").put("marksAwarded", 1).put("marks", new JSONObject()
-                .put("reasonFoo", 1).put("reasonBar", 1).put("reasonFizz", 0)))
-            .put(new JSONObject().put("answer", "Fizz").put("marksAwarded", 1).put("marks", new JSONObject()
-                .put("reasonFoo", 0).put("reasonBar", 0).put("reasonFizz", 1)));
-        List<LLMFreeTextMarkedExample> markedExamplesOneMark = generateMarkedExamples(jsonMarkedExamplesOneMark);
-
-        llmFreeTextQuestionOneMark = createLLMFreeTextQuestion(markScheme, 1, markedExamplesOneMark, null);
-
-        // Set up a question object with a default marking formula worth two marks:
-        JSONArray jsonMarkedExamplesTwoMarks = new JSONArray()
-            .put(new JSONObject().put("answer", "Foo and Bar").put("marksAwarded", 2).put("marks", new JSONObject()
-                .put("reasonFoo", 1).put("reasonBar", 1).put("reasonFizz", 0)))
-            .put(new JSONObject().put("answer", "Fizz").put("marksAwarded", 1).put("marks", new JSONObject()
-                .put("reasonFoo", 0).put("reasonBar", 0).put("reasonFizz", 1)));
-        List<LLMFreeTextMarkedExample> markedExamplesTwoMarks = generateMarkedExamples(jsonMarkedExamplesTwoMarks);
-
-        llmFreeTextQuestionTwoMarks = createLLMFreeTextQuestion(markScheme, 2, markedExamplesTwoMarks, null);
-
-        // Set up a question object with an advantage/disadvantage marking formula worth two marks:
-        JSONArray jsonMarkSchemeAdvantageDisadvantage = new JSONArray()
-            .put(new JSONObject().put("jsonField", "advantageOne").put("shortDescription", "Advantage reason").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "advantageTwo").put("shortDescription", "Another advantage reason").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "disadvantageOne").put("shortDescription", "Disadvantage reason").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "disadvantageTwo").put("shortDescription", "Another disadvantage reason").put("marks", 1));
-        List<LLMFreeTextMarkSchemeEntry> markSchemeAdvantageDisadvantage = generateMarkScheme(jsonMarkSchemeAdvantageDisadvantage);
-
-        JSONArray jsonMarkedExamplesAdvantageDisadvantage = new JSONArray()
-            .put(new JSONObject().put("answer", "Advantage").put("marksAwarded", 1).put("marks", new JSONObject()
-                .put("advantageOne", 1).put("advantageTwo", 0).put("disadvantageOne", 0).put("disadvantageTwo", 0)))
-            .put(new JSONObject().put("answer", "Disadvantage Disadvantage").put("marksAwarded", 1).put("marks", new JSONObject()
-                .put("advantageOne", 1).put("advantageTwo", 0).put("disadvantageOne", 1).put("disadvantageTwo", 1)));
-        List<LLMFreeTextMarkedExample> markedExamplesAdvantageDisadvantage = generateMarkedExamples(jsonMarkedExamplesAdvantageDisadvantage);
-
-        llmFreeTextQuestionAdvantageDisadvantage = createLLMFreeTextQuestion(markSchemeAdvantageDisadvantage, 2, markedExamplesAdvantageDisadvantage, advantageDisadvantageMarkingFormula);
-
-        // Set up a question object with a point/explanation marking formula worth two marks:
-        JSONArray jsonMarkSchemePointExplanation = new JSONArray()
-            .put(new JSONObject().put("jsonField", "pointOne").put("shortDescription", "First point").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "pointTwo").put("shortDescription", "Second point").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "explanationOne").put("shortDescription", "Explaining first point").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "explanationTwo").put("shortDescription", "Explaining second point").put("marks", 1));
-        List<LLMFreeTextMarkSchemeEntry> markSchemePointExplanation = generateMarkScheme(jsonMarkSchemePointExplanation);
-
-        JSONArray jsonMarkedExamplesPointExplanation = new JSONArray()
-            .put(new JSONObject().put("answer", "Explanation").put("marksAwarded", 0).put("marks", new JSONObject()
-                .put("pointOne", 0).put("pointTwo", 0).put("explanationOne", 1).put("explanationTwo", 0)))
-            .put(new JSONObject().put("answer", "Point2 Explanation2").put("marksAwarded", 2).put("marks", new JSONObject()
-                .put("pointOne", 0).put("pointTwo", 1).put("explanationOne", 0).put("explanationTwo", 1)));
-        List<LLMFreeTextMarkedExample> markedExamplesPointExplanation = generateMarkedExamples(jsonMarkedExamplesPointExplanation);
-
-        llmFreeTextQuestionPointExplanation = createLLMFreeTextQuestion(markSchemePointExplanation, 2, markedExamplesPointExplanation, pointExplanationMarkingFormula);
-    }
-
-    /*
-        Test that a one-mark answer for a default marking formula one-mark question gets recognised as correct
-     */
-    @SuppressWarnings("checkstyle:MethodName")
     @Test
-    public final void isaacLLMFreeTextValidator_OneMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMark() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("A one-mark answer for a default marking formula one-mark question gets recognised as correct")
+    public void isaacLLMFreeTextValidator_OneMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMark() throws Exception {
+        var response = validate(genericOneMarkQuestion(), "{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("reasonFoo").setMarks(1),
+                field().setName("reasonBar").setMarks(0),
+                field().setName("reasonFizz").setMarks(0)));
         assertEquals(1, (long) response.getMarksAwarded());
     }
 
-    /*
-        Test that a three-mark answer for a default marking formula one-mark question gets recognised as correct
-     */
     @Test
-    public final void isaacLLMFreeTextValidator_OneMarkQuestionThreeMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"reasonFoo\": 1, \"reasonBar\": 1, \"reasonFizz\": 1}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 1))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("A three-mark answer for a default marking formula one-mark question gets recognised as correct")
+    public void isaacLLMFreeTextValidator_OneMarkQuestionThreeMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
+        var response = validate(genericOneMarkQuestion(), "{\"reasonFoo\": 1, \"reasonBar\": 1, \"reasonFizz\": 1}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("reasonFoo").setMarks(1),
+                field().setName("reasonBar").setMarks(1),
+                field().setName("reasonFizz").setMarks(1)));
         assertEquals(1, (long) response.getMarksAwarded());
     }
 
-    /*
-        Test that a zero-mark answer for a one-mark question gets recognised as incorrect
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_OneMarkQuestionZeroMarkAnswer_MarkSchemeShouldIncludeNoMarks() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Buzz");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"reasonFoo\": 0, \"reasonBar\": 0, \"reasonFizz\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("A zero-mark answer for a one-mark question gets recognised as incorrect")
+    public void isaacLLMFreeTextValidator_OneMarkQuestionZeroMarkAnswer_MarkSchemeShouldIncludeNoMarks() throws Exception {
+        var response = validate(genericOneMarkQuestion(), "{\"reasonFoo\": 0, \"reasonBar\": 0, \"reasonFizz\": 0}");
 
         assertFalse(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("reasonFoo").setMarks(0),
+                field().setName("reasonBar").setMarks(0),
+                field().setName("reasonFizz").setMarks(0)));
         assertEquals(0, (long) response.getMarksAwarded());
     }
 
-    /*
-        Test that a two-mark answer for a default marking formula two-mark question gets recognised as correct
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_TwoMarkQuestionTwoMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo Bar");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"reasonFoo\": 1, \"reasonBar\": 1, \"reasonFizz\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionTwoMarks, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("A two-mark answer for a default marking formula two-mark question gets recognised as correct")
+    public void isaacLLMFreeTextValidator_TwoMarkQuestionTwoMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
+        var response = validate(genericTwoMarkQuestion(), "{\"reasonFoo\": 1, \"reasonBar\": 1, \"reasonFizz\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("reasonFoo").setMarks(1),
+                field().setName("reasonBar").setMarks(1),
+                field().setName("reasonFizz").setMarks(0)));
         assertEquals(2, (long) response.getMarksAwarded());
     }
 
-    /*
-        Test that a one-mark answer for a default marking formula two-mark question receives exactly one mark
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_TwoMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionTwoMarks, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("A one-mark answer for a default marking formula two-mark question receives exactly one mark")
+    public void isaacLLMFreeTextValidator_TwoMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
+        var response = validate(genericTwoMarkQuestion(), "{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("reasonFoo").setMarks(1),
+                field().setName("reasonBar").setMarks(0),
+                field().setName("reasonFizz").setMarks(0)));
         assertEquals(1, (long) response.getMarksAwarded());
     }
 
-    /*
-        Tests that an answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionADMarks_MarkTotalShouldBeTwo() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Advantage Disadvantage");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"advantageOne\": 1, \"advantageTwo\": 0, \"disadvantageOne\": 1, \"disadvantageTwo\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionAdvantageDisadvantage, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "advantageOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "advantageTwo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "disadvantageOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "disadvantageTwo").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("An answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks")
+    public void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionADMarks_MarkTotalShouldBeTwo() throws Exception {
+        var response = validate(advantageQuestion(),
+                "{\"advantageOne\": 1, \"advantageTwo\": 0, \"disadvantageOne\": 1, \"disadvantageTwo\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("advantageOne").setMarks(1),
+                field().setName("advantageTwo").setMarks(0),
+                field().setName("disadvantageOne").setMarks(1),
+                field().setName("disadvantageTwo").setMarks(0)));
         assertEquals(2, (long) response.getMarksAwarded());
     }
 
-    /*
-        Tests that an answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionDMarks_MarkTotalShouldBeOne() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Disadvantage");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"advantageOne\": 0, \"advantageTwo\": 0, \"disadvantageOne\": 1, \"disadvantageTwo\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionAdvantageDisadvantage, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "advantageOne").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "advantageTwo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "disadvantageOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "disadvantageTwo").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("An answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark")
+    public void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionDMarks_MarkTotalShouldBeOne() throws Exception {
+        var response = validate(advantageQuestion(),
+                "{\"advantageOne\": 0, \"advantageTwo\": 0, \"disadvantageOne\": 1, \"disadvantageTwo\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("advantageOne").setMarks(0),
+                field().setName("advantageTwo").setMarks(0),
+                field().setName("disadvantageOne").setMarks(1),
+                field().setName("disadvantageTwo").setMarks(0)));
         assertEquals(1, (long) response.getMarksAwarded());
     }
 
-    /*
-       Tests that an answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionAAMarks_MarkTotalShouldBeOne() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Advantage Advantage");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"advantageOne\": 1, \"advantageTwo\": 1, \"disadvantageOne\": 0, \"disadvantageTwo\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionAdvantageDisadvantage, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "advantageOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "advantageTwo").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "disadvantageOne").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "disadvantageTwo").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("An answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark")
+    public void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionAAMarks_MarkTotalShouldBeOne() throws Exception {
+        var response = validate(advantageQuestion(),
+                "{\"advantageOne\": 1, \"advantageTwo\": 1, \"disadvantageOne\": 0, \"disadvantageTwo\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("advantageOne").setMarks(1),
+                field().setName("advantageTwo").setMarks(1),
+                field().setName("disadvantageOne").setMarks(0),
+                field().setName("disadvantageTwo").setMarks(0)));
         assertEquals(1, (long) response.getMarksAwarded());
     }
 
-    /*
-       Tests that an answer containing a point and matching explanation for a two-mark point/explanation question receives two marks
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_PointExplanationQuestionPEMarks_MarkTotalShouldBeTwo() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Point1 Explanation1");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"pointOne\": 1, \"pointTwo\": 0, \"explanationOne\": 1, \"explanationTwo\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionPointExplanation, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "pointOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "pointTwo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "explanationOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "explanationTwo").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("An answer containing a point and matching explanation for a two-mark point/explanation question receives two marks")
+    public void isaacLLMFreeTextValidator_PointExplanationQuestionPEMarks_MarkTotalShouldBeTwo() throws Exception {
+        var response = validate(pointExplanationQuestion(),
+                "{\"pointOne\": 1, \"pointTwo\": 0, \"explanationOne\": 1, \"explanationTwo\": 0}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("pointOne").setMarks(1),
+                field().setName("pointTwo").setMarks(0),
+                field().setName("explanationOne").setMarks(1),
+                field().setName("explanationTwo").setMarks(0)));
         assertEquals(2, (long) response.getMarksAwarded());
     }
 
-    /*
-        Tests that an answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_PointExplanationQuestionEMark_MarkTotalShouldBeZero() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Explanation1");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"pointOne\": 0, \"pointTwo\": 0, \"explanationOne\": 1, \"explanationTwo\": 0}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionPointExplanation, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "pointOne").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "pointTwo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "explanationOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "explanationTwo").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("An answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks")
+    public void isaacLLMFreeTextValidator_PointExplanationQuestionEMark_MarkTotalShouldBeZero() throws Exception {
+        var response = validate(pointExplanationQuestion(),
+                "{\"pointOne\": 0, \"pointTwo\": 0, \"explanationOne\": 1, \"explanationTwo\": 0}");
 
         assertFalse(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("pointOne").setMarks(0),
+                field().setName("pointTwo").setMarks(0),
+                field().setName("explanationOne").setMarks(1),
+                field().setName("explanationTwo").setMarks(0)));
         assertEquals(0, (long) response.getMarksAwarded());
     }
 
-    /*
-        Tests that an answer containing a point and a mismatched explanation for a
-        two-mark point/explanation question receives one mark
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_PointExplanationQuestionPEMismatchMarks_MarkTotalShouldBeOne() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Point1 Explanation2");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("{\"pointOne\": 1, \"pointTwo\": 0, \"explanationOne\": 0, \"explanationTwo\": 1}");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionPointExplanation, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "pointOne").put("marks", 1))
-            .put(new JSONObject().put("jsonField", "pointTwo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "explanationOne").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "explanationTwo").put("marks", 1))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("An answer containing a point and a mismatched explanation for a two-mark point/explanation question receives one mark")
+    public void isaacLLMFreeTextValidator_PointExplanationQuestionPEMismatchMarks_MarkTotalShouldBeOne() throws Exception {
+        var response = validate(pointExplanationQuestion(),
+                "{\"pointOne\": 1, \"pointTwo\": 0, \"explanationOne\": 0, \"explanationTwo\": 1}");
 
         assertTrue(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("pointOne").setMarks(1),
+                field().setName("pointTwo").setMarks(0),
+                field().setName("explanationOne").setMarks(0),
+                field().setName("explanationTwo").setMarks(1)));
         assertEquals(1, (long) response.getMarksAwarded());
     }
 
-    /*
-        Test that a response from the client not in the expected json format returns zero marks
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_ResponseInvalidFormat_MarkSchemeShouldIncludeNoMarks() throws Exception {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo Bar Fizz");
-
-        // Set up mocked OpenAI response to the user answer:
-        setUpMockResponse("Not a valid JSON response");
-
-        // Test response:
-        LLMFreeTextQuestionValidationResponse response = (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c);
-
-        List<LLMFreeTextMarkSchemeEntry> expectedMarks = generateMarkScheme(new JSONArray()
-            .put(new JSONObject().put("jsonField", "reasonFoo").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "reasonBar").put("marks", 0))
-            .put(new JSONObject().put("jsonField", "reasonFizz").put("marks", 0))
-        );
-        List<LLMFreeTextMarkSchemeEntry> awardedMarks = response.getMarkBreakdown();
+    @DisplayName("A response from the client not in the expected json format returns zero marks")
+    public void isaacLLMFreeTextValidator_ResponseInvalidFormat_MarkSchemeShouldIncludeNoMarks() throws Exception {
+        var response = validate(genericOneMarkQuestion(), "Not a valid JSON response");
 
         assertFalse(response.isCorrect());
-        assertTrue(expectedMarks.containsAll(awardedMarks));
-        assertTrue(awardedMarks.containsAll(expectedMarks));
+        expectMarkBreakdown(response, generateMarkScheme(
+                field().setName("reasonFoo").setMarks(0),
+                field().setName("reasonBar").setMarks(0),
+                field().setName("reasonFizz").setMarks(0)));
         assertEquals(0, (long) response.getMarksAwarded());
     }
 
-    /*
-        Test that an answer exceeding the maximum answer length is handled with an exception
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        int maxAnswerLength = 4096;
-        try {
-            maxAnswerLength = Integer.parseInt(propertiesForTest.getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
-        } catch (final NumberFormatException ignored) { /* Use default value */ }
-        c.setValue(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
+    @DisplayName("An answer exceeding the maximum answer length is handled with an exception")
+    public void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() throws Exception {
+        int maxAnswerLength = getIntTestProperty(LLM_MARKER_MAX_ANSWER_LENGTH, 4096);
+        var answr = answer(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
 
-        // Test response:
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c)
-        );
+                () -> createValidator(client("")).validateQuestionResponse(genericOneMarkQuestion(), answr));
 
         assertEquals("Answer is too long for LLM free-text question marking", exception.getMessage());
     }
 
     /*
-        Test that an error from the client (e.g. timeout, rate limit, out of credits) is handled with an exception
-    */
+     * Test that an error from the client (e.g. timeout, rate limit, out of credits)
+     * is handled with an exception
+     */
     @Test
-    public final void isaacLLMFreeTextValidator_ResponseError_ExceptionShouldBeThrown() {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo Bar Fizz");
+    @DisplayName("Error from the client (e.g. timeout, rate limit, out of credits) is handled with an exception")
+    public void isaacLLMFreeTextValidator_ResponseError_ExceptionShouldBeThrown() {
+        var clnt = createMock(OpenAIClient.class);
+        EasyMock.expect(clnt.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class)))
+                .andThrow(new RuntimeException("Test OpenAI Exception"));
+        replay(clnt);
 
-        // Set up mocked OpenAI exception response to the user answer:
-        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andThrow(new RuntimeException("Test OpenAI Exception"));
-        replay(client);
-
-        // Test response:
         ValidatorUnavailableException exception = assertThrows(
                 ValidatorUnavailableException.class,
-                () -> validator.validateQuestionResponse(llmFreeTextQuestionOneMark, c)
-        );
-
-        assertEquals("We are having problems marking LLM marked questions. Please try again later!", exception.getMessage());
+                () -> createValidator(clnt).validateQuestionResponse(genericOneMarkQuestion(), answer("")));
+        assertEquals("We are having problems marking LLM marked questions. Please try again later!",
+                exception.getMessage());
     }
 
-    /*
-        Test that an invalid question (i.e. missing maxMarks field/not LLMFreeTextQuestion) is handled with an exception
-    */
     @Test
-    public final void isaacLLMFreeTextValidator_InvalidQuestion_ExceptionShouldBeThrown()  {
-        // Set up user answer:
-        LLMFreeTextChoice c = new LLMFreeTextChoice();
-        c.setValue("Foo Bar Fizz");
-
+    @DisplayName("Invalid question (i.e. missing maxMarks field/not LLMFreeTextQuestion) is handled with an exception")
+    public void isaacLLMFreeTextValidator_InvalidQuestion_ExceptionShouldBeThrown() {
         IsaacLLMFreeTextQuestion invalidQuestionFields = createLLMFreeTextQuestion(null, null, null, null);
         Question invalidQuestionType = new Question();
 
-        // Test response:
-        IllegalArgumentException exceptionFields = assertThrows(
-                IllegalArgumentException.class,
-                () -> validator.validateQuestionResponse(invalidQuestionFields, c)
-        );
+        assertEquals("This question cannot be answered correctly",
+                assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionFields, "")).getMessage());
 
-        assertEquals("This question cannot be answered correctly", exceptionFields.getMessage());
-
-        IllegalArgumentException exceptionType = assertThrows(
-                IllegalArgumentException.class,
-                () -> validator.validateQuestionResponse(invalidQuestionType, c)
-        );
-
-        assertEquals(invalidQuestionType.getId() + " is not a LLM free-text question", exceptionType.getMessage());
+        assertEquals(invalidQuestionType.getId() + " is not a LLM free-text question",
+                assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionType, "")).getMessage());
     }
 
     // --- Helper Functions ---
@@ -583,173 +275,68 @@ public class IsaacLLMFreeTextValidatorTest {
      * Helper method for the isaacLLMFreeTextValidator tests,
      * mocks given response as if generated by the OpenAI client.
      *
-     * @param llmResponse      - mock message to return from client
+     * @param llmResponse - mock message to return from client
      */
-    private void setUpMockResponse(final String llmResponse) {
+    private static OpenAIClient client(final String llmResponse) {
+        // Create mock objects for the open AI client and each layer of the response it
+        // provides
+        // These must be PowerMocked since the classes are final in the Azure OpenAI
+        // library
+
+        var client = createMock(OpenAIClient.class);
+        var chatCompletions = createMock(ChatCompletions.class);
+        var chatChoice = createMock(ChatChoice.class);
+        var chatResponseMessage = createMock(ChatResponseMessage.class);
+
         // Mock each layer of the response generated by the client's model
         EasyMock.expect(chatResponseMessage.getContent()).andReturn(llmResponse);
+        
+        // TODO: are these even necessary?
         EasyMock.expect(chatChoice.getMessage()).andReturn(chatResponseMessage);
         EasyMock.expect(chatCompletions.getChoices()).andReturn(Collections.singletonList(chatChoice)).times(2);
-        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class))).andReturn(chatCompletions);
+        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class)))
+                .andReturn(chatCompletions);
 
         // Set all mocked objects into replay mode
         replayAll();
+        return client;
     }
 
-    /**
-     * Helper method for the isaacLLMFreeTextValidator tests,
-     * generates a list of marks and their values from json input.
-     *
-     * @param jsonMarkScheme      - a JSON array containing marks in the format {"jsonField": markName, "marks": markValue}
-     * @return A list of marks with corresponding "jsonField" and "marks" fields
-     */
-    private List<LLMFreeTextMarkSchemeEntry> generateMarkScheme(final JSONArray jsonMarkScheme) {
-        List<LLMFreeTextMarkSchemeEntry> markScheme = new LinkedList<>();
+    private static IsaacLLMFreeTextValidator createValidator(OpenAIClient client) throws IOException {
+        return new IsaacLLMFreeTextValidator(propertiesForTest(), client);
+    }
 
-        for (int i = 0; i < jsonMarkScheme.length(); i++) {
-            JSONObject jsonMarkSchemeEntry = jsonMarkScheme.getJSONObject(i);
-            LLMFreeTextMarkSchemeEntry markSchemeEntry = new LLMFreeTextMarkSchemeEntry();
-
-            // Extract "answer" and "marksAwarded" fields from json to add to the marked example
-            markSchemeEntry.setJsonField(jsonMarkSchemeEntry.getString("jsonField"));
-            markSchemeEntry.setMarks(jsonMarkSchemeEntry.getInt("marks"));
-
-            markScheme.add(markSchemeEntry);
+    private static int getIntTestProperty(String key, int defaultValue) throws IOException {
+        try {
+            return Integer.parseInt(propertiesForTest().getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
+        } catch (final NumberFormatException ignored) {
+            return defaultValue;
         }
-
-        return markScheme;
     }
 
-    /**
-     * Helper method for the isaacLLMFreeTextValidator tests,
-     * generates a list of marked example answers (consisting of a written answer and its marks) from json input.
-     *
-     * @param jsonMarkedExamples      - a JSON array containing examples in the format:
-     *                                  {"answer": exampleAnswer, "marksAwarded: exampleValue, "marks": {...exampleMarkScheme...}}
-     * @return A list of marked examples with corresponding "answer", "marksAwarded", and "marks" fields
-     */
-    private List<LLMFreeTextMarkedExample> generateMarkedExamples(final JSONArray jsonMarkedExamples) {
-        List<LLMFreeTextMarkedExample> markedExamples = new LinkedList<>();
-
-        for (int i = 0; i < jsonMarkedExamples.length(); i++) {
-            JSONObject jsonMarkedExample = jsonMarkedExamples.getJSONObject(i);
-            LLMFreeTextMarkedExample example = new LLMFreeTextMarkedExample();
-
-            // Extract "answer" and "marksAwarded" fields from json to add to the marked example
-            example.setAnswer(jsonMarkedExample.getString("answer"));
-            example.setMarksAwarded(jsonMarkedExample.getInt("marksAwarded"));
-
-            // Extract each of the individual marks from json to add to the marked example
-            JSONObject jsonMarkedExampleMarks = jsonMarkedExample.getJSONObject("marks");
-            HashMap<String, Integer> marks = new HashMap<>();
-            jsonMarkedExampleMarks.keys().forEachRemaining(mark ->
-                    marks.put(mark, jsonMarkedExampleMarks.getInt(mark)));
-            example.setMarks(marks);
-
-            // Add current example to list of marked examples
-            markedExamples.add(example);
-        }
-
-        return markedExamples;
+    private static YamlLoader propertiesForTest() throws IOException {
+        return new YamlLoader(
+                "src/test/resources/segue-integration-test-config.yaml,"
+                        + "src/test/resources/segue-unit-test-llm-validator-override.yaml");
     }
 
-    /**
-     * Helper method for the isaacLLMFreeTextValidator tests,
-     * generates an IsaacLLMFreeTextQuestion with provided marking information.
-     *
-     * @param markScheme              - Each available mark for the question and its corresponding value
-     * @param maxMarks                - Maximum available number of marks for the question
-     * @param markedExamples          - Example marked answers to the question
-     * @param markingFormula          - Formula used to calculate the mark total.
-     *                                  If null, defaults to MIN(maxMarks, SUM(... all marks ...))
-     * @return The new IsaacLLMFreeTextQuestion
-     */
-    private IsaacLLMFreeTextQuestion createLLMFreeTextQuestion(final List<LLMFreeTextMarkSchemeEntry> markScheme,
-                                                               final Integer maxMarks,
-                                                               final List<LLMFreeTextMarkedExample> markedExamples,
-                                                               final LLMMarkingExpression markingFormula) {
-        IsaacLLMFreeTextQuestion question = new IsaacLLMFreeTextQuestion();
-        question.setMarkScheme(markScheme);
-        question.setMaxMarks(maxMarks);
-        question.setMarkedExamples(markedExamples);
-        question.setMarkingFormula(markingFormula);
-
-        return question;
+    private static LLMFreeTextChoice answer(String answerString) {
+        LLMFreeTextChoice answer = new LLMFreeTextChoice();
+        answer.setValue(answerString);
+        return answer;
     }
 
-    //  --- LLMMarkingElement Syntax Sugar ---
-
-    private static LLMMarkingFunction markingFormulaFunction(final String name, final List<LLMMarkingExpression> args) {
-        LLMMarkingFunction function = new LLMMarkingFunction();
-        if (Objects.equals(name, "SUM")) {
-            function.setName(LLMMarkingFunction.FunctionName.SUM);
-        } else if (Objects.equals(name, "MIN")) {
-            function.setName(LLMMarkingFunction.FunctionName.MIN);
-        } else if (Objects.equals(name, "MAX")) {
-            function.setName(LLMMarkingFunction.FunctionName.MAX);
-        }
-        function.setArguments(args);
-        return function;
+    private LLMFreeTextQuestionValidationResponse validate(Question question, String response) throws IOException, ValidatorUnavailableException {
+        var validator = createValidator(client(response));
+        return (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(
+                question,
+                answer("The user's answer does not matter because we've mocked the endpoint that evaluates it."));
     }
 
-    private static LLMMarkingVariable markingFormulaVariable(final String name) {
-        LLMMarkingVariable variable = new LLMMarkingVariable();
-        variable.setName(name);
-        return variable;
+    private static void expectMarkBreakdown(LLMFreeTextQuestionValidationResponse response,
+            List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
+        var awardedMarks = response.getMarkBreakdown();
+        assertTrue(expectedMarks.containsAll(awardedMarks));
+        assertTrue(awardedMarks.containsAll(expectedMarks));
     }
-
-    //  --- Useful Example Marking Formulae ---
-
-    /*
-       - advantageDisadvantage = SUM(MAX(... All Advantage Marks ...), MAX(... All Disadvantage Marks ...))
-       Labelled here and in documentation as advantage/disadvantage, although this structure can also be used
-       for any two mutually exclusive categories each required to get full marks
-    */
-    private final LLMMarkingFunction advantageDisadvantageMarkingFormula = markingFormulaFunction("SUM",
-        Arrays.asList(
-            markingFormulaFunction("MAX",
-                Arrays.asList(
-                    markingFormulaVariable("advantageOne"),
-                    markingFormulaVariable("advantageTwo")
-                )
-            ),
-            markingFormulaFunction("MAX",
-                Arrays.asList(
-                    markingFormulaVariable("disadvantageOne"),
-                    markingFormulaVariable("disadvantageTwo")
-                )
-            )
-        )
-    );
-
-    /*
-        - pointExplanation = SUM(MAX(pointOne, pointTwo, ... pointN), MAX(MIN(pointOne, explanationOne), MIN(pointTwo, explanationTwo), ... MIN(pointN, explanationN))
-        Used for questions where a point is a prerequisite for its matching explanation
-    */
-    private final LLMMarkingFunction pointExplanationMarkingFormula = markingFormulaFunction("SUM",
-        Arrays.asList(
-            markingFormulaFunction("MAX",
-                Arrays.asList(
-                    markingFormulaVariable("pointOne"),
-                    markingFormulaVariable("pointTwo")
-                )
-            ),
-            markingFormulaFunction("MAX",
-                Arrays.asList(
-                    markingFormulaFunction("MIN",
-                        Arrays.asList(
-                            markingFormulaVariable("pointOne"),
-                            markingFormulaVariable("explanationOne")
-                        )
-                    ),
-                    markingFormulaFunction("MIN",
-                        Arrays.asList(
-                            markingFormulaVariable("pointTwo"),
-                            markingFormulaVariable("explanationTwo")
-                        )
-                    )
-                )
-            )
-        )
-    );
 }
