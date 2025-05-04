@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import uk.ac.cam.cl.dtg.isaac.Mark;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
@@ -43,7 +45,6 @@ import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.createMock;
@@ -51,160 +52,121 @@ import static org.powermock.api.easymock.PowerMock.replayAll;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import static uk.ac.cam.cl.dtg.isaac.QuestionFactory.*;
+import static uk.ac.cam.cl.dtg.isaac.quiz.Helpers.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class })
-@PowerMockIgnore({ "jakarta.ws.*" })
 public class IsaacLLMFreeTextValidatorTest {
     @Test
     @DisplayName("A one-mark answer for a default marking formula one-mark question gets recognised as correct")
     public void isaacLLMFreeTextValidator_OneMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMark() throws Exception {
-        var mark = mark().setReasonFoo(1);
-        var response = validate(genericOneMarkQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(1, (long) response.getMarksAwarded());
+        var breakdown = mark().setReasonFoo(1);
+        var response = validate(genericOneMarkQuestion(), breakdown);
+        expectMark(response, CORRECT, 1, breakdown);
     }
 
     @Test
     @DisplayName("A three-mark answer for a default marking formula one-mark question gets recognised as correct")
-    public void isaacLLMFreeTextValidator_OneMarkQuestionThreeMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
-        var mark = mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1);
-        var response = validate(genericOneMarkQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(1, (long) response.getMarksAwarded());
+    public void isaacLLMFreeTextValidator_OneMarkQuestionThreeMarkAnswer_MarkSchemeShouldIncludeMarks()
+            throws Exception {
+        var breakdown = mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1);
+        var response = validate(genericOneMarkQuestion(), breakdown);
+        expectMark(response, CORRECT, 1, breakdown);
     }
 
     @Test
     @DisplayName("A zero-mark answer for a one-mark question gets recognised as incorrect")
     public void isaacLLMFreeTextValidator_OneMarkQuestionZeroMarkAnswer_MarkSchemeShouldIncludeNoMarks()
             throws Exception {
-        var response = validate(genericOneMarkQuestion(), mark().toJSON());
-
-        assertFalse(response.isCorrect());
-        expectMarkBreakdown(response, mark().toMarkScheme());
-        assertEquals(0, (long) response.getMarksAwarded());
+        var response = validate(genericOneMarkQuestion(), mark());
+        expectMark(response, INCORRECT, 0, mark());
     }
 
     @Test
     @DisplayName("A two-mark answer for a default marking formula two-mark question gets recognised as correct")
     public void isaacLLMFreeTextValidator_TwoMarkQuestionTwoMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
-        var mark = mark().setReasonFoo(1).setReasonBar(1);
-        var response = validate(genericTwoMarkQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(2, (long) response.getMarksAwarded());
+        var breakdown = mark().setReasonFoo(1).setReasonBar(1);
+        var response = validate(genericTwoMarkQuestion(), breakdown);
+        expectMark(response, CORRECT, 2, breakdown);
     }
 
     @Test
     @DisplayName("A one-mark answer for a default marking formula two-mark question receives exactly one mark")
     public void isaacLLMFreeTextValidator_TwoMarkQuestionOneMarkAnswer_MarkSchemeShouldIncludeMarks() throws Exception {
-        var mark = mark().setReasonFoo(1);
-        var response = validate(genericTwoMarkQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(1, (long) response.getMarksAwarded());
+        var breakdown = mark().setReasonFoo(1);
+        var response = validate(genericTwoMarkQuestion(), breakdown);
+        expectMark(response, CORRECT, 1, breakdown);
     }
 
     @Test
     @DisplayName("An answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks")
     public void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionADMarks_MarkTotalShouldBeTwo() throws Exception {
-        var mark = advantageMark().setAdvantageOne(1).setDisadvantageOne(1);
-        var response = validate(advantageQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(2, (long) response.getMarksAwarded());
+        var breakdown = advantageMark().setAdvantageOne(1).setDisadvantageOne(1);
+        var response = validate(advantageQuestion(), breakdown);
+        expectMark(response, CORRECT, 2, breakdown);
     }
 
     @Test
     @DisplayName("An answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark")
     public void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionDMarks_MarkTotalShouldBeOne() throws Exception {
-        var mark = advantageMark().setDisadvantageOne(1);
-        var response = validate(advantageQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(1, (long) response.getMarksAwarded());
+        var breakdown = advantageMark().setDisadvantageOne(1);
+        var response = validate(advantageQuestion(), breakdown);
+        expectMark(response, CORRECT, 1, breakdown);
     }
 
     @Test
     @DisplayName("An answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark")
     public void isaacLLMFreeTextValidator_AdvantageDisadvantageQuestionAAMarks_MarkTotalShouldBeOne() throws Exception {
-        var mark = advantageMark().setAdvantageOne(1).setAdvantageTwo(1);
-        var response = validate(advantageQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(1, (long) response.getMarksAwarded());
+        var breakdown = advantageMark().setAdvantageOne(1).setAdvantageTwo(1);
+        var response = validate(advantageQuestion(), breakdown);
+        expectMark(response, CORRECT, 1, breakdown);
     }
 
     @Test
     @DisplayName("An answer containing a point and matching explanation for a two-mark point/explanation question receives two marks")
     public void isaacLLMFreeTextValidator_PointExplanationQuestionPEMarks_MarkTotalShouldBeTwo() throws Exception {
-        var mark = pointMark().setPointOne(1).setExplanationOne(1);
-        var response = validate(pointExplanationQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(2, (long) response.getMarksAwarded());
+        var breakdown = pointMark().setPointOne(1).setExplanationOne(1);
+        var response = validate(pointExplanationQuestion(), breakdown);
+        expectMark(response, CORRECT, 2, breakdown);
     }
 
     @Test
     @DisplayName("An answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks")
     public void isaacLLMFreeTextValidator_PointExplanationQuestionEMark_MarkTotalShouldBeZero() throws Exception {
-        var mark = pointMark().setExplanationOne(1);
-        var response = validate(pointExplanationQuestion(), mark.toJSON());
-
-        assertFalse(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(0, (long) response.getMarksAwarded());
+        var breakdown = pointMark().setExplanationOne(1);
+        var response = validate(pointExplanationQuestion(), breakdown);
+        expectMark(response, INCORRECT, 0, breakdown);
     }
 
     @Test
     @DisplayName("An answer containing a point and a mismatched explanation for a two-mark point/explanation question receives one mark")
     public void isaacLLMFreeTextValidator_PointExplanationQuestionPEMismatchMarks_MarkTotalShouldBeOne()
             throws Exception {
-        var mark = pointMark().setPointOne(1).setExplanationTwo(1);
-        var response = validate(pointExplanationQuestion(), mark.toJSON());
-
-        assertTrue(response.isCorrect());
-        expectMarkBreakdown(response, mark.toMarkScheme());
-        assertEquals(1, (long) response.getMarksAwarded());
+        var breakdown = pointMark().setPointOne(1).setExplanationTwo(1);
+        var response = validate(pointExplanationQuestion(), breakdown);
+        expectMark(response, CORRECT, 1, breakdown);
     }
 
     @Test
     @DisplayName("A response from the client not in the expected json format returns zero marks")
     public void isaacLLMFreeTextValidator_ResponseInvalidFormat_MarkSchemeShouldIncludeNoMarks() throws Exception {
         var response = validate(genericOneMarkQuestion(), "Not a valid JSON response");
-
-        assertFalse(response.isCorrect());
-        expectMarkBreakdown(response, mark().toMarkScheme());
-        assertEquals(0, (long) response.getMarksAwarded());
+        expectMark(response, INCORRECT, 0, mark());
     }
 
     @Test
     @DisplayName("An answer exceeding the maximum answer length is handled with an exception")
     public void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() throws Exception {
-        int maxAnswerLength = getIntTestProperty(LLM_MARKER_MAX_ANSWER_LENGTH, 4096);
+        var maxAnswerLength = getIntTestProperty(LLM_MARKER_MAX_ANSWER_LENGTH, 4096);
         var answr = answer(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
 
-        IllegalArgumentException exception = assertThrows(
+        var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> createValidator(client("")).validateQuestionResponse(genericOneMarkQuestion(), answr));
+                () -> createValidator(client()).validateQuestionResponse(genericOneMarkQuestion(), answr));
 
         assertEquals("Answer is too long for LLM free-text question marking", exception.getMessage());
     }
 
-    /*
-     * Test that an error from the client (e.g. timeout, rate limit, out of credits)
-     * is handled with an exception
-     */
     @Test
     @DisplayName("Error from the client (e.g. timeout, rate limit, out of credits) is handled with an exception")
     public void isaacLLMFreeTextValidator_ResponseError_ExceptionShouldBeThrown() {
@@ -232,18 +194,53 @@ public class IsaacLLMFreeTextValidatorTest {
         assertEquals(invalidQuestionType.getId() + " is not a LLM free-text question",
                 assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionType, "")).getMessage());
     }
+}
 
-    // --- Helper Functions ---
+class Helpers {
+    public static boolean CORRECT = true;
+    public static boolean INCORRECT = false;
+    
+    public static LLMFreeTextQuestionValidationResponse validate(Question question, Mark response) throws Exception {
+        return validate(question, response.toJSON());
+    }
 
-    /**
-     * Helper method for the isaacLLMFreeTextValidator tests,
-     * mocks given response as if generated by the OpenAI client.
-     *
-     * @param llmResponse - mock message to return from client
-     */
-    private static OpenAIClient client(final String llmResponse) {
-        // Create mock objects for the open AI client and each layer of the response it
-        // provides
+    public static LLMFreeTextQuestionValidationResponse validate(Question question, String response) throws Exception {
+        var validator = createValidator(client(response));
+        return (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(
+                question,
+                answer("The user's answer does not matter because we've mocked the endpoint that evaluates it."));
+    }
+
+    public static void expectMark(LLMFreeTextQuestionValidationResponse response, boolean isCorrect, int marksAwarded,
+            Mark markBreakDown) {
+        assertEquals(isCorrect, response.isCorrect());
+        assertEquals(marksAwarded, (long) response.getMarksAwarded());
+        expectMarkBreakdown(response, markBreakDown.toMarkScheme());
+    }
+
+    public static LLMFreeTextChoice answer(String answerString) {
+        LLMFreeTextChoice answer = new LLMFreeTextChoice();
+        answer.setValue(answerString);
+        return answer;
+    }
+
+    public static IsaacLLMFreeTextValidator createValidator(OpenAIClient client) throws IOException {
+        return new IsaacLLMFreeTextValidator(propertiesForTest(), client);
+    }
+
+    public static int getIntTestProperty(String key, int defaultValue) throws IOException {
+        try {
+            return Integer.parseInt(propertiesForTest().getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
+        } catch (final NumberFormatException ignored) {
+            return defaultValue;
+        }
+    }
+
+    public static OpenAIClient client() {
+        return client("");
+    }
+
+    public static OpenAIClient client(final String llmResponse) {
         // These must be PowerMocked since the classes are final in the Azure OpenAI
         // library
 
@@ -252,7 +249,6 @@ public class IsaacLLMFreeTextValidatorTest {
         var chatChoice = createMock(ChatChoice.class);
         var chatResponseMessage = createMock(ChatResponseMessage.class);
 
-        // Mock each layer of the response generated by the client's model
         EasyMock.expect(chatResponseMessage.getContent()).andReturn(llmResponse);
         EasyMock.expect(chatChoice.getMessage()).andReturn(chatResponseMessage);
         EasyMock.expect(chatCompletions.getChoices()).andReturn(Collections.singletonList(chatChoice)).times(2);
@@ -263,36 +259,10 @@ public class IsaacLLMFreeTextValidatorTest {
         return client;
     }
 
-    private static IsaacLLMFreeTextValidator createValidator(OpenAIClient client) throws IOException {
-        return new IsaacLLMFreeTextValidator(propertiesForTest(), client);
-    }
-
-    private static int getIntTestProperty(String key, int defaultValue) throws IOException {
-        try {
-            return Integer.parseInt(propertiesForTest().getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
-        } catch (final NumberFormatException ignored) {
-            return defaultValue;
-        }
-    }
-
     private static YamlLoader propertiesForTest() throws IOException {
         return new YamlLoader(
                 "src/test/resources/segue-integration-test-config.yaml,"
                         + "src/test/resources/segue-unit-test-llm-validator-override.yaml");
-    }
-
-    private static LLMFreeTextChoice answer(String answerString) {
-        LLMFreeTextChoice answer = new LLMFreeTextChoice();
-        answer.setValue(answerString);
-        return answer;
-    }
-
-    private LLMFreeTextQuestionValidationResponse validate(Question question, String response)
-            throws IOException, ValidatorUnavailableException {
-        var validator = createValidator(client(response));
-        return (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(
-                question,
-                answer("The user's answer does not matter because we've mocked the endpoint that evaluates it."));
     }
 
     private static void expectMarkBreakdown(LLMFreeTextQuestionValidationResponse response,
