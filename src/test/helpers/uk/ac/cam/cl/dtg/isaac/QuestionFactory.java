@@ -2,7 +2,6 @@
 package uk.ac.cam.cl.dtg.isaac;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -79,8 +78,17 @@ public class QuestionFactory {
                 pointExplanationMarkingFormula);
     }
 
-    public static Field field() {
-        return Field.field();
+    
+    public static GenericMark mark() {
+        return new GenericMark();
+    }
+
+    public static AdvantageMark advantageMark() {
+        return new AdvantageMark();
+    }
+
+    public static PointMark pointMark() {
+        return new PointMark();
     }
 
     /**
@@ -183,7 +191,7 @@ public class QuestionFactory {
      *         "marksAwarded", and "marks" fields
      */
     @SafeVarargs
-    private static <T extends Marking> List<LLMFreeTextMarkedExample> generateMarkedExamples(Example<T>... examples) {
+    private static <T extends Mark> List<LLMFreeTextMarkedExample> generateMarkedExamples(Example<T>... examples) {
         return Stream.of(examples).map(input -> {
             var output = new LLMFreeTextMarkedExample();
             output.setAnswer(input.answer());
@@ -214,37 +222,29 @@ public class QuestionFactory {
         return variable;
     }
 
-    private static Example<GenericMarking> example() {
+    private static Example<GenericMark> example() {
         return Example.example();
     }
 
-    private static Example<AdvantageMarking> advantageExample() {
+    private static Example<AdvantageMark> advantageExample() {
         return Example.example();
     }
 
-    private static Example<PointMarking> pointExample() {
+    private static Example<PointMark> pointExample() {
         return Example.example();
     }
 
-    private static GenericMarking mark() {
-        return new GenericMarking();
-    }
-
-    private static AdvantageMarking advantageMark() {
-        return new AdvantageMarking();
-    }
-
-    private static PointMarking pointMark() {
-        return new PointMarking();
+    private static Field field() {
+        return Field.field();
     }
 }
 
-class Example<T extends Marking> {
+class Example<T extends Mark> {
     private String answer;
     private int marksAwarded;
     private T marks;
 
-    public static <T extends Marking> Example<T> example() {
+    public static <T extends Mark> Example<T> example() {
         return new Example<T>();
     }
 
@@ -273,110 +273,5 @@ class Example<T extends Marking> {
 
     public T marks() {
         return this.marks;
-    }
-}
-
-interface Marking {
-    HashMap<String, Integer> toHashMap();
-};
-
-class GenericMarking implements Marking {
-    private int reasonFoo = 0;
-    private int reasonBar = 0;
-    private int reasonFizz = 0;
-
-    public GenericMarking setReasonFoo(int reasonFoo) {
-        this.reasonFoo = reasonFoo;
-        return this;
-    }
-
-    public GenericMarking setReasonBar(int reasonBar) {
-        this.reasonBar = reasonBar;
-        return this;
-    }
-
-    public GenericMarking setReasonFizz(int reasonFizz) {
-        this.reasonFizz = reasonFizz;
-        return this;
-    }
-
-    public HashMap<String, Integer> toHashMap() {
-        var result = new HashMap<String, Integer>();
-        result.put("reasonFoo", this.reasonFoo);
-        result.put("reasonBar", this.reasonBar);
-        result.put("reasonFizz", this.reasonFizz);
-        return result;
-    }
-}
-
-class AdvantageMarking implements Marking {
-    private int advantageOne = 0;
-    private int advantageTwo = 0;
-    private int disadvantageOne = 0;
-    private int disadvantageTwo = 0;
-
-    public AdvantageMarking setAdvantageOne(int advantageOne) {
-        this.advantageOne = advantageOne;
-        return this;
-    }
-
-    public AdvantageMarking setAdvantageTwo(int advantageTwo) {
-        this.advantageTwo = advantageTwo;
-        return this;
-    }
-
-    public AdvantageMarking setDisadvantageOne(int disadvantageOne) {
-        this.disadvantageOne = disadvantageOne;
-        return this;
-    }
-
-    public AdvantageMarking setDisadvantageTwo(int disadvantageTwo) {
-        this.disadvantageTwo = disadvantageTwo;
-        return this;
-    }
-
-    public HashMap<String, Integer> toHashMap() {
-        var result = new HashMap<String, Integer>();
-        result.put("advantageOne", this.advantageOne);
-        result.put("advantageTwo", this.advantageTwo);
-        result.put("disadvantageOne", this.disadvantageOne);
-        result.put("disadvantageTwo", this.disadvantageTwo);
-        return result;
-    }
-}
-
-class PointMarking implements Marking {
-    private int pointOne = 0;
-    private int pointTwo = 0;
-    private int explanationOne = 0;
-    private int explanationTwo = 0;
-
-    public PointMarking setPointOne(int pointOne) {
-        this.pointOne = pointOne;
-        return this;
-    }
-
-    public PointMarking setPointTwo(int pointTwo) {
-        this.pointTwo = pointTwo;
-        return this;
-    }
-
-    public PointMarking setExplanationOne(int explanationOne) {
-        this.explanationOne = explanationOne;
-        return this;
-    }
-
-    public PointMarking setExplanationTwo(int explanationTwo) {
-        this.explanationTwo = explanationTwo;
-        return this;
-    }
-
-    public HashMap<String, Integer> toHashMap() {
-        var result = new HashMap<String, Integer>();
-        result.put("pointOne", this.pointOne);
-        result.put("pointTwo", this.pointTwo);
-        result.put("explanationOne", this.explanationOne);
-        result.put("explanationTwo", this.explanationTwo);
-        return result;
     }
 }
