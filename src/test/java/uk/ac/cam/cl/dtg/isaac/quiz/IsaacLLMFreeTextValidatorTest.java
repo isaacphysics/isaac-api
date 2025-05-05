@@ -40,7 +40,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.util.YamlLoader;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -55,10 +54,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replayAll;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import static uk.ac.cam.cl.dtg.isaac.QuestionFactory.*;
+import static uk.ac.cam.cl.dtg.isaac.OpenAIClientFactory.*;
+import static uk.ac.cam.cl.dtg.isaac.AnswerFactory.*;
+import static uk.ac.cam.cl.dtg.isaac.YamlLoaderFactory.*;
 import static uk.ac.cam.cl.dtg.isaac.quiz.Helpers.*;
 
 @RunWith(Enclosed.class)
@@ -79,7 +80,7 @@ public class IsaacLLMFreeTextValidatorTest {
         @Parameter(4)
         public int expectedMark;
 
-        @Parameters
+        @Parameters(name = "{index}: {0}")
         public static Collection<Object[]> data() {
             return Arrays.asList(new Object[][] {
                     { "A one-mark answer for a default marking formula one-mark question gets recognised as correct",
@@ -133,11 +134,9 @@ public class IsaacLLMFreeTextValidatorTest {
         @DisplayName("An answer exceeding the maximum answer length is handled with an exception")
         public void isaacLLMFreeTextValidator_AnswerOverLengthLimit_ExceptionShouldBeThrown() throws Exception {
             var maxAnswerLength = getIntTestProperty(LLM_MARKER_MAX_ANSWER_LENGTH, 4096);
-            var answr = answer(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
+            var choice = answer(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
 
-            var exception = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> createValidator(client()).validateQuestionResponse(genericOneMarkQuestion(), answr));
+            var exception = assertThrows(IllegalArgumentException.class, () -> validate(genericOneMarkQuestion(), choice));
 
             assertEquals("Answer is too long for LLM free-text question marking", exception.getMessage());
         }
@@ -145,30 +144,31 @@ public class IsaacLLMFreeTextValidatorTest {
         @Test
         @DisplayName("Error from the client (e.g. timeout, rate limit, out of credits) is handled with an exception")
         public void isaacLLMFreeTextValidator_ResponseError_ExceptionShouldBeThrown() {
-            var clnt = createMock(OpenAIClient.class);
-            EasyMock.expect(clnt.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class)))
+            var client = createMock(OpenAIClient.class);
+            EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class)))
                     .andThrow(new RuntimeException("Test OpenAI Exception"));
-            replay(clnt);
+            replay(client);
 
+            var exception = assertThrows(ValidatorUnavailableException.class, () -> validate(client));
+                
             assertEquals("We are having problems marking LLM marked questions. Please try again later!",
-                    assertThrows(
-                            ValidatorUnavailableException.class,
-                            () -> createValidator(clnt).validateQuestionResponse(genericOneMarkQuestion(), answer("")))
-                            .getMessage());
+                    exception.getMessage());
         }
 
         @Test
-        @DisplayName("Invalid question (i.e. missing maxMarks field/not LLMFreeTextQuestion) is handled with an exception")
-        public void isaacLLMFreeTextValidator_InvalidQuestion_ExceptionShouldBeThrown() {
-            IsaacLLMFreeTextQuestion invalidQuestionFields = createLLMFreeTextQuestion(null, null, null, null);
-            Question invalidQuestionType = new Question();
+        @DisplayName("Invalid question (missing maxMarks fields) is handled with an exception")
+        public void isaacLLMFreeTextValidator_MissingMaxMarks_ExceptionShouldBeThrown() {
+            var invalidQuestionFields = createLLMFreeTextQuestion(null, null, null, null);
+            var exception = assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionFields, "")); 
+            assertEquals("This question cannot be answered correctly", exception.getMessage());
+        }
 
-            assertEquals("This question cannot be answered correctly",
-                    assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionFields, ""))
-                            .getMessage());
-
-            assertEquals(invalidQuestionType.getId() + " is not a LLM free-text question",
-                    assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionType, "")).getMessage());
+        @Test
+        @DisplayName("Invalid question (not LLMFreeTextQuestion) is handled with an exception")
+        public void isaacLLMFreeTextValidator_NotLLMFreeTextQuestion_ExceptionShouldBeThrown() {
+            var invalidQuestionType = new Question();
+            var exception = assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionType, ""));
+            assertEquals(invalidQuestionType.getId() + " is not a LLM free-text question", exception.getMessage());
         }
     }
 }
@@ -177,15 +177,30 @@ class Helpers {
     public static boolean CORRECT = true;
     public static boolean INCORRECT = false;
 
+    public static LLMFreeTextQuestionValidationResponse validate(OpenAIClient client) throws Exception {
+        return validate(genericOneMarkQuestion(), client, answer(""));
+    }
+
+    public static LLMFreeTextQuestionValidationResponse validate(Question question, LLMFreeTextChoice answer)
+            throws Exception {
+        return validate(question, client(), answer);
+    }
+
     public static LLMFreeTextQuestionValidationResponse validate(Question question, Mark response) throws Exception {
         return validate(question, response.toJSON());
     }
 
     public static LLMFreeTextQuestionValidationResponse validate(Question question, String response) throws Exception {
-        var validator = createValidator(client(response));
+        return validate(question, client(response),
+                answer("The user's answer does not matter because we've mocked the endpoint that evaluates it."));
+    }
+
+    public static LLMFreeTextQuestionValidationResponse validate(Question question, OpenAIClient client,
+            LLMFreeTextChoice answer) throws Exception {
+        var validator = new IsaacLLMFreeTextValidator(propertiesForTest(), client);
         return (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(
                 question,
-                answer("The user's answer does not matter because we've mocked the endpoint that evaluates it."));
+                answer);
     }
 
     public static void expectMark(LLMFreeTextQuestionValidationResponse response, boolean isCorrect, int marksAwarded,
@@ -195,51 +210,12 @@ class Helpers {
         expectMarkBreakdown(response, markBreakDown.toMarkScheme());
     }
 
-    public static LLMFreeTextChoice answer(String answerString) {
-        LLMFreeTextChoice answer = new LLMFreeTextChoice();
-        answer.setValue(answerString);
-        return answer;
-    }
-
-    public static IsaacLLMFreeTextValidator createValidator(OpenAIClient client) throws IOException {
-        return new IsaacLLMFreeTextValidator(propertiesForTest(), client);
-    }
-
     public static int getIntTestProperty(String key, int defaultValue) throws IOException {
         try {
             return Integer.parseInt(propertiesForTest().getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
         } catch (final NumberFormatException ignored) {
             return defaultValue;
         }
-    }
-
-    public static OpenAIClient client() {
-        return client("");
-    }
-
-    public static OpenAIClient client(final String llmResponse) {
-        // These must be PowerMocked since the classes are final in the Azure OpenAI
-        // library
-
-        var client = createMock(OpenAIClient.class);
-        var chatCompletions = createMock(ChatCompletions.class);
-        var chatChoice = createMock(ChatChoice.class);
-        var chatResponseMessage = createMock(ChatResponseMessage.class);
-
-        EasyMock.expect(chatResponseMessage.getContent()).andReturn(llmResponse);
-        EasyMock.expect(chatChoice.getMessage()).andReturn(chatResponseMessage);
-        EasyMock.expect(chatCompletions.getChoices()).andReturn(Collections.singletonList(chatChoice)).times(2);
-        EasyMock.expect(client.getChatCompletions(anyString(), isA(ChatCompletionsOptions.class)))
-                .andReturn(chatCompletions);
-
-        replayAll();
-        return client;
-    }
-
-    private static YamlLoader propertiesForTest() throws IOException {
-        return new YamlLoader(
-                "src/test/resources/segue-integration-test-config.yaml,"
-                        + "src/test/resources/segue-unit-test-llm-validator-override.yaml");
     }
 
     private static void expectMarkBreakdown(LLMFreeTextQuestionValidationResponse response,
