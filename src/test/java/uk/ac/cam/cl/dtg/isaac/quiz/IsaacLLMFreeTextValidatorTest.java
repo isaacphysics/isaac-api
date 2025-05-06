@@ -92,14 +92,16 @@ public class IsaacLLMFreeTextValidatorTest {
 
         private static Stream<MarkingTestCase> genericOneMarkCases() {
             var question = createLLMFreeTextQuestion(
-                    mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), 1, emptyExamples(), null
+                    mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1),
+                    1,
+                    emptyExamples(),
+                    null
             );
             return Stream.of(
                     testCase("A one-mark answer for a default marking formula one-mark question gets recognised as correct",
                             question, mark().setReasonFoo(1), CORRECT, 1),
                     testCase("A three-mark answer for a default marking formula one-mark question gets recognised as correct",
-                            question, mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), CORRECT,
-                            1),
+                            question, mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), CORRECT, 1),
                     testCase("A zero-mark answer for a one-mark question gets recognised as incorrect",
                             question, mark(), INCORRECT, 0)
             );
@@ -107,7 +109,10 @@ public class IsaacLLMFreeTextValidatorTest {
 
         private static Stream<MarkingTestCase> genericTwoMarkCases() {
             var question = createLLMFreeTextQuestion(
-                    mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), 2, emptyExamples(), null
+                    mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1),
+                    2,
+                    emptyExamples(),
+                    null
             );
             return Stream.of(
                     testCase("A two-mark answer for a default marking formula two-mark question gets recognised as correct",
