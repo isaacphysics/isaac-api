@@ -7,8 +7,10 @@ import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkedExample;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
+import uk.ac.cam.cl.dtg.isaac.marks.Mark;
+
 import static uk.ac.cam.cl.dtg.isaac.MarkingFormulaFactory.*;
-import static uk.ac.cam.cl.dtg.isaac.Mark.*;
+import static uk.ac.cam.cl.dtg.isaac.marks.Mark.*;
 
 public class QuestionFactory {
     public static IsaacLLMFreeTextQuestion genericOneMarkQuestion() {
@@ -25,7 +27,6 @@ public class QuestionFactory {
                 2,
                 emptyExamples(),
                 null);
-
     }
 
     public static IsaacLLMFreeTextQuestion advantageQuestion() {

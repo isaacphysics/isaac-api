@@ -1,7 +1,8 @@
-package uk.ac.cam.cl.dtg.isaac;
+package uk.ac.cam.cl.dtg.isaac.marks;
 
 import java.util.List;
 
+import uk.ac.cam.cl.dtg.isaac.Field;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 
 public class AdvantageMark extends Mark {

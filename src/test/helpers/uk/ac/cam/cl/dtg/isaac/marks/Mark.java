@@ -1,9 +1,10 @@
-package uk.ac.cam.cl.dtg.isaac;
+package uk.ac.cam.cl.dtg.isaac.marks;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import uk.ac.cam.cl.dtg.isaac.Field;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 
 public abstract class Mark {

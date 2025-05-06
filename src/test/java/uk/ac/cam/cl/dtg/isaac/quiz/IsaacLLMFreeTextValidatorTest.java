@@ -34,17 +34,17 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
-import uk.ac.cam.cl.dtg.isaac.Mark;
-import static uk.ac.cam.cl.dtg.isaac.Mark.*;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
+import uk.ac.cam.cl.dtg.isaac.marks.Mark;
+import uk.ac.cam.cl.dtg.isaac.MarkingTestCase;
+
+import static uk.ac.cam.cl.dtg.isaac.marks.Mark.*;
+
 import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,66 +62,59 @@ import static uk.ac.cam.cl.dtg.isaac.OpenAIClientFactory.*;
 import static uk.ac.cam.cl.dtg.isaac.AnswerFactory.*;
 import static uk.ac.cam.cl.dtg.isaac.YamlLoaderFactory.*;
 import static uk.ac.cam.cl.dtg.isaac.quiz.Helpers.*;
+import static uk.ac.cam.cl.dtg.isaac.MarkingTestCase.testCase;
 
 @RunWith(Enclosed.class)
 public class IsaacLLMFreeTextValidatorTest {
     @RunWith(PowerMockRunner.class)
     @PowerMockRunnerDelegate(Parameterized.class)
-    @PrepareForTest({ OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class })
+    @PrepareForTest({OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class})
     @DisplayName("Test that a mark is awarded based on the marking formula")
     public static class TestFormulaBasedMarking {
         @Parameter()
-        public String testDescription;
-        @Parameter(1)
-        public IsaacLLMFreeTextQuestion question;
-        @Parameter(2)
-        public Mark response;
-        @Parameter(3)
-        public boolean expectedResult;
-        @Parameter(4)
-        public int expectedMark;
+        public MarkingTestCase testCase;
 
         @Parameters(name = "{index}: {0}")
-        public static Collection<Object[]> data() {
-            return Arrays.asList(new Object[][] {
-                    { "A one-mark answer for a default marking formula one-mark question gets recognised as correct",
-                            genericOneMarkQuestion(), mark().setReasonFoo(1), CORRECT, 1 },
-                    { "A three-mark answer for a default marking formula one-mark question gets recognised as correct",
+        public static List<MarkingTestCase> data() {
+            return List.of(
+                    testCase("A one-mark answer for a default marking formula one-mark question gets recognised as correct",
+                            genericOneMarkQuestion(), mark().setReasonFoo(1), CORRECT, 1),
+                    testCase("A three-mark answer for a default marking formula one-mark question gets recognised as correct",
                             genericOneMarkQuestion(), mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), CORRECT,
-                            1 },
-                    { "A zero-mark answer for a one-mark question gets recognised as incorrect",
-                            genericOneMarkQuestion(), mark(), INCORRECT, 0 },
+                            1),
+                    testCase("A zero-mark answer for a one-mark question gets recognised as incorrect",
+                            genericOneMarkQuestion(), mark(), INCORRECT, 0),
 
-                    { "A two-mark answer for a default marking formula two-mark question gets recognised as correct",
-                            genericTwoMarkQuestion(), mark().setReasonFoo(1).setReasonBar(1), CORRECT, 2 },
-                    { "A one-mark answer for a default marking formula two-mark question receives exactly one mark",
-                            genericTwoMarkQuestion(), mark().setReasonFoo(1), CORRECT, 1 },
+                    testCase("A two-mark answer for a default marking formula two-mark question gets recognised as correct",
+                            genericTwoMarkQuestion(), mark().setReasonFoo(1).setReasonBar(1), CORRECT, 2),
+                    testCase("A one-mark answer for a default marking formula two-mark question receives exactly one mark",
+                            genericTwoMarkQuestion(), mark().setReasonFoo(1), CORRECT, 1),
 
-                    { "An answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks",
-                            advantageQuestion(), advantageMark().setAdvantageOne(1).setDisadvantageOne(1), CORRECT, 2 },
-                    { "An answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark",
-                            advantageQuestion(), advantageMark().setDisadvantageOne(1), CORRECT, 1 },
-                    { "An answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark",
-                            advantageQuestion(), advantageMark().setAdvantageOne(1).setAdvantageTwo(1), CORRECT, 1 },
+                    testCase("An answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks",
+                            advantageQuestion(), advantageMark().setAdvantageOne(1).setDisadvantageOne(1), CORRECT, 2),
+                    testCase("An answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark",
+                            advantageQuestion(), advantageMark().setDisadvantageOne(1), CORRECT, 1),
+                    testCase("An answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark",
+                            advantageQuestion(), advantageMark().setAdvantageOne(1).setAdvantageTwo(1), CORRECT, 1),
 
-                    { "An answer containing a point and matching explanation for a two-mark point/explanation question receives two marks",
-                            pointExplanationQuestion(), pointMark().setPointOne(1).setExplanationOne(1), CORRECT, 2 },
-                    { "An answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks",
-                            pointExplanationQuestion(), pointMark().setExplanationOne(1), INCORRECT, 0 },
-                    { "An answer containing a point and a mismatched explanation for a two-mark point/explanation question receives one mark",
-                            pointExplanationQuestion(), pointMark().setPointOne(1).setExplanationTwo(1), CORRECT, 1 }
-            });
+                    testCase("An answer containing a point and matching explanation for a two-mark point/explanation question receives two marks",
+                            pointExplanationQuestion(), pointMark().setPointOne(1).setExplanationOne(1), CORRECT, 2),
+                    testCase("An answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks",
+                            pointExplanationQuestion(), pointMark().setExplanationOne(1), INCORRECT, 0),
+                    testCase("An answer containing a point and a mismatched explanation for a two-mark point/explanation question receives one mark",
+                            pointExplanationQuestion(), pointMark().setPointOne(1).setExplanationTwo(1), CORRECT, 1)
+            );
         }
 
         @Test
         public void test() throws Exception {
-            var resp = validate(question, response);
-            expectMark(resp, expectedResult, expectedMark, response);
+            var resp = validate(testCase.getQuestion(), testCase.getResponse());
+            expectMark(resp, testCase.getExpectedResult(), testCase.getExpectedMark(), testCase.getResponse());
         }
     }
 
     @RunWith(PowerMockRunner.class)
-    @PrepareForTest({ OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class })
+    @PrepareForTest({OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class})
     @DisplayName("Test application behaviour in case of errors.")
     public static class TestErrorHandling {
         @Test
@@ -151,7 +144,7 @@ public class IsaacLLMFreeTextValidatorTest {
             replay(client);
 
             var exception = assertThrows(ValidatorUnavailableException.class, () -> validate(client));
-                
+
             assertEquals("We are having problems marking LLM marked questions. Please try again later!",
                     exception.getMessage());
         }
@@ -160,7 +153,7 @@ public class IsaacLLMFreeTextValidatorTest {
         @DisplayName("Invalid question (missing maxMarks fields) is handled with an exception")
         public void isaacLLMFreeTextValidator_MissingMaxMarks_ExceptionShouldBeThrown() {
             var invalidQuestionFields = createLLMFreeTextQuestion(null, null, null, null);
-            var exception = assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionFields, "")); 
+            var exception = assertThrows(IllegalArgumentException.class, () -> validate(invalidQuestionFields, ""));
             assertEquals("This question cannot be answered correctly", exception.getMessage());
         }
 
@@ -178,13 +171,13 @@ class Helpers {
     public static boolean CORRECT = true;
     public static boolean INCORRECT = false;
 
-    public static LLMFreeTextQuestionValidationResponse validate(OpenAIClient client) throws Exception {
-        return validate(genericOneMarkQuestion(), client, answer(""));
+    public static void validate(OpenAIClient client) throws Exception {
+        validate(genericOneMarkQuestion(), client, answer(""));
     }
 
-    public static LLMFreeTextQuestionValidationResponse validate(Question question, LLMFreeTextChoice answer)
+    public static void validate(Question question, LLMFreeTextChoice answer)
             throws Exception {
-        return validate(question, client(), answer);
+        validate(question, client(), answer);
     }
 
     public static LLMFreeTextQuestionValidationResponse validate(Question question, Mark response) throws Exception {
@@ -197,7 +190,7 @@ class Helpers {
     }
 
     public static LLMFreeTextQuestionValidationResponse validate(Question question, OpenAIClient client,
-            LLMFreeTextChoice answer) throws Exception {
+                                                                 LLMFreeTextChoice answer) throws Exception {
         var validator = new IsaacLLMFreeTextValidator(propertiesForTest(), client);
         return (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(
                 question,
@@ -205,7 +198,7 @@ class Helpers {
     }
 
     public static void expectMark(LLMFreeTextQuestionValidationResponse response, boolean isCorrect, int marksAwarded,
-            Mark markBreakDown) {
+                                  Mark markBreakDown) {
         assertEquals(isCorrect, response.isCorrect());
         assertEquals(marksAwarded, (long) response.getMarksAwarded());
         expectMarkBreakdown(response, markBreakDown.toMarkScheme());
@@ -220,7 +213,7 @@ class Helpers {
     }
 
     private static void expectMarkBreakdown(LLMFreeTextQuestionValidationResponse response,
-            List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
+                                            List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
         var awardedMarks = response.getMarkBreakdown();
         assertTrue(expectedMarks.containsAll(awardedMarks));
         assertTrue(awardedMarks.containsAll(expectedMarks));
