@@ -1,13 +1,11 @@
 package uk.ac.cam.cl.dtg.isaac;
 
-import static uk.ac.cam.cl.dtg.isaac.QuestionFactory.generateMarkScheme;
-
 import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 
-public class GenericMark implements Mark {
+public class GenericMark extends Mark {
   private int reasonFoo = 0;
   private int reasonBar = 0;
   private int reasonFizz = 0;

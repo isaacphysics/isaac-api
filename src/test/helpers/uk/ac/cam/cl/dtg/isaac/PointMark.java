@@ -1,13 +1,11 @@
 package uk.ac.cam.cl.dtg.isaac;
 
-import static uk.ac.cam.cl.dtg.isaac.QuestionFactory.generateMarkScheme;
-
 import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 
-public class PointMark implements Mark {
+public class PointMark extends Mark {
     private int pointOne = 0;
     private int pointTwo = 0;
     private int explanationOne = 0;

@@ -38,5 +38,4 @@ public class OpenAIClientFactory {
     replayAll();
     return client;
   }
-
 }

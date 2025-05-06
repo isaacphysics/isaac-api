@@ -1,13 +1,11 @@
 package uk.ac.cam.cl.dtg.isaac;
 
-import static uk.ac.cam.cl.dtg.isaac.QuestionFactory.generateMarkScheme;
-
 import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
 
-public class AdvantageMark implements Mark {
+public class AdvantageMark extends Mark {
   private int advantageOne = 0;
   private int advantageTwo = 0;
   private int disadvantageOne = 0;
