@@ -37,6 +37,8 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import uk.ac.cam.cl.dtg.isaac.marks.Mark;
 import uk.ac.cam.cl.dtg.isaac.MarkingTestCase;
 
+import static uk.ac.cam.cl.dtg.isaac.MarkingFormulaFactory.function;
+import static uk.ac.cam.cl.dtg.isaac.MarkingFormulaFactory.variable;
 import static uk.ac.cam.cl.dtg.isaac.marks.Mark.*;
 
 import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
@@ -47,6 +49,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.isA;
@@ -76,40 +80,84 @@ public class IsaacLLMFreeTextValidatorTest {
 
         @Parameters(name = "{index}: {0}")
         public static List<MarkingTestCase> data() {
-            return List.of(
-                    testCase("A one-mark answer for a default marking formula one-mark question gets recognised as correct",
-                            genericOneMarkQuestion(), mark().setReasonFoo(1), CORRECT, 1),
-                    testCase("A three-mark answer for a default marking formula one-mark question gets recognised as correct",
-                            genericOneMarkQuestion(), mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), CORRECT,
-                            1),
-                    testCase("A zero-mark answer for a one-mark question gets recognised as incorrect",
-                            genericOneMarkQuestion(), mark(), INCORRECT, 0),
-
-                    testCase("A two-mark answer for a default marking formula two-mark question gets recognised as correct",
-                            genericTwoMarkQuestion(), mark().setReasonFoo(1).setReasonBar(1), CORRECT, 2),
-                    testCase("A one-mark answer for a default marking formula two-mark question receives exactly one mark",
-                            genericTwoMarkQuestion(), mark().setReasonFoo(1), CORRECT, 1),
-
-                    testCase("An answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks",
-                            advantageQuestion(), advantageMark().setAdvantageOne(1).setDisadvantageOne(1), CORRECT, 2),
-                    testCase("An answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark",
-                            advantageQuestion(), advantageMark().setDisadvantageOne(1), CORRECT, 1),
-                    testCase("An answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark",
-                            advantageQuestion(), advantageMark().setAdvantageOne(1).setAdvantageTwo(1), CORRECT, 1),
-
-                    testCase("An answer containing a point and matching explanation for a two-mark point/explanation question receives two marks",
-                            pointExplanationQuestion(), pointMark().setPointOne(1).setExplanationOne(1), CORRECT, 2),
-                    testCase("An answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks",
-                            pointExplanationQuestion(), pointMark().setExplanationOne(1), INCORRECT, 0),
-                    testCase("An answer containing a point and a mismatched explanation for a two-mark point/explanation question receives one mark",
-                            pointExplanationQuestion(), pointMark().setPointOne(1).setExplanationTwo(1), CORRECT, 1)
-            );
+            return Stream.of(genericOneMarkCases(), genericTwoMarkCases(), advantageCases(), pointExplanationCases())
+                    .reduce(Stream::concat).orElseGet(Stream::empty).collect(Collectors.toList());
         }
 
         @Test
         public void test() throws Exception {
             var resp = validate(testCase.getQuestion(), testCase.getResponse());
             expectMark(resp, testCase.getExpectedResult(), testCase.getExpectedMark(), testCase.getResponse());
+        }
+
+        private static Stream<MarkingTestCase> genericOneMarkCases() {
+            var question = createLLMFreeTextQuestion(
+                    mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), 1, emptyExamples(), null
+            );
+            return Stream.of(
+                    testCase("A one-mark answer for a default marking formula one-mark question gets recognised as correct",
+                            question, mark().setReasonFoo(1), CORRECT, 1),
+                    testCase("A three-mark answer for a default marking formula one-mark question gets recognised as correct",
+                            question, mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), CORRECT,
+                            1),
+                    testCase("A zero-mark answer for a one-mark question gets recognised as incorrect",
+                            question, mark(), INCORRECT, 0)
+            );
+        }
+
+        private static Stream<MarkingTestCase> genericTwoMarkCases() {
+            var question = createLLMFreeTextQuestion(
+                    mark().setReasonFoo(1).setReasonBar(1).setReasonFizz(1), 2, emptyExamples(), null
+            );
+            return Stream.of(
+                    testCase("A two-mark answer for a default marking formula two-mark question gets recognised as correct",
+                            question, mark().setReasonFoo(1).setReasonBar(1), CORRECT, 2),
+                    testCase("A one-mark answer for a default marking formula two-mark question receives exactly one mark",
+                            question, mark().setReasonFoo(1), CORRECT, 1)
+            );
+        }
+
+        private static Stream<MarkingTestCase> advantageCases() {
+            var question = createLLMFreeTextQuestion(
+                    advantageMark().setAdvantageOne(1).setAdvantageTwo(1).setDisadvantageOne(1).setDisadvantageTwo(1),
+                    2,
+                    emptyExamples(),
+                    function("SUM",
+                            function("MAX", variable("advantageOne"), variable("advantageTwo")),
+                            function("MAX", variable("disadvantageOne"), variable("disadvantageTwo"))
+                    )
+            );
+            return Stream.of(
+                    testCase("An answer containing an advantage and a disadvantage mark for a two-mark advantage/disadvantage question receives two marks",
+                            question, advantageMark().setAdvantageOne(1).setDisadvantageOne(1), CORRECT, 2),
+                    testCase("An answer containing only a disadvantage mark for a two-mark advantage/disadvantage question receives one mark",
+                            question, advantageMark().setDisadvantageOne(1), CORRECT, 1),
+                    testCase("An answer containing two advantage marks for a two-mark advantage/disadvantage question receives one mark",
+                            question, advantageMark().setAdvantageOne(1).setAdvantageTwo(1), CORRECT, 1)
+            );
+        }
+
+        private static Stream<MarkingTestCase> pointExplanationCases() {
+            var question = createLLMFreeTextQuestion(
+                    pointMark().setPointOne(1).setExplanationOne(1).setPointTwo(1).setExplanationTwo(1),
+                    2,
+                    emptyExamples(),
+                    function("SUM",
+                            function("MAX", variable("pointOne"), variable("pointTwo")),
+                            function("MAX",
+                                    function("MIN", variable("pointOne"), variable("explanationOne")),
+                                    function("MIN", variable("pointTwo"), variable("explanationTwo"))
+                            )
+                    )
+            );
+            return Stream.of(
+                    testCase("An answer containing a point and matching explanation for a two-mark point/explanation question receives two marks",
+                            question, pointMark().setPointOne(1).setExplanationOne(1), CORRECT, 2),
+                    testCase("An answer containing an explanation without a matching point for a two-mark point/explanation question receives zero marks",
+                            question, pointMark().setExplanationOne(1), INCORRECT, 0),
+                    testCase("An answer containing a point and a mismatched explanation for a two-mark point/explanation question receives one mark",
+                            question, pointMark().setPointOne(1).setExplanationTwo(1), CORRECT, 1)
+            );
         }
     }
 
@@ -120,7 +168,7 @@ public class IsaacLLMFreeTextValidatorTest {
         @Test
         @DisplayName("A response from the client not in the expected json format returns zero marks")
         public void isaacLLMFreeTextValidator_ResponseInvalidFormat_MarkSchemeShouldIncludeNoMarks() throws Exception {
-            var response = validate(genericOneMarkQuestion(), "Not a valid JSON response");
+            var response = validate(someQuestion(), "Not a valid JSON response");
             expectMark(response, INCORRECT, 0, mark());
         }
 
@@ -130,7 +178,7 @@ public class IsaacLLMFreeTextValidatorTest {
             var maxAnswerLength = getIntTestProperty(LLM_MARKER_MAX_ANSWER_LENGTH, 4096);
             var choice = answer(String.join("", Collections.nCopies((maxAnswerLength / 10 + 1), "Repeat Me ")));
 
-            var exception = assertThrows(IllegalArgumentException.class, () -> validate(genericOneMarkQuestion(), choice));
+            var exception = assertThrows(IllegalArgumentException.class, () -> validate(someQuestion(), choice));
 
             assertEquals("Answer is too long for LLM free-text question marking", exception.getMessage());
         }
@@ -172,7 +220,7 @@ class Helpers {
     public static boolean INCORRECT = false;
 
     public static void validate(OpenAIClient client) throws Exception {
-        validate(genericOneMarkQuestion(), client, answer(""));
+        validate(someQuestion(), client, answer(""));
     }
 
     public static void validate(Question question, LLMFreeTextChoice answer)
