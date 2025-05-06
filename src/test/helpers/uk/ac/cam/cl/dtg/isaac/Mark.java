@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,7 +19,6 @@ public abstract class Mark {
     return new PointMark();
   }
 
-  public abstract HashMap<String, Integer> toHashMap();
   public abstract List<LLMFreeTextMarkSchemeEntry> toMarkScheme();
   public abstract String toJSON();
 
@@ -33,4 +31,4 @@ public abstract class Mark {
             })
             .collect(Collectors.toList());
   }
-};
+}

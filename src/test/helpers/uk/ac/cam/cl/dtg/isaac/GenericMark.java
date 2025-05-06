@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac;
 
-import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
@@ -23,14 +22,6 @@ public class GenericMark extends Mark {
   public GenericMark setReasonFizz(int reasonFizz) {
       this.reasonFizz = reasonFizz;
       return this;
-  }
-
-  public HashMap<String, Integer> toHashMap() {
-      var result = new HashMap<String, Integer>();
-      result.put("reasonFoo", reasonFoo);
-      result.put("reasonBar", reasonBar);
-      result.put("reasonFizz", reasonFizz);
-      return result;
   }
 
   public List<LLMFreeTextMarkSchemeEntry> toMarkScheme() {

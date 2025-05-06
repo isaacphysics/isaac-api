@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac;
 
-import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextMarkSchemeEntry;
@@ -29,15 +28,6 @@ public class PointMark extends Mark {
     public PointMark setExplanationTwo(int explanationTwo) {
         this.explanationTwo = explanationTwo;
         return this;
-    }
-
-    public HashMap<String, Integer> toHashMap() {
-        var result = new HashMap<String, Integer>();
-        result.put("pointOne", this.pointOne);
-        result.put("pointTwo", this.pointTwo);
-        result.put("explanationOne", this.explanationOne);
-        result.put("explanationTwo", this.explanationTwo);
-        return result;
     }
 
     public List<LLMFreeTextMarkSchemeEntry> toMarkScheme() {

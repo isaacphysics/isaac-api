@@ -69,8 +69,8 @@ public class IsaacLLMFreeTextValidatorTest {
     @PowerMockRunnerDelegate(Parameterized.class)
     @PrepareForTest({ OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class })
     @DisplayName("Test that a mark is awarded based on the marking formula")
-    public static class FormulaBasedMarking {
-        @Parameter(0)
+    public static class TestFormulaBasedMarking {
+        @Parameter()
         public String testDescription;
         @Parameter(1)
         public IsaacLLMFreeTextQuestion question;
@@ -123,7 +123,7 @@ public class IsaacLLMFreeTextValidatorTest {
     @RunWith(PowerMockRunner.class)
     @PrepareForTest({ OpenAIClient.class, ChatCompletions.class, ChatChoice.class, ChatResponseMessage.class })
     @DisplayName("Test application behaviour in case of errors.")
-    public static class ErrorHandling {
+    public static class TestErrorHandling {
         @Test
         @DisplayName("A response from the client not in the expected json format returns zero marks")
         public void isaacLLMFreeTextValidator_ResponseInvalidFormat_MarkSchemeShouldIncludeNoMarks() throws Exception {
@@ -213,7 +213,7 @@ class Helpers {
 
     public static int getIntTestProperty(String key, int defaultValue) throws IOException {
         try {
-            return Integer.parseInt(propertiesForTest().getProperty(LLM_MARKER_MAX_ANSWER_LENGTH));
+            return Integer.parseInt(propertiesForTest().getProperty(key));
         } catch (final NumberFormatException ignored) {
             return defaultValue;
         }

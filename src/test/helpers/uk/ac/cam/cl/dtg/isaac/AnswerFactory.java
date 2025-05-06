@@ -9,4 +9,3 @@ public class AnswerFactory {
     return answer;
   }
 }
-
