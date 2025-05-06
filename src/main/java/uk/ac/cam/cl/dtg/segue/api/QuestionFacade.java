@@ -90,7 +90,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
 public class QuestionFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(QuestionFacade.class);
 
-    private static final class NoUserConsentGrantedException extends Exception {
+    public static final class NoUserConsentGrantedException extends Exception {
         NoUserConsentGrantedException(final String message) {
             super(message);
         }
@@ -117,7 +117,7 @@ public class QuestionFacade extends AbstractSegueFacade {
      * @throws SegueResourceMisuseException - if the user has exceeded the number of attempts they can make over a period of time.
      * @throws SegueDatabaseException - if there is an unexpected problem with the database.
      */
-    private RegisteredUserDTO assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO user) throws
+    public RegisteredUserDTO assertUserCanAnswerLLMQuestions(final AbstractSegueUserDTO user) throws
             SegueDatabaseException, NoUserLoggedInException, NoUserConsentGrantedException,
             ValidatorUnavailableException, SegueResourceMisuseException
     {
