@@ -80,6 +80,11 @@ public class IsaacLLMFreeTextValidatorTest {
             expectMark(resp, expectedResult, expectedMarkTotal, toMarkScheme(breakdown));
         }
 
+        /*
+           Generic Mark Scheme = MIN(maxMarks, SUM(... all marks ...))
+           This mark scheme is used when no other valid mark scheme is specified for the question.
+           It is the total number of marks received, capped by the required maxMarks.
+        */
         private static Object[][] genericOneMarkCases() {
             var question = createLLMFreeTextQuestion("{\"reasonFoo\": 1, \"reasonBar\": 1, \"reasonFizz\": 1}",
                     1, genericExamples(), null);
@@ -104,6 +109,13 @@ public class IsaacLLMFreeTextValidatorTest {
                             question, "{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}", CORRECT, ONE_MARK}};
         }
 
+        /*
+          Advantage/Disadvantage Mark Scheme = SUM(
+            MAX(... All Advantage Marks ...), MAX(... All Disadvantage Marks ...)
+          )
+          This is a generally applicable mark scheme for any two mutually exclusive categories of marks.
+          A common example of this is advantages and disadvantages.
+        */
         private static Object[][] advantageCases() {
             var formula = formulaFn("SUM",
                     formulaFn("MAX", formulaVar("adv1"), formulaVar("adv2")),
@@ -120,6 +132,15 @@ public class IsaacLLMFreeTextValidatorTest {
                             question, "{\"adv1\": 1, \"adv2\": 1, \"dis1\": 0, \"dis2\": 0}", CORRECT, ONE_MARK}};
         }
 
+
+        /*
+            Point/Explanation Mark Scheme = SUM(
+                MAX(pointOne, ... pointN),
+                MAX(MIN(pointOne, explanationOne), MIN(pointTwo, explanationTwo), ... MIN(pointN, explanationN)
+            )
+            This is a generally applicable mark scheme for any grouped sets of marks where a prerequisite mark is
+            required to receive a secondary mark. A common example of this is points and explanations.
+        */
         private static Object[][] pointExplanationCases() {
             var formula = formulaFn("SUM",
                     formulaFn("MAX", formulaVar("pnt1"), formulaVar("pnt2")),
@@ -197,6 +218,22 @@ public class IsaacLLMFreeTextValidatorTest {
     }
 
     protected static class Helpers {
+        public static boolean CORRECT = true;
+        public static boolean INCORRECT = false;
+        public static int NO_MARKS = 0;
+        public static int ONE_MARK = 1;
+        public static int TWO_MARKS = 2;
+
+        /**
+         * Use this helper as the "act" part of a test.
+         *
+         * @param question  - create using createLLMFreeTextQuestion factory method.
+         * @param answer 1  - this is what OpenAI would validate. As these tests mock the API, the answer doesn't
+         *                    usually matter, but still matters for cases where we check validation. For example, even
+         *                    these mocked tests notice if an answer exceeds the maximum length.
+         * @param client    - use the mocked client instance to specify the mark breakdown the API should return
+         * @return the response from the validator, examine this object in "assert".
+         */
         public static LLMFreeTextQuestionValidationResponse validate(Question question,
                                                                      LLMFreeTextChoice answer,
                                                                      OpenAIClient client) throws Exception {
@@ -204,6 +241,17 @@ public class IsaacLLMFreeTextValidatorTest {
             return (LLMFreeTextQuestionValidationResponse) validator.validateQuestionResponse(question, answer);
         }
 
+        /**
+         * Use this helper as the "assert" part of a test.
+         *
+         * @param response      - response from the validator, the object we examine by performing assertions.
+         * @param isCorrect     - whether the response should be marked as correct or incorrect. Use provided constants
+         *                        CORRECT, INCORRECT.
+         * @param marksAwarded  - how many marks should be awarded in total for the question. This is calculated from
+         *                        the breakdown specified during the act part. Use provided constants NO_MARKS,
+         *                        ONE_MARK, TWO_MARKS.
+         * @param expectedMarks - double check that the breakdown is returned in the expected format
+         */
         public static void expectMark(LLMFreeTextQuestionValidationResponse response,
                                       boolean isCorrect,
                                       int marksAwarded,
@@ -214,22 +262,23 @@ public class IsaacLLMFreeTextValidatorTest {
             assertTrue(response.getMarkBreakdown().containsAll(expectedMarks));
         }
 
-        public static int getIntTestProperty(String key, int defaultValue) throws IOException {
+        /**
+         * A helper for accessing configuration properties safely.
+         *
+         * @param key       - the configuration property key to look up.
+         * @param fallback  - the value to return if the property is not found.
+         */
+
+        public static int getIntTestProperty(String key, int fallback) throws IOException {
             try {
                 return Integer.parseInt(propertiesForTest().getProperty(key));
             } catch (final NumberFormatException ignored) {
-                return defaultValue;
+                return fallback;
             }
         }
     }
 
     protected static class Factories {
-        public static boolean CORRECT = true;
-        public static boolean INCORRECT = false;
-        public static int NO_MARKS = 0;
-        public static int ONE_MARK = 1;
-        public static int TWO_MARKS = 2;
-
         public static LLMMarkingFunction formulaFn(final String name, final LLMMarkingExpression... args) {
             LLMMarkingFunction function = new LLMMarkingFunction();
             if (Objects.equals(name, "SUM")) {
@@ -281,6 +330,15 @@ public class IsaacLLMFreeTextValidatorTest {
                     1, genericExamples(), null);
         }
 
+        /**
+         * Factory method for creating a valid IsaacLLMFreeTextQuestion.
+         * @param scheme         - JSON string for mark scheme. Keys as mark names, possible marks awarded as values.
+         * @param maxMarks       - total number of possible marks awarded for a question
+         * @param markedExamples - a list of examples to train the AI. Test invalid input, or use provided sample
+         *                         examples genericExamples, advantageExamples, pointExplanationExamples.
+         * @param markingFormula - derives marks awarded for question from a breakdown of marks received from LLM.
+         *                         use formulaFn factory method to create these.
+         */
         public static IsaacLLMFreeTextQuestion createLLMFreeTextQuestion(final String scheme,
                                                                          final Integer maxMarks,
                                                                          final List<LLMFreeTextMarkedExample> markedExamples,
