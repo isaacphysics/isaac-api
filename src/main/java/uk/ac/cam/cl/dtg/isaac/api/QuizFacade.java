@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
@@ -54,6 +55,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
@@ -161,7 +163,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Get quizzes visible to this user, starting from index 0.
      *
-     * Anonymous users can't see quizzes.
+     * See {@link #getAvailableQuizzes(Request, HttpServletRequest, Integer)}.
      *
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
@@ -176,7 +178,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Get quizzes visible to this user, starting from the specified index.
      *
-     * Anonymous users can't see quizzes.
+     * Anonymous users can't view or take quizzes, but can list STUDENT quizzes using this endpoint.
      *
      * @param request            the Request needed for ETag checking.
      * @param httpServletRequest the Request needed for Cookies for the current user.
@@ -187,17 +189,21 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/available/{startIndex}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Get tests visible to this user, from the specified index.")
+    @Operation(summary = "Get tests visible to this user, from the specified index.",
+               description = "Anonymous users can list student quizzes, but cannot take them.")
     public final Response getAvailableQuizzes(@Context final Request request,
                                               @Context final HttpServletRequest httpServletRequest,
                                               @PathParam("startIndex") final Integer startIndex) {
         try {
-            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            String userRoleString = user.getRole().name();
+            String userRoleString = Role.STUDENT.name();  // Allow anonymous users to list STUDENT quizzes.
+            AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
+            if (currentUser instanceof RegisteredUserDTO) {
+                userRoleString = ((RegisteredUserDTO) currentUser).getRole().name();
+            }
 
             // Cache the list of quizzes based on current content version, user's role, and startIndex:
-            int etagValue = this.contentManager.getCurrentContentSHA().hashCode() + user.getRole().hashCode();
+            int etagValue = this.contentManager.getCurrentContentSHA().hashCode() + userRoleString.hashCode();
             if (null != startIndex) {
                 etagValue += startIndex;
             }
@@ -220,8 +226,10 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "ContentManagerException whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst getting available tests";
+            log.error(message, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 
@@ -256,7 +264,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(assignments)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available tests";
+            String message = "Database error whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -287,7 +295,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(attempts)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available tests";
+            String message = "Database error whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
