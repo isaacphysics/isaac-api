@@ -208,7 +208,7 @@ public class EventNotificationEmailManager {
             boolean postResourcesPresent =
                 postResources != null && !postResources.isEmpty() && !postResources.contains(null);
             if (postResourcesPresent) {
-              commitAndSendFeedbackEmail(event, "post", "email_event_resources_and_feedback");
+              commitAndSendFeedbackEmail(event, "post", "event_feedback");
             }
             // New logic for sending survey email
             boolean shouldSendSurvey = true; // Define your criteria for sending surveys
