@@ -47,6 +47,8 @@ public final class Constants {
     public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
     public static final String QUIZ_TYPE = "isaacQuiz";
+    public static final String BOOK_INDEX_TYPE = "isaacBookIndexPage";
+    public static final String BOOK_DETAIL_TYPE = "isaacBookDetailPage";
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
@@ -58,10 +60,10 @@ public final class Constants {
     public static final Set<String> QUESTION_PAGE_TYPES_SET = new HashSet<>(QUESTION_PAGE_TYPES);
 
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
-            QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
+            QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, BOOK_INDEX_TYPE, BOOK_DETAIL_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     public static final Set<String> SEARCHABLE_DOC_TYPES = ImmutableSet.of(
-            QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
+            QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, BOOK_INDEX_TYPE, BOOK_DETAIL_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     /*
      * Game specific variables.
