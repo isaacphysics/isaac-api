@@ -49,7 +49,7 @@ public class IsaacEventPage extends Content {
 
   private List<ExternalReference> preResources;
   private List<Content> preResourceContent;
-  private String eventSurvey;
+  private List<ExternalReference> eventSurvey;
 
   private String emailEventDetails;
 
@@ -119,7 +119,7 @@ public class IsaacEventPage extends Content {
                         @JsonProperty("location") final Location location,
                         @JsonProperty("preResources") final List<ExternalReference> preResources,
                         @JsonProperty("postResources") final List<ExternalReference> postResources,
-                        @JsonProperty("eventSurvey") final String eventSurvey,
+                        @JsonProperty("eventSurvey") final List<ExternalReference> eventSurvey,
                         @JsonProperty("eventThumbnail") final Image eventThumbnail,
                         @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
                         @JsonProperty("EventStatus") final EventStatus eventStatus,
@@ -338,7 +338,7 @@ public class IsaacEventPage extends Content {
    *
    * @return the eventSurvey
    */
-  public String getEventSurvey() {
+  public List<ExternalReference> getEventSurvey() {
     return eventSurvey;
   }
 
@@ -347,7 +347,7 @@ public class IsaacEventPage extends Content {
    *
    * @param eventSurvey the eventSurvey to set
    */
-  public void setEventSurvey(final String eventSurvey) {
+  public void setEventSurvey(final List<ExternalReference> eventSurvey) {
     this.eventSurvey = eventSurvey;
   }
 

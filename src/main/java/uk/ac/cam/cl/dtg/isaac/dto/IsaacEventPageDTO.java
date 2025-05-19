@@ -57,7 +57,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
   private List<ExternalReference> postResources;
   private List<ContentDTO> postResourceContent;
-  private String eventSurvey;
+  private List<ExternalReference> eventSurvey;
 
   private ImageDTO eventThumbnail;
 
@@ -127,7 +127,7 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("location") final Location location,
       @JsonProperty("preResources") final List<ExternalReference> preResources,
       @JsonProperty("postResources") final List<ExternalReference> postResources,
-      @JsonProperty("eventSurvey") final String eventSurvey,
+      @JsonProperty("eventSurvey") final List<ExternalReference> eventSurvey,
       @JsonProperty("eventThumbnail") final ImageDTO eventThumbnail,
       @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
       @JsonProperty("EventStatus") final EventStatus eventStatus,
@@ -320,7 +320,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @return the eventSurvey
    */
   @JsonIgnore
-  public String getEventSurvey() {
+  public List<ExternalReference> getEventSurvey() {
     return eventSurvey;
   }
 
@@ -330,7 +330,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param eventSurvey
    *            the eventSurvey to set
    */
-  public void setEventSurvey(final String eventSurvey) {
+  public void setEventSurvey(final List<ExternalReference> eventSurvey) {
     this.eventSurvey = eventSurvey;
   }
 
