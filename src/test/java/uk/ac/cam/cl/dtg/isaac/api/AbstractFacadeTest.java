@@ -17,21 +17,22 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Joiner;
-import jakarta.ws.rs.core.Request;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
@@ -100,7 +102,12 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     @Before
     public void abstractFacadeTestSetup() {
+        HttpSession session = createMock(HttpSession.class);
+        expect(session.getAttribute(anyString())).andReturn(null).anyTimes();
+        expect(session.getId()).andReturn("fake-session-id").anyTimes();
+        replay(session);
         httpServletRequest = createMock(HttpServletRequest.class);
+        expect(httpServletRequest.getSession()).andReturn(session).anyTimes();
         replay(httpServletRequest);
         request = createNiceMock(Request.class);  // We don't particularly care about what gets called on this.
         replay(request);
