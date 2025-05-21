@@ -183,8 +183,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     @Test
     public void availableQuizzes() {
         forEndpoint(() -> quizFacade.getAvailableQuizzes(request, httpServletRequest),
-            requiresLogin(),
-            as(anyOf(student, secondStudent),
+            as(anyOf(noone, student, secondStudent),
                 check((response) ->
                     assertEquals(Collections.singletonList(studentQuizSummary), extractResults(response)))
             ),

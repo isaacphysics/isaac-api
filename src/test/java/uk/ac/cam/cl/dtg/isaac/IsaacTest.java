@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -86,6 +87,7 @@ public class IsaacTest {
     protected RegisteredUserDTO secondTeacher;
     protected RegisteredUserDTO otherTeacher;
     protected RegisteredUserDTO noone;
+    protected AnonymousUserDTO anonUser;
     protected RegisteredUserDTO secondStudent;
     protected RegisteredUserDTO otherStudent;
     protected RegisteredUserDTO adminUser;
@@ -190,6 +192,7 @@ public class IsaacTest {
         otherTeacher.setId(++id);
 
         noone = null;
+        anonUser = new AnonymousUserDTO("fake-session-id");
 
         secondStudent = new RegisteredUserDTO("Second", "Student", "second-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false);
         secondStudent.setRole(Role.STUDENT);
