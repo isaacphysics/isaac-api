@@ -51,7 +51,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
         .build();
 
-    private final String scopes = "";
+    private final String scopes = "email";
     private final String callbackURL = "http://localhost:8004/auth/microsoft/callback";
     private final String clientId;
     private final String tenantId;
@@ -127,7 +127,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
             // TODO: to support sign-ups, parse more info
             return new UserFromAuthProvider(
-                (String) idToken.getPayload().get("sub"), null, null, null,
+                (String) idToken.getPayload().get("sub"), null, null, (String) idToken.getPayload().get("email"),
                 null, null, null, null, null, null
             );
         } catch (Exception e) {
