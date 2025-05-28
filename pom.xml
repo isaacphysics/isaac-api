@@ -156,10 +156,17 @@
             <artifactId>google-oauth-client</artifactId>
             <version>${oauth-client.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.oauth-client</groupId>
             <artifactId>google-oauth-client-servlet</artifactId>
             <version>${oauth-client.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>msal4j</artifactId>
+            <version>1.20.0</version>
         </dependency>
 
         <dependency>
