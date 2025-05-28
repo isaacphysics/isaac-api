@@ -835,7 +835,8 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             ContentDTO contentDTO = contentManager.getContentById(fragmentId, true);
             if (contentDTO instanceof IsaacPageFragmentDTO) {
-                // Unlikely we want to augment with related content here!
+                // Unlikely we want to augment with a user's actual question attempts. Use an empty Map.
+                augmentContentWithRelatedContent(contentDTO, Collections.emptyMap());
 
                 // the request log
                 ImmutableMap<String, String> logEntry = ImmutableMap.of(
