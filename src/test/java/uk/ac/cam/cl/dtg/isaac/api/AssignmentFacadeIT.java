@@ -28,7 +28,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentProgressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import jakarta.servlet.http.Cookie;
@@ -45,7 +44,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Map;
 
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -506,7 +504,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the progress response contains the right fields
         AssignmentProgressDTO progressDTO = responseData.get(0);
         Assertions.assertNotNull(progressDTO.getUser());
-        Assertions.assertNotNull(progressDTO.getResults());
+        Assertions.assertNotNull(progressDTO.getQuestionResults());
         Assertions.assertNotNull(progressDTO.getCorrectPartResults());
         Assertions.assertNotNull(progressDTO.getIncorrectPartResults());
     }
@@ -540,7 +538,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the progress response contains the right fields
         AssignmentProgressDTO progressDTO = responseData.get(0);
         Assertions.assertNotNull(progressDTO.getUser());
-        Assertions.assertNotNull(progressDTO.getResults());
+        Assertions.assertNotNull(progressDTO.getQuestionResults());
         Assertions.assertNotNull(progressDTO.getCorrectPartResults());
         Assertions.assertNotNull(progressDTO.getIncorrectPartResults());
     }

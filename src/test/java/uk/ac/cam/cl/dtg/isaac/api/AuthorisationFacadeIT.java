@@ -276,7 +276,7 @@ public class AuthorisationFacadeIT extends IsaacIntegrationTest {
                 UserSummaryDTO userSummary = studentResults.getUser();
                 assert userSummary != null;
                 if (userSummary.getId() == ALICE_STUDENT_ID) {
-                    List<Constants.GameboardItemState> results = studentResults.getResults();
+                    List<Constants.GameboardItemState> results = studentResults.getQuestionResults();
                     assertTrue(results != null && results.isEmpty());
                     break;
                 }
