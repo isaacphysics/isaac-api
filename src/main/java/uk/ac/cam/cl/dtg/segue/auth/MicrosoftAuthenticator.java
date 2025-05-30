@@ -162,6 +162,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
             var verifier = JWT.require(algorithm)
                 .withAudience(clientId)
+                .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", tenantId))
                 .build();
             verifier.verify(tokenStr); // TODO: does this check validity of cert?
             if (null == keyId) {

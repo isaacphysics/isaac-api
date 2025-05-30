@@ -46,6 +46,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withNotBefore(oneHourAgo)
             .withExpiresAt(inOneHour)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withPayload("{\"email\": \"test@example.com\"}"));
         var userInfo = testGetUserInfo(token);
         assertEquals("test@example.com", userInfo.getEmail());
@@ -58,11 +59,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
 
     @Test
     void getUserInfo_noSuchToken_throwsError() throws MalformedURLException {
-        var store = getStore();
         var subject = new MicrosoftAuthenticator(
                 clientId, "", "", "http://localhost:8888/keys"
         ) {{
-            MicrosoftAuthenticator.credentialStore = store;
+            MicrosoftAuthenticator.credentialStore = getStore();
         }};
         var error = assertThrows(AuthenticatorSecurityException.class, () -> subject.getUserInfo("no_token_for_id"));
         assertEquals("Token verification: TOKEN_MISSING", error.getMessage());
@@ -75,7 +75,8 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withNotBefore(oneHourAgo)
             .withExpiresAt(inOneHour)
             .withAudience(clientId)
-            .withKeyId((String) null));
+            .withIssuer(expectedIssuer)
+            .withKeyId(null));
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NO_KEY_ID", error.getMessage());
     }
@@ -96,9 +97,11 @@ class MicrosoftAuthenticatorTest extends Helpers{
 
     @Test
     void getUserInfo_tokenNoExp_throwsError() {
-        String token = signedToken(validSigningKey, t -> t.withAudience(clientId)
+        String token = signedToken(validSigningKey, t -> t
             .withIssuedAt(oneHourAgo)
             .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withIssuer(expectedIssuer)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NULL_EXPIRY", error.getMessage());
@@ -110,6 +113,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withIssuedAt(oneHourAgo)
             .withNotBefore(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withExpiresAt((Date) null)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
@@ -122,6 +126,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withIssuedAt(oneHourAgo)
             .withNotBefore(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withExpiresAt(oneHourAgo)
         );
         var error = assertThrows(TokenExpiredException.class, () -> testGetUserInfo(token));
@@ -134,6 +139,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withExpiresAt(inOneHour)
             .withNotBefore(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NULL_ISSUED_AT", error.getMessage());
@@ -145,6 +151,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withExpiresAt(inOneHour)
             .withNotBefore(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withIssuedAt((Date) null)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
@@ -157,6 +164,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withExpiresAt(inOneHour)
             .withNotBefore(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withIssuedAt(inOneHour)
         );
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
@@ -169,6 +177,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withExpiresAt(inOneHour)
             .withIssuedAt(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NULL_NOT_BEFORE", error.getMessage());
@@ -180,6 +189,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withIssuedAt(oneHourAgo)
             .withExpiresAt(inOneHour)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withNotBefore((Date) null)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
@@ -192,6 +202,7 @@ class MicrosoftAuthenticatorTest extends Helpers{
             .withExpiresAt(inOneHour)
             .withIssuedAt(oneHourAgo)
             .withAudience(clientId)
+            .withIssuer(expectedIssuer)
             .withNotBefore(inOneHour)
         );
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
@@ -231,13 +242,51 @@ class MicrosoftAuthenticatorTest extends Helpers{
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
         assertEquals("The Claim 'aud' value doesn't contain the required audience.", error.getMessage());
     }
+
+    @Test
+    void getUserInfo_tokenNoIssuer_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+            .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+        );
+        var error = assertThrows(MissingClaimException.class, () -> testGetUserInfo(token));
+        assertEquals("The Claim 'iss' is not present in the JWT.", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenIssuerIncorrrect_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+            .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withIssuer(null)
+        );
+        var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
+        assertEquals("The Claim 'iss' value doesn't match the required issuer.", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNullIssuer_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+            .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withIssuer("some_bad_issuer")
+        );
+        var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
+        assertEquals("The Claim 'iss' value doesn't match the required issuer.", error.getMessage());
+    }
 }
 
 class Helpers {
     static UserFromAuthProvider testGetUserInfo(String token) throws Throwable {
         var store = getStore();
         var subject = new MicrosoftAuthenticator(
-                clientId, "", "", "http://localhost:8888/keys"
+                clientId, tenantId, "", "http://localhost:8888/keys"
         ) {{
             MicrosoftAuthenticator.credentialStore = store;
         }};
@@ -271,6 +320,8 @@ class Helpers {
     static Instant oneHourAgo = Instant.now().minusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
     static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
     static String clientId = "the_client_id";
+    static String tenantId = "common";
+    static String expectedIssuer = "https://login.microsoftonline.com/common/v2.0";
 }
 
 class TestKeyServer {
