@@ -156,17 +156,17 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens
         // I've ignored "nonce" validation as RaspberryPi Authenticator also skips it
         var token = JWT.decode(tokenStr);
-        var keyId = token.getKeyId();
-        if (null == keyId) {
-            throw new AuthenticatorSecurityException("Token verification: NO_KEY_ID");
-        }
         try {
+            var keyId = token.getKeyId();
             var jwk = provider.get(keyId);
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
             var verifier = JWT.require(algorithm)
                 .withAudience(clientId)
                 .build();
             verifier.verify(tokenStr); // TODO: does this check validity of cert?
+            if (null == keyId) {
+                throw new AuthenticatorSecurityException("Token verification: NO_KEY_ID");
+            }
             if (null == token.getExpiresAt()) {
                 throw new AuthenticatorSecurityException("Token verification: NULL_EXPIRY");
             }
