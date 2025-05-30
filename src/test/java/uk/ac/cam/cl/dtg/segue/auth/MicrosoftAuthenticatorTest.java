@@ -3,7 +3,10 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.IncorrectClaimException;
+import com.auth0.jwt.exceptions.MissingClaimException;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import jakarta.servlet.http.HttpServlet;
@@ -24,26 +27,31 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static uk.ac.cam.cl.dtg.segue.auth.Helpers.*;
 
-class MicrosoftAuthenticatorTest {
+class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_validToken_returnsUserInformation() throws Exception {
         String token = signedToken(validSigningKey, t -> t
-                        .withKeyId(validSigningKey.id())
-                        .withPayload("{\"email\": \"test@example.com\"}"));
+            .withIssuedAt(oneHourAgo)
+            .withNotBefore(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withAudience(clientId)
+            .withPayload("{\"email\": \"test@example.com\"}"));
         var userInfo = testGetUserInfo(token);
         assertEquals("test@example.com", userInfo.getEmail());
     }
 
     @Test
     void getUserInfo_tokenSignatureNoKeyId_throwsError() {
-        String token = signedToken(validSigningKey, t -> t);
+        String token = signedToken(validSigningKey, t -> t.withKeyId((String) null));
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NO_KEY_ID", error.getMessage());
     }
@@ -61,6 +69,144 @@ class MicrosoftAuthenticatorTest {
         var error = assertThrows(SignatureVerificationException.class, () -> testGetUserInfo(token));
         assertEquals("The Token's Signature resulted invalid when verified using the Algorithm: SHA256withRSA", error.getMessage());
     }
+
+    @Test
+    void getUserInfo_tokenNoExp_throwsError() {
+        String token = signedToken(validSigningKey, t -> t.withAudience(clientId)
+            .withIssuedAt(oneHourAgo)
+            .withNotBefore(oneHourAgo)
+        );
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
+        assertEquals("Token verification: NULL_EXPIRY", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNullExp_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+            .withIssuedAt(oneHourAgo)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withExpiresAt((Date) null)
+        );
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
+        assertEquals("Token verification: NULL_EXPIRY", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenExpired_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+            .withIssuedAt(oneHourAgo)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withExpiresAt(oneHourAgo)
+        );
+        var error = assertThrows(TokenExpiredException.class, () -> testGetUserInfo(token));
+        assertEquals(String.format("The Token has expired on %s.", oneHourAgo), error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNoIat_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+        );
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
+        assertEquals("Token verification: NULL_ISSUED_AT", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNullIat_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withExpiresAt(inOneHour)
+                .withNotBefore(oneHourAgo)
+                .withAudience(clientId)
+                .withIssuedAt((Date) null)
+        );
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
+        assertEquals("Token verification: NULL_ISSUED_AT", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenIatFuture_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withExpiresAt(inOneHour)
+                .withNotBefore(oneHourAgo)
+                .withAudience(clientId)
+                .withIssuedAt(inOneHour)
+        );
+        var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
+        assertEquals(String.format("The Token can't be used before %s.", inOneHour), error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNoNbf_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withExpiresAt(inOneHour)
+                .withIssuedAt(oneHourAgo)
+                .withAudience(clientId)
+        );
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
+        assertEquals("Token verification: NULL_NOT_BEFORE", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNullNbf_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withIssuedAt(oneHourAgo)
+                .withExpiresAt(inOneHour)
+                .withAudience(clientId)
+                .withNotBefore((Date) null)
+        );
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
+        assertEquals("Token verification: NULL_NOT_BEFORE", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNbfFuture_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withExpiresAt(inOneHour)
+                .withIssuedAt(oneHourAgo)
+                .withAudience(clientId)
+                .withNotBefore(inOneHour)
+        );
+        var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
+        assertEquals(String.format("The Token can't be used before %s.", inOneHour), error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNoAud_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withExpiresAt(inOneHour)
+                .withIssuedAt(oneHourAgo)
+        );
+        var error = assertThrows(MissingClaimException.class, () -> testGetUserInfo(token));
+        assertEquals("The Claim 'aud' is not present in the JWT.", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenNullAud_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withIssuedAt(oneHourAgo)
+                .withExpiresAt(inOneHour)
+                .withNotBefore(oneHourAgo)
+                .withAudience((String) null)
+        );
+        var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
+        assertEquals("The Claim 'aud' value doesn't contain the required audience.", error.getMessage());
+    }
+
+    @Test
+    void getUserInfo_tokenAudIncorrect_throwsError() {
+        String token = signedToken(validSigningKey, t -> t
+                .withIssuedAt(oneHourAgo)
+                .withExpiresAt(inOneHour)
+                .withNotBefore(oneHourAgo)
+                .withAudience("intended_for_somebody_else")
+        );
+        var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
+        assertEquals("The Claim 'aud' value doesn't contain the required audience.", error.getMessage());
+    }
 }
 
 class Helpers {
@@ -71,7 +217,7 @@ class Helpers {
                 .build();
         try {
             var subject = new MicrosoftAuthenticator(
-                    "", "", "", "http://localhost:8888/keys"
+                    clientId, "", "", "http://localhost:8888/keys"
             ) {{
                 MicrosoftAuthenticator.credentialStore = store;
             }};
@@ -84,12 +230,15 @@ class Helpers {
 
     public static String signedToken(TestKeyPair key, Function<JWTCreator.Builder, JWTCreator.Builder> fn) {
         var algorithm = Algorithm.RSA256(key.publicKey(), key.privateKey());
-        var token = fn.apply(JWT.create());
+        var token = fn.apply(JWT.create().withKeyId(key.id()));
         return token.sign(algorithm);
     }
 
     public static TestKeyPair validSigningKey = new TestKeyPair();
     public static TestKeyPair invalidSigningKey = new TestKeyPair();
+    public static Instant oneHourAgo = Instant.now().minusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
+    public static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
+    public static String clientId = "the_client_id";
 }
 
 class TestKeyServer {

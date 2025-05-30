@@ -149,6 +149,9 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     private DecodedJWT parseAndVerifyToken (String tokenStr) throws AuthenticatorSecurityException {
+        // validating id token based on requirements at
+        // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens
+        // I've ignored "nonce" validation as we skipped that with other clients also
         var token = JWT.decode(tokenStr);
         var keyId = token.getKeyId();
         if (null == keyId) {
@@ -157,7 +160,19 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         try {
             var jwk = provider.get(keyId);
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
-            algorithm.verify(token);
+            var verifier = JWT.require(algorithm)
+                .withAudience(clientId)
+                .build();
+            verifier.verify(tokenStr); // TODO: does this check validity of cert?
+            if (null == token.getExpiresAt()) {
+                throw new AuthenticatorSecurityException("Token verification: NULL_EXPIRY");
+            }
+            if (null == token.getIssuedAt()) {
+                throw new AuthenticatorSecurityException("Token verification: NULL_ISSUED_AT");
+            }
+            if (null == token.getNotBefore()) {
+                throw new AuthenticatorSecurityException("Token verification: NULL_NOT_BEFORE");
+            }
         }
         catch (InvalidPublicKeyException e) {
             throw new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY");
