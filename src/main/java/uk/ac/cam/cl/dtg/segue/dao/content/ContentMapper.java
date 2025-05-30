@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SidebarEntry;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -330,6 +331,7 @@ public class ContentMapper {
             converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
             converterFactory.registerConverter(new AnonymousUserQuestionAttemptsOrikaConverter());
             converterFactory.registerConverter(new AudienceOrikaConverter());
+            converterFactory.registerConverter(new SidebarEntryOrikaConverter());
 
             this.autoMapper = mapperFactory.getMapperFacade();
         }
@@ -359,6 +361,8 @@ public class ContentMapper {
         IsaacQuestionBaseDeserializer isaacQuestionBaseDeserializer =
                 new IsaacQuestionBaseDeserializer(contentDeserializer);
 
+        SidebarEntryDeserializer sidebarEntryDeserializer = new SidebarEntryDeserializer(contentDeserializer);
+
         SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
         contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
         contentDeserializerModule.addDeserializer(IsaacQuestionBase.class, isaacQuestionBaseDeserializer);
@@ -366,6 +370,7 @@ public class ContentMapper {
         contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
         contentDeserializerModule.addDeserializer(LLMMarkingExpression.class, new LLMMarkingExpressionDeserializer());
+        contentDeserializerModule.addDeserializer(SidebarEntry.class, sidebarEntryDeserializer);
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
