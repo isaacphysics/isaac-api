@@ -18,10 +18,12 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -38,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MicrosoftAuthenticatorTest extends Helpers{
     @Test
-    void getUserInfo_validToken_returnsUserInformation() throws Exception {
+    void getUserInfo_validToken_returnsUserInformation() throws Throwable {
         String token = signedToken(validSigningKey, t -> t
             .withIssuedAt(oneHourAgo)
             .withNotBefore(oneHourAgo)
@@ -50,8 +52,30 @@ class MicrosoftAuthenticatorTest extends Helpers{
     }
 
     @Test
+    void getUserInfo_nullToStore_throwsError() {
+        assertThrows(NullPointerException.class, () -> testGetUserInfo(null));
+    }
+
+    @Test
+    void getUserInfo_noSuchToken_throwsError() throws MalformedURLException {
+        var store = getStore();
+        var subject = new MicrosoftAuthenticator(
+                clientId, "", "", "http://localhost:8888/keys"
+        ) {{
+            MicrosoftAuthenticator.credentialStore = store;
+        }};
+        var error = assertThrows(AuthenticatorSecurityException.class, () -> subject.getUserInfo("no_token_for_id"));
+        assertEquals("Token verification: TOKEN_MISSING", error.getMessage());
+    }
+
+    @Test
     void getUserInfo_tokenSignatureNoKeyId_throwsError() {
-        String token = signedToken(validSigningKey, t -> t.withKeyId((String) null));
+        String token = signedToken(validSigningKey, t -> t
+            .withIssuedAt(oneHourAgo)
+            .withNotBefore(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withAudience(clientId)
+            .withKeyId((String) null));
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NO_KEY_ID", error.getMessage());
     }
@@ -118,10 +142,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenNullIat_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withExpiresAt(inOneHour)
-                .withNotBefore(oneHourAgo)
-                .withAudience(clientId)
-                .withIssuedAt((Date) null)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withIssuedAt((Date) null)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NULL_ISSUED_AT", error.getMessage());
@@ -130,10 +154,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenIatFuture_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withExpiresAt(inOneHour)
-                .withNotBefore(oneHourAgo)
-                .withAudience(clientId)
-                .withIssuedAt(inOneHour)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience(clientId)
+            .withIssuedAt(inOneHour)
         );
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
         assertEquals(String.format("The Token can't be used before %s.", inOneHour), error.getMessage());
@@ -142,9 +166,9 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenNoNbf_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withExpiresAt(inOneHour)
-                .withIssuedAt(oneHourAgo)
-                .withAudience(clientId)
+            .withExpiresAt(inOneHour)
+            .withIssuedAt(oneHourAgo)
+            .withAudience(clientId)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NULL_NOT_BEFORE", error.getMessage());
@@ -153,10 +177,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenNullNbf_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withIssuedAt(oneHourAgo)
-                .withExpiresAt(inOneHour)
-                .withAudience(clientId)
-                .withNotBefore((Date) null)
+            .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withAudience(clientId)
+            .withNotBefore((Date) null)
         );
         var error = assertThrows(AuthenticatorSecurityException.class, () -> testGetUserInfo(token));
         assertEquals("Token verification: NULL_NOT_BEFORE", error.getMessage());
@@ -165,10 +189,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenNbfFuture_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withExpiresAt(inOneHour)
-                .withIssuedAt(oneHourAgo)
-                .withAudience(clientId)
-                .withNotBefore(inOneHour)
+            .withExpiresAt(inOneHour)
+            .withIssuedAt(oneHourAgo)
+            .withAudience(clientId)
+            .withNotBefore(inOneHour)
         );
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
         assertEquals(String.format("The Token can't be used before %s.", inOneHour), error.getMessage());
@@ -177,8 +201,8 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenNoAud_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withExpiresAt(inOneHour)
-                .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withIssuedAt(oneHourAgo)
         );
         var error = assertThrows(MissingClaimException.class, () -> testGetUserInfo(token));
         assertEquals("The Claim 'aud' is not present in the JWT.", error.getMessage());
@@ -187,10 +211,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenNullAud_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withIssuedAt(oneHourAgo)
-                .withExpiresAt(inOneHour)
-                .withNotBefore(oneHourAgo)
-                .withAudience((String) null)
+            .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience((String) null)
         );
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
         assertEquals("The Claim 'aud' value doesn't contain the required audience.", error.getMessage());
@@ -199,10 +223,10 @@ class MicrosoftAuthenticatorTest extends Helpers{
     @Test
     void getUserInfo_tokenAudIncorrect_throwsError() {
         String token = signedToken(validSigningKey, t -> t
-                .withIssuedAt(oneHourAgo)
-                .withExpiresAt(inOneHour)
-                .withNotBefore(oneHourAgo)
-                .withAudience("intended_for_somebody_else")
+            .withIssuedAt(oneHourAgo)
+            .withExpiresAt(inOneHour)
+            .withNotBefore(oneHourAgo)
+            .withAudience("intended_for_somebody_else")
         );
         var error = assertThrows(IncorrectClaimException.class, () -> testGetUserInfo(token));
         assertEquals("The Claim 'aud' value doesn't contain the required audience.", error.getMessage());
@@ -210,35 +234,43 @@ class MicrosoftAuthenticatorTest extends Helpers{
 }
 
 class Helpers {
-    public static UserFromAuthProvider testGetUserInfo(String token) throws Exception {
+    static UserFromAuthProvider testGetUserInfo(String token) throws Throwable {
+        var store = getStore();
+        var subject = new MicrosoftAuthenticator(
+                clientId, "", "", "http://localhost:8888/keys"
+        ) {{
+            MicrosoftAuthenticator.credentialStore = store;
+        }};
+        store.put("the_internal_id", token);
+        return withKeyServer(() -> subject.getUserInfo("the_internal_id"));
+    }
+
+    static <T> T withKeyServer(ThrowingSupplier<T> fn) throws Throwable {
         var keyServer = TestKeyServer.withKey(validSigningKey).start(8888);
-        Cache<String, String> store = CacheBuilder.newBuilder()
-                .expireAfterAccess(10, TimeUnit.MINUTES)
-                .build();
         try {
-            var subject = new MicrosoftAuthenticator(
-                    clientId, "", "", "http://localhost:8888/keys"
-            ) {{
-                MicrosoftAuthenticator.credentialStore = store;
-            }};
-            store.put("the_internal_id", token);
-            return subject.getUserInfo("the_internal_id");
+            return fn.get();
         } finally {
             keyServer.stop();
         }
     }
 
-    public static String signedToken(TestKeyPair key, Function<JWTCreator.Builder, JWTCreator.Builder> fn) {
+    static String signedToken(TestKeyPair key, Function<JWTCreator.Builder, JWTCreator.Builder> fn) {
         var algorithm = Algorithm.RSA256(key.publicKey(), key.privateKey());
         var token = fn.apply(JWT.create().withKeyId(key.id()));
         return token.sign(algorithm);
     }
 
-    public static TestKeyPair validSigningKey = new TestKeyPair();
-    public static TestKeyPair invalidSigningKey = new TestKeyPair();
-    public static Instant oneHourAgo = Instant.now().minusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
-    public static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
-    public static String clientId = "the_client_id";
+    static Cache<String, String> getStore() {
+        return CacheBuilder.newBuilder()
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build();
+    }
+
+    static TestKeyPair validSigningKey = new TestKeyPair();
+    static TestKeyPair invalidSigningKey = new TestKeyPair();
+    static Instant oneHourAgo = Instant.now().minusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
+    static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
+    static String clientId = "the_client_id";
 }
 
 class TestKeyServer {

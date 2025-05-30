@@ -128,7 +128,10 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
     @Override
     public UserFromAuthProvider getUserInfo(String internalProviderReference) throws AuthenticatorSecurityException {
-        String tokenStr = Objects.requireNonNull(credentialStore.getIfPresent(internalProviderReference));
+        String tokenStr = credentialStore.getIfPresent(internalProviderReference);
+        if (null == tokenStr) {
+            throw new AuthenticatorSecurityException("Token verification: TOKEN_MISSING");
+        }
         var token = parseAndVerifyToken(tokenStr);
         // TODO: to support sign-ups, parse more info
         return new UserFromAuthProvider(
@@ -151,7 +154,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private DecodedJWT parseAndVerifyToken (String tokenStr) throws AuthenticatorSecurityException {
         // validating id token based on requirements at
         // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens
-        // I've ignored "nonce" validation as we skipped that with other clients also
+        // I've ignored "nonce" validation as RaspberryPi Authenticator also skips it
         var token = JWT.decode(tokenStr);
         var keyId = token.getKeyId();
         if (null == keyId) {
