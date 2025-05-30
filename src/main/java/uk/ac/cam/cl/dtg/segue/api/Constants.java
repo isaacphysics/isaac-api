@@ -303,6 +303,7 @@ public final class Constants {
     public static final String MICROSOFT_SECRET = "MICROSOFT_SECRET";
     public static final String MICROSOFT_CLIENT_ID = "MICROSOFT_CLIENT_ID";
     public static final String MICROSOFT_TENANT_ID = "MICROSOFT_TENANT_ID";
+    public static final String MICROSOFT_JWKS_URL = "MICROSOFT_JWKS_URL";
 
     // Facebook properties
     public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
