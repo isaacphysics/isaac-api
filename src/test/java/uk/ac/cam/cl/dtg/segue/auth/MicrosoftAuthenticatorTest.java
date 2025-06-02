@@ -60,7 +60,7 @@ class MicrosoftAuthenticatorTest extends Helpers {
     void getUserInfo_validToken_returnsUserInformation() throws Throwable {
         var token = validToken(t -> t.withPayload("{\"email\": \"test@example.com\"}"));
         var userInfo = testGetUserInfo(token);
-        assertEquals("test@example.com", userInfo.getEmail());
+        assertEquals("test2@example.com", userInfo.getEmail());
     }
 
     @Nested
