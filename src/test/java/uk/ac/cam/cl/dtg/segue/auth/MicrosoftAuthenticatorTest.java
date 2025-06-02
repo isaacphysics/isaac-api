@@ -58,7 +58,7 @@ import static java.lang.String.format;
 
 @RunWith(Enclosed.class)
 public class MicrosoftAuthenticatorTest extends Helpers {
-    public static class JwtParsing {
+    public static class TestJwtParsing {
         @Test
         public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
             var token = validToken(t -> t.withPayload("{\"email\": \"test@example.com\"}"));
@@ -68,8 +68,8 @@ public class MicrosoftAuthenticatorTest extends Helpers {
     }
 
     @RunWith(Enclosed.class)
-    public static class TokenValidation {
-        public static class TokenMissing {
+    public static class TestTokenValidation {
+        public static class TestTokenMissing {
             @Test
             public void getUserInfo_tryingToStoreNull_throwsError() {
                 assertThrows(NullPointerException.class, () -> testGetUserInfo(null));
@@ -89,7 +89,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             }
         }
 
-        public static class SignatureVerification {
+        public static class TestSignatureVerification {
             @Test
             public void getUserInfo_tokenSignatureNoKeyId_throwsError() {
                 var token = validToken(t -> t.withKeyId(null));
@@ -110,7 +110,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                         "The Token's Signature resulted invalid when verified using the Algorithm: SHA256withRSA");
             }
         }
-        public static class ExpirationClaim {
+        public static class TestExpirationClaim {
             @Test
             public void getUserInfo_tokenWithoutExp_accepted() {
                 assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withExpiresAt((Date) null))));
@@ -124,7 +124,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             }
         }
 
-        public static class IssuedAtClaim {
+        public static class TestIssuedAtClaim {
             @Test
             public void getUserInfo_tokenWithoutIat_accepted() {
                 assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withIssuedAt((Date) null))));
@@ -138,7 +138,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             }
         }
 
-        public static class NotBeforeClaim {
+        public static class TestNotBeforeClaim {
             @Test
             public void getUserInfo_tokenWithoutNbf_accepted() {
                 assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withNotBefore((Date) null))));
@@ -152,7 +152,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             }
         }
 
-        public static class AudienceClaim {
+        public static class TestAudienceClaim {
             @Test
             public void getUserInfo_tokenMissingAud_throwsError() {
                 var token = validToken(t -> t.withAudience((String) null));
@@ -168,7 +168,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             }
         }
 
-        public static class IssuerClaim {
+        public static class TestIssuerClaim {
             @Test
             public void getUserInfo_tokenMissingIssuer_throwsError() {
                 var token = validToken(t -> t.withIssuer(null));
@@ -252,7 +252,7 @@ class Helpers {
 }
 
 class KeySetServlet extends HttpServlet {
-    private TestKeyPair key;
+    private final TestKeyPair key;
 
     public static ServletHolder withKey(TestKeyPair key) {
         return new ServletHolder(new KeySetServlet(key));
@@ -289,7 +289,7 @@ class KeySetServlet extends HttpServlet {
 }
 
 class TestKeyPair {
-    private KeyPair keyPair;
+    private final KeyPair keyPair;
 
     public TestKeyPair() {
         try {
