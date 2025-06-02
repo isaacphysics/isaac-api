@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Stephen Cummins
+ * Copyright 2025 Barna Magyarkuti
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,9 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     static final int CREDENTIAL_CACHE_TTL_MINUTES = 10;
     // TODO: why do we cache idTokens? Why don't we just pass them around in code?
     static Cache<String, String> credentialStore = CacheBuilder
-        .newBuilder()
-        .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
-        .build();
+            .newBuilder()
+            .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
+            .build();
 
     private final String scopes = "email";
     private final String callbackURL = "http://localhost:8004/auth/microsoft/callback";
@@ -65,17 +65,17 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
     @Inject
     public MicrosoftAuthenticator(
-        @Named(Constants.MICROSOFT_CLIENT_ID) final String clientId,
-        @Named(Constants.MICROSOFT_TENANT_ID) final String tenantId,
-        @Named(Constants.MICROSOFT_SECRET) final String clientSecret,
-        @Named(Constants.MICROSOFT_JWKS_URL) final String jwksUrl
+            @Named(Constants.MICROSOFT_CLIENT_ID) final String clientId,
+            @Named(Constants.MICROSOFT_TENANT_ID) final String tenantId,
+            @Named(Constants.MICROSOFT_SECRET) final String clientSecret,
+            @Named(Constants.MICROSOFT_JWKS_URL) final String jwksUrl
     ) throws MalformedURLException {
         this.clientId = clientId;
         this.tenantId = tenantId;
         this.clientSecret = clientSecret;
         provider = new UrlJwkProvider(new URL(jwksUrl));
     }
-    
+
     @Override
     public AuthenticationProvider getAuthenticationProvider() {
         return AuthenticationProvider.MICROSOFT;
@@ -89,11 +89,11 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     @Override
     public String getAuthorizationUrl(String antiForgeryStateToken) {
         var parameters = AuthorizationRequestUrlParameters
-            .builder(callbackURL, Collections.singleton(scopes))
-            .responseMode(ResponseMode.QUERY)
-            .prompt(Prompt.SELECT_ACCOUNT)
-            .state(antiForgeryStateToken)
-            .build();
+                .builder(callbackURL, Collections.singleton(scopes))
+                .responseMode(ResponseMode.QUERY)
+                .prompt(Prompt.SELECT_ACCOUNT)
+                .state(antiForgeryStateToken)
+                .build();
         return client().getAuthorizationRequestUrl(parameters).toString();
     }
 
@@ -111,11 +111,11 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String exchangeCode(String authorizationCode) throws CodeExchangeException{
+    public String exchangeCode(String authorizationCode) throws CodeExchangeException {
         try {
             var authParams = AuthorizationCodeParameters
-                .builder(authorizationCode, new URI(callbackURL)).scopes(Collections.singleton(scopes))
-                .build();
+                    .builder(authorizationCode, new URI(callbackURL)).scopes(Collections.singleton(scopes))
+                    .build();
             var result = client().acquireToken(authParams).get();
 
             String internalCredentialID = UUID.randomUUID().toString();
@@ -135,8 +135,8 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         var token = parseAndVerifyToken(tokenStr);
         // TODO: to support sign-ups, parse more info
         return new UserFromAuthProvider(
-            token.getSubject(), null, null, token.getClaim("email").asString(),
-            null, null, null, null, null, null
+                token.getSubject(), null, null, token.getClaim("email").asString(),
+                null, null, null, null, null, null
         );
     }
 
@@ -144,14 +144,14 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         var secret = ClientCredentialFactory.createFromSecret(clientSecret);
         try {
             return ConfidentialClientApplication.builder(clientId, secret)
-                .authority(String.format("https://login.microsoftonline.com/%s", tenantId))
-                .build();
+                    .authority(String.format("https://login.microsoftonline.com/%s", tenantId))
+                    .build();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private DecodedJWT parseAndVerifyToken (String tokenStr) throws AuthenticatorSecurityException {
+    private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException {
         // validating id token based on requirements at
         // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens
         // I've ignored "nonce" validation as RaspberryPi Authenticator also skips it
@@ -161,27 +161,16 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var jwk = provider.get(keyId);
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
             var verifier = JWT.require(algorithm)
-                .withAudience(clientId)
-                .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", tenantId))
-                .build();
+                    .withAudience(clientId)
+                    .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", tenantId))
+                    .build();
             verifier.verify(tokenStr); // TODO: does this check validity of cert?
             if (null == keyId) {
                 throw new AuthenticatorSecurityException("Token verification: NO_KEY_ID");
             }
-            if (null == token.getExpiresAt()) {
-                throw new AuthenticatorSecurityException("Token verification: NULL_EXPIRY");
-            }
-            if (null == token.getIssuedAt()) {
-                throw new AuthenticatorSecurityException("Token verification: NULL_ISSUED_AT");
-            }
-            if (null == token.getNotBefore()) {
-                throw new AuthenticatorSecurityException("Token verification: NULL_NOT_BEFORE");
-            }
-        }
-        catch (InvalidPublicKeyException e) {
+        } catch (InvalidPublicKeyException e) {
             throw new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY");
-        }
-        catch (JwkException e) {
+        } catch (JwkException e) {
             throw new AuthenticatorSecurityException(e.getMessage());
         }
         return token;
