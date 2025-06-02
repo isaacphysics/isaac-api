@@ -21,6 +21,9 @@ import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.IncorrectClaimException;
+import com.auth0.jwt.exceptions.MissingClaimException;
+import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
 import com.google.common.cache.Cache;
@@ -34,10 +37,13 @@ import com.microsoft.aad.msal4j.ResponseMode;
 import com.microsoft.aad.msal4j.ConfidentialClientApplication;
 import com.microsoft.aad.msal4j.ClientCredentialFactory;
 
+import org.apache.commons.validator.routines.EmailValidator;
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -47,6 +53,7 @@ import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 
 public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     static final int CREDENTIAL_CACHE_TTL_MINUTES = 10;
@@ -127,16 +134,22 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public UserFromAuthProvider getUserInfo(String internalProviderReference) throws AuthenticatorSecurityException {
+    public UserFromAuthProvider getUserInfo(String internalProviderReference) throws AuthenticatorSecurityException, NoUserException {
         String tokenStr = credentialStore.getIfPresent(internalProviderReference);
         if (null == tokenStr) {
             throw new AuthenticatorSecurityException("Token verification: TOKEN_MISSING");
         }
+
         var token = parseAndVerifyToken(tokenStr);
-        // TODO: to support sign-ups, parse more info
+
         return new UserFromAuthProvider(
-                token.getSubject(), null, null, token.getClaim("email").asString(),
-                null, null, null, null, null, null
+                token.getSubject(),
+                token.getClaim("given_name").asString(),
+                token.getClaim("family_name").asString(),
+                token.getClaim("email").asString(),
+                EmailVerificationStatus.NOT_VERIFIED,
+                null, null, null, null,
+                false
         );
     }
 
@@ -151,10 +164,12 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         }
     }
 
-    private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException {
-        // validating id token based on requirements at
+    private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException, NoUserException{
+        // Validating id token based on requirements at
         // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens
         // I've ignored "nonce" validation as RaspberryPi Authenticator also skips it
+        // Validating `sub`, `email`, `family_name` and `given_name` to meet our own requirements. For example, when a
+        // user is unable to sign in, we use email to look up whether they use the platform with another account.
         var token = JWT.decode(tokenStr);
         try {
             var keyId = token.getKeyId();
@@ -163,18 +178,32 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var verifier = JWT.require(algorithm)
                     .withAudience(clientId)
                     .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", tenantId))
+                    .withClaim("sub", notEmpty())
+                    .withClaim("email", validEmail())
+                    .withClaim("family_name", notEmpty())
+                    .withClaim("given_name", notEmpty())
                     .build();
             verifier.verify(tokenStr); // TODO: does this check validity of cert?
-            if (null == keyId) {
-                throw new AuthenticatorSecurityException("Token verification: NO_KEY_ID");
-            }
         } catch (InvalidPublicKeyException e) {
             throw new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY");
+        } catch (MissingClaimException | IncorrectClaimException e) {
+            String claimName = e instanceof MissingClaimException ?
+                    ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
+            if (List.of("sub", "email", "family_name", "given_name").contains(claimName)) {
+                throw new NoUserException(String.format("Required field '%s' missing from identity provider's response.", claimName));
+            }
+            throw e;
         } catch (JwkException e) {
             throw new AuthenticatorSecurityException(e.getMessage());
         }
         return token;
     }
+
+    private BiPredicate<Claim, DecodedJWT> notEmpty() {
+        return (c, j) -> !c.isNull() && !c.asString().isBlank();
+    }
+
+    private BiPredicate<Claim, DecodedJWT> validEmail() {
+        return (c, j) -> EmailValidator.getInstance().isValid(c.asString());
+    }
 }
-
-

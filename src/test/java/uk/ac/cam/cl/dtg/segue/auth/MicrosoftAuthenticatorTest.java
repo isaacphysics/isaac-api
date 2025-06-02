@@ -37,8 +37,10 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 
+import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -49,21 +51,71 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.Date;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.String.format;
 
 @RunWith(Enclosed.class)
 public class MicrosoftAuthenticatorTest extends Helpers {
+    @RunWith(Enclosed.class)
     public static class TestJwtParsing {
-        @Test
-        public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
-            var token = validToken(t -> t.withPayload("{\"email\": \"test@example.com\"}"));
-            var userInfo = testGetUserInfo(token);
-            assertEquals("test@example.com", userInfo.getEmail());
+        public static class TestValidPayload {
+            @Test
+            public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
+                var token = validToken(t -> t, p -> {
+                    p.put("sub", "some_account_id");
+                    p.put("email", "test@example.org");
+                    p.put("family_name", "Doe");
+                    p.put("given_name", "John");
+                    return null;
+                });
+
+                var userInfo = testGetUserInfo(token);
+
+                assertEquals("some_account_id", userInfo.getProviderUserId());
+                assertEquals("test@example.org", userInfo.getEmail());
+                assertEquals(EmailVerificationStatus.NOT_VERIFIED, userInfo.getEmailVerificationStatus());
+                assertEquals("Doe", userInfo.getFamilyName());
+                assertEquals("John", userInfo.getGivenName());
+                assertEquals(false, userInfo.getTeacherAccountPending());
+            }
+        }
+
+        @RunWith(Enclosed.class)
+        public static class TestInvalidPayload {
+            public static class TestSubClaim extends TestInvalidPayloadField {
+                String claim() {
+                    return "sub";
+                }
+            }
+
+            public static class TestGivenNameClaim extends TestInvalidPayloadField {
+                String claim() {
+                    return "given_name";
+                }
+            }
+
+            public static class TestFamilyNameClaim extends TestInvalidPayloadField {
+                String claim() {
+                    return "family_name";
+                }
+            }
+
+            public static class TestEmailClaim extends TestInvalidPayloadField {
+                String claim() {
+                    return "email";
+                }
+
+                @Test
+                public void getUserInfo_emailInvalid_throwsError() {
+                    var token = validToken(t -> t, p -> p.put("email", "some_bad_email"));
+                    testGetUserInfo(token, NoUserException.class,
+                            format("Required field 'email' missing from identity provider's response."));
+                }
+            }
         }
     }
 
@@ -92,13 +144,14 @@ public class MicrosoftAuthenticatorTest extends Helpers {
         public static class TestSignatureVerification {
             @Test
             public void getUserInfo_tokenSignatureNoKeyId_throwsError() {
-                var token = validToken(t -> t.withKeyId(null));
-                testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: NO_KEY_ID");
+                var token = validToken(t -> t.withKeyId(null), p -> p);
+                Helpers.testGetUserInfo(token, AuthenticatorSecurityException.class,
+                        "No key found in http://localhost:8888/keys with kid null");
             }
 
             @Test
             public void getUserInfo_tokenSignatureKeyNotFound_throwsError() {
-                var token = validToken(t -> t.withKeyId("no-such-key"));
+                var token = validToken(t -> t.withKeyId("no-such-key"), p -> p);
                 testGetUserInfo(token, AuthenticatorSecurityException.class,
                         "No key found in http://localhost:8888/keys with kid no-such-key");
             }
@@ -110,15 +163,16 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                         "The Token's Signature resulted invalid when verified using the Algorithm: SHA256withRSA");
             }
         }
+
         public static class TestExpirationClaim {
             @Test
             public void getUserInfo_tokenWithoutExp_accepted() {
-                assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withExpiresAt((Date) null))));
+                assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withExpiresAt((Date) null), p -> p)));
             }
 
             @Test
             public void getUserInfo_tokenExpired_throwsError() {
-                var token = validToken(t -> t.withExpiresAt(oneHourAgo));
+                var token = validToken(t -> t.withExpiresAt(oneHourAgo), p -> p);
                 testGetUserInfo(token, TokenExpiredException.class,
                         format("The Token has expired on %s.", oneHourAgo));
             }
@@ -127,42 +181,40 @@ public class MicrosoftAuthenticatorTest extends Helpers {
         public static class TestIssuedAtClaim {
             @Test
             public void getUserInfo_tokenWithoutIat_accepted() {
-                assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withIssuedAt((Date) null))));
+                assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withIssuedAt((Date) null), p -> p)));
             }
 
             @Test
             public void getUserInfo_tokenIatFuture_throwsError() {
-                var token = validToken(t -> t.withIssuedAt(inOneHour));
-                testGetUserInfo(token, IncorrectClaimException.class,
-                        format("The Token can't be used before %s.", inOneHour));
+                var token = validToken(t -> t.withIssuedAt(inOneHour), p -> p);
+                testGetUserInfo(token, IncorrectClaimException.class, format("The Token can't be used before %s.", inOneHour));
             }
         }
 
         public static class TestNotBeforeClaim {
             @Test
             public void getUserInfo_tokenWithoutNbf_accepted() {
-                assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withNotBefore((Date) null))));
+                assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withNotBefore((Date) null), p -> p)));
             }
 
             @Test
             public void getUserInfo_tokenNbfFuture_throwsError() {
-                var token = validToken(t -> t.withNotBefore(inOneHour));
-                testGetUserInfo(token, IncorrectClaimException.class,
-                        format("The Token can't be used before %s.", inOneHour));
+                var token = validToken(t -> t.withNotBefore(inOneHour), p -> p);
+                testGetUserInfo(token, IncorrectClaimException.class, format("The Token can't be used before %s.", inOneHour));
             }
         }
 
         public static class TestAudienceClaim {
             @Test
             public void getUserInfo_tokenMissingAud_throwsError() {
-                var token = validToken(t -> t.withAudience((String) null));
+                var token = validToken(t -> t.withAudience((String) null), p -> p);
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'aud' value doesn't contain the required audience.");
             }
 
             @Test
             public void getUserInfo_tokenAudIncorrect_throwsError() {
-                var token = validToken(t -> t.withAudience("intended_for_somebody_else"));
+                var token = validToken(t -> t.withAudience("intended_for_somebody_else"), p -> p);
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'aud' value doesn't contain the required audience.");
             }
@@ -171,14 +223,14 @@ public class MicrosoftAuthenticatorTest extends Helpers {
         public static class TestIssuerClaim {
             @Test
             public void getUserInfo_tokenMissingIssuer_throwsError() {
-                var token = validToken(t -> t.withIssuer(null));
+                var token = validToken(t -> t.withIssuer(null), p -> p);
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'iss' value doesn't match the required issuer.");
             }
 
             @Test
             public void getUserInfo_tokenIncorrectIssuer_throwsError() {
-                var token = validToken(t -> t.withIssuer("some_bad_issuer"));
+                var token = validToken(t -> t.withIssuer("some_bad_issuer"), p -> p);
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'iss' value doesn't match the required issuer.");
             }
@@ -187,6 +239,38 @@ public class MicrosoftAuthenticatorTest extends Helpers {
 }
 
 class Helpers {
+    static abstract class TestInvalidPayloadField {
+        abstract String claim();
+
+        @Test
+        public void getUserInfo_missing_throwsError() {
+            var token = validToken(t -> t, p -> p.remove(claim()));
+            testGetUserInfo(token, NoUserException.class, expectedMessage());
+        }
+
+        @Test
+        public void getUserInfo_null_throwsError() {
+            var token = validToken(t -> t, p -> p.put(claim(), null));
+            testGetUserInfo(token, NoUserException.class, expectedMessage());
+        }
+
+        @Test
+        public void getUserInfo_empty_throwsError() {
+            var token = validToken(t -> t, p -> p.put(claim(), ""));
+            testGetUserInfo(token, NoUserException.class, expectedMessage());
+        }
+
+        @Test
+        public void getUserInfo_blank_throwsError() {
+            var token = validToken(t -> t, p -> p.put(claim(), " "));
+            testGetUserInfo(token, NoUserException.class, expectedMessage());
+        }
+
+        private String expectedMessage() {
+            return format("Required field '%s' missing from identity provider's response.", claim());
+        }
+    }
+
     static UserFromAuthProvider testGetUserInfo(String token) throws Throwable {
         var store = getStore();
         var subject = new MicrosoftAuthenticator(
@@ -196,7 +280,7 @@ class Helpers {
             }
         };
         store.put("the_internal_id", token);
-        var keySetServer = startKeySetServer(8888, validSigningKey);
+        var keySetServer = startKeySetServer(8888, Stream.of(validSigningKey, anotherValidSigningKey));
         try {
             return subject.getUserInfo("the_internal_id");
         } finally {
@@ -209,11 +293,11 @@ class Helpers {
         assertEquals(errorMessage, error.getMessage());
     }
 
-    static Server startKeySetServer(int port, TestKeyPair key) throws Exception {
+    static Server startKeySetServer(int port, Stream<TestKeyPair> keys) throws Exception {
         var server = new Server(port);
         var handler = new ServletHandler();
         server.setHandler(handler);
-        handler.addServletWithMapping(KeySetServlet.withKey(key), "/keys");
+        handler.addServletWithMapping(KeySetServlet.withKeys(keys), "/keys");
         server.start();
         return server;
     }
@@ -221,15 +305,20 @@ class Helpers {
     interface JWTBuildFn extends Function<JWTCreator.Builder, JWTCreator.Builder> {
     }
 
-    ;
+    static class Payload extends HashMap<String, String> {
+    }
 
-    static String validToken(JWTBuildFn fn) {
-        return signedToken(validSigningKey, t -> {
-            return fn.apply(t.withIssuedAt(oneHourAgo)
-                    .withNotBefore(oneHourAgo)
-                    .withAudience(clientId)
-                    .withIssuer(expectedIssuer));
-        });
+    public interface PayloadModifyFn extends Function<Payload, Object> {
+    }
+
+    static String validToken(JWTBuildFn customiseToken, PayloadModifyFn customisePayload) {
+        JWTBuildFn addDefaults = t -> t.withIssuedAt(oneHourAgo)
+                .withNotBefore(oneHourAgo)
+                .withAudience(clientId)
+                .withIssuer(expectedIssuer)
+                .withPayload(validPayload(customisePayload));
+
+        return signedToken(validSigningKey, t -> customiseToken.apply(addDefaults.apply(t)));
     }
 
     static String signedToken(TestKeyPair key, JWTBuildFn fn) {
@@ -243,23 +332,34 @@ class Helpers {
     }
 
     static TestKeyPair validSigningKey = new TestKeyPair();
+    static TestKeyPair anotherValidSigningKey = new TestKeyPair();
     static TestKeyPair invalidSigningKey = new TestKeyPair();
     static Instant oneHourAgo = Instant.now().minusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
     static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
     static String clientId = "the_client_id";
     static String tenantId = "common";
     static String expectedIssuer = "https://login.microsoftonline.com/common/v2.0";
+
+    static Payload validPayload(PayloadModifyFn customisePayload) {
+        var validPayload = new Payload();
+        validPayload.put("sub", "the_ms_account_id");
+        validPayload.put("email", "test@example.com");
+        validPayload.put("family_name", "Family");
+        validPayload.put("given_name", "Given");
+        customisePayload.apply(validPayload);
+        return validPayload;
+    }
 }
 
 class KeySetServlet extends HttpServlet {
-    private final TestKeyPair key;
+    private final Stream<TestKeyPair> keys;
 
-    public static ServletHolder withKey(TestKeyPair key) {
-        return new ServletHolder(new KeySetServlet(key));
+    public static ServletHolder withKeys(Stream<TestKeyPair> keys) {
+        return new ServletHolder(new KeySetServlet(keys));
     }
 
-    private KeySetServlet(TestKeyPair key) {
-        this.key = key;
+    private KeySetServlet(Stream<TestKeyPair> keys) {
+        this.keys = keys;
     }
 
     @Override
@@ -272,19 +372,21 @@ class KeySetServlet extends HttpServlet {
 
     private JSONObject keyStore() {
         return new JSONObject().put(
-                "keys", new JSONArray().put(
-                        new JSONObject()
-                                .put("kty", "RSA")
-                                .put("use", "sig")
-                                .put("kid", key.id())
-                                .put("n", key.modulus())
-                                .put("e", key.exponent())
-                                .put("cloud_instance_name", "microsoftonline.com")
-                        // Microsoft's response also contains an X.509 certificate, which we don't test
-                        // here. Sample at: https://login.microsoftonline.com/common/discovery/keys
-                        // .put("x5t", key_id)
-                        // .put("x5c", new JSONArray("some_string"))
-                ));
+                "keys", keys.reduce(
+                        new JSONArray(),
+                        (acc, key) -> acc.put(
+                                new JSONObject().put("kty", "RSA")
+                                        .put("use", "sig")
+                                        .put("kid", key.id())
+                                        .put("n", key.modulus())
+                                        .put("e", key.exponent())
+                                        .put("cloud_instance_name", "microsoftonline.com")
+                                // Microsoft's response also contains an X.509 certificate, which we don't test
+                                // here. Sample at: https://login.microsoftonline.com/common/discovery/keys
+                                // .put("x5t", key_id)
+                                // .put("x5c", new JSONArray("some_string"))
+                        ),
+                        JSONArray::putAll));
     }
 }
 
