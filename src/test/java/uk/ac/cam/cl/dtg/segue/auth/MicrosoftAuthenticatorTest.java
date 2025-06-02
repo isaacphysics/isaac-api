@@ -32,9 +32,10 @@ import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.ThrowingSupplier;
+
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
+import org.junit.Test;
 
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
@@ -55,130 +56,128 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.String.format;
 
-class MicrosoftAuthenticatorTest extends Helpers {
-    @Test
-    void getUserInfo_validToken_returnsUserInformation() throws Throwable {
-        var token = validToken(t -> t.withPayload("{\"email\": \"test@example.com\"}"));
-        var userInfo = testGetUserInfo(token);
-        assertEquals("test2@example.com", userInfo.getEmail());
+@RunWith(Enclosed.class)
+public class MicrosoftAuthenticatorTest extends Helpers {
+    public static class JwtParsing {
+        @Test
+        public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
+            var token = validToken(t -> t.withPayload("{\"email\": \"test@example.com\"}"));
+            var userInfo = testGetUserInfo(token);
+            assertEquals("test2@example.com", userInfo.getEmail());
+        }
     }
 
-    @Nested
-    class TokenValidation {
-        @Test
-        void getUserInfo_tryingToStoreNull_throwsError() {
-            assertThrows(NullPointerException.class, () -> testGetUserInfo(null));
-        }
-
-        @Test
-        void getUserInfo_noSuchToken_throwsError() throws MalformedURLException {
-            var subject = new MicrosoftAuthenticator(
-                    clientId, "", "", "http://localhost:8888/keys") {
-                {
-                    MicrosoftAuthenticator.credentialStore = getStore();
-                }
-            };
-            var error = assertThrows(AuthenticatorSecurityException.class,
-                    () -> subject.getUserInfo("no_token_for_id"));
-            assertEquals("Token verification: TOKEN_MISSING", error.getMessage());
-        }
-
-        @Nested
-        class SignatureVerification {
+    @RunWith(Enclosed.class)
+    public static class TokenValidation {
+        public static class TokenMissing {
             @Test
-            void getUserInfo_tokenSignatureNoKeyId_throwsError() {
+            public void getUserInfo_tryingToStoreNull_throwsError() {
+                assertThrows(NullPointerException.class, () -> testGetUserInfo(null));
+            }
+
+            @Test
+            public void getUserInfo_noSuchToken_throwsError() throws MalformedURLException {
+                var subject = new MicrosoftAuthenticator(
+                        clientId, "", "", "http://localhost:8888/keys") {
+                    {
+                        MicrosoftAuthenticator.credentialStore = getStore();
+                    }
+                };
+                var error = assertThrows(AuthenticatorSecurityException.class,
+                        () -> subject.getUserInfo("no_token_for_id"));
+                assertEquals("Token verification: TOKEN_MISSING", error.getMessage());
+            }
+        }
+
+        public static class SignatureVerification {
+            @Test
+            public void getUserInfo_tokenSignatureNoKeyId_throwsError() {
                 var token = validToken(t -> t.withKeyId(null));
                 testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: NO_KEY_ID");
             }
 
             @Test
-            void getUserInfo_tokenSignatureKeyNotFound_throwsError() {
+            public void getUserInfo_tokenSignatureKeyNotFound_throwsError() {
                 var token = validToken(t -> t.withKeyId("no-such-key"));
                 testGetUserInfo(token, AuthenticatorSecurityException.class,
                         "No key found in http://localhost:8888/keys with kid no-such-key");
             }
 
             @Test
-            void getUserInfo_tokenSignatureMismatch_throwsError() {
+            public void getUserInfo_tokenSignatureMismatch_throwsError() {
                 var token = signedToken(invalidSigningKey, t -> t.withKeyId(validSigningKey.id()));
                 testGetUserInfo(token, SignatureVerificationException.class,
                         "The Token's Signature resulted invalid when verified using the Algorithm: SHA256withRSA");
             }
         }
-
-        @Nested
-        class ExpirationClaim {
+        public static class ExpirationClaim {
             @Test
-            void getUserInfo_tokenWithoutExp_accepted() {
+            public void getUserInfo_tokenWithoutExp_accepted() {
                 assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withExpiresAt((Date) null))));
             }
 
             @Test
-            void getUserInfo_tokenExpired_throwsError() {
+            public void getUserInfo_tokenExpired_throwsError() {
                 var token = validToken(t -> t.withExpiresAt(oneHourAgo));
                 testGetUserInfo(token, TokenExpiredException.class,
                         format("The Token has expired on %s.", oneHourAgo));
             }
         }
 
-        @Nested
-        class IssuedAtClaim {
+        public static class IssuedAtClaim {
             @Test
-            void getUserInfo_tokenWithoutIat_accepted() {
+            public void getUserInfo_tokenWithoutIat_accepted() {
                 assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withIssuedAt((Date) null))));
             }
 
             @Test
-            void getUserInfo_tokenIatFuture_throwsError() {
+            public void getUserInfo_tokenIatFuture_throwsError() {
                 var token = validToken(t -> t.withIssuedAt(inOneHour));
                 testGetUserInfo(token, IncorrectClaimException.class,
                         format("The Token can't be used before %s.", inOneHour));
             }
         }
 
-        @Nested
-        class NotBeforeClaim {
+        public static class NotBeforeClaim {
             @Test
-            void getUserInfo_tokenWithoutNbf_accepted() {
+            public void getUserInfo_tokenWithoutNbf_accepted() {
                 assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withNotBefore((Date) null))));
             }
 
             @Test
-            void getUserInfo_tokenNbfFuture_throwsError() {
+            public void getUserInfo_tokenNbfFuture_throwsError() {
                 var token = validToken(t -> t.withNotBefore(inOneHour));
                 testGetUserInfo(token, IncorrectClaimException.class,
                         format("The Token can't be used before %s.", inOneHour));
             }
         }
 
-        @Nested
-        class AudienceClaim {
+        public static class AudienceClaim {
             @Test
-            void getUserInfo_tokenMissingAud_throwsError() {
+            public void getUserInfo_tokenMissingAud_throwsError() {
                 var token = validToken(t -> t.withAudience((String) null));
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'aud' value doesn't contain the required audience.");
             }
 
             @Test
-            void getUserInfo_tokenAudIncorrect_throwsError() {
+            public void getUserInfo_tokenAudIncorrect_throwsError() {
                 var token = validToken(t -> t.withAudience("intended_for_somebody_else"));
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'aud' value doesn't contain the required audience.");
             }
         }
 
-        @Nested
-        class IssuerClaim {
+        public static class IssuerClaim {
             @Test
-            void getUserInfo_tokenMissingIssuer_throwsError() {
+            public void getUserInfo_tokenMissingIssuer_throwsError() {
                 var token = validToken(t -> t.withIssuer(null));
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'iss' value doesn't match the required issuer.");
             }
 
             @Test
-            void getUserInfo_tokenIncorrectIssuer_throwsError() {
+            public void getUserInfo_tokenIncorrectIssuer_throwsError() {
                 var token = validToken(t -> t.withIssuer("some_bad_issuer"));
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'iss' value doesn't match the required issuer.");
@@ -197,21 +196,17 @@ class Helpers {
             }
         };
         store.put("the_internal_id", token);
-        return withKeySetServer(() -> subject.getUserInfo("the_internal_id"));
+        var keySetServer = startKeySetServer(8888, validSigningKey);
+        try {
+            return subject.getUserInfo("the_internal_id");
+        } finally {
+            keySetServer.stop();
+        }
     }
 
     static <T extends Exception> void testGetUserInfo(String token, Class<T> errorClass, String errorMessage) {
         var error = assertThrows(errorClass, () -> testGetUserInfo(token));
         assertEquals(errorMessage, error.getMessage());
-    }
-
-    static <T> T withKeySetServer(ThrowingSupplier<T> supplier) throws Throwable {
-        var keySetServer = startKeySetServer(8888, validSigningKey);
-        try {
-            return supplier.get();
-        } finally {
-            keySetServer.stop();
-        }
     }
 
     static Server startKeySetServer(int port, TestKeyPair key) throws Exception {
