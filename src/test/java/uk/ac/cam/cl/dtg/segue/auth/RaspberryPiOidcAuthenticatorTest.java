@@ -72,7 +72,7 @@ public class RaspberryPiOidcAuthenticatorTest {
         List<String> givenNameFamilyName = authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
 
         // Assert
-        assertEquals("John", givenNameFamilyName.get(0));
+        assertEquals("Johns", givenNameFamilyName.get(0));
         assertEquals("John", givenNameFamilyName.get(1));
     }
 
