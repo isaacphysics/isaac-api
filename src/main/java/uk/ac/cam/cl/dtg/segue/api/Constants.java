@@ -428,6 +428,9 @@ public final class Constants {
     public static final String LLM_PROVIDER_NAME = "OPENAI";
     public static final String LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE = "LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE";
 
+    // Quartz
+    public static final String DISABLE_QUARTZ_AUTOSTART = "DISABLE_QUARTZ_AUTOSTART";
+
 
     /*
      * Default values.
