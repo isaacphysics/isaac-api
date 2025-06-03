@@ -72,7 +72,7 @@ public class IsaacQuizDTO extends SeguePageDTO implements EmailService.HasTitleO
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, deprecated, supersededBy, tags, teacherNotes,
-                level);
+                level, null);
 
         this.hiddenFromRoles = hiddenFromRoles;
         this.defaultFeedbackMode = defaultFeedbackMode;

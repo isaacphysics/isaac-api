@@ -10,6 +10,7 @@ public class SidebarEntryDTO extends ContentDTO {
 
     private String label;
     private String pageId;
+    private String pageType;
 
     public String getLabel() {
         return label;
@@ -25,5 +26,13 @@ public class SidebarEntryDTO extends ContentDTO {
 
     public void setPageId(final String pageId) {
         this.pageId = pageId;
+    }
+
+    public String getPageType() {
+        return pageType;
+    }
+
+    public void setPageType(final String pageType) {
+        this.pageType = pageType;
     }
 }

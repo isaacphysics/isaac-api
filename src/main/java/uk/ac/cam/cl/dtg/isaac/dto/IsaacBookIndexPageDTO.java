@@ -2,13 +2,14 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ImageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 
 /**
  * Book Index Page DTO.
  *
  */
 @JsonContentType("isaacBookIndexPage")
-public class IsaacBookIndexPageDTO extends IsaacSidebarPageDTO {
+public class IsaacBookIndexPageDTO extends SeguePageDTO {
 
     private ImageDTO coverImage;
 

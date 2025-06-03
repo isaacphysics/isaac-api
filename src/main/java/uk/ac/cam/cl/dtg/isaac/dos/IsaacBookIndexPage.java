@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Image;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 
 /**
@@ -11,7 +12,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
  */
 @DTOMapping(IsaacBookIndexPageDTO.class)
 @JsonContentType("isaacBookIndexPage")
-public class IsaacBookIndexPage extends IsaacSidebarPage {
+public class IsaacBookIndexPage extends SeguePage {
 
     private Image coverImage;
 

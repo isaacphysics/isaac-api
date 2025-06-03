@@ -63,7 +63,7 @@ public class IsaacQuiz extends SeguePage {
         super(id, title, subtitle, type, author, encoding,
                 canonicalSourceFile, layout, children, value, attribution,
                 relatedContent, published, deprecated, supersededBy, tags, permissions, notes,
-                teacherNotes, level);
+                teacherNotes, level, null);
 
         this.hiddenFromRoles = hiddenFromRoles;
         this.rubric = rubric;

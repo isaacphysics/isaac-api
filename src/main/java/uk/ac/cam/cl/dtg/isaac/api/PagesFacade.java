@@ -772,6 +772,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
                 // Unlikely we want to augment with a user's actual question attempts. Use an empty Map.
                 augmentContentWithRelatedContent(content, Collections.emptyMap());
+                contentManager.populateSidebar(content);
 
                 // the request log
                 ImmutableMap<String, String> logEntry = ImmutableMap.of(
@@ -898,7 +899,10 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             ContentDTO contentDTO = contentManager.getContentById(bookId, true);
             if (contentDTO instanceof IsaacBookIndexPageDTO) {
+                IsaacBookIndexPageDTO indexPageDTO = (IsaacBookIndexPageDTO) contentDTO;
+
                 // Unlikely we want to augment with related content here!
+                contentManager.populateSidebar(indexPageDTO);
 
                 // Log the page view:
                 getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
@@ -907,7 +911,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                 CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
                         ));
 
-                return Response.ok(contentDTO)
+                return Response.ok(indexPageDTO)
                         .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                         .tag(etag)
                         .build();
@@ -970,6 +974,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             // Augment related content:
             this.augmentContentWithRelatedContent(bookPageDTO, Collections.emptyMap());
+            contentManager.populateSidebar(bookPageDTO);
 
             // Augment linked gameboards using the list in the DO:
             // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
@@ -1044,6 +1049,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             // Augment related content, without user-specific question attempts:
             this.augmentContentWithRelatedContent(revisionPageDTO, Collections.emptyMap());
+            contentManager.populateSidebar(revisionPageDTO);
 
             // Augment linked gameboards using the list in the DO:
             // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
