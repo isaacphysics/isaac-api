@@ -256,7 +256,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             }
 
             @Test
-            public void getUserInfo_tokenTenantIssuerMismatch_accepted() {
+            public void getUserInfo_tokenTenantIssuerMismatch_throwsError() {
                 var tid = UUID.randomUUID().toString();
                 var token = validToken(t -> t.withIssuer(expectedIssuer(msTenantId)), p -> p.put("tid", tid));
                 testGetUserInfo(token, IncorrectClaimException.class,
