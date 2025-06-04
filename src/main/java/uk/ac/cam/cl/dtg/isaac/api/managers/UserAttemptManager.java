@@ -71,34 +71,42 @@ public class UserAttemptManager {
         String questionId = contentSummary.getId();
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
         boolean questionAnsweredCorrectly = false;
-        boolean attempted = false;
+        int questionPartsCorrect = 0;
+        int questionPartsIncorrect = 0;
+        int questionPartsTotal = contentSummary.getQuestionPartIds().size();
         if (questionAttempts != null) {
             for (String relatedQuestionPartId : contentSummary.getQuestionPartIds()) {
-                questionAnsweredCorrectly = false;
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
                 if (questionPartAttempts != null) {
-                    attempted = true;
                     for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
                         questionAnsweredCorrectly = partAttempt.isCorrect();
                         if (questionAnsweredCorrectly) {
+                            questionPartsCorrect++;
                             break; // exit on first correct attempt
                         }
                     }
-                }
-                if (!questionAnsweredCorrectly) {
-                    break; // exit on first false question part
+                    if (!questionAnsweredCorrectly) {
+                        questionPartsIncorrect++;
+                    }
                 }
             }
         }
-        if (attempted) {
-            if (questionAnsweredCorrectly) {
-                contentSummary.setState(Constants.CompletionState.ALL_CORRECT);
-            } else {
-                contentSummary.setState(Constants.CompletionState.IN_PROGRESS);
-            }
+        int questionPartsNotAttempted = questionPartsTotal - (questionPartsCorrect + questionPartsIncorrect);
+
+        // TODO: move to common function with GameManagerL1198
+        CompletionState state;
+        if (questionPartsCorrect == questionPartsTotal) {
+            state = CompletionState.ALL_CORRECT;
+        } else if (questionPartsIncorrect == questionPartsTotal) {
+            state = CompletionState.ALL_INCORRECT;
+        } else if (questionPartsNotAttempted == questionPartsTotal) {
+            state = CompletionState.NOT_ATTEMPTED;
+        } else if (questionPartsNotAttempted > 0) {
+            state = CompletionState.IN_PROGRESS;
         } else {
-            contentSummary.setState(Constants.CompletionState.NOT_ATTEMPTED);
+            state = CompletionState.ALL_ATTEMPTED;
         }
+        contentSummary.setState(state);
     }
 
     /**

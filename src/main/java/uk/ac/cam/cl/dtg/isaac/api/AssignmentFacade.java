@@ -405,7 +405,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    ArrayList<GameboardItemState> states = Lists.newArrayList();
+                    ArrayList<CompletionState> states = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
                     for (GameboardItem questionResult : userGameboardItems.getRight()) {
