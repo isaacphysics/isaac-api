@@ -12,7 +12,8 @@ public class AssignmentProgressDTO {
     public UserSummaryDTO user;
     public List<Integer> correctPartResults;
     public List<Integer> incorrectPartResults;
-    public List<Constants.CompletionState> results;
+    public List<Constants.CompletionState> questionResults;
+    public List<List<Constants.QuestionPartState>> questionPartResults;
 
     /**
      * Complete AssignmentProgressDTO constructor with all dependencies.
@@ -25,11 +26,12 @@ public class AssignmentProgressDTO {
      * @param results
      *            - Array of results.
      */
-    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, List<Constants.CompletionState> results) {
+    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, List<Constants.CompletionState> results, List<List<Constants.QuestionPartState>> partResults) {
         this.user = user;
         this.correctPartResults = correctPartResults;
         this.incorrectPartResults = incorrectPartResults;
-        this.results = results;
+        this.questionResults = results;
+        this.questionPartResults = partResults;
     }
 
     public AssignmentProgressDTO() {
@@ -59,11 +61,20 @@ public class AssignmentProgressDTO {
         this.incorrectPartResults = incorrectPartResults;
     }
 
-    public List<Constants.CompletionState> getResults() {
-        return results;
+    public List<Constants.CompletionState> getQuestionResults() {
+        return questionResults;
     }
 
-    public void setResults(List<Constants.CompletionState> results) {
-        this.results = results;
+    public void setQuestionResults(List<Constants.CompletionState> questionResults) {
+        this.questionResults = questionResults;
+    }
+
+
+    public List<List<Constants.QuestionPartState>> getQuestionPartResults() {
+        return questionPartResults;
+    }
+
+    public void setQuestionPartResults(List<List<Constants.QuestionPartState>> questionPartResults) {
+        this.questionPartResults = questionPartResults;
     }
 }

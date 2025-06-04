@@ -405,11 +405,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    ArrayList<CompletionState> states = Lists.newArrayList();
+                    ArrayList<CompletionState> questionStates = Lists.newArrayList();
+                    ArrayList<List<QuestionPartState>> questionPartStates = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
                     for (GameboardItem questionResult : userGameboardItems.getRight()) {
-                        states.add(questionResult.getState());
+                        questionStates.add(questionResult.getState());
+                        questionPartStates.add(questionResult.getQuestionPartStates());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
                     }
@@ -417,11 +419,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             userSummary,
                             correctQuestionParts,
                             incorrectQuestionParts,
-                            states
+                            questionStates,
+                            questionPartStates
                     ));
                 } else {
                     result.add(new AssignmentProgressDTO(
                             userSummary,
+                            Collections.emptyList(),
                             Collections.emptyList(),
                             Collections.emptyList(),
                             Collections.emptyList()
