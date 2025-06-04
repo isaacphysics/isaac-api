@@ -68,7 +68,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private final String clientId;
     private final String tenantId;
     private final String clientSecret;
-    private JwkProvider provider;
+    private final JwkProvider provider;
 
     @Inject
     public MicrosoftAuthenticator(
@@ -101,7 +101,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                 .prompt(Prompt.SELECT_ACCOUNT)
                 .state(antiForgeryStateToken)
                 .build();
-        return client().getAuthorizationRequestUrl(parameters).toString();
+        return microsoftClient().getAuthorizationRequestUrl(parameters).toString();
     }
 
     @Override
@@ -123,7 +123,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var authParams = AuthorizationCodeParameters
                     .builder(authorizationCode, new URI(callbackURL)).scopes(Collections.singleton(scopes))
                     .build();
-            var result = client().acquireToken(authParams).get();
+            var result = microsoftClient().acquireToken(authParams).get();
 
             String internalCredentialID = UUID.randomUUID().toString();
             credentialStore.put(internalCredentialID, result.idToken());
@@ -153,7 +153,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         );
     }
 
-    private ConfidentialClientApplication client() {
+    private ConfidentialClientApplication microsoftClient() {
         var secret = ClientCredentialFactory.createFromSecret(clientSecret);
         try {
             return ConfidentialClientApplication.builder(clientId, secret)
@@ -177,7 +177,8 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
             var verifier = JWT.require(algorithm)
                     .withAudience(clientId)
-                    .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", tenantId))
+                    .withClaim("tid", validUUID())
+                    .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", token.getClaim("tid").asString()))
                     .withClaim("sub", notEmpty())
                     .withClaim("email", validEmail())
                     .withClaim("family_name", notEmpty())
@@ -189,7 +190,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         } catch (MissingClaimException | IncorrectClaimException e) {
             String claimName = e instanceof MissingClaimException ?
                     ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
-            if (List.of("sub", "email", "family_name", "given_name").contains(claimName)) {
+            if (List.of("sub", "tid", "email", "family_name", "given_name").contains(claimName)) {
                 throw new NoUserException(String.format("Required field '%s' missing from identity provider's response.", claimName));
             }
             throw e;
@@ -205,5 +206,16 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
     private BiPredicate<Claim, DecodedJWT> validEmail() {
         return (c, j) -> EmailValidator.getInstance().isValid(c.asString());
+    }
+
+    private BiPredicate<Claim, DecodedJWT> validUUID() {
+        return (c, j) -> {
+            try {
+                var uuid = UUID.fromString(c.asString());
+                return uuid.toString().equals(c.asString());
+            } catch (Exception e) {
+                return false;
+            }
+        };
     }
 }

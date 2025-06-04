@@ -61,7 +61,7 @@ import static java.lang.String.format;
 @RunWith(Enclosed.class)
 public class MicrosoftAuthenticatorTest extends Helpers {
     @RunWith(Enclosed.class)
-    public static class TestJwtParsing {
+    public static class TestTokenParsing {
         public static class TestValidPayload {
             @Test
             public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
@@ -101,6 +101,26 @@ public class MicrosoftAuthenticatorTest extends Helpers {
             public static class TestFamilyNameClaim extends TestInvalidPayloadField {
                 String claim() {
                     return "family_name";
+                }
+            }
+
+            public static class TestTidClaim extends TestInvalidPayloadField {
+                String claim() {
+                    return "tid";
+                }
+
+                @Test
+                public void getUserInfo_tidInvalid_throwsError() {
+                    var token = validToken(t -> t, p -> p.put("tid", "some_bad_tid"));
+                    testGetUserInfo(token, NoUserException.class,
+                            format("Required field 'tid' missing from identity provider's response."));
+                }
+
+                @Test
+                public void getUserInfo_tidValidFollowdByInvalid_throwsError() {
+                    var token = validToken(t -> t, p -> p.put("tid", format("%s/hello/", msTenantId)));
+                    testGetUserInfo(token, NoUserException.class,
+                            format("Required field 'tid' missing from identity provider's response."));
                 }
             }
 
@@ -234,6 +254,21 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                 testGetUserInfo(token, IncorrectClaimException.class,
                         "The Claim 'iss' value doesn't match the required issuer.");
             }
+
+            @Test
+            public void getUserInfo_tokenTenantIssuerMismatch_accepted() {
+                var tid = UUID.randomUUID().toString();
+                var token = validToken(t -> t.withIssuer(expectedIssuer(msTenantId)), p -> p.put("tid", tid));
+                testGetUserInfo(token, IncorrectClaimException.class,
+                        "The Claim 'iss' value doesn't match the required issuer.");
+            }
+
+            @Test
+            public void getUserInfo_tokenTenantSpecificIssuer_accepted() {
+                var tid = UUID.randomUUID().toString();
+                var token = validToken(t -> t.withIssuer(expectedIssuer(tid)), p -> p.put("tid", tid));
+                assertDoesNotThrow(() -> testGetUserInfo(token));
+            }
         }
     }
 }
@@ -294,15 +329,15 @@ class Helpers {
     }
 
     static Server startKeySetServer(int port, Stream<TestKeyPair> keys) throws Exception {
-        var server = new Server(port);
         var handler = new ServletHandler();
-        server.setHandler(handler);
         handler.addServletWithMapping(KeySetServlet.withKeys(keys), "/keys");
+        var server = new Server(port);
+        server.setHandler(handler);
         server.start();
         return server;
     }
 
-    interface JWTBuildFn extends Function<JWTCreator.Builder, JWTCreator.Builder> {
+    interface TokenModifyFn extends Function<JWTCreator.Builder, JWTCreator.Builder> {
     }
 
     static class Payload extends HashMap<String, String> {
@@ -311,17 +346,17 @@ class Helpers {
     public interface PayloadModifyFn extends Function<Payload, Object> {
     }
 
-    static String validToken(JWTBuildFn customiseToken, PayloadModifyFn customisePayload) {
-        JWTBuildFn addDefaults = t -> t.withIssuedAt(oneHourAgo)
+    static String validToken(TokenModifyFn customiseToken, PayloadModifyFn customisePayload) {
+        TokenModifyFn addDefaults = t -> t.withIssuedAt(oneHourAgo)
                 .withNotBefore(oneHourAgo)
                 .withAudience(clientId)
-                .withIssuer(expectedIssuer)
+                .withIssuer(expectedIssuer(msTenantId))
                 .withPayload(validPayload(customisePayload));
 
         return signedToken(validSigningKey, t -> customiseToken.apply(addDefaults.apply(t)));
     }
 
-    static String signedToken(TestKeyPair key, JWTBuildFn fn) {
+    static String signedToken(TestKeyPair key, TokenModifyFn fn) {
         var algorithm = Algorithm.RSA256(key.publicKey(), key.privateKey());
         var token = fn.apply(JWT.create().withKeyId(key.id()));
         return token.sign(algorithm);
@@ -338,7 +373,7 @@ class Helpers {
     static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
     static String clientId = "the_client_id";
     static String tenantId = "common";
-    static String expectedIssuer = "https://login.microsoftonline.com/common/v2.0";
+    static String msTenantId = "9188040d-6c67-4c5b-b112-36a304b66dad"; // MS uses this for personal accounts
 
     static Payload validPayload(PayloadModifyFn customisePayload) {
         var validPayload = new Payload();
@@ -346,8 +381,13 @@ class Helpers {
         validPayload.put("email", "test@example.com");
         validPayload.put("family_name", "Family");
         validPayload.put("given_name", "Given");
+        validPayload.put("tid", msTenantId);
         customisePayload.apply(validPayload);
         return validPayload;
+    }
+
+    static String expectedIssuer(String tid) {
+        return format("https://login.microsoftonline.com/%s/v2.0", tid);
     }
 }
 
