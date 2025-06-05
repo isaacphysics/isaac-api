@@ -58,7 +58,7 @@ import java.util.function.BiPredicate;
 public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     static final int CREDENTIAL_CACHE_TTL_MINUTES = 10;
     // TODO: why do we cache idTokens? Why don't we just pass them around in code?
-    static Cache<String, String> credentialStore = CacheBuilder
+    protected static Cache<String, String> credentialStore = CacheBuilder
             .newBuilder()
             .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
             .build();
@@ -125,7 +125,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                     .build();
             var result = microsoftClient().acquireToken(authParams).get();
 
-            String internalCredentialID = UUID.randomUUID().toString();
+            var internalCredentialID = UUID.randomUUID().toString();
             credentialStore.put(internalCredentialID, result.idToken());
             return internalCredentialID;
         } catch (Exception e) {
