@@ -703,8 +703,8 @@ public class GroupManager {
                     questionPartsNotAttempted += gameboardItem.getQuestionPartsNotAttempted();
                     questionPartsTotal += gameboardItem.getQuestionPartsTotal();
                     passMark += gameboardItem.getPassMark();
-                    Constants.GameboardItemState state = gameboardItem.getState();
-                    if (state == Constants.GameboardItemState.PERFECT) {
+                    Constants.CompletionState state = gameboardItem.getState();
+                    if (state == Constants.CompletionState.ALL_CORRECT) {
                         questionPagesPerfect += 1;
                     }
                 }
