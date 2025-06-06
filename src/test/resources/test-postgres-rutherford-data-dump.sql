@@ -144,6 +144,7 @@ COPY public.ip_location_history (id, ip_address, location_information, created, 
 --
 
 COPY public.linked_accounts (user_id, provider, provider_user_id) FROM stdin;
+11	MICROSOFT	erika_ms_identifier
 \.
 
 

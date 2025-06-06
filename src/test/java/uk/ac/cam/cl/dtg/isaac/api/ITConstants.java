@@ -79,6 +79,7 @@ public final class ITConstants {
     public static final String ERIKA_STUDENT_EMAIL = "erika-student@test.com";
     public static final String ERIKA_STUDENT_PASSWORD = "test1234";
     public static final long ERIKA_STUDENT_ID = 11L;
+    public static final String ERIKA_PROVIDER_USER_ID = "erika_ms_identifier";
 
     public static final String TEST_SIGNUP_EMAIL = "test-signup@test.com";
     public static final String TEST_SIGNUP_PASSWORD = "test1234";
