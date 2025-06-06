@@ -25,6 +25,7 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 
+import org.junit.runners.Parameterized;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest.TestKeyPair;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
@@ -67,25 +68,54 @@ public class MicrosoftAuthenticatorTest extends Helpers {
 
         @RunWith(Enclosed.class)
         public static class TestInvalidPayload {
-            public static class TestSubClaim extends TestInvalidPayloadField {
+            public static class TestSubClaim extends TestNonEmptyClaim {
                 String claim() {
                     return "sub";
                 }
             }
 
-            public static class TestGivenNameClaim extends TestInvalidPayloadField {
-                String claim() {
-                    return "given_name";
+            @RunWith(Parameterized.class)
+            public static class TestValidNameClaims {
+                @Parameterized.Parameters(name="test case {index}")
+                public static Collection<String[][]> data() {
+                    return Arrays.asList(new String[][][] {
+                            { {"John", "Doe", "JohnDoe" }, {"John", "Doe"} },
+                            { {"John", "Doe", null }, {"John", "Doe"} },
+                            { {"John", "Doe", "" }, {"John", "Doe"} },
+                            { {"John", null, "John Doe" }, {"John", null} },
+                            { {"John", "", "John Doe" }, {"John", null} },
+                            { { null, "Doe", "John Doe" }, {null, "Doe"} },
+                            { { "", "Doe", "John Doe" }, {null, "Doe"} },
+                            { { null, null, "John Doe" }, {"John", "Doe"} },
+                            { { "", "", "John Doe" }, {"John", "Doe"} },
+                            { { null, null, "Doe" }, {null, "Doe"} },
+                            { { null, null, "John" }, {null, "John"} },
+                            { { null, null, " John " }, {null, "John"} },
+                            { { null, null, "John " }, {null, "John"} },
+                            { { null, null, "John  " }, {null, "John"} },
+                            { { null, null, "John Joanne Doe" }, {"John Joanne", "Doe"} },
+                            { { null, null, "John Joanne Josephine Doe" }, {"John Joanne Josephine", "Doe"} },
+                            { { null, null, "John  Joanne   Josephine   Doe " }, {"John  Joanne   Josephine  ", "Doe"} },
+                    });
                 }
+
+                @Parameterized.Parameter(0)
+                public String[] input;
+
+                @Parameterized.Parameter(1)
+                public String[] expectedOutput;
+
+                @Test
+                public void getUserInfo_validNameClaims_accepted() throws Throwable {
+                    var token = validToken(t -> t, p -> setName(p, input[0], input[1], input[2]));
+                    var userInfo = testGetUserInfo(token);
+                    assertEquals(expectedOutput[0], userInfo.getGivenName(), String.format("given name failed for %s", Arrays.toString(input)));
+                    assertEquals(expectedOutput[1], userInfo.getFamilyName(), String.format("last name failed for %s", Arrays.toString(input)));
+                }
+
             }
 
-            public static class TestFamilyNameClaim extends TestInvalidPayloadField {
-                String claim() {
-                    return "family_name";
-                }
-            }
-
-            public static class TestTidClaim extends TestInvalidPayloadField {
+            public static class TestTidClaim extends TestNonEmptyClaim {
                 String claim() {
                     return "tid";
                 }
@@ -105,7 +135,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                 }
             }
 
-            public static class TestEmailClaim extends TestInvalidPayloadField {
+            public static class TestEmailClaim extends TestNonEmptyClaim {
                 String claim() {
                     return "email";
                 }
@@ -255,7 +285,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
 }
 
 class Helpers {
-    static abstract class TestInvalidPayloadField {
+    static abstract class TestNonEmptyClaim {
         abstract String claim();
 
         @Test
@@ -315,4 +345,19 @@ class Helpers {
 
     static TestKeyPair anotherValidSigningKey = new TestKeyPair();
     static TestKeyPair invalidSigningKey = new TestKeyPair();
+
+    static Payload setName(Payload p, String givenName, String familyName, String name) {
+        setOrRemove(p, "given_name", givenName);
+        setOrRemove(p, "family_name", familyName);
+        setOrRemove(p, "name", name);
+        return p;
+    }
+
+    private static void setOrRemove(Payload p, String key, String value) {
+        if (value == null) {
+            p.remove(key);
+        } else {
+            p.put(key, value);
+        }
+    }
 }

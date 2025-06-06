@@ -37,10 +37,13 @@ import com.microsoft.aad.msal4j.ResponseMode;
 import com.microsoft.aad.msal4j.ConfidentialClientApplication;
 import com.microsoft.aad.msal4j.ClientCredentialFactory;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.EmailValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -141,11 +144,13 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         }
 
         var token = parseAndVerifyToken(tokenStr);
+        var name = extractName(token.getClaim("given_name").asString(), token.getClaim("family_name").asString(),
+                token.getClaim("name").toString());
 
         return new UserFromAuthProvider(
                 token.getSubject(),
-                token.getClaim("given_name").asString(),
-                token.getClaim("family_name").asString(),
+                name.getLeft(),
+                name.getRight(),
                 token.getClaim("email").asString(),
                 EmailVerificationStatus.NOT_VERIFIED,
                 null, null, null, null,
@@ -181,8 +186,6 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                     .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", token.getClaim("tid").asString()))
                     .withClaim("sub", notEmpty())
                     .withClaim("email", validEmail())
-                    .withClaim("family_name", notEmpty())
-                    .withClaim("given_name", notEmpty())
                     .build();
             verifier.verify(tokenStr); // TODO: does this check validity of cert?
         } catch (InvalidPublicKeyException e) {
@@ -205,7 +208,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     private BiPredicate<Claim, DecodedJWT> validEmail() {
-        return (c, j) -> EmailValidator.getInstance().isValid(c.asString());
+        return (c, j) -> UserAccountManager.isUserEmailValid(c.toString());
     }
 
     private BiPredicate<Claim, DecodedJWT> validUUID() {
@@ -217,5 +220,23 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                 return false;
             }
         };
+    }
+
+    private Pair<String, String> extractName(String givenName, String familyName,  String name) throws NoUserException {
+        if (UserAccountManager.isUserNameValid(givenName) && UserAccountManager.isUserNameValid(familyName)) {
+            return Pair.of(givenName, familyName);
+        }
+        if (UserAccountManager.isUserNameValid(givenName)) {
+            return Pair.of(givenName, null);
+        }
+        if (UserAccountManager.isUserNameValid(familyName)) {
+            return Pair.of(null, familyName);
+        }
+        if (!name.isEmpty()) {
+            var names = StringUtils.strip(name, "\"").split(" ");
+            var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
+            return extractName(String.join(" ", firstName), names[names.length - 1], null);
+        }
+        throw new NoUserException("Could not determine name");
     }
 }
