@@ -77,6 +77,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -977,8 +978,19 @@ public class PagesFacade extends AbstractIsaacFacade {
                     .flatMap(Collection::stream).collect(Collectors.toList());
             List<GameboardDTO> linkedGameboards = gameManager.getGameboards(allGameboardIds);
 
-            bookPageDTO.setGameboards(linkedGameboards.stream().filter(gb -> gameboardIds.contains(gb.getId())).collect(Collectors.toList()));
-            bookPageDTO.setExtensionGameboards(linkedGameboards.stream().filter(gb -> additionalGameboardIds.contains(gb.getId())).collect(Collectors.toList()));
+            bookPageDTO.setGameboards(linkedGameboards
+                    .stream()
+                    .filter(gb -> gameboardIds.contains(gb.getId()))
+                    .sorted(Comparator.comparingInt(o -> gameboardIds.indexOf(o.getId())))  // maintain original order
+                    .collect(Collectors.toList())
+            );
+
+            bookPageDTO.setExtensionGameboards(linkedGameboards
+                    .stream()
+                    .filter(gb -> additionalGameboardIds.contains(gb.getId()))
+                    .sorted(Comparator.comparingInt(o -> additionalGameboardIds.indexOf(o.getId())))
+                    .collect(Collectors.toList())
+            );
 
             // Log the request:
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
