@@ -20,9 +20,12 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 
 import java.net.URI;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.easymock.EasyMock.*;
@@ -85,6 +88,25 @@ public class AuthenticationFacadeIT extends Helpers {
                     response.assertUserLoggedIn(ERIKA_STUDENT_ID);
                 }
             }
+
+            @Nested
+            class SignUp {
+                @Test
+                public void noMatchedAccount_registersUser() throws Exception {
+                    var nextId = nextUserIdFromDb();
+                    var token = validToken(t -> t, p -> {
+                        p.put("email", "new_student@outlook.com");
+                        p.put("given_name", "New");
+                        p.put("family_name", "Student");
+                        return null;
+                    });
+                    var response = testAuthenticationCallback(token, validQuery);
+                    response.assertUserLoggedIn(nextId);
+                    assertEquals("new_student@outlook.com", response.getUser().getEmail());
+                    assertEquals("New", response.getUser().getGivenName());
+                    assertEquals("Student", response.getUser().getFamilyName());
+                }
+            }
         }
     }
 
@@ -135,17 +157,21 @@ class Helpers extends IsaacIntegrationTest {
 
         void assertUserReturned(String email) throws Exception {
             assertEquals(responseReturned.getStatus(), Response.Status.OK.getStatusCode());
-            assertEquals(responseReturned.readEntity(RegisteredUserDTO.class), userAccountManager.getUserDTOByEmail(email));
+            assertEquals(getUser(), userAccountManager.getUserDTOByEmail(email));
         }
 
         void assertUserLoggedIn(Number userId) throws Exception {
             var capture = rersponsePassedIn.getRight();
             var session = getSessionInformationFromCookie(capture.getValue());
-            assertEquals(session.get("id"), userId.toString());
+            assertEquals(userId.toString(), session.get("id"));
         }
 
         void assertNoUserLoggedIn() {
             assertFalse(rersponsePassedIn.getRight().hasCaptured());
+        }
+
+        RegisteredUserDTO getUser() throws Exception {
+            return responseReturned.readEntity(RegisteredUserDTO.class);
         }
     }
 
@@ -221,4 +247,10 @@ class Helpers extends IsaacIntegrationTest {
 
     static String csrfToken = "the_csrf_token";
     static String validQuery = String.format("?state=%s&code=123", csrfToken);
+
+    static Number nextUserIdFromDb() throws Exception {
+        var users = userAccountManager.findUsers(LongStream.range(0, 100).boxed().collect(Collectors.toList()));
+        var largestIdUser = users.stream().max(Comparator.comparingLong(RegisteredUserDTO::getId));
+        return largestIdUser.map(u -> u.getId() + 1).orElse(null);
+    }
 }
