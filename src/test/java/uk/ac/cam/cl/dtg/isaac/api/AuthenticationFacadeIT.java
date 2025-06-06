@@ -60,7 +60,7 @@ public class AuthenticationFacadeIT extends Helpers {
             public void missingEmail_returnsErrorResponse() throws Exception {
                 var token = validToken(t -> t, p -> p.put("email", null));
                 var response = testAuthenticationCallback(token, validQuery);
-                response.assertError("Unable to locate user information.", Response.Status.UNAUTHORIZED);
+                response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
             }
         }
 
@@ -76,7 +76,7 @@ public class AuthenticationFacadeIT extends Helpers {
                         return null;
                     });
                     var response = testAuthenticationCallback(token, validQuery);
-                    response.assertError("You do not use Microsoft to log in.", Response.Status.FORBIDDEN);
+                    response.assertError(notUsingMicrosoftMessage, Response.Status.FORBIDDEN);
                     response.assertNoUserLoggedIn();
                 }
 
@@ -92,9 +92,10 @@ public class AuthenticationFacadeIT extends Helpers {
             @Nested
             class SignUp {
                 @Test
-                public void noMatchedAccount_registersUser() throws Exception {
+                public void completePayload_registersUser() throws Exception {
                     var nextId = nextUserIdFromDb();
                     var token = validToken(t -> t, p -> {
+                        p.put("sub", "new_student_provider_user_id");
                         p.put("email", "new_student@outlook.com");
                         p.put("given_name", "New");
                         p.put("family_name", "Student");
@@ -105,6 +106,21 @@ public class AuthenticationFacadeIT extends Helpers {
                     assertEquals("new_student@outlook.com", response.getUser().getEmail());
                     assertEquals("New", response.getUser().getGivenName());
                     assertEquals("Student", response.getUser().getFamilyName());
+                }
+
+                @Test
+                public void incompletePayload_returnsError() throws Exception {
+                    var token = validToken(t -> t, p -> {
+                        p.put("sub", "new_student_2_provider_user_id");
+                        p.put("email", "new_student_2@outlook.com");
+                        p.remove("given_name");
+                        p.remove("family_name");
+                        p.remove("name");
+                        return null;
+                    });
+                    var response = testAuthenticationCallback(token, validQuery);
+                    response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
+                    response.assertNoUserLoggedIn();
                 }
             }
         }
@@ -151,7 +167,7 @@ class Helpers extends IsaacIntegrationTest {
         }
 
         void assertError(String message, Response.Status status) {
-            assertTrue(responseReturned.readEntity(SegueErrorResponse.class).getErrorMessage().startsWith(message));
+            assertEquals(responseReturned.readEntity(SegueErrorResponse.class).getErrorMessage(), message);
             assertEquals(status.getStatusCode(), responseReturned.getStatus());
         }
 
@@ -161,6 +177,8 @@ class Helpers extends IsaacIntegrationTest {
         }
 
         void assertUserLoggedIn(Number userId) throws Exception {
+            assertEquals(responseReturned.getStatus(), Response.Status.OK.getStatusCode());
+
             var capture = rersponsePassedIn.getRight();
             var session = getSessionInformationFromCookie(capture.getValue());
             assertEquals(userId.toString(), session.get("id"));
@@ -170,7 +188,7 @@ class Helpers extends IsaacIntegrationTest {
             assertFalse(rersponsePassedIn.getRight().hasCaptured());
         }
 
-        RegisteredUserDTO getUser() throws Exception {
+        RegisteredUserDTO getUser() {
             return responseReturned.readEntity(RegisteredUserDTO.class);
         }
     }
@@ -245,12 +263,15 @@ class Helpers extends IsaacIntegrationTest {
         return session;
     }
 
-    static String csrfToken = "the_csrf_token";
-    static String validQuery = String.format("?state=%s&code=123", csrfToken);
-
     static Number nextUserIdFromDb() throws Exception {
         var users = userAccountManager.findUsers(LongStream.range(0, 100).boxed().collect(Collectors.toList()));
         var largestIdUser = users.stream().max(Comparator.comparingLong(RegisteredUserDTO::getId));
         return largestIdUser.map(u -> u.getId() + 1).orElse(null);
     }
+
+    static String csrfToken = "the_csrf_token";
+    static String validQuery = String.format("?state=%s&code=123", csrfToken);
+    static String notUsingMicrosoftMessage = "You do not use Microsoft to log in. You may have registered using" +
+            " a different provider, or your email address and password.";
+    static String noUserMessage = "Unable to locate user information.";
 }
