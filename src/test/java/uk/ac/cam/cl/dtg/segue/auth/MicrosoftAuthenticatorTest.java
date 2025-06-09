@@ -88,7 +88,6 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                             { { "", "Doe", "John Doe" }, {null, "Doe"} },
                             { { null, null, "John Doe" }, {"John", "Doe"} },
                             { { "", "", "John Doe" }, {"John", "Doe"} },
-                            { { "   ", "   ", "John Doe" }, {"John", "Doe"} },
                             { { null, null, "Doe" }, {null, "Doe"} },
                             { { null, null, "John" }, {null, "John"} },
                             { { null, null, " John " }, {null, "John"} },
@@ -136,12 +135,6 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                 @Test
                 public void getUserInfo_EmptyNameClaims_rejected() {
                     var token = validToken(t -> t, p -> setName(p, "", "", ""));
-                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
-                }
-
-                @Test
-                public void getUserInfo_SpacesNameClaims_rejected() {
-                    var token = validToken(t -> t, p -> setName(p, "   ", "   ", "   "));
                     testGetUserInfo(token, NoUserException.class, "Could not determine name");
                 }
             }

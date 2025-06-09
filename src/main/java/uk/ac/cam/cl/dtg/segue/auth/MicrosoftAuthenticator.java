@@ -221,31 +221,25 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     private Pair<String, String> getName(String givenName, String familyName, DecodedJWT token) throws NoUserException {
-        if (userNameValid(givenName) && userNameValid(familyName)) {
+        if (UserAccountManager.isUserNameValid(givenName) && UserAccountManager.isUserNameValid((familyName))) {
             return Pair.of(givenName, familyName);
         }
-        if (userNameValid(givenName)) {
+        if (UserAccountManager.isUserNameValid((givenName))) {
             return Pair.of(givenName, null);
         }
-        if (userNameValid(familyName)) {
+        if (UserAccountManager.isUserNameValid((familyName))) {
             return Pair.of(null, familyName);
         }
 
         if (token != null) {
-            var name = token.getClaim("name").asString();
-            if (name != null) {
+            try {
+                var name = token.getClaim("name").asString();
                 var names = StringUtils.split(name, " ");
-                if (names.length > 0) {
-                    var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
-                    return getName(String.join(" ", firstName), names[names.length - 1], null);
-                }
-            }
+                var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
+                return getName(String.join(" ", firstName), names[names.length - 1], null);
+            } catch (Exception ignored) {}
         }
+
         throw new NoUserException("Could not determine name");
     }
-
-    private boolean userNameValid(String name) {
-        return UserAccountManager.isUserNameValid(name) && !name.replaceAll(" ", "").isEmpty();
-    }
-
 }
