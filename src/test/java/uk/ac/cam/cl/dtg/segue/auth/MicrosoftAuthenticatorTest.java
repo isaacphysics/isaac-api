@@ -352,7 +352,7 @@ class Helpers {
         return new MicrosoftAuthenticator(
                 clientId, tenantId, "", "http://localhost:8888/keys", "") {
             {
-                MicrosoftAuthenticator.credentialStore = store;
+                credentialStore = store;
             }
         };
     }
