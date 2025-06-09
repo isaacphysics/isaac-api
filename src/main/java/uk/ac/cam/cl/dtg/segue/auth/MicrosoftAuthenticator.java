@@ -15,10 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import com.auth0.jwk.InvalidPublicKeyException;
-import com.auth0.jwk.JwkException;
-import com.auth0.jwk.JwkProvider;
-import com.auth0.jwk.UrlJwkProvider;
+import com.auth0.jwk.*;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.IncorrectClaimException;
@@ -58,18 +55,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 
 public class MicrosoftAuthenticator implements IOAuth2Authenticator {
-    final int CREDENTIAL_CACHE_TTL_MINUTES = 10;
-    protected Cache<String, String> credentialStore = CacheBuilder
-            .newBuilder()
-            .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
-            .build();
-
     private final String scopes = "email";
     private final String clientId;
     private final String tenantId;
     private final String clientSecret;
-    private final JwkProvider provider;
     private final String redirectUrl;
+
+    private final JwkProvider jwkProvider;
+    protected Cache<String, String> credentialStore;
 
     @Inject
     public MicrosoftAuthenticator(
@@ -82,8 +75,14 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         this.clientId = clientId;
         this.tenantId = tenantId;
         this.clientSecret = clientSecret;
-        provider = new UrlJwkProvider(new URL(jwksUrl));
         this.redirectUrl = redirectUrL;
+
+        jwkProvider = new JwkProviderBuilder(new URL(jwksUrl)).cached(10, 1, TimeUnit.HOURS).build();
+        int CREDENTIAL_CACHE_TTL_MINUTES = 10;
+        credentialStore = CacheBuilder
+                .newBuilder()
+                .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
+                .build();
     }
 
     @Override
@@ -177,7 +176,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         var token = JWT.decode(tokenStr);
         try {
             var keyId = token.getKeyId();
-            var jwk = provider.get(keyId);
+            var jwk = jwkProvider.get(keyId);
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
             JWT.require(algorithm)
                     .withAudience(clientId)

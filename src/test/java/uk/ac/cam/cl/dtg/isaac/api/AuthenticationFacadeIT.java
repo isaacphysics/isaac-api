@@ -21,12 +21,12 @@ import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 
 import java.net.URI;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,6 +123,20 @@ public class AuthenticationFacadeIT extends Helpers {
                     response.assertNoUserLoggedIn();
                 }
             }
+
+            @Test
+            public void cachesJwksCalls() throws Exception {
+                var server = startKeySetServer(8888, List.of(validSigningKey));
+                try {
+                    var subject = subject(validToken(t -> t, p -> p));
+                    var url = String.format("http://isaacphysics.org/auth/microsoft/callback%s", validQuery);
+                    subject.authenticationCallback(request(url), response().getLeft(), "microsoft");
+                    subject.authenticationCallback(request(url), response().getLeft(), "microsoft");
+                    assertEquals(1, server.getRight().getRequestCount());
+                } finally {
+                    server.getLeft().stop();
+                };
+            }
         }
     }
 
@@ -195,14 +209,14 @@ class Helpers extends IsaacIntegrationTest {
 
     public CallbackResponse testAuthenticationCallback(String token, String query) throws Exception {
         var subject = subject(token);
-        var keySetServer = IsaacTest.startKeySetServer(8888, Stream.of(validSigningKey));
+        var keySetServer = IsaacTest.startKeySetServer(8888, List.of(validSigningKey));
         try {
             var url = String.format("http://isaacphysics.org/auth/microsoft/callback%s", query);
             var passedResponse = response();
             var response = subject.authenticationCallback(request(url), passedResponse.getLeft(), "microsoft");
             return new CallbackResponse(response, passedResponse);
         } finally {
-            keySetServer.stop();
+            keySetServer.getLeft().stop();
         }
     }
 

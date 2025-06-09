@@ -340,11 +340,11 @@ class Helpers {
         var store = getStore();
         var subject = subject(store);
         store.put("the_internal_id", token);
-        var keySetServer = startKeySetServer(8888, Stream.of(validSigningKey, anotherValidSigningKey));
+        var keySetServer = startKeySetServer(8888, List.of(validSigningKey, anotherValidSigningKey));
         try {
             return subject.getUserInfo("the_internal_id");
         } finally {
-            keySetServer.stop();
+            keySetServer.getLeft().stop();
         }
     }
 
