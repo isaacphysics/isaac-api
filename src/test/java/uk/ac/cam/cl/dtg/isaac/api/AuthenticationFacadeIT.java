@@ -209,7 +209,7 @@ class Helpers extends IsaacIntegrationTest {
     static AuthenticationFacade subject(String token) {
         try {
             var microsoftAuthenticator = new MicrosoftAuthenticator(clientId, tenantId, null,
-                    "http://localhost:8888/keys") {
+                    "http://localhost:8888/keys", "") {
                 public String exchangeCode(String authorizationCode) {
                     var internalCredentialID = UUID.randomUUID().toString();
                     if (null != token) {

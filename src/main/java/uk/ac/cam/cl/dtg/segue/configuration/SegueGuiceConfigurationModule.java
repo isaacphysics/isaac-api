@@ -369,6 +369,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.MICROSOFT_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.MICROSOFT_TENANT_ID, globalProperties);
         this.bindConstantToProperty(MICROSOFT_JWKS_URL, globalProperties);
+        this.bindConstantToProperty(MICROSOFT_REDIRECT_URL, globalProperties);
         mapBinder.addBinding(AuthenticationProvider.MICROSOFT).to(MicrosoftAuthenticator.class);
 
         // Facebook

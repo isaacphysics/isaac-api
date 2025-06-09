@@ -66,23 +66,25 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             .build();
 
     private final String scopes = "email";
-    private final String callbackURL = "http://localhost:8004/auth/microsoft/callback";
     private final String clientId;
     private final String tenantId;
     private final String clientSecret;
     private final JwkProvider provider;
+    private final String redirectUrl;
 
     @Inject
     public MicrosoftAuthenticator(
             @Named(Constants.MICROSOFT_CLIENT_ID) final String clientId,
             @Named(Constants.MICROSOFT_TENANT_ID) final String tenantId,
             @Named(Constants.MICROSOFT_SECRET) final String clientSecret,
-            @Named(Constants.MICROSOFT_JWKS_URL) final String jwksUrl
+            @Named(Constants.MICROSOFT_JWKS_URL) final String jwksUrl,
+            @Named(Constants.MICROSOFT_REDIRECT_URL) final String redirectUrL
     ) throws MalformedURLException {
         this.clientId = clientId;
         this.tenantId = tenantId;
         this.clientSecret = clientSecret;
         provider = new UrlJwkProvider(new URL(jwksUrl));
+        this.redirectUrl = redirectUrL;
     }
 
     @Override
@@ -98,7 +100,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     @Override
     public String getAuthorizationUrl(String antiForgeryStateToken) {
         var parameters = AuthorizationRequestUrlParameters
-                .builder(callbackURL, Collections.singleton(scopes))
+                .builder(redirectUrl, Collections.singleton(scopes))
                 .responseMode(ResponseMode.QUERY)
                 .prompt(Prompt.SELECT_ACCOUNT)
                 .state(antiForgeryStateToken)
@@ -123,7 +125,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     public String exchangeCode(String authorizationCode) throws CodeExchangeException {
         try {
             var authParams = AuthorizationCodeParameters
-                    .builder(authorizationCode, new URI(callbackURL)).scopes(Collections.singleton(scopes))
+                    .builder(authorizationCode, new URI(redirectUrl)).scopes(Collections.singleton(scopes))
                     .build();
             var result = microsoftClient().acquireToken(authParams).get();
 
@@ -230,7 +232,6 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         if (UserAccountManager.isUserNameValid((familyName))) {
             return Pair.of(null, familyName);
         }
-
         if (token != null) {
             try {
                 var name = token.getClaim("name").asString();

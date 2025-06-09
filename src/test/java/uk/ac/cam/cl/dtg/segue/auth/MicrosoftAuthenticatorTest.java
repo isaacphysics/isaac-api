@@ -184,12 +184,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
 
             @Test
             public void getUserInfo_noSuchToken_throwsError() throws MalformedURLException {
-                var subject = new MicrosoftAuthenticator(
-                        clientId, "", "", "http://localhost:8888/keys") {
-                    {
-                        MicrosoftAuthenticator.credentialStore = getStore();
-                    }
-                };
+                var subject = subject(getStore());
                 var error = assertThrows(AuthenticatorSecurityException.class,
                         () -> subject.getUserInfo("no_token_for_id"));
                 assertEquals("Token verification: TOKEN_MISSING", error.getMessage());
@@ -343,12 +338,7 @@ class Helpers {
 
     static UserFromAuthProvider testGetUserInfo(String token) throws Throwable {
         var store = getStore();
-        var subject = new MicrosoftAuthenticator(
-                clientId, tenantId, "", "http://localhost:8888/keys") {
-            {
-                MicrosoftAuthenticator.credentialStore = store;
-            }
-        };
+        var subject = subject(store);
         store.put("the_internal_id", token);
         var keySetServer = startKeySetServer(8888, Stream.of(validSigningKey, anotherValidSigningKey));
         try {
@@ -356,6 +346,15 @@ class Helpers {
         } finally {
             keySetServer.stop();
         }
+    }
+
+    static MicrosoftAuthenticator subject(Cache<String, String> store ) throws MalformedURLException{
+        return new MicrosoftAuthenticator(
+                clientId, tenantId, "", "http://localhost:8888/keys", "") {
+            {
+                MicrosoftAuthenticator.credentialStore = store;
+            }
+        };
     }
 
     static <T extends Exception> void testGetUserInfo(String token, Class<T> errorClass, String errorMessage) {
