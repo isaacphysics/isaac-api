@@ -88,6 +88,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                             { { "", "Doe", "John Doe" }, {null, "Doe"} },
                             { { null, null, "John Doe" }, {"John", "Doe"} },
                             { { "", "", "John Doe" }, {"John", "Doe"} },
+                            { { "   ", "   ", "John Doe" }, {"John", "Doe"} },
                             { { null, null, "Doe" }, {null, "Doe"} },
                             { { null, null, "John" }, {null, "John"} },
                             { { null, null, " John " }, {null, "John"} },
@@ -95,7 +96,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                             { { null, null, "John  " }, {null, "John"} },
                             { { null, null, "John Joanne Doe" }, {"John Joanne", "Doe"} },
                             { { null, null, "John Joanne Josephine Doe" }, {"John Joanne Josephine", "Doe"} },
-                            { { null, null, "John  Joanne   Josephine   Doe " }, {"John  Joanne   Josephine  ", "Doe"} },
+                            { { null, null, "John  Joanne   Josephine   Doe " }, {"John Joanne Josephine", "Doe"} },
                     });
                 }
 
@@ -112,7 +113,37 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                     assertEquals(expectedOutput[0], userInfo.getGivenName(), String.format("given name failed for %s", Arrays.toString(input)));
                     assertEquals(expectedOutput[1], userInfo.getFamilyName(), String.format("last name failed for %s", Arrays.toString(input)));
                 }
+            }
 
+            public static class TestInvalidNameClaims {
+                @Test
+                public void getUserInfo_MissingNameClaims_rejected() {
+                    var token = validToken(t -> t, p -> setName(p, null, null, null));
+                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                }
+
+                @Test
+                public void getUserInfo_nullNameClaims_rejected() {
+                    var token = validToken(t -> t, p -> {
+                        p.put("given_name", null);
+                        p.put("family_name", null);
+                        p.put("name", null);
+                        return null;
+                    });
+                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                }
+
+                @Test
+                public void getUserInfo_EmptyNameClaims_rejected() {
+                    var token = validToken(t -> t, p -> setName(p, "", "", ""));
+                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                }
+
+                @Test
+                public void getUserInfo_SpacesNameClaims_rejected() {
+                    var token = validToken(t -> t, p -> setName(p, "   ", "   ", "   "));
+                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                }
             }
 
             public static class TestTidClaim extends TestNonEmptyClaim {
@@ -128,7 +159,7 @@ public class MicrosoftAuthenticatorTest extends Helpers {
                 }
 
                 @Test
-                public void getUserInfo_tidValidFollowdByInvalid_throwsError() {
+                public void getUserInfo_tidPrefixValid_throwsError() {
                     var token = validToken(t -> t, p -> p.put("tid", format("%s/hello/", msTenantId)));
                     testGetUserInfo(token, NoUserException.class,
                             format("Required field 'tid' missing from identity provider's response."));

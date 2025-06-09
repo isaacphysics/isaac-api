@@ -39,7 +39,6 @@ import com.microsoft.aad.msal4j.ClientCredentialFactory;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.validator.routines.EmailValidator;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -144,8 +143,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         }
 
         var token = parseAndVerifyToken(tokenStr);
-        var name = extractName(token.getClaim("given_name").asString(), token.getClaim("family_name").asString(),
-                token.getClaim("name").toString());
+        var name = getName(token.getClaim("given_name").asString(), token.getClaim("family_name").asString(), token);
 
         return new UserFromAuthProvider(
                 token.getSubject(),
@@ -180,20 +178,20 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var keyId = token.getKeyId();
             var jwk = provider.get(keyId);
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
-            var verifier = JWT.require(algorithm)
+            JWT.require(algorithm)
                     .withAudience(clientId)
                     .withClaim("tid", validUUID())
                     .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", token.getClaim("tid").asString()))
                     .withClaim("sub", notEmpty())
                     .withClaim("email", validEmail())
-                    .build();
-            verifier.verify(tokenStr); // TODO: does this check validity of cert?
+                    .build()
+                    .verify(tokenStr); // TODO: does this check validity of cert?
         } catch (InvalidPublicKeyException e) {
             throw new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY");
         } catch (MissingClaimException | IncorrectClaimException e) {
             String claimName = e instanceof MissingClaimException ?
                     ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
-            if (List.of("sub", "tid", "email", "family_name", "given_name").contains(claimName)) {
+            if (List.of("sub", "tid", "email").contains(claimName)) {
                 throw new NoUserException(String.format("Required field '%s' missing from identity provider's response.", claimName));
             }
             throw e;
@@ -222,21 +220,32 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         };
     }
 
-    private Pair<String, String> extractName(String givenName, String familyName,  String name) throws NoUserException {
-        if (UserAccountManager.isUserNameValid(givenName) && UserAccountManager.isUserNameValid(familyName)) {
+    private Pair<String, String> getName(String givenName, String familyName, DecodedJWT token) throws NoUserException {
+        if (userNameValid(givenName) && userNameValid(familyName)) {
             return Pair.of(givenName, familyName);
         }
-        if (UserAccountManager.isUserNameValid(givenName)) {
+        if (userNameValid(givenName)) {
             return Pair.of(givenName, null);
         }
-        if (UserAccountManager.isUserNameValid(familyName)) {
+        if (userNameValid(familyName)) {
             return Pair.of(null, familyName);
         }
-        if (!name.isEmpty()) {
-            var names = StringUtils.strip(name, "\"").split(" ");
-            var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
-            return extractName(String.join(" ", firstName), names[names.length - 1], null);
+
+        if (token != null) {
+            var name = token.getClaim("name").asString();
+            if (name != null) {
+                var names = StringUtils.split(name, " ");
+                if (names.length > 0) {
+                    var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
+                    return getName(String.join(" ", firstName), names[names.length - 1], null);
+                }
+            }
         }
         throw new NoUserException("Could not determine name");
     }
+
+    private boolean userNameValid(String name) {
+        return UserAccountManager.isUserNameValid(name) && !name.replaceAll(" ", "").isEmpty();
+    }
+
 }
