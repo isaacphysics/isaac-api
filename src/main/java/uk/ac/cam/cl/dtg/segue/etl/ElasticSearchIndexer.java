@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -126,31 +125,14 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
     void bulkIndexWithIDs(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
             throws SegueSearchException {
-
-        Iterables.partition(dataToIndex, 1000)
-                .forEach(
-                        batch -> {
-                            try {
-
-                                executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
-                                    // build bulk request, ids of data items are specified by their keys
-                                    BulkRequest bulkRequest = new BulkRequest();
-                                    batch.forEach(itemToIndex -> bulkRequest.add(
-                                            new IndexRequest(typedIndex).id(itemToIndex.getKey()).source(itemToIndex.getValue(), XContentType.JSON)
-                                    ));
-                                    return bulkRequest;
-                                });
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                );
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
+        executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
+            // build bulk request, ids of data items are specified by their keys
+            BulkRequest bulkRequest = new BulkRequest();
+            dataToIndex.forEach(itemToIndex -> bulkRequest.add(
+                    new IndexRequest(typedIndex).id(itemToIndex.getKey()).source(itemToIndex.getValue(), XContentType.JSON)
+            ));
+            return bulkRequest;
+        });
     }
 
 
