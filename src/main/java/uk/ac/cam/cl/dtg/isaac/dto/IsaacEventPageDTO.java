@@ -95,6 +95,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param location where the event will occur
    * @param preResources resources to be provided to attendees before the event
    * @param postResources resources to be provided to attendees after the event
+   * @param eventSurveyTitle a survey title of event that will be sent to attendees after the event
    * @param eventSurveyUrl a survey Url will be sent to attendees after the event
    * @param eventThumbnail thumbnail image for event
    * @param numberOfPlaces maximum number of booking places to allow
@@ -128,6 +129,7 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("location") final Location location,
       @JsonProperty("preResources") final List<ExternalReference> preResources,
       @JsonProperty("postResources") final List<ExternalReference> postResources,
+      @JsonProperty("eventSurveyTitle") final String eventSurveyTitle,
       @JsonProperty("eventSurveyUrl") final String eventSurveyUrl,
       @JsonProperty("eventThumbnail") final ImageDTO eventThumbnail,
       @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
@@ -149,6 +151,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     this.location = location;
     this.preResources = preResources;
     this.postResources = postResources;
+    this.eventSurveyTitle = eventSurveyTitle;
     this.eventSurveyUrl = eventSurveyUrl;
     this.eventThumbnail = eventThumbnail;
     this.numberOfPlaces = numberOfPlaces;
@@ -316,9 +319,29 @@ public class IsaacEventPageDTO extends ContentDTO {
   }
 
   /**
-   * Gets the eventSurvey.
+   * Gets the eventSurveyTitle.
    *
-   * @return the eventSurvey
+   * @return the eventSurveyTitle
+   */
+  @JsonIgnore
+  public String getEventSurveyTitle() {
+    return eventSurveyTitle;
+  }
+
+  /**
+   * Sets the eventSurveyTitle.
+   *
+   * @param eventSurveyTitle
+   *            the eventSurveyTitle to set
+   */
+  public void setEventSurveyTitle(final String eventSurveyTitle) {
+    this.eventSurveyTitle = eventSurveyTitle;
+  }
+
+  /**
+   * Gets the eventSurveyUrl.
+   *
+   * @return the eventSurveyUrl
    */
   @JsonIgnore
   public String getEventSurveyUrl() {
@@ -326,10 +349,10 @@ public class IsaacEventPageDTO extends ContentDTO {
   }
 
   /**
-   * Sets the eventSurvey.
+   * Sets the eventSurveyUrl.
    *
    * @param eventSurveyUrl
-   *            the eventSurvey to set
+   *            the eventSurveyUrl to set
    */
   public void setEventSurveyUrl(final String eventSurveyUrl) {
     this.eventSurveyUrl = eventSurveyUrl;
