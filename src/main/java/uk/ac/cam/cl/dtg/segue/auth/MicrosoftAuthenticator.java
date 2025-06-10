@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -115,8 +116,12 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String extractAuthCode(String url) {
-        return new AuthorizationCodeResponseUrl(url).getCode();
+    public String extractAuthCode(String url) throws AuthenticationCodeException{
+        try {
+            return new AuthorizationCodeResponseUrl(url).getCode();
+        } catch (Exception e) {
+            throw new AuthenticationCodeException("Error extracting authentication code.");
+        }
     }
 
     @Override

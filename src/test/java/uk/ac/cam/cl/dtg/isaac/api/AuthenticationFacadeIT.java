@@ -45,9 +45,10 @@ public class AuthenticationFacadeIT extends Helpers {
             }
 
             @Test
-            public void authCodeMissing_throwsException() {
+            public void authCodeMissing_throwsException() throws Exception {
                 var query = String.format("?state=%s", csrfToken);
-                assertThrows(IllegalArgumentException.class, () -> testAuthenticationCallback(null, query));
+                var response = testAuthenticationCallback(null, query);
+                response.assertError("Error extracting authentication code.", Response.Status.UNAUTHORIZED);
             }
 
             @Test
