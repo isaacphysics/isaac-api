@@ -19,6 +19,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EVENT_GROUP_RESERVATION_DEFAULT_LIMIT;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.List;
@@ -49,7 +50,8 @@ public class IsaacEventPage extends Content {
 
   private List<ExternalReference> preResources;
   private List<Content> preResourceContent;
-  private String eventSurvey;
+  private String eventSurveyTitle;
+  private String eventSurveyUrl;
 
   private String emailEventDetails;
 
@@ -87,7 +89,8 @@ public class IsaacEventPage extends Content {
    * @param location where the event will occur
    * @param preResources resources to be provided to attendees before the event
    * @param postResources resources to be provided to attendees after the event
-   * @param eventSurvey a survey will be sent to attendees after the event
+   * @param eventSurveyTitle a survey title of event that will be sent to attendees after the event
+   * @param eventSurveyUrl a survey Url will be sent to attendees after the event
    * @param eventThumbnail thumbnail image for event
    * @param numberOfPlaces maximum number of booking places to allow
    * @param eventStatus status of event {@link EventStatus}
@@ -119,7 +122,8 @@ public class IsaacEventPage extends Content {
                         @JsonProperty("location") final Location location,
                         @JsonProperty("preResources") final List<ExternalReference> preResources,
                         @JsonProperty("postResources") final List<ExternalReference> postResources,
-                        @JsonProperty("eventSurvey") final String eventSurvey,
+                        @JsonProperty("eventSurveyTitle") final String eventSurveyTitle,
+                        @JsonProperty("eventSurveyUrl") final String eventSurveyUrl,
                         @JsonProperty("eventThumbnail") final Image eventThumbnail,
                         @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
                         @JsonProperty("EventStatus") final EventStatus eventStatus,
@@ -139,7 +143,8 @@ public class IsaacEventPage extends Content {
     this.location = location;
     this.preResources = preResources;
     this.postResources = postResources;
-    this.eventSurvey = eventSurvey;
+    this.eventSurveyTitle = eventSurveyTitle;
+    this.eventSurveyUrl = eventSurveyUrl;
     this.eventThumbnail = eventThumbnail;
     this.numberOfPlaces = numberOfPlaces;
     this.eventStatus = eventStatus;
@@ -334,21 +339,41 @@ public class IsaacEventPage extends Content {
   }
 
   /**
-   * Gets the eventSurvey.
+   * Gets the eventSurveyTitle.
    *
-   * @return the eventSurvey
+   * @return the eventSurveyTitle
    */
-  public String getEventSurvey() {
-    return eventSurvey;
+  @JsonIgnore
+  public String getEventSurveyTitle() {
+    return eventSurveyTitle;
   }
 
   /**
-   * Sets the eventSurvey.
+   * Sets the eventSurveyTitle.
    *
-   * @param eventSurvey the eventSurvey to set
+   * @param eventSurveyTitle the eventSurveyTitle to set
    */
-  public void setEventSurvey(final String eventSurvey) {
-    this.eventSurvey = eventSurvey;
+  public void setEventSurveyTitle(final String eventSurveyTitle) {
+    this.eventSurveyTitle = eventSurveyTitle;
+  }
+
+  /**
+   * Gets the eventSurveyUrl.
+   *
+   * @return the eventSurveyUrl
+   */
+  @JsonIgnore
+  public String getEventSurveyUrl() {
+    return eventSurveyUrl;
+  }
+
+  /**
+   * Sets the eventSurveyUrl.
+   *
+   * @param eventSurveyUrl the eventSurveyUrl to set
+   */
+  public void setEventSurveyUrl(final String eventSurveyUrl) {
+    this.eventSurveyUrl = eventSurveyUrl;
   }
 
   /**
