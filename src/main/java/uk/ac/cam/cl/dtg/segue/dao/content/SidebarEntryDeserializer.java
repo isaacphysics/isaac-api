@@ -55,7 +55,7 @@ public class SidebarEntryDeserializer extends JsonDeserializer<SidebarEntry> {
         ObjectNode root = getSingletonItemMapper().readTree(jsonParser);
 
         if (null == root.get("type")) {
-            throw new JsonMappingException("Error: JSON missing 'type' property!");
+            throw JsonMappingException.from(jsonParser, "Error: JSON missing 'type' property!");
         }
 
         String contentType = root.get("type").textValue();
