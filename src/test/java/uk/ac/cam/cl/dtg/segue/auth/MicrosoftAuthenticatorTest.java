@@ -32,7 +32,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
-import java.net.MalformedURLException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,6 +40,43 @@ import static uk.ac.cam.cl.dtg.isaac.IsaacTest.*;
 
 @RunWith(Enclosed.class)
 public class MicrosoftAuthenticatorTest {
+    @RunWith(Parameterized.class)
+    public static class TestInitialisation extends Helpers {
+        @Parameterized.Parameters(name="{0}")
+        public static Collection<Object[]> data() {
+            return Arrays.asList(new Object[][] {
+                    { "client_id", (C) v -> new MicrosoftAuthenticator(v, tenantId, clientSecret, jwksUrl, redirectUrl) },
+                    { "tenant_id", (C) v -> new MicrosoftAuthenticator(clientId, v, clientSecret, jwksUrl, redirectUrl) },
+                    { "client_secret", (C) v -> new MicrosoftAuthenticator(clientId, tenantId, v, jwksUrl, redirectUrl) },
+                    { "jwks_url", (C) v -> new MicrosoftAuthenticator(clientId, tenantId, clientSecret, v, redirectUrl) },
+                    { "redirect_url", (C) v -> new MicrosoftAuthenticator(clientId, tenantId, clientSecret, jwksUrl, v) },
+            });
+        }
+
+        @Parameterized.Parameter()
+        public String field;
+
+        @Parameterized.Parameter(1)
+        public C consumer;
+
+        @Test
+        public void microsoftAuthenticator_nullValue_throwsError() {
+            Executable act = () -> consumer.consume(null);
+            assertError(act, NullPointerException.class, format("Missing %s, can't be \"null\".", field));
+        }
+
+        @Test
+        public void microsoftAuthenticator_emptyValue_throwsError() {
+            Executable act = () -> consumer.consume("");
+            assertError(act, IllegalArgumentException.class, format("Missing %s, can't be \"\".", field));
+        }
+
+        @FunctionalInterface
+        public interface C  {
+            void consume(String t) throws Exception;
+        }
+    }
+
     // Contains tests for:
     // 1) getAuthorizationUrl, 2) extractAuthCode, 3) getAntiForgeryStateToken, 4) getUserInfo,
     // 5) getAuthenticationProvider, 6) exchangeCode
@@ -309,9 +345,8 @@ public class MicrosoftAuthenticatorTest {
 }
 
 class Helpers {
-    static MicrosoftAuthenticator subject(Cache<String, String> store ) throws MalformedURLException{
-        return new MicrosoftAuthenticator(
-                clientId, tenantId, "the_client_secret", "http://localhost:8888/keys", "http://example.com") {
+    static MicrosoftAuthenticator subject(Cache<String, String> store ) {
+        return new MicrosoftAuthenticator(clientId, tenantId, clientSecret, jwksUrl, redirectUrl) {
             {
                 credentialStore = store;
             }
@@ -326,6 +361,10 @@ class Helpers {
         var error = assertThrows(errorClass, action);
         assertEquals(errorMessage, error.getMessage());
     }
+
+    static String clientSecret = "the_client_secret";
+    static String jwksUrl = "http://localhost:8888/keys";
+    static String redirectUrl = "http://the.redirect.url";
 }
 
 class GetUserInfoHelpers extends Helpers {

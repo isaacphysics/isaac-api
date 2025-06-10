@@ -37,6 +37,7 @@ import com.microsoft.aad.msal4j.ConfidentialClientApplication;
 import com.microsoft.aad.msal4j.ClientCredentialFactory;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
@@ -49,7 +50,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.math.BigInteger;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
@@ -62,7 +62,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private final String clientId;
     private final String tenantId;
     private final String clientSecret;
-    private final String redirectUrl;
+    private final URL redirectUrl;
 
     private final JwkProvider jwkProvider;
     protected Cache<String, String> credentialStore;
@@ -74,17 +74,15 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             @Named(Constants.MICROSOFT_SECRET) final String clientSecret,
             @Named(Constants.MICROSOFT_JWKS_URL) final String jwksUrl,
             @Named(Constants.MICROSOFT_REDIRECT_URL) final String redirectUrL
-    ) throws MalformedURLException {
-        this.clientId = clientId;
-        this.tenantId = tenantId;
-        this.clientSecret = clientSecret;
-        this.redirectUrl = redirectUrL;
-
-        jwkProvider = new JwkProviderBuilder(new URL(jwksUrl)).cached(10, 1, TimeUnit.HOURS).build();
-        int CREDENTIAL_CACHE_TTL_MINUTES = 10;
-        credentialStore = CacheBuilder
-                .newBuilder()
-                .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
+    )  {
+        this.clientId = Validate.notBlank(clientId, "Missing client_id, can't be \"%s\".", clientId);
+        this.tenantId = Validate.notBlank(tenantId, "Missing tenant_id, can't be \"%s\".", tenantId);
+        this.clientSecret = Validate.notBlank(clientSecret, "Missing client_secret, can't be \"%s\".", clientSecret);
+        this.redirectUrl = validateURL(redirectUrL, "Missing redirect_url, can't be \"%s\".");
+        var parsedJWKSUrl = validateURL(jwksUrl, "Missing jwks_url, can't be \"%s\".");
+        this.jwkProvider = new JwkProviderBuilder(parsedJWKSUrl).cached(10, 1, TimeUnit.HOURS).build();
+        this.credentialStore = CacheBuilder.newBuilder()
+                .expireAfterAccess(10, TimeUnit.MINUTES)
                 .build();
     }
 
@@ -101,7 +99,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     @Override
     public String getAuthorizationUrl(String antiForgeryStateToken) {
         var parameters = AuthorizationRequestUrlParameters
-                .builder(redirectUrl, Collections.singleton(scopes))
+                .builder(redirectUrl.toString(), Collections.singleton(scopes))
                 .responseMode(ResponseMode.QUERY)
                 .prompt(Prompt.SELECT_ACCOUNT)
                 .state(antiForgeryStateToken)
@@ -130,7 +128,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     public String exchangeCode(String authorizationCode) throws CodeExchangeException {
         try {
             var authParams = AuthorizationCodeParameters
-                    .builder(authorizationCode, new URI(redirectUrl)).scopes(Collections.singleton(scopes))
+                    .builder(authorizationCode, redirectUrl.toURI()).scopes(Collections.singleton(scopes))
                     .build();
             var result = microsoftClient().acquireToken(authParams).get();
 
@@ -252,5 +250,16 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         }
 
         throw new NoUserException("Could not determine name");
+    }
+
+    private static URL validateURL(String urlString, String message) {
+        try {
+            return new URL(urlString);
+        } catch (MalformedURLException e ) {
+            if (null == urlString) {
+                throw new NullPointerException(String.format(message, urlString));
+            }
+            throw new IllegalArgumentException(String.format(message, urlString));
+        }
     }
 }
