@@ -23,6 +23,7 @@ import com.google.common.cache.CacheBuilder;
 
 import org.junit.Before;
 import org.junit.experimental.runners.Enclosed;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 
@@ -30,6 +31,7 @@ import org.junit.runners.Parameterized;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest.TestKeyPair;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
@@ -50,6 +52,15 @@ public class MicrosoftAuthenticatorTest {
         public final void setUp() throws Exception {
             this.oauth2Authenticator = Helpers.subject(Helpers.getStore());
             this.authenticator = this.oauth2Authenticator;
+        }
+    }
+
+    public static class TestExtractAuthCode extends Helpers {
+        /** test for happy path: {@link IOAuth2AuthenticatorTest#extractAuthCode_givenValidUrl_returnsCorrectCode} */
+        @Test
+        public void extractAuthCode_givenInvalidUrl_throwsError() {
+            Executable act = () -> subject(getStore()).extractAuthCode("http://example.com");
+            assertError(act, AuthenticationCodeException.class, "Error extracting authentication code.");
         }
     }
 
@@ -327,6 +338,11 @@ class Helpers {
     static Cache<String, String> getStore() {
         return CacheBuilder.newBuilder().build();
     }
+
+    static <T extends Exception> void assertError(Executable action, Class<T> errorClass, String errorMessage) {
+        var error = assertThrows(errorClass, action);
+        assertEquals(errorMessage, error.getMessage());
+    }
 }
 
 class GetUserInfoHelpers extends Helpers {
@@ -375,8 +391,7 @@ class GetUserInfoHelpers extends Helpers {
     }
 
     static <T extends Exception> void testGetUserInfo(String token, Class<T> errorClass, String errorMessage) {
-        var error = assertThrows(errorClass, () -> testGetUserInfo(token));
-        assertEquals(errorMessage, error.getMessage());
+        assertError(() -> testGetUserInfo(token), errorClass, errorMessage);
     }
 
     static Payload setName(Payload p, String givenName, String familyName, String name) {
