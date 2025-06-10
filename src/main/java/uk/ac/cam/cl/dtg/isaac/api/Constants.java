@@ -181,6 +181,7 @@ public final class Constants {
         VIEW_QUESTION,
         VIEW_QUIZ_RUBRIC,
         VIEW_QUIZ_SECTION,
+        VIEW_REVISION_DETAIL_PAGE,
         VIEW_TOPIC_SUMMARY_PAGE,
         VIEW_USER_PROGRESS,
     }

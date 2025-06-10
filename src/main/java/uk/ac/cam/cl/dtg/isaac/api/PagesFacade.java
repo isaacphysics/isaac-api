@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.IsaacBookDetailPage;
+import uk.ac.cam.cl.dtg.isaac.dos.content.IsaacRevisionDetailPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
@@ -45,6 +46,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.IsaacBookDetailPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.IsaacRevisionDetailPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
@@ -771,6 +773,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
                 // Unlikely we want to augment with a user's actual question attempts. Use an empty Map.
                 augmentContentWithRelatedContent(content, Collections.emptyMap());
+                contentManager.populateSidebar(content);
 
                 // the request log
                 ImmutableMap<String, String> logEntry = ImmutableMap.of(
@@ -897,7 +900,10 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             ContentDTO contentDTO = contentManager.getContentById(bookId, true);
             if (contentDTO instanceof IsaacBookIndexPageDTO) {
+                IsaacBookIndexPageDTO indexPageDTO = (IsaacBookIndexPageDTO) contentDTO;
+
                 // Unlikely we want to augment with related content here!
+                contentManager.populateSidebar(indexPageDTO);
 
                 // Log the page view:
                 getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
@@ -906,7 +912,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                                 CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
                         ));
 
-                return Response.ok(contentDTO)
+                return Response.ok(indexPageDTO)
                         .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                         .tag(etag)
                         .build();
@@ -969,6 +975,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             // Augment related content:
             this.augmentContentWithRelatedContent(bookPageDTO, Collections.emptyMap());
+            contentManager.populateSidebar(bookPageDTO);
 
             // Augment linked gameboards using the list in the DO:
             // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
@@ -1007,6 +1014,76 @@ public class PagesFacade extends AbstractIsaacFacade {
             return error.toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load book detail page.").toResponse();
+        }
+    }
+
+    /**
+     *   Endpoint that gets a revision detail page from the given id.
+     *
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param revisionPageId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/revision/detail/{revision_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a revision detail page by ID.")
+    public final Response getRevisionDetailPage(@Context final Request request,
+                                            @Context final HttpServletRequest httpServletRequest,
+                                            @PathParam("revision_page_id") final String revisionPageId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + revisionPageId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        try {
+            // Load the summary page:
+            Content contentDOById = this.contentManager.getContentDOById(revisionPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
+
+            if (!(contentDOById instanceof IsaacRevisionDetailPage
+                    && contentDTOById instanceof IsaacRevisionDetailPageDTO)) {
+                return SegueErrorResponse.getResourceNotFoundResponse(String.format(
+                        "Unable to locate revision detail page with id: %s", revisionPageId));
+            }
+            IsaacRevisionDetailPage revisionPage = (IsaacRevisionDetailPage) contentDOById;
+            IsaacRevisionDetailPageDTO revisionPageDTO = (IsaacRevisionDetailPageDTO) contentDTOById;
+
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+
+            // Augment related content, without user-specific question attempts:
+            this.augmentContentWithRelatedContent(revisionPageDTO, Collections.emptyMap());
+            contentManager.populateSidebar(revisionPageDTO);
+
+            // Augment linked gameboards using the list in the DO:
+            // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
+            List<String> gameboardIds = Objects.requireNonNullElse(revisionPage.getGameboards(), Collections.emptyList());
+            List<GameboardDTO> linkedGameboards = gameManager.getGameboards(gameboardIds);
+            revisionPageDTO.setGameboards(linkedGameboards);
+
+            // Log the request:
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, revisionPageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_REVISION_DETAIL_PAGE, logEntry);
+
+
+            return Response.status(Status.OK).entity(revisionPageDTO)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load revision detail page.").toResponse();
         }
     }
 
