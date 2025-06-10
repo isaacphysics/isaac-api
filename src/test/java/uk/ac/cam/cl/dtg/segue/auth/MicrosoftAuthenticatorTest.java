@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import com.auth0.jwt.exceptions.IncorrectClaimException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -169,15 +166,13 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tidInvalid_throwsError() {
                     var token = validToken(t -> t, p -> p.put("tid", "some_bad_tid"));
-                    testGetUserInfo(token, NoUserException.class,
-                            format("Required field 'tid' missing from identity provider's response."));
+                    testGetUserInfo(token, NoUserException.class, "User verification: BAD_CLAIM (tid)");
                 }
 
                 @Test
                 public void getUserInfo_tidPrefixValid_throwsError() {
                     var token = validToken(t -> t, p -> p.put("tid", format("%s/hello/", msTenantId)));
-                    testGetUserInfo(token, NoUserException.class,
-                            format("Required field 'tid' missing from identity provider's response."));
+                    testGetUserInfo(token, NoUserException.class, "User verification: BAD_CLAIM (tid)");
                 }
             }
 
@@ -189,8 +184,7 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_emailInvalid_throwsError() {
                     var token = validToken(t -> t, p -> p.put("email", "some_bad_email"));
-                    testGetUserInfo(token, NoUserException.class,
-                            format("Required field 'email' missing from identity provider's response."));
+                    testGetUserInfo(token, NoUserException.class, "User verification: BAD_CLAIM (email)");
                 }
             }
         }
@@ -204,11 +198,9 @@ public class MicrosoftAuthenticatorTest {
                 }
 
                 @Test
-                public void getUserInfo_noSuchToken_throwsError() throws MalformedURLException {
-                    var subject = subject(getStore());
-                    var error = assertThrows(AuthenticatorSecurityException.class,
-                            () -> subject.getUserInfo("no_token_for_id"));
-                    assertEquals("Token verification: TOKEN_MISSING", error.getMessage());
+                public void getUserInfo_noSuchToken_throwsError() {
+                    Executable act = () -> subject(getStore()).getUserInfo("no_token_for_id");
+                    assertError(act, AuthenticatorSecurityException.class, "Token verification: TOKEN_MISSING");
                 }
             }
 
@@ -216,22 +208,19 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tokenSignatureNoKeyId_throwsError() {
                     var token = validToken(t -> t.withKeyId(null), p -> p);
-                    GetUserInfoHelpers.testGetUserInfo(token, AuthenticatorSecurityException.class,
-                            "No key found in http://localhost:8888/keys with kid null");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: KEY_NOT_FOUND");
                 }
 
                 @Test
                 public void getUserInfo_tokenSignatureKeyNotFound_throwsError() {
                     var token = validToken(t -> t.withKeyId("no-such-key"), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class,
-                            "No key found in http://localhost:8888/keys with kid no-such-key");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: KEY_NOT_FOUND");
                 }
 
                 @Test
                 public void getUserInfo_tokenSignatureMismatch_throwsError() {
                     var token = signedToken(invalidSigningKey, t -> t.withKeyId(validSigningKey.id()));
-                    testGetUserInfo(token, SignatureVerificationException.class,
-                            "The Token's Signature resulted invalid when verified using the Algorithm: SHA256withRSA");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_SIGNATURE");
                 }
             }
 
@@ -244,8 +233,7 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tokenExpired_throwsError() {
                     var token = validToken(t -> t.withExpiresAt(oneHourAgo), p -> p);
-                    testGetUserInfo(token, TokenExpiredException.class,
-                            format("The Token has expired on %s.", oneHourAgo));
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: TOKEN_EXPIRED");
                 }
             }
 
@@ -258,7 +246,7 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tokenIatFuture_throwsError() {
                     var token = validToken(t -> t.withIssuedAt(inOneHour), p -> p);
-                    testGetUserInfo(token, IncorrectClaimException.class, format("The Token can't be used before %s.", inOneHour));
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iat)");
                 }
             }
 
@@ -271,7 +259,7 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tokenNbfFuture_throwsError() {
                     var token = validToken(t -> t.withNotBefore(inOneHour), p -> p);
-                    testGetUserInfo(token, IncorrectClaimException.class, format("The Token can't be used before %s.", inOneHour));
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (nbf)");
                 }
             }
 
@@ -279,15 +267,13 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tokenMissingAud_throwsError() {
                     var token = validToken(t -> t.withAudience((String) null), p -> p);
-                    testGetUserInfo(token, IncorrectClaimException.class,
-                            "The Claim 'aud' value doesn't contain the required audience.");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (aud)");
                 }
 
                 @Test
                 public void getUserInfo_tokenAudIncorrect_throwsError() {
                     var token = validToken(t -> t.withAudience("intended_for_somebody_else"), p -> p);
-                    testGetUserInfo(token, IncorrectClaimException.class,
-                            "The Claim 'aud' value doesn't contain the required audience.");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (aud)");
                 }
             }
 
@@ -295,23 +281,20 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_tokenMissingIssuer_throwsError() {
                     var token = validToken(t -> t.withIssuer(null), p -> p);
-                    testGetUserInfo(token, IncorrectClaimException.class,
-                            "The Claim 'iss' value doesn't match the required issuer.");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
                 }
 
                 @Test
                 public void getUserInfo_tokenIncorrectIssuer_throwsError() {
                     var token = validToken(t -> t.withIssuer("some_bad_issuer"), p -> p);
-                    testGetUserInfo(token, IncorrectClaimException.class,
-                            "The Claim 'iss' value doesn't match the required issuer.");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
                 }
 
                 @Test
                 public void getUserInfo_tokenTenantIssuerMismatch_throwsError() {
                     var tid = UUID.randomUUID().toString();
                     var token = validToken(t -> t.withIssuer(expectedIssuer(msTenantId)), p -> p.put("tid", tid));
-                    testGetUserInfo(token, IncorrectClaimException.class,
-                            "The Claim 'iss' value doesn't match the required issuer.");
+                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
                 }
 
                 @Test
@@ -374,7 +357,7 @@ class GetUserInfoHelpers extends Helpers {
         }
 
         private String expectedMessage() {
-            return format("Required field '%s' missing from identity provider's response.", claim());
+            return format("User verification: BAD_CLAIM (%s)", claim());
         }
     }
 

@@ -20,6 +20,8 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.IncorrectClaimException;
 import com.auth0.jwt.exceptions.MissingClaimException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
@@ -174,10 +176,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
     private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException, NoUserException{
         // Validating id token based on requirements at
-        // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens
-        // I've ignored "nonce" validation as RaspberryPi Authenticator also skips it
-        // Validating `sub`, `email`, `family_name` and `given_name` to meet our own requirements. For example, when a
-        // user is unable to sign in, we use email to look up whether they use the platform with another account.
+        // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens, as well as our own requirements
         var token = JWT.decode(tokenStr);
         try {
             var keyId = token.getKeyId();
@@ -190,20 +189,28 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                     .withClaim("sub", notEmpty())
                     .withClaim("email", validEmail())
                     .build()
-                    .verify(tokenStr); // TODO: does this check validity of cert?
+                    .verify(tokenStr);
+            return token;
         } catch (InvalidPublicKeyException e) {
             throw new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY");
-        } catch (MissingClaimException | IncorrectClaimException e) {
+        } catch (SigningKeyNotFoundException e) {
+            throw new AuthenticatorSecurityException("Token verification: KEY_NOT_FOUND");
+        } catch (SignatureVerificationException e) {
+            throw new AuthenticatorSecurityException("Token verification: BAD_SIGNATURE");
+        } catch (TokenExpiredException e) {
+            throw new AuthenticatorSecurityException("Token verification: TOKEN_EXPIRED");
+        }
+        catch (MissingClaimException | IncorrectClaimException e) {
             String claimName = e instanceof MissingClaimException ?
                     ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
             if (List.of("sub", "tid", "email").contains(claimName)) {
-                throw new NoUserException(String.format("Required field '%s' missing from identity provider's response.", claimName));
+                throw new NoUserException(String.format("User verification: BAD_CLAIM (%s)", claimName));
+            } else {
+                throw new AuthenticatorSecurityException(String.format("Token verification: BAD_CLAIM (%s)", claimName));
             }
-            throw e;
-        } catch (JwkException e) {
-            throw new AuthenticatorSecurityException(e.getMessage());
+        } catch (Exception e) {
+            throw new AuthenticatorSecurityException("Token verification: UNEXPECTED_ERROR");
         }
-        return token;
     }
 
     private BiPredicate<Claim, DecodedJWT> notEmpty() {
