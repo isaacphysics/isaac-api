@@ -11,16 +11,7 @@ import java.util.List;
 @JsonContentType("sidebarGroup")
 public class SidebarGroup extends SidebarEntry {
 
-    private String label;
     private List<SidebarEntry> sidebarEntries;
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(final String label) {
-        this.label = label;
-    }
 
     public List<SidebarEntry> getSidebarEntries() {
         return sidebarEntries;

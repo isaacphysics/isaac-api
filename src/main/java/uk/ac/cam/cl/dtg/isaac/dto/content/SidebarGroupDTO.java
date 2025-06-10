@@ -7,16 +7,7 @@ import java.util.List;
  */
 public class SidebarGroupDTO extends SidebarEntryDTO {
 
-    private String label;
     private List<SidebarEntryDTO> sidebarEntries;
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(final String label) {
-        this.label = label;
-    }
 
     public List<SidebarEntryDTO> getSidebarEntries() {
         return sidebarEntries;
