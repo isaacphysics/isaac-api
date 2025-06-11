@@ -24,17 +24,18 @@ import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
+import com.google.api.client.auth.oauth2.AuthorizationCodeTokenRequest;
+import com.google.api.client.auth.openidconnect.IdTokenResponse;
+import com.google.api.client.http.BasicAuthentication;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.microsoft.aad.msal4j.AuthorizationCodeParameters;
-import com.microsoft.aad.msal4j.AuthorizationRequestUrlParameters;
-import com.microsoft.aad.msal4j.Prompt;
-import com.microsoft.aad.msal4j.ResponseMode;
-import com.microsoft.aad.msal4j.ConfidentialClientApplication;
-import com.microsoft.aad.msal4j.ClientCredentialFactory;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -58,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 
 public class MicrosoftAuthenticator implements IOAuth2Authenticator {
-    private final String scopes = "email";
+    private final List<String> scopes = List.of("openid", "profile", "email");
     private final String clientId;
     private final String tenantId;
     private final String clientSecret;
@@ -81,9 +82,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         this.redirectUrl = validateURL(redirectUrL, "Missing redirect_url, can't be \"%s\".");
         var parsedJWKSUrl = validateURL(jwksUrl, "Missing jwks_url, can't be \"%s\".");
         this.jwkProvider = new JwkProviderBuilder(parsedJWKSUrl).cached(10, 1, TimeUnit.HOURS).build();
-        this.credentialStore = CacheBuilder.newBuilder()
-                .expireAfterAccess(10, TimeUnit.MINUTES)
-                .build();
+        this.credentialStore = CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
     }
 
     @Override
@@ -98,13 +97,13 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
     @Override
     public String getAuthorizationUrl(String antiForgeryStateToken) {
-        var parameters = AuthorizationRequestUrlParameters
-                .builder(redirectUrl.toString(), Collections.singleton(scopes))
-                .responseMode(ResponseMode.QUERY)
-                .prompt(Prompt.SELECT_ACCOUNT)
-                .state(antiForgeryStateToken)
+        return new AuthorizationCodeRequestUrl("https://login.microsoftonline.com/common/oauth2/v2.0/authorize", this.clientId)
+                .setScopes(scopes)
+                .setRedirectUri(redirectUrl.toString())
+                .setState(antiForgeryStateToken)
+                .set("prompt", "select_account")
+                .set("response_mode", "query")
                 .build();
-        return microsoftClient().getAuthorizationRequestUrl(parameters).toString();
     }
 
     @Override
@@ -127,13 +126,20 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     @Override
     public String exchangeCode(String authorizationCode) throws CodeExchangeException {
         try {
-            var authParams = AuthorizationCodeParameters
-                    .builder(authorizationCode, redirectUrl.toURI()).scopes(Collections.singleton(scopes))
-                    .build();
-            var result = microsoftClient().acquireToken(authParams).get();
+            var request = new AuthorizationCodeTokenRequest(
+                    new NetHttpTransport(),
+                    new GsonFactory(),
+                    new GenericUrl(String.format("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantId)),
+                    authorizationCode
+            );
+            IdTokenResponse response = (IdTokenResponse) request
+                    .setResponseClass(IdTokenResponse.class)
+                    .setRedirectUri(redirectUrl.toString())
+                    .setClientAuthentication(new BasicAuthentication(clientId, clientSecret))
+                    .execute();
 
             var internalCredentialID = UUID.randomUUID().toString();
-            credentialStore.put(internalCredentialID, result.idToken());
+            credentialStore.put(internalCredentialID, response.getIdToken());
             return internalCredentialID;
         } catch (Exception e) {
             throw new CodeExchangeException(e.getMessage());
@@ -159,17 +165,6 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                 null, null, null, null,
                 false
         );
-    }
-
-    private ConfidentialClientApplication microsoftClient() {
-        var secret = ClientCredentialFactory.createFromSecret(clientSecret);
-        try {
-            return ConfidentialClientApplication.builder(clientId, secret)
-                    .authority(String.format("https://login.microsoftonline.com/%s", tenantId))
-                    .build();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException, NoUserException{

@@ -97,6 +97,23 @@ public class MicrosoftAuthenticatorTest {
         }
     }
 
+    public static class TestGetAuthorizationUrl extends Helpers {
+        @Test
+        public void getAuthorizationUrl_validAntiForgeryToken_returnsUrl() {
+            var csrfToken = "the_csrf_token";
+            var url = subject(getStore()).getAuthorizationUrl(csrfToken);
+            var expectedUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize" +
+                    format("?client_id=%s", clientId) +
+                    format("&redirect_uri=%s", redirectUrl) +
+                    format("&response_type=%s", "code") +
+                    format("&scope=%s", "openid%20profile%20email") +
+                    format("&state=%s", csrfToken) +
+                    format("&prompt=%s", "select_account") +
+                    format("&response_mode=%s", "query");
+            assertEquals(expectedUrl, url);
+        }
+    }
+
     @RunWith(Enclosed.class)
     public static class TestGetUserInfo extends GetUserInfoHelpers {
         @RunWith(Enclosed.class)
