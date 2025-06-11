@@ -211,7 +211,14 @@ public class EventNotificationEmailManager {
               commitAndSendFeedbackEmail(event, "post", "event_feedback");
             }
             // New logic for sending survey email
-            boolean shouldSendSurvey = true; // Define your criteria for sending surveys
+            String surveyUrl = event.getEventSurveyUrl();
+            String surveyTitle = event.getEventSurveyTitle();
+
+            // Define your criteria for sending surveys
+            // Events created before the survey title field was added may not have a title.
+            // Condition is set to handle backwards compatibility for events without title.
+            boolean shouldSendSurvey = (surveyUrl != null && !surveyUrl.isEmpty())
+                && (surveyTitle == null || !surveyTitle.isEmpty());
             if (shouldSendSurvey) {
               commitAndSendFeedbackEmail(event, "survey", "event_survey");
             }
