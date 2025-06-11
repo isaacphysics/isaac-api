@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import com.google.common.collect.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
-import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 
@@ -46,7 +45,7 @@ public class GameboardItem {
     private Integer questionPartsNotAttempted;
     private Integer questionPartsTotal;
     private Float passMark;
-    private GameboardItemState state;
+    private Constants.CompletionState state;
     private List<Constants.QuestionPartState> questionPartStates = Lists.newArrayList();
     
     // optional field if we want to use the gameboard item outside the context of a board.
@@ -346,7 +345,7 @@ public class GameboardItem {
      *
      * @return the state
      */
-    public final GameboardItemState getState() {
+    public final Constants.CompletionState getState() {
         return state;
     }
 
@@ -356,7 +355,7 @@ public class GameboardItem {
      * @param state
      *            the state to set
      */
-    public final void setState(final GameboardItemState state) {
+    public final void setState(final Constants.CompletionState state) {
         this.state = state;
     }
 
