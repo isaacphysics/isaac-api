@@ -217,8 +217,8 @@ public class EventNotificationEmailManager {
             // Define your criteria for sending surveys
             // Events created before the survey title field was added may not have a title.
             // Condition is set to handle backwards compatibility for events without title.
-            boolean shouldSendSurvey = (surveyUrl != null && !surveyUrl.isEmpty()) &&
-                (surveyTitle == null || !surveyTitle.isEmpty());
+            boolean shouldSendSurvey = (surveyUrl != null && !surveyUrl.isEmpty())
+                && (surveyTitle == null || !surveyTitle.isEmpty());
             if (shouldSendSurvey) {
               commitAndSendFeedbackEmail(event, "survey", "event_survey");
             }
