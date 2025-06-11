@@ -211,7 +211,7 @@ public class EventNotificationEmailManager {
               commitAndSendFeedbackEmail(event, "post", "event_feedback");
             }
             // New logic for sending survey email
-            String surveyUrl = event.getEventSurveyUrl();
+            String surveyUrl = event.getEventSurvey();
             String surveyTitle = event.getEventSurveyTitle();
 
             // Define your criteria for sending surveys

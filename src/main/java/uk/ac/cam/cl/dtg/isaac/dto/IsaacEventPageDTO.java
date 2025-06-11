@@ -58,7 +58,7 @@ public class IsaacEventPageDTO extends ContentDTO {
   private List<ExternalReference> postResources;
   private List<ContentDTO> postResourceContent;
   private String eventSurveyTitle;
-  private String eventSurveyUrl;
+  private String eventSurvey;
 
   private ImageDTO eventThumbnail;
 
@@ -96,7 +96,7 @@ public class IsaacEventPageDTO extends ContentDTO {
    * @param preResources resources to be provided to attendees before the event
    * @param postResources resources to be provided to attendees after the event
    * @param eventSurveyTitle a survey title of event that will be sent to attendees after the event
-   * @param eventSurveyUrl a survey Url will be sent to attendees after the event
+   * @param eventSurvey a survey Url will be sent to attendees after the event
    * @param eventThumbnail thumbnail image for event
    * @param numberOfPlaces maximum number of booking places to allow
    * @param eventStatus status of event {@link EventStatus}
@@ -130,7 +130,7 @@ public class IsaacEventPageDTO extends ContentDTO {
       @JsonProperty("preResources") final List<ExternalReference> preResources,
       @JsonProperty("postResources") final List<ExternalReference> postResources,
       @JsonProperty("eventSurveyTitle") final String eventSurveyTitle,
-      @JsonProperty("eventSurveyUrl") final String eventSurveyUrl,
+      @JsonProperty("eventSurvey") final String eventSurvey,
       @JsonProperty("eventThumbnail") final ImageDTO eventThumbnail,
       @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
       @JsonProperty("EventStatus") final EventStatus eventStatus,
@@ -152,7 +152,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     this.preResources = preResources;
     this.postResources = postResources;
     this.eventSurveyTitle = eventSurveyTitle;
-    this.eventSurveyUrl = eventSurveyUrl;
+    this.eventSurvey = eventSurvey;
     this.eventThumbnail = eventThumbnail;
     this.numberOfPlaces = numberOfPlaces;
     this.eventStatus = eventStatus;
@@ -339,23 +339,23 @@ public class IsaacEventPageDTO extends ContentDTO {
   }
 
   /**
-   * Gets the eventSurveyUrl.
+   * Gets the eventSurvey Url.
    *
-   * @return the eventSurveyUrl
+   * @return the eventSurvey Url
    */
   @JsonIgnore
-  public String getEventSurveyUrl() {
-    return eventSurveyUrl;
+  public String getEventSurvey() {
+    return eventSurvey;
   }
 
   /**
-   * Sets the eventSurveyUrl.
+   * Sets the eventSurvey Url.
    *
-   * @param eventSurveyUrl
-   *            the eventSurveyUrl to set
+   * @param eventSurvey
+   *            the eventSurvey Url to set
    */
-  public void setEventSurveyUrl(final String eventSurveyUrl) {
-    this.eventSurveyUrl = eventSurveyUrl;
+  public void setEventSurvey(final String eventSurvey) {
+    this.eventSurvey = eventSurvey;
   }
 
   /**
