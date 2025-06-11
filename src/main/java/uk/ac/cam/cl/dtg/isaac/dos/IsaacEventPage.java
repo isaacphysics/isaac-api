@@ -51,7 +51,7 @@ public class IsaacEventPage extends Content {
   private List<ExternalReference> preResources;
   private List<Content> preResourceContent;
   private String eventSurveyTitle;
-  private String eventSurveyUrl;
+  private String eventSurvey;
 
   private String emailEventDetails;
 
@@ -90,7 +90,7 @@ public class IsaacEventPage extends Content {
    * @param preResources resources to be provided to attendees before the event
    * @param postResources resources to be provided to attendees after the event
    * @param eventSurveyTitle a survey title of event that will be sent to attendees after the event
-   * @param eventSurveyUrl a survey Url will be sent to attendees after the event
+   * @param eventSurvey a survey Url will be sent to attendees after the event
    * @param eventThumbnail thumbnail image for event
    * @param numberOfPlaces maximum number of booking places to allow
    * @param eventStatus status of event {@link EventStatus}
@@ -123,7 +123,7 @@ public class IsaacEventPage extends Content {
                         @JsonProperty("preResources") final List<ExternalReference> preResources,
                         @JsonProperty("postResources") final List<ExternalReference> postResources,
                         @JsonProperty("eventSurveyTitle") final String eventSurveyTitle,
-                        @JsonProperty("eventSurveyUrl") final String eventSurveyUrl,
+                        @JsonProperty("eventSurvey") final String eventSurvey,
                         @JsonProperty("eventThumbnail") final Image eventThumbnail,
                         @JsonProperty("numberOfPlaces") final Integer numberOfPlaces,
                         @JsonProperty("EventStatus") final EventStatus eventStatus,
@@ -144,7 +144,7 @@ public class IsaacEventPage extends Content {
     this.preResources = preResources;
     this.postResources = postResources;
     this.eventSurveyTitle = eventSurveyTitle;
-    this.eventSurveyUrl = eventSurveyUrl;
+    this.eventSurvey = eventSurvey;
     this.eventThumbnail = eventThumbnail;
     this.numberOfPlaces = numberOfPlaces;
     this.eventStatus = eventStatus;
@@ -358,22 +358,22 @@ public class IsaacEventPage extends Content {
   }
 
   /**
-   * Gets the eventSurveyUrl.
+   * Gets the eventSurvey.
    *
-   * @return the eventSurveyUrl
+   * @return the eventSurvey
    */
   @JsonIgnore
-  public String getEventSurveyUrl() {
-    return eventSurveyUrl;
+  public String getEventSurvey() {
+    return eventSurvey;
   }
 
   /**
-   * Sets the eventSurveyUrl.
+   * Sets the eventSurvey url.
    *
-   * @param eventSurveyUrl the eventSurveyUrl to set
+   * @param eventSurvey the eventSurvey url to set
    */
-  public void setEventSurveyUrl(final String eventSurveyUrl) {
-    this.eventSurveyUrl = eventSurveyUrl;
+  public void setEventSurvey(final String eventSurvey) {
+    this.eventSurvey = eventSurvey;
   }
 
   /**
