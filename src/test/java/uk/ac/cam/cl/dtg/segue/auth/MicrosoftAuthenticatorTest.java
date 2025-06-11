@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.util.*;
@@ -111,6 +112,14 @@ public class MicrosoftAuthenticatorTest {
                     format("&prompt=%s", "select_account") +
                     format("&response_mode=%s", "query");
             assertEquals(expectedUrl, url);
+        }
+    }
+
+    public static class TestExchangeCode extends Helpers {
+        @Test
+        public void exchangeCode_invalidCode_throwsCodeExchangeExceptionWithoutAnyDetails() {
+            Executable act = () -> subject(getStore()).exchangeCode(null);
+            assertError(act, CodeExchangeException.class, "There was an error exchanging the code.");
         }
     }
 

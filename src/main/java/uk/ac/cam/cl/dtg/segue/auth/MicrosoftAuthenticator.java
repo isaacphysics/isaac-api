@@ -142,7 +142,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             credentialStore.put(internalCredentialID, response.getIdToken());
             return internalCredentialID;
         } catch (Exception e) {
-            throw new CodeExchangeException(e.getMessage());
+            throw new CodeExchangeException("There was an error exchanging the code.");
         }
     }
 
