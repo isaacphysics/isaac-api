@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 James Sharkey
+ * Copyright 2025 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
 /**
- *  A hashing algorithm for blind-upgrading SeguePBKDF2v1 hashes to use SegueSCryptv1.
+ *  A hashing algorithm for blind-upgrading SeguePBKDF2v2 hashes to use SegueSCryptv1.
  */
-public class SegueChainedPBKDFv1SCryptv1 extends ChainedHashAlgorithm {
+public class SegueChainedPBKDFv2SCryptv1 extends ChainedHashAlgorithm {
 
-    public SegueChainedPBKDFv1SCryptv1() {
-        super(new SeguePBKDF2v1(), new SegueSCryptv1());
+    public SegueChainedPBKDFv2SCryptv1() {
+        super(new SeguePBKDF2v2(), new SegueSCryptv1());
     }
 
     @Override
     public String hashingAlgorithmName() {
-        return "SegueChainedPBKDFv1SCryptv1";
+        return "SegueChainedPBKDFv2SCryptv1";
     }
 }
