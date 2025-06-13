@@ -424,7 +424,7 @@ class GetUserInfoHelpers extends Helpers {
 
         @Test
         public void getUserInfo_prefixValidButOverallInvalid_throwsError() {
-            var token = validToken(t -> t, p -> p.put(claim(), format("%s/hello/", UUID.randomUUID().toString())));
+            var token = validToken(t -> t, p -> p.put(claim(), format("%s/hello/", UUID.randomUUID())));
             testGetUserInfo(token, NoUserException.class, expectedMessage());
         }
     }
