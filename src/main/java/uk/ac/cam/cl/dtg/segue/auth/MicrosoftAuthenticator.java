@@ -157,7 +157,10 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         var name = getName(token.getClaim("given_name").asString(), token.getClaim("family_name").asString(), token);
 
         return new UserFromAuthProvider(
-                token.getSubject(),
+                // use "oid" over "sub" because oid is the same across app registrations, and we might need to
+                // move app registrations eg. for publisher verification
+                // https://learn.microsoft.com/en-us/entra/identity-platform/id-token-claims-reference
+                token.getClaim("oid").asString(),
                 name.getLeft(),
                 name.getRight(),
                 token.getClaim("email").asString(),
@@ -179,7 +182,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                     .withAudience(clientId)
                     .withClaim("tid", validUUID())
                     .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", token.getClaim("tid").asString()))
-                    .withClaim("sub", notEmpty())
+                    .withClaim("oid", validUUID())
                     .withClaim("email", validEmail())
                     .build()
                     .verify(tokenStr);
@@ -196,7 +199,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         catch (MissingClaimException | IncorrectClaimException e) {
             String claimName = e instanceof MissingClaimException ?
                     ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
-            if (List.of("sub", "tid", "email").contains(claimName)) {
+            if (List.of("oid", "tid", "email").contains(claimName)) {
                 throw new NoUserException(String.format("User verification: BAD_CLAIM (%s)", claimName));
             } else {
                 throw new AuthenticatorSecurityException(String.format("Token verification: BAD_CLAIM (%s)", claimName));
@@ -204,10 +207,6 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         } catch (Exception e) {
             throw new AuthenticatorSecurityException("Token verification: UNEXPECTED_ERROR");
         }
-    }
-
-    private BiPredicate<Claim, DecodedJWT> notEmpty() {
-        return (c, j) -> !c.isNull() && !c.asString().isBlank();
     }
 
     private BiPredicate<Claim, DecodedJWT> validEmail() {

@@ -411,7 +411,7 @@ public class IsaacTest {
 
     static Payload validPayload(PayloadModifyFn customisePayload) {
         var validPayload = new Payload();
-        validPayload.put("sub", "the_ms_account_id");
+        validPayload.put("oid", UUID.randomUUID().toString());
         validPayload.put("email", "test@example.com");
         validPayload.put("family_name", "Family");
         validPayload.put("given_name", "Given");

@@ -130,8 +130,9 @@ public class MicrosoftAuthenticatorTest {
             public static class TestValid {
                 @Test
                 public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
+                    var oid = UUID.randomUUID().toString();
                     var token = validToken(t -> t, p -> {
-                        p.put("sub", "some_account_id");
+                        p.put("oid", oid);
                         p.put("email", "test@example.org");
                         p.put("family_name", "Doe");
                         p.put("given_name", "John");
@@ -140,7 +141,7 @@ public class MicrosoftAuthenticatorTest {
 
                     var userInfo = testGetUserInfo(token);
 
-                    assertEquals("some_account_id", userInfo.getProviderUserId());
+                    assertEquals(oid, userInfo.getProviderUserId());
                     assertEquals("test@example.org", userInfo.getEmail());
                     assertEquals(EmailVerificationStatus.NOT_VERIFIED, userInfo.getEmailVerificationStatus());
                     assertEquals("Doe", userInfo.getFamilyName());
@@ -149,9 +150,9 @@ public class MicrosoftAuthenticatorTest {
                 }
             }
 
-            public static class TestSubClaim extends TestNonEmptyClaim {
+            public static class TestOidClaim extends TestUUIDClaim {
                 String claim() {
-                    return "sub";
+                    return "oid";
                 }
             }
 
@@ -220,21 +221,9 @@ public class MicrosoftAuthenticatorTest {
                 }
             }
 
-            public static class TestTidClaim extends TestNonEmptyClaim {
+            public static class TestTidClaim extends TestUUIDClaim {
                 String claim() {
                     return "tid";
-                }
-
-                @Test
-                public void getUserInfo_tidInvalid_throwsError() {
-                    var token = validToken(t -> t, p -> p.put("tid", "some_bad_tid"));
-                    testGetUserInfo(token, NoUserException.class, "User verification: BAD_CLAIM (tid)");
-                }
-
-                @Test
-                public void getUserInfo_tidPrefixValid_throwsError() {
-                    var token = validToken(t -> t, p -> p.put("tid", format("%s/hello/", msTenantId)));
-                    testGetUserInfo(token, NoUserException.class, "User verification: BAD_CLAIM (tid)");
                 }
             }
 
@@ -421,8 +410,22 @@ class GetUserInfoHelpers extends Helpers {
             testGetUserInfo(token, NoUserException.class, expectedMessage());
         }
 
-        private String expectedMessage() {
+        String expectedMessage() {
             return format("User verification: BAD_CLAIM (%s)", claim());
+        }
+    }
+
+    static abstract class TestUUIDClaim extends TestNonEmptyClaim {
+        @Test
+        public void getUserInfo_invalid_throwsError() {
+            var token = validToken(t -> t, p -> p.put(claim(), "some_bad_uuid"));
+            testGetUserInfo(token, NoUserException.class, expectedMessage());
+        }
+
+        @Test
+        public void getUserInfo_prefixValidButOverallInvalid_throwsError() {
+            var token = validToken(t -> t, p -> p.put(claim(), format("%s/hello/", UUID.randomUUID().toString())));
+            testGetUserInfo(token, NoUserException.class, expectedMessage());
         }
     }
 

@@ -79,7 +79,7 @@ public class AuthenticationFacadeIT extends Helpers {
                 @Test
                 public void matchedAccountNotConnected_returnsNotUsingMicrosoftResponse() throws Exception {
                     var token = validToken(t -> t, p -> {
-                        p.put("sub", "some_non_matching_sub");
+                        p.put("oid", UUID.randomUUID().toString());
                         p.put("email", CHARLIE_STUDENT_EMAIL);
                         return null;
                     });
@@ -90,7 +90,7 @@ public class AuthenticationFacadeIT extends Helpers {
 
                 @Test
                 public void matchedAccountConnected_signInAndReturnsUser() throws Exception {
-                    var token = validToken(t -> t, p -> p.put("sub", ERIKA_PROVIDER_USER_ID));
+                    var token = validToken(t -> t, p -> p.put("oid", ERIKA_PROVIDER_USER_ID));
                     var response = testAuthenticationCallback(msAuth().mockExchange(token), validQuery);
                     response.assertUserReturned(ERIKA_STUDENT_EMAIL);
                     response.assertUserLoggedIn(ERIKA_STUDENT_ID);
@@ -103,7 +103,7 @@ public class AuthenticationFacadeIT extends Helpers {
                 public void completePayload_registersUser() throws Exception {
                     var nextId = nextUserIdFromDb();
                     var token = validToken(t -> t, p -> {
-                        p.put("sub", "new_student_provider_user_id");
+                        p.put("oid", UUID.randomUUID().toString());
                         p.put("email", "new_student@outlook.com");
                         p.put("given_name", "New");
                         p.put("family_name", "Student");
@@ -119,7 +119,7 @@ public class AuthenticationFacadeIT extends Helpers {
                 @Test
                 public void incompletePayload_returnsError() throws Exception {
                     var token = validToken(t -> t, p -> {
-                        p.put("sub", "new_student_2_provider_user_id");
+                        p.put("oid", UUID.randomUUID().toString());
                         p.put("email", "new_student_2@outlook.com");
                         p.remove("given_name");
                         p.remove("family_name");
