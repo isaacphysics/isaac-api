@@ -403,6 +403,7 @@ public class IsaacTest {
                 .withNotBefore(oneHourAgo)
                 .withAudience(clientId)
                 .withIssuer(expectedIssuer(msTenantId))
+                .withExpiresAt(inOneHour)
                 .withPayload(validPayload(customisePayload));
 
         return signedToken(validSigningKey, t -> customiseToken.apply(addDefaults.apply(t)));
