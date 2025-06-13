@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 
 /**
@@ -32,7 +33,7 @@ public interface IOAuthAuthenticator extends IFederatedAuthenticator {
 	 *            containing the authorisation code
 	 * @return the extracted authorisation code.
 	 */
-	String extractAuthCode(String url);
+	String extractAuthCode(String url) throws AuthenticationCodeException;
 
 	/**
 	 * Step 3 of OAUTH - Exchange short term authorisation code for an access
