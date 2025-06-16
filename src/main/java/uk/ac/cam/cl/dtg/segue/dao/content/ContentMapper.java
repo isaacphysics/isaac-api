@@ -245,7 +245,7 @@ public class ContentMapper {
         if (content instanceof SeguePage && result instanceof SeguePageDTO) {
             SeguePage seguePage = (SeguePage) content;
             SeguePageDTO seguePageDTO = (SeguePageDTO) result;
-            if (null != seguePage.getSidebar()) {
+            if (null != seguePage.getSidebar() && !seguePage.getSidebar().isEmpty()) {
                 SidebarDTO placeholder = new SidebarDTO();
                 placeholder.setId(seguePage.getSidebar());
                 seguePageDTO.setSidebar(placeholder);
