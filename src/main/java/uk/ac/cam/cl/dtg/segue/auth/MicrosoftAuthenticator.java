@@ -40,6 +40,8 @@ import com.google.inject.name.Named;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -115,11 +117,11 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String extractAuthCode(String url) throws AuthenticationCodeException{
+    public String extractAuthCode(String url) throws AuthenticationCodeException {
         try {
             return new AuthorizationCodeResponseUrl(url).getCode();
         } catch (Exception e) {
-            throw new AuthenticationCodeException("Error extracting authentication code.");
+            throw LogException.warn(e, new AuthenticationCodeException("Error extracting authentication code."));
         }
     }
 
@@ -142,17 +144,13 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             credentialStore.put(internalCredentialID, response.getIdToken());
             return internalCredentialID;
         } catch (Exception e) {
-            throw new CodeExchangeException("There was an error exchanging the code.");
+            throw LogException.error(e, new CodeExchangeException("There was an error exchanging the code."));
         }
     }
 
     @Override
     public UserFromAuthProvider getUserInfo(String internalProviderReference) throws AuthenticatorSecurityException, NoUserException {
         String tokenStr = credentialStore.getIfPresent(internalProviderReference);
-        if (null == tokenStr) {
-            throw new AuthenticatorSecurityException("Token verification: TOKEN_MISSING");
-        }
-
         var token = parseAndVerifyToken(tokenStr);
         var name = getName(token.getClaim("given_name").asString(), token.getClaim("family_name").asString(), token);
 
@@ -173,6 +171,10 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException, NoUserException{
         // Validating id token based on requirements at
         // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens, as well as our own requirements
+        if (null == tokenStr) {
+            throw new AuthenticatorSecurityException("Token verification: TOKEN_MISSING");
+        }
+
         var token = JWT.decode(tokenStr);
         try {
             var keyId = token.getKeyId();
@@ -188,24 +190,25 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                     .verify(tokenStr);
             return token;
         } catch (InvalidPublicKeyException e) {
-            throw new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY");
+            throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY"));
         } catch (SigningKeyNotFoundException e) {
-            throw new AuthenticatorSecurityException("Token verification: KEY_NOT_FOUND");
+            throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: KEY_NOT_FOUND"));
         } catch (SignatureVerificationException e) {
-            throw new AuthenticatorSecurityException("Token verification: BAD_SIGNATURE");
+            throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: BAD_SIGNATURE"));
         } catch (TokenExpiredException e) {
-            throw new AuthenticatorSecurityException("Token verification: TOKEN_EXPIRED");
+            throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: TOKEN_EXPIRED"));
         }
         catch (MissingClaimException | IncorrectClaimException e) {
             String claimName = e instanceof MissingClaimException ?
                     ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
             if (List.of("oid", "tid", "email").contains(claimName)) {
-                throw new NoUserException(String.format("User verification: BAD_CLAIM (%s)", claimName));
+                throw LogException.warn(e, new NoUserException(String.format("User verification: BAD_CLAIM (%s)", claimName)));
             } else {
-                throw new AuthenticatorSecurityException(String.format("Token verification: BAD_CLAIM (%s)", claimName));
+                throw LogException.warn(e, new AuthenticatorSecurityException(
+                        String.format("Token verification: BAD_CLAIM (%s)", claimName)));
             }
         } catch (Exception e) {
-            throw new AuthenticatorSecurityException("Token verification: UNEXPECTED_ERROR");
+            throw LogException.error(e, new AuthenticatorSecurityException("Token verification: UNEXPECTED_ERROR"));
         }
     }
 
@@ -243,7 +246,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             } catch (Exception ignored) {}
         }
 
-        throw new NoUserException("Could not determine name");
+        throw LogException.warn(null, new NoUserException("Could not determine name"));
     }
 
     private static URL validateURL(String urlString, String message) {
@@ -255,5 +258,34 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             }
             throw new IllegalArgumentException(String.format(message, urlString));
         }
+    }
+}
+
+class LogException {
+    private static final Logger log = LoggerFactory.getLogger(MicrosoftAuthenticator.class);
+
+    public static <T extends Exception, U extends Exception> U warn(T sourceError, U targetError) {
+        log.warn(String.format(targetMessage(targetError), safeExtractMessage(sourceError)), sourceError);
+        return targetError;
+    }
+
+    public static <T extends Exception, U extends Exception> U error(T sourceError, U targetError) {
+        log.error(String.format(targetMessage(targetError), safeExtractMessage(sourceError)), sourceError);
+        return targetError;
+    }
+
+    private static String safeExtractMessage(Exception e) {
+        return Optional.ofNullable(e).map(Exception::getMessage).orElse(null);
+    }
+
+    private static String targetMessage(Exception e) {
+        if (e instanceof AuthenticationCodeException) {
+            return "Error extracting the authentication code: %s";
+        } else if (e instanceof CodeExchangeException) {
+            return "Error exchanging the authentication code: %s";
+        } else if (e instanceof NoUserException || e instanceof AuthenticatorSecurityException) {
+            return "Error validating the authentication token: %s";
+        }
+        return "Could not construct log message from error";
     }
 }
