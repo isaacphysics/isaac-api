@@ -152,6 +152,7 @@ public class MicrosoftAuthenticatorTest {
             }
 
             public static class TestOidClaim extends TestUUIDClaim {
+                @Override
                 String claim() {
                     return "oid";
                 }
@@ -223,12 +224,14 @@ public class MicrosoftAuthenticatorTest {
             }
 
             public static class TestTidClaim extends TestUUIDClaim {
+                @Override
                 String claim() {
                     return "tid";
                 }
             }
 
             public static class TestEmailClaim extends TestNonEmptyClaim {
+                @Override
                 String claim() {
                     return "email";
                 }
