@@ -365,12 +365,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
 
         // Microsoft
-        this.bindConstantToProperty(Constants.MICROSOFT_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.MICROSOFT_CLIENT_ID, globalProperties);
-        this.bindConstantToProperty(Constants.MICROSOFT_TENANT_ID, globalProperties);
-        this.bindConstantToProperty(MICROSOFT_JWKS_URL, globalProperties);
-        this.bindConstantToProperty(MICROSOFT_REDIRECT_URL, globalProperties);
-        mapBinder.addBinding(AuthenticationProvider.MICROSOFT).to(MicrosoftAuthenticator.class);
+        try {
+            new MicrosoftAuthenticator(
+                    globalProperties.getProperty(Constants.MICROSOFT_CLIENT_ID),
+                    globalProperties.getProperty(Constants.MICROSOFT_TENANT_ID),
+                    globalProperties.getProperty(Constants.MICROSOFT_SECRET),
+                    globalProperties.getProperty(Constants.MICROSOFT_JWKS_URL),
+                    globalProperties.getProperty(Constants.MICROSOFT_REDIRECT_URL));
+
+            this.bindConstantToProperty(Constants.MICROSOFT_SECRET, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_CLIENT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_TENANT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_JWKS_URL, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_REDIRECT_URL, globalProperties);
+
+            mapBinder.addBinding(AuthenticationProvider.MICROSOFT).to(MicrosoftAuthenticator.class);
+        } catch (Exception e) {
+            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
+                    AuthenticationProvider.MICROSOFT));
+        }
 
         // Facebook
         this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
