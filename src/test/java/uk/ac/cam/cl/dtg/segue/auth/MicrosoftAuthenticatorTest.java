@@ -25,19 +25,20 @@ import org.junit.runner.RunWith;
 import org.junit.Test;
 
 import org.junit.runners.Parameterized;
-import uk.ac.cam.cl.dtg.isaac.IsaacTest.TestKeyPair;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
+import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
+import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.String.format;
-import static uk.ac.cam.cl.dtg.isaac.IsaacTest.*;
 
 @RunWith(Enclosed.class)
 public class MicrosoftAuthenticatorTest {
@@ -131,15 +132,15 @@ public class MicrosoftAuthenticatorTest {
                 @Test
                 public void getUserInfo_validToken_returnsUserInformation() throws Throwable {
                     var oid = UUID.randomUUID().toString();
-                    var token = validToken(t -> t, p -> {
-                        p.put("oid", oid);
-                        p.put("email", "test@example.org");
-                        p.put("family_name", "Doe");
-                        p.put("given_name", "John");
+                    var t = token.valid(s -> s, u -> {
+                        u.put("oid", oid);
+                        u.put("email", "test@example.org");
+                        u.put("family_name", "Doe");
+                        u.put("given_name", "John");
                         return null;
                     });
 
-                    var userInfo = testGetUserInfo(token);
+                    var userInfo = testGetUserInfo(t);
 
                     assertEquals(oid, userInfo.getProviderUserId());
                     assertEquals("test@example.org", userInfo.getEmail());
@@ -189,8 +190,8 @@ public class MicrosoftAuthenticatorTest {
 
                 @Test
                 public void getUserInfo_validNameClaims_accepted() throws Throwable {
-                    var token = validToken(t -> t, p -> setName(p, input[0], input[1], input[2]));
-                    var userInfo = testGetUserInfo(token);
+                    var t = token.valid(s -> s, u -> u.setName(input[0], input[1], input[2]));
+                    var userInfo = testGetUserInfo(t);
                     assertEquals(expectedOutput[0], userInfo.getGivenName(), String.format("given name failed for %s", Arrays.toString(input)));
                     assertEquals(expectedOutput[1], userInfo.getFamilyName(), String.format("last name failed for %s", Arrays.toString(input)));
                 }
@@ -199,25 +200,25 @@ public class MicrosoftAuthenticatorTest {
             public static class TestInvalidNameClaims {
                 @Test
                 public void getUserInfo_MissingNameClaims_rejected() {
-                    var token = validToken(t -> t, p -> setName(p, null, null, null));
-                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                    var t = token.valid(s -> s, u -> u.setName(null, null, null));
+                    testGetUserInfo(t, NoUserException.class, "Could not determine name");
                 }
 
                 @Test
                 public void getUserInfo_nullNameClaims_rejected() {
-                    var token = validToken(t -> t, p -> {
-                        p.put("given_name", null);
-                        p.put("family_name", null);
-                        p.put("name", null);
+                    var t = token.valid(s -> s, u -> {
+                        u.put("given_name", null);
+                        u.put("family_name", null);
+                        u.put("name", null);
                         return null;
                     });
-                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                    testGetUserInfo(t, NoUserException.class, "Could not determine name");
                 }
 
                 @Test
                 public void getUserInfo_EmptyNameClaims_rejected() {
-                    var token = validToken(t -> t, p -> setName(p, "", "", ""));
-                    testGetUserInfo(token, NoUserException.class, "Could not determine name");
+                    var t = token.valid(s -> s, u -> u.setName("", "", ""));
+                    testGetUserInfo(t, NoUserException.class, "Could not determine name");
                 }
             }
 
@@ -234,8 +235,8 @@ public class MicrosoftAuthenticatorTest {
 
                 @Test
                 public void getUserInfo_emailInvalid_throwsError() {
-                    var token = validToken(t -> t, p -> p.put("email", "some_bad_email"));
-                    testGetUserInfo(token, NoUserException.class, "User verification: BAD_CLAIM (email)");
+                    var t = token.valid(s -> s, u -> u.put("email", "some_bad_email"));
+                    testGetUserInfo(t, NoUserException.class, "User verification: BAD_CLAIM (email)");
                 }
             }
         }
@@ -258,101 +259,102 @@ public class MicrosoftAuthenticatorTest {
             public static class TestSignatureVerification {
                 @Test
                 public void getUserInfo_tokenSignatureNoKeyId_throwsError() {
-                    var token = validToken(t -> t.withKeyId(null), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: KEY_NOT_FOUND");
+                    var t = token.valid(s -> s.withKeyId(null), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: KEY_NOT_FOUND");
                 }
 
                 @Test
                 public void getUserInfo_tokenSignatureKeyNotFound_throwsError() {
-                    var token = validToken(t -> t.withKeyId("no-such-key"), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: KEY_NOT_FOUND");
+                    var t = token.valid(s -> s.withKeyId("no-such-key"), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: KEY_NOT_FOUND");
                 }
 
                 @Test
                 public void getUserInfo_tokenSignatureMismatch_throwsError() {
-                    var token = signedToken(invalidSigningKey, t -> t.withKeyId(validSigningKey.id()));
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_SIGNATURE");
+                    var t = Token.signed(invalidSigningKey, s -> s.withKeyId(validSigningKey.getPublic().id()));
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_SIGNATURE");
                 }
             }
 
             public static class TestExpirationClaim {
                 @Test
                 public void getUserInfo_tokenWithoutExp_accepted() {
-                    assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withExpiresAt((Date) null), p -> p)));
+                    assertDoesNotThrow(() -> testGetUserInfo(token.valid(s -> s.withExpiresAt((Date) null), u -> u)));
                 }
 
                 @Test
                 public void getUserInfo_tokenExpired_throwsError() {
-                    var token = validToken(t -> t.withExpiresAt(oneHourAgo), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: TOKEN_EXPIRED");
+                    var t = token.valid(s -> s.withExpiresAt(Token.oneHourAgo), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: TOKEN_EXPIRED");
                 }
             }
 
             public static class TestIssuedAtClaim {
                 @Test
                 public void getUserInfo_tokenWithoutIat_accepted() {
-                    assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withIssuedAt((Date) null), p -> p)));
+                    assertDoesNotThrow(() -> testGetUserInfo(token.valid(s -> s.withIssuedAt((Date) null), u -> u)));
                 }
 
                 @Test
                 public void getUserInfo_tokenIatFuture_throwsError() {
-                    var token = validToken(t -> t.withIssuedAt(inOneHour), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iat)");
+                    var t = token.valid(s -> s.withIssuedAt(Token.inOneHour), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iat)");
                 }
             }
 
             public static class TestNotBeforeClaim {
                 @Test
                 public void getUserInfo_tokenWithoutNbf_accepted() {
-                    assertDoesNotThrow(() -> testGetUserInfo(validToken(t -> t.withNotBefore((Date) null), p -> p)));
+                    assertDoesNotThrow(() -> testGetUserInfo(token.valid(s -> s.withNotBefore((Date) null), u -> u)));
                 }
 
                 @Test
                 public void getUserInfo_tokenNbfFuture_throwsError() {
-                    var token = validToken(t -> t.withNotBefore(inOneHour), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (nbf)");
+                    var t = token.valid(s -> s.withNotBefore(Token.inOneHour), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (nbf)");
                 }
             }
 
             public static class TestAudienceClaim {
                 @Test
                 public void getUserInfo_tokenMissingAud_throwsError() {
-                    var token = validToken(t -> t.withAudience((String) null), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (aud)");
+                    var t = token.valid(s -> s.withAudience((String) null), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (aud)");
                 }
 
                 @Test
                 public void getUserInfo_tokenAudIncorrect_throwsError() {
-                    var token = validToken(t -> t.withAudience("intended_for_somebody_else"), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (aud)");
+                    var t = token.valid(s -> s.withAudience("intended_for_somebody_else"), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (aud)");
                 }
             }
 
             public static class TestIssuerClaim {
                 @Test
                 public void getUserInfo_tokenMissingIssuer_throwsError() {
-                    var token = validToken(t -> t.withIssuer(null), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
+                    var t = token.valid(s -> s.withIssuer(null), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
                 }
 
                 @Test
                 public void getUserInfo_tokenIncorrectIssuer_throwsError() {
-                    var token = validToken(t -> t.withIssuer("some_bad_issuer"), p -> p);
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
+                    var t = token.valid(s -> s.withIssuer("some_bad_issuer"), u -> u);
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
                 }
 
                 @Test
                 public void getUserInfo_tokenTenantIssuerMismatch_throwsError() {
                     var tid = UUID.randomUUID().toString();
-                    var token = validToken(t -> t.withIssuer(expectedIssuer(msTenantId)), p -> p.put("tid", tid));
-                    testGetUserInfo(token, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
+                    var t = token.valid(s -> s.withIssuer(Token.expectedIssuer(Token.msTenantId)),
+                            u -> u.put("tid", tid));
+                    testGetUserInfo(t, AuthenticatorSecurityException.class, "Token verification: BAD_CLAIM (iss)");
                 }
 
                 @Test
                 public void getUserInfo_tokenTenantSpecificIssuer_accepted() {
                     var tid = UUID.randomUUID().toString();
-                    var token = validToken(t -> t.withIssuer(expectedIssuer(tid)), p -> p.put("tid", tid));
-                    assertDoesNotThrow(() -> testGetUserInfo(token));
+                    var t = token.valid(s -> s.withIssuer(Token.expectedIssuer(tid)), u -> u.put("tid", tid));
+                    assertDoesNotThrow(() -> testGetUserInfo(t));
                 }
             }
         }
@@ -377,7 +379,9 @@ class Helpers {
         assertEquals(errorMessage, error.getMessage());
     }
 
+    static String clientId = "the_client_id";
     static String clientSecret = "the_client_secret";
+    static String tenantId = "common";
     static String jwksUrl = "http://localhost:8888/keys";
     static String redirectUrl = "http://the.redirect.url";
 }
@@ -388,26 +392,26 @@ class GetUserInfoHelpers extends Helpers {
 
         @Test
         public void getUserInfo_missing_throwsError() {
-            var token = validToken(t -> t, p -> p.remove(claim()));
-            testGetUserInfo(token, NoUserException.class, expectedMessage());
+            var t = token.valid(s -> s, u -> u.remove(claim()));
+            testGetUserInfo(t, NoUserException.class, expectedMessage());
         }
 
         @Test
         public void getUserInfo_null_throwsError() {
-            var token = validToken(t -> t, p -> p.put(claim(), null));
-            testGetUserInfo(token, NoUserException.class, expectedMessage());
+            var t = token.valid(s -> s, u -> u.put(claim(), null));
+            testGetUserInfo(t, NoUserException.class, expectedMessage());
         }
 
         @Test
         public void getUserInfo_empty_throwsError() {
-            var token = validToken(t -> t, p -> p.put(claim(), ""));
-            testGetUserInfo(token, NoUserException.class, expectedMessage());
+            var t = token.valid(s -> s, u -> u.put(claim(), ""));
+            testGetUserInfo(t, NoUserException.class, expectedMessage());
         }
 
         @Test
         public void getUserInfo_blank_throwsError() {
-            var token = validToken(t -> t, p -> p.put(claim(), " "));
-            testGetUserInfo(token, NoUserException.class, expectedMessage());
+            var t = token.valid(s -> s, u -> u.put(claim(), " "));
+            testGetUserInfo(t, NoUserException.class, expectedMessage());
         }
 
         String expectedMessage() {
@@ -418,14 +422,14 @@ class GetUserInfoHelpers extends Helpers {
     static abstract class TestUUIDClaim extends TestNonEmptyClaim {
         @Test
         public void getUserInfo_invalid_throwsError() {
-            var token = validToken(t -> t, p -> p.put(claim(), "some_bad_uuid"));
-            testGetUserInfo(token, NoUserException.class, expectedMessage());
+            var t = token.valid(s -> s, u -> u.put(claim(), "some_bad_uuid"));
+            testGetUserInfo(t, NoUserException.class, expectedMessage());
         }
 
         @Test
         public void getUserInfo_prefixValidButOverallInvalid_throwsError() {
-            var token = validToken(t -> t, p -> p.put(claim(), format("%s/hello/", UUID.randomUUID())));
-            testGetUserInfo(token, NoUserException.class, expectedMessage());
+            var t = token.valid(s -> s, u -> u.put(claim(), format("%s/hello/", UUID.randomUUID())));
+            testGetUserInfo(t, NoUserException.class, expectedMessage());
         }
     }
 
@@ -433,7 +437,7 @@ class GetUserInfoHelpers extends Helpers {
         var store = getStore();
         var subject = subject(store);
         store.put("the_internal_id", token);
-        var keySetServer = startKeySetServer(8888, List.of(validSigningKey, anotherValidSigningKey));
+        var keySetServer = KeySetServlet.startServer(8888, List.of(validSigningKey, anotherValidSigningKey));
         try {
             return subject.getUserInfo("the_internal_id");
         } finally {
@@ -445,21 +449,8 @@ class GetUserInfoHelpers extends Helpers {
         assertError(() -> testGetUserInfo(token), errorClass, errorMessage);
     }
 
-    static Payload setName(Payload p, String givenName, String familyName, String name) {
-        setOrRemove(p, "given_name", givenName);
-        setOrRemove(p, "family_name", familyName);
-        setOrRemove(p, "name", name);
-        return p;
-    }
-
-    private static void setOrRemove(Payload p, String key, String value) {
-        if (value == null) {
-            p.remove(key);
-        } else {
-            p.put(key, value);
-        }
-    }
-
-    static TestKeyPair anotherValidSigningKey = new TestKeyPair();
-    static TestKeyPair invalidSigningKey = new TestKeyPair();
+    static KeyPair validSigningKey = new KeyPair();
+    static KeyPair anotherValidSigningKey = new KeyPair();
+    static KeyPair invalidSigningKey = new KeyPair();
+    static Token token = new Token(clientId, validSigningKey);
 }

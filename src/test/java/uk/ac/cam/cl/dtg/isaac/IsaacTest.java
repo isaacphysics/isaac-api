@@ -15,22 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import ma.glasnost.orika.MapperFacade;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Before;
-import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
@@ -59,19 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.easymock.EasyMock.anyLong;
@@ -388,141 +364,4 @@ public class IsaacTest {
             }
         }
     }
-
-    public interface TokenModifyFn extends Function<JWTCreator.Builder, JWTCreator.Builder> {
-    }
-
-    public interface PayloadModifyFn extends Function<Payload, Object> {
-    }
-
-    public static class Payload extends HashMap<String, String> {
-    }
-
-    public static String validToken(TokenModifyFn customiseToken, PayloadModifyFn customisePayload) {
-        TokenModifyFn addDefaults = t -> t.withIssuedAt(oneHourAgo)
-                .withNotBefore(oneHourAgo)
-                .withAudience(clientId)
-                .withIssuer(expectedIssuer(msTenantId))
-                .withExpiresAt(inOneHour)
-                .withPayload(validPayload(customisePayload));
-
-        return signedToken(validSigningKey, t -> customiseToken.apply(addDefaults.apply(t)));
-    }
-
-    static Payload validPayload(PayloadModifyFn customisePayload) {
-        var validPayload = new Payload();
-        validPayload.put("oid", UUID.randomUUID().toString());
-        validPayload.put("email", "test@example.com");
-        validPayload.put("family_name", "Family");
-        validPayload.put("given_name", "Given");
-        validPayload.put("tid", msTenantId);
-        customisePayload.apply(validPayload);
-        return validPayload;
-    }
-
-    public static String signedToken(TestKeyPair key, TokenModifyFn fn) {
-        var algorithm = Algorithm.RSA256(key.publicKey(), key.privateKey());
-        var token = fn.apply(JWT.create().withKeyId(key.id()));
-        return token.sign(algorithm);
-    }
-
-    public static Pair<Server, KeySetServlet> startKeySetServer(int port, List<TestKeyPair> keys) throws Exception {
-        var handler = new ServletHandler();
-        var servlet = KeySetServlet.withKeys(keys);
-        handler.addServletWithMapping(new ServletHolder(servlet), "/keys");
-        var server = new Server(port);
-        server.setHandler(handler);
-        server.start();
-        return Pair.of(server, servlet);
-    }
-
-    public static class TestKeyPair {
-        private final KeyPair keyPair;
-
-        public TestKeyPair() {
-            try {
-                keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public String id() {
-            return format("key_id_%s", keyPair.getPublic().hashCode());
-        }
-
-        public String modulus() {
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(publicKey().getModulus().toByteArray());
-        }
-
-        public String exponent() {
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(publicKey().getPublicExponent().toByteArray());
-        }
-
-        public RSAPublicKey publicKey() {
-            return (RSAPublicKey) keyPair.getPublic();
-        }
-
-        public RSAPrivateKey privateKey() {
-            return (RSAPrivateKey) keyPair.getPrivate();
-        }
-    }
-
-    public static TestKeyPair validSigningKey = new TestKeyPair();
-
-    public static Instant oneHourAgo = Instant.now().minusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
-    public static Instant inOneHour = Instant.now().plusSeconds(60 * 60).truncatedTo(ChronoUnit.SECONDS);
-    public static String clientId = "the_client_id";
-    public static String tenantId = "common";
-    public static String msTenantId = "9188040d-6c67-4c5b-b112-36a304b66dad"; // MS uses this for personal accounts
-
-    public static String expectedIssuer(String tid) {
-        return format("https://login.microsoftonline.com/%s/v2.0", tid);
-    }
-
-    public static class KeySetServlet extends HttpServlet {
-        private final List<IsaacTest.TestKeyPair> keys;
-        private int requestCount = 0;
-
-        public static KeySetServlet withKeys(List<IsaacTest.TestKeyPair> keys) {
-            return new KeySetServlet(keys);
-        }
-
-        private KeySetServlet(List<IsaacTest.TestKeyPair> keys) {
-            this.keys = keys;
-        }
-
-        public int getRequestCount() {
-            return this.requestCount;
-        }
-
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-                throws IOException {
-            resp.setContentType("application/json");
-            resp.setStatus(HttpServletResponse.SC_OK);
-            resp.getWriter().println(keyStore());
-            requestCount++;
-        }
-
-        private JSONObject keyStore() {
-            return new JSONObject().put(
-                    "keys", keys.stream().reduce(
-                            new JSONArray(),
-                            (acc, key) -> acc.put(
-                                    new JSONObject().put("kty", "RSA")
-                                            .put("use", "sig")
-                                            .put("kid", key.id())
-                                            .put("n", key.modulus())
-                                            .put("e", key.exponent())
-                                            .put("cloud_instance_name", "microsoftonline.com")
-                                    // Microsoft's response also contains an X.509 certificate, which we don't test
-                                    // here. Sample at: https://login.microsoftonline.com/common/discovery/keys
-                                    // .put("x5t", key_id)
-                                    // .put("x5c", new JSONArray("some_string"))
-                            ),
-                            JSONArray::putAll));
-        }
-    }
-
 }

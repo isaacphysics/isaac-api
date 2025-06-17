@@ -12,12 +12,14 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
+import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
 import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
 import java.net.URI;
 import java.util.Comparator;
@@ -30,7 +32,6 @@ import java.util.stream.LongStream;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static uk.ac.cam.cl.dtg.isaac.IsaacTest.*;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
 public class AuthenticationFacadeIT extends Helpers {
@@ -66,8 +67,8 @@ public class AuthenticationFacadeIT extends Helpers {
 
             @Test
             public void missingEmail_returnsErrorResponse() throws Exception {
-                var token = validToken(t -> t, p -> p.put("email", null));
-                var response = testAuthenticationCallback(msAuth().mockExchange(token), validQuery);
+                var t = token.valid(s -> s, u -> u.put("email", null));
+                var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
                 response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
             }
         }
@@ -78,20 +79,20 @@ public class AuthenticationFacadeIT extends Helpers {
             class SignIn {
                 @Test
                 public void matchedAccountNotConnected_returnsNotUsingMicrosoftResponse() throws Exception {
-                    var token = validToken(t -> t, p -> {
-                        p.put("oid", UUID.randomUUID().toString());
-                        p.put("email", CHARLIE_STUDENT_EMAIL);
+                    var t = token.valid(s -> s, u -> {
+                        u.put("oid", UUID.randomUUID().toString());
+                        u.put("email", CHARLIE_STUDENT_EMAIL);
                         return null;
                     });
-                    var response = testAuthenticationCallback(msAuth().mockExchange(token), validQuery);
+                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
                     response.assertError(notUsingMicrosoftMessage, Response.Status.FORBIDDEN);
                     response.assertNoUserLoggedIn();
                 }
 
                 @Test
                 public void matchedAccountConnected_signInAndReturnsUser() throws Exception {
-                    var token = validToken(t -> t, p -> p.put("oid", ERIKA_PROVIDER_USER_ID));
-                    var response = testAuthenticationCallback(msAuth().mockExchange(token), validQuery);
+                    var t = token.valid(s -> s, u -> u.put("oid", ERIKA_PROVIDER_USER_ID));
+                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
                     response.assertUserReturned(ERIKA_STUDENT_EMAIL);
                     response.assertUserLoggedIn(ERIKA_STUDENT_ID);
                 }
@@ -102,14 +103,14 @@ public class AuthenticationFacadeIT extends Helpers {
                 @Test
                 public void completePayload_registersUser() throws Exception {
                     var nextId = nextUserIdFromDb();
-                    var token = validToken(t -> t, p -> {
-                        p.put("oid", UUID.randomUUID().toString());
-                        p.put("email", "new_student@outlook.com");
-                        p.put("given_name", "New");
-                        p.put("family_name", "Student");
+                    var t = token.valid(s -> s, u -> {
+                        u.put("oid", UUID.randomUUID().toString());
+                        u.put("email", "new_student@outlook.com");
+                        u.put("given_name", "New");
+                        u.put("family_name", "Student");
                         return null;
                     });
-                    var response = testAuthenticationCallback(msAuth().mockExchange(token), validQuery);
+                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
                     response.assertUserLoggedIn(nextId);
                     assertEquals("new_student@outlook.com", response.getUser().getEmail());
                     assertEquals("New", response.getUser().getGivenName());
@@ -118,15 +119,15 @@ public class AuthenticationFacadeIT extends Helpers {
 
                 @Test
                 public void incompletePayload_returnsError() throws Exception {
-                    var token = validToken(t -> t, p -> {
-                        p.put("oid", UUID.randomUUID().toString());
-                        p.put("email", "new_student_2@outlook.com");
-                        p.remove("given_name");
-                        p.remove("family_name");
-                        p.remove("name");
+                    var t = token.valid(s -> s, u -> {
+                        u.put("oid", UUID.randomUUID().toString());
+                        u.put("email", "new_student_2@outlook.com");
+                        u.remove("given_name");
+                        u.remove("family_name");
+                        u.remove("name");
                         return null;
                     });
-                    var response = testAuthenticationCallback(msAuth().mockExchange(token), validQuery);
+                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
                     response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
                     response.assertNoUserLoggedIn();
                 }
@@ -134,9 +135,9 @@ public class AuthenticationFacadeIT extends Helpers {
 
             @Test
             public void cachesJwksCalls() throws Exception {
-                var server = startKeySetServer(8888, List.of(validSigningKey));
+                var server = KeySetServlet.startServer(8888, List.of(validSigningKey));
                 try {
-                    var subject = subject(msAuth().mockExchange(validToken(t -> t, p -> p)));
+                    var subject = subject(msAuth().mockExchange(token.valid(s -> s, u -> u)));
                     var url = String.format("http://isaacphysics.org/auth/microsoft/callback%s", validQuery);
                     subject.authenticationCallback(request(url), response().getLeft(), "microsoft");
                     subject.authenticationCallback(request(url), response().getLeft(), "microsoft");
@@ -217,7 +218,7 @@ class Helpers extends IsaacIntegrationTest {
 
     public CallbackResponse testAuthenticationCallback(MicrosoftAuthenticator authenticator, String query) throws Exception {
         var subject = subject(authenticator);
-        var keySetServer = IsaacTest.startKeySetServer(8888, List.of(validSigningKey));
+        var keySetServer = KeySetServlet.startServer(8888, List.of(validSigningKey));
         try {
             var url = String.format("http://isaacphysics.org/auth/microsoft/callback%s", query);
             var passedResponse = response();
@@ -314,6 +315,10 @@ class Helpers extends IsaacIntegrationTest {
         return largestIdUser.map(u -> u.getId() + 1).orElse(null);
     }
 
+    static String clientId = "the_client_id";
+    static String tenantId = "common";
+    static KeyPair validSigningKey = new KeyPair();
+    static Token token = new Token(clientId, validSigningKey);
     static String csrfToken = "the_csrf_token";
     static String validQuery = String.format("?state=%s&code=123", csrfToken);
     static String notUsingMicrosoftMessage = "You do not use Microsoft to log in. You may have registered using" +
