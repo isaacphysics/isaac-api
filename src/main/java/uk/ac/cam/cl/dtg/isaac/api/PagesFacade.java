@@ -440,11 +440,12 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         String validatedSearchString = (null == searchString || searchString.isBlank()) ? null : searchString;
 
-        // Show "nofilter" content to staff, superseded content to teachers:
+        // Show "nofilter" content to staff, superseded content to teachers, except when finding random questions:
         boolean showNoFilterContent = false;
         boolean showSupersededContent = false;
+        boolean isRandomQuestion = Objects.equals(QUESTION_SEARCH_RANDOM_QUESTION, querySource);
         try {
-            if (user instanceof RegisteredUserDTO) {
+            if (!isRandomQuestion && user instanceof RegisteredUserDTO) {
                 showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
                 showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
             }
