@@ -81,8 +81,8 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         this.clientId = Validate.notBlank(clientId, "Missing client_id, can't be \"%s\".", clientId);
         this.tenantId = Validate.notBlank(tenantId, "Missing tenant_id, can't be \"%s\".", tenantId);
         this.clientSecret = Validate.notBlank(clientSecret, "Missing client_secret, can't be \"%s\".", clientSecret);
-        this.redirectUrl = validateURL(redirectUrL, "Missing redirect_url, can't be \"%s\".");
-        var parsedJWKSUrl = validateURL(jwksUrl, "Missing jwks_url, can't be \"%s\".");
+        this.redirectUrl = Validation.url(redirectUrL, "Missing redirect_url, can't be \"%s\".");
+        var parsedJWKSUrl = Validation.url(jwksUrl, "Missing jwks_url, can't be \"%s\".");
         this.jwkProvider = new JwkProviderBuilder(parsedJWKSUrl).cached(10, 1, TimeUnit.HOURS).build();
         this.credentialStore = CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
     }
@@ -152,7 +152,10 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     public UserFromAuthProvider getUserInfo(String internalProviderReference) throws AuthenticatorSecurityException, NoUserException {
         String tokenStr = credentialStore.getIfPresent(internalProviderReference);
         var token = parseAndVerifyToken(tokenStr);
-        var name = getName(token.getClaim("given_name").asString(), token.getClaim("family_name").asString(), token);
+        var name = Validation.name(
+                token.getClaim("given_name").asString(),
+                token.getClaim("family_name").asString(),
+                token);
 
         return new UserFromAuthProvider(
                 // use "oid" over "sub" because oid is the same across app registrations, and we might need to
@@ -182,10 +185,10 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
             JWT.require(algorithm)
                     .withAudience(clientId)
-                    .withClaim("tid", validUUID())
+                    .withClaim("tid", Validation.uuid())
                     .withIssuer(String.format("https://login.microsoftonline.com/%s/v2.0", token.getClaim("tid").asString()))
-                    .withClaim("oid", validUUID())
-                    .withClaim("email", validEmail())
+                    .withClaim("oid", Validation.uuid())
+                    .withClaim("email", Validation.email())
                     .build()
                     .verify(tokenStr);
             return token;
@@ -211,12 +214,25 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             throw LogException.error(e, new AuthenticatorSecurityException("Token verification: UNEXPECTED_ERROR"));
         }
     }
+}
 
-    private BiPredicate<Claim, DecodedJWT> validEmail() {
+class Validation {
+    public static URL url(String urlString, String message) {
+        try {
+            return new URL(urlString);
+        } catch (MalformedURLException e ) {
+            if (null == urlString) {
+                throw new NullPointerException(String.format(message, urlString));
+            }
+            throw new IllegalArgumentException(String.format(message, urlString));
+        }
+    }
+
+    public static BiPredicate<Claim, DecodedJWT> email() {
         return (c, j) -> UserAccountManager.isUserEmailValid(c.toString());
     }
 
-    private BiPredicate<Claim, DecodedJWT> validUUID() {
+    public static BiPredicate<Claim, DecodedJWT> uuid() {
         return (c, j) -> {
             try {
                 var uuid = UUID.fromString(c.asString());
@@ -227,7 +243,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         };
     }
 
-    private Pair<String, String> getName(String givenName, String familyName, DecodedJWT token) throws NoUserException {
+    public static Pair<String, String> name(String givenName, String familyName, DecodedJWT token) throws NoUserException {
         if (UserAccountManager.isUserNameValid(givenName) && UserAccountManager.isUserNameValid((familyName))) {
             return Pair.of(givenName, familyName);
         }
@@ -242,22 +258,11 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                 var name = token.getClaim("name").asString();
                 var names = StringUtils.split(name, " ");
                 var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
-                return getName(String.join(" ", firstName), names[names.length - 1], null);
+                return Validation.name(String.join(" ", firstName), names[names.length - 1], null);
             } catch (Exception ignored) {}
         }
 
         throw LogException.warn(null, new NoUserException("Could not determine name"));
-    }
-
-    private static URL validateURL(String urlString, String message) {
-        try {
-            return new URL(urlString);
-        } catch (MalformedURLException e ) {
-            if (null == urlString) {
-                throw new NullPointerException(String.format(message, urlString));
-            }
-            throw new IllegalArgumentException(String.format(message, urlString));
-        }
     }
 }
 
