@@ -26,5 +26,5 @@ package uk.ac.cam.cl.dtg.segue.auth;
  * (ignoring case).
  */
 public enum AuthenticationProvider {
-	GOOGLE, FACEBOOK, @Deprecated TWITTER, RAVEN, TEST, SEGUE, RASPBERRYPI
+	GOOGLE, FACEBOOK, @Deprecated TWITTER, RAVEN, TEST, SEGUE, RASPBERRYPI, MICROSOFT
 }

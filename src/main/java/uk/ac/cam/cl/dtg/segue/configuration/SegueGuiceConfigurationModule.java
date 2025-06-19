@@ -88,6 +88,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
@@ -363,6 +364,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES, globalProperties);
         mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
+
+        // Microsoft
+        try {
+            new MicrosoftAuthenticator(
+                    globalProperties.getProperty(Constants.MICROSOFT_CLIENT_ID),
+                    globalProperties.getProperty(Constants.MICROSOFT_TENANT_ID),
+                    globalProperties.getProperty(Constants.MICROSOFT_SECRET),
+                    globalProperties.getProperty(Constants.MICROSOFT_JWKS_URL),
+                    globalProperties.getProperty(Constants.MICROSOFT_REDIRECT_URL));
+
+            this.bindConstantToProperty(Constants.MICROSOFT_SECRET, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_CLIENT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_TENANT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_JWKS_URL, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_REDIRECT_URL, globalProperties);
+
+            mapBinder.addBinding(AuthenticationProvider.MICROSOFT).to(MicrosoftAuthenticator.class);
+        } catch (Exception e) {
+            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
+                    AuthenticationProvider.MICROSOFT));
+        }
 
         // Facebook
         this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
