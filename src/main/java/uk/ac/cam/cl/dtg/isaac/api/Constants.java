@@ -227,6 +227,15 @@ public final class Constants {
         addAll(ISAAC_CLIENT_LOG_TYPES);
     }};
 
+    /**
+     * Question search constants
+     */
+    public static final String QUESTION_SEARCH_RANDOM_QUESTION = "randomQuestion";
+    public static final Set<String> QUESTION_SEARCH_LOG_SOURCE_IGNORES = ImmutableSet.of(QUESTION_SEARCH_RANDOM_QUESTION);
+
+    /**
+     * User preference categories
+     */
     public enum IsaacUserPreferences {
         BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, CONSENT
     }

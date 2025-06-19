@@ -333,7 +333,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit,
-            @QueryParam("randomSeed") final Long randomSeed) {
+            @QueryParam("randomSeed") final Long randomSeed, @QueryParam("querySource") final String querySource) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
@@ -376,27 +376,30 @@ public class PagesFacade extends AbstractIsaacFacade {
             limit = idsList.size();
         }
 
-        // Not an ImmutableMap since we may have null values, which will get nicely excluded from JSON.
-        Map<String, Object> logEntry = new HashMap<>();
-        logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
-        logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
-        logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
-        logEntry.put(BOOKS_FIELDNAME, csvParamToLogValue(books));
-        logEntry.put(STAGES_FIELDNAME, csvParamToLogValue(stages));
-        logEntry.put(DIFFICULTIES_FIELDNAME, csvParamToLogValue(difficulties));
-        logEntry.put(EXAM_BOARDS_FIELDNAME, csvParamToLogValue(examBoards));
-        logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
-        logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
-        logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
-        logEntry.put("levels", csvParamToLogValue(level));
-        logEntry.put("questionIds", csvParamToLogValue(ids));
-        logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
-        logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
-        logEntry.put(SEARCH_STRING_FIELDNAME, !Objects.equals(searchString, "") ? searchString : null);
-        logEntry.put("fasttrack", Objects.equals(fasttrack, true) ? String.valueOf(fasttrack) : null);
-        logEntry.put("randomSeed", null != randomSeed ? String.valueOf(randomSeed) : null);
+        if (null == querySource || !QUESTION_SEARCH_LOG_SOURCE_IGNORES.contains(querySource)) {
+            // Not an ImmutableMap since we may have null values, which will get nicely excluded from JSON.
+            Map<String, Object> logEntry = new HashMap<>();
+            logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
+            logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
+            logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
+            logEntry.put(BOOKS_FIELDNAME, csvParamToLogValue(books));
+            logEntry.put(STAGES_FIELDNAME, csvParamToLogValue(stages));
+            logEntry.put(DIFFICULTIES_FIELDNAME, csvParamToLogValue(difficulties));
+            logEntry.put(EXAM_BOARDS_FIELDNAME, csvParamToLogValue(examBoards));
+            logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
+            logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
+            logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
+            logEntry.put("levels", csvParamToLogValue(level));
+            logEntry.put("questionIds", csvParamToLogValue(ids));
+            logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
+            logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
+            logEntry.put(SEARCH_STRING_FIELDNAME, !Objects.equals(searchString, "") ? searchString : null);
+            logEntry.put("fasttrack", Objects.equals(fasttrack, true) ? String.valueOf(fasttrack) : null);
+            logEntry.put("randomSeed", null != randomSeed ? String.valueOf(randomSeed) : null);
+            logEntry.put("querySource", querySource);
 
-        this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
+            this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
+        }
 
         Map<String, String> fieldNameToValues = new HashMap<>();
         fieldNameToValues.put(ID_FIELDNAME, ids);
@@ -437,11 +440,12 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         String validatedSearchString = (null == searchString || searchString.isBlank()) ? null : searchString;
 
-        // Show "nofilter" content to staff, superseded content to teachers:
+        // Show "nofilter" content to staff, superseded content to teachers, except when finding random questions:
         boolean showNoFilterContent = false;
         boolean showSupersededContent = false;
+        boolean isRandomQuestion = Objects.equals(QUESTION_SEARCH_RANDOM_QUESTION, querySource);
         try {
-            if (user instanceof RegisteredUserDTO) {
+            if (!isRandomQuestion && user instanceof RegisteredUserDTO) {
                 showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
                 showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
             }
