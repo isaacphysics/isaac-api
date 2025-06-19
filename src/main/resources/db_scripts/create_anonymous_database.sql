@@ -227,7 +227,7 @@ CREATE TABLE anonymous.logged_events AS
         'VIEW_CONCEPT', 'CONCEPT_SECTION_OPEN', 'QUICK_QUESTION_TAB_VIEW', 'VIEW_GITHUB_CODE',
         'QUESTION_CONFIDENCE_BEFORE', 'QUESTION_CONFIDENCE_AFTER',
         -- Page usage:
-        'VIEW_PAGE', 'VIEW_PAGE_FRAGMENT',
+        'VIEW_PAGE', 'VIEW_PAGE_FRAGMENT', 'ACCORDION_SECTION_OPEN',
         -- Assignment usage:
         'VIEW_MY_ASSIGNMENTS', 'VIEW_MY_BOARDS_PAGE', 'VIEW_GAMEBOARD_BY_ID',
         -- Group and assignment related usage:
