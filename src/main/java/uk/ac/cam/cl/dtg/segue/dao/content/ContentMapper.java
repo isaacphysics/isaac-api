@@ -37,9 +37,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SidebarEntry;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
@@ -227,6 +231,29 @@ public class ContentMapper {
     }
 
     /**
+     *  Populate the DTO object sidebar with a placeholder, if a page type.
+     *
+     *  This is necessary since the DO has a String but the DTO has a Sidebar object,
+     *  which cannot be automapped and would otherwise lead to the ID of the sidebar
+     *  being lost in the DTO conversion.
+     *
+     * @param content the DO version of the page object to extract the ID from.
+     * @param result the DTO version of the page object to augment.
+     */
+    private void populateSidebarWithIDs(final Content content, final ContentDTO result) {
+        // No need for recursion, since we don't support SeguePages that aren't top-level.
+        if (content instanceof SeguePage && result instanceof SeguePageDTO) {
+            SeguePage seguePage = (SeguePage) content;
+            SeguePageDTO seguePageDTO = (SeguePageDTO) result;
+            if (null != seguePage.getSidebar() && !seguePage.getSidebar().isEmpty()) {
+                SidebarDTO placeholder = new SidebarDTO();
+                placeholder.setId(seguePage.getSidebar());
+                seguePageDTO.setSidebar(placeholder);
+            }
+        }
+    }
+
+    /**
      * Find the default DTO class from a given Domain object.
      *
      * @param content
@@ -239,7 +266,8 @@ public class ContentMapper {
         }
 
         ContentDTO result = getAutoMapper().map(content, this.mapOfDOsToDTOs.get(content.getClass()));
-        this.populateRelatedContentWithIDs(content, result);
+        populateRelatedContentWithIDs(content, result);
+        populateSidebarWithIDs(content, result);
         return result;
     }
 
@@ -330,6 +358,7 @@ public class ContentMapper {
             converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
             converterFactory.registerConverter(new AnonymousUserQuestionAttemptsOrikaConverter());
             converterFactory.registerConverter(new AudienceOrikaConverter());
+            converterFactory.registerConverter(new SidebarEntryOrikaConverter());
 
             this.autoMapper = mapperFactory.getMapperFacade();
         }
@@ -359,6 +388,8 @@ public class ContentMapper {
         IsaacQuestionBaseDeserializer isaacQuestionBaseDeserializer =
                 new IsaacQuestionBaseDeserializer(contentDeserializer);
 
+        SidebarEntryDeserializer sidebarEntryDeserializer = new SidebarEntryDeserializer(contentDeserializer);
+
         SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
         contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
         contentDeserializerModule.addDeserializer(IsaacQuestionBase.class, isaacQuestionBaseDeserializer);
@@ -366,6 +397,7 @@ public class ContentMapper {
         contentDeserializerModule.addDeserializer(Item.class, itemDeserializer);
         contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
         contentDeserializerModule.addDeserializer(LLMMarkingExpression.class, new LLMMarkingExpressionDeserializer());
+        contentDeserializerModule.addDeserializer(SidebarEntry.class, sidebarEntryDeserializer);
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);

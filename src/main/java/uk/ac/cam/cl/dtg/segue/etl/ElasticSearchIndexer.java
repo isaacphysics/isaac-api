@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -43,6 +44,8 @@ import java.util.function.Function;
  * Created by Ian on 17/10/2016.
  */
 class ElasticSearchIndexer extends ElasticSearchProvider {
+    private static final Integer BULK_REQUEST_BATCH_SIZE = 10000;  // Huge requests overwhelm ES, so batch!
+
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchIndexer.class);
     private final Map<String, List<String>> rawFieldsListByType = new HashMap<>();
     private final Map<String, List<String>> nestedFieldsByType = new HashMap<>();
@@ -113,28 +116,37 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
     void bulkIndex(final String indexBase, final String indexType, final List<String> dataToIndex)
             throws SegueSearchException {
-        executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
-            // build bulk request, items don't have ids
-            BulkRequest request = new BulkRequest();
-            dataToIndex.forEach(itemToIndex -> request.add(
+
+        Iterable<List<String>> partitions = Iterables.partition(dataToIndex, BULK_REQUEST_BATCH_SIZE);
+        // For loop not lambda in forEach, to allow checked exceptions to propagate correctly.
+        for (List<String> batch : partitions) {
+            executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
+                // build bulk request, these items don't have ids
+                BulkRequest request = new BulkRequest();
+                batch.forEach(itemToIndex -> request.add(
                     new IndexRequest(typedIndex).source(itemToIndex, XContentType.JSON)
-            ));
-            return request;
-        });
+                ));
+                return request;
+            });
+        }
     }
 
     void bulkIndexWithIDs(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
             throws SegueSearchException {
-        executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
-            // build bulk request, ids of data items are specified by their keys
-            BulkRequest bulkRequest = new BulkRequest();
-            dataToIndex.forEach(itemToIndex -> bulkRequest.add(
-                    new IndexRequest(typedIndex).id(itemToIndex.getKey()).source(itemToIndex.getValue(), XContentType.JSON)
-            ));
-            return bulkRequest;
-        });
-    }
 
+        Iterable<List<Map.Entry<String, String>>> partitions = Iterables.partition(dataToIndex, BULK_REQUEST_BATCH_SIZE);
+        // For loop not lambda in forEach, to allow checked exceptions to propagate correctly.
+        for (List<Map.Entry<String, String>> batch : partitions) {
+            executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
+                // build bulk request, ids of data items are specified by their keys
+                BulkRequest bulkRequest = new BulkRequest();
+                batch.forEach(itemToIndex -> bulkRequest.add(
+                        new IndexRequest(typedIndex).id(itemToIndex.getKey()).source(itemToIndex.getValue(), XContentType.JSON)
+                ));
+                return bulkRequest;
+            });
+        }
+    }
 
     void indexObject(final String indexBase, final String indexType, final String content, final String uniqueId)
             throws SegueSearchException {

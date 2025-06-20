@@ -460,8 +460,9 @@ public class GameboardPersistenceManager {
      */
     public void augmentGameboardItemsWithContentData(final List<GameboardDTO> gameboards) {
 
+        // Get all content IDs from all gameboards, preserving order to improve cache-hits later.
         List<String> allQuestionIds = gameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream)
-                .map(GameboardItem::getId).unordered().distinct().collect(Collectors.toList());
+                .map(GameboardItem::getId).distinct().collect(Collectors.toList());
 
         if (allQuestionIds.isEmpty()) {
             log.info("No question ids found; returning database gameboard without augmenting.");

@@ -963,7 +963,7 @@ public class ContentIndexer {
         if (content instanceof Media) {
             Media f = (Media) content;
 
-            if (f.getSrc() != null && !f.getSrc().startsWith("http")) {
+            if (f.getSrc() != null && !f.getSrc().startsWith("http") && !f.getSrc().startsWith("/assets/")) {
                 ByteArrayOutputStream fileData = null;
                 try {
                     // This will return null if the file is not found:

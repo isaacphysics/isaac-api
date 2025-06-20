@@ -37,6 +37,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
@@ -748,6 +750,23 @@ public class GitContentManager {
     public static ContentSummaryDTO populateContentSummaryValues(ContentDTO content, ContentSummaryDTO summary) {
         generateDerivedSummaryValues(content, summary);
         return summary;
+    }
+
+    /**
+     * Replace a placeholder sidebar object with an augmented sidebar.
+     *
+     * Augmentation will not happen if a sidebar with the right ID cannot be found.
+     *
+     * @param seguePageDTO the page to augment.
+     * @throws ContentManagerException if loading the sidebar errors.
+     */
+    public void populateSidebar(final SeguePageDTO seguePageDTO) throws ContentManagerException {
+        if (null != seguePageDTO.getSidebar()) {
+            ContentDTO potentialSidebar = getContentById(seguePageDTO.getSidebar().getId(), true);
+            if (potentialSidebar instanceof SidebarDTO) {
+                seguePageDTO.setSidebar((SidebarDTO) potentialSidebar);
+            }
+        }
     }
 
     public String getCurrentContentSHA() {

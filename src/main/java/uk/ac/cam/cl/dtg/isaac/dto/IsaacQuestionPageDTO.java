@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -46,10 +47,10 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
             @JsonProperty("deprecated") Boolean deprecated,
             @JsonProperty("level") Integer level, @JsonProperty("difficulty") Integer difficulty,
             @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy,
-            @JsonProperty("teacherNotes") String teacherNotes) {
+            @JsonProperty("teacherNotes") String teacherNotes, @JsonProperty("sidebar") SidebarDTO sidebar) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, deprecated, supersededBy, tags, teacherNotes, level);
+                attribution, relatedContent, published, deprecated, supersededBy, tags, teacherNotes, level, sidebar);
 
         this.passMark = passMark;
         this.difficulty = difficulty;
