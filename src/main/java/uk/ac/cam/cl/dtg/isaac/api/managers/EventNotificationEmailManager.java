@@ -220,7 +220,7 @@ public class EventNotificationEmailManager {
             boolean shouldSendSurvey = (surveyUrl != null && !surveyUrl.isEmpty())
                 && (surveyTitle == null || !surveyTitle.isEmpty());
             if (shouldSendSurvey) {
-              commitAndSendFeedbackEmail(event, "survey", "event_survey");
+              commitAndSendFeedbackEmail(event, "survey", "event_feedback");
             }
           }
         }

@@ -343,7 +343,6 @@ public class IsaacEventPage extends Content {
    *
    * @return the eventSurveyTitle
    */
-  @JsonIgnore
   public String getEventSurveyTitle() {
     return eventSurveyTitle;
   }
@@ -362,7 +361,6 @@ public class IsaacEventPage extends Content {
    *
    * @return the eventSurvey
    */
-  @JsonIgnore
   public String getEventSurvey() {
     return eventSurvey;
   }
