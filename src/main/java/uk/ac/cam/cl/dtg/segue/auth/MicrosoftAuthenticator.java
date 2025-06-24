@@ -76,7 +76,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private final URL redirectUrl;
 
     private final JwkProvider jwkProvider;
-    protected Cache<String, String> credentialStore;
+    protected final Cache<String, String> credentialStore;
 
 
     /**
@@ -171,7 +171,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public UserFromAuthProvider getUserInfo(final String internalProviderReference)
+    public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
             throws AuthenticatorSecurityException, NoUserException {
         String tokenStr = credentialStore.getIfPresent(internalProviderReference);
         var token = parseAndVerifyToken(tokenStr);
