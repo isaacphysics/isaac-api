@@ -58,7 +58,7 @@ public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
 	 * @throws IOException 
 	 */
 	@Test
-	public final void extractAuthCode_givenValidUrl_returnsCorrectCode() throws IOException, AuthenticationCodeException {
+	public final void extractAuthCode_givenValidUrl_returnsCorrectCode() throws AuthenticationCodeException {
 		GenericUrl url = new GenericUrl(someDomain);
 		url.set("code", someAuthCode);
 		String code = authenticator.extractAuthCode(url.build());

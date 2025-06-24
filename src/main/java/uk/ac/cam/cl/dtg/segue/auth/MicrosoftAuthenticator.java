@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import com.auth0.jwk.*;
+import com.auth0.jwk.InvalidPublicKeyException;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.JwkProviderBuilder;
+import com.auth0.jwk.SigningKeyNotFoundException;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.IncorrectClaimException;
@@ -36,7 +39,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,10 +58,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 
+/**
+ * Microsoft authenticator adapter for Segue.
+ */
 public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private final List<String> scopes = List.of("openid", "profile", "email");
     private final String clientId;
@@ -70,20 +78,34 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private final JwkProvider jwkProvider;
     protected Cache<String, String> credentialStore;
 
+
+    /**
+     * Construct a Microsoft authenticator. Parameters injected by framework, defined in SOPS config.
+     * Our app registration hosted at <a href="https://toolkit.uis.cam.ac.uk/endpoints">Toolkit</a>.
+     *
+     * @param clientId      the id for our app registration with Microsoft.
+     * @param tenantId      the id for the tenant whose accounts we support. `common` for all tenants.
+     * @param clientSecret  a secret generated on Toolkit. When exchanging an auth code for a token, we need to show
+     *                      this secret to Microsoft to prove that we are the intended recipients.
+     * @param jwksUrl       the URL for the key store that should be used to validate token signatures
+     * @param redirectUrl   Microsoft will pass auth codes to our application using this URL
+     * @throws NullPointerException     when some required piece of configuration is missing
+     * @throws IllegalArgumentException when some required piece of configuration is invalid
+     */
     @Inject
     public MicrosoftAuthenticator(
             @Named(Constants.MICROSOFT_CLIENT_ID) final String clientId,
             @Named(Constants.MICROSOFT_TENANT_ID) final String tenantId,
             @Named(Constants.MICROSOFT_SECRET) final String clientSecret,
             @Named(Constants.MICROSOFT_JWKS_URL) final String jwksUrl,
-            @Named(Constants.MICROSOFT_REDIRECT_URL) final String redirectUrL
+            @Named(Constants.MICROSOFT_REDIRECT_URL) final String redirectUrl
     )  {
         this.clientId = Validate.notBlank(clientId, "Missing client_id, can't be \"%s\".", clientId);
         this.tenantId = Validate.notBlank(tenantId, "Missing tenant_id, can't be \"%s\".", tenantId);
         this.clientSecret = Validate.notBlank(clientSecret, "Missing client_secret, can't be \"%s\".", clientSecret);
-        this.redirectUrl = Validation.url(redirectUrL, "Missing redirect_url, can't be \"%s\".");
-        var parsedJWKSUrl = Validation.url(jwksUrl, "Missing jwks_url, can't be \"%s\".");
-        this.jwkProvider = new JwkProviderBuilder(parsedJWKSUrl).cached(10, 1, TimeUnit.HOURS).build();
+        this.redirectUrl = Validation.url(redirectUrl, "Missing redirect_url, can't be \"%s\".");
+        var parsedJwksUrl = Validation.url(jwksUrl, "Missing jwks_url, can't be \"%s\".");
+        this.jwkProvider = new JwkProviderBuilder(parsedJwksUrl).cached(10, 1, TimeUnit.HOURS).build();
         this.credentialStore = CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
     }
 
@@ -98,7 +120,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     }
 
     @Override
-    public String getAuthorizationUrl(String antiForgeryStateToken) {
+    public String getAuthorizationUrl(final String antiForgeryStateToken) {
         return new AuthorizationCodeRequestUrl("https://login.microsoftonline.com/common/oauth2/v2.0/authorize", this.clientId)
                 .setScopes(scopes)
                 .setRedirectUri(redirectUrl.toString())
@@ -110,23 +132,23 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
 
     @Override
     public String getAntiForgeryStateToken() {
-        int SALT_SIZE_BITS = 130;
-        int RADIX_FOR_SALT = 32;
+        int saltSizeBits = 130;
+        int radixForSalt = 32;
 
-        return "microsoft" + new BigInteger(SALT_SIZE_BITS, new SecureRandom()).toString(RADIX_FOR_SALT);
+        return "microsoft" + new BigInteger(saltSizeBits, new SecureRandom()).toString(radixForSalt);
     }
 
     @Override
-    public String extractAuthCode(String url) throws AuthenticationCodeException {
+    public String extractAuthCode(final String url) throws AuthenticationCodeException {
         try {
             return new AuthorizationCodeResponseUrl(url).getCode();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw LogException.warn(e, new AuthenticationCodeException("Error extracting authentication code."));
         }
     }
 
     @Override
-    public String exchangeCode(String authorizationCode) throws CodeExchangeException {
+    public String exchangeCode(final String authorizationCode) throws CodeExchangeException {
         try {
             var request = new AuthorizationCodeTokenRequest(
                     new NetHttpTransport(),
@@ -143,13 +165,14 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
             var internalCredentialID = UUID.randomUUID().toString();
             credentialStore.put(internalCredentialID, response.getIdToken());
             return internalCredentialID;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw LogException.error(e, new CodeExchangeException("There was an error exchanging the code."));
         }
     }
 
     @Override
-    public UserFromAuthProvider getUserInfo(String internalProviderReference) throws AuthenticatorSecurityException, NoUserException {
+    public UserFromAuthProvider getUserInfo(final String internalProviderReference)
+            throws AuthenticatorSecurityException, NoUserException {
         String tokenStr = credentialStore.getIfPresent(internalProviderReference);
         var token = parseAndVerifyToken(tokenStr);
         var name = Validation.name(
@@ -171,7 +194,8 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         );
     }
 
-    private DecodedJWT parseAndVerifyToken(String tokenStr) throws AuthenticatorSecurityException, NoUserException{
+    private DecodedJWT parseAndVerifyToken(final String tokenStr)
+            throws AuthenticatorSecurityException, NoUserException {
         // Validating id token based on requirements at
         // https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens, as well as our own requirements
         if (null == tokenStr) {
@@ -192,98 +216,102 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
                     .build()
                     .verify(tokenStr);
             return token;
-        } catch (InvalidPublicKeyException e) {
+        } catch (final InvalidPublicKeyException e) {
             throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: INVALID_PUBLIC_KEY"));
-        } catch (SigningKeyNotFoundException e) {
+        } catch (final SigningKeyNotFoundException e) {
             throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: KEY_NOT_FOUND"));
-        } catch (SignatureVerificationException e) {
+        } catch (final SignatureVerificationException e) {
             throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: BAD_SIGNATURE"));
-        } catch (TokenExpiredException e) {
+        } catch (final TokenExpiredException e) {
             throw LogException.warn(e, new AuthenticatorSecurityException("Token verification: TOKEN_EXPIRED"));
-        }
-        catch (MissingClaimException | IncorrectClaimException e) {
-            String claimName = e instanceof MissingClaimException ?
-                    ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
+        } catch (MissingClaimException | IncorrectClaimException e) {
+            String claimName = e instanceof MissingClaimException
+                    ? ((MissingClaimException) e).getClaimName() : ((IncorrectClaimException) e).getClaimName();
             if (List.of("oid", "tid", "email").contains(claimName)) {
-                throw LogException.warn(e, new NoUserException(String.format("User verification: BAD_CLAIM (%s)", claimName)));
+                throw LogException.warn(e, new NoUserException(
+                        String.format("User verification: BAD_CLAIM (%s)", claimName)));
             } else {
                 throw LogException.warn(e, new AuthenticatorSecurityException(
                         String.format("Token verification: BAD_CLAIM (%s)", claimName)));
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw LogException.error(e, new AuthenticatorSecurityException("Token verification: UNEXPECTED_ERROR"));
         }
     }
+
+    private static class Validation {
+        public static URL url(final String urlString, final String message) {
+            try {
+                return new URL(urlString);
+            } catch (final MalformedURLException e) {
+                if (e.getCause() instanceof NullPointerException) {
+                    throw new NullPointerException(String.format(message, urlString));
+                }
+                throw new IllegalArgumentException(String.format(message, urlString));
+            }
+        }
+
+        public static BiPredicate<Claim, DecodedJWT> email() {
+            return (c, j) -> UserAccountManager.isUserEmailValid(c.toString());
+        }
+
+        public static BiPredicate<Claim, DecodedJWT> uuid() {
+            return (c, j) -> {
+                try {
+                    var uuid = UUID.fromString(c.asString());
+                    return uuid.toString().equals(c.asString());
+                } catch (final Exception e) {
+                    return false;
+                }
+            };
+        }
+
+        public static Pair<String, String> name(final String givenName, final String familyName, final DecodedJWT token)
+                throws NoUserException {
+            if (UserAccountManager.isUserNameValid(givenName) && UserAccountManager.isUserNameValid((familyName))) {
+                return Pair.of(givenName, familyName);
+            }
+            if (UserAccountManager.isUserNameValid((givenName))) {
+                return Pair.of(givenName, null);
+            }
+            if (UserAccountManager.isUserNameValid((familyName))) {
+                return Pair.of(null, familyName);
+            }
+            if (token != null) {
+                try {
+                    var name = token.getClaim("name").asString();
+                    var names = StringUtils.split(name, " ");
+                    var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
+                    return Validation.name(String.join(" ", firstName), names[names.length - 1], null);
+                } catch (final Exception ignored) {
+                    // fall-through to exception thrown at bottom
+                }
+            }
+            throw LogException.warn(null, new NoUserException("Could not determine name"));
+        }
+    }
 }
 
-class Validation {
-    public static URL url(String urlString, String message) {
-        try {
-            return new URL(urlString);
-        } catch (MalformedURLException e ) {
-            if (null == urlString) {
-                throw new NullPointerException(String.format(message, urlString));
-            }
-            throw new IllegalArgumentException(String.format(message, urlString));
-        }
-    }
 
-    public static BiPredicate<Claim, DecodedJWT> email() {
-        return (c, j) -> UserAccountManager.isUserEmailValid(c.toString());
-    }
-
-    public static BiPredicate<Claim, DecodedJWT> uuid() {
-        return (c, j) -> {
-            try {
-                var uuid = UUID.fromString(c.asString());
-                return uuid.toString().equals(c.asString());
-            } catch (Exception e) {
-                return false;
-            }
-        };
-    }
-
-    public static Pair<String, String> name(String givenName, String familyName, DecodedJWT token) throws NoUserException {
-        if (UserAccountManager.isUserNameValid(givenName) && UserAccountManager.isUserNameValid((familyName))) {
-            return Pair.of(givenName, familyName);
-        }
-        if (UserAccountManager.isUserNameValid((givenName))) {
-            return Pair.of(givenName, null);
-        }
-        if (UserAccountManager.isUserNameValid((familyName))) {
-            return Pair.of(null, familyName);
-        }
-        if (token != null) {
-            try {
-                var name = token.getClaim("name").asString();
-                var names = StringUtils.split(name, " ");
-                var firstName = Arrays.copyOfRange(names, 0, names.length - 1);
-                return Validation.name(String.join(" ", firstName), names[names.length - 1], null);
-            } catch (Exception ignored) {}
-        }
-
-        throw LogException.warn(null, new NoUserException("Could not determine name"));
-    }
-}
-
+@SuppressWarnings("checkstyle:OneTopLevelClass")
 class LogException {
     private static final Logger log = LoggerFactory.getLogger(MicrosoftAuthenticator.class);
 
-    public static <T extends Exception, U extends Exception> U warn(T sourceError, U targetError) {
+    public static <T extends Exception, U extends Exception> U warn(final T sourceError, final U targetError) {
         log.warn(String.format(targetMessage(targetError), safeExtractMessage(sourceError)), sourceError);
         return targetError;
     }
 
-    public static <T extends Exception, U extends Exception> U error(T sourceError, U targetError) {
+    public static <T extends Exception, U extends Exception> U error(final T sourceError, final U targetError) {
         log.error(String.format(targetMessage(targetError), safeExtractMessage(sourceError)), sourceError);
         return targetError;
     }
 
-    private static String safeExtractMessage(Exception e) {
+    private static String safeExtractMessage(final Exception e) {
         return Optional.ofNullable(e).map(Exception::getMessage).orElse(null);
     }
 
-    private static String targetMessage(Exception e) {
+    private static String targetMessage(final Exception e) {
         if (e instanceof AuthenticationCodeException) {
             return "Error extracting the authentication code: %s";
         } else if (e instanceof CodeExchangeException) {

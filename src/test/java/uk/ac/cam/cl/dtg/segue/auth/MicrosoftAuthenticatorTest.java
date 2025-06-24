@@ -35,7 +35,11 @@ import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.String.format;
@@ -91,10 +95,10 @@ public class MicrosoftAuthenticatorTest {
     }
 
     public static class TestExtractAuthCode extends Helpers {
-        /** test for happy path: {@link IOAuth2AuthenticatorTest#extractAuthCode_givenValidUrl_returnsCorrectCode} */
+        /** happy path: {@link IOAuth2AuthenticatorTest#extractAuthCode_givenValidUrl_returnsCorrectCode} */
         @Test
         public void extractAuthCode_givenInvalidUrl_throwsError() {
-            Executable act = () -> subject(getStore()).extractAuthCode("http://example.com");
+            Executable act = () -> subject(getStore()).extractAuthCode("https://example.com");
             assertError(act, AuthenticationCodeException.class, "Error extracting authentication code.");
         }
     }
@@ -183,7 +187,7 @@ public class MicrosoftAuthenticatorTest {
                     });
                 }
 
-                @Parameterized.Parameter(0)
+                @Parameterized.Parameter()
                 public String[] input;
 
                 @Parameterized.Parameter(1)
