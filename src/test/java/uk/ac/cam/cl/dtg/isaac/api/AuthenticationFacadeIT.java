@@ -153,7 +153,7 @@ public class AuthenticationFacadeIT extends Helpers {
     class RegisterWithRaspberryPiAuthenticator {
         @Test
         public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() {
-            var response = subject(msAuth()).authenticate(request(""), "RASPBERRYPI", false);
+            var response = subject().authenticate(request(""), "RASPBERRYPI", false);
 
             // Assert
             // check status code is OK
@@ -166,7 +166,7 @@ public class AuthenticationFacadeIT extends Helpers {
 
         @Test
         public void initialSignup_addsForceSignUpParameterToRedirectURL() {
-            var response = subject(msAuth()).authenticate(request(""), "RASPBERRYPI", true);
+            var response = subject().authenticate(request(""), "RASPBERRYPI", true);
 
             // Assert
             // check status code is OK
@@ -230,12 +230,12 @@ class Helpers extends IsaacIntegrationTest {
     }
 
     static AuthenticationFacade subject(MicrosoftAuthenticator authenticator) {
-        try {
-            providersToRegister.put(AuthenticationProvider.MICROSOFT, authenticator);
-            return new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        providersToRegister.put(AuthenticationProvider.MICROSOFT, authenticator);
+        return subject();
+    }
+
+    static AuthenticationFacade subject() {
+        return new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);
     }
 
     static class MockingMicrosoftAuthenticator extends MicrosoftAuthenticator {
