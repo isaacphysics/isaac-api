@@ -76,7 +76,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
     private final URL redirectUrl;
 
     private final JwkProvider jwkProvider;
-    protected final Cache<String, String> credentialStore;
+    protected Cache<String, String> credentialStore;
 
 
     /**
