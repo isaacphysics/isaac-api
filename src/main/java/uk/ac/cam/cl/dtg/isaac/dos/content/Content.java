@@ -52,6 +52,7 @@ public class Content extends ContentBase {
     protected String prioritisedSearchableContent;
     protected String searchableContent;
     protected Boolean expandable;
+    protected Boolean topScrollable;
 
     @JsonCreator
     public Content(@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -231,6 +232,14 @@ public class Content extends ContentBase {
 
     public void setExpandable(Boolean expandable) {
         this.expandable = expandable;
+    }
+
+    public Boolean getTopScrollable() {
+        return this.topScrollable;
+    }
+
+    public void setTopScrollable(Boolean topScrollable) {
+        this.topScrollable = topScrollable;
     }
 
     @Override

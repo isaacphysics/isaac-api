@@ -46,6 +46,7 @@ public class ContentDTO extends ContentBaseDTO {
     protected Boolean published;
     protected Integer level;
     protected Boolean expandable;
+    protected Boolean topScrollable;
 
     @JsonCreator
     public ContentDTO(@JsonProperty("id") String id,
@@ -220,6 +221,10 @@ public class ContentDTO extends ContentBaseDTO {
     public void setExpandable(Boolean expandable) {
         this.expandable = expandable;
     }
+
+    public Boolean getTopScrollable() { return this.topScrollable; }
+
+    public void setTopScrollable(Boolean topScrollable) { this.topScrollable = topScrollable; }
 
     @Override
     public boolean equals(final Object o) {
