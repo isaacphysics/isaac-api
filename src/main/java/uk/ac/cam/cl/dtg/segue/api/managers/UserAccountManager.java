@@ -22,6 +22,7 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
@@ -1862,8 +1863,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return true if it meets the internal storage requirements, false if not.
      */
     private static boolean isUserEmailValid(final String email) {
-        return email != null && !email.isEmpty()
-                && email.matches(".*(@.+\\.[^.]+|-(facebook|google|twitter)$)");
+        return EmailValidator.getInstance().isValid(email);
     }
 
     /**
