@@ -261,7 +261,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         }
 
         public static BiPredicate<Claim, DecodedJWT> email() {
-            return (c, j) -> UserAccountManager.isUserEmailValid(c.toString());
+            return (c, j) -> UserAccountManager.isUserEmailValid(c.asString());
         }
 
         public static BiPredicate<Claim, DecodedJWT> uuid() {
