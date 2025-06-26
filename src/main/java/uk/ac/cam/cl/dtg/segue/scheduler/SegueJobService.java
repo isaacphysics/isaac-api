@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.scheduler;
 
-import com.google.inject.Inject;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -54,10 +53,11 @@ public class SegueJobService implements ServletContextListener {
      * @param database the Postgres database used as a job store.
      * @param allKnownJobs collection of jobs to register
      * @param jobsToRemove collection of possibly-existing jobs to remove/deregister
+     * @param disableAutostart whether to prevent automatically starting Quartz
      */
-    @Inject
     public SegueJobService(final PostgresSqlDb database, final List<SegueScheduledJob> allKnownJobs,
-                           @Nullable final List<SegueScheduledJob> jobsToRemove) {
+                           @Nullable final List<SegueScheduledJob> jobsToRemove,
+                           final Boolean disableAutostart) {
         this.allKnownJobs = allKnownJobs;
         this.jobsToRemove = jobsToRemove;
         this.localRegisteredJobs = new ArrayList<>();
@@ -65,10 +65,12 @@ public class SegueJobService implements ServletContextListener {
 
         try {
             scheduler = stdSchedulerFactory.getScheduler();
-            if (!database.isReadOnlyReplica()) {
-                initialiseService();
+            if (disableAutostart) {
+                log.warn("Segue Job Service: Not starting, prevented by configuration.");
+            } else if (database.isReadOnlyReplica()) {
+                log.warn("Segue Job Service: Not starting, readonly database.");
             } else {
-                log.warn("Segue Job Service: Not starting due to readonly database.");
+                initialiseService();
             }
         } catch (SchedulerException | SQLException e) {
             throw new RuntimeException("Segue Job Service: Failed to schedule quartz jobs or start scheduler! Aborting!", e);

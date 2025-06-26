@@ -94,6 +94,7 @@ import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
+import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv2SCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
@@ -635,13 +636,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
         ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
         ISegueHashingAlgorithm chainedAlgorithm1 = new SegueChainedPBKDFv1SCryptv1();
+        ISegueHashingAlgorithm chainedAlgorithm2 = new SegueChainedPBKDFv2SCryptv1();
 
         Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
                 preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
                 oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
                 oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
                 oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3,
-                chainedAlgorithm1.hashingAlgorithmName(), chainedAlgorithm1
+                chainedAlgorithm1.hashingAlgorithmName(), chainedAlgorithm1,
+                chainedAlgorithm2.hashingAlgorithmName(), chainedAlgorithm2
         );
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
@@ -1077,6 +1080,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
             String eventPrePostEmails = properties.getProperty(EVENT_PRE_POST_EMAILS);
             boolean eventPrePostEmailsEnabled = null != eventPrePostEmails && !eventPrePostEmails.isEmpty() && Boolean.parseBoolean(eventPrePostEmails);
+            Boolean disableQuartzAutostart = Boolean.parseBoolean(properties.getProperty(DISABLE_QUARTZ_AUTOSTART));
 
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
@@ -1183,7 +1187,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 scheduledJobsToRemove.add(eventReminderEmail);
                 scheduledJobsToRemove.add(eventFeedbackEmail);
             }
-            segueJobService = new SegueJobService(database, configuredScheduledJobs, scheduledJobsToRemove);
+            segueJobService = new SegueJobService(database, configuredScheduledJobs, scheduledJobsToRemove, disableQuartzAutostart);
 
         }
 

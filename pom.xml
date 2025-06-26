@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v3.18.11-SNAPSHOT</segue.version>
+        <segue.version>v3.18.14-SNAPSHOT</segue.version>
         <log4j.version>2.24.3</log4j.version>
         <resteasy.version>6.2.12.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
@@ -19,20 +19,20 @@
         <jackson-databind.version>2.18.3</jackson-databind.version>
         <powermock.version>2.0.9</powermock.version>
         <junit-4.version>4.13.2</junit-4.version>
-        <junit-5.version>5.11.4</junit-5.version>
+        <junit-5.version>5.13.0</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
         <jetty-version>11.0.25</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <dependency-check.version>12.1.0</dependency-check.version>
+        <dependency-check.version>12.1.1</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <swagger-core.version>2.2.29</swagger-core.version>
-        <jgit.version>6.10.0.202406032230-r</jgit.version>
+        <swagger-core.version>2.2.32</swagger-core.version>
+        <jgit.version>6.10.1.202505221210-r</jgit.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
     </properties>
@@ -148,7 +148,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.4.6-jre</version>
+            <version>33.4.8-jre</version>
         </dependency>
 
         <dependency>
@@ -172,7 +172,7 @@
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.46.3</version>
+            <version>1.47.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -323,12 +323,12 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-            <version>4.5.0-M3</version>
+            <version>4.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.13.0</version>
+            <version>1.13.1</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -375,7 +375,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.5</version>
+            <version>42.7.7</version>
         </dependency>
 
         <dependency>
@@ -399,7 +399,13 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>5.10</version>
+            <version>5.11.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>net.sf.biweekly</groupId>
@@ -415,7 +421,7 @@
         <dependency>
             <groupId>com.mailgun</groupId>
             <artifactId>mailgun-java</artifactId>
-            <version>1.1.5</version>
+            <version>1.1.6</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -464,7 +470,7 @@
         <dependency>
             <groupId>com.maxmind.geoip2</groupId>
             <artifactId>geoip2</artifactId>
-            <version>4.2.1</version>
+            <version>4.3.1</version>
         </dependency>
 
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
