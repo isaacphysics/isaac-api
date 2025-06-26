@@ -1862,7 +1862,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @param email - the user email to validate.
      * @return true if it meets the internal storage requirements, false if not.
      */
-    private static boolean isUserEmailValid(final String email) {
+    public static boolean isUserEmailValid(final String email) {
         return EmailValidator.getInstance().isValid(email);
     }
 

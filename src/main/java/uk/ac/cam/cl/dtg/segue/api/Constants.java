@@ -299,6 +299,13 @@ public final class Constants {
     public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
     public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
 
+    // Microsoft properties
+    public static final String MICROSOFT_SECRET = "MICROSOFT_SECRET";
+    public static final String MICROSOFT_CLIENT_ID = "MICROSOFT_CLIENT_ID";
+    public static final String MICROSOFT_TENANT_ID = "MICROSOFT_TENANT_ID";
+    public static final String MICROSOFT_JWKS_URL = "MICROSOFT_JWKS_URL";
+    public static final String MICROSOFT_REDIRECT_URL = "MICROSOFT_REDIRECT_URL";
+
     // Facebook properties
     public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
     public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
