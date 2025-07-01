@@ -1192,8 +1192,6 @@ public class GameManager {
         gameItem.setQuestionPartStates(questionPartStates);
         int questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
-//        float percentCorrect = 100f * questionPartsCorrect / questionPartsTotal;
-//        float percentIncorrect = 100f * questionPartsIncorrect / questionPartsTotal;
 
         CompletionState state;
         if (questionPartsCorrect == questionPartsTotal) {
@@ -1208,14 +1206,6 @@ public class GameManager {
             state = CompletionState.ALL_ATTEMPTED;
         }
 
-
-//        } else if (percentCorrect >= gameItem.getPassMark()) {
-//            state = GameboardItemState.PASSED;
-//        } else if (percentIncorrect > (100 - gameItem.getPassMark())) {
-//            state = GameboardItemState.FAILED;
-//        } else {
-//            state = GameboardItemState.IN_PROGRESS;
-//        }
         gameItem.setState(state);
     }
     
