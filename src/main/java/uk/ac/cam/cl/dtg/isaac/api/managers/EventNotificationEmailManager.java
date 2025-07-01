@@ -197,30 +197,28 @@ public class EventNotificationEmailManager {
           if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
             continue;
           }
+          // New logic for sending survey email
+          String surveyUrl = event.getEventSurvey();
+          String surveyTitle = event.getEventSurveyTitle();
           // Event end date (if present) is yesterday or before, else event date is yesterday, or before
           // We want to send the event_feedback email 24 hours after the event
           boolean endDateYesterday =
               event.getEndDate() != null && event.getEndDate().isBefore(Instant.now().minus(1, ChronoUnit.DAYS));
+
           boolean noEndDateAndStartDateYesterday =
               event.getEndDate() == null && event.getDate().isBefore(Instant.now().minus(1, ChronoUnit.DAYS));
+
           if (endDateYesterday || noEndDateAndStartDateYesterday) {
             List<ExternalReference> postResources = event.getPostResources();
+
             boolean postResourcesPresent =
                 postResources != null && !postResources.isEmpty() && !postResources.contains(null);
-            if (postResourcesPresent) {
-              commitAndSendFeedbackEmail(event, "post", "event_feedback");
-            }
-            // New logic for sending survey email
-            String surveyUrl = event.getEventSurvey();
-            String surveyTitle = event.getEventSurveyTitle();
 
-            // Define your criteria for sending surveys
-            // Events created before the survey title field was added may not have a title.
-            // Condition is set to handle backwards compatibility for events without title.
-            boolean shouldSendSurvey = (surveyUrl != null && !surveyUrl.isEmpty())
+            boolean eventSurveyTitleUrlPresent = (surveyUrl != null && !surveyUrl.isEmpty())
                 && (surveyTitle == null || !surveyTitle.isEmpty());
-            if (shouldSendSurvey) {
-              commitAndSendFeedbackEmail(event, "survey", "event_feedback");
+
+            if (postResourcesPresent || eventSurveyTitleUrlPresent) {
+              commitAndSendFeedbackEmail(event, "post", "event_feedback");
             }
           }
         }
