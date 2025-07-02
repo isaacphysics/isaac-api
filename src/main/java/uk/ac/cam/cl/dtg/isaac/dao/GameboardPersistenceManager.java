@@ -52,6 +52,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -549,8 +550,16 @@ public class GameboardPersistenceManager {
                 pst.setObject(1, gameboardToSave.getId());
                 pst.setString(2, gameboardToSave.getTitle());
                 pst.setArray(3, contents);
-                pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
-                pst.setInt(5, gameboardToSave.getWildCardPosition());
+                if (gameboardToSave.getWildCard() != null) {
+                    pst.setString(4, objectMapper.writeValueAsString(gameboardToSave.getWildCard()));
+                } else {
+                    pst.setNull(4, Types.VARCHAR);
+                }
+                if (gameboardToSave.getWildCardPosition() != null) {
+                    pst.setInt(5, gameboardToSave.getWildCardPosition());
+                } else {
+                    pst.setNull(5, Types.INTEGER);
+                }
                 pst.setString(6, objectMapper.writeValueAsString(gameboardToSave.getGameFilter()));
                 pst.setLong(7, gameboardToSave.getOwnerUserId());
                 pst.setString(8, gameboardToSave.getCreationMethod().toString());
@@ -562,7 +571,7 @@ public class GameboardPersistenceManager {
                 }
 
                 if (pst.executeUpdate() == 0) {
-                    throw new SegueDatabaseException("Unable to save assignment.");
+                    throw new SegueDatabaseException("Unable to save gameboard.");
                 }
             } finally {
                 contents.free();
@@ -766,16 +775,12 @@ public class GameboardPersistenceManager {
         }
         gameboardDO.setContents(contents);
         gameboardDO.setWildCard(Objects.isNull(results.getObject("wildcard")) ? null : objectMapper.readValue(results.getObject("wildcard").toString(), IsaacWildcard.class));
-        gameboardDO.setWildCardPosition(results.getInt("wildcard_position"));
+        gameboardDO.setWildCardPosition(Objects.isNull(results.getObject("wildcard_position")) ? null : results.getInt("wildcard_position"));
         gameboardDO.setGameFilter(objectMapper
                 .readValue(results.getObject("game_filter").toString(), GameFilter.class));
-        long ownerUserId = results.getLong("owner_user_id");
-        // by default getLong (primitive) sets null to 0, where 0 is a distinct value from null for user IDs
-        gameboardDO.setOwnerUserId(!results.wasNull() ? ownerUserId : null);
+        gameboardDO.setOwnerUserId(Objects.isNull(results.getObject("owner_user_id")) ? null : results.getLong("owner_user_id"));
         gameboardDO.setTags(objectMapper.readValue(results.getObject("tags").toString(), Set.class));
-        if (results.getString("creation_method") != null) {
-            gameboardDO.setCreationMethod(GameboardCreationMethod.valueOf(results.getString("creation_method")));    
-        }
+        gameboardDO.setCreationMethod(Objects.isNull(results.getString("creation_method")) ? null : GameboardCreationMethod.valueOf(results.getString("creation_method")));
         
         gameboardDO.setCreationDate(new Date(results.getTimestamp("creation_date").getTime()));
         return gameboardDO;
