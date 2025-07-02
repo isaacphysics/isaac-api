@@ -33,7 +33,7 @@ public class ContentSummaryDTO {
     private String subtitle;
     private String summary;
     private String type;
-    private String level;
+    private Integer level;
     private List<String> tags;
     private String url;
     private CompletionState state;
@@ -170,7 +170,7 @@ public class ContentSummaryDTO {
      *
      * @return the level
      */
-    public String getLevel() {
+    public Integer getLevel() {
         return level;
     }
 
@@ -180,7 +180,7 @@ public class ContentSummaryDTO {
      * @param level
      *            the level to set
      */
-    public void setLevel(final String level) {
+    public void setLevel(final Integer level) {
         this.level = level;
     }
 
