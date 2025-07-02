@@ -366,7 +366,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
             }
 
-            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0
+            if ((newGameboardObject.getId() != null || !newGameboardObject.getTags().isEmpty()
                     || newGameboardObject.getWildCard() != null) && !isUserStaff(userManager, user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard wildcard, ID or tags.").toResponse();
             }
