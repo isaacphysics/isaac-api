@@ -141,8 +141,6 @@ public class GameManager {
      *            The user that should be marked as the creator of the gameBoard.
      * @return a gameboard if possible that satisifies the conditions provided by the parameters. Will return null if no
      *         questions can be provided.
-     * @throws NoWildcardException
-     *             - when we are unable to provide you with a wildcard object.
      * @throws SegueDatabaseException
      *             - if there is an error contacting the database.
      * @throws ContentManagerException
@@ -154,7 +152,7 @@ public class GameManager {
             final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
             final List<String> stages, final List<String> difficulties, final List<String> examBoards,
             final AbstractSegueUserDTO boardOwner)
-    throws NoWildcardException, SegueDatabaseException, ContentManagerException {
+    throws SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
@@ -565,8 +563,6 @@ public class GameManager {
      * @param owner
      *            - user to make owner of gameboard.
      * @return gameboardDTO as persisted
-     * @throws NoWildcardException
-     *             - if we cannot add a wildcard.
      * @throws InvalidGameboardException
      *             - if the gameboard already exists with the given id.
      * @throws SegueDatabaseException
@@ -577,7 +573,7 @@ public class GameManager {
      *             - if we are unable to lookup the required content.
      */
     public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
-            throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
+            throws InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
             ContentManagerException {
         Objects.requireNonNull(gameboardDTO);
         Objects.requireNonNull(owner);
@@ -1411,18 +1407,6 @@ public class GameManager {
                 || gameboardDTO.getTitle().length() > GAMEBOARD_MAX_TITLE_LENGTH) {
             throw new InvalidGameboardException(String.format(
                     "The gameboard title provided is invalid; the maximum length is %s", GAMEBOARD_MAX_TITLE_LENGTH));
-        }
-
-        if (gameboardDTO.getWildCard() != null) {
-            // This will throw a NoWildCardException if we cannot locate a valid
-            // wildcard for this gameboard.
-            try {
-                this.getWildCardById(gameboardDTO.getWildCard().getId());
-            } catch (ContentManagerException e) {
-                log.error("Error validating gameboard.", e);
-                throw new InvalidGameboardException(
-                        "There was a problem validating the gameboard due to ContentManagerException another exception.");
-            }
         }
 
     }

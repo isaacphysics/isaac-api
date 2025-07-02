@@ -23,12 +23,10 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -80,14 +78,12 @@ public class GameboardsFacadeTest {
 	/**
 	 * Verify that when an empty gameboard is noticed a 204 is returned.
 	 * 
-	 * @throws NoUserLoggedInException
 	 * @throws ContentManagerException
 	 */
 	@Test
 	@PowerMockIgnore({ "jakarta.ws.*" })
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
-			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
-			ContentManagerException {
+			throws SegueDatabaseException, ContentManagerException {
 		GameboardsFacade gameboardFacade = new GameboardsFacade(
 				dummyPropertiesLoader, dummyLogManager, dummyGameManager, questionManager,
 				userManager, fastTrackManager);
