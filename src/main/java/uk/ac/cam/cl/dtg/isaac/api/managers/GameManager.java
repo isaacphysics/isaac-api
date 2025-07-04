@@ -141,8 +141,6 @@ public class GameManager {
      *            The user that should be marked as the creator of the gameBoard.
      * @return a gameboard if possible that satisifies the conditions provided by the parameters. Will return null if no
      *         questions can be provided.
-     * @throws NoWildcardException
-     *             - when we are unable to provide you with a wildcard object.
      * @throws SegueDatabaseException
      *             - if there is an error contacting the database.
      * @throws ContentManagerException
@@ -154,7 +152,7 @@ public class GameManager {
             final List<Integer> levels, final List<String> concepts, final List<String> questionCategories,
             final List<String> stages, final List<String> difficulties, final List<String> examBoards,
             final AbstractSegueUserDTO boardOwner)
-    throws NoWildcardException, SegueDatabaseException, ContentManagerException {
+    throws SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
@@ -180,7 +178,7 @@ public class GameManager {
             log.debug("Created gameboard " + uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
-                    getRandomWildcard(mapper, subjects), generateRandomWildCardPosition(), new Date(), gameFilter,
+                    null, null, new Date(), gameFilter,
                     boardOwnerId, GameboardCreationMethod.FILTER, Sets.newHashSet());
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
@@ -565,8 +563,6 @@ public class GameManager {
      * @param owner
      *            - user to make owner of gameboard.
      * @return gameboardDTO as persisted
-     * @throws NoWildcardException
-     *             - if we cannot add a wildcard.
      * @throws InvalidGameboardException
      *             - if the gameboard already exists with the given id.
      * @throws SegueDatabaseException
@@ -577,7 +573,7 @@ public class GameManager {
      *             - if we are unable to lookup the required content.
      */
     public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
-            throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
+            throws InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException,
             ContentManagerException {
         Objects.requireNonNull(gameboardDTO);
         Objects.requireNonNull(owner);
@@ -589,14 +585,6 @@ public class GameManager {
             throw new DuplicateGameboardException();
         } else {
             gameboardDTO.setId(gameboardId.toLowerCase());
-        }
-
-        if (gameboardDTO.getWildCard() == null) {
-            gameboardDTO.setWildCard(getRandomWildcard(mapper, gameboardDTO.getGameFilter().getSubjects()));
-        } 
-        
-        if (gameboardDTO.getWildCardPosition() == null) {
-            gameboardDTO.setWildCardPosition(this.generateRandomWildCardPosition());
         }
 
         // set creation date to now.
@@ -1209,68 +1197,6 @@ public class GameManager {
         }
         gameItem.setState(state);
     }
-    
-    /**
-     * Generate a random integer value to represent the position of the wildcard tile in the gameboard.
-     * 
-     * @return integer between one and GAME_BOARD_SIZE+1
-     */
-    private Integer generateRandomWildCardPosition() {
-        return randomGenerator.nextInt(GAME_BOARD_TARGET_SIZE + 1);
-    }
-
-    /**
-     * Find a wildcard object to add to a gameboard.
-     * 
-     * @param mapper
-     *            - to convert between contentDTO to wildcard.
-     * @return wildCard object.
-     * @throws NoWildcardException
-     *             - when we are unable to provide you with a wildcard object.
-     * @throws ContentManagerException
-     *             - if we cannot access the content requested.
-     */
-    private IsaacWildcard getRandomWildcard(final MapperFacade mapper, final List<String> subjectsList) throws NoWildcardException,
-            ContentManagerException {
-        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, BooleanOperator.OR, Collections.singletonList(WILDCARD_TYPE)));
-
-        // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
-        ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNamesRandomOrder(
-                fieldsToMap, 0, 999);
-
-        // try to increase randomness of wildcard results.
-        Collections.shuffle(wildcardResults.getResults());
-
-        List<ContentDTO> wildcards = new ArrayList<>();
-
-        if (null == subjectsList) {
-            // If we have no subject info, just use any wildcard; to match behavior of questions.
-            wildcards.addAll(wildcardResults.getResults());
-        } else {
-            for (ContentDTO c : wildcardResults.getResults()) {
-                boolean match = false;
-                for (String s : subjectsList) {
-                    if (c.getTags().contains(s)) {
-                        match = true;
-                        break;
-                    }
-                }
-
-                if (match) {
-                    wildcards.add(c);
-                }
-            }
-        }
-
-        if (wildcards.size() == 0) {
-            throw new NoWildcardException();
-        }
-
-        return mapper.map(wildcards.get(0), IsaacWildcard.class);
-    }
 
     /**
      * Get a wildcard by id.
@@ -1453,11 +1379,8 @@ public class GameManager {
      *            - to check
      * @throws InvalidGameboardException
      *             - If the gameboard is considered to be invalid.
-     * @throws NoWildcardException
-     *             - if the wildcard cannot be found.
      */
-    private void validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
-            NoWildcardException {
+    private void validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException {
         if (gameboardDTO.getId() != null && gameboardDTO.getId().contains(" ")) {
             throw new InvalidGameboardException(
                     "Your gameboard must not contain illegal characters e.g. spaces");
@@ -1474,29 +1397,17 @@ public class GameManager {
         }
 
         List<String> badQuestions = this.gameboardPersistenceManager.getInvalidQuestionIdsFromGameboard(gameboardDTO);
-        if (badQuestions.size() > 0) {
+        if (!badQuestions.isEmpty()) {
             throw new InvalidGameboardException(String.format(
                     "The gameboard provided contains %s invalid (or missing) questions - [%s]", badQuestions.size(),
                     badQuestions));
         }
 
-        if (gameboardDTO.getTitle().length() > GAMEBOARD_MAX_TITLE_LENGTH) {
+        if (null == gameboardDTO.getTitle() || gameboardDTO.getTitle().isEmpty()
+                || gameboardDTO.getTitle().length() > GAMEBOARD_MAX_TITLE_LENGTH) {
             throw new InvalidGameboardException(String.format(
-                    "The gameboard title provided is too long (%s characters) the maximum length is %s", gameboardDTO.getTitle().length(), GAMEBOARD_MAX_TITLE_LENGTH));
+                    "The gameboard title provided is invalid; the maximum length is %s", GAMEBOARD_MAX_TITLE_LENGTH));
         }
 
-        if (gameboardDTO.getWildCard() == null) {
-            throw new NoWildcardException();
-        }
-
-        // This will throw a NoWildCardException if we cannot locate a valid
-        // wildcard for this gameboard.
-        try {
-            this.getWildCardById(gameboardDTO.getWildCard().getId());
-        } catch (ContentManagerException e) {
-            log.error("Error validating gameboard.", e);
-            throw new InvalidGameboardException(
-                    "There was a problem validating the gameboard due to ContentManagerException another exception.");
-        }
     }
 }

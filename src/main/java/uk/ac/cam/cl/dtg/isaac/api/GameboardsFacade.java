@@ -196,8 +196,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (IllegalArgumentException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.").toResponse();
-        } catch (NoWildcardException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to load the wildcard.").toResponse();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst generating a gameboard";
             log.error(message, e);
@@ -366,7 +364,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
             }
 
-            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0
+            if ((newGameboardObject.getId() != null || !newGameboardObject.getTags().isEmpty()
                     || newGameboardObject.getWildCard() != null) && !isUserStaff(userManager, user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard wildcard, ID or tags.").toResponse();
             }
@@ -383,9 +381,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
 
-        } catch (NoWildcardException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No wildcard available. Unable to construct gameboard.")
-                    .toResponse();
         } catch (InvalidGameboardException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, String.format("The gameboard you provided is invalid"), e)
                     .toResponse();
