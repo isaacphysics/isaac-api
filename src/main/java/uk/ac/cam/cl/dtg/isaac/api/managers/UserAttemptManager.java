@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -37,7 +36,7 @@ public class UserAttemptManager {
      * @param content the content to be augmented.
      * @param usersQuestionAttempts the user's question attempts.
      */
-    public void augmentRelatedQuestionsWithAttemptInformation(
+    public static void augmentRelatedQuestionsWithAttemptInformation(
             final ContentDTO content,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
         // Check if all question parts have been answered
