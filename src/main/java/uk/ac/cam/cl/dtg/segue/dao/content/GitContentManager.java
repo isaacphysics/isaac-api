@@ -268,37 +268,6 @@ public class GitContentManager {
     }
 
     /**
-     *  Retrieve all DTO content matching an ID prefix.
-     *
-     *  This may return cached objects, and will temporarily cache the objects
-     *  to avoid re-querying the data store and the deserialization costs.
-     *  Do not modify the returned DTO objects.
-     *
-     * @param idPrefix the content object ID prefix.
-     * @param startIndex the integer start index for pagination.
-     * @param limit the limit for pagination.
-     * @return a ResultsWrapper of the matching content.
-     * @throws ContentManagerException on failure to return the objects.
-     */
-    public ResultsWrapper<ContentDTO> getUnsafeCachedDTOsByIdPrefix(final String idPrefix, final int startIndex,
-                                                                    final int limit) throws ContentManagerException {
-
-        String k = "getByIdPrefix~" + getCurrentContentSHA() + "~" + idPrefix + "~" + startIndex + "~" + limit;
-        if (!cache.asMap().containsKey(k)) {
-
-            ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(contentIndex, CONTENT_TYPE,
-                    Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    idPrefix, startIndex, limit, this.getBaseFilters());
-
-            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
-        }
-
-        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
-    }
-
-    /**
      *  Get a list of DTO objects by their IDs.
      *
      *  This may return cached objects, and will temporarily cache the objects
