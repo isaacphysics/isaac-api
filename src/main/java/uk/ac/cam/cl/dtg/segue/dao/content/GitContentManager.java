@@ -64,7 +64,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +89,8 @@ public class GitContentManager {
     private final boolean showOnlyPublishedContent;
     private final boolean hideRegressionTestContent;
 
-    private final Cache<Object, Object> cache;
+    private final Cache<String, ResultsWrapper<Content>> contentDOcache;
+    private final Cache<String, ResultsWrapper<ContentDTO>> contentDTOcache;
     private final Cache<String, GetResponse> contentShaCache;
 
     private final String contentIndex;
@@ -128,8 +128,10 @@ public class GitContentManager {
             log.info("API Configured to hide content tagged with 'regression_test'.");
         }
 
-        this.cache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
-        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_cache", cache);
+        this.contentDOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentDTOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_do_cache", contentDOcache);
+        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_dto_cache", contentDTOcache);
 
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(5, TimeUnit.SECONDS).build();
 
@@ -154,7 +156,8 @@ public class GitContentManager {
         this.globalProperties = null;
         this.showOnlyPublishedContent = false;
         this.hideRegressionTestContent = false;
-        this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentDOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentDTOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
         this.contentIndex = null;
     }
@@ -239,30 +242,28 @@ public class GitContentManager {
         String k = "getContentDOById~" + getCurrentContentSHA() + "~" + id;
 
         try {
-            @SuppressWarnings("unchecked")
-            Optional<Content> result = (Optional<Content>) cache.get(k, () -> {
+            ResultsWrapper<Content> result = contentDOcache.get(k, () -> {
 
-                List<Content> searchResults = mapper.mapFromStringListToContentList(searchProvider.termSearch(
+                ResultsWrapper<String> rawResults = searchProvider.termSearch(
                         contentIndex,
                         CONTENT_TYPE, id,
                         Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                        getBaseFilters()).getResults()
-                );
+                        getBaseFilters());
+                List<Content> searchResults = mapper.mapFromStringListToContentList(rawResults.getResults());
 
-                if (null == searchResults || searchResults.isEmpty()) {
-                    if (!failQuietly) {
-                        log.error("Failed to locate content with ID '{}' in the cache for content SHA ({})", id, getCurrentContentSHA());
-                    }
-                    // Cache this 'not found' result.
-                    return Optional.empty();
-                } else {
-                    return Optional.of(searchResults.get(0));
-                }
+                return new ResultsWrapper<>(searchResults, rawResults.getTotalResults());
             });
-            // Return null in the case of an empty Optional value.
-            return result.orElse(null);
 
-        } catch (ExecutionException e) {
+            if (null == result.getResults() || result.getResults().isEmpty()) {
+                if (!failQuietly) {
+                    log.error("Failed to locate content with ID '{}' in the cache for content SHA ({})", id, getCurrentContentSHA());
+                }
+                return null;
+            }
+
+            return result.getResults().get(0);
+
+        } catch (final ExecutionException e) {
             throw new ContentManagerException(e.getCause().getMessage());
         }
     }
@@ -270,9 +271,9 @@ public class GitContentManager {
     /**
      *  Get a list of DTO objects by their IDs.
      *
-     *  This may return cached objects, and will temporarily cache the objects
-     *  to avoid re-querying the data store and the deserialization costs.
-     *  Do not modify the returned DTO objects.
+     *  This will always return cached objects, and temporarily caches the objects to avoid re-querying
+     *  the data store and the deserialization costs.
+     *  Do not modify the returned DTO objects!
      *
      * @param ids the list of content object IDs.
      * @param startIndex the integer start index for pagination.
@@ -284,35 +285,37 @@ public class GitContentManager {
                                                                             final int startIndex, final int limit)
             throws ContentManagerException {
 
-        String k = "getContentMatchingIds~" + getCurrentContentSHA()
-                + "~" + ids.toString() + "~" + startIndex + "~" + limit;
-        if (!cache.asMap().containsKey(k)) {
+        String k = "getContentMatchingIds~" + getCurrentContentSHA() + "~" + ids.toString() + "~" + startIndex + "~" + limit;
 
-            Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
-            finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
-                                .put(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                                    new TermsFilterInstruction(ids))
-                                .build());
+        try {
+            return contentDTOcache.get(k, () -> {
 
-            if (getBaseFilters() != null) {
-                finalFilter.putAll(getBaseFilters());
-            }
+                Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
+                finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
+                        .put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                                new TermsFilterInstruction(ids))
+                        .build());
 
-            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
-                    contentIndex,
-                    CONTENT_TYPE,
-                    null,
-                    null,
-                    startIndex,
-                    limit,
-                    finalFilter
-            );
+                if (getBaseFilters() != null) {
+                    finalFilter.putAll(getBaseFilters());
+                }
 
-            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+                ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
+                        contentIndex,
+                        CONTENT_TYPE,
+                        null,
+                        null,
+                        startIndex,
+                        limit,
+                        finalFilter
+                );
+
+                List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+                return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+            });
+        } catch (final ExecutionException e) {
+            throw new ContentManagerException(e.getCause().getMessage());
         }
-
-        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
     /** Search the content for specified types that match a given user provided search string from a given index.
