@@ -59,7 +59,13 @@ public class UserAttemptManager {
         }
     }
 
-    private void augmentContentSummaryWithAttemptInformation(
+    /**
+     * Augment a ContentSummary object with question attempt information.
+     *
+     * @param contentSummary - the ContentSummaryDTO of a question page object.
+     * @param usersQuestionAttempts - the user's question attempts.
+     */
+    public static void augmentContentSummaryWithAttemptInformation(
             final ContentSummaryDTO contentSummary,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
 
