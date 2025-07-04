@@ -1193,19 +1193,7 @@ public class GameManager {
         int questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
 
-        CompletionState state;
-        if (questionPartsCorrect == questionPartsTotal) {
-            state = CompletionState.ALL_CORRECT;
-        } else if (questionPartsIncorrect == questionPartsTotal) {
-            state = CompletionState.ALL_INCORRECT;
-        } else if (questionPartsNotAttempted == questionPartsTotal) {
-            state = CompletionState.NOT_ATTEMPTED;
-        } else if (questionPartsNotAttempted > 0) {
-            state = CompletionState.IN_PROGRESS;
-        } else {
-            state = CompletionState.ALL_ATTEMPTED;
-        }
-
+        CompletionState state = UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
         gameItem.setState(state);
     }
     

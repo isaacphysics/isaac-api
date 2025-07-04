@@ -97,9 +97,22 @@ public class UserAttemptManager {
                 }
             }
         }
+        CompletionState state = getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
+        contentSummary.setState(state);
+    }
+
+    /**
+     *  Get a CompletionState from question part attempt correct, incorrect and total counts.
+     *
+     * @param questionPartsTotal total number of question parts.
+     * @param questionPartsCorrect total answered correctly.
+     * @param questionPartsIncorrect total answered incorrectly.
+     * @return the state of the question
+     */
+    public static CompletionState getCompletionState(final int questionPartsTotal, final int questionPartsCorrect,
+                                                      final int questionPartsIncorrect) {
         int questionPartsNotAttempted = questionPartsTotal - (questionPartsCorrect + questionPartsIncorrect);
 
-        // TODO: move to common function with GameManagerL1198
         CompletionState state;
         if (questionPartsCorrect == questionPartsTotal) {
             state = CompletionState.ALL_CORRECT;
@@ -112,7 +125,7 @@ public class UserAttemptManager {
         } else {
             state = CompletionState.ALL_ATTEMPTED;
         }
-        contentSummary.setState(state);
+        return state;
     }
 
     /**
