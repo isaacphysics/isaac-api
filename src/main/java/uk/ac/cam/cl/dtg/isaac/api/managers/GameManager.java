@@ -806,7 +806,7 @@ public class GameManager {
                 continue;
             }
 
-            if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {
+            if (!gameboardStarted && !gameItem.getState().equals(CompletionState.NOT_ATTEMPTED)) {
                 gameboardStarted = true;
                 gameboardDTO.setStartedQuestion(gameboardStarted);
             }
@@ -997,7 +997,7 @@ public class GameManager {
         // choose the gameboard questions to include.
         while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
             for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
-                GameboardItemState questionState;
+                CompletionState questionState;
                 try {
                     this.augmentGameItemWithAttemptInformation(gameboardItem, usersQuestionAttempts);
                     questionState = gameboardItem.getState();
@@ -1007,8 +1007,8 @@ public class GameManager {
                             + "should only show available content.");
                 }
                 
-                if (questionState.equals(GameboardItemState.PASSED) 
-                        || questionState.equals(GameboardItemState.PERFECT)) {
+                if (questionState.equals(CompletionState.ALL_ATTEMPTED)
+                        || questionState.equals(CompletionState.ALL_CORRECT)) {
                     completedQuestions.add(gameboardItem);
                 } else {
                     gameboardReadyQuestions.add(gameboardItem);
@@ -1180,21 +1180,8 @@ public class GameManager {
         gameItem.setQuestionPartStates(questionPartStates);
         int questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
-        float percentCorrect = 100f * questionPartsCorrect / questionPartsTotal;
-        float percentIncorrect = 100f * questionPartsIncorrect / questionPartsTotal;
 
-        GameboardItemState state;
-        if (questionPartsCorrect == questionPartsTotal) {
-            state = GameboardItemState.PERFECT;
-        } else if (questionPartsNotAttempted == questionPartsTotal) {
-            state = GameboardItemState.NOT_ATTEMPTED;
-        } else if (percentCorrect >= gameItem.getPassMark()) {
-            state = GameboardItemState.PASSED;
-        } else if (percentIncorrect > (100 - gameItem.getPassMark())) {
-            state = GameboardItemState.FAILED;
-        } else {
-            state = GameboardItemState.IN_PROGRESS;
-        }
+        CompletionState state = UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
         gameItem.setState(state);
     }
 
