@@ -39,6 +39,7 @@ public class AssignmentDTO implements IAssignmentLike {
   // dueDate is not read correctly as an epoch by the jackson converter, this forces conversion
   @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant dueDate;
+  @JsonDeserialize(converter = LongToInstantConverter.class)
   private Instant scheduledStartDate;
 
   /**
