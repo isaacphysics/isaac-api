@@ -1205,7 +1205,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
         if (usersQuestionAttempts != null) {
-            userAttemptManager.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
+            UserAttemptManager.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
         }
     }
 

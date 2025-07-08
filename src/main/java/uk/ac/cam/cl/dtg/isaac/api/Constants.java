@@ -70,15 +70,8 @@ public final class Constants {
      */
     public static final int GAME_BOARD_TARGET_SIZE = 10;
 
-    /**
-     * GameboardItemState Represents the potential states of a gameboard item.
-     */
-    public enum GameboardItemState {
-        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED;
-    }
-
     public enum CompletionState {
-        ALL_CORRECT, IN_PROGRESS, NOT_ATTEMPTED;
+        ALL_CORRECT, ALL_ATTEMPTED, ALL_INCORRECT, IN_PROGRESS, NOT_ATTEMPTED;
 
         private static final Set<CompletionState> allStates = Set.of(CompletionState.values());
 
