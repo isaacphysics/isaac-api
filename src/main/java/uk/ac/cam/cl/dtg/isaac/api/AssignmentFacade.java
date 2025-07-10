@@ -425,10 +425,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 } else {
                     result.add(new AssignmentProgressDTO(
                             userSummary,
-                            Collections.emptyList(),
-                            Collections.emptyList(),
-                            Collections.emptyList(),
-                            Collections.emptyList()
+                            null,
+                            null,
+                            null,
+                            null
                     ));
                 }
             }
