@@ -234,6 +234,10 @@ class Helpers extends IsaacIntegrationTest {
         return subject();
     }
 
+    static TestServer server() {
+        return new TestServer();
+    }
+
     static AuthenticationFacade subject() {
         return new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);
     }
