@@ -9,13 +9,16 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jgit.api.Git;
-import org.jboss.resteasy.mock.MockDispatcherFactory;
-import org.jboss.resteasy.mock.MockHttpRequest;
-import org.jboss.resteasy.mock.MockHttpResponse;
-import org.jboss.resteasy.spi.Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +53,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
+import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
@@ -101,12 +105,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.core.Application;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -414,23 +419,52 @@ public abstract class IsaacIntegrationTest {
         return new LoginResult(user, capturedUserCookie.getValue());
     }
 
-    public static class TestServer {
-        private final Collection<AbstractIsaacFacade> facades;
+    public static class TestServer implements BeforeEachCallback, AfterEachCallback {
+        private Server server;
+        private int port;
 
-        public TestServer(Collection<AbstractIsaacFacade> facades) {
-            this.facades = facades;
+        public TestServer() {}
+
+        public void beforeEach(ExtensionContext extensionContext) throws Exception {
+            server = new Server(0);
+            var ctx = new ServletContextHandler();
+            ctx.setContextPath("/");
+            server.setHandler(ctx);
+
+            var servlet = new ServletHolder(new HttpServletDispatcher());
+            servlet.setInitParameter("jakarta.ws.rs.Application", TestApp.class.getName());
+            ctx.addServlet(servlet, "/*");
+
+            server.start();
+            port = server.getURI().getPort();
         }
 
-        public MockHttpResponse execute(MockHttpRequest request) {
-            var response = new MockHttpResponse();
-            dispatcher().invoke(request, response);
-            return response;
+        public void afterEach(ExtensionContext extensionContext) throws Exception {
+            server.stop();
         }
 
-        private Dispatcher dispatcher() {
-            var dispatcher = MockDispatcherFactory.createDispatcher();
-            facades.forEach(facade -> dispatcher.getRegistry().addSingletonResource(facade));
-            return dispatcher;
+        public String url(String urlString) {
+            return "http://localhost:" + port + urlString;
+        }
+
+
+        public static class TestApp extends Application  {
+            private final Set<Object> singletons;
+
+            public TestApp() {
+                this.singletons = new HashSet<>();
+            }
+
+            @Override
+            public Set<Object> getSingletons() {
+                if (singletons.isEmpty()) {
+                    singletons.addAll(List.of(
+                            new HelloFacade(properties, logManager),
+                            new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor)
+                    ));
+                }
+                return this.singletons;
+            }
         }
     }
 
