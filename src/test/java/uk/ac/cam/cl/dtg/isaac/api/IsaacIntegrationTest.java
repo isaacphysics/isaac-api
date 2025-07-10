@@ -10,6 +10,10 @@ import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
+import org.jboss.resteasy.mock.MockDispatcherFactory;
+import org.jboss.resteasy.mock.MockHttpRequest;
+import org.jboss.resteasy.mock.MockHttpResponse;
+import org.jboss.resteasy.spi.Dispatcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.reflections.Reflections;
@@ -101,6 +105,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -407,6 +412,26 @@ public abstract class IsaacIntegrationTest {
         }
 
         return new LoginResult(user, capturedUserCookie.getValue());
+    }
+
+    public static class TestServer {
+        private final Collection<AbstractIsaacFacade> facades;
+
+        public TestServer(Collection<AbstractIsaacFacade> facades) {
+            this.facades = facades;
+        }
+
+        public MockHttpResponse execute(MockHttpRequest request) {
+            var response = new MockHttpResponse();
+            dispatcher().invoke(request, response);
+            return response;
+        }
+
+        private Dispatcher dispatcher() {
+            var dispatcher = MockDispatcherFactory.createDispatcher();
+            facades.forEach(facade -> dispatcher.getRegistry().addSingletonResource(facade));
+            return dispatcher;
+        }
     }
 
     protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
