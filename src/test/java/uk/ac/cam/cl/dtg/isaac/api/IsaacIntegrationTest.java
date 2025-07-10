@@ -427,7 +427,7 @@ public abstract class IsaacIntegrationTest {
 
         public void beforeEach(ExtensionContext extensionContext) throws Exception {
             server = new Server(0);
-            var ctx = new ServletContextHandler();
+            var ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
             ctx.setContextPath("/");
             server.setHandler(ctx);
 
