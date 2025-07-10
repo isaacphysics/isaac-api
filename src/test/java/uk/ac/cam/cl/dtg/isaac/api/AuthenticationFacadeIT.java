@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -12,6 +13,7 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
@@ -21,7 +23,6 @@ import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
 import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
-import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -151,30 +152,31 @@ public class AuthenticationFacadeIT extends Helpers {
 
     @Nested
     class RegisterWithRaspberryPiAuthenticator {
+        @RegisterExtension
+        TestServer server = new TestServer();
+
         @Test
         public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() {
-            var response = subject().authenticate(request(""), "RASPBERRYPI", false);
-
+            var response = ClientBuilder.newClient().target(server.url("/auth/raspberrypi/authenticate?signup=false")).request().get();
             // Assert
             // check status code is OK
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
             // check force_signup parameter was not added to redirect URL
-            var uri = ((Map<String, URI>) response.getEntity()).get("redirectUrl");
-            assertFalse(uri.getQuery().contains("force_signup"));
+            var uri = ((Map<String, String>) response.readEntity(Map.class));
+            assertFalse(uri.get("redirectUrl").contains("force_signup"));
         }
 
         @Test
         public void initialSignup_addsForceSignUpParameterToRedirectURL() {
-            var response = subject().authenticate(request(""), "RASPBERRYPI", true);
-
+            var response = ClientBuilder.newClient().target(server.url("/auth/raspberrypi/authenticate?signup=true")).request().get();
             // Assert
             // check status code is OK
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
             // check force_signup parameter was added to redirect URL
-            var uri = ((Map<String, URI>) response.getEntity()).get("redirectUrl");
-            assertTrue(uri.getQuery().contains("force_signup"));
+            var uri = ((Map<String, String>) response.readEntity(Map.class));
+            assertTrue(uri.get("redirectUrl").contains("force_signup"));
         }
     }
 }
@@ -232,10 +234,6 @@ class Helpers extends IsaacIntegrationTest {
     static AuthenticationFacade subject(MicrosoftAuthenticator authenticator) {
         providersToRegister.put(AuthenticationProvider.MICROSOFT, authenticator);
         return subject();
-    }
-
-    static TestServer server() {
-        return new TestServer();
     }
 
     static AuthenticationFacade subject() {
