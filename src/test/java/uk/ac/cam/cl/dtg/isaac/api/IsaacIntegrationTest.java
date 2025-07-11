@@ -9,16 +9,17 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.SystemUtils;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jgit.api.Git;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.json.JSONObject;
+import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -116,6 +118,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
@@ -126,6 +129,8 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -140,6 +145,7 @@ public abstract class IsaacIntegrationTest {
     protected static final Logger log = LoggerFactory.getLogger(IsaacIntegrationTest.class);
 
     private final ObjectMapper serializationMapper = new ObjectMapper();
+    private final HashSet<ThrowingRunnable> cleanups = new HashSet<>();
 
     protected static HttpSession httpSession;
     protected static PostgreSQLContainer postgres;
@@ -397,6 +403,19 @@ public abstract class IsaacIntegrationTest {
         postgres.stop();
     }
 
+    @AfterEach
+    public void tearDownCase()  {
+        for (var cleanup : cleanups) {
+            try {
+                cleanup.run();
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public void registerCleanup(ThrowingRunnable cleanup) {
+        this.cleanups.add(cleanup);
+    }
+
     protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws Exception {
         Capture<Cookie> capturedUserCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
@@ -420,16 +439,22 @@ public abstract class IsaacIntegrationTest {
         return new LoginResult(user, capturedUserCookie.getValue());
     }
 
-    public static class TestServer implements BeforeEachCallback, AfterEachCallback {
+    public static class TestServer {
+        private String sessionId;
         private Server server;
+        private ServletContextHandler ctx;
+        private final IsaacIntegrationTest testCase;
 
-        public TestServer(Set<Object> facades) {
-            TestApp.facades = facades;
+        private TestServer(Server server, ServletContextHandler ctx, IsaacIntegrationTest testCase) {
+            this.server = server;
+            this.ctx = ctx;
+            this.testCase = testCase;
         }
 
-        @Override
-        public void beforeEach(ExtensionContext extensionContext) throws Exception {
-            server = new Server(0);
+        public static TestServer start(Set<Object> facades, IsaacIntegrationTest testCase) throws Exception {
+            TestApp.facades = facades;
+
+            var server = new Server(0);
             var ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
             ctx.setContextPath("/");
             server.setHandler(ctx);
@@ -439,17 +464,29 @@ public abstract class IsaacIntegrationTest {
             ctx.addServlet(servlet, "/*");
 
             server.start();
+            testCase.registerCleanup(server::stop);
+            return new TestServer(server, ctx, testCase);
         }
 
-        @Override
-        public void afterEach(ExtensionContext extensionContext) throws Exception {
-            server.stop();
+        public TestServer setSessionAttributes(Map<String, String> attributes) {
+            var session = ctx.getSessionHandler().newHttpSession(new Request(null, null));;
+            attributes.keySet().forEach(k -> session.setAttribute(k, attributes.get(k)));
+            sessionId = session.getId();
+            return this;
         }
 
-        public Response request(String urlString) {
+        public TestResponse request(String urlString) {
+            RequestBuilder builder = (null == this.sessionId) ? r -> r : r -> r.cookie("JSESSIONID", sessionId);
+            return this.request(urlString, builder);
+        }
+
+        private TestResponse request(String urlString, RequestBuilder pipeline) {
             var url = "http://localhost:" + server.getURI().getPort() + urlString;
             try (var client = ClientBuilder.newClient() ) {
-                return client.target(url).request().get();
+                var request = client.target(url).request();
+                var response = pipeline.apply(request).get();
+                testCase.registerCleanup(response::close);
+                return new TestResponse(response);
             }
         }
 
@@ -461,6 +498,42 @@ public abstract class IsaacIntegrationTest {
                 return TestApp.facades;
             }
         }
+
+        public static class TestResponse {
+            Response response;
+
+            TestResponse(Response response) {
+                this.response = response;
+            }
+
+            void assertError(String message, Response.Status status) {
+                assertEquals(message, response.readEntity(Map.class).get("errorMessage"));
+                assertEquals(status.getStatusCode(), response.getStatus());
+            }
+
+            void assertNoUserLoggedIn() {
+                assertThat(this.response.getCookies()).doesNotContainKey("SEGUE_AUTH_COOKIE");
+            }
+
+            void assertUserLoggedIn(Number userId) {
+                var base64Cookie = this.response.getCookies().get("SEGUE_AUTH_COOKIE").getValue();
+                var cookieBytes = java.util.Base64.getDecoder().decode(base64Cookie);
+                var cookie = new JSONObject(new String(cookieBytes));
+                assertEquals(userId, cookie.getLong("id"));
+            }
+
+            <T> void assertEntityReturned(T entity) {
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+                assertEquals(entity, response.readEntity(entity.getClass()));
+            }
+
+            <T> T readEntity(Class<T> klass) {
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+                return response.readEntity(klass);
+            }
+        }
+
+        public interface RequestBuilder extends Function<Invocation.Builder, Invocation.Builder> {}
     }
 
     protected HttpServletRequest createRequestWithCookies(final Cookie[] cookies) {
