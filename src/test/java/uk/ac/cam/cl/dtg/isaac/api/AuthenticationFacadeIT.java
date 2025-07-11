@@ -179,7 +179,6 @@ public class AuthenticationFacadeIT extends Helpers {
                 assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
                 // check force_signup parameter was added to redirect URL
-                // check force_signup parameter was not added to redirect URL
                 var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
                 assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
             };
