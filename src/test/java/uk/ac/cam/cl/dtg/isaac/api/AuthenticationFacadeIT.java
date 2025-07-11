@@ -157,27 +157,29 @@ public class AuthenticationFacadeIT extends Helpers {
 
         @Test
         public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() {
-            var response = ClientBuilder.newClient().target(server.url("/auth/raspberrypi/authenticate?signup=false")).request().get();
-            // Assert
-            // check status code is OK
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            try (var response = server.request("/auth/raspberrypi/authenticate?signup=false")) {
+                // Assert
+                // check status code is OK
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-            // check force_signup parameter was not added to redirect URL
-            var uri = ((Map<String, String>) response.readEntity(Map.class));
-            assertFalse(uri.get("redirectUrl").contains("force_signup"));
+                // check force_signup parameter was not added to redirect URL
+                var uri = ((Map<String, String>) response.readEntity(Map.class));
+                assertFalse(uri.get("redirectUrl").contains("force_signup"));
+            }
         }
 
         @Test
         public void initialSignup_addsForceSignUpParameterToRedirectURL() {
-            var response = ClientBuilder.newClient().target(server.url("/auth/raspberrypi/authenticate?signup=true")).request().get();
-            // Assert
-            // check status code is OK
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            try (var response = server.request("/auth/raspberrypi/authenticate?signup=true")) {
+                // Assert
+                // check status code is OK
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-            // check force_signup parameter was added to redirect URL
-            var uri = ((Map<String, String>) response.readEntity(Map.class));
-            assertTrue(uri.get("redirectUrl").contains("force_signup"));
-        }
+                // check force_signup parameter was added to redirect URL
+                var uri = ((Map<String, String>) response.readEntity(Map.class));
+                assertTrue(uri.get("redirectUrl").contains("force_signup"));
+            };
+        };
     }
 }
 

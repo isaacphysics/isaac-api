@@ -105,7 +105,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -421,7 +423,6 @@ public abstract class IsaacIntegrationTest {
 
     public static class TestServer implements BeforeEachCallback, AfterEachCallback {
         private Server server;
-        private int port;
 
         public TestServer() {}
 
@@ -436,17 +437,18 @@ public abstract class IsaacIntegrationTest {
             ctx.addServlet(servlet, "/*");
 
             server.start();
-            port = server.getURI().getPort();
         }
 
         public void afterEach(ExtensionContext extensionContext) throws Exception {
             server.stop();
         }
 
-        public String url(String urlString) {
-            return "http://localhost:" + port + urlString;
+        public Response request(String urlString) {
+            var url = "http://localhost:" + server.getURI().getPort() + urlString;
+            try (var client = ClientBuilder.newClient() ) {
+                return client.target(url).request().get();
+            }
         }
-
 
         public static class TestApp extends Application  {
             private final Set<Object> singletons;

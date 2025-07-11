@@ -15,8 +15,9 @@ public class HelloFacadeIt extends IsaacIntegrationTest {
 
     @Test
     public void shouldSayHello() {
-        var response = ClientBuilder.newClient().target(server.url("/hello")).request().get();
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("Hello World!", response.readEntity(String.class));
+        try (var response = server.request("/hello")) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            assertEquals("Hello World!", response.readEntity(String.class));
+        }
     }
 }
