@@ -4,7 +4,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -34,6 +33,7 @@ import java.util.stream.LongStream;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
 public class AuthenticationFacadeIT extends Helpers {
@@ -166,9 +166,8 @@ public class AuthenticationFacadeIT extends Helpers {
                 assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
                 // check force_signup parameter was not added to redirect URL
-                var uri = ((Map<String, String>) response.readEntity(Map.class));
-
-                assertFalse(uri.get("redirectUrl").contains("force_signup"));
+                var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
+                assertThat(redirectUrl).isInstanceOf(String.class).asString().doesNotContain("force_signup");
             }
         }
 
@@ -180,8 +179,9 @@ public class AuthenticationFacadeIT extends Helpers {
                 assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
                 // check force_signup parameter was added to redirect URL
-                var uri = ((Map<String, String>) response.readEntity(Map.class));
-                assertTrue(uri.get("redirectUrl").contains("force_signup"));
+                // check force_signup parameter was not added to redirect URL
+                var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
+                assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
             };
         };
     }
