@@ -426,6 +426,7 @@ public abstract class IsaacIntegrationTest {
 
         public TestServer() {}
 
+        @Override
         public void beforeEach(ExtensionContext extensionContext) throws Exception {
             server = new Server(0);
             var ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -439,6 +440,7 @@ public abstract class IsaacIntegrationTest {
             server.start();
         }
 
+        @Override
         public void afterEach(ExtensionContext extensionContext) throws Exception {
             server.stop();
         }
