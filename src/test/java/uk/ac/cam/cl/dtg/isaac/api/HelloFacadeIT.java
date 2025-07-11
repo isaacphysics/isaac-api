@@ -10,7 +10,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class HelloFacadeIt extends IsaacIntegrationTest {
+public class HelloFacadeIT extends IsaacIntegrationTest {
     @RegisterExtension
     final TestServer server = new TestServer(Set.of(new HelloFacade(properties, logManager)));
 
