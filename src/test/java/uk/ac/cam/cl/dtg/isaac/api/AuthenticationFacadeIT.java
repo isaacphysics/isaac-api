@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -153,7 +154,9 @@ public class AuthenticationFacadeIT extends Helpers {
     @Nested
     class RegisterWithRaspberryPiAuthenticator {
         @RegisterExtension
-        TestServer server = new TestServer();
+        TestServer server = new TestServer(Set.of(
+            new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor)
+        ));
 
         @Test
         public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() {
@@ -164,6 +167,7 @@ public class AuthenticationFacadeIT extends Helpers {
 
                 // check force_signup parameter was not added to redirect URL
                 var uri = ((Map<String, String>) response.readEntity(Map.class));
+
                 assertFalse(uri.get("redirectUrl").contains("force_signup"));
             }
         }

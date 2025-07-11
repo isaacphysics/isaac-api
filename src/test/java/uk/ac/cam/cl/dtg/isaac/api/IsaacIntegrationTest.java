@@ -53,7 +53,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
-import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.PgTransactionManager;
@@ -424,7 +423,9 @@ public abstract class IsaacIntegrationTest {
     public static class TestServer implements BeforeEachCallback, AfterEachCallback {
         private Server server;
 
-        public TestServer() {}
+        public TestServer(Set<Object> facades) {
+            TestApp.facades = facades;
+        }
 
         @Override
         public void beforeEach(ExtensionContext extensionContext) throws Exception {
@@ -453,21 +454,11 @@ public abstract class IsaacIntegrationTest {
         }
 
         public static class TestApp extends Application  {
-            private final Set<Object> singletons;
-
-            public TestApp() {
-                this.singletons = new HashSet<>();
-            }
+            static Set<Object> facades = new HashSet<>();
 
             @Override
             public Set<Object> getSingletons() {
-                if (singletons.isEmpty()) {
-                    singletons.addAll(List.of(
-                            new HelloFacade(properties, logManager),
-                            new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor)
-                    ));
-                }
-                return this.singletons;
+                return TestApp.facades;
             }
         }
     }
