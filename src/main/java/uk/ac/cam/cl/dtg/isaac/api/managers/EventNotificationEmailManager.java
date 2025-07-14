@@ -200,26 +200,37 @@ public class EventNotificationEmailManager {
           // New logic for sending survey email
           String surveyUrl = event.getEventSurvey();
           String surveyTitle = event.getEventSurveyTitle();
+
           // Event end date (if present) is yesterday or before, else event date is yesterday, or before
-          // We want to send the event_feedback email 24 hours after the event
           boolean endDateYesterday =
               event.getEndDate() != null && event.getEndDate().isBefore(Instant.now().minus(1, ChronoUnit.DAYS));
-
           boolean noEndDateAndStartDateYesterday =
               event.getEndDate() == null && event.getDate().isBefore(Instant.now().minus(1, ChronoUnit.DAYS));
 
-          if (endDateYesterday || noEndDateAndStartDateYesterday) {
-            List<ExternalReference> postResources = event.getPostResources();
+          // Event end date (if present) is 96 hours ago or before, else event date is 96 hours ago or before
+          boolean endDate96HoursAgo =
+              event.getEndDate() != null && event.getEndDate()
+                  .isBefore(Instant.now().minus(Constants.EMAIL_EVENT_SECOND_FEEDBACK_HOURS, ChronoUnit.HOURS));
+          boolean noEndDateAndStartDate96HoursAgo =
+              event.getEndDate() == null && event.getDate()
+                  .isBefore(Instant.now().minus(Constants.EMAIL_EVENT_SECOND_FEEDBACK_HOURS, ChronoUnit.HOURS));
 
-            boolean postResourcesPresent =
-                postResources != null && !postResources.isEmpty() && !postResources.contains(null);
+          List<ExternalReference> postResources = event.getPostResources();
+          boolean postResourcesPresent =
+              postResources != null && !postResources.isEmpty() && !postResources.contains(null);
 
-            boolean eventSurveyTitleUrlPresent = (surveyUrl != null && !surveyUrl.isEmpty())
-                && (surveyTitle == null || !surveyTitle.isEmpty());
+          boolean eventSurveyTitleUrlPresent = (surveyUrl != null && !surveyUrl.isEmpty())
+              && (surveyTitle == null || !surveyTitle.isEmpty());
 
-            if (postResourcesPresent || eventSurveyTitleUrlPresent) {
-              commitAndSendFeedbackEmail(event, "post", "event_feedback");
-            }
+          // First trigger (24 hours)
+          if ((endDateYesterday || noEndDateAndStartDateYesterday) && (postResourcesPresent
+              || eventSurveyTitleUrlPresent)) {
+            commitAndSendFeedbackEmail(event, "post", "event_feedback");
+          }
+          // Second trigger (96 hours)
+          if ((endDate96HoursAgo || noEndDateAndStartDate96HoursAgo) && (postResourcesPresent
+              || eventSurveyTitleUrlPresent)) {
+            commitAndSendFeedbackEmail(event, "post", "event_feedback");
           }
         }
       }

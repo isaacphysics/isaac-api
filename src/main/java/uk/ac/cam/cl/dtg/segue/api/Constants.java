@@ -145,7 +145,7 @@ public final class Constants {
   public static final String SEGUE_CONFIG_LOCATION_NOT_SPECIFIED_MESSAGE =
       "Segue configuration location not specified, please provide it as either a java system property"
           + " (config.location) or environment variable SEGUE_CONFIG_LOCATION";
-
+  public static final Integer EMAIL_EVENT_SECOND_FEEDBACK_HOURS = 96;
   /**
    * Enum to describe types of server environment / profile.
    */
