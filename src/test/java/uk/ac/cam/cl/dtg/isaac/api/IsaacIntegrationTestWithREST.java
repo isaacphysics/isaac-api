@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +39,7 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
     }
 
     TestServer startServer(Object...facades) throws Exception {
-        return TestServer.start(Set.of(facades), this);
+        return TestServer.start(Set.of(facades), this::registerCleanup);
     }
 }
 
@@ -46,15 +47,15 @@ class TestServer {
     private String sessionId;
     private final Server server;
     private final ServletContextHandler ctx;
-    private final IsaacIntegrationTestWithREST testCase;
+    private final Consumer<ThrowingRunnable> registerCleanup;
 
-    private TestServer(Server server, ServletContextHandler ctx, IsaacIntegrationTestWithREST testCase) {
+    private TestServer(Server server, ServletContextHandler ctx, Consumer<ThrowingRunnable> registerCleanup) {
         this.server = server;
         this.ctx = ctx;
-        this.testCase = testCase;
+        this.registerCleanup = registerCleanup;
     }
 
-    public static TestServer start(Set<Object> facades, IsaacIntegrationTestWithREST testCase) throws Exception {
+    public static TestServer start(Set<Object> facades, Consumer<ThrowingRunnable> registerCleanup) throws Exception {
         TestApp.facades = facades;
 
         var server = new Server(0);
@@ -67,8 +68,8 @@ class TestServer {
         ctx.addServlet(servlet, "/*");
 
         server.start();
-        testCase.registerCleanup(server::stop);
-        return new TestServer(server, ctx, testCase);
+        registerCleanup.accept(server::stop);
+        return new TestServer(server, ctx, registerCleanup);
     }
 
     public TestServer setSessionAttributes(Map<String, String> attributes) {
@@ -78,19 +79,10 @@ class TestServer {
         return this;
     }
 
-    public TestResponse request(String urlString) {
+    public TestClient client() {
+        var baseUrl = "http://localhost:" + server.getURI().getPort();
         RequestBuilder builder = (null == this.sessionId) ? r -> r : r -> r.cookie("JSESSIONID", sessionId);
-        return this.request(urlString, builder);
-    }
-
-    private TestResponse request(String urlString, RequestBuilder pipeline) {
-        var url = "http://localhost:" + server.getURI().getPort() + urlString;
-        try (var client = ClientBuilder.newClient() ) {
-            var request = client.target(url).request();
-            var response = pipeline.apply(request).get();
-            testCase.registerCleanup(response::close);
-            return new TestResponse(response);
-        }
+        return new TestClient(baseUrl, registerCleanup, builder);
     }
 
     public static class TestApp extends Application {
@@ -99,6 +91,27 @@ class TestServer {
         @Override
         public Set<Object> getSingletons() {
             return TestApp.facades;
+        }
+    }
+}
+
+class TestClient {
+    String baseUrl;
+    Consumer<ThrowingRunnable> registerCleanup;
+    RequestBuilder builder;
+
+    TestClient(String baseUrl, Consumer<ThrowingRunnable> registerCleanup, RequestBuilder builder) {
+        this.baseUrl = baseUrl;
+        this.registerCleanup = registerCleanup;
+        this.builder = builder;
+    }
+
+    public TestResponse get(String url) {
+        try (var client = ClientBuilder.newClient()) {
+            var request = client.target(baseUrl + url).request();
+            var response = builder.apply(request).get();
+            registerCleanup.accept(response::close);
+            return new TestResponse(response);
         }
     }
 }
@@ -138,5 +151,3 @@ class TestResponse {
 }
 
 interface RequestBuilder extends Function<Invocation.Builder, Invocation.Builder> {}
-
-
