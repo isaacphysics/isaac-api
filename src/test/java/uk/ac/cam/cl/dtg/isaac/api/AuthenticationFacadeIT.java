@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -62,8 +63,7 @@ public class AuthenticationFacadeIT extends Helpers {
 
             @Test
             public void missingEmail_returnsErrorResponse() throws Exception {
-                var server = startServer();
-                prepareTestCase(server, token.valid(s -> s, u -> u.put("email", null)));
+                var server = prepareTestCase(token.valid(s -> s, u -> u.put("email", null)));
                 var response = server.request("/auth/microsoft/callback" + validQuery);
                 response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
             }
@@ -75,8 +75,7 @@ public class AuthenticationFacadeIT extends Helpers {
             class SignIn {
                 @Test
                 public void matchedAccountNotConnected_returnsNotUsingMicrosoftResponse() throws Exception {
-                    var server = startServer();
-                    prepareTestCase(server, token.valid(s -> s, u -> {
+                    var server = prepareTestCase(token.valid(s -> s, u -> {
                         u.put("oid", UUID.randomUUID().toString());
                         u.put("email", CHARLIE_STUDENT_EMAIL);
                         return null;
@@ -91,8 +90,7 @@ public class AuthenticationFacadeIT extends Helpers {
 
                 @Test
                 public void matchedAccountConnected_signInAndReturnsUser() throws Exception {
-                    var server = startServer();
-                    prepareTestCase(server, token.valid(s -> s, u -> u.put("oid", ERIKA_PROVIDER_USER_ID)));
+                    var server = prepareTestCase(token.valid(s -> s, u -> u.put("oid", ERIKA_PROVIDER_USER_ID)));
 
                     var response = server.request("/auth/microsoft/callback" + validQuery);
 
@@ -106,8 +104,7 @@ public class AuthenticationFacadeIT extends Helpers {
                 @Test
                 public void completePayload_registersUser() throws Exception {
                     var nextId = nextUserIdFromDb();
-                    var server = startServer();
-                    prepareTestCase(server, token.valid(s -> s, u -> {
+                    var server = prepareTestCase(token.valid(s -> s, u -> {
                         u.put("oid", UUID.randomUUID().toString());
                         u.put("email", "new_student@outlook.com");
                         u.put("given_name", "New");
@@ -126,8 +123,7 @@ public class AuthenticationFacadeIT extends Helpers {
 
                 @Test
                 public void incompletePayload_returnsError() throws Exception {
-                    var server = startServer();
-                    prepareTestCase(server, token.valid(s -> s, u -> {
+                    var server = prepareTestCase(token.valid(s -> s, u -> {
                         u.put("oid", UUID.randomUUID().toString());
                         u.put("email", "new_student_2@outlook.com");
                         u.remove("given_name");
@@ -145,13 +141,13 @@ public class AuthenticationFacadeIT extends Helpers {
 
             @Test
             public void cachesJwksCalls() throws Exception {
-                var server = startServer();
-                var keySetServlet = prepareTestCase(server, token.valid(s -> s, u -> u));
+                var keySetServletHolder = new Stack<KeySetServlet>();
+                var server = prepareTestCase(token.valid(s -> s, u -> u), keySetServletHolder);
 
                 server.request("/auth/microsoft/callback" + validQuery);
                 server.request("/auth/microsoft/callback" + validQuery);
 
-                assertEquals(1, keySetServlet.getRequestCount());
+                assertEquals(1, keySetServletHolder.pop().getRequestCount());
             }
         }
     }
@@ -161,7 +157,6 @@ public class AuthenticationFacadeIT extends Helpers {
         @Test
         public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() throws Exception {
             var response = startServer().request("/auth/raspberrypi/authenticate?signup=false");
-
             var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
             assertThat(redirectUrl).isInstanceOf(String.class).asString().doesNotContain("force_signup");
         }
@@ -169,7 +164,6 @@ public class AuthenticationFacadeIT extends Helpers {
         @Test
         public void initialSignup_addsForceSignUpParameterToRedirectURL() throws Exception {
             var response = startServer().request("/auth/raspberrypi/authenticate?signup=true");
-
             var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
             assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
         };
@@ -183,12 +177,16 @@ class Helpers extends IsaacIntegrationTest {
         ), this);
     }
 
-    KeySetServlet prepareTestCase(TestServer server, String token) throws Exception {
+    TestServer prepareTestCase(String token) throws Exception {
+        return prepareTestCase(token, new Stack<>());
+    }
+
+    TestServer prepareTestCase(String token, Stack<KeySetServlet> keySetServletHolder) throws Exception {
         providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth().mockExchange(token));
-        server.setSessionAttributes(Map.of("state", csrfToken));
         var keySetServer = KeySetServlet.startServer(8888, List.of(validSigningKey));
         registerCleanup(() -> keySetServer.getLeft().stop());
-        return keySetServer.getRight();
+        keySetServletHolder.push(keySetServer.getRight());
+        return startServer().setSessionAttributes(Map.of("state", csrfToken));
     }
 
     static class MockingMicrosoftAuthenticator extends MicrosoftAuthenticator {
