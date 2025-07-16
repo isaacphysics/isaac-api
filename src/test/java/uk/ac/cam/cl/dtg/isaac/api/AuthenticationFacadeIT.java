@@ -15,7 +15,6 @@ import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,14 +32,14 @@ public class AuthenticationFacadeIT extends Helpers {
             @Test
             public void csrfTokenMissing_returnsErrorResponse() throws Exception {
                 providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth());
-                var response = startServer().request("/auth/microsoft/callback");
+                var response = initServer().request("/auth/microsoft/callback");
                 response.assertError("CSRF check failed", Response.Status.UNAUTHORIZED);
             }
 
             @Test
             public void authCodeMissing_returnsErrorResponse() throws Exception {
                 providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth());
-                var server = startServer().setSessionAttributes(Map.of("state", csrfToken));
+                var server = initServer().setSessionAttributes(Map.of("state", csrfToken));
                 var response = server.request("/auth/microsoft/callback?state=" + csrfToken);
                 response.assertError("Error extracting authentication code.", Response.Status.UNAUTHORIZED);
             }
@@ -48,7 +47,7 @@ public class AuthenticationFacadeIT extends Helpers {
             @Test
             public void authCodeInvalid_returnsErrorResponse() throws Exception {
                 providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth());
-                var server = startServer().setSessionAttributes(Map.of("state", csrfToken));
+                var server = initServer().setSessionAttributes(Map.of("state", csrfToken));
                 var response = server.request("/auth/microsoft/callback?state=" + csrfToken + "&code=invalid");
                 response.assertError("There was an error exchanging the code.", Response.Status.UNAUTHORIZED);
             }
@@ -56,7 +55,7 @@ public class AuthenticationFacadeIT extends Helpers {
             @Test
             public void tokenMissing_returnsErrorResponse() throws Exception {
                 providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth().mockExchange(null));
-                var server = startServer().setSessionAttributes(Map.of("state", csrfToken));
+                var server = initServer().setSessionAttributes(Map.of("state", csrfToken));
                 var response = server.request("/auth/microsoft/callback" + validQuery);
                 response.assertError("Token verification: TOKEN_MISSING", Response.Status.UNAUTHORIZED);
             }
@@ -156,25 +155,25 @@ public class AuthenticationFacadeIT extends Helpers {
     class RegisterWithRaspberryPiAuthenticator {
         @Test
         public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() throws Exception {
-            var response = startServer().request("/auth/raspberrypi/authenticate?signup=false");
+            var response = initServer().request("/auth/raspberrypi/authenticate?signup=false");
             var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
             assertThat(redirectUrl).isInstanceOf(String.class).asString().doesNotContain("force_signup");
         }
 
         @Test
         public void initialSignup_addsForceSignUpParameterToRedirectURL() throws Exception {
-            var response = startServer().request("/auth/raspberrypi/authenticate?signup=true");
+            var response = initServer().request("/auth/raspberrypi/authenticate?signup=true");
             var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
             assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
         }
     }
 }
 
-class Helpers extends IsaacIntegrationTest {
-    TestServer startServer() throws Exception {
-        return TestServer.start(Set.of(
+class Helpers extends IsaacIntegrationTestWithREST {
+    TestServer initServer() throws Exception {
+        return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor)
-        ), this);
+        );
     }
 
     TestServer prepareTestCase(String token) throws Exception {
@@ -186,7 +185,7 @@ class Helpers extends IsaacIntegrationTest {
         var keySetServer = KeySetServlet.startServer(8888, List.of(validSigningKey));
         registerCleanup(() -> keySetServer.getLeft().stop());
         keySetServletHolder.push(keySetServer.getRight());
-        return startServer().setSessionAttributes(Map.of("state", csrfToken));
+        return initServer().setSessionAttributes(Map.of("state", csrfToken));
     }
 
     static class MockingMicrosoftAuthenticator extends MicrosoftAuthenticator {
