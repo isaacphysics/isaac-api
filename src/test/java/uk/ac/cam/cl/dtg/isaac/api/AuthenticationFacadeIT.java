@@ -166,7 +166,7 @@ public class AuthenticationFacadeIT extends Helpers {
             var response = startServer().request("/auth/raspberrypi/authenticate?signup=true");
             var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
             assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
-        };
+        }
     }
 }
 
