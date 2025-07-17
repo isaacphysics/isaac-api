@@ -102,6 +102,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
+ * IMPORTANT: Rather than directly subclass this, use either IsaacIntegrationTestWithREST or IsaacIntegrationTest
  * Abstract superclass for integration tests, providing them with dependencies including Elasticsearch and PostgreSQL
  * (as docker containers) and other managers (some of which are mocked). Except for the Elasticsearch container, these
  * dependencies are created before and destroyed after every test class.
@@ -351,7 +352,7 @@ public class AbstractIsaacIntegrationTest {
 
 
     private static String getClassLoaderResourcePath(final String resource) {
-        return IsaacIntegrationTest.class.getClassLoader().getResource(resource)
+        return AbstractIsaacIntegrationTest.class.getClassLoader().getResource(resource)
                 .getPath()
                 // ":" is removed from the resource path for Windows compatibility
                 .replace(":", "");

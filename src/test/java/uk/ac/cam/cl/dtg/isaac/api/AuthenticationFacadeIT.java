@@ -1,17 +1,16 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import jakarta.ws.rs.core.Response;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
-import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
+import jakarta.ws.rs.core.Response;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +19,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.CHARLIE_STUDENT_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_PROVIDER_USER_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_STUDENT_ID;
 
-public class AuthenticationFacadeIT extends Helpers {
+@SuppressWarnings("checkstyle:MissingJavadocType")
+public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class MicrosoftAuthenticationCallback {
         @Nested
@@ -167,18 +169,16 @@ public class AuthenticationFacadeIT extends Helpers {
             assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
         }
     }
-}
 
-class Helpers extends IsaacIntegrationTestWithREST {
     TestServer subject() throws Exception {
         return startServer(new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor));
     }
 
-    TestClient prepareTestCase(String token) throws Exception {
+    TestClient prepareTestCase(final String token) throws Exception {
         return prepareTestCase(token, new Stack<>());
     }
 
-    TestClient prepareTestCase(String token, Stack<KeySetServlet> keySetServletHolder) throws Exception {
+    TestClient prepareTestCase(final String token, final Stack<KeySetServlet> keySetServletHolder) throws Exception {
         providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth().mockExchange(token));
         var keySetServer = KeySetServlet.startServer(8888, List.of(validSigningKey));
         registerCleanup(() -> keySetServer.getLeft().stop());
@@ -191,17 +191,17 @@ class Helpers extends IsaacIntegrationTestWithREST {
         String jwksUrl;
         String redirectUrl;
 
-        public MockingMicrosoftAuthenticator(String clientId, String tenantId, String clientSecret, String jwksUrl, String redirectUrL) {
+        public MockingMicrosoftAuthenticator(final String clientId, final String tenantId, final String clientSecret, final String jwksUrl, final String redirectUrL) {
             super(clientId, tenantId, clientSecret, jwksUrl, redirectUrL);
             this.clientSecret = clientSecret;
             this.jwksUrl = jwksUrl;
             this.redirectUrl = redirectUrL;
         }
 
-        MicrosoftAuthenticator mockExchange(String token) {
-            return new MicrosoftAuthenticator(clientId, tenantId, clientSecret, jwksUrl, redirectUrl ) {
+        MicrosoftAuthenticator mockExchange(final String token) {
+            return new MicrosoftAuthenticator(clientId, tenantId, clientSecret, jwksUrl, redirectUrl) {
                 @Override
-                public String exchangeCode(String authorizationCode) {
+                public String exchangeCode(final String authorizationCode) {
                     var internalCredentialID = UUID.randomUUID().toString();
                     if (null != token) {
                         credentialStore.put(internalCredentialID, token);
@@ -231,7 +231,7 @@ class Helpers extends IsaacIntegrationTestWithREST {
     static Token token = new Token(clientId, validSigningKey);
     static String csrfToken = "the_csrf_token";
     static String validQuery = String.format("?state=%s&code=%s", csrfToken, 123);
-    static String notUsingMicrosoftMessage = "You do not use Microsoft to log in. You may have registered using" +
-            " a different provider, or your email address and password.";
+    static String notUsingMicrosoftMessage = "You do not use Microsoft to log in. You may have registered using"
+            + " a different provider, or your email address and password.";
     static String noUserMessage = "Unable to locate user information.";
 }
