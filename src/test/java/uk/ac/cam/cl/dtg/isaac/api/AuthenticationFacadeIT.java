@@ -191,7 +191,13 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
         String jwksUrl;
         String redirectUrl;
 
-        public MockingMicrosoftAuthenticator(final String clientId, final String tenantId, final String clientSecret, final String jwksUrl, final String redirectUrL) {
+        public MockingMicrosoftAuthenticator(
+            final String clientId,
+            final String tenantId,
+            final String clientSecret,
+            final String jwksUrl,
+            final String redirectUrL
+        ) {
             super(clientId, tenantId, clientSecret, jwksUrl, redirectUrL);
             this.clientSecret = clientSecret;
             this.jwksUrl = jwksUrl;
