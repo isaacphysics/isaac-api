@@ -1,74 +1,71 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.core.Response;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
-import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
-import java.net.URI;
+import jakarta.ws.rs.core.Response;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.CHARLIE_STUDENT_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_PROVIDER_USER_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_STUDENT_ID;
 
-public class AuthenticationFacadeIT extends Helpers {
+@SuppressWarnings("checkstyle:MissingJavadocType")
+public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class MicrosoftAuthenticationCallback {
         @Nested
         class UnsuccessfulAuthentication {
             @Test
             public void csrfTokenMissing_returnsErrorResponse() throws Exception {
-                var response = testAuthenticationCallback(msAuth(), "");
+                providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth());
+                var response = subject().client().get("/auth/microsoft/callback");
                 response.assertError("CSRF check failed", Response.Status.UNAUTHORIZED);
             }
 
             @Test
             public void authCodeMissing_returnsErrorResponse() throws Exception {
-                var query = String.format("?state=%s", csrfToken);
-                var response = testAuthenticationCallback(msAuth(), query);
+                providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth());
+                var client = subject().setSessionAttributes(Map.of("state", csrfToken)).client();
+                var response = client.get("/auth/microsoft/callback?state=" + csrfToken);
                 response.assertError("Error extracting authentication code.", Response.Status.UNAUTHORIZED);
             }
 
             @Test
             public void authCodeInvalid_returnsErrorResponse() throws Exception {
-                var query = String.format("?state=%s&code=invalid", csrfToken);
-                var response = testAuthenticationCallback(msAuth(), query);
+                providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth());
+                var client = subject().setSessionAttributes(Map.of("state", csrfToken)).client();
+                var response = client.get("/auth/microsoft/callback?state=" + csrfToken + "&code=invalid");
                 response.assertError("There was an error exchanging the code.", Response.Status.UNAUTHORIZED);
             }
 
             @Test
             public void tokenMissing_returnsErrorResponse() throws Exception {
-                var response = testAuthenticationCallback(msAuth().mockExchange(null), validQuery);
+                providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth().mockExchange(null));
+                var client = subject().setSessionAttributes(Map.of("state", csrfToken)).client();
+                var response = client.get("/auth/microsoft/callback" + validQuery);
                 response.assertError("Token verification: TOKEN_MISSING", Response.Status.UNAUTHORIZED);
             }
 
             @Test
             public void missingEmail_returnsErrorResponse() throws Exception {
-                var t = token.valid(s -> s, u -> u.put("email", null));
-                var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
+                var client = prepareTestCase(token.valid(s -> s, u -> u.put("email", null)));
+                var response = client.get("/auth/microsoft/callback" + validQuery);
                 response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
             }
         }
@@ -79,21 +76,26 @@ public class AuthenticationFacadeIT extends Helpers {
             class SignIn {
                 @Test
                 public void matchedAccountNotConnected_returnsNotUsingMicrosoftResponse() throws Exception {
-                    var t = token.valid(s -> s, u -> {
+                    var client = prepareTestCase(token.valid(s -> s, u -> {
                         u.put("oid", UUID.randomUUID().toString());
                         u.put("email", CHARLIE_STUDENT_EMAIL);
                         return null;
-                    });
-                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
+                    }));
+
+                    var response = client.get("/auth/microsoft/callback" + validQuery);
+
                     response.assertError(notUsingMicrosoftMessage, Response.Status.FORBIDDEN);
                     response.assertNoUserLoggedIn();
+
                 }
 
                 @Test
                 public void matchedAccountConnected_signInAndReturnsUser() throws Exception {
-                    var t = token.valid(s -> s, u -> u.put("oid", ERIKA_PROVIDER_USER_ID));
-                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
-                    response.assertUserReturned(ERIKA_STUDENT_EMAIL);
+                    var client = prepareTestCase(token.valid(s -> s, u -> u.put("oid", ERIKA_PROVIDER_USER_ID)));
+
+                    var response = client.get("/auth/microsoft/callback" + validQuery);
+
+                    response.assertEntityReturned(userAccountManager.getUserDTOById(ERIKA_STUDENT_ID));
                     response.assertUserLoggedIn(ERIKA_STUDENT_ID);
                 }
             }
@@ -103,31 +105,36 @@ public class AuthenticationFacadeIT extends Helpers {
                 @Test
                 public void completePayload_registersUser() throws Exception {
                     var nextId = nextUserIdFromDb();
-                    var t = token.valid(s -> s, u -> {
+                    var client = prepareTestCase(token.valid(s -> s, u -> {
                         u.put("oid", UUID.randomUUID().toString());
                         u.put("email", "new_student@outlook.com");
                         u.put("given_name", "New");
                         u.put("family_name", "Student");
                         return null;
-                    });
-                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
+                    }));
+
+                    var response = client.get("/auth/microsoft/callback" + validQuery);
+
                     response.assertUserLoggedIn(nextId);
-                    assertEquals("new_student@outlook.com", response.getUser().getEmail());
-                    assertEquals("New", response.getUser().getGivenName());
-                    assertEquals("Student", response.getUser().getFamilyName());
+                    var user = response.readEntity(RegisteredUserDTO.class);
+                    assertEquals("new_student@outlook.com", user.getEmail());
+                    assertEquals("New", user.getGivenName());
+                    assertEquals("Student", user.getFamilyName());
                 }
 
                 @Test
                 public void incompletePayload_returnsError() throws Exception {
-                    var t = token.valid(s -> s, u -> {
+                    var client = prepareTestCase(token.valid(s -> s, u -> {
                         u.put("oid", UUID.randomUUID().toString());
                         u.put("email", "new_student_2@outlook.com");
                         u.remove("given_name");
                         u.remove("family_name");
                         u.remove("name");
                         return null;
-                    });
-                    var response = testAuthenticationCallback(msAuth().mockExchange(t), validQuery);
+                    }));
+
+                    var response = client.get("/auth/microsoft/callback" + validQuery);
+
                     response.assertError(noUserMessage, Response.Status.UNAUTHORIZED);
                     response.assertNoUserLoggedIn();
                 }
@@ -135,16 +142,13 @@ public class AuthenticationFacadeIT extends Helpers {
 
             @Test
             public void cachesJwksCalls() throws Exception {
-                var server = KeySetServlet.startServer(8888, List.of(validSigningKey));
-                try {
-                    var subject = subject(msAuth().mockExchange(token.valid(s -> s, u -> u)));
-                    var url = String.format("http://isaacphysics.org/auth/microsoft/callback%s", validQuery);
-                    subject.authenticationCallback(request(url), response().getLeft(), "microsoft");
-                    subject.authenticationCallback(request(url), response().getLeft(), "microsoft");
-                    assertEquals(1, server.getRight().getRequestCount());
-                } finally {
-                    server.getLeft().stop();
-                };
+                var keySetServletHolder = new Stack<KeySetServlet>();
+                var client = prepareTestCase(token.valid(s -> s, u -> u), keySetServletHolder);
+
+                client.get("/auth/microsoft/callback" + validQuery);
+                client.get("/auth/microsoft/callback" + validQuery);
+
+                assertEquals(1, keySetServletHolder.pop().getRequestCount());
             }
         }
     }
@@ -152,90 +156,34 @@ public class AuthenticationFacadeIT extends Helpers {
     @Nested
     class RegisterWithRaspberryPiAuthenticator {
         @Test
-        public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() {
-            var response = subject().authenticate(request(""), "RASPBERRYPI", false);
-
-            // Assert
-            // check status code is OK
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-
-            // check force_signup parameter was not added to redirect URL
-            var uri = ((Map<String, URI>) response.getEntity()).get("redirectUrl");
-            assertFalse(uri.getQuery().contains("force_signup"));
+        public void notInitialSignup_omitsForceSignUpParameterFromRedirectURL() throws Exception {
+            var response = subject().client().get("/auth/raspberrypi/authenticate?signup=false");
+            var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
+            assertThat(redirectUrl).isInstanceOf(String.class).asString().doesNotContain("force_signup");
         }
 
         @Test
-        public void initialSignup_addsForceSignUpParameterToRedirectURL() {
-            var response = subject().authenticate(request(""), "RASPBERRYPI", true);
-
-            // Assert
-            // check status code is OK
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-
-            // check force_signup parameter was added to redirect URL
-            var uri = ((Map<String, URI>) response.getEntity()).get("redirectUrl");
-            assertTrue(uri.getQuery().contains("force_signup"));
-        }
-    }
-}
-
-class Helpers extends IsaacIntegrationTest {
-    static class CallbackResponse extends IsaacIntegrationTest {
-        private final Response responseReturned;
-        private final Pair<HttpServletResponse, Capture<Cookie>> rersponsePassedIn;
-
-        CallbackResponse(Response response, Pair<HttpServletResponse, Capture<Cookie>> passedInResponse) {
-            this.responseReturned = response;
-            this.rersponsePassedIn = passedInResponse;
-        }
-
-        void assertError(String message, Response.Status status) {
-            assertEquals(responseReturned.readEntity(SegueErrorResponse.class).getErrorMessage(), message);
-            assertEquals(status.getStatusCode(), responseReturned.getStatus());
-        }
-
-        void assertUserReturned(String email) throws Exception {
-            assertEquals(responseReturned.getStatus(), Response.Status.OK.getStatusCode());
-            assertEquals(getUser(), userAccountManager.getUserDTOByEmail(email));
-        }
-
-        void assertUserLoggedIn(Number userId) throws Exception {
-            assertEquals(responseReturned.getStatus(), Response.Status.OK.getStatusCode());
-
-            var capture = rersponsePassedIn.getRight();
-            var session = getSessionInformationFromCookie(capture.getValue());
-            assertEquals(userId.toString(), session.get("id"));
-        }
-
-        void assertNoUserLoggedIn() {
-            assertFalse(rersponsePassedIn.getRight().hasCaptured());
-        }
-
-        RegisteredUserDTO getUser() {
-            return responseReturned.readEntity(RegisteredUserDTO.class);
+        public void initialSignup_addsForceSignUpParameterToRedirectURL() throws Exception {
+            var response = subject().client().get("/auth/raspberrypi/authenticate?signup=true");
+            var redirectUrl = response.readEntity(Map.class).get("redirectUrl");
+            assertThat(redirectUrl).isInstanceOf(String.class).asString().contains("force_signup");
         }
     }
 
-    public CallbackResponse testAuthenticationCallback(MicrosoftAuthenticator authenticator, String query) throws Exception {
-        var subject = subject(authenticator);
+    TestServer subject() throws Exception {
+        return startServer(new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor));
+    }
+
+    TestClient prepareTestCase(final String token) throws Exception {
+        return prepareTestCase(token, new Stack<>());
+    }
+
+    TestClient prepareTestCase(final String token, final Stack<KeySetServlet> keySetServletHolder) throws Exception {
+        providersToRegister.put(AuthenticationProvider.MICROSOFT, msAuth().mockExchange(token));
         var keySetServer = KeySetServlet.startServer(8888, List.of(validSigningKey));
-        try {
-            var url = String.format("http://isaacphysics.org/auth/microsoft/callback%s", query);
-            var passedResponse = response();
-            var response = subject.authenticationCallback(request(url), passedResponse.getLeft(), "microsoft");
-            return new CallbackResponse(response, passedResponse);
-        } finally {
-            keySetServer.getLeft().stop();
-        }
-    }
-
-    static AuthenticationFacade subject(MicrosoftAuthenticator authenticator) {
-        providersToRegister.put(AuthenticationProvider.MICROSOFT, authenticator);
-        return subject();
-    }
-
-    static AuthenticationFacade subject() {
-        return new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor);
+        registerCleanup(() -> keySetServer.getLeft().stop());
+        keySetServletHolder.push(keySetServer.getRight());
+        return subject().setSessionAttributes(Map.of("state", csrfToken)).client();
     }
 
     static class MockingMicrosoftAuthenticator extends MicrosoftAuthenticator {
@@ -243,17 +191,23 @@ class Helpers extends IsaacIntegrationTest {
         String jwksUrl;
         String redirectUrl;
 
-        public MockingMicrosoftAuthenticator(String clientId, String tenantId, String clientSecret, String jwksUrl, String redirectUrL) {
+        public MockingMicrosoftAuthenticator(
+            final String clientId,
+            final String tenantId,
+            final String clientSecret,
+            final String jwksUrl,
+            final String redirectUrL
+        ) {
             super(clientId, tenantId, clientSecret, jwksUrl, redirectUrL);
             this.clientSecret = clientSecret;
             this.jwksUrl = jwksUrl;
             this.redirectUrl = redirectUrL;
         }
 
-        MicrosoftAuthenticator mockExchange(String token) {
-            return new MicrosoftAuthenticator(clientId, tenantId, clientSecret, jwksUrl, redirectUrl ) {
+        MicrosoftAuthenticator mockExchange(final String token) {
+            return new MicrosoftAuthenticator(clientId, tenantId, clientSecret, jwksUrl, redirectUrl) {
                 @Override
-                public String exchangeCode(String authorizationCode) {
+                public String exchangeCode(final String authorizationCode) {
                     var internalCredentialID = UUID.randomUUID().toString();
                     if (null != token) {
                         credentialStore.put(internalCredentialID, token);
@@ -271,44 +225,6 @@ class Helpers extends IsaacIntegrationTest {
         return new MockingMicrosoftAuthenticator(clientId, tenantId, secret, jwksUrl, redirectUrl);
     }
 
-    static HttpServletRequest request(String url) {
-        HttpServletRequest request = createNiceMock(HttpServletRequest.class);
-        Function<Integer, String> splitUrl = i -> {
-            try {
-                return url.split("\\?")[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                return "";
-            }
-        };
-        expect(request.getRequestURL()).andStubAnswer(() -> new StringBuffer(splitUrl.apply(0)));
-        expect(request.getParameter(EasyMock.anyString())).andStubAnswer(() -> {
-            var name = (String) EasyMock.getCurrentArguments()[0];
-            return new URIBuilder(url).getQueryParams().stream()
-                    .filter(p -> p.getName().equals(name))
-                    .map(NameValuePair::getValue)
-                    .findFirst().orElse(null);
-        });
-        expect(request.getQueryString()).andStubAnswer(() -> splitUrl.apply(1));
-        expect(request.getSession()).andStubReturn(session());
-        replay(request);
-        return request;
-    }
-
-    Pair<HttpServletResponse, Capture<Cookie>> response() {
-        Capture<Cookie> responseCookieCapture = Capture.newInstance();
-        var response = createResponseAndCaptureCookies(responseCookieCapture);
-        replay(response);
-        return Pair.of(response, responseCookieCapture);
-    }
-
-    static HttpSession session() {
-        HttpSession session = createNiceMock(HttpSession.class);
-        expect(session.getAttribute("state")).andStubReturn(csrfToken);
-        expect(session.getId()).andStubReturn("the_session_id");
-        replay(session);
-        return session;
-    }
-
     static Number nextUserIdFromDb() throws Exception {
         var users = userAccountManager.findUsers(LongStream.range(0, 100).boxed().collect(Collectors.toList()));
         var largestIdUser = users.stream().max(Comparator.comparingLong(RegisteredUserDTO::getId));
@@ -320,8 +236,8 @@ class Helpers extends IsaacIntegrationTest {
     static KeyPair validSigningKey = new KeyPair();
     static Token token = new Token(clientId, validSigningKey);
     static String csrfToken = "the_csrf_token";
-    static String validQuery = String.format("?state=%s&code=123", csrfToken);
-    static String notUsingMicrosoftMessage = "You do not use Microsoft to log in. You may have registered using" +
-            " a different provider, or your email address and password.";
+    static String validQuery = String.format("?state=%s&code=%s", csrfToken, 123);
+    static String notUsingMicrosoftMessage = "You do not use Microsoft to log in. You may have registered using"
+            + " a different provider, or your email address and password.";
     static String noUserMessage = "Unable to locate user information.";
 }
