@@ -1407,7 +1407,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             for (RegisteredUserDTO groupMember : groupMembers) {
-                UserSummaryDTO groupMemberSummary = this.userManager.convertToUserSummaryObject(groupMember);
                 List<String> row = new ArrayList<>(Arrays.asList(groupMember.getGivenName(), groupMember.getFamilyName()));
                 List<String> quizTotals = new ArrayList<>();
                 List<String> questionResults = new ArrayList<>();
