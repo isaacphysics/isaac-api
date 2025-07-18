@@ -1381,8 +1381,6 @@ public class QuizFacade extends AbstractIsaacFacade {
                         "You can only retrieve results for groups you own or manage.").toResponse();
             }
 
-            List<QuizAssignmentDTO> quizAssignments = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(group));
-
             List<List<String>> rows = new ArrayList<>();
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
@@ -1397,6 +1395,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             List<String> quizTitles = new ArrayList<>();
             List<String> questionTitles = new ArrayList<>();
 
+            List<QuizAssignmentDTO> quizAssignments = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(group));
             Map<Long, List<QuizUserFeedbackDTO>> quizFeedbacks = new HashMap<>();
             for (QuizAssignmentDTO quizAssignment : quizAssignments) {
                 String quizId = quizAssignment.getQuizId();
