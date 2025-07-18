@@ -1397,11 +1397,14 @@ public class QuizFacade extends AbstractIsaacFacade {
             List<String> quizTitles = new ArrayList<>();
             List<String> questionTitles = new ArrayList<>();
 
-            for (QuizAssignmentDTO assignment : quizAssignments) {
-                String quizId = assignment.getQuizId();
+            Map<Long, List<QuizUserFeedbackDTO>> quizFeedbacks = new HashMap<>();
+            for (QuizAssignmentDTO quizAssignment : quizAssignments) {
+                String quizId = quizAssignment.getQuizId();
                 IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
                 quizTitles.add(String.format("\"%s\"", quiz.getTitle()));
                 questionTitles.addAll(getQuizQuestionTitles(quiz));
+                // Precompute quiz feedbacks:
+                quizFeedbacks.put(quizAssignment.getId(), getUserFeedback(user, quizAssignment, quiz, groupMembers));
             }
 
             for (RegisteredUserDTO groupMember : groupMembers) {
@@ -1414,7 +1417,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     String quizId = quizAssignment.getQuizId();
                     IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
                     List<String> questionIds = getQuizQuestionIds(quiz);
-                    Optional<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, quizAssignment, quiz, groupMembers).stream()
+                    Optional<QuizUserFeedbackDTO> userFeedback = quizFeedbacks.getOrDefault(quizAssignment.getId(), Collections.emptyList()).stream()
                             .filter(f -> f.getUser().getId().equals(groupMember.getId())).findFirst();
                     if (!userFeedback.isPresent()) {
                         // This looks like it should work but I can't test it as I don't know how to retrieve a
