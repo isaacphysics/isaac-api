@@ -245,34 +245,50 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (null == conceptId || conceptId.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
         }
-
-        // Calculate the ETag on current live version of the content:
-        EntityTag etag = new EntityTag(
-            String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + conceptId.hashCode())
-        );
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
         try {
+            AbstractSegueUserDTO user = userManager.getCurrentUser(servletRequest);
+
             ContentDTO contentDTO = contentManager.getContentById(conceptId, true);
             if (contentDTO instanceof IsaacConceptPageDTO) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
-                // Do we want to use the user's actual question attempts here? We did not previously.
-                augmentContentWithRelatedContent(content, Collections.emptyMap());
 
+                // Load attempts at related questions:
+                Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
+                List<String> relatedQuestionIds = new ArrayList<>(getRelatedContentIds(content));
+                if (user instanceof AnonymousUserDTO) {
+                    // For anon users, must load all attempts:
+                    relatedQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+                } else {
+                    // For registered users, can load only relevant lightweight attempts:
+                    RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+                    relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts(
+                            registeredUser, relatedQuestionIds
+                    );
+                }
+
+                // Check the cache status:
+                EntityTag etag = new EntityTag(String.valueOf(
+                        this.contentManager.getCurrentContentSHA().hashCode()
+                        + conceptId.hashCode()
+                        + relatedQuestionAttempts.hashCode()
+                ));
+                Response cachedResponse = generateCachedResponse(request, etag);
+                if (cachedResponse != null) {
+                    return cachedResponse;
+                }
+
+                // Augment related content with question attempts:
+                augmentContentWithRelatedContent(content, relatedQuestionAttempts);
+
+                // Log the request:
                 ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
                         .put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
                         .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                         .build();
-
-                // the request log
-                getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
-                        IsaacServerLogType.VIEW_CONCEPT, logEntry);
+                getLogManager().logEvent(user, servletRequest, IsaacServerLogType.VIEW_CONCEPT, logEntry);
 
                 return Response.ok(content)
-                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                         .tag(etag)
                         .build();
             } else {
