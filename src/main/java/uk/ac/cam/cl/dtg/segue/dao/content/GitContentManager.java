@@ -461,12 +461,7 @@ public class GitContentManager {
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                if (BOOKS_FIELDNAME.equals(entry.getKey())) {
-                    // books are stored as a type of tag, but unlike other tags are required fields in the search
-                    searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
-                            .strategy(Strategy.SIMPLE)
-                            .required(true));
-                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME, TAGS_FIELDNAME)
+                if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME, TAGS_FIELDNAME, BOOKS_FIELDNAME)
                         .contains(entry.getKey())) {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
                             .strategy(Strategy.SIMPLE)
