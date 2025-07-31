@@ -105,11 +105,11 @@ public interface IValidator {
         String requestString = sw.toString();
 
         try {
-            HttpClient httpClient = HttpClient.newHttpClient();
+            HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(500)).build();
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(externalValidatorUrl))
-                    .timeout(Duration.ofMillis(1000))
+                    .timeout(Duration.ofMillis(3000))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestString))
                     .build();
