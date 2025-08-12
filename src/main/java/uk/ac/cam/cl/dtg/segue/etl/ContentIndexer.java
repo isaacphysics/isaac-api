@@ -34,9 +34,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
@@ -960,7 +963,7 @@ public class ContentIndexer {
         if (content instanceof Media) {
             Media f = (Media) content;
 
-            if (f.getSrc() != null && !f.getSrc().startsWith("http")) {
+            if (f.getSrc() != null && !f.getSrc().startsWith("http") && !f.getSrc().startsWith("/assets/")) {
                 ByteArrayOutputStream fileData = null;
                 try {
                     // This will return null if the file is not found:
@@ -1166,6 +1169,27 @@ public class ContentIndexer {
                             + "significant figure rules! The upper bound may be below the lower bound, or "
                             + "either bound might be less than 1 - the question will be unanswerable unless "
                             + "this is fixed.", indexProblemCache);
+                }
+            }
+
+            for (Choice choice : q.getChoices()) {
+                if (choice instanceof CoordinateChoice) {
+                    CoordinateChoice coordChoice = (CoordinateChoice) choice;
+                    for (Item item : coordChoice.getItems()) {
+                        if (item instanceof CoordinateItem) {
+                            CoordinateItem coordItem = (CoordinateItem) item;
+                            for (String coord : coordItem.getCoordinates()) {
+                                // Check valid number by parsing in the same way ValidationUtils does:
+                                try {
+                                    stringValueToDouble(reformatNumberForParsing(coord));
+                                } catch (NumberFormatException e) {
+                                    this.registerContentProblem(content,
+                                            String.format("Coordinate Question: %s has a value (%s) that cannot be interpreted as a number!",
+                                                    q.getId(), coord), indexProblemCache);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

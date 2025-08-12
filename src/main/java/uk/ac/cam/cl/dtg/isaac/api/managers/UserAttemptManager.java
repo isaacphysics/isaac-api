@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -15,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * A class to augment content with user attempt information.
@@ -35,7 +36,7 @@ public class UserAttemptManager {
      * @param content the content to be augmented.
      * @param usersQuestionAttempts the user's question attempts.
      */
-    public void augmentRelatedQuestionsWithAttemptInformation(
+    public static void augmentRelatedQuestionsWithAttemptInformation(
             final ContentDTO content,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
         // Check if all question parts have been answered
@@ -57,40 +58,73 @@ public class UserAttemptManager {
         }
     }
 
-    private void augmentContentSummaryWithAttemptInformation(
+    /**
+     * Augment a ContentSummary object with question attempt information.
+     *
+     * @param contentSummary - the ContentSummaryDTO of a question page object.
+     * @param usersQuestionAttempts - the user's question attempts.
+     */
+    public static void augmentContentSummaryWithAttemptInformation(
             final ContentSummaryDTO contentSummary,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> usersQuestionAttempts) {
+
+        if (!QUESTION_PAGE_TYPES_SET.contains(contentSummary.getType())) {
+            // Do not augment non-question pages.
+            return;
+        }
+
         String questionId = contentSummary.getId();
         Map<String, ? extends List<? extends LightweightQuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
         boolean questionAnsweredCorrectly = false;
-        boolean attempted = false;
+        int questionPartsCorrect = 0;
+        int questionPartsIncorrect = 0;
+        int questionPartsTotal = contentSummary.getQuestionPartIds().size();
         if (questionAttempts != null) {
             for (String relatedQuestionPartId : contentSummary.getQuestionPartIds()) {
-                questionAnsweredCorrectly = false;
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts = questionAttempts.get(relatedQuestionPartId);
                 if (questionPartAttempts != null) {
-                    attempted = true;
                     for (LightweightQuestionValidationResponse partAttempt : questionPartAttempts) {
                         questionAnsweredCorrectly = partAttempt.isCorrect();
                         if (questionAnsweredCorrectly) {
+                            questionPartsCorrect++;
                             break; // exit on first correct attempt
                         }
                     }
-                }
-                if (!questionAnsweredCorrectly) {
-                    break; // exit on first false question part
+                    if (!questionAnsweredCorrectly) {
+                        questionPartsIncorrect++;
+                    }
                 }
             }
         }
-        if (attempted) {
-            if (questionAnsweredCorrectly) {
-                contentSummary.setState(Constants.CompletionState.ALL_CORRECT);
-            } else {
-                contentSummary.setState(Constants.CompletionState.IN_PROGRESS);
-            }
+        CompletionState state = getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
+        contentSummary.setState(state);
+    }
+
+    /**
+     *  Get a CompletionState from question part attempt correct, incorrect and total counts.
+     *
+     * @param questionPartsTotal total number of question parts.
+     * @param questionPartsCorrect total answered correctly.
+     * @param questionPartsIncorrect total answered incorrectly.
+     * @return the state of the question
+     */
+    public static CompletionState getCompletionState(final int questionPartsTotal, final int questionPartsCorrect,
+                                                      final int questionPartsIncorrect) {
+        int questionPartsNotAttempted = questionPartsTotal - (questionPartsCorrect + questionPartsIncorrect);
+
+        CompletionState state;
+        if (questionPartsCorrect == questionPartsTotal) {
+            state = CompletionState.ALL_CORRECT;
+        } else if (questionPartsIncorrect == questionPartsTotal) {
+            state = CompletionState.ALL_INCORRECT;
+        } else if (questionPartsNotAttempted == questionPartsTotal) {
+            state = CompletionState.NOT_ATTEMPTED;
+        } else if (questionPartsNotAttempted > 0) {
+            state = CompletionState.IN_PROGRESS;
         } else {
-            contentSummary.setState(Constants.CompletionState.NOT_ATTEMPTED);
+            state = CompletionState.ALL_ATTEMPTED;
         }
+        return state;
     }
 
     /**

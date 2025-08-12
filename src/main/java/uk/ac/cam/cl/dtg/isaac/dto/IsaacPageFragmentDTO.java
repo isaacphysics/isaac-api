@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 @JsonContentType("isaacPageFragment")
 public class IsaacPageFragmentDTO extends ContentDTO {
     private String summary;
+    private String teacherNotes;
 
     @Override
     @JsonIgnore(false) // Override the parent class decorator!
@@ -46,5 +47,24 @@ public class IsaacPageFragmentDTO extends ContentDTO {
      */
     public final void setSummary(final String summary) {
         this.summary = summary;
+    }
+
+    /**
+     * Gets the teacherNotes.
+     *
+     * @return the teacherNotes
+     */
+    public String getTeacherNotes() {
+        return teacherNotes;
+    }
+
+    /**
+     * Sets the teacherNotes.
+     *
+     * @param teacherNotes
+     *            the teacherNotes to set
+     */
+    public void setTeacherNotes(final String teacherNotes) {
+        this.teacherNotes = teacherNotes;
     }
 }

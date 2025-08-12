@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
@@ -89,11 +88,13 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
+import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv2SCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
@@ -364,6 +365,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES, globalProperties);
         mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
 
+        // Microsoft
+        try {
+            new MicrosoftAuthenticator(
+                    globalProperties.getProperty(Constants.MICROSOFT_CLIENT_ID),
+                    globalProperties.getProperty(Constants.MICROSOFT_TENANT_ID),
+                    globalProperties.getProperty(Constants.MICROSOFT_SECRET),
+                    globalProperties.getProperty(Constants.MICROSOFT_JWKS_URL),
+                    globalProperties.getProperty(Constants.MICROSOFT_REDIRECT_URL));
+
+            this.bindConstantToProperty(Constants.MICROSOFT_SECRET, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_CLIENT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_TENANT_ID, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_JWKS_URL, globalProperties);
+            this.bindConstantToProperty(Constants.MICROSOFT_REDIRECT_URL, globalProperties);
+
+            mapBinder.addBinding(AuthenticationProvider.MICROSOFT).to(MicrosoftAuthenticator.class);
+        } catch (Exception e) {
+            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
+                    AuthenticationProvider.MICROSOFT));
+        }
+
         // Facebook
         this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID, globalProperties);
@@ -614,13 +636,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
         ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
         ISegueHashingAlgorithm chainedAlgorithm1 = new SegueChainedPBKDFv1SCryptv1();
+        ISegueHashingAlgorithm chainedAlgorithm2 = new SegueChainedPBKDFv2SCryptv1();
 
         Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
                 preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
                 oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
                 oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
                 oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3,
-                chainedAlgorithm1.hashingAlgorithmName(), chainedAlgorithm1
+                chainedAlgorithm1.hashingAlgorithmName(), chainedAlgorithm1,
+                chainedAlgorithm2.hashingAlgorithmName(), chainedAlgorithm2
         );
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
@@ -1056,6 +1080,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             String mailjetSecret = properties.getProperty(MAILJET_API_SECRET);
             String eventPrePostEmails = properties.getProperty(EVENT_PRE_POST_EMAILS);
             boolean eventPrePostEmailsEnabled = null != eventPrePostEmails && !eventPrePostEmails.isEmpty() && Boolean.parseBoolean(eventPrePostEmails);
+            Boolean disableQuartzAutostart = Boolean.parseBoolean(properties.getProperty(DISABLE_QUARTZ_AUTOSTART));
 
             SegueScheduledJob PIISQLJob = new SegueScheduledDatabaseScriptJob(
                     "PIIDeleteScheduledJob",
@@ -1162,7 +1187,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 scheduledJobsToRemove.add(eventReminderEmail);
                 scheduledJobsToRemove.add(eventFeedbackEmail);
             }
-            segueJobService = new SegueJobService(database, configuredScheduledJobs, scheduledJobsToRemove);
+            segueJobService = new SegueJobService(database, configuredScheduledJobs, scheduledJobsToRemove, disableQuartzAutostart);
 
         }
 
@@ -1232,12 +1257,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-                                                                              final GitContentManager contentManager, final MapperFacade mapper, final ContentMapper objectMapper,
-                                                                              final URIManager uriManager) {
+    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
+                                                                              final MapperFacade mapper, final ContentMapper objectMapper) {
         if (null == gameboardPersistenceManager) {
-            gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
-                    objectMapper, uriManager);
+            gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

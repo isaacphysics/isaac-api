@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
@@ -276,8 +277,8 @@ public class AuthorisationFacadeIT extends IsaacIntegrationTest {
                 UserSummaryDTO userSummary = studentResults.getUser();
                 assert userSummary != null;
                 if (userSummary.getId() == ALICE_STUDENT_ID) {
-                    List<Constants.GameboardItemState> results = studentResults.getResults();
-                    assertTrue(results != null && results.isEmpty());
+                    List<Constants.CompletionState> results = studentResults.getQuestionResults();
+                    assertNull(results);
                     break;
                 }
             }

@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -86,6 +87,7 @@ public class IsaacTest {
     protected RegisteredUserDTO secondTeacher;
     protected RegisteredUserDTO otherTeacher;
     protected RegisteredUserDTO noone;
+    protected AnonymousUserDTO anonUser;
     protected RegisteredUserDTO secondStudent;
     protected RegisteredUserDTO otherStudent;
     protected RegisteredUserDTO adminUser;
@@ -164,14 +166,14 @@ public class IsaacTest {
         quizSection2.setId("studentQuiz|section2");
         quizSection2.setChildren(ImmutableList.of(question2, question3));
 
-        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
-        studentQuizPreQuizAnswerChange = new IsaacQuizDTO("studentQuizPreQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
-        studentQuizPostQuizAnswerChange = new IsaacQuizDTO("studentQuizPostQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.OVERALL_MARK, null);
-        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, null, false, ImmutableList.of("STUDENT"), null, null);
-        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, null, null, true, null, QuizFeedbackMode.DETAILED_FEEDBACK, null);
+        studentQuiz = new IsaacQuizDTO("studentQuiz", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, null, null, QuizFeedbackMode.OVERALL_MARK, null);
+        studentQuizPreQuizAnswerChange = new IsaacQuizDTO("studentQuizPreQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, null, null, QuizFeedbackMode.OVERALL_MARK, null);
+        studentQuizPostQuizAnswerChange = new IsaacQuizDTO("studentQuizPostQuizAnswerChange", null, null, null, null, null, null, null, ImmutableList.of(quizSection1, quizSection2), null, null, null, false, null, null, null, null, null, null, QuizFeedbackMode.OVERALL_MARK, null);
+        teacherQuiz = new IsaacQuizDTO("teacherQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, null, null, ImmutableList.of("STUDENT"), null, null);
+        otherQuiz = new IsaacQuizDTO("otherQuiz", null, null, null, null, null, null, null, Collections.singletonList(quizSection1), null, null, null, false, null, null, null, null, null, null, QuizFeedbackMode.DETAILED_FEEDBACK, null);
 
         // A bit scrappy, but hopefully sufficient.
-        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, null, null, null, true, null, null);
+        studentQuizDO = new IsaacQuiz("studentQuiz", null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, null, null, null, null, null, null);
 
         student = new RegisteredUserDTO("Some", "Student", "test-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.MALE, somePastDate, "", null, false);
         student.setRole(Role.STUDENT);
@@ -190,6 +192,7 @@ public class IsaacTest {
         otherTeacher.setId(++id);
 
         noone = null;
+        anonUser = new AnonymousUserDTO("fake-session-id");
 
         secondStudent = new RegisteredUserDTO("Second", "Student", "second-student@test.com", EmailVerificationStatus.VERIFIED, somePastDate, Gender.FEMALE, somePastDate, "", null, false);
         secondStudent.setRole(Role.STUDENT);
@@ -255,8 +258,8 @@ public class IsaacTest {
         quizManager = createMock(QuizManager.class);
 
         registerDefaultsFor(quizManager, m -> {
-            expect(m.getAvailableQuizzes(true,"STUDENT", 0, 9000)).andStubReturn(wrap(studentQuizSummary));
-            expect(m.getAvailableQuizzes(false,"TEACHER", 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
+            expect(m.getAvailableQuizzes("STUDENT", 0, 9000)).andStubReturn(wrap(studentQuizSummary));
+            expect(m.getAvailableQuizzes("TEACHER", 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
             expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
             expect(m.findQuiz(studentQuizPreQuizAnswerChange.getId())).andStubReturn(studentQuizPreQuizAnswerChange);
             expect(m.findQuiz(studentQuizPostQuizAnswerChange.getId())).andStubReturn(studentQuizPostQuizAnswerChange);

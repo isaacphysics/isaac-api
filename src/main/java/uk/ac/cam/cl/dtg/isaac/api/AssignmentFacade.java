@@ -67,7 +67,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -101,7 +100,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  *
  */
 @Path("/assignments")
-@Tag(name = "/assignments")
+@Tag(name = "AssignmentFacade", description = "/assignments")
 public class AssignmentFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 
@@ -338,6 +337,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         .stream().collect(Collectors.toMap(GameboardDTO::getId, Function.identity()));
                 for (AssignmentDTO assignment : allAssignmentsSetToGroup) {
                     assignment.setGameboard(gameboards.get(assignment.getGameboardId()));
+                    assignment.setGroupName(group.getGroupName());
                 }
 
                 return Response.ok(allAssignmentsSetToGroup)
@@ -405,11 +405,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    ArrayList<GameboardItemState> states = Lists.newArrayList();
+                    ArrayList<CompletionState> questionStates = Lists.newArrayList();
+                    ArrayList<List<QuestionPartState>> questionPartStates = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
                     for (GameboardItem questionResult : userGameboardItems.getRight()) {
-                        states.add(questionResult.getState());
+                        questionStates.add(questionResult.getState());
+                        questionPartStates.add(questionResult.getQuestionPartStates());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
                     }
@@ -417,14 +419,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                             userSummary,
                             correctQuestionParts,
                             incorrectQuestionParts,
-                            states
+                            questionStates,
+                            questionPartStates
                     ));
                 } else {
                     result.add(new AssignmentProgressDTO(
                             userSummary,
-                            Collections.emptyList(),
-                            Collections.emptyList(),
-                            Collections.emptyList()
+                            null,
+                            null,
+                            null,
+                            null
                     ));
                 }
             }

@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,9 @@ import java.util.stream.Collectors;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.*;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_EVENT_LEADERS_OPEN_GROUP_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_EVENT_LEADERS_WAITING_LIST_GROUP_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 
 
 public class EventsFacadeIT extends IsaacIntegrationTest {
@@ -54,7 +59,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         assertNotNull(entity);
         List<IsaacEventPageDTO> results = entity.getResults();
         // Check that we retrieved the expected amount of results
-        assertEquals(8, results.size());
+        assertEquals(10, results.size());
         // NOTE: We may end up having more events in the dataset than the limit specified in the call.
         //       In this case, we need to check for the limit up here and then check if the response object tells us
         //       that there are more, and how many there are.
@@ -265,5 +270,81 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         Response eventManager_Response = eventsFacade.getEventBookingForGivenGroup(eventManager_Request, "_regular_test_event", "2");
         // The event manager does not own the group so this should not succeed
         assertNotEquals(Response.Status.OK.getStatusCode(), eventManager_Response.getStatus());
+    }
+
+    @Test
+    public void waitingListFlow_openButExpiredEventAndOwnerIsEventLeader_bookingVisibleToOwnerButGroupWasNotJoined()
+            throws Exception {
+        // Arrange
+        // login student and event leader
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+
+        HttpServletRequest joinWaitingListRequest = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
+        replay(joinWaitingListRequest);
+
+        LoginResult eventLeaderLogin = loginAs(httpSession, ITConstants.TEST_EVENTLEADER_EMAIL,
+                ITConstants.TEST_EVENTLEADER_PASSWORD);
+
+        HttpServletRequest getBookingsRequest = createRequestWithCookies(new Cookie[] { eventLeaderLogin.cookie });
+        replay(getBookingsRequest);
+
+        // Act
+        // student - join waiting list
+        Response joinResponse = eventsFacade.addMeToWaitingList(joinWaitingListRequest,
+                "_open_with_waiting_list_test_event", null);
+
+        // event leader - get waiting list
+        Response getBookingsResponse = eventsFacade.adminGetEventBookingByEventId(getBookingsRequest,
+                "_open_with_waiting_list_test_event");
+
+        // Assert
+        // event leader can see student details
+        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).get(0);
+        assertEquals(BookingStatus.WAITING_LIST, booking.getBookingStatus());
+        assertEquals("Student", booking.getUserBooked().getFamilyName());
+        assertEquals("Test Student", booking.getUserBooked().getGivenName());
+
+        // student has not joined group
+        assertFalse(groupManager.isUserInGroup(userAccountManager.getUserDTOById(TEST_STUDENT_ID),
+                groupManager.getGroupById(TEST_EVENT_LEADERS_OPEN_GROUP_ID)));
+    }
+
+    @Test
+    public void waitingListFlow_waitingListOnlyEventAndOwnerIsEventLeader_bookingVisibleToOwnerAndGroupWasJoined()
+            throws Exception {
+        // Arrange
+        // login student and event leader
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+
+        HttpServletRequest joinWaitingListRequest = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
+        replay(joinWaitingListRequest);
+
+        LoginResult eventLeaderLogin = loginAs(httpSession, ITConstants.TEST_EVENTLEADER_EMAIL,
+                ITConstants.TEST_EVENTLEADER_PASSWORD);
+
+        HttpServletRequest getBookingsRequest = createRequestWithCookies(new Cookie[] { eventLeaderLogin.cookie });
+        replay(getBookingsRequest);
+
+        // Act
+        // student - join waiting list
+        Response joinResponse = eventsFacade.addMeToWaitingList(joinWaitingListRequest,
+                "_waiting_list_only_test_event", null);
+
+        // event leader - get waiting list
+        Response getBookingsResponse = eventsFacade.adminGetEventBookingByEventId(getBookingsRequest,
+                "_waiting_list_only_test_event");
+
+        // Assert
+        // event leader can see student details
+        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).get(0);
+        assertEquals(BookingStatus.WAITING_LIST, booking.getBookingStatus());
+        assertEquals("Student", booking.getUserBooked().getFamilyName());
+        assertEquals("Test Student", booking.getUserBooked().getGivenName());
+
+        // student has joined group
+        assertTrue(groupManager.isUserInGroup(userAccountManager.getUserDTOById(TEST_STUDENT_ID),
+                groupManager.getGroupById(TEST_EVENT_LEADERS_WAITING_LIST_GROUP_ID)));
     }
 }

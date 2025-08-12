@@ -22,6 +22,7 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
@@ -30,8 +31,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -46,7 +45,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/")
-@Tag(name = "/")
+@Tag(name = "SegueDefaultFacade", description = "/")
 public class SegueDefaultFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueDefaultFacade.class);
 

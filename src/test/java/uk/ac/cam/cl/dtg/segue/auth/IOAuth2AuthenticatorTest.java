@@ -23,6 +23,7 @@ import java.net.URL;
 import org.junit.Test;
 
 import com.google.api.client.http.GenericUrl;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 
 /**
  * Test class for the facebook authenticator class.
@@ -57,7 +58,7 @@ public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
 	 * @throws IOException 
 	 */
 	@Test
-	public final void extractAuthCode_givenValidUrl_returnsCorrectCode() throws IOException {
+	public final void extractAuthCode_givenValidUrl_returnsCorrectCode() throws AuthenticationCodeException {
 		GenericUrl url = new GenericUrl(someDomain);
 		url.set("code", someAuthCode);
 		String code = authenticator.extractAuthCode(url.build());

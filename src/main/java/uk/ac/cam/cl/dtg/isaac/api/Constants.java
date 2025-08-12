@@ -15,17 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants.LogType;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_SERVER_LOG_TYPES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Utility class to provide common isaac-specific constants.
@@ -47,6 +47,8 @@ public final class Constants {
     public static final String TOPIC_SUMMARY_PAGE_TYPE = "isaacTopicSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
     public static final String QUIZ_TYPE = "isaacQuiz";
+    public static final String BOOK_INDEX_TYPE = "isaacBookIndexPage";
+    public static final String BOOK_DETAIL_TYPE = "isaacBookDetailPage";
 
     public static final String SEARCHABLE_TAG = "search_result";
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
@@ -54,26 +56,22 @@ public final class Constants {
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
+    public static final List<String> QUESTION_PAGE_TYPES = List.of(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE);
+    public static final Set<String> QUESTION_PAGE_TYPES_SET = new HashSet<>(QUESTION_PAGE_TYPES);
+
     public static final Set<String> SITE_WIDE_SEARCH_VALID_DOC_TYPES = ImmutableSet.of(
-            QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
+            QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, BOOK_INDEX_TYPE, BOOK_DETAIL_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     public static final Set<String> SEARCHABLE_DOC_TYPES = ImmutableSet.of(
-            QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, PAGE_TYPE, EVENT_TYPE);
+            QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, BOOK_INDEX_TYPE, BOOK_DETAIL_TYPE, PAGE_TYPE, EVENT_TYPE);
 
     /*
      * Game specific variables.
      */
     public static final int GAME_BOARD_TARGET_SIZE = 10;
 
-    /**
-     * GameboardItemState Represents the potential states of a gameboard item.
-     */
-    public enum GameboardItemState {
-        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED;
-    }
-
     public enum CompletionState {
-        ALL_CORRECT, IN_PROGRESS, NOT_ATTEMPTED;
+        ALL_CORRECT, ALL_ATTEMPTED, ALL_INCORRECT, IN_PROGRESS, NOT_ATTEMPTED;
 
         private static final Set<CompletionState> allStates = Set.of(CompletionState.values());
 
@@ -168,11 +166,15 @@ public final class Constants {
         UPDATE_QUIZ_FEEDBACK_MODE,
         VIEW_ASSIGNMENT_PROGRESS,
         VIEW_CONCEPT,
+        VIEW_BOOK_INDEX_PAGE,
+        VIEW_BOOK_DETAIL_PAGE,
         VIEW_MY_BOARDS_PAGE,
         VIEW_PAGE,
         VIEW_PAGE_FRAGMENT,
         VIEW_QUESTION,
+        VIEW_QUIZ_RUBRIC,
         VIEW_QUIZ_SECTION,
+        VIEW_REVISION_DETAIL_PAGE,
         VIEW_TOPIC_SUMMARY_PAGE,
         VIEW_USER_PROGRESS,
     }
@@ -218,8 +220,17 @@ public final class Constants {
         addAll(ISAAC_CLIENT_LOG_TYPES);
     }};
 
+    /**
+     * Question search constants
+     */
+    public static final String QUESTION_SEARCH_RANDOM_QUESTION = "randomQuestion";
+    public static final Set<String> QUESTION_SEARCH_LOG_SOURCE_IGNORES = ImmutableSet.of(QUESTION_SEARCH_RANDOM_QUESTION);
+
+    /**
+     * User preference categories
+     */
     public enum IsaacUserPreferences {
-        SUBJECT_INTEREST, BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, CONSENT
+        BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, CONSENT
     }
 
     /**

@@ -22,7 +22,7 @@ import jakarta.ws.rs.core.Response;
  * Created by Ian on 17/10/2016.
  */
 @Path("/etl")
-@Tag(name = "/etl")
+@Tag(name = "ETLFacade", description = "/etl")
 public class ETLFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
 

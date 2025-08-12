@@ -28,13 +28,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -59,7 +57,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COL
  *
  */
 @Path("/glossary")
-@Tag(name = "/glossary")
+@Tag(name = "GlossaryFacade", description = "/glossary")
 public class GlossaryFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(GlossaryFacade.class);
 
@@ -150,40 +148,5 @@ public class GlossaryFacade extends AbstractSegueFacade {
             log.warn("Error loading glossary terms!", e);  // Sadly need full stack trace here, since errors are nested!
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error loading glossary terms!").toResponse();
         }
-    }
-
-    /**
-     * Gets the current version of the segue application.
-     *
-     * @param term_id - The ID of the term to retrieve.
-     *
-     * @return segue version as a string wrapped in a response.
-     */
-    @GET
-    @Path("terms/{term_id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get the term with the given id.")
-    public final Response getTermById(@PathParam("term_id") final String term_id) {
-
-        if (null == term_id) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Please specify a term_id.").toResponse();
-        }
-
-        ResultsWrapper<ContentDTO> c;
-        try {
-            c = this.contentManager.getUnsafeCachedDTOsByIdPrefix(term_id, 0, 10000);
-            if (null == c) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No glossary term found with id: " + term_id);
-                log.debug(error.getErrorMessage());
-                return error.toResponse();
-            }
-        } catch (ContentManagerException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content acquisition error.", e).toResponse();
-        }
-        // Calculate the ETag on last modified date of tags list
-        // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
-        return Response.ok(c).tag(etag).build();
     }
 }

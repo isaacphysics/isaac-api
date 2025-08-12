@@ -31,7 +31,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.IsaacBookDetailPage;
+import uk.ac.cam.cl.dtg.isaac.dos.content.IsaacRevisionDetailPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacBookIndexPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -42,6 +45,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.IsaacBookDetailPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.IsaacRevisionDetailPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
@@ -72,12 +77,16 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -88,7 +97,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * This class specifically caters for displaying isaac specific content pages.
  */
 @Path("/pages")
-@Tag(name = "/pages")
+@Tag(name = "PagesFacade", description = "/pages")
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
@@ -236,34 +245,50 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (null == conceptId || conceptId.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
         }
-
-        // Calculate the ETag on current live version of the content:
-        EntityTag etag = new EntityTag(
-            String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + conceptId.hashCode())
-        );
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
         try {
+            AbstractSegueUserDTO user = userManager.getCurrentUser(servletRequest);
+
             ContentDTO contentDTO = contentManager.getContentById(conceptId, true);
             if (contentDTO instanceof IsaacConceptPageDTO) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
-                // Do we want to use the user's actual question attempts here? We did not previously.
-                augmentContentWithRelatedContent(content, Collections.emptyMap());
 
+                // Load attempts at related questions:
+                Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
+                List<String> relatedQuestionIds = new ArrayList<>(getRelatedContentIds(content));
+                if (user instanceof AnonymousUserDTO) {
+                    // For anon users, must load all attempts:
+                    relatedQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
+                } else {
+                    // For registered users, can load only relevant lightweight attempts:
+                    RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+                    relatedQuestionAttempts = questionManager.getMatchingLightweightQuestionAttempts(
+                            registeredUser, relatedQuestionIds
+                    );
+                }
+
+                // Check the cache status:
+                EntityTag etag = new EntityTag(String.valueOf(
+                        this.contentManager.getCurrentContentSHA().hashCode()
+                        + conceptId.hashCode()
+                        + relatedQuestionAttempts.hashCode()
+                ));
+                Response cachedResponse = generateCachedResponse(request, etag);
+                if (cachedResponse != null) {
+                    return cachedResponse;
+                }
+
+                // Augment related content with question attempts:
+                augmentContentWithRelatedContent(content, relatedQuestionAttempts);
+
+                // Log the request:
                 ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
                         .put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
                         .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                         .build();
-
-                // the request log
-                getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
-                        IsaacServerLogType.VIEW_CONCEPT, logEntry);
+                getLogManager().logEvent(user, servletRequest, IsaacServerLogType.VIEW_CONCEPT, logEntry);
 
                 return Response.ok(content)
-                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                         .tag(etag)
                         .build();
             } else {
@@ -289,9 +314,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to provide a list of questions.
-     * 
-     * @param request
-     *            - used to determine if we can return a cache response.
+     *
      * @param ids
      *            - the ids of the concepts to request.
      * @param searchString
@@ -314,19 +337,19 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all question page objects matching the provided criteria.")
-    public final Response getQuestionList(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest,
+    public final Response getQuestionList(@Context final HttpServletRequest httpServletRequest,
             @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
-            @QueryParam("subjects") final String subjects,
-            @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
+            @QueryParam("subjects") final String subjects, @QueryParam("fields") final String fields,
+            @QueryParam("topics") final String topics,
             @QueryParam("stages") final String stages, @QueryParam("difficulties") final String difficulties,
-            @QueryParam("examBoards") final String examBoards, @QueryParam("books") final String books,
-            @QueryParam("questionCategories") final String questionCategories,
+            @QueryParam("examBoards") final String examBoards,
+            @QueryParam("books") final String books, @QueryParam("questionCategories") final String questionCategories,
             @QueryParam("statuses") final String statuses,
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
-            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit) {
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit,
+            @QueryParam("randomSeed") final Long randomSeed, @QueryParam("querySource") final String querySource) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
@@ -334,6 +357,12 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (null != searchString && searchString.length() > SEARCH_TEXT_CHAR_LIMIT) {
             return SegueErrorResponse.getBadRequestResponse(
                     String.format("Search string exceeded %s character limit.", SEARCH_TEXT_CHAR_LIMIT));
+        }
+
+        // TODO: the limit ought to be lower when filtering by attempt status
+        if (null != paramLimit && (paramLimit > MAX_SEARCH_RESULT_LIMIT || paramLimit <= 0)) {
+            log.warn("Question search requested {} results!", paramLimit);
+            return SegueErrorResponse.getBadRequestResponse("Unsupported search result limit!");
         }
 
         try {
@@ -363,22 +392,30 @@ public class PagesFacade extends AbstractIsaacFacade {
             limit = idsList.size();
         }
 
-        // Not an ImmutableMap since we may have null values
-        Map<String, Object> logEntry = new HashMap<>();
-        logEntry.put(SEARCH_STRING_FIELDNAME, searchString);
-        logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
-        logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
-        logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
-        logEntry.put(BOOKS_FIELDNAME, csvParamToLogValue(books));
-        logEntry.put(STAGES_FIELDNAME, csvParamToLogValue(stages));
-        logEntry.put(DIFFICULTIES_FIELDNAME, csvParamToLogValue(difficulties));
-        logEntry.put(EXAM_BOARDS_FIELDNAME, csvParamToLogValue(examBoards));
-        logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
-        logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
-        logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
-        logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
+        if (null == querySource || !QUESTION_SEARCH_LOG_SOURCE_IGNORES.contains(querySource)) {
+            // Not an ImmutableMap since we may have null values, which will get nicely excluded from JSON.
+            Map<String, Object> logEntry = new HashMap<>();
+            logEntry.put(FIELDS_FIELDNAME, csvParamToLogValue(fields));
+            logEntry.put(SUBJECTS_FIELDNAME, csvParamToLogValue(subjects));
+            logEntry.put(TOPICS_FIELDNAME, csvParamToLogValue(topics));
+            logEntry.put(BOOKS_FIELDNAME, csvParamToLogValue(books));
+            logEntry.put(STAGES_FIELDNAME, csvParamToLogValue(stages));
+            logEntry.put(DIFFICULTIES_FIELDNAME, csvParamToLogValue(difficulties));
+            logEntry.put(EXAM_BOARDS_FIELDNAME, csvParamToLogValue(examBoards));
+            logEntry.put(CATEGORIES_FIELDNAME, csvParamToLogValue(questionCategories));
+            logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
+            logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
+            logEntry.put("levels", csvParamToLogValue(level));
+            logEntry.put("questionIds", csvParamToLogValue(ids));
+            logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
+            logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
+            logEntry.put(SEARCH_STRING_FIELDNAME, !Objects.equals(searchString, "") ? searchString : null);
+            logEntry.put("fasttrack", Objects.equals(fasttrack, true) ? String.valueOf(fasttrack) : null);
+            logEntry.put("randomSeed", null != randomSeed ? String.valueOf(randomSeed) : null);
+            logEntry.put("querySource", querySource);
 
-        this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
+            this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
+        }
 
         Map<String, String> fieldNameToValues = new HashMap<>();
         fieldNameToValues.put(ID_FIELDNAME, ids);
@@ -419,11 +456,12 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         String validatedSearchString = (null == searchString || searchString.isBlank()) ? null : searchString;
 
-        // Show "nofilter" content to staff, superseded content to teachers:
+        // Show "nofilter" content to staff, superseded content to teachers, except when finding random questions:
         boolean showNoFilterContent = false;
         boolean showSupersededContent = false;
+        boolean isRandomQuestion = Objects.equals(QUESTION_SEARCH_RANDOM_QUESTION, querySource);
         try {
-            if (user instanceof RegisteredUserDTO) {
+            if (!isRandomQuestion && user instanceof RegisteredUserDTO) {
                 showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
                 showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
             }
@@ -444,10 +482,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                 ResultsWrapper<ContentDTO> c;
                 c = contentManager.questionSearch(
                         validatedSearchString,
+                        randomSeed,
                         fieldsToMatch,
-                        fasttrack,
                         nextSearchStartIndex,
                         limit,
+                        fasttrack,
                         showNoFilterContent,
                         showSupersededContent
                 );
@@ -645,7 +684,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         try {
             // Load the summary page:
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
-            ContentDTO contentDTOById = this.contentManager.getContentById(summaryPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
             if (!(contentDOById instanceof IsaacTopicSummaryPage
                     && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
@@ -754,6 +793,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
                 // Unlikely we want to augment with a user's actual question attempts. Use an empty Map.
                 augmentContentWithRelatedContent(content, Collections.emptyMap());
+                contentManager.populateSidebar(content);
 
                 // the request log
                 ImmutableMap<String, String> logEntry = ImmutableMap.of(
@@ -847,6 +887,223 @@ public class PagesFacade extends AbstractIsaacFacade {
             );
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        }
+    }
+
+    /**
+     * Endpoint that gets a single book index page from the given id.
+     *
+     * @param request
+     *            - so that we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param bookId
+     *            as a string
+     * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/books/index/{book_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a book index page by ID.")
+    public final Response getBookPage(@Context final Request request,
+                                          @Context final HttpServletRequest httpServletRequest,
+                                          @PathParam("book_id") final String bookId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + bookId.hashCode()));
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        try {
+            ContentDTO contentDTO = contentManager.getContentById(bookId, true);
+            if (contentDTO instanceof IsaacBookIndexPageDTO) {
+                IsaacBookIndexPageDTO indexPageDTO = (IsaacBookIndexPageDTO) contentDTO;
+
+                // Unlikely we want to augment with related content here!
+                contentManager.populateSidebar(indexPageDTO);
+
+                // Log the page view:
+                getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                        IsaacServerLogType.VIEW_BOOK_INDEX_PAGE, ImmutableMap.of(
+                                PAGE_ID_LOG_FIELDNAME, bookId,
+                                CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()
+                        ));
+
+                return Response.ok(indexPageDTO)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .tag(etag)
+                        .build();
+            } else {
+                log.warn("Unable to locate a book index page with the id '{}'!", bookId);
+                return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate a book index page with the id specified!");
+            }
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while processing request.");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
+
+    /**
+     *   Endpoint that gets a single book detail page from the given id.
+     *
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param bookPageId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/books/page/{book_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a single book details page by ID.")
+    public final Response getBookDetailPage(@Context final Request request,
+                                              @Context final HttpServletRequest httpServletRequest,
+                                              @PathParam("book_page_id") final String bookPageId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + bookPageId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        try {
+            // Load the summary page:
+            Content contentDOById = this.contentManager.getContentDOById(bookPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
+
+            if (!(contentDOById instanceof IsaacBookDetailPage
+                    && contentDTOById instanceof IsaacBookDetailPageDTO)) {
+                return SegueErrorResponse.getResourceNotFoundResponse(String.format(
+                        "Unable to locate book detail page with id: %s", bookPageId));
+            }
+            IsaacBookDetailPage bookPageDO = (IsaacBookDetailPage) contentDOById;
+            IsaacBookDetailPageDTO bookPageDTO = (IsaacBookDetailPageDTO) contentDTOById;
+
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+
+            // Augment related content:
+            this.augmentContentWithRelatedContent(bookPageDTO, Collections.emptyMap());
+            contentManager.populateSidebar(bookPageDTO);
+
+            // Augment linked gameboards using the list in the DO:
+            // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
+            List<String> gameboardIds = Objects.requireNonNullElse(bookPageDO.getGameboards(), Collections.emptyList());
+            List<String> additionalGameboardIds = Objects.requireNonNullElse(bookPageDO.getExtensionGameboards(), Collections.emptyList());
+            List<String> allGameboardIds = Stream.of(gameboardIds, additionalGameboardIds)
+                    .flatMap(Collection::stream).collect(Collectors.toList());
+            List<GameboardDTO> linkedGameboards = gameManager.getGameboards(allGameboardIds);
+
+            bookPageDTO.setGameboards(linkedGameboards
+                    .stream()
+                    .filter(gb -> gameboardIds.contains(gb.getId()))
+                    .sorted(Comparator.comparingInt(o -> gameboardIds.indexOf(o.getId())))  // maintain original order
+                    .collect(Collectors.toList())
+            );
+
+            bookPageDTO.setExtensionGameboards(linkedGameboards
+                    .stream()
+                    .filter(gb -> additionalGameboardIds.contains(gb.getId()))
+                    .sorted(Comparator.comparingInt(o -> additionalGameboardIds.indexOf(o.getId())))
+                    .collect(Collectors.toList())
+            );
+
+            // Log the request:
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, bookPageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_BOOK_DETAIL_PAGE, logEntry);
+
+
+            return Response.status(Status.OK).entity(bookPageDTO)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load book detail page.").toResponse();
+        }
+    }
+
+    /**
+     *   Endpoint that gets a revision detail page from the given id.
+     *
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param revisionPageId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/revision/detail/{revision_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "Get a revision detail page by ID.")
+    public final Response getRevisionDetailPage(@Context final Request request,
+                                            @Context final HttpServletRequest httpServletRequest,
+                                            @PathParam("revision_page_id") final String revisionPageId) {
+
+        // Calculate the ETag on current live version of the content
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + revisionPageId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        try {
+            // Load the summary page:
+            Content contentDOById = this.contentManager.getContentDOById(revisionPageId, true);
+            ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
+
+            if (!(contentDOById instanceof IsaacRevisionDetailPage
+                    && contentDTOById instanceof IsaacRevisionDetailPageDTO)) {
+                return SegueErrorResponse.getResourceNotFoundResponse(String.format(
+                        "Unable to locate revision detail page with id: %s", revisionPageId));
+            }
+            IsaacRevisionDetailPage revisionPage = (IsaacRevisionDetailPage) contentDOById;
+            IsaacRevisionDetailPageDTO revisionPageDTO = (IsaacRevisionDetailPageDTO) contentDTOById;
+
+            AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+
+            // Augment related content, without user-specific question attempts:
+            this.augmentContentWithRelatedContent(revisionPageDTO, Collections.emptyMap());
+            contentManager.populateSidebar(revisionPageDTO);
+
+            // Augment linked gameboards using the list in the DO:
+            // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
+            List<String> gameboardIds = Objects.requireNonNullElse(revisionPage.getGameboards(), Collections.emptyList());
+            List<GameboardDTO> linkedGameboards = gameManager.getGameboards(gameboardIds);
+            revisionPageDTO.setGameboards(linkedGameboards);
+
+            // Log the request:
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, revisionPageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_REVISION_DETAIL_PAGE, logEntry);
+
+
+            return Response.status(Status.OK).entity(revisionPageDTO)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Failed to load revision detail page.").toResponse();
         }
     }
 
@@ -964,7 +1221,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         ContentDTO augmentedDTO = this.contentManager.populateRelatedContent(contentToAugment);
 
         if (usersQuestionAttempts != null) {
-            userAttemptManager.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
+            UserAttemptManager.augmentRelatedQuestionsWithAttemptInformation(augmentedDTO, usersQuestionAttempts);
         }
     }
 

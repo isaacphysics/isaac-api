@@ -46,7 +46,6 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -426,8 +425,7 @@ public class StatisticsManager implements IStatisticsManager {
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),
                 new ArrayList<>(ids));
 
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
-                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), QUESTION_PAGE_TYPES);
 
         // Search for questions that match the ids.
         ResultsWrapper<ContentDTO> allMatchingIds =

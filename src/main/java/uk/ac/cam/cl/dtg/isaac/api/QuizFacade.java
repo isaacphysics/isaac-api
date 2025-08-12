@@ -54,6 +54,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
@@ -109,7 +111,7 @@ import static uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager.extractPageIdF
  * Quiz Facade.
  */
 @Path("/quiz")
-@Tag(name = "/quiz")
+@Tag(name = "QuizFacade", description = "/quiz")
 public class QuizFacade extends AbstractIsaacFacade {
     private final GitContentManager contentManager;
     private final QuizManager quizManager;
@@ -161,7 +163,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Get quizzes visible to this user, starting from index 0.
      *
-     * Anonymous users can't see quizzes.
+     * See {@link #getAvailableQuizzes(Request, HttpServletRequest, Integer)}.
      *
      * @return a Response containing a list of ContentSummaryDTO for the visible quizzes.
      */
@@ -176,7 +178,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     /**
      * Get quizzes visible to this user, starting from the specified index.
      *
-     * Anonymous users can't see quizzes.
+     * Anonymous users can't view or take quizzes, but can list STUDENT quizzes using this endpoint.
      *
      * @param request            the Request needed for ETag checking.
      * @param httpServletRequest the Request needed for Cookies for the current user.
@@ -187,19 +189,21 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/available/{startIndex}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Get tests visible to this user, from the specified index.")
+    @Operation(summary = "Get tests visible to this user, from the specified index.",
+               description = "Anonymous users can list student quizzes, but cannot take them.")
     public final Response getAvailableQuizzes(@Context final Request request,
                                               @Context final HttpServletRequest httpServletRequest,
                                               @PathParam("startIndex") final Integer startIndex) {
         try {
-            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            // Tutors cannot see quizzes that are invisible to students
-            boolean showOnlyStudentVisibleQuizzes = !isUserTeacherOrAbove(userManager, user);
-            String userRoleString = user.getRole().name();
+            String userRoleString = Role.STUDENT.name();  // Allow anonymous users to list STUDENT quizzes.
+            AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
+            if (currentUser instanceof RegisteredUserDTO) {
+                userRoleString = ((RegisteredUserDTO) currentUser).getRole().name();
+            }
 
             // Cache the list of quizzes based on current content version, user's role, and startIndex:
-            int etagValue = this.contentManager.getCurrentContentSHA().hashCode() + user.getRole().hashCode();
+            int etagValue = this.contentManager.getCurrentContentSHA().hashCode() + userRoleString.hashCode();
             if (null != startIndex) {
                 etagValue += startIndex;
             }
@@ -213,7 +217,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(showOnlyStudentVisibleQuizzes, userRoleString, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(userRoleString, startIndex, 9000);
 
             return ok(summary).tag(etag)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
@@ -222,8 +226,10 @@ public class QuizFacade extends AbstractIsaacFacade {
             String message = "ContentManagerException whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error whilst getting available tests";
+            log.error(message, e);
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 
@@ -258,7 +264,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(assignments)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available tests";
+            String message = "Database error whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -289,7 +295,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             return Response.ok(attempts)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst getting available tests";
+            String message = "Database error whilst getting available tests";
             log.error(message, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, message).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -298,7 +304,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Preview a quiz. Only available to tutors and above.
+     * Preview the full contents of a quiz. Only available to tutors and above.
      *
      * @param request            - so we can deal with caching.
      * @param httpServletRequest - so that we can extract user information.
@@ -309,7 +315,8 @@ public class QuizFacade extends AbstractIsaacFacade {
     @Path("/{quizId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @Operation(summary = "Preview an individual test.")
+    @Operation(summary = "Preview the full contents of a test.",
+            description = "Students may not preview tests.")
     public final Response previewQuiz(@Context final Request request,
                                       @Context final HttpServletRequest httpServletRequest,
                                       @PathParam("quizId") final String quizId) {
@@ -336,12 +343,8 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             quiz = quizQuestionManager.augmentQuestionsForPreview(quiz);
 
-            // Check this user is actually allowed to preview this quiz. A tutor counts as both a student and teacher
-            // in this check
-            if (null != quiz.getHiddenFromRoles() && (quiz.getHiddenFromRoles().contains(user.getRole().name())
-                    || (quiz.getHiddenFromRoles().contains(Role.STUDENT.name()) && user.getRole() == Role.TUTOR)
-                    || (quiz.getHiddenFromRoles().contains(Role.TEACHER.name()) && user.getRole() == Role.TUTOR))
-            ) {
+            // Check this user is actually allowed to preview this quiz.
+            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -355,6 +358,66 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
     }
 
+
+    /**
+     * View a quiz and its rubric without starting a free attempt.
+     *
+     * Students cannot preview tests, but they may wish to use the rubric to decide whether to attempt
+     * the quiz or not. The lightweight summaries provided by the overview endpoint
+     * {@link QuizFacade#getAvailableQuizzes(Request, HttpServletRequest)} do not contain the rubric because
+     * it can be quite large.
+     *
+     * @param httpServletRequest - so that we can extract user information.
+     * @param quizId             - the ID of the quiz the user wishes to attempt.
+     * @return a DetailedQuizSummaryDTO
+     */
+    @GET
+    @Path("/{quizId}/rubric")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @Operation(summary = "View the rubric of a test.",
+            description = "This does not start a free test attempt for this test.")
+    public final Response viewQuizRubric(@Context final Request request,
+                                         @Context final HttpServletRequest httpServletRequest,
+                                         @PathParam("quizId") final String quizId) {
+        try {
+            if (null == quizId || quizId.isEmpty()) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid test id.").toResponse();
+            }
+
+            EntityTag etag = new EntityTag(String.valueOf(this.contentManager.getCurrentContentSHA().hashCode() + quizId.hashCode()));
+            Response cachedResponse = generateCachedResponse(request, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+
+            // Get the quiz summary
+            DetailedQuizSummaryDTO quiz = quizManager.getQuizSummary(quizId);
+
+            // Check it is visible to this user's role:
+            if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "This test cannot be attempted freely, so no preview is available.").toResponse();
+            }
+
+            // Log the request:
+            ImmutableMap<String, String> logEntry = ImmutableMap.of(
+                    QUIZ_ID_FKEY, quizId,
+                    CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
+            getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_QUIZ_RUBRIC, logEntry);
+
+            return Response.ok(quiz)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .tag(etag).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e) {
+            log.error("Content error whilst loading a test summary", e);
+            return SegueErrorResponse.getResourceNotFoundResponse("This test has become unavailable.");
+        }
+    }
+
     /**
      * Start a quiz attempt for a particular quiz assignment.
      *
@@ -365,7 +428,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param httpServletRequest - so that we can extract user information.
      * @param quizAssignmentId   - the ID of the quiz assignment for this user.
      * @return a QuizAttemptDTO
-     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visibleToStudents to be taken by students.
+     * @see #startFreeQuizAttempt An endpoint to allow a quiz that is visible to the user's role to be attempted freely.
      */
     @POST
     @Path("/assignment/{quizAssignmentId}/attempt")
@@ -425,7 +488,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Start a quiz attempt for a free quiz (one that is visibleToStudents).
+     * Start a quiz attempt for a free quiz (one that is visible to the user's role).
      *
      * This checks that quiz has not already been assigned. (When a quiz has been set to a student,
      * they are locked out of all previous feedback for that quiz and prevented from starting the
@@ -453,10 +516,6 @@ public class QuizFacade extends AbstractIsaacFacade {
             // Get the quiz
             IsaacQuizDTO quiz = quizManager.findQuiz(quizId);
 
-            // TODO: Remove this deprecated check:
-            if (!quiz.getVisibleToStudents()) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
-            }
             // Check it is visible to this user's role:
             if (null != quiz.getHiddenFromRoles() && quiz.getHiddenFromRoles().contains(user.getRole().name())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Free attempts are not available for test quiz.").toResponse();
@@ -1308,8 +1367,8 @@ public class QuizFacade extends AbstractIsaacFacade {
         }
 
         try {
-            RegisteredUserDTO user = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!(isUserTeacherOrAbove(userManager, user))) {
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+            if (!(isUserTeacherOrAbove(userManager, currentUser))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
@@ -1317,12 +1376,10 @@ public class QuizFacade extends AbstractIsaacFacade {
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
-            if (!canManageGroup(user, group)) {
+            if (!canManageGroup(currentUser, group)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only retrieve results for groups you own or manage.").toResponse();
             }
-
-            List<QuizAssignmentDTO> quizAssignments = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(group));
 
             List<List<String>> rows = new ArrayList<>();
             StringWriter stringWriter = new StringWriter();
@@ -1332,21 +1389,24 @@ public class QuizFacade extends AbstractIsaacFacade {
                 headerBuilder.append("\uFEFF");  // UTF-8 Byte Order Marker
             }
             headerBuilder.append(String.format("Quiz results for group (%s): Downloaded on %s \nGenerated by: %s %s \n\n",
-                    group.getGroupName(), new Date(), user.getGivenName(), user.getFamilyName()));
+                    group.getGroupName(), new Date(), currentUser.getGivenName(), currentUser.getFamilyName()));
             headerBuilder.append(",,");
 
             List<String> quizTitles = new ArrayList<>();
             List<String> questionTitles = new ArrayList<>();
 
-            for (QuizAssignmentDTO assignment : quizAssignments) {
-                String quizId = assignment.getQuizId();
+            List<QuizAssignmentDTO> quizAssignments = this.quizAssignmentManager.getAssignmentsForGroups(Collections.singletonList(group));
+            Map<Long, List<QuizUserFeedbackDTO>> quizFeedbacks = new HashMap<>();
+            for (QuizAssignmentDTO quizAssignment : quizAssignments) {
+                String quizId = quizAssignment.getQuizId();
                 IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
                 quizTitles.add(String.format("\"%s\"", quiz.getTitle()));
                 questionTitles.addAll(getQuizQuestionTitles(quiz));
+                // Precompute quiz feedbacks:
+                quizFeedbacks.put(quizAssignment.getId(), getUserFeedback(currentUser, quizAssignment, quiz, groupMembers));
             }
 
             for (RegisteredUserDTO groupMember : groupMembers) {
-                UserSummaryDTO groupMemberSummary = this.userManager.convertToUserSummaryObject(groupMember);
                 List<String> row = new ArrayList<>(Arrays.asList(groupMember.getGivenName(), groupMember.getFamilyName()));
                 List<String> quizTotals = new ArrayList<>();
                 List<String> questionResults = new ArrayList<>();
@@ -1355,7 +1415,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     String quizId = quizAssignment.getQuizId();
                     IsaacQuizDTO quiz = this.quizManager.findQuiz(quizId);
                     List<String> questionIds = getQuizQuestionIds(quiz);
-                    Optional<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, quizAssignment, quiz, groupMembers).stream()
+                    Optional<QuizUserFeedbackDTO> userFeedback = quizFeedbacks.getOrDefault(quizAssignment.getId(), Collections.emptyList()).stream()
                             .filter(f -> f.getUser().getId().equals(groupMember.getId())).findFirst();
                     if (!userFeedback.isPresent()) {
                         // This looks like it should work but I can't test it as I don't know how to retrieve a

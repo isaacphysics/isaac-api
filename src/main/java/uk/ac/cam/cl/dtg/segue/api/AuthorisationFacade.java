@@ -68,7 +68,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Stephen Cummins
  */
 @Path("/authorisations")
-@Tag(name = "/authorisations")
+@Tag(name = "AuthorisationFacade", description = "/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
@@ -474,9 +474,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (InvalidUserAssociationTokenException e) {
-            log.info(String.format("User (%s) attempted to use token (%s) but it is invalid or no longer exists.",
-                    currentRegisteredUser.getId(), token));
+        } catch (InvalidUserAssociationTokenException | ResourceNotFoundException e) {
+            log.info("User ({}) attempted to use token ({}) but it is invalid or no longer exists.", currentRegisteredUser.getId(), token);
 
             return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is invalid or no longer exists.")
                     .toResponse();
@@ -513,7 +512,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
+            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user, true);
 
             UserGroupDTO group = groupManager.getGroupById(associationToken.getGroupId());
             List<Long> usersApproved = new ArrayList<>();

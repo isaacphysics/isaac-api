@@ -11,7 +11,7 @@
         </init-param>
         <init-param>
             <param-name>allowedOrigins</param-name>
-            <param-value>(https://*.(isaacphysics|adacomputerscience|isaacscience).org|http://localhost:[0-9]+)</param-value>
+            <param-value>(https://*.(isaacphysics|isaacscience|adacomputerscience).org|http://localhost:[0-9]+)</param-value>
         </init-param>
         <init-param>
             <param-name>exposedHeaders</param-name>

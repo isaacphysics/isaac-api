@@ -37,6 +37,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -45,6 +46,7 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -161,16 +163,30 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> nestedMatchSearch(
-            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
-            @NotNull final BooleanInstruction matchInstruction, @Nullable final Map<String, Constants.SortOrder> sortOrder
+    public ResultsWrapper<String> nestedMatchSearch(final String indexBase, final String indexType,
+                                                    final Integer startIndex, final Integer limit,
+                                                    @NotNull final BooleanInstruction matchInstruction,
+                                                    @Nullable final Long randomSeed,
+                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException {
+
         if (null == indexBase || null == indexType) {
             log.warn("A required field is missing. Unable to execute search.");
             throw new SegueSearchException("A required field is missing. Unable to execute search.");
         }
 
-        BoolQueryBuilder query = (BoolQueryBuilder) this.processMatchInstructions(matchInstruction);
+        QueryBuilder query = this.processMatchInstructions(matchInstruction);
+
+        if (null == sortOrder && null != randomSeed) {
+            RandomScoreFunctionBuilder randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
+            randomScoreFunctionBuilder.seed(randomSeed);
+            randomScoreFunctionBuilder.setField("_seq_no");
+            FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
+            // Don't use the base query's result ranking at all, only use this random weighting:
+            functionScoreQuery.boostMode(CombineFunction.REPLACE);
+            query = functionScoreQuery;
+        }
+
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
     }
 

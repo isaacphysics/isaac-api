@@ -148,3 +148,58 @@ FROM anonymous.users
          LEFT JOIN schools_2021_priority AS ncce_priority ON ncce_priority.urn = users.school_id
          LEFT JOIN anonymous.nspl21_postcodes AS postcodes ON schools.postcode = postcodes.pcd
          LEFT JOIN anonymous.imd_deprivation AS imd_deprivation ON postcodes.lsoa21 = imd_deprivation.lsoa_code;
+
+CREATE TABLE anonymous.workshop_join_events AS (
+    SELECT memberships.user_id, memberships.created AS timestamp
+    FROM anonymous.group_memberships AS memberships
+        JOIN anonymous.groups ON groups.id = memberships.group_id
+    WHERE groups.owner_id = '7fd4393b821465bfc25cdf6e0d43811f949723169c79c1a28ad710d4d8db2dee'
+);
+
+CREATE TABLE anonymous.student_engagement_v2_events AS
+    SELECT user_id, timestamp
+    FROM anonymous.logged_events
+    WHERE registered_user = true
+      AND (
+        event_type IN (
+            --  Answered a question
+                       'ANSWER_QUESTION',
+            -- Viewed a concept page
+                       'VIEW_CONCEPT',
+            -- Created a quiz
+                       'CREATE_GAMEBOARD',
+                       'CLONE_GAMEBOARD',
+            -- Viewed the glossary page
+                       'VIEW_GLOSSARY_PAGE'
+            )
+            -- Viewed a glossary item hint
+            OR event_type = 'VIEW_HINT' AND event_details ->> 'hintIndex' = '0'
+        )
+    UNION
+        (SELECT user_id, timestamp from anonymous.workshop_join_events);
+
+CREATE TABLE anonymous.teacher_engagement_v2_events AS
+    SELECT user_id, timestamp
+    FROM anonymous.logged_events
+    WHERE registered_user = true
+      AND (
+        event_type IN (
+            --  Answered a question
+                       'ANSWER_QUESTION',
+            -- Viewed a concept page
+                       'VIEW_CONCEPT',
+            -- Created a quiz
+                       'CREATE_GAMEBOARD',
+                       'CLONE_GAMEBOARD',
+            -- Assigned a quiz
+                       'SET_NEW_ASSIGNMENT',
+            -- Assigned a test
+                       'SET_NEW_QUIZ_ASSIGNMENT',
+            -- Viewed the glossary page
+                       'VIEW_GLOSSARY_PAGE'
+            )
+            -- Viewed a glossary item in a hint
+            OR event_type = 'VIEW_HINT' AND event_details ->> 'hintIndex' = '0'
+        )
+    UNION
+        (SELECT user_id, timestamp from anonymous.workshop_join_events);

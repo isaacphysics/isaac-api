@@ -114,7 +114,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/admin")
-@Tag(name = "/admin")
+@Tag(name = "AdminFacade", description = "/admin")
 public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
@@ -1211,7 +1211,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            if (isUserAnAdmin(userManager, currentUser)) {
+            if (isUserAnAdminOrEventManager(userManager, currentUser)) {
 
                 String oldLiveVersion = contentManager.getCurrentContentSHA();
 
@@ -1227,7 +1227,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
                 if (httpResponse.statusCode() == 200) {
-                    log.info(currentUser.getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
+                    log.info("{} changed live version from {} to {}.", currentUser.getEmail(), oldLiveVersion, version);
                     return Response.ok().build();
                 } else {
                     SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, httpResponse.body());

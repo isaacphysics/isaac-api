@@ -82,7 +82,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * @author Alistair Stead
  */
 @Path("/")
-@Tag(name = "/email")
+@Tag(name = "EmailFacade", description = "/email")
 public class EmailFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
 
@@ -222,7 +222,7 @@ public class EmailFacade extends AbstractSegueFacade {
      * @param token  - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
-    @GET
+    @POST
     @Path("/users/verifyemail/{userid}/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

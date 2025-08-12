@@ -32,12 +32,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
@@ -64,6 +65,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -87,7 +89,8 @@ public class GitContentManager {
     private final boolean showOnlyPublishedContent;
     private final boolean hideRegressionTestContent;
 
-    private final Cache<Object, Object> cache;
+    private final Cache<String, ResultsWrapper<Content>> contentDOcache;
+    private final Cache<String, ResultsWrapper<ContentDTO>> contentDTOcache;
     private final Cache<String, GetResponse> contentShaCache;
 
     private final String contentIndex;
@@ -125,8 +128,10 @@ public class GitContentManager {
             log.info("API Configured to hide content tagged with 'regression_test'.");
         }
 
-        this.cache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
-        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_cache", cache);
+        this.contentDOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentDTOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_do_cache", contentDOcache);
+        CACHE_METRICS_COLLECTOR.addCache("git_content_manager_dto_cache", contentDTOcache);
 
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(5, TimeUnit.SECONDS).build();
 
@@ -151,7 +156,8 @@ public class GitContentManager {
         this.globalProperties = null;
         this.showOnlyPublishedContent = false;
         this.hideRegressionTestContent = false;
-        this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentDOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
+        this.contentDTOcache = CacheBuilder.newBuilder().recordStats().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
         this.contentShaCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(1, TimeUnit.MINUTES).build();
         this.contentIndex = null;
     }
@@ -188,6 +194,20 @@ public class GitContentManager {
     }
 
     /**
+     * Get a DTO object from a DO object.
+     *
+     * This method merely wraps {@link ContentMapper#getDTOByDO(Content)}, and will trust the content of the DO.
+     * Only use for DO objects obtained from {@link #getContentDOById(String)} when the DTO is also required,
+     * to avoid the potential cache-miss and ElasticSearch round-trip of {@link #getContentById(String)}.
+     *
+     * @param content - the DO object to convert.
+     * @return the DTO form of the object.
+     */
+    public final ContentDTO getContentDTOByDO(final Content content) {
+        return this.mapper.getDTOByDO(content);
+    }
+
+    /**
      *  Get a DO object by its ID or return null.
      *
      *  This may return a cached object, and will temporarily cache the object
@@ -220,69 +240,40 @@ public class GitContentManager {
         }
 
         String k = "getContentDOById~" + getCurrentContentSHA() + "~" + id;
-        if (!cache.asMap().containsKey(k)) {
 
-            List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(
-                    contentIndex,
-                    CONTENT_TYPE, id,
-                    Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                    this.getBaseFilters()).getResults()
-            );
+        try {
+            ResultsWrapper<Content> result = contentDOcache.get(k, () -> {
 
-            if (null == searchResults || searchResults.isEmpty()) {
+                ResultsWrapper<String> rawResults = searchProvider.termSearch(
+                        contentIndex,
+                        CONTENT_TYPE, id,
+                        Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
+                        getBaseFilters());
+                List<Content> searchResults = mapper.mapFromStringListToContentList(rawResults.getResults());
+
+                return new ResultsWrapper<>(searchResults, rawResults.getTotalResults());
+            });
+
+            if (null == result.getResults() || result.getResults().isEmpty()) {
                 if (!failQuietly) {
-                    log.error(String.format(
-                            "Failed to locate content with ID '%s' in the cache for content SHA (%s)",
-                            id, getCurrentContentSHA()
-                    ));
+                    log.error("Failed to locate content with ID '{}' in the cache for content SHA ({})", id, getCurrentContentSHA());
                 }
                 return null;
             }
 
-            cache.put(k, searchResults.get(0));
+            return result.getResults().get(0);
+
+        } catch (final ExecutionException e) {
+            throw new ContentManagerException(e.getCause().getMessage());
         }
-
-        return (Content) cache.getIfPresent(k);
-
-    }
-
-    /**
-     *  Retrieve all DTO content matching an ID prefix.
-     *
-     *  This may return cached objects, and will temporarily cache the objects
-     *  to avoid re-querying the data store and the deserialization costs.
-     *  Do not modify the returned DTO objects.
-     *
-     * @param idPrefix the content object ID prefix.
-     * @param startIndex the integer start index for pagination.
-     * @param limit the limit for pagination.
-     * @return a ResultsWrapper of the matching content.
-     * @throws ContentManagerException on failure to return the objects.
-     */
-    public ResultsWrapper<ContentDTO> getUnsafeCachedDTOsByIdPrefix(final String idPrefix, final int startIndex,
-                                                                    final int limit) throws ContentManagerException {
-
-        String k = "getByIdPrefix~" + getCurrentContentSHA() + "~" + idPrefix + "~" + startIndex + "~" + limit;
-        if (!cache.asMap().containsKey(k)) {
-
-            ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(contentIndex, CONTENT_TYPE,
-                    Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    idPrefix, startIndex, limit, this.getBaseFilters());
-
-            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
-        }
-
-        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
     /**
      *  Get a list of DTO objects by their IDs.
      *
-     *  This may return cached objects, and will temporarily cache the objects
-     *  to avoid re-querying the data store and the deserialization costs.
-     *  Do not modify the returned DTO objects.
+     *  This will always return cached objects, and temporarily caches the objects to avoid re-querying
+     *  the data store and the deserialization costs.
+     *  Do not modify the returned DTO objects!
      *
      * @param ids the list of content object IDs.
      * @param startIndex the integer start index for pagination.
@@ -294,35 +285,37 @@ public class GitContentManager {
                                                                             final int startIndex, final int limit)
             throws ContentManagerException {
 
-        String k = "getContentMatchingIds~" + getCurrentContentSHA()
-                + "~" + ids.toString() + "~" + startIndex + "~" + limit;
-        if (!cache.asMap().containsKey(k)) {
+        String k = "getContentMatchingIds~" + getCurrentContentSHA() + "~" + ids.toString() + "~" + startIndex + "~" + limit;
 
-            Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
-            finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
-                                .put(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                                    new TermsFilterInstruction(ids))
-                                .build());
+        try {
+            return contentDTOcache.get(k, () -> {
 
-            if (getBaseFilters() != null) {
-                finalFilter.putAll(getBaseFilters());
-            }
+                Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
+                finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
+                        .put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                                new TermsFilterInstruction(ids))
+                        .build());
 
-            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
-                    contentIndex,
-                    CONTENT_TYPE,
-                    null,
-                    null,
-                    startIndex,
-                    limit,
-                    finalFilter
-            );
+                if (getBaseFilters() != null) {
+                    finalFilter.putAll(getBaseFilters());
+                }
 
-            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+                ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
+                        contentIndex,
+                        CONTENT_TYPE,
+                        null,
+                        null,
+                        startIndex,
+                        limit,
+                        finalFilter
+                );
+
+                List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+                return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+            });
+        } catch (final ExecutionException e) {
+            throw new ContentManagerException(e.getCause().getMessage());
         }
-
-        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
     /** Search the content for specified types that match a given user provided search string from a given index.
@@ -392,6 +385,7 @@ public class GitContentManager {
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
+                null,
                 sortOrder
         );
 
@@ -414,9 +408,10 @@ public class GitContentManager {
      */
     public final ResultsWrapper<ContentDTO> questionSearch(
             @Nullable final String searchString,
+            @Nullable final Long randomSeed,
             final Map<String, Set<String>> filterFieldNamesToValues,
-            final boolean fasttrack, final Integer startIndex,
-            final Integer limit, final boolean showNoFilterContent, final boolean showSupersededContent
+            final Integer startIndex, final Integer limit,
+            final boolean fasttrack, final boolean showNoFilterContent, final boolean showSupersededContent
     ) throws ContentManagerException {
 
         // Set question type (content type) based on fasttrack status
@@ -466,12 +461,7 @@ public class GitContentManager {
         // Add a required filtering rule for each field that has a value
         for (Map.Entry<String, Set<String>> entry : filterFieldNamesToValues.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                if (BOOKS_FIELDNAME.equals(entry.getKey())) {
-                    // books are stored as a type of tag, but unlike other tags are required fields in the search
-                    searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
-                            .strategy(Strategy.SIMPLE)
-                            .required(true));
-                } else if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME)
+                if (Arrays.asList(SUBJECTS_FIELDNAME, FIELDS_FIELDNAME, TOPICS_FIELDNAME, CATEGORIES_FIELDNAME, TAGS_FIELDNAME, BOOKS_FIELDNAME)
                         .contains(entry.getKey())) {
                     searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME, entry.getValue())
                             .strategy(Strategy.SIMPLE)
@@ -485,9 +475,9 @@ public class GitContentManager {
             }
         }
 
-        // If no search terms were provided, sort by ascending alphabetical order of title.
+        // If no search terms or random seed, sort by ascending alphabetical order of title.
         Map<String, Constants.SortOrder> sortOrder = null;
-        if (searchTerms.isEmpty()) {
+        if (searchTerms.isEmpty() && null == randomSeed) {
             sortOrder = new HashMap<>();
             sortOrder.put(
                     Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -501,6 +491,7 @@ public class GitContentManager {
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
+                randomSeed,
                 sortOrder
         );
 
@@ -561,6 +552,7 @@ public class GitContentManager {
         return finalResults;
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit
@@ -568,6 +560,7 @@ public class GitContentManager {
         return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit, @Nullable final Long randomSeed
@@ -730,6 +723,23 @@ public class GitContentManager {
     public static ContentSummaryDTO populateContentSummaryValues(ContentDTO content, ContentSummaryDTO summary) {
         generateDerivedSummaryValues(content, summary);
         return summary;
+    }
+
+    /**
+     * Replace a placeholder sidebar object with an augmented sidebar.
+     *
+     * Augmentation will not happen if a sidebar with the right ID cannot be found.
+     *
+     * @param seguePageDTO the page to augment.
+     * @throws ContentManagerException if loading the sidebar errors.
+     */
+    public void populateSidebar(final SeguePageDTO seguePageDTO) throws ContentManagerException {
+        if (null != seguePageDTO.getSidebar()) {
+            ContentDTO potentialSidebar = getContentById(seguePageDTO.getSidebar().getId(), true);
+            if (potentialSidebar instanceof SidebarDTO) {
+                seguePageDTO.setSidebar((SidebarDTO) potentialSidebar);
+            }
+        }
     }
 
     public String getCurrentContentSHA() {

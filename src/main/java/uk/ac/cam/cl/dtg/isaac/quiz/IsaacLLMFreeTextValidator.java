@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingVariable;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -69,6 +70,10 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         if (!(question instanceof IsaacLLMFreeTextQuestion)) {
             throw new IllegalArgumentException(question.getId() + " is not a LLM free-text question");
         }
+        if (((IsaacLLMFreeTextQuestion) question).getMaxMarks() == null) {
+            log.error("Question has missing maximum marks field: " + question.getId());
+            throw new IllegalArgumentException("This question cannot be answered correctly");
+        }
 
         // Validate answer
         Objects.requireNonNull(answer);
@@ -80,14 +85,16 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         try { maxAnswerLength = Integer.parseInt(configLoader.getProperty(LLM_MARKER_MAX_ANSWER_LENGTH)); }
         catch (NumberFormatException ignored) { /* Use default value */ }
         if (answer.getValue().length() > maxAnswerLength) {
-            log.error("Answer exceeds maximum length for LLM free-text question marking: " + answer.getValue().length());
+            log.error(String.format("Answer was %d characters long and exceeded maximum %d length for LLM free-text question marking.", answer.getValue().length(), maxAnswerLength));
             throw new IllegalArgumentException("Answer is too long for LLM free-text question marking");
         }
     }
 
     private String generatePromptSystemMessage(final IsaacLLMFreeTextQuestion question) {
+        String llmMarkerSubject = Optional.ofNullable(configLoader.getProperty(LLM_MARKER_SUBJECT)).orElse("");
+
         String contextAndInstructions = "You are a principal examiner marking A Level and GCSE "
-            + String.format("%s questions.\n", this.configLoader.getProperty(LLM_MARKER_SUBJECT))
+            + String.format("%s questions.\n", llmMarkerSubject)
             + "You do not like vagueness in student answers.\n"
             + "You follow a standard procedure when marking a question attempt and write your responses as JSON:\n"
             + "```\n"
@@ -166,14 +173,14 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @param questionPrompt the prompt to send to the OpenAI API.
      * @return the completions from the OpenAI API or null if there was an error.
      */
-    private @Nullable ChatCompletions retrieveCompletionsFromOpenAI(final List<ChatRequestMessage> questionPrompt) {
+    private ChatCompletions retrieveCompletionsFromOpenAI(final List<ChatRequestMessage> questionPrompt) throws IOException {
         try {
             return openAIClient.getChatCompletions(
                     configLoader.getProperty(LLM_MARKER_DEFAULT_MODEL_NAME),
                     new ChatCompletionsOptions(questionPrompt).setTemperature(0.0));
         } catch (Exception e) {
             log.error("Failed to retrieve completions from OpenAI API", e);
-            return null;
+            throw new IOException(e.getMessage());
         }
     }
 
@@ -188,11 +195,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @return a map of the marks awarded for each field in the mark scheme.
      */
     private Map<String, Integer> extractValidatedMarks(
-            final IsaacLLMFreeTextQuestion question, @Nullable final ChatCompletions chatCompletions) {
-        if (chatCompletions == null) {
-            // Error logged previously when we have more context.
-            return zeroMarkResult;
-        }
+            final IsaacLLMFreeTextQuestion question, final ChatCompletions chatCompletions) {
         if (chatCompletions.getChoices().size() != 1) {
             log.error("Expected exactly one choice from LLM completion provider, received: "
                     + chatCompletions.getChoices().stream().map(c -> c.getMessage().getContent())
@@ -305,15 +308,20 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @return a response to the user's attempt at the question.
      */
     @Override
-    public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        validateInputs(question, answer);
-
-        IsaacLLMFreeTextQuestion freeTextLLMQuestion = (IsaacLLMFreeTextQuestion) question;
-        List<ChatRequestMessage> questionPrompt = generateQuestionPrompt(freeTextLLMQuestion);
-        questionPrompt.add(extractUserAttemptAtQuestion(answer));
-        ChatCompletions chatCompletions = retrieveCompletionsFromOpenAI(questionPrompt);
-        Map<String, Integer> awardedMarks = extractValidatedMarks(freeTextLLMQuestion, chatCompletions);
-        int markTotal = evaluateMarkTotal(freeTextLLMQuestion, awardedMarks);
-        return generateQuestionValidationResponse(freeTextLLMQuestion, answer, awardedMarks, markTotal);
+    public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) throws ValidatorUnavailableException {
+        try {
+            validateInputs(question, answer);
+            IsaacLLMFreeTextQuestion freeTextLLMQuestion = (IsaacLLMFreeTextQuestion) question;
+            List<ChatRequestMessage> questionPrompt = generateQuestionPrompt(freeTextLLMQuestion);
+            questionPrompt.add(extractUserAttemptAtQuestion(answer));
+            ChatCompletions chatCompletions = retrieveCompletionsFromOpenAI(questionPrompt);
+            Map<String, Integer> awardedMarks = extractValidatedMarks(freeTextLLMQuestion, chatCompletions);
+            int markTotal = evaluateMarkTotal(freeTextLLMQuestion, awardedMarks);
+            return generateQuestionValidationResponse(freeTextLLMQuestion, answer, awardedMarks, markTotal);
+        } catch (IOException e) {
+            log.error("Failed to check answer with OpenAI Client. Not trying again.");
+            throw new ValidatorUnavailableException("We are having problems marking LLM marked questions."
+                    + " Please try again later!");
+        }
     }
 }

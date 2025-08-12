@@ -34,18 +34,21 @@ public class SeguePage extends Content {
     private String supersededBy;
     private String permissions;
     private String notes;
+    private String teacherNotes;
+    private String sidebar;
 
     @JsonCreator
     public SeguePage(@JsonProperty("id") String id,
-            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type, @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
-            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
-            @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("supersededBy") String supersededBy,
-            @JsonProperty("tags") Set<String> tags, @JsonProperty("permissions") String permissions,
-            @JsonProperty("notes") String notes, @JsonProperty("level") Integer level) {
+                     @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+                     @JsonProperty("type") String type, @JsonProperty("author") String author,
+                     @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+                     @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
+                     @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+                     @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
+                     @JsonProperty("deprecated") Boolean deprecated, @JsonProperty("supersededBy") String supersededBy,
+                     @JsonProperty("tags") Set<String> tags, @JsonProperty("permissions") String permissions,
+                     @JsonProperty("notes") String notes, @JsonProperty("teacherNotes") String teacherNotes,
+                     @JsonProperty("level") Integer level, @JsonProperty("sidebar") String sidebar) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
@@ -54,7 +57,8 @@ public class SeguePage extends Content {
         this.supersededBy = supersededBy;
         this.permissions = permissions;
         this.notes = notes;
-
+        this.teacherNotes = teacherNotes;
+        this.sidebar = sidebar;
     }
 
     public SeguePage() {
@@ -93,5 +97,21 @@ public class SeguePage extends Content {
 
     public void setSupersededBy(String supersededBy) {
         this.supersededBy = supersededBy;
+    }
+
+    public String getTeacherNotes() {
+        return teacherNotes;
+    }
+
+    public void setTeacherNotes(final String teacherNotes) {
+        this.teacherNotes = teacherNotes;
+    }
+
+    public String getSidebar() {
+        return sidebar;
+    }
+
+    public void setSidebar(final String sidebar) {
+        this.sidebar = sidebar;
     }
 }

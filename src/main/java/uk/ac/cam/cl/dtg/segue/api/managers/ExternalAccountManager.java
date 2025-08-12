@@ -122,6 +122,8 @@ public class ExternalAccountManager implements IExternalAccountManager {
                     log.debug("Update provider_last_updated.");
                     database.updateProviderLastUpdated(userId);
 
+                    Thread.sleep(200);
+
                 } catch (SegueDatabaseException e) {
                     log.error(String.format("Error storing record of MailJet update to user (%s)!", userId));
                 } catch (MailjetClientCommunicationException e) {
@@ -130,7 +132,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
                 } catch (MailjetRateLimitException e) {
                     log.warn("MailJet rate limiting!");
                     throw new ExternalAccountSynchronisationException("MailJet API rate limits exceeded!");
-                } catch (MailjetException e) {
+                } catch (MailjetException | InterruptedException e) {
                     log.error(e.getMessage());
                     throw new ExternalAccountSynchronisationException(e.getMessage());
                 }

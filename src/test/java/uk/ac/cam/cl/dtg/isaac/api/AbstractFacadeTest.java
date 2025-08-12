@@ -17,21 +17,21 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Joiner;
-import jakarta.ws.rs.core.Request;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
@@ -105,7 +105,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         request = createNiceMock(Request.class);  // We don't particularly care about what gets called on this.
         replay(request);
 
-        userManager = createPartialMock(UserAccountManager.class, "getCurrentRegisteredUser", "convertToUserSummaryObject", "getUserDTOById");
+        userManager = createPartialMock(UserAccountManager.class, "getCurrentUser", "getCurrentRegisteredUser", "convertToUserSummaryObject", "getUserDTOById");
 
         registerDefaultsFor(userManager, m -> {
             expect(m.convertToUserSummaryObject(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
@@ -428,9 +428,11 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         private void runStepsAs(@Nullable RegisteredUserDTO user, Endpoint endpoint) {
             withMock(userManager, m -> {
                 if (user == null) {
-                    expect(m.getCurrentRegisteredUser(httpServletRequest)).andThrow(new NoUserLoggedInException());
+                    expect(m.getCurrentRegisteredUser(httpServletRequest)).andThrow(new NoUserLoggedInException()).anyTimes();
+                    expect(m.getCurrentUser(httpServletRequest)).andReturn(anonUser).anyTimes();
                 } else {
-                    expect(m.getCurrentRegisteredUser(httpServletRequest)).andReturn(user);
+                    expect(m.getCurrentRegisteredUser(httpServletRequest)).andReturn(user).anyTimes();
+                    expect(m.getCurrentUser(httpServletRequest)).andReturn(user).anyTimes();
                 }
             });
             currentUser = user;

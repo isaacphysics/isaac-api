@@ -299,6 +299,13 @@ public final class Constants {
     public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
     public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
 
+    // Microsoft properties
+    public static final String MICROSOFT_SECRET = "MICROSOFT_SECRET";
+    public static final String MICROSOFT_CLIENT_ID = "MICROSOFT_CLIENT_ID";
+    public static final String MICROSOFT_TENANT_ID = "MICROSOFT_TENANT_ID";
+    public static final String MICROSOFT_JWKS_URL = "MICROSOFT_JWKS_URL";
+    public static final String MICROSOFT_REDIRECT_URL = "MICROSOFT_REDIRECT_URL";
+
     // Facebook properties
     public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
     public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
@@ -428,6 +435,9 @@ public final class Constants {
     public static final String LLM_PROVIDER_NAME = "OPENAI";
     public static final String LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE = "LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE";
 
+    // Quartz
+    public static final String DISABLE_QUARTZ_AUTOSTART = "DISABLE_QUARTZ_AUTOSTART";
+
 
     /*
      * Default values.
@@ -442,6 +452,7 @@ public final class Constants {
     public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
+    public static final Integer MAX_SEARCH_RESULT_LIMIT = 350;
 
     public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
 
@@ -466,7 +477,6 @@ public final class Constants {
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
     public static final String PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME = "prioritisedSearchableContent";
     public static final String SEARCHABLE_CONTENT_FIELDNAME = "searchableContent";
-    public static final String VISIBLE_TO_STUDENTS_FIELDNAME = "visibleToStudents";
     public static final String HIDDEN_FROM_ROLES_FIELDNAME = "hiddenFromRoles";
     public static final String DEPRECATED_FIELDNAME = "deprecated";
     public static final String SUPERSEDED_BY_FIELDNAME = "supersededBy";
@@ -481,6 +491,7 @@ public final class Constants {
     public static final String SEARCH_STRING_FIELDNAME = "searchString";
     public static final String QUESTION_STATUSES_FIELDNAME = "questionStatuses";
     public static final String START_INDEX_FIELDNAME = "startIndex";
+    public static final String LIMIT_FIELDNAME = "limit";
     public static final Set<String> NESTED_QUERY_FIELDS =
             ImmutableSet.of(STAGE_FIELDNAME, DIFFICULTY_FIELDNAME, EXAM_BOARD_FIELDNAME);
 
@@ -593,8 +604,6 @@ public final class Constants {
 
     public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
     public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
-    public static final String CHEMISTRY_CHECKER_OLD_HOST = "CHEMISTRY_CHECKER_OLD_HOST";
-    public static final String CHEMISTRY_CHECKER_OLD_PORT = "CHEMISTRY_CHECKER_OLD_PORT";
 
     public static final String QUESTION_MISUSE_THRESHOLD_OVERRIDE = "QUESTION_MISUSE_THRESHOLD_OVERRIDE";
 

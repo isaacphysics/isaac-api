@@ -30,25 +30,29 @@ public class SeguePageDTO extends ContentDTO {
     private String summary;
     private Boolean deprecated;
     private String supersededBy;
+    private String teacherNotes;
+    private SidebarDTO sidebar;
 
     @JsonCreator
     public SeguePageDTO(@JsonProperty("id") String id,
-            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-            @JsonProperty("type") String type, @JsonProperty("author") String author,
-            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
-            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
-            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-            @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
-            @JsonProperty("supersededBy") String supersededBy,
-            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
+                        @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+                        @JsonProperty("type") String type, @JsonProperty("author") String author,
+                        @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+                        @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
+                        @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+                        @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+                        @JsonProperty("published") Boolean published, @JsonProperty("deprecated") Boolean deprecated,
+                        @JsonProperty("supersededBy") String supersededBy, @JsonProperty("tags") Set<String> tags,
+                        @JsonProperty("teacherNotes") String teacherNotes, @JsonProperty("level") Integer level,
+                        @JsonProperty("sidebar") SidebarDTO sidebar) {
 
         super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.deprecated = deprecated;
         this.supersededBy = supersededBy;
-
+        this.teacherNotes = teacherNotes;
+        this.sidebar = sidebar;
     }
 
     public SeguePageDTO() {
@@ -79,6 +83,14 @@ public class SeguePageDTO extends ContentDTO {
         return this.canonicalSourceFile;
     }
 
+    public String getTeacherNotes() {
+        return teacherNotes;
+    }
+
+    public void setTeacherNotes(final String teacherNotes) {
+        this.teacherNotes = teacherNotes;
+    }
+
     public Boolean getDeprecated() {
         return deprecated;
     }
@@ -93,5 +105,13 @@ public class SeguePageDTO extends ContentDTO {
 
     public void setSupersededBy(String supersededBy) {
         this.supersededBy = supersededBy;
+    }
+
+    public SidebarDTO getSidebar() {
+        return sidebar;
+    }
+
+    public void setSidebar(final SidebarDTO sidebar) {
+        this.sidebar = sidebar;
     }
 }

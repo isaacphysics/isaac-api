@@ -32,7 +32,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,7 +51,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Contact Facade.
  */
 @Path("/contact")
-@Tag(name = "/contact")
+@Tag(name = "ContactFacade", description = "/contact")
 public class ContactFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(ContactFacade.class);
 
@@ -63,8 +62,6 @@ public class ContactFacade extends AbstractSegueFacade {
      * 
      * @param properties
      *            - the fully configured properties loader for the api.
-     * @param mapper
-     *            - The Content mapper object used for polymorphic mapping of content objects.
      * @param userManager
      *            - The manager object responsible for users.
      * @param emailManager
@@ -73,8 +70,8 @@ public class ContactFacade extends AbstractSegueFacade {
      *            - An instance of the log manager used for recording usage of the CMS.
      */
     @Inject
-    public ContactFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
-                         final UserAccountManager userManager, final EmailManager emailManager, final ILogManager logManager) {
+    public ContactFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
+                         final EmailManager emailManager, final ILogManager logManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.emailManager = emailManager;

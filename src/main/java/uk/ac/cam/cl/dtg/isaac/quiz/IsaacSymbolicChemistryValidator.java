@@ -63,8 +63,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
     private final Set<String> VALID_ERROR_FEEDBACK = Set.of(
             "Division by zero is undefined!",
-            "Check that all atoms have a mass and atomic number!",
-            "We are unable to interpret your answer; it may not be chemically valid or be in a format we don't recognise."
+            "Check that all particles have appropriate labels, for example for mass number/proton number/charge!",
+            "We are unable to interpret your answer; it may not be chemically valid or be in a format we don't recognise.",
+            "We are unable to interpret your answer; it may not be scientifically valid or be in a format we don't recognise."
     );
 
     public IsaacSymbolicChemistryValidator(final String hostname, final String port) {
@@ -338,7 +339,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     feedback = new Content((String) closestResponse.get("error"));
                 } else {
                     // Default error message
-                    feedback = new Content("We are unable to interpret your answer; it may not be chemically valid or be in a format we don't recognise.");
+                    feedback = new Content(String.format("We are unable to interpret your answer; it may not be %s valid or be in a format we don't recognise.", isNuclear ? "scientifically" : "chemically"));
                 }
 
             } else if (closestMatch != null && closestMatchType == MatchType.EXACT) {
@@ -359,14 +360,20 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
             } else if (closestResponse != null && (!receivedType.contains("statement") && allEquation
                     || !receivedType.contains("expr") && allExpression || !receivedType.contains("term") && allTerm)) {
-                Map<String, String> map = new HashMap<>();
-                map.put("statement", "an equation");
-                map.put("expr", "an expression");
-                map.put("term", "a term");
 
-                // Term/Expression/Equation mismatch in all correct answers.
-                feedback = new Content("Your answer is " + map.get(closestResponse.get("receivedType"))
-                                           + " but we expected " + map.get(closestResponse.get("expectedType")) + "!");
+                if (isNuclear) {
+                    // Input is not an equation. Equations are necessary for nuclear questions
+                    feedback = new Content("We are expecting an answer in the form of an equation!");
+                } else {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("statement", "an equation");
+                    map.put("expr", "an expression");
+                    map.put("term", "a term");
+
+                    // Term/Expression/Equation mismatch in all correct answers.
+                    feedback = new Content("Your answer is " + map.get(closestResponse.get("receivedType"))
+                            + " but we expected " + map.get(closestResponse.get("expectedType")) + "!");
+                }
 
             } else if (isEquation && balancedKnownFlag && !isBalanced) {
 
@@ -381,7 +388,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             } else if (isNuclear && validityKnownFlag && !isValid) {
 
                 // Input is nuclear, but atomic/mass numbers are invalid.
-                feedback = new Content("Check your atomic/mass numbers!");
+                feedback = new Content("Check your mass numbers/proton numbers/charges!");
 
             } else if (closestMatch != null && closestMatch.isCorrect() && closestResponse != null
                     && closestResponse.get("typeMismatch").equals(false)) {
@@ -393,7 +400,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 if (closestResponse.get("sameElements").equals(false)) {
 
                     // Wrong element/compound - MatchType.WEAK1
-                    feedback = new Content("Check that you have all the correct atoms present and in the right place!");
+                    feedback = new Content(String.format("Check that you have all the correct %s present and in the right place!", isNuclear ? "particles" : "atoms"));
 
                 } else if (closestResponse.get("sameCoefficient").equals(false)) {
 

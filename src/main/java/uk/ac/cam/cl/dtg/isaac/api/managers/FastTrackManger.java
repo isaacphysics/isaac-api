@@ -117,7 +117,7 @@ public class FastTrackManger {
 
         List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, Constants.BooleanOperator.OR, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE)));
+                TYPE_FIELDNAME, Constants.BooleanOperator.OR, QUESTION_PAGE_TYPES));
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
                 TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND,
                 Collections.singletonList(conceptTitle)));

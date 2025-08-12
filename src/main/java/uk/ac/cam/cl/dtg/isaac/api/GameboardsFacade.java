@@ -31,20 +31,20 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -67,6 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -77,7 +78,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Games boards Facade.
  */
 @Path("/")
-@Tag(name = "/gameboards")
+@Tag(name = "GameboardsFacade", description = "/gameboards")
 public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
@@ -196,8 +197,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (IllegalArgumentException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.").toResponse();
-        } catch (NoWildcardException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to load the wildcard.").toResponse();
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst generating a gameboard";
             log.error(message, e);
@@ -366,7 +365,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a gameboard object").toResponse();
             }
 
-            if ((newGameboardObject.getId() != null || newGameboardObject.getTags().size() > 0
+            if ((newGameboardObject.getId() != null || !newGameboardObject.getTags().isEmpty()
                     || newGameboardObject.getWildCard() != null) && !isUserStaff(userManager, user)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot provide a gameboard wildcard, ID or tags.").toResponse();
             }
@@ -383,9 +382,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
 
-        } catch (NoWildcardException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No wildcard available. Unable to construct gameboard.")
-                    .toResponse();
         } catch (InvalidGameboardException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, String.format("The gameboard you provided is invalid"), e)
                     .toResponse();
@@ -471,11 +467,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         if (null == existingGameboard.getTitle() || !existingGameboard.getTitle().equals(newGameboardTitle)) {
 
             // do they have permission?
-            if (null != existingGameboard.getOwnerUserId()
-                    && !existingGameboard.getOwnerUserId().equals(user.getId())) {
-                // user not logged in return not authorized
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not allowed to change another user's gameboard.").toResponse();
+            boolean isOwner = Objects.equals(existingGameboard.getOwnerUserId(), user.getId());
+            try {
+                if (!isOwner && !isUserAnAdmin(userManager, user)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You are not allowed to change another user's gameboard.").toResponse();
+                }
+            } catch (NoUserLoggedInException e) {
+                return SegueErrorResponse.getNotLoggedInResponse();
             }
 
             // We can now change the title, and persist this change to the database
