@@ -67,6 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -466,11 +467,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         if (null == existingGameboard.getTitle() || !existingGameboard.getTitle().equals(newGameboardTitle)) {
 
             // do they have permission?
-            if (null != existingGameboard.getOwnerUserId()
-                    && !existingGameboard.getOwnerUserId().equals(user.getId())) {
-                // user not logged in return not authorized
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You are not allowed to change another user's gameboard.").toResponse();
+            boolean isOwner = Objects.equals(existingGameboard.getOwnerUserId(), user.getId());
+            try {
+                if (!isOwner && !isUserAnAdmin(userManager, user)) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You are not allowed to change another user's gameboard.").toResponse();
+                }
+            } catch (NoUserLoggedInException e) {
+                return SegueErrorResponse.getNotLoggedInResponse();
             }
 
             // We can now change the title, and persist this change to the database
