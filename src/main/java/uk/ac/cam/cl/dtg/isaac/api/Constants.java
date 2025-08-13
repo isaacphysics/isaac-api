@@ -230,7 +230,7 @@ public final class Constants {
      * User preference categories
      */
     public enum IsaacUserPreferences {
-        BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, CONSENT
+        BETA_FEATURE, EXAM_BOARD, PROGRAMMING_LANGUAGE, BOOLEAN_NOTATION, DISPLAY_SETTING, ACCESSIBILITY, CONSENT
     }
 
     /**
