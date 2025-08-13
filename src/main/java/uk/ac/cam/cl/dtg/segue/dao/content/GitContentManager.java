@@ -361,7 +361,7 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                        .strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
                         .strategy(Strategy.FUZZY))
 
