@@ -59,6 +59,8 @@ public class IsaacSearchInstructionBuilder {
     private static final Long HIGH_PRIORITY_FIELD_BOOST_FUZZY = 8L;
     private static final Long HIGH_PRIORITY_WILDCARD_FIELD_BOOST = 5L;
 
+    private static final Long SEARCHABLE_CONTENT_FIELD_BOOST = 2L;
+
     private static final Long EVENT_ADDRESS_FIELD_BOOST = 3L;
     private static final Long EVENT_ADDRESS_FIELD_BOOST_FUZZY = 1L;
 
@@ -367,20 +369,21 @@ public class IsaacSearchInstructionBuilder {
                                 new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
 
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
-                        Long boost = searchInField.getPriority() == Priority.HIGH
-                                ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
-
+                        boolean isSearchableContentField = searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME) ||
+                                searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME);
+                        Long boost = isSearchableContentField
+                                ? SEARCHABLE_CONTENT_FIELD_BOOST
+                                    : searchInField.getPriority() == Priority.HIGH
+                                        ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
-
-                        if (!(searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME) ||
-                                searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME))) {
+                        if (!isSearchableContentField) {
                                     generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
                                     // Use a multi-match instruction, and ensure multi-match instructions for a
                                     // particular term are grouped together
                                     multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
                                     multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
                         }
-
+                        
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
                                 ? HIGH_PRIORITY_FIELD_BOOST : NO_BOOST;
