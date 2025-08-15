@@ -349,9 +349,20 @@ public class GitContentManager {
                 // Restrict content types
                 .includeContentTypes(contentTypes)
 
+                // High priority matches on untokenised search string
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
+                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
+                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
+                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+
                 // Fuzzy search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                        .priority(Priority.HIGH).strategy(Strategy.DEFAULT))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
@@ -361,7 +372,7 @@ public class GitContentManager {
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                        .strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
                         .strategy(Strategy.FUZZY))
 
