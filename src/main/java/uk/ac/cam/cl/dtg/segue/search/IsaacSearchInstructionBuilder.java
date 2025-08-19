@@ -50,7 +50,7 @@ public class IsaacSearchInstructionBuilder {
     private static final float PRIORITY_CONTENT_BOOST = 5L;
 
     private List<SearchInField> searchesInFields;
-    public static final Long NO_BOOST = 1L;
+    private static final Long NO_BOOST = 1L;
     private static final Long FIELD_BOOST = 5L;
     private static final Long FIELD_BOOST_FUZZY = 1L;
     private static final Long WILDCARD_FIELD_BOOST = 1L;
