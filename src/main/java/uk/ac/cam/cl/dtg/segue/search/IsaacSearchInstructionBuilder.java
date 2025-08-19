@@ -372,8 +372,7 @@ public class IsaacSearchInstructionBuilder {
                         boolean isSearchableContentField = searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME) ||
                                 searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME);
                         Long boost = isSearchableContentField
-                                ? SEARCHABLE_CONTENT_FIELD_BOOST
-                                    : searchInField.getPriority() == Priority.HIGH
+                                ? SEARCHABLE_CONTENT_FIELD_BOOST : searchInField.getPriority() == Priority.HIGH
                                         ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
                         if (!isSearchableContentField) {
