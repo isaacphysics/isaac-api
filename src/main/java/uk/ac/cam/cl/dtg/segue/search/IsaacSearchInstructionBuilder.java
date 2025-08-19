@@ -376,11 +376,11 @@ public class IsaacSearchInstructionBuilder {
                                         ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
                         if (!isSearchableContentField) {
-                                    generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
-                                    // Use a multi-match instruction, and ensure multi-match instructions for a
-                                    // particular term are grouped together
-                                    multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
-                                    multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
+                                generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
+                                // Use a multi-match instruction, and ensure multi-match instructions for a
+                                // particular term are grouped together
+                                multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
+                                multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
                         }
                         
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
