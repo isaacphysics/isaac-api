@@ -187,7 +187,6 @@ public final class Constants {
 
   public static final Integer EMAIL_EVENT_REMINDER_DAYS_AHEAD = 3;
   public static final Integer EMAIL_EVENT_FEEDBACK_DAYS_AGO = 60;
-  public static final Integer EMAIL_EVENT_SECOND_FEEDBACK_HOURS = 96;
 
   // Response messages
   public static final String EMPTY_ASSIGNMENT_GAMEBOARD =

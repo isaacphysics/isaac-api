@@ -468,7 +468,7 @@ public class GitContentManager {
     return this.findByFieldNames(fieldsToMatch, startIndex, limit, sortInstructions, null);
   }
 
-  public ResultsWrapper<ContentDTO> findByFieldNames(
+  public final ResultsWrapper<ContentDTO> findByFieldNames(
       final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
       @Nullable final Map<String, Constants.SortOrder> sortInstructions,
       @Nullable final Map<String, AbstractFilterInstruction> filterInstructions

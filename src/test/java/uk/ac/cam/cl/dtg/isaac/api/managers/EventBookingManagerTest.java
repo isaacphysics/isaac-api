@@ -1702,7 +1702,13 @@ class EventBookingManagerTest {
           assertion = "The default case should return false";
         }},
         new TestCase() {{
-          eventPageDTO = new IsaacEventPageDTO() {{
+          eventPageDTO = new IsaacEventPageDTO() {
+            @Override
+            public Boolean isCompetitionEvent() {
+              return super.isCompetitionEvent();
+            }
+
+            {
               setAllowGroupReservations(true);
             }};
           expected = true;
