@@ -361,7 +361,7 @@ public class IsaacSearchInstructionBuilder {
 
                     } else if (searchInField.getStrategy() == Strategy.SUBSTRING) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
-                                ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
+                                ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
 
                         generatedSubInstructions.add(
                                 new MatchInstruction(searchInField.getField(), term, boost, false));
