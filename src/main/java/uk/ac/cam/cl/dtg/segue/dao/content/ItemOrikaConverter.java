@@ -18,9 +18,11 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsItem;
 import uk.ac.cam.cl.dtg.isaac.dto.content.CoordinateItemDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DndItemDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ItemDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ParsonsItemDTO;
 
@@ -48,6 +50,8 @@ public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverte
             return super.mapperFacade.map(source, ParsonsItemDTO.class);
         } else if (source instanceof CoordinateItem) {
             return super.mapperFacade.map(source, CoordinateItemDTO.class);
+        } else if (source instanceof DndItem) {
+            return super.mapperFacade.map(source, DndItemDTO.class);
         } else {
             // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
             ItemDTO itemDTO = new ItemDTO();
@@ -66,6 +70,8 @@ public class ItemOrikaConverter extends AbstractPolymorphicBidirectionalConverte
             return super.mapperFacade.map(source, ParsonsItem.class);
         } else if (source instanceof CoordinateItemDTO) {
             return super.mapperFacade.map(source, CoordinateItem.class);
+        } else if (source instanceof DndItemDTO) {
+            return super.mapperFacade.map(source, DndItem.class);
         } else {
             // This looks like it should cause an infinite loop / stack overflow but apparently it does not.
             Item item = new Item();

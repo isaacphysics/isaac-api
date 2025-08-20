@@ -1,18 +1,18 @@
 package uk.ac.cam.cl.dtg.util;
 
 public class DropZone {
-    private Integer index;
+    private String id;
     private String minWidth;
     private String minHeight;
-    private Integer left;
-    private Integer top;
+    private Float left;
+    private Float top;
 
-    public Integer getIndex() {
-        return index;
+    public String getId() {
+        return id;
     }
 
-    public void setIndex(Integer index) {
-        this.index = index;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getMinWidth() {
@@ -31,19 +31,19 @@ public class DropZone {
         this.minHeight = minHeight;
     }
 
-    public Integer getLeft() {
+    public Float getLeft() {
         return left;
     }
 
-    public void setLeft(Integer left) {
+    public void setLeft(Float left) {
         this.left = left;
     }
 
-    public Integer getTop() {
+    public Float getTop() {
         return top;
     }
 
-    public void setTop(Integer top) {
+    public void setTop(Float top) {
         this.top = top;
     }
 }

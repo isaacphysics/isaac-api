@@ -20,6 +20,7 @@ import ma.glasnost.orika.metadata.Type;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMFreeTextChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.FreeTextRule;
@@ -34,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.LLMFreeTextChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.CoordinateChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DndChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.FormulaDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.FreeTextRuleDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.GraphChoiceDTO;
@@ -89,6 +91,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, ParsonsChoiceDTO.class);
         } else if (source instanceof CoordinateChoice) {
             return super.mapperFacade.map(source, CoordinateChoiceDTO.class);
+        } else if (source instanceof DndChoice) {
+            return super.mapperFacade.map(source, DndChoiceDTO.class);
         } else if (source instanceof ItemChoice) {
             return super.mapperFacade.map(source, ItemChoiceDTO.class);
         } else {
@@ -129,6 +133,8 @@ public class ChoiceOrikaConverter extends AbstractPolymorphicBidirectionalConver
             return super.mapperFacade.map(source, ParsonsChoice.class);
         } else if (source instanceof CoordinateChoiceDTO) {
             return super.mapperFacade.map(source, CoordinateChoice.class);
+        } else if (source instanceof DndChoiceDTO) {
+            return super.mapperFacade.map(source, DndChoice.class);
         } else if (source instanceof ItemChoiceDTO) {
             return super.mapperFacade.map(source, ItemChoice.class);
         } else {
