@@ -425,9 +425,8 @@ public class UserAccountManager implements IUserAccountManager {
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
                     "Unable to set a password.").toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You are missing a required field. "
-                    + "Please make sure you have specified all mandatory fields in your response.").toResponse();
+            log.warn(String.format("Missing or invalid field during update operation: %s ", e.getMessage()));
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (DuplicateAccountException e) {
             log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
