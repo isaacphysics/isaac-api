@@ -803,15 +803,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
+                gameboardQuestionIds.put(gameboard, Lists.newArrayList());
                 for (GameboardItem questionPage : gameboard.getContents()) {
                     int b = 1;
                     for (Question question : gameManager.getAllMarkableDOQuestionPartsDFSOrder(questionPage.getId())) {
-                        List<String> questionIds = gameboardQuestionIds.get(gameboard);
-                        if (null == questionIds) {
-                            questionIds = Lists.newArrayList();
-                        }
-                        questionIds.add(question.getId());
-                        gameboardQuestionIds.put(gameboard, questionIds);
+                        gameboardQuestionIds.get(gameboard).add(question.getId());
 
                         StringBuilder s = new StringBuilder();
                         if (question.getTitle() != null) {
