@@ -588,6 +588,8 @@ public final class Constants {
 
     public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
 
+    public static final String GAMEBOARD_QUESTION_LIMIT = "GAMEBOARD_QUESTION_LIMIT";
+
     public static final String GROUP_FK = "groupId";
     public static final String ASSIGNMENT_FK = "assignmentId";
     public static final String ASSIGNMENT_DUEDATE = "dueDate";
