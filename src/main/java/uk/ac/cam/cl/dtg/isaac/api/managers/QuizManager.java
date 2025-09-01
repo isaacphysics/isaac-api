@@ -90,6 +90,9 @@ public class QuizManager {
         fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
 
+        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
+                Collections.singletonList(HIDE_FROM_FILTER_TAG)));
+
         if (null != visibleToRole) {
             fieldsToMatch.add(new GitContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,
                     BooleanOperator.NOT, Collections.singletonList(visibleToRole)));
