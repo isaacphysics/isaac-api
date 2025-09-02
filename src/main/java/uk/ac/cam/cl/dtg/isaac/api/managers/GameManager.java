@@ -25,7 +25,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
@@ -89,7 +88,8 @@ public class GameManager {
     private static final float DEFAULT_QUESTION_PASS_MARK = 75;
 
     private static final int MAX_QUESTIONS_TO_SEARCH = 20;
-    private static int questionLimit;
+    private static final int GAMEBOARD_QUESTIONS_DEFAULT = 10;
+    private static int gameboardQuestionsLimit;
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
@@ -122,7 +122,7 @@ public class GameManager {
 
         this.mapper = mapper;
 
-        GameManager.questionLimit = Integer.parseInt(properties.getProperty(GAMEBOARD_QUESTION_LIMIT));
+        GameManager.gameboardQuestionsLimit = Integer.parseInt(properties.getProperty(GAMEBOARD_QUESTION_LIMIT));
     }
 
     /**
@@ -1001,7 +1001,7 @@ public class GameManager {
         Set<GameboardItem> gameboardReadyQuestions = Sets.newHashSet();
         List<GameboardItem> completedQuestions = Lists.newArrayList();
         // choose the gameboard questions to include.
-        while (gameboardReadyQuestions.size() < questionLimit && !selectionOfGameboardQuestions.isEmpty()) {
+        while (gameboardReadyQuestions.size() < GAMEBOARD_QUESTIONS_DEFAULT && !selectionOfGameboardQuestions.isEmpty()) {
             for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
                 CompletionState questionState;
                 try {
@@ -1021,12 +1021,12 @@ public class GameManager {
                 }
 
                 // stop inner loop if we have reached our target
-                if (gameboardReadyQuestions.size() == questionLimit) {
+                if (gameboardReadyQuestions.size() == GAMEBOARD_QUESTIONS_DEFAULT) {
                     break;
                 }
             }
 
-            if (gameboardReadyQuestions.size() == questionLimit) {
+            if (gameboardReadyQuestions.size() == GAMEBOARD_QUESTIONS_DEFAULT) {
                 break;
             }
 
@@ -1038,11 +1038,11 @@ public class GameManager {
         }
 
         // Try and make up the difference with completed ones if we haven't reached our target size
-        if (gameboardReadyQuestions.size() < questionLimit && !completedQuestions.isEmpty()) {
+        if (gameboardReadyQuestions.size() < GAMEBOARD_QUESTIONS_DEFAULT && !completedQuestions.isEmpty()) {
             for (GameboardItem completedQuestion : completedQuestions) {
-                if (gameboardReadyQuestions.size() < questionLimit) {
+                if (gameboardReadyQuestions.size() < GAMEBOARD_QUESTIONS_DEFAULT) {
                     gameboardReadyQuestions.add(completedQuestion);
-                } else if (gameboardReadyQuestions.size() == questionLimit) {
+                } else if (gameboardReadyQuestions.size() == GAMEBOARD_QUESTIONS_DEFAULT) {
                     break;
                 }
             }
@@ -1379,9 +1379,9 @@ public class GameManager {
                     "Your gameboard must not contain illegal characters e.g. spaces");
         }
 
-        if (gameboardDTO.getContents().size() > questionLimit) {
+        if (gameboardDTO.getContents().size() > gameboardQuestionsLimit) {
             throw new InvalidGameboardException(String.format("Your gameboard must not contain more than %s questions",
-                    questionLimit));
+                    gameboardQuestionsLimit));
         }
 
         if (gameboardDTO.getGameFilter() == null || !validateFilterQuery(gameboardDTO.getGameFilter())) {
