@@ -87,6 +87,21 @@ services:
     ports:
       - "5432:5432"
 
+  it-postgres:
+    network_mode: bridge
+    container_name: it-postgres
+    image: postgres:16
+    volumes:
+      - ./src/main/resources/db_scripts/postgres-rutherford-create-script.sql:/docker-entrypoint-initdb.d/00-isaac-create.sql:ro
+      - ./src/main/resources/db_scripts/postgres-rutherford-functions.sql:/docker-entrypoint-initdb.d/01-isaac-functions.sql:ro
+      - ./src/main/resources/db_scripts/quartz_scheduler_create_script.sql:/docker-entrypoint-initdb.d/02-isaac-quartz.sql:ro
+      - ./src/test/resources/test-postgres-rutherford-data-dump.sql:/docker-entrypoint-initdb.d/03-isaac-test-data.sql:ro
+    environment:
+      POSTGRES_USER: rutherford
+      POSTGRES_PASSWORD: rutherf0rd
+    ports:
+      - "5433:5432"
+
 #  app-physics:
 #    network_mode: bridge
 #    container_name: app-physics
