@@ -461,19 +461,18 @@ public class GitContentManager {
     return this.findByFieldNames(fieldsToMatch, startIndex, limit, null);
   }
 
-  public final ResultsWrapper<ContentDTO> findByFieldNames(
+  public ResultsWrapper<ContentDTO> findByFieldNames(
       final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
       final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
   ) throws ContentManagerException {
     return this.findByFieldNames(fieldsToMatch, startIndex, limit, sortInstructions, null);
   }
 
-  public final ResultsWrapper<ContentDTO> findByFieldNames(
+  public ResultsWrapper<ContentDTO> findByFieldNames(
       final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
       @Nullable final Map<String, Constants.SortOrder> sortInstructions,
       @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
   ) throws ContentManagerException {
-    ResultsWrapper<ContentDTO> finalResults;
 
     final Map<String, Constants.SortOrder> newSortInstructions;
     if (null == sortInstructions || sortInstructions.isEmpty()) {
@@ -503,9 +502,7 @@ public class GitContentManager {
 
     List<ContentDTO> contentDTOResults = mapperUtils.getDTOByDOList(result);
 
-    finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
-
-    return finalResults;
+    return new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
   }
 
   public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(

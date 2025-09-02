@@ -24,6 +24,14 @@ public class ExternalReference {
   private String title;
   private String url;
 
+  public ExternalReference() {
+  }
+
+  public ExternalReference(String title, String url) {
+    this.title = title;
+    this.url = url;
+  }
+
   /**
    * Gets the title.
    *

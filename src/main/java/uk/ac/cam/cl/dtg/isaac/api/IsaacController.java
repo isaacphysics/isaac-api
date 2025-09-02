@@ -115,16 +115,13 @@ public class IsaacController extends AbstractIsaacFacade {
   private final Supplier<Long> questionCountCache = Suppliers.memoizeWithExpiration(new Supplier<Long>() {
     @Override
     public Long get() {
-      Executors.newSingleThreadExecutor().submit(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            log.info("Triggering question answer count query.");
-            lastQuestionCount = statsManager.getLogCount(SegueServerLogType.ANSWER_QUESTION.name());
-            log.info("Question answer count query complete.");
-          } catch (SegueDatabaseException e) {
-            lastQuestionCount = 0L;
-          }
+      Executors.newSingleThreadExecutor().submit(() -> {
+        try {
+          log.info("Triggering question answer count query.");
+          lastQuestionCount = statsManager.getLogCount(SegueServerLogType.ANSWER_QUESTION.name());
+          log.info("Question answer count query complete.");
+        } catch (SegueDatabaseException e) {
+          lastQuestionCount = 0L;
         }
       });
 
