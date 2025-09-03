@@ -180,6 +180,7 @@ public interface UserMapper {
   @Mapping(target = "registeredContextsLastConfirmed", ignore = true)
   @Mapping(target = "registeredContexts", ignore = true)
   @Mapping(target = "lastUpdated", ignore = true)
+  @Mapping(target = "privacyPolicyAcceptedTime", ignore = true)
   @Mapping(target = "lastSeen", ignore = true)
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "emailVerificationToken", ignore = true)

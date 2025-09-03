@@ -441,8 +441,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     }
 
     String inParams = String.join(",", Collections.nCopies(usersToLocate.size(), "?"));
-    String query = String.format(
-            "SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name", inParams);
+    String query =
+        String.format("SELECT * FROM users WHERE id IN (%s) AND NOT deleted ORDER BY family_name, given_name",
+            inParams);
 
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query)) {
@@ -680,6 +681,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
 
   @Override
   public void updateUserLastSeen(final RegisteredUser user, final Instant date) throws SegueDatabaseException {
+
     requireNonNull(user);
 
     String query = "UPDATE users SET last_seen = ? WHERE id = ?";
@@ -691,6 +693,32 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       pst.execute();
     } catch (SQLException e) {
       throw new SegueDatabaseException(POSTGRES_EXCEPTION_MESSAGE, e);
+    }
+  }
+
+  @Override
+  public void updatePrivacyPolicyAcceptedTime(final RegisteredUser user, final Instant acceptedTime)
+      throws SegueDatabaseException {
+
+    requireNonNull(user);
+    requireNonNull(acceptedTime);
+
+    String query = "UPDATE users SET updated_privacy_policy_accepted = ?, last_updated = ? WHERE id = ?";
+    try (Connection conn = database.getDatabaseConnection();
+         PreparedStatement pst = conn.prepareStatement(query)
+    ) {
+      Instant now = Instant.now();
+      Instant privacyPolicyAcceptedTime = acceptedTime.isAfter(now) ? now : acceptedTime;
+      pst.setTimestamp(1, Timestamp.from(privacyPolicyAcceptedTime));
+      pst.setTimestamp(2, Timestamp.from(now));
+      pst.setLong(3, user.getId());
+      pst.execute();
+
+      // Update the user object as well
+      user.setPrivacyPolicyAcceptedTime(now);
+      user.setLastUpdated(now);
+    } catch (SQLException e) {
+      throw new SegueDatabaseException("Unable to update privacy policy acceptance time", e);
     }
   }
 
@@ -827,8 +855,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     String query = "INSERT INTO users(family_name, given_name, email, role, date_of_birth, gender,"
         + " registration_date, school_id, school_other, last_updated, email_verification_status, last_seen,"
         + " email_verification_token, email_to_verify, teacher_pending, registered_contexts,"
-        + " registered_contexts_last_confirmed)"
-        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        + " registered_contexts_last_confirmed, updated_privacy_policy_accepted)"
+        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try (Connection conn = database.getDatabaseConnection();
          PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
     ) {
@@ -859,6 +887,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       pst.setArray(FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS, userContexts);
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED,
           userToCreate.getRegisteredContextsLastConfirmed());
+      setValueHelper(pst, FIELD_CREATE_UPDATE_USER_UPDATED_PRIVACY_POLICY_ACCEPTED,
+          userToCreate.getPrivacyPolicyAcceptedTime());
 
       if (pst.executeUpdate() == 0) {
         throw new SegueDatabaseException("Unable to save user.");
@@ -922,7 +952,9 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     String query = "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, date_of_birth = ?,"
         + " gender = ?, registration_date = ?, school_id = ?, school_other = ?, last_updated = ?,"
         + " email_verification_status = ?, last_seen = ?, email_verification_token = ?, email_to_verify = ?,"
-        + " teacher_pending = ?, registered_contexts = ?, registered_contexts_last_confirmed = ? WHERE id = ?;";
+        + " teacher_pending = ?, registered_contexts = ?, registered_contexts_last_confirmed = ?,"
+        + " updated_privacy_policy_accepted = ?"
+        + " WHERE id = ?;";
     try (PreparedStatement pst = conn.prepareStatement(query)) {
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_FAMILY_NAME, userToCreate.getFamilyName());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_GIVEN_NAME, userToCreate.getGivenName());
@@ -940,6 +972,8 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_VERIFICATION_TOKEN, userToCreate.getEmailVerificationToken());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_EMAIL_TO_VERIFY, userToCreate.getEmailToVerify());
       setValueHelper(pst, FIELD_CREATE_UPDATE_USER_TEACHER_PENDING, userToCreate.getTeacherPending());
+      setValueHelper(pst, FIELD_CREATE_UPDATE_USER_UPDATED_PRIVACY_POLICY_ACCEPTED,
+          userToCreate.getPrivacyPolicyAcceptedTime());
       List<String> userContextsJsonb = Lists.newArrayList();
       if (userToCreate.getRegisteredContexts() != null) {
         for (UserContext registeredContext : userToCreate.getRegisteredContexts()) {
@@ -1008,6 +1042,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
     u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
         .valueOf(results.getString("email_verification_status")) : null);
     u.setTeacherPending(results.getBoolean("teacher_pending"));
+    u.setPrivacyPolicyAcceptedTime(getInstantFromTimestamp(results, "updated_privacy_policy_accepted"));
 
     return u;
   }
@@ -1165,5 +1200,6 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
   private static final int FIELD_CREATE_UPDATE_USER_TEACHER_PENDING = 15;
   private static final int FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS = 16;
   private static final int FIELD_CREATE_UPDATE_USER_REGISTERED_CONTEXTS_LAST_CONFIRMED = 17;
-  private static final int FIELD_UPDATE_USER_USER_ID = 18;
+  private static final int FIELD_CREATE_UPDATE_USER_UPDATED_PRIVACY_POLICY_ACCEPTED = 18;
+  private static final int FIELD_UPDATE_USER_USER_ID = 19;
 }

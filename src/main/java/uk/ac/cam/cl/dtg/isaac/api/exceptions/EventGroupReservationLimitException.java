@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.isaac.api.exceptions;
 
 /**
  * Indicates that the user is trying to request reservations exceeding the limit specified.

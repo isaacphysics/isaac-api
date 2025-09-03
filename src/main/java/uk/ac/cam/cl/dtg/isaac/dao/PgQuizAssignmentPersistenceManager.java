@@ -31,7 +31,7 @@ import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.AssignmentCancelledException;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizAssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;

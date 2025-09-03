@@ -252,6 +252,14 @@ public interface IUserDataManager {
   void createSessionToken(RegisteredUser user, Integer newTokenValue) throws SegueDatabaseException;
 
   /**
+   * Update the privacy policy acceptance time for a user.
+   *
+   * @param user - the user to update
+   * @throws SegueDatabaseException - if there is a database error
+   */
+  void updatePrivacyPolicyAcceptedTime(RegisteredUser user, Instant policyAcceptedTime) throws SegueDatabaseException;
+
+  /**
    * Update the session token of a user object in the data store to a randomly generated value.
    *
    * @param user the user object to update the session token of

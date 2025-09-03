@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.isaac.api.exceptions;
 
 /**
  * Created by sac92 on 07/06/2016.

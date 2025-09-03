@@ -194,7 +194,7 @@ class UserManagerTest {
     int sessionToken = 7;
 
     RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
-        Instant.now(), Gender.MALE, Instant.now(), null, null, null, null, false);
+        Instant.now(), Gender.MALE, Instant.now(), null, null, null, null, null, false);
     returnUser.setId(validUserId);
 
     Map<String, String> sessionInformation =
@@ -382,7 +382,7 @@ class UserManagerTest {
         .atLeastOnce();
 
     RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
-        Instant.now(), Gender.MALE, Instant.now(), null, null, null, null, false);
+        Instant.now(), Gender.MALE, Instant.now(), null, null, null, null, null, false);
 
     expect(dummyDatabase.getAuthenticationProvidersByUsers(Collections.singletonList(mappedUser)))
         .andReturn(new HashMap<RegisteredUser, List<AuthenticationProvider>>() {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.isaac.api.exceptions;
 
 /**
  * Exception for when an IsaacWildcard cannot be found/provided.

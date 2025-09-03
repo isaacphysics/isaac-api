@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.isaac.api.exceptions;
 
 /**
  * An exception that indicates a gameboard already exists with the id provided.

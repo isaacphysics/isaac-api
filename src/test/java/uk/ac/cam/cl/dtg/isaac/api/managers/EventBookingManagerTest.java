@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import static java.time.ZoneId.getAvailableZoneIds;
 import static java.time.ZoneOffset.UTC;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
@@ -32,7 +31,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +44,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.DuplicateBookingException;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.EventDeadlineException;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.EventGroupReservationLimitException;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.EventIsCancelledException;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.EventIsFullException;
+import uk.ac.cam.cl.dtg.isaac.api.exceptions.EventIsNotFullException;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;

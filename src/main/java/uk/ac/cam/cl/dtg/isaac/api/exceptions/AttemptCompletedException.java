@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.isaac.api.exceptions;
 
 public class AttemptCompletedException extends Exception {
   private static final long serialVersionUID = -1062901117738824285L;

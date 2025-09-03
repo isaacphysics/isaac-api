@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.dto.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 import java.util.List;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -34,6 +35,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
   private EmailVerificationStatus emailVerificationStatus;
   private Boolean teacherPending;
   private List<UserContext> registeredContexts;
+  private Instant privacyPolicyAcceptedTime;
 
   /**
    * UserSummaryDTO.
@@ -179,6 +181,24 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     this.registeredContexts = registeredContexts;
   }
 
+  /**
+   * Gets the privacyPolicyAcceptedTime.
+   *
+   * @return the privacyPolicyAcceptedTime
+   */
+  public Instant getPrivacyPolicyAcceptedTime() {
+    return privacyPolicyAcceptedTime;
+  }
+
+  /**
+   * Sets the privacyPolicyAcceptedTime.
+   *
+   * @param privacyPolicyAcceptedTime the privacyPolicyAcceptedTime to set
+   */
+  public void setPrivacyPolicyAcceptedTime(final Instant privacyPolicyAcceptedTime) {
+    this.privacyPolicyAcceptedTime = privacyPolicyAcceptedTime;
+  }
+
   @Override
   public String toString() {
     return "UserSummaryDTO ["
@@ -190,6 +210,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
         + ", emailVerificationStatus=" + emailVerificationStatus
         + ", teacherPending=" + teacherPending
         + ", registeredContexts=" + registeredContexts
+        + ", privacyPolicyAcceptedTime=" + privacyPolicyAcceptedTime
         + ']';
   }
 }
