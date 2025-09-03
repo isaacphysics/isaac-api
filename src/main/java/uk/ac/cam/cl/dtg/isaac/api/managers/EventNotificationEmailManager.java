@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -238,20 +239,26 @@ public class EventNotificationEmailManager {
   public void sendFeedbackEmails() {
     log.info("Starting feedback email processing...");
 
-    var failedEvents = new ArrayList<>();
-    var successfulEvents = new ArrayList<>();
+    var failedEvents = new ArrayList<IsaacEventPageDTO>();
+    var successfulEvents = new ArrayList<IsaacEventPageDTO>();
 
     try {
       Instant thresholdDate = Instant.now().minus(EMAIL_EVENT_FEEDBACK_DAYS_AGO, ChronoUnit.DAYS);
-      Map<String, List<String>> fieldsToMatch = Map.of(TYPE_FIELDNAME, List.of(EVENT_TYPE));
-      Map<String, Constants.SortOrder> sortInstructions = Map.of(DATE_FIELDNAME, Constants.SortOrder.DESC);
-      Map<String, AbstractFilterInstruction> filterInstructions = Map.of(
-          DATE_FIELDNAME, new DateRangeFilterInstruction(thresholdDate, Instant.now())
-      );
+
+      Map<String, List<String>> fieldsToMatch = new HashMap<>();
+      fieldsToMatch.put(TYPE_FIELDNAME, List.of(EVENT_TYPE));
+
+      Map<String, Constants.SortOrder> sortInstructions = new HashMap<>();
+      sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
+
+      Map<String, AbstractFilterInstruction> filterInstructions = new HashMap<>();
+      filterInstructions.put(DATE_FIELDNAME, new DateRangeFilterInstruction(thresholdDate, Instant.now()));
 
       ResultsWrapper<ContentDTO> results = contentManager.findByFieldNames(
           ContentService.generateDefaultFieldToMatch(fieldsToMatch),
           0, DEFAULT_MAX_WINDOW_SIZE, sortInstructions, filterInstructions);
+
+      log.info("Content results: " + results);
 
       Instant currentTime = Instant.now();
 
@@ -290,6 +297,7 @@ public class EventNotificationEmailManager {
 
   private void processEvent(IsaacEventPageDTO event, Instant currentTime)
       throws SegueDatabaseException {
+    log.info("Processing event: " + event.getId() +" " + event.getEventSurveyTitle() + " : " + event.getTitle());
     Instant eventEndTime = Optional.ofNullable(event.getEndDate()).orElse(event.getDate());
     if (eventEndTime == null) {
       return;
