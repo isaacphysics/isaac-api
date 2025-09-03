@@ -33,6 +33,7 @@
         <ossindex.version>3.2.0</ossindex.version>
         <swagger-core.version>2.2.34</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
     </properties>
@@ -478,6 +479,12 @@
             <groupId>com.maxmind.geoip2</groupId>
             <artifactId>geoip2</artifactId>
             <version>4.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
         </dependency>
 
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
