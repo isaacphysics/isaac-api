@@ -42,7 +42,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     @BeforeEach
     public void setUp() {
         this.pagesFacade = new PagesFacade(new ContentService(contentManager), properties, logManager,
-                mapperFacade, contentManager, userAccountManager, new URIManager(properties), questionManager, gameManager, userAttemptManager);
+                mainMapper, contentManager, userAccountManager, new URIManager(properties), questionManager, gameManager, userAttemptManager);
     }
 
     @Test
