@@ -84,6 +84,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
@@ -121,6 +122,7 @@ public class AbstractIsaacIntegrationTest {
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MapperFacade mapperFacade;
+    protected static MainMapper mainMapper;
     protected static ContentSummarizerService contentSummarizerService;
     protected static IMisuseMonitor misuseMonitor;
 
@@ -245,6 +247,7 @@ public class AbstractIsaacIntegrationTest {
         questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
 
         mapperFacade = contentMapper.getAutoMapper();
+        mainMapper = MainMapper.INSTANCE;
 
         providersToRegister = new HashMap<>();
         providersToRegister.put(AuthenticationProvider.RASPBERRYPI, new RaspberryPiOidcAuthenticator(
