@@ -122,7 +122,11 @@ public class GameManager {
 
         this.mapper = mapper;
 
-        GameManager.gameboardQuestionsLimit = Integer.parseInt(properties.getProperty(GAMEBOARD_QUESTION_LIMIT));
+        try {
+            GameManager.gameboardQuestionsLimit = Integer.parseInt(properties.getProperty(GAMEBOARD_QUESTION_LIMIT));
+        } catch (NumberFormatException e) {
+            GameManager.gameboardQuestionsLimit = GAMEBOARD_QUESTIONS_DEFAULT;
+        }
     }
 
     /**
