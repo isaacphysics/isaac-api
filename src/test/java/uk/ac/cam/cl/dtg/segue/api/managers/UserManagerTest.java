@@ -54,6 +54,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -91,7 +92,7 @@ public class UserManagerTest {
     private AbstractConfigLoader dummyPropertiesLoader;
     private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
-    private MapperFacade dummyMapper;
+    private MainMapper dummyMapper;
     private EmailManager dummyQueue;
     private SimpleDateFormat sdf;
 
@@ -121,7 +122,7 @@ public class UserManagerTest {
         this.dummyProvidersMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
 
         this.dummyHostName = "bob";
-        this.dummyMapper = createMock(MapperFacade.class);
+        this.dummyMapper = createMock(MainMapper.class);
         this.dummyQueue = createMock(EmailManager.class);
         this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
         this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
@@ -211,7 +212,7 @@ public class UserManagerTest {
                 .andReturn(Lists.newArrayList(AuthenticationProvider.GOOGLE)).once();
         replay(dummyQuestionDatabase);
 
-        expect(dummyMapper.map(returnUser, RegisteredUserDTO.class)).andReturn(new RegisteredUserDTO()).atLeastOnce();
+        expect(dummyMapper.map(returnUser)).andReturn(new RegisteredUserDTO()).atLeastOnce();
         replay(dummyMapper, dummyDatabase, dummyLocalAuth);
 
         // Act
@@ -391,8 +392,8 @@ public class UserManagerTest {
         RegisteredUserDTO mappedUserDTO = new RegisteredUserDTO();
 
         expect(dummyMapper.map(providerUser, RegisteredUser.class)).andReturn(mappedUser).atLeastOnce();
-        expect(dummyMapper.map(mappedUser, RegisteredUserDTO.class)).andReturn(mappedUserDTO).atLeastOnce();
-        expect(dummyMapper.map(au, AnonymousUserDTO.class)).andReturn(someAnonymousUserDTO).anyTimes();
+        expect(dummyMapper.map(mappedUser)).andReturn(mappedUserDTO).atLeastOnce();
+        expect(dummyMapper.map(au)).andReturn(someAnonymousUserDTO).anyTimes();
 
         // handle duplicate account check.
         expect(dummyDatabase.getByEmail(providerUser.getEmail())).andReturn(null).once();

@@ -18,8 +18,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.validator.routines.EmailValidator;
@@ -82,6 +80,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -117,7 +116,7 @@ public class UserAccountManager implements IUserAccountManager {
     private final IUserDataManager database;
     private final QuestionManager questionAttemptDb;
     private final ILogManager logManager;
-    private final MapperFacade dtoMapper;
+    private final UserMapper dtoMapper;
     private final EmailManager emailManager;
 
     private final IAnonymousUserDataManager temporaryUserCache;
@@ -151,7 +150,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     @Inject
     public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb, final AbstractConfigLoader properties,
-                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
+                              final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final UserMapper dtoMapper,
                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                               final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
                               final ISecondFactorAuthenticator secondFactorManager,
@@ -825,7 +824,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         UserAuthenticationSettings userAuthenticationSettings = this.database.getUserAuthenticationSettings(user.getId());
         if (userAuthenticationSettings != null) {
-            return this.dtoMapper.map(userAuthenticationSettings, UserAuthenticationSettingsDTO.class);
+            return this.dtoMapper.map(userAuthenticationSettings);
         } else {
             return new UserAuthenticationSettingsDTO();
         }
@@ -844,8 +843,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @throws SegueDatabaseException - if there is a database error.
      */
     public List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
-        List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
-                RegisteredUser.class));
+        List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype));
 
         return this.convertUserDOListToUserDTOList(registeredUsersDOs);
     }
@@ -981,12 +979,12 @@ public class UserAccountManager implements IUserAccountManager {
 
         Validate.isTrue(user.getId() == null, "When creating a new user the user id must not be set.");
 
-        MapperFacade mapper = this.dtoMapper;
+        UserMapper mapper = this.dtoMapper;
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
 
         // We want to map via a DTO first to make sure that the user cannot set fields that aren't exposed to them:
-        RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
-        RegisteredUser userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
+        RegisteredUserDTO userDtoForNewUser = mapper.map(user);
+        RegisteredUser userToSave = mapper.map(userDtoForNewUser);
 
         // -----  Validate the user object and details:  -----
 
@@ -1096,7 +1094,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         // We want to map to DTO first to make sure that the user cannot
         // change fields that aren't exposed to them
-        RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser, RegisteredUserDTO.class);
+        RegisteredUserDTO userDTOContainingUpdates = this.dtoMapper.map(updatedUser);
         if (updatedUser.getId() == null) {
             throw new IllegalArgumentException(
                     "The user object specified does not have an id. Users cannot be updated without a specific id set.");
@@ -1133,11 +1131,9 @@ public class UserAccountManager implements IUserAccountManager {
             authenticator.ensureValidPassword(newPassword);
         }
 
-        MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
+        RegisteredUser userToSave = dtoMapper.copy(existingUser);
+        dtoMapper.merge(userDTOContainingUpdates, userToSave);
 
-        RegisteredUser userToSave = new RegisteredUser();
-        mergeMapper.map(existingUser, userToSave);
-        mergeMapper.map(userDTOContainingUpdates, userToSave);
         // Don't modify email verification status, registration date, role, or teacher account pending status
         userToSave.setEmailVerificationStatus(existingUser.getEmailVerificationStatus());
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
@@ -1680,7 +1676,7 @@ public class UserAccountManager implements IUserAccountManager {
         emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate, emailTokens, EmailType.SYSTEM);
 
         // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
-        RegisteredUserDTO temporaryUser = this.dtoMapper.map(userDTO, RegisteredUserDTO.class);
+        RegisteredUserDTO temporaryUser = this.dtoMapper.copy(userDTO);
         temporaryUser.setEmail(newEmail);
         temporaryUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         this.sendVerificationEmailForCurrentEmail(temporaryUser, newEmailToken);
@@ -1748,7 +1744,7 @@ public class UserAccountManager implements IUserAccountManager {
                 final RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
 
                 this.questionAttemptDb.mergeAnonymousQuestionAttemptsIntoRegisteredUser(
-                        this.dtoMapper.map(anonymousUser, AnonymousUserDTO.class), userDTO);
+                        this.dtoMapper.map(anonymousUser), userDTO);
 
                 // may as well spawn a new thread to do the log migration stuff asynchronously
                 // work now.
@@ -1901,7 +1897,7 @@ public class UserAccountManager implements IUserAccountManager {
             return new ArrayList<>();
         }
 
-        return users.parallelStream().map(user -> this.dtoMapper.map(user, RegisteredUserDTO.class)).collect(Collectors.toList());
+        return users.parallelStream().map(this.dtoMapper::map).collect(Collectors.toList());
     }
 
     /**
@@ -1926,7 +1922,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return An anonymous user containing any anonymous question attempts (which could be none)
      */
     private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) throws SegueDatabaseException {
-        return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
+        return this.dtoMapper.map(this.getAnonymousUserDO(request));
     }
 
     /**

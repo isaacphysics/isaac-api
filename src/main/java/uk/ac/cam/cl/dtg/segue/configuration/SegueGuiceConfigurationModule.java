@@ -148,6 +148,7 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
+import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.ServletContextEvent;
@@ -804,13 +805,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private IUserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
                                                final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                                final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
-                                               final ILogManager logManager, final MapperFacade mapperFacade,
+                                               final ILogManager logManager, final UserMapper userMapper,
                                                final UserAuthenticationManager userAuthenticationManager,
                                                final ISecondFactorAuthenticator secondFactorManager,
                                                final AbstractUserPreferenceManager userPreferenceManager) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
-                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
+                    userMapper, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
                     secondFactorManager, userPreferenceManager);
             log.info("Creating singleton of UserManager");
         }

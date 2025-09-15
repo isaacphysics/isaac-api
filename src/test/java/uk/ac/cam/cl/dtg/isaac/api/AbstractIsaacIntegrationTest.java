@@ -283,7 +283,7 @@ public class AbstractIsaacIntegrationTest {
         }
         replay(secondFactorManager);
 
-        userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
+        userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mainMapper, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
 
         ObjectMapper objectMapper = new ObjectMapper();
         mailGunEmailManager = new MailGunEmailManager(globalTokens, properties, userPreferenceManager);
