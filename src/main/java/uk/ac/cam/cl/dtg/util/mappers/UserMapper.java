@@ -89,7 +89,6 @@ public interface UserMapper {
             nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     void merge(RegisteredUserDTO source, @MappingTarget RegisteredUser target);
 
-    @Mapping(target = "teacherAccountPending", ignore = true)
     @Mapping(target = "schoolOther", ignore = true)
     @Mapping(target = "schoolId", ignore = true)
     @Mapping(target = "role", ignore = true)
