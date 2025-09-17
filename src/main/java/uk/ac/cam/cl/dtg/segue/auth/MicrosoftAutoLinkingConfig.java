@@ -9,16 +9,20 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.StringUtils;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 
 import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class MicrosoftAutoLinkingConfig {
     private List<ConfigEntry> entries;
 
     @Inject
-    public MicrosoftAutoLinkingConfig(@Nullable @Named(Constants.MICROSOFT_ALLOW_AUTO_LINKING) final String jsonConfig) {
+    public MicrosoftAutoLinkingConfig(
+            @Nullable @Named(Constants.MICROSOFT_ALLOW_AUTO_LINKING) final String jsonConfig
+    ) {
         try {
             this.entries = new ObjectMapper().readValue(jsonConfig, new TypeReference<>() {});
         } catch (final JsonProcessingException | IllegalArgumentException e) {
@@ -27,9 +31,8 @@ public class MicrosoftAutoLinkingConfig {
     }
 
     public boolean enabledFor(final String email) {
-        return this.entries.stream().anyMatch(
-                entry -> entry.emailDomain.equals(StringUtils.substringAfter(email, '@'))
-        );
+        return UserAccountManager.isUserEmailValid(email)
+                && this.entries.stream().anyMatch(ConfigEntry.matchingDomain(email));
     }
 
     public int size() {
@@ -47,6 +50,10 @@ public class MicrosoftAutoLinkingConfig {
         ) {
             this.tenantId = tenantId;
             this.emailDomain = emailDomain;
+        }
+
+        public static Predicate<ConfigEntry> matchingDomain(final String email) {
+            return entry -> entry.emailDomain.equals(StringUtils.substringAfter(email, '@'));
         }
     }
 }
