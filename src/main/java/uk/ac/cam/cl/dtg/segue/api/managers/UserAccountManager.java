@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAutoLinkingConfig;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -129,6 +130,7 @@ public class UserAccountManager implements IUserAccountManager {
     private final ISecondFactorAuthenticator secondFactorManager;
 
     private final AbstractUserPreferenceManager userPreferenceManager;
+    private final MicrosoftAutoLinkingConfig microsoftAutoLinkingConfig;
 
     private final Pattern restrictedSignupEmailRegex;
     private static final int USER_NAME_MAX_LENGTH = 255;
@@ -155,7 +157,8 @@ public class UserAccountManager implements IUserAccountManager {
                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                               final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
                               final ISecondFactorAuthenticator secondFactorManager,
-                              final AbstractUserPreferenceManager userPreferenceManager) {
+                              final AbstractUserPreferenceManager userPreferenceManager,
+                              final MicrosoftAutoLinkingConfig msAutoLinkingConfig) {
 
         Objects.requireNonNull(properties.getProperty(HMAC_SALT));
         Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));
@@ -177,6 +180,7 @@ public class UserAccountManager implements IUserAccountManager {
         this.userAuthenticationManager = userAuthenticationManager;
         this.secondFactorManager = secondFactorManager;
         this.userPreferenceManager = userPreferenceManager;
+        this.microsoftAutoLinkingConfig = msAutoLinkingConfig;
 
         String forbiddenEmailRegex = properties.getProperty(RESTRICTED_SIGNUP_EMAIL_REGEX);
         if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
@@ -267,6 +271,17 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         RegisteredUser currentUser = getCurrentRegisteredUserDO(request);
+        RegisteredUser matchedUserFromEmail = this.findUserByEmail(providerUserDO.getEmail());
+
+        if (microsoftAutoLinkingConfig.enabledFor(providerUserDO.getEmail()) &&
+                userFromLinkedAccount == null &&
+                currentUser == null &&
+                providerUserDO.getEmail() != null &&
+                !providerUserDO.getEmail().isEmpty() &&
+                matchedUserFromEmail != null) {
+            return this.logUserIn(request, response, matchedUserFromEmail, rememberMe);
+        }
+
         // if the user is currently logged in and this is a request for a linked account, then create the new link.
         if (null != currentUser) {
             Boolean intentionToLinkRegistered = (Boolean) request.getSession().getAttribute(LINK_ACCOUNT_PARAM_NAME);

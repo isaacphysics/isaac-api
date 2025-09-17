@@ -62,6 +62,8 @@ SESSION_EXPIRY_SECONDS_DEFAULT: "432000"
 SESSION_EXPIRY_SECONDS_REMEMBERED: "1209600"
 EMAIL_VERIFICATION_ENDPOINT_TOKEN: some-very-secret-token
 # Federated Authentication
+# Microsoft
+MICROSOFT_ALLOW_AUTO_LINKING: "[{\"tenantId\": \"766576da-ca7a-46eb-bf55-43eea65e85b7\", \"emailDomain\": \"linkable.com\"}]"
 # Google
 GOOGLE_CLIENT_SECRET_LOCATION: x
 GOOGLE_CALLBACK_URI: x
