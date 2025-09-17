@@ -45,7 +45,7 @@ public interface UserMapper {
         } else if (targetClass.equals(UserSummaryWithGroupMembershipDTO.class)) {
             return (T) mapUserToSummaryWithGroupMembershipDTO(source);
         } else {
-            throw new RuntimeException();
+            throw new UnimplementedMappingException(RegisteredUserDTO.class, targetClass);
         }
     }
 
@@ -53,7 +53,7 @@ public interface UserMapper {
         if (targetClass.equals(RegisteredUser.class)) {
             return (T) mapUserFromAuthProviderToRegisteredUser(source);
         } else {
-            throw new RuntimeException();
+            throw new UnimplementedMappingException(UserFromAuthProvider.class, targetClass);
         }
     }
 
@@ -63,7 +63,7 @@ public interface UserMapper {
         } else if (targetClass.equals(UserSummaryDTO.class)) {
             return (T) mapExtendedUserSummaryDTOtoBaseUserSummaryDTO(source);
         } else {
-            throw new RuntimeException();
+            throw new UnimplementedMappingException(UserSummaryDTO.class, targetClass);
         }
     }
 

@@ -16,7 +16,7 @@ public interface ContentMapperMS {
         if (targetClass.equals(ContentSummaryDTO.class)) {
             return (T) mapContentDTOtoContentSummaryDTO(source);
         } else {
-            throw new RuntimeException();
+            throw new UnimplementedMappingException(ContentDTO.class, targetClass);
         }
     }
 
