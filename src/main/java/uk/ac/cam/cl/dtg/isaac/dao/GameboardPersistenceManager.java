@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class GameboardPersistenceManager {
     private final PostgresSqlDb database;
     private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
     
-    private final MapperFacade mapper; // used for content object mapping.
+    private final MainMapper mapper; // used for content object mapping.
     private final ObjectMapper objectMapper; // used for json serialisation
 
     private final GitContentManager contentManager;
@@ -100,7 +101,7 @@ public class GameboardPersistenceManager {
      */
     @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                       final MapperFacade mapper, final ContentMapper objectMapper) {
+                                       final MainMapper mapper, final ContentMapper objectMapper) {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;
@@ -189,7 +190,7 @@ public class GameboardPersistenceManager {
      */
     public String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
         throws SegueDatabaseException {
-        GameboardDO gameboardToSave = mapper.map(gameboard, GameboardDO.class);
+        GameboardDO gameboardToSave = mapper.map(gameboard);
         // the mapping operation won't work for the list so we should just
         // create a new one.
         gameboardToSave.setContents(Lists.newArrayList());
@@ -601,7 +602,7 @@ public class GameboardPersistenceManager {
         List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
 
         for (GameboardDO gameboardDO : gameboardDOs) {
-            GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
+            GameboardDTO gameboardDTO = mapper.map(gameboardDO);
             List<GameboardItem> sparseGameboardItems = gameboardDO.getContents().stream()
                     .map(GameboardItem::buildLightweightItemFromContentDescriptor)
                     .collect(Collectors.toList());
@@ -640,7 +641,7 @@ public class GameboardPersistenceManager {
      * @return GameboardDO.
      */
     private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
-        GameboardDO gameboardDO = mapper.map(gameboardDTO, GameboardDO.class);
+        GameboardDO gameboardDO = mapper.map(gameboardDTO);
         // the mapping operation won't work for the list so we should just
         // create a new one.
         gameboardDO.setContents(Lists.newArrayList());

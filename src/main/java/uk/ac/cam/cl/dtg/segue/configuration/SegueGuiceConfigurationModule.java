@@ -148,6 +148,7 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import jakarta.annotation.Nullable;
@@ -1259,7 +1260,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                                                              final MapperFacade mapper, final ContentMapper objectMapper) {
+                                                                              final MainMapper mapper, final ContentMapper objectMapper) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");
