@@ -17,6 +17,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
@@ -142,6 +143,7 @@ public class AbstractIsaacIntegrationTest {
     protected static QuizManager quizManager;
     protected static PgPasswordDataManager passwordDataManager;
     protected static UserAttemptManager userAttemptManager;
+    protected static FastTrackManger fastTrackManger;
 
     // Manager dependencies
     protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -292,8 +294,8 @@ public class AbstractIsaacIntegrationTest {
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
         IAssignmentPersistenceManager assignmentPersistenceManager = new PgAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
 
-        GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mainMapper, contentMapper);
-        gameManager = new GameManager(contentManager, gameboardPersistenceManager, mainMapper, questionManager);
+        GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mapperFacade, contentMapper);
+        gameManager = new GameManager(contentManager, gameboardPersistenceManager, mapperFacade, questionManager);
         groupManager = new GroupManager(pgUserGroupPersistenceManager, userAccountManager, gameManager, mapperFacade);
         userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
@@ -310,6 +312,7 @@ public class AbstractIsaacIntegrationTest {
         quizQuestionAttemptPersistenceManager = new PgQuizQuestionAttemptPersistenceManager(postgresSqlDb, contentMapper);
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
         userAttemptManager = new UserAttemptManager(questionManager);
+        fastTrackManger = new FastTrackManger(properties, contentManager, gameManager);
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));

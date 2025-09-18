@@ -34,6 +34,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager.BooleanSearchClause;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.YamlLoader;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.powermock.api.easymock.PowerMock.replay;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 
 @RunWith(PowerMockRunner.class)
@@ -54,6 +57,7 @@ public class GameManagerTest {
     private GameboardPersistenceManager dummyGameboardPersistenceManager;
     private MainMapper dummyMapper;
     private QuestionManager dummyQuestionManager;
+    private AbstractConfigLoader dummyConfigLoader;
 
     @Before
     public void setUp() {
@@ -61,6 +65,10 @@ public class GameManagerTest {
         this.dummyGameboardPersistenceManager = PowerMock.createMock(GameboardPersistenceManager.class);
         this.dummyMapper = PowerMock.createMock(MainMapper.class);
         this.dummyQuestionManager = PowerMock.createMock(QuestionManager.class);
+        this.dummyConfigLoader = PowerMock.createMock(YamlLoader.class);
+
+        EasyMock.expect(dummyConfigLoader.getProperty(GAMEBOARD_QUESTION_LIMIT)).andStubReturn("30");
+        replay(dummyConfigLoader);
     }
 
     @Test
@@ -72,7 +80,8 @@ public class GameManagerTest {
                 this.dummyContentManager,
                 this.dummyGameboardPersistenceManager,
                 this.dummyMapper,
-                this.dummyQuestionManager
+                this.dummyQuestionManager,
+                this.dummyConfigLoader
         );
 
         // configure the mock GitContentManager to record the filters that are sent to it by getNextQuestionsForFilter()
