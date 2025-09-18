@@ -3,6 +3,8 @@ package uk.ac.cam.cl.dtg.util.mappers;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.SubclassMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
@@ -26,4 +28,6 @@ public interface ContentMapperMS {
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     ContentSummaryDTO mapContentDTOtoContentSummaryDTO(ContentDTO source);
+
+    IsaacWildcard map(Content source);
 }
