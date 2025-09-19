@@ -307,7 +307,7 @@ public class AbstractIsaacIntegrationTest {
         quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
         quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
-        quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mapperFacade);
+        quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mainMapper);
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
         quizQuestionAttemptPersistenceManager = new PgQuizQuestionAttemptPersistenceManager(postgresSqlDb, contentMapper);
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
