@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ma.glasnost.orika.MapperFacade;
 import org.junit.Before;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;

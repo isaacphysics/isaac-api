@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
