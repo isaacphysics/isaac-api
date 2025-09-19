@@ -292,7 +292,7 @@ public class AbstractIsaacIntegrationTest {
         EventBookingPersistenceManager bookingPersistanceManager = new EventBookingPersistenceManager(postgresSqlDb, userAccountManager, contentManager, objectMapper);
         PgAssociationDataManager pgAssociationDataManager = new PgAssociationDataManager(postgresSqlDb);
         PgUserGroupPersistenceManager pgUserGroupPersistenceManager = new PgUserGroupPersistenceManager(postgresSqlDb);
-        IAssignmentPersistenceManager assignmentPersistenceManager = new PgAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
+        IAssignmentPersistenceManager assignmentPersistenceManager = new PgAssignmentPersistenceManager(postgresSqlDb, mainMapper);
 
         GameboardPersistenceManager gameboardPersistenceManager = new GameboardPersistenceManager(postgresSqlDb, contentManager, mainMapper, contentMapper);
         gameManager = new GameManager(contentManager, gameboardPersistenceManager, mainMapper, questionManager, properties);
