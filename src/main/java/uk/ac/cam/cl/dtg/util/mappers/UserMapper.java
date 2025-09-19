@@ -10,11 +10,15 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
 
+import uk.ac.cam.cl.dtg.isaac.dos.GroupMembership;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserAuthenticationSettings;
 import uk.ac.cam.cl.dtg.isaac.dos.users.UserFromAuthProvider;
+import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -70,11 +74,25 @@ public interface UserMapper {
     @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryDTO mapUserToSummary(RegisteredUserDTO source);
 
+    @Mapping(target = "token", ignore = true)
+    @Mapping(target = "ownerSummary", ignore = true)
+    @Mapping(target = "mongoId", ignore = true)
+    @Mapping(target = "additionalManagers", ignore = true)
+    @Mapping(target = "additionalManagersUserIds", ignore = true)
+    UserGroupDTO map(UserGroup source);
+
     @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryForAdminUsersDTO mapUserToAdminSummaryDTO(RegisteredUserDTO source);
 
     @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryWithEmailAddressDTO mapUserToSummaryWithEmailDTO(RegisteredUserDTO source);
+
+    GroupMembership map(GroupMembershipDTO source);
+
+    GroupMembershipDTO map(GroupMembership source);
+
+    @Mapping(target = "status", ignore = true)
+    UserGroup map(UserGroupDTO source);
 
     @Mapping(target = "groupMembershipInformation", ignore = true)
     @Mapping(target = "authorisedFullAccess", ignore = true)
@@ -82,6 +100,8 @@ public interface UserMapper {
 
     RegisteredUser copy(RegisteredUser source);
     RegisteredUserDTO copy(RegisteredUserDTO source);
+
+    GroupMembershipDTO copy(GroupMembershipDTO source);
 
     @Mapping(target = "emailVerificationToken", ignore = true)
     @Mapping(target = "emailToVerify", ignore = true)

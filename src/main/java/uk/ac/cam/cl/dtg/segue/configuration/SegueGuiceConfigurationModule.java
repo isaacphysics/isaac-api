@@ -859,7 +859,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private GroupManager getGroupManager(final IUserGroupPersistenceManager userGroupDataManager,
                                          final UserAccountManager userManager, final GameManager gameManager,
-                                         final MapperFacade dtoMapper) {
+                                         final MainMapper dtoMapper) {
 
         if (null == groupManager) {
             groupManager = new GroupManager(userGroupDataManager, userManager, gameManager, dtoMapper);

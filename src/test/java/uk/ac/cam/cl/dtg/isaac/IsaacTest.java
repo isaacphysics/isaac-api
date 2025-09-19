@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -274,7 +275,7 @@ public class IsaacTest {
         groupDatabase = createMock(IUserGroupPersistenceManager.class);
         UserAccountManager userAccountManager = createMock(UserAccountManager.class);
         GameManager gameManager = createMock(GameManager.class);
-        MapperFacade mapperFacade = createMock(MapperFacade.class);
+        MainMapper mapperFacade = createMock(MainMapper.class);
         groupManager = partialMockBuilder(GroupManager.class)
                 .withConstructor(groupDatabase, userAccountManager, gameManager, mapperFacade)
                 .addMockedMethod("getGroupById").addMockedMethod("isUserInGroup").addMockedMethod("getGroupMembershipList", RegisteredUserDTO.class, boolean.class)
