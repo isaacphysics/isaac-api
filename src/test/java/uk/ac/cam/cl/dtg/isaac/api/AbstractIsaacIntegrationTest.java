@@ -304,7 +304,7 @@ public class AbstractIsaacIntegrationTest {
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         quizManager = new QuizManager(properties, new ContentService(contentManager), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)));
-        quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mapperFacade);
+        quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mainMapper);
         quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
         quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mainMapper);
