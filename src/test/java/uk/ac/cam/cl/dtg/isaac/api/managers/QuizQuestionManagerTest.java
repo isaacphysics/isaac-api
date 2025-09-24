@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,15 +81,19 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
     public void setUp() {
         quizQuestionAttemptPersistenceManager = createMock(IQuizQuestionAttemptPersistenceManager.class);
         questionManager = createMock(QuestionManager.class);
-        ContentMapper contentMapper = createMock(ContentMapper.class);
+        MainMapper contentMapper = createMock(MainMapper.class);
         MapperFacade mapperFacade = createMock(MapperFacade.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
 
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
 
-        expect(contentMapper.getAutoMapper()).andStubReturn(mapperFacade);
         expect(mapperFacade.map(correctAnswer, ChoiceDTO.class)).andStubReturn(correctAnswerDTO);
         expect(mapperFacade.map(wrongAnswer, ChoiceDTO.class)).andStubReturn(wrongAnswerDTO);
+
+        expect(contentMapper.mapChoice(correctAnswer)).andStubReturn(correctAnswerDTO);
+        expect(contentMapper.mapChoice(wrongAnswer)).andStubReturn(wrongAnswerDTO);
+        expect(contentMapper.mapChoice((ChoiceDTO) null)).andStubReturn(null);
+
 
         registerDefaultsFor(questionManager, m -> {
             expect(m.convertQuestionValidationResponseToDTO(wrongResponse)).andStubReturn(wrongResponseDTO);

@@ -310,7 +310,7 @@ public class AbstractIsaacIntegrationTest {
         quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mainMapper);
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
         quizQuestionAttemptPersistenceManager = new PgQuizQuestionAttemptPersistenceManager(postgresSqlDb, contentMapper);
-        quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
+        quizQuestionManager = new QuizQuestionManager(questionManager, mainMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
         userAttemptManager = new UserAttemptManager(questionManager);
         fastTrackManger = new FastTrackManger(properties, contentManager, gameManager);
 
