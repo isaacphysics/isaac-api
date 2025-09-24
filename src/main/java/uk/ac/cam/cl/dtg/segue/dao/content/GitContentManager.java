@@ -52,6 +52,8 @@ import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -83,7 +85,8 @@ public class GitContentManager {
     private static final String CONTENT_TYPE = "content";
 
     private final GitDb database;
-    private final ContentMapper mapper;
+    private final ContentMapperMS mapper;
+    private final ContentMapper mapperUtils;
     private final ISearchProvider searchProvider;
     private final AbstractConfigLoader globalProperties;
     private final boolean showOnlyPublishedContent;
@@ -109,10 +112,11 @@ public class GitContentManager {
      *            - global properties.
      */
     @Inject
-    public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-                             final ContentMapper contentMapper, final AbstractConfigLoader globalProperties) {
+    public GitContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapperMS mapper,
+                             final ContentMapper mapperUtils, final AbstractConfigLoader globalProperties) {
         this.database = database;
-        this.mapper = contentMapper;
+        this.mapper = mapper;
+        this.mapperUtils = mapperUtils;
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
 
@@ -149,10 +153,11 @@ public class GitContentManager {
      *            - The utility class for mapping content objects.
      */
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper) {
+                             final ContentMapperMS contentMapper, ContentMapper mapperUtils) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
+        this.mapperUtils = mapperUtils;
         this.globalProperties = null;
         this.showOnlyPublishedContent = false;
         this.hideRegressionTestContent = false;
@@ -190,7 +195,7 @@ public class GitContentManager {
      * @throws ContentManagerException on failure to return the object or null.
      */
     public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
-        return this.mapper.getDTOByDO(this.getContentDOById(id, failQuietly));
+        return this.mapperUtils.getDTOByDO(this.getContentDOById(id, failQuietly));
     }
 
     /**
@@ -204,7 +209,7 @@ public class GitContentManager {
      * @return the DTO form of the object.
      */
     public final ContentDTO getContentDTOByDO(final Content content) {
-        return this.mapper.getDTOByDO(content);
+        return this.mapperUtils.getDTOByDO(content);
     }
 
     /**
@@ -249,7 +254,7 @@ public class GitContentManager {
                         CONTENT_TYPE, id,
                         Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
                         getBaseFilters());
-                List<Content> searchResults = mapper.mapFromStringListToContentList(rawResults.getResults());
+                List<Content> searchResults = mapperUtils.mapFromStringListToContentList(rawResults.getResults());
 
                 return new ResultsWrapper<>(searchResults, rawResults.getTotalResults());
             });
@@ -310,8 +315,8 @@ public class GitContentManager {
                         finalFilter
                 );
 
-                List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
-                return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+                List<Content> searchResults = mapperUtils.mapFromStringListToContentList(searchHits.getResults());
+                return new ResultsWrapper<>(mapperUtils.getDTOByDOList(searchResults), searchHits.getTotalResults());
             });
         } catch (final ExecutionException e) {
             throw new ContentManagerException(e.getCause().getMessage());
@@ -389,9 +394,9 @@ public class GitContentManager {
                 sortOrder
         );
 
-        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+        List<Content> searchResults = mapperUtils.mapFromStringListToContentList(searchHits.getResults());
 
-        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+        return new ResultsWrapper<>(mapperUtils.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
     /** Search the content for questions (and fasttrack questions) that match a given user provided search string and
@@ -495,9 +500,9 @@ public class GitContentManager {
                 sortOrder
         );
 
-        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+        List<Content> searchResults = mapperUtils.mapFromStringListToContentList(searchHits.getResults());
 
-        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+        return new ResultsWrapper<>(mapperUtils.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
     public final ResultsWrapper<ContentDTO> findByFieldNames(
@@ -543,9 +548,9 @@ public class GitContentManager {
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
-        List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
+        List<Content> result = mapperUtils.mapFromStringListToContentList(searchHits.getResults());
 
-        List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
+        List<ContentDTO> contentDTOResults = mapperUtils.getDTOByDOList(result);
 
         finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
 
@@ -573,9 +578,9 @@ public class GitContentManager {
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
-        List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
+        List<Content> result = mapperUtils.mapFromStringListToContentList(searchHits.getResults());
 
-        List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
+        List<ContentDTO> contentDTOResults = mapperUtils.getDTOByDOList(result);
 
         finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
 
@@ -707,7 +712,7 @@ public class GitContentManager {
         for (String contentId : relatedContentIds) {
             ContentDTO relatedContent = resultsMappedById.get(contentId);
             if (relatedContent != null) {
-                ContentSummaryDTO summary = this.mapper.getAutoMapper().map(relatedContent, ContentSummaryDTO.class);
+                ContentSummaryDTO summary = this.mapper.map(relatedContent, ContentSummaryDTO.class);
                 GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
                 relatedContentDTOs.add(summary);
             } else {

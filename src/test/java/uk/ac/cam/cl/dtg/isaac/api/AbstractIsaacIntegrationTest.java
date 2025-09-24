@@ -269,7 +269,7 @@ public class AbstractIsaacIntegrationTest {
 
         Git git = createNiceMock(Git.class);
         GitDb gitDb = new GitDb(git);
-        contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, properties);
+        contentManager = new GitContentManager(gitDb, elasticSearchProvider, mainMapper, contentMapper, properties);
         logManager = createNiceMock(ILogManager.class);
         IDeletionTokenPersistenceManager deletionTokenPersistenceManager = new PgDeletionTokenPersistenceManager(postgresSqlDb);
 

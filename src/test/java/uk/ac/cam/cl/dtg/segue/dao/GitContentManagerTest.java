@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
 
 import java.util.*;
 
@@ -40,7 +41,8 @@ import static org.junit.Assert.fail;
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
-	private ContentMapper contentMapper;
+	private ContentMapperMS contentMapper;
+	private ContentMapper contentMapperUtils;
 
 	private GitContentManager defaultGCM;
 
@@ -56,9 +58,10 @@ public class GitContentManagerTest {
 	public final void setUp() throws Exception {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);
-		this.contentMapper = createMock(ContentMapper.class);
+		this.contentMapper = createMock(ContentMapperMS.class);
+		this.contentMapperUtils = createMock(ContentMapper.class);
 
-		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper);
+		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper, contentMapperUtils);
 	}
 	/**
 	 * Test that the getById method returns null if it is passed a null id.
@@ -109,6 +112,6 @@ public class GitContentManagerTest {
 		Map<String, Content> contents = new TreeMap<String, Content>();
 		contents.put(INITIAL_VERSION, content);
 
-		return new GitContentManager(database, searchProvider, contentMapper);
+		return new GitContentManager(database, searchProvider, contentMapper, contentMapperUtils);
 	}
 }
