@@ -1,17 +1,32 @@
 package uk.ac.cam.cl.dtg.util.mappers;
 
+import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.SubclassMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacPageFragment;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.*;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDeckDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPodDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.*;
+
+import java.util.List;
 
 @Mapper
 public interface ContentMapperMS {
@@ -63,4 +78,112 @@ public interface ContentMapperMS {
 
     @Mapping(target = "rubric", ignore = true)
     DetailedQuizSummaryDTO map(IsaacQuizDTO source);
+
+    SidebarDTO map(String source);
+
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "correct", ignore = true)
+    @Mapping(target = "explanation", ignore = true)
+    @InheritInverseConfiguration(name = "mapChoice")
+    Choice mapChoice(ChoiceDTO source);
+
+    @SubclassMapping(source = Formula.class, target = FormulaDTO.class)
+    @SubclassMapping(source = FreeTextRule.class, target = FreeTextRuleDTO.class)
+    @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
+    @SubclassMapping(source = LogicFormula.class, target = LogicFormulaDTO.class)
+    @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
+    @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
+    @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
+    ChoiceDTO mapChoice(Choice source);
+
+    List<String> copyListOfString(List<String> source);
+    default ResultsWrapper<String> copy(ResultsWrapper<String> source) {
+        return new ResultsWrapper<>(copyListOfString(source.getResults()), source.getTotalResults());
+    }
+
+    @Mapping(target = "searchableContent", ignore = true)
+    @InheritInverseConfiguration(name = "mapContent")
+    Content mapContent(ContentDTO source);
+
+    @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
+    @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
+    @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)
+    @SubclassMapping(source = CodeTabs.class, target = CodeTabsDTO.class)
+    @SubclassMapping(source = EmailTemplate.class, target = EmailTemplateDTO.class)
+    @SubclassMapping(source = GlossaryTerm.class, target = GlossaryTermDTO.class)
+    @SubclassMapping(source = IsaacCard.class, target = IsaacCardDTO.class)
+    @SubclassMapping(source = IsaacCardDeck.class, target = IsaacCardDeckDTO.class)
+    @SubclassMapping(source = IsaacEventPage.class, target = IsaacEventPageDTO.class)
+    @SubclassMapping(source = IsaacFeaturedProfile.class, target = IsaacFeaturedProfileDTO.class)
+    @SubclassMapping(source = IsaacPageFragment.class, target = IsaacPageFragmentDTO.class)
+    @SubclassMapping(source = IsaacPod.class, target = IsaacPodDTO.class)
+    @SubclassMapping(source = IsaacQuizSection.class, target = IsaacQuizSectionDTO.class)
+    @SubclassMapping(source = IsaacWildcard.class, target = IsaacWildcardDTO.class)
+    @SubclassMapping(source = Item.class, target = ItemDTO.class)
+    @SubclassMapping(source = Media.class, target = MediaDTO.class)
+    @SubclassMapping(source = Notification.class, target = NotificationDTO.class)
+    @SubclassMapping(source = Question.class, target = QuestionDTO.class)
+    @SubclassMapping(source = SeguePage.class, target = SeguePageDTO.class)
+    ContentDTO mapContent(Content source);
+
+    List<String> mapListOfContentSummaryDtoToListOfString(List<ContentSummaryDTO> source);
+
+    List<ContentSummaryDTO> mapListOfStringToListOfContentSummaryDTO(List<String> source);
+
+    default ContentSummaryDTO mapStringToContentSummaryDTO(String source) {
+        if (source == null) {
+            return null;
+        }
+        ContentSummaryDTO contentSummaryDTO = new ContentSummaryDTO();
+        contentSummaryDTO.setId(source);
+        return contentSummaryDTO;
+    }
+
+    default String mapContentSummaryDTOtoString(ContentSummaryDTO source) {
+        if (source == null) {
+            return null;
+        }
+        return source.getId();
+    }
+
+    // Needed to avoid abstract interface errors
+    default ContentBase map(ContentBaseDTO source) {
+        if (source == null) {
+            return null;
+        } else if (source instanceof ContentDTO) {
+            return mapContent((ContentDTO) source);
+        } else {
+            throw new UnimplementedMappingException(source.getClass(), ContentBase.class);
+        }
+    }
+
+    default ContentBaseDTO map(ContentBase source) {
+        if (source == null) {
+            return null;
+        } else if (source instanceof Content) {
+            return mapContent((Content) source);
+        } else {
+            throw new UnimplementedMappingException(source.getClass(), ContentBaseDTO.class);
+        }
+    }
+
+    default Media map(MediaDTO source) {
+        if (source == null) {
+            return null;
+        } else if (source instanceof ImageDTO || source instanceof VideoDTO) {
+            return map(source);
+        } else {
+            throw new UnimplementedMappingException(source.getClass(), Media.class);
+        }
+    }
+
+    default MediaDTO map(Media source) {
+        if (source == null) {
+            return null;
+        } else if (source instanceof Image || source instanceof Video) {
+            return map(source);
+        } else {
+            throw new UnimplementedMappingException(source.getClass(), MediaDTO.class);
+        }
+    }
 }
