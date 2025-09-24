@@ -7,8 +7,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 
 @Mapper
 public interface ContentMapperMS {
@@ -20,6 +23,10 @@ public interface ContentMapperMS {
             return (T) mapContentDTOtoContentSummaryDTO(source);
         } else if (targetClass.equals(GameboardItem.class)) {
             return (T) mapContentDTOtoGameboardItem(source);
+        } else if (targetClass.equals(QuizSummaryDTO.class)) {
+            return (T) mapContentDTOtoQuizSummaryDTO(source);
+        } else if (targetClass.equals(DetailedQuizSummaryDTO.class)) {
+            return (T) mapContentDTOtoDetailedQuizSummaryDTO(source);
         } else {
             throw new UnimplementedMappingException(ContentDTO.class, targetClass);
         }
@@ -48,4 +55,12 @@ public interface ContentMapperMS {
     @Mapping(target = "contentType", ignore = true)
     @Mapping(target = "boardId", ignore = true)
     GameboardItem mapContentDTOtoGameboardItem(ContentDTO source);
+
+    QuizSummaryDTO mapContentDTOtoQuizSummaryDTO(ContentDTO source);
+
+    @SubclassMapping(source = IsaacQuizDTO.class, target = DetailedQuizSummaryDTO.class)
+    DetailedQuizSummaryDTO mapContentDTOtoDetailedQuizSummaryDTO(ContentDTO source);
+
+    @Mapping(target = "rubric", ignore = true)
+    DetailedQuizSummaryDTO map(IsaacQuizDTO source);
 }

@@ -303,7 +303,7 @@ public class AbstractIsaacIntegrationTest {
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
-        quizManager = new QuizManager(properties, new ContentService(contentManager), contentManager, new ContentSummarizerService(mapperFacade, new URIManager(properties)));
+        quizManager = new QuizManager(properties, new ContentService(contentManager), contentManager, new ContentSummarizerService(mainMapper, new URIManager(properties)));
         quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mainMapper);
         quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
@@ -328,7 +328,7 @@ public class AbstractIsaacIntegrationTest {
         expect(httpSession.getId()).andReturn(someSegueAnonymousUserId).anyTimes();
         replay(httpSession);
 
-        contentSummarizerService = new ContentSummarizerService(mapperFacade, new URIManager(properties));
+        contentSummarizerService = new ContentSummarizerService(mainMapper, new URIManager(properties));
 
         // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
         /*
