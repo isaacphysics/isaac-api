@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseLockTimoutException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
@@ -96,7 +96,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
     }
 
-    private final ContentMapper mapper;
+    private final ContentMapperUtils mapper;
     private final GitContentManager contentManager;
     private final UserAccountManager userManager;
     private final AbstractUserPreferenceManager userPreferenceManager;
@@ -172,7 +172,7 @@ public class QuestionFacade extends AbstractSegueFacade {
 
      */
     @Inject
-    public QuestionFacade(final AbstractConfigLoader properties, final ContentMapper mapper,
+    public QuestionFacade(final AbstractConfigLoader properties, final ContentMapperUtils mapper,
                           final GitContentManager contentManager, final UserAccountManager userManager,
                           final AbstractUserPreferenceManager userPreferenceManager, final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,

@@ -14,7 +14,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.WriteablePropertiesLoader;
@@ -33,7 +33,7 @@ class ETLConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(ETLConfigurationModule.class);
     private static Injector injector = null;
     private static AbstractConfigLoader globalProperties = null;
-    private static ContentMapper mapper = null;
+    private static ContentMapperUtils mapper = null;
     private static RestHighLevelClient elasticSearchClient = null;
     private static SchoolIndexer schoolIndexer = null;
     private static ETLManager etlManager = null;
@@ -114,10 +114,10 @@ class ETLConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private static ContentMapper getContentMapper() {
+    private static ContentMapperUtils getContentMapper() {
         if (null == mapper) {
             Reflections r = new Reflections("uk.ac.cam.cl.dtg");
-            mapper = new ContentMapper(r);
+            mapper = new ContentMapperUtils(r);
         }
         return mapper;
     }
@@ -178,7 +178,7 @@ class ETLConfigurationModule extends AbstractModule {
     @Singleton
     private SchoolIndexer getSchoolListIndexer(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String schoolListPath,
                                                  final ElasticSearchIndexer es,
-                                                 final ContentMapper mapper) {
+                                                 final ContentMapperUtils mapper) {
         if (null == schoolIndexer) {
             schoolIndexer = new SchoolIndexer(es, mapper, schoolListPath);
             log.info("Creating singleton of SchoolListReader");

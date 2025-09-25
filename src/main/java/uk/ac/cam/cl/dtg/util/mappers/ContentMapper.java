@@ -31,8 +31,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.*;
 import java.util.List;
 
 @Mapper
-public interface ContentMapperMS {
-    ContentMapperMS INSTANCE = Mappers.getMapper(ContentMapperMS.class);
+public interface ContentMapper {
+    ContentMapper INSTANCE = Mappers.getMapper(ContentMapper.class);
 
     @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
     ContentDTO copy(ContentDTO source);

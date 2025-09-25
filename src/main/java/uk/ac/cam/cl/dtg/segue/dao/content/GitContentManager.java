@@ -52,8 +52,7 @@ import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
-import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -85,8 +84,8 @@ public class GitContentManager {
     private static final String CONTENT_TYPE = "content";
 
     private final GitDb database;
-    private final ContentMapperMS mapper;
-    private final ContentMapper mapperUtils;
+    private final ContentMapper mapper;
+    private final ContentMapperUtils mapperUtils;
     private final ISearchProvider searchProvider;
     private final AbstractConfigLoader globalProperties;
     private final boolean showOnlyPublishedContent;
@@ -112,8 +111,8 @@ public class GitContentManager {
      *            - global properties.
      */
     @Inject
-    public GitContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapperMS mapper,
-                             final ContentMapper mapperUtils, final AbstractConfigLoader globalProperties) {
+    public GitContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper mapper,
+                             final ContentMapperUtils mapperUtils, final AbstractConfigLoader globalProperties) {
         this.database = database;
         this.mapper = mapper;
         this.mapperUtils = mapperUtils;
@@ -153,7 +152,7 @@ public class GitContentManager {
      *            - The utility class for mapping content objects.
      */
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-                             final ContentMapperMS contentMapper, ContentMapper mapperUtils) {
+                             final ContentMapper contentMapper, ContentMapperUtils mapperUtils) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
@@ -201,7 +200,7 @@ public class GitContentManager {
     /**
      * Get a DTO object from a DO object.
      *
-     * This method merely wraps {@link ContentMapper#getDTOByDO(Content)}, and will trust the content of the DO.
+     * This method merely wraps {@link ContentMapperUtils#getDTOByDO(Content)}, and will trust the content of the DO.
      * Only use for DO objects obtained from {@link #getContentDOById(String)} when the DTO is also required,
      * to avoid the potential cache-miss and ElasticSearch round-trip of {@link #getContentById(String)}.
      *

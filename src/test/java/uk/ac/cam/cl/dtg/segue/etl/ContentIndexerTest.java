@@ -23,7 +23,6 @@ import java.util.*;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
-import org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -33,12 +32,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
 /**
  * Test class for the GitContentManager class.
@@ -48,8 +47,8 @@ import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
 public class ContentIndexerTest {
     private GitDb database;
     private ElasticSearchIndexer searchProvider;
-    private ContentMapperMS contentMapper;
-    private ContentMapper contentMapperUtils;
+    private ContentMapper contentMapper;
+    private ContentMapperUtils contentMapperUtils;
 
     private ContentIndexer defaultContentIndexer;
 
@@ -65,8 +64,8 @@ public class ContentIndexerTest {
     public final void setUp() throws Exception {
         this.database = createMock(GitDb.class);
         this.searchProvider = createMock(ElasticSearchIndexer.class);
-        this.contentMapper = createMock(ContentMapperMS.class);
-        this.contentMapperUtils = createMock(ContentMapper.class);
+        this.contentMapper = createMock(ContentMapper.class);
+        this.contentMapperUtils = createMock(ContentMapperUtils.class);
         this.defaultContentIndexer = new ContentIndexer(database, searchProvider, contentMapperUtils);
     }
 

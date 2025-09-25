@@ -19,13 +19,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
 import java.util.*;
 
@@ -41,8 +41,8 @@ import static org.junit.Assert.fail;
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
-	private ContentMapperMS contentMapper;
-	private ContentMapper contentMapperUtils;
+	private ContentMapper contentMapper;
+	private ContentMapperUtils contentMapperUtils;
 
 	private GitContentManager defaultGCM;
 
@@ -58,8 +58,8 @@ public class GitContentManagerTest {
 	public final void setUp() throws Exception {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);
-		this.contentMapper = createMock(ContentMapperMS.class);
-		this.contentMapperUtils = createMock(ContentMapper.class);
+		this.contentMapper = createMock(ContentMapper.class);
+		this.contentMapperUtils = createMock(ContentMapperUtils.class);
 
 		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper, contentMapperUtils);
 	}

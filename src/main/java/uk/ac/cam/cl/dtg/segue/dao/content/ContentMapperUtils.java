@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
-import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,8 +54,8 @@ import java.util.Set;
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass.
  */
-public class ContentMapper {
-    private static final Logger log = LoggerFactory.getLogger(ContentMapper.class);
+public class ContentMapperUtils {
+    private static final Logger log = LoggerFactory.getLogger(ContentMapperUtils.class);
 
     // Used for serialization into the correct POJO as well as deserialization.
     // Currently depends on the string key being the same text value as the type
@@ -72,7 +72,7 @@ public class ContentMapper {
      * 
      */
     @Inject
-    public ContentMapper() {
+    public ContentMapperUtils() {
         jsonTypes = Maps.newConcurrentMap();
         mapOfDOsToDTOs = Maps.newConcurrentMap();
     }
@@ -84,7 +84,7 @@ public class ContentMapper {
      *            - string representing the parent package to search for content classes. e.g. uk.ac.cam.cl.dtg.segue
      */
     @SuppressWarnings("unchecked")
-    public ContentMapper(final Reflections configuredReflectionClass) {
+    public ContentMapperUtils(final Reflections configuredReflectionClass) {
         this();
         Objects.requireNonNull(configuredReflectionClass);
 
@@ -256,7 +256,7 @@ public class ContentMapper {
         if (null == content) {
             return null;
         }
-        ContentDTO result = ContentMapperMS.INSTANCE.mapContent(content);
+        ContentDTO result = ContentMapper.INSTANCE.mapContent(content);
         populateRelatedContentWithIDs(content, result);
         populateSidebarWithIDs(content, result);
         return result;
@@ -294,7 +294,7 @@ public class ContentMapper {
      * @return a jackson object mapper.
      */
     public ObjectMapper getSharedContentObjectMapper() {
-        if (ContentMapper.preconfiguredObjectMapper != null) {
+        if (ContentMapperUtils.preconfiguredObjectMapper != null) {
             return preconfiguredObjectMapper;
         }
 

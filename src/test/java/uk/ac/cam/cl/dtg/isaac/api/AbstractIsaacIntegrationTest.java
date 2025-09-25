@@ -70,7 +70,7 @@ import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
@@ -242,7 +242,7 @@ public class AbstractIsaacIntegrationTest {
         pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
-        ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
+        ContentMapperUtils contentMapper = new ContentMapperUtils(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
         questionManager = new QuestionManager(contentMapper, mainMapper, pgQuestionAttempts);
 

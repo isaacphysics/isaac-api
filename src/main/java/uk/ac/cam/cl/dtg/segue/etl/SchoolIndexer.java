@@ -9,7 +9,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -33,10 +33,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_TYPE;
 class SchoolIndexer {
     private static final Logger log = LoggerFactory.getLogger(SchoolIndexer.class);
     private ElasticSearchIndexer es;
-    private ContentMapper mapper;
+    private ContentMapperUtils mapper;
     private String schoolsListPath;
 
-    SchoolIndexer(ElasticSearchIndexer es, ContentMapper mapper, String schoolsListPath) {
+    SchoolIndexer(ElasticSearchIndexer es, ContentMapperUtils mapper, String schoolsListPath) {
         this.es = es;
         this.mapper = mapper;
         this.schoolsListPath = schoolsListPath;

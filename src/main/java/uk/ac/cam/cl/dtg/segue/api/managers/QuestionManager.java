@@ -60,7 +60,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.ws.rs.BadRequestException;
@@ -87,7 +87,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY
 public class QuestionManager {
     private static final Logger log = LoggerFactory.getLogger(QuestionManager.class);
 
-    private final ContentMapper mapperUtils;
+    private final ContentMapperUtils mapperUtils;
     private final MainMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
     /**
@@ -98,7 +98,7 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentMapper mapperUtils, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+    public QuestionManager(final ContentMapperUtils mapperUtils, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
         this.mapperUtils = mapperUtils;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;

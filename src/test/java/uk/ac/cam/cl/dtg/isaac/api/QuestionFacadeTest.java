@@ -33,7 +33,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
@@ -68,12 +68,12 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
 
         GitContentManager contentManager = createMock(GitContentManager.class);
         ILogManager logManager = createNiceMock(ILogManager.class); // We don't care about logging.
-        ContentMapper contentMapper = createMock(ContentMapper.class);
+        ContentMapperUtils contentMapperUtils = createMock(ContentMapperUtils.class);
         QuestionManager questionManager = createMock(QuestionManager.class);
         IUserStreaksManager userStreaksManager = createMock(IUserStreaksManager.class);
         UserAssociationManager userAssociationManager = createMock(UserAssociationManager.class);
 
-        questionFacade = new QuestionFacade(properties, contentMapper, contentManager, userManager, userPreferenceManager,
+        questionFacade = new QuestionFacade(properties, contentMapperUtils, contentManager, userManager, userPreferenceManager,
                 questionManager, logManager, misuseMonitor, userStreaksManager, userAssociationManager);
 
         String contentIndex = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";

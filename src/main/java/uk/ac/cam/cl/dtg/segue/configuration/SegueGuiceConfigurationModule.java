@@ -109,7 +109,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
@@ -182,7 +182,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
-    private static ContentMapper mapper = null;
+    private static ContentMapperUtils mapper = null;
     private static GitContentManager contentManager = null;
     private static RestHighLevelClient elasticSearchClient = null;
     private static UserAccountManager userManager = null;
@@ -544,7 +544,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - database reference
      * @param searchProvider
      *            - search provider to use
-     * @param contentMapper
+     * @param contentMapperUtils
      *            - content mapper to use.
      * @return a fully configured content Manager.
      */
@@ -552,9 +552,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider, final MainMapper mainMapper,
-                                                       final ContentMapper contentMapper, final AbstractConfigLoader globalProperties) {
+                                                       final ContentMapperUtils contentMapperUtils, final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, mainMapper, contentMapper, globalProperties);
+            contentManager = new GitContentManager(database, searchProvider, mainMapper, contentMapperUtils, globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
@@ -607,9 +607,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ContentMapper getContentMapper() {
+    private static ContentMapperUtils getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg"));
+            mapper = new ContentMapperUtils(getReflectionsClass("uk.ac.cam.cl.dtg"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
@@ -830,7 +830,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapper objectMapper) {
+    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapperUtils objectMapper) {
         // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
         if (null == questionPersistenceManager) {
             questionPersistenceManager = new PgQuestionAttempts(ds, objectMapper);
@@ -1245,7 +1245,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                                                              final MainMapper mapper, final ContentMapper objectMapper) {
+                                                                              final MainMapper mapper, final ContentMapperUtils objectMapper) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");

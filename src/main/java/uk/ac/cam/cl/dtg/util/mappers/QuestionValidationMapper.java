@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ItemValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuantityValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 
-@Mapper(uses = ContentMapperMS.class)
+@Mapper(uses = ContentMapper.class)
 public interface QuestionValidationMapper {
     @SubclassMapping(source = FormulaValidationResponseDTO.class, target = FormulaValidationResponse.class)
     @SubclassMapping(source = ItemValidationResponseDTO.class, target = ItemValidationResponse.class)

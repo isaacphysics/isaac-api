@@ -47,7 +47,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
@@ -84,13 +84,13 @@ public class ContentIndexer {
 
     private ElasticSearchIndexer es;
     private GitDb database;
-    private ContentMapper mapper;
+    private ContentMapperUtils mapper;
 
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
     @Inject
-    public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapper mapper) {
+    public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapperUtils mapper) {
         this.database = database;
         this.es = es;
         this.mapper = mapper;
