@@ -4,12 +4,14 @@ import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.SubclassMapping;
+import org.mapstruct.factory.Mappers;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacPageFragment;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.content.*;
@@ -30,6 +32,8 @@ import java.util.List;
 
 @Mapper
 public interface ContentMapperMS {
+    ContentMapperMS INSTANCE = Mappers.getMapper(ContentMapperMS.class);
+
     @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
     ContentDTO copy(ContentDTO source);
 
@@ -76,7 +80,6 @@ public interface ContentMapperMS {
     @SubclassMapping(source = IsaacQuizDTO.class, target = DetailedQuizSummaryDTO.class)
     DetailedQuizSummaryDTO mapContentDTOtoDetailedQuizSummaryDTO(ContentDTO source);
 
-    @Mapping(target = "rubric", ignore = true)
     DetailedQuizSummaryDTO map(IsaacQuizDTO source);
 
     SidebarDTO map(String source);
@@ -120,10 +123,9 @@ public interface ContentMapperMS {
     @SubclassMapping(source = IsaacQuizSection.class, target = IsaacQuizSectionDTO.class)
     @SubclassMapping(source = IsaacWildcard.class, target = IsaacWildcardDTO.class)
     @SubclassMapping(source = Item.class, target = ItemDTO.class)
-    @SubclassMapping(source = Media.class, target = MediaDTO.class)
     @SubclassMapping(source = Notification.class, target = NotificationDTO.class)
     @SubclassMapping(source = Question.class, target = QuestionDTO.class)
-    @SubclassMapping(source = SeguePage.class, target = SeguePageDTO.class)
+    @SubclassMapping(source = IsaacQuiz.class, target = IsaacQuizDTO.class)
     ContentDTO mapContent(Content source);
 
     List<String> mapListOfContentSummaryDtoToListOfString(List<ContentSummaryDTO> source);
@@ -164,26 +166,6 @@ public interface ContentMapperMS {
             return mapContent((Content) source);
         } else {
             throw new UnimplementedMappingException(source.getClass(), ContentBaseDTO.class);
-        }
-    }
-
-    default Media map(MediaDTO source) {
-        if (source == null) {
-            return null;
-        } else if (source instanceof ImageDTO || source instanceof VideoDTO) {
-            return map(source);
-        } else {
-            throw new UnimplementedMappingException(source.getClass(), Media.class);
-        }
-    }
-
-    default MediaDTO map(Media source) {
-        if (source == null) {
-            return null;
-        } else if (source instanceof Image || source instanceof Video) {
-            return map(source);
-        } else {
-            throw new UnimplementedMappingException(source.getClass(), MediaDTO.class);
         }
     }
 }

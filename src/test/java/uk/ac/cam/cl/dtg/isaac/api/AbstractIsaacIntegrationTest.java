@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.eclipse.jgit.api.Git;
 import org.junit.jupiter.api.AfterAll;
@@ -122,7 +121,6 @@ public class AbstractIsaacIntegrationTest {
     protected static PostgresSqlDb postgresSqlDb;
     protected static ElasticSearchProvider elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
-    protected static MapperFacade mapperFacade;
     protected static MainMapper mainMapper;
     protected static ContentSummarizerService contentSummarizerService;
     protected static IMisuseMonitor misuseMonitor;
@@ -248,7 +246,6 @@ public class AbstractIsaacIntegrationTest {
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
         questionManager = new QuestionManager(contentMapper, mainMapper, pgQuestionAttempts);
 
-        mapperFacade = contentMapper.getAutoMapper();
         mainMapper = MainMapper.INSTANCE;
 
         providersToRegister = new HashMap<>();

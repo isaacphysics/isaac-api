@@ -21,10 +21,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
-import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.converter.ConverterFactory;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +41,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
-import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
-import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapperMS;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,9 +62,6 @@ public class ContentMapper {
     // field.
     private final Map<String, Class<? extends Content>> jsonTypes;
     private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
-
-    // this autoMapper is initialised lazily in the getAutoMapper method
-    private MapperFacade autoMapper = null;
     
     private static ObjectMapper preconfiguredObjectMapper;
 
@@ -264,8 +256,7 @@ public class ContentMapper {
         if (null == content) {
             return null;
         }
-
-        ContentDTO result = getAutoMapper().map(content, this.mapOfDOsToDTOs.get(content.getClass()));
+        ContentDTO result = ContentMapperMS.INSTANCE.mapContent(content);
         populateRelatedContentWithIDs(content, result);
         populateSidebarWithIDs(content, result);
         return result;
@@ -296,7 +287,7 @@ public class ContentMapper {
 
     /**
      * Provides a pre-configured module that can be added to an object mapper so that contentBase objects can be
-     * deseerialized using the custom deserializer.
+     * deserialized using the custom deserializer.
      * 
      * This object Mapper is shared and should be treated as immutable.
      * 
@@ -337,34 +328,6 @@ public class ContentMapper {
         }
         return contentList;
     }
-
-    /**
-     * Get an instance of the automapper which has been configured to cope with recursive content objects. This
-     * automapper is more efficient than the jackson one as there is no intermediate representation.
-     * 
-     * @return autoMapper
-     */
-    public MapperFacade getAutoMapper() {
-        if (null == this.autoMapper) {
-            log.info("Creating instance of content auto mapper.");
-            MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
-            ContentBaseOrikaConverter contentBaseOrikaConverter = new ContentBaseOrikaConverter(this);
-
-            ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-            converterFactory.registerConverter(contentBaseOrikaConverter);
-            converterFactory.registerConverter(new QuestionBaseOrikaConverter(contentBaseOrikaConverter));
-            converterFactory.registerConverter(new ChoiceOrikaConverter());
-            converterFactory.registerConverter(new ItemOrikaConverter());
-            converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
-            converterFactory.registerConverter(new AnonymousUserQuestionAttemptsOrikaConverter());
-            converterFactory.registerConverter(new AudienceOrikaConverter());
-            converterFactory.registerConverter(new SidebarEntryOrikaConverter());
-
-            this.autoMapper = mapperFactory.getMapperFacade();
-        }
-
-        return this.autoMapper;
-    }
     
     /**
      * Creates a brand new object mapper.
@@ -376,7 +339,7 @@ public class ContentMapper {
         ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
         contentDeserializer.registerTypeMap(jsonTypes);
 
-        /* When deserialising from Git, the top-level content mapper needs to have an ItemDeseriaizer,
+        /* When deserialising from Git, the top-level content mapper needs to have an ItemDeserializer,
            and when deserialising a Choice object directly then the ChoiceDeserializer needs to have an
            ItemDeserializer inside it too. The perils of a recursive content model! */
         ItemDeserializer itemDeserializer = new ItemDeserializer(contentDeserializer);

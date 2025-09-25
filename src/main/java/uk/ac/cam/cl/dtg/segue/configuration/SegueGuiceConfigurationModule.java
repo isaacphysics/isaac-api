@@ -990,20 +990,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return countryLookupManager;
     }
 
-
-
-    /**
-     * Gets the instance of the dozer mapper object.
-     *
-     * @return a preconfigured instance of an Auto Mapper. This is specialised for mapping SegueObjects.
-     */
-    @Provides
-    @Singleton
-    @Inject
-    public static MapperFacade getDOtoDTOMapper() {
-        return SegueGuiceConfigurationModule.getContentMapper().getAutoMapper();
-    }
-
     /**
      * @return segue version currently running.
      */
