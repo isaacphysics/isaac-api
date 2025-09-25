@@ -22,7 +22,6 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.prometheus.client.Histogram;
-import ma.glasnost.orika.MapperFacade;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ma.glasnost.orika.MapperFacade;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
@@ -27,7 +26,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -82,13 +80,9 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
         quizQuestionAttemptPersistenceManager = createMock(IQuizQuestionAttemptPersistenceManager.class);
         questionManager = createMock(QuestionManager.class);
         MainMapper contentMapper = createMock(MainMapper.class);
-        MapperFacade mapperFacade = createMock(MapperFacade.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
 
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
-
-        expect(mapperFacade.map(correctAnswer, ChoiceDTO.class)).andStubReturn(correctAnswerDTO);
-        expect(mapperFacade.map(wrongAnswer, ChoiceDTO.class)).andStubReturn(wrongAnswerDTO);
 
         expect(contentMapper.mapChoice(correctAnswer)).andStubReturn(correctAnswerDTO);
         expect(contentMapper.mapChoice(wrongAnswer)).andStubReturn(wrongAnswerDTO);
@@ -100,7 +94,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
             expect(m.convertQuestionValidationResponseToDTO(correctResponse)).andStubReturn(correctResponseDTO);
         });
 
-        replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, mapperFacade, quizAttemptManager);
+        replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, quizAttemptManager);
     }
 
     @Before
