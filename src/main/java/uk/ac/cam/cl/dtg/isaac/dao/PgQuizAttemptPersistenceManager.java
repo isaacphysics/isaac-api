@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizAttemptDO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.util.mappers.GameboardMapper;
+import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 
 import jakarta.annotation.Nullable;
 import java.sql.Array;
@@ -46,7 +46,7 @@ import java.util.Set;
 public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(PgQuizAttemptPersistenceManager.class);
 
-    private final GameboardMapper mapper;
+    private final AssignmentMapper mapper;
     private final PostgresSqlDb database;
 
     /**
@@ -58,7 +58,7 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
      *            - An instance of an automapper that can be used for mapping to and from AssignmentDOs and DTOs.
      */
     @Inject
-    public PgQuizAttemptPersistenceManager(final PostgresSqlDb database, final GameboardMapper mapper) {
+    public PgQuizAttemptPersistenceManager(final PostgresSqlDb database, final AssignmentMapper mapper) {
         this.database = database;
         this.mapper = mapper;
     }

@@ -13,7 +13,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 
 @Mapper
-public interface GameboardMapper {
+public interface AssignmentMapper {
     GameboardDTO map(GameboardDO source);
     GameboardDO map(GameboardDTO source);
 
