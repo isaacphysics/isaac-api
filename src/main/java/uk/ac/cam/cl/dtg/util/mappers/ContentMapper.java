@@ -3,39 +3,25 @@ package uk.ac.cam.cl.dtg.util.mappers;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.SubclassExhaustiveStrategy;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacPageFragment;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.*;
 import uk.ac.cam.cl.dtg.isaac.dos.content.*;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDeckDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacPodDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.*;
 import uk.ac.cam.cl.dtg.isaac.dto.content.*;
 
 import java.util.List;
 
-@Mapper
+@Mapper(subclassExhaustiveStrategy = SubclassExhaustiveStrategy.RUNTIME_EXCEPTION)
 public interface ContentMapper {
     ContentMapper INSTANCE = Mappers.getMapper(ContentMapper.class);
 
-    @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
-    ContentDTO copy(ContentDTO source);
+    @SubclassMapping(source = ContentDTO.class, target = Content.class)
+    ContentBase map(ContentBaseDTO source);
+
+    @SubclassMapping(source = Content.class, target = ContentDTO.class)
+    ContentBaseDTO map(ContentBase source);
 
     default <T> T map(ContentDTO source, Class<T> targetClass) {
         if (targetClass.equals(ContentSummaryDTO.class)) {
@@ -46,6 +32,8 @@ public interface ContentMapper {
             return (T) mapContentDTOtoQuizSummaryDTO(source);
         } else if (targetClass.equals(DetailedQuizSummaryDTO.class)) {
             return (T) mapContentDTOtoDetailedQuizSummaryDTO(source);
+        } else if (targetClass.equals(IsaacWildcard.class)) {
+            return (T) map(mapContent(source), IsaacWildcard.class);
         } else {
             throw new UnimplementedMappingException(ContentDTO.class, targetClass);
         }
@@ -142,6 +130,9 @@ public interface ContentMapper {
 
     List<ContentSummaryDTO> mapListOfStringToListOfContentSummaryDTO(List<String> source);
 
+    @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
+    ContentDTO copy(ContentDTO source);
+
     default ContentSummaryDTO mapStringToContentSummaryDTO(String source) {
         if (source == null) {
             return null;
@@ -156,26 +147,5 @@ public interface ContentMapper {
             return null;
         }
         return source.getId();
-    }
-
-    // Needed to avoid abstract interface errors
-    default ContentBase map(ContentBaseDTO source) {
-        if (source == null) {
-            return null;
-        } else if (source instanceof ContentDTO) {
-            return mapContent((ContentDTO) source);
-        } else {
-            throw new UnimplementedMappingException(source.getClass(), ContentBase.class);
-        }
-    }
-
-    default ContentBaseDTO map(ContentBase source) {
-        if (source == null) {
-            return null;
-        } else if (source instanceof Content) {
-            return mapContent((Content) source);
-        } else {
-            throw new UnimplementedMappingException(source.getClass(), ContentBaseDTO.class);
-        }
     }
 }
