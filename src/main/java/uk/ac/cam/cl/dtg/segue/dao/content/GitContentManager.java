@@ -106,15 +106,17 @@ public class GitContentManager {
      * @param searchProvider
      *            - search provider that the content manager manages and controls.
      * @param contentMapper
-     *            - The utility class for mapping content objects.
+     *            - defines the mappings for content objects.
+     * @param mapperUtils
+     *           - the utility class for mapping content objects.
      * @param globalProperties
      *            - global properties.
      */
     @Inject
-    public GitContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper mapper,
+    public GitContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper contentMapper,
                              final ContentMapperUtils mapperUtils, final AbstractConfigLoader globalProperties) {
         this.database = database;
-        this.mapper = mapper;
+        this.mapper = contentMapper;
         this.mapperUtils = mapperUtils;
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
@@ -149,7 +151,9 @@ public class GitContentManager {
      * @param searchProvider
      *            - search provider that the content manager manages and controls.
      * @param contentMapper
-     *            - The utility class for mapping content objects.
+     *            - defines the mappings for content objects.
+     * @param mapperUtils
+     *           - the utility class for mapping content objects.
      */
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
                              final ContentMapper contentMapper, ContentMapperUtils mapperUtils) {

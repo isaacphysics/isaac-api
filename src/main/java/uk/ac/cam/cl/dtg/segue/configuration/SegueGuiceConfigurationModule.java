@@ -147,6 +147,7 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
@@ -544,17 +545,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - database reference
      * @param searchProvider
      *            - search provider to use
-     * @param contentMapperUtils
-     *            - content mapper to use.
+     * @param contentMapper
+     *            - defines the mappings for content objects
+     * @param mapperUtils
+     *           - the utility class for mapping content objects
      * @return a fully configured content Manager.
      */
     @Inject
     @Provides
     @Singleton
-    private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider, final MainMapper mainMapper,
-                                                       final ContentMapperUtils contentMapperUtils, final AbstractConfigLoader globalProperties) {
+    private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper contentMapper,
+                                                       final ContentMapperUtils mapperUtils, final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, mainMapper, contentMapperUtils, globalProperties);
+            contentManager = new GitContentManager(database, searchProvider, contentMapper, mapperUtils, globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
