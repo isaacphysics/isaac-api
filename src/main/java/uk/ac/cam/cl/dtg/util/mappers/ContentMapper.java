@@ -51,6 +51,16 @@ public interface ContentMapper {
         }
     }
 
+    default <T> T map(Content source, Class<T> targetClass) {
+        if (targetClass.equals(IsaacWildcard.class)) {
+            return (T) mapContentToIsaacWildcard(source);
+        } else if (targetClass.equals(ContentDTO.class)) {
+            return (T) mapContent(source);
+        } else {
+            throw new UnimplementedMappingException(Content.class, targetClass);
+        }
+    }
+
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
@@ -58,7 +68,7 @@ public interface ContentMapper {
     @Mapping(target = "difficulty", ignore = true)
     ContentSummaryDTO mapContentDTOtoContentSummaryDTO(ContentDTO source);
 
-    IsaacWildcard map(Content source);
+    IsaacWildcard mapContentToIsaacWildcard(Content source);
 
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "state", ignore = true)

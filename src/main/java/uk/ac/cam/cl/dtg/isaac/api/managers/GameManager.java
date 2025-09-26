@@ -1212,7 +1212,7 @@ public class GameManager {
 
         Content wildcardResults = this.contentManager.getContentDOById(id);
 
-        return mapper.map(wildcardResults);
+        return mapper.map(wildcardResults, IsaacWildcard.class);
     }
 
     /**
