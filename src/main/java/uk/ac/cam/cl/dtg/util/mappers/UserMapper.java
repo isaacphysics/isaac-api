@@ -30,8 +30,12 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithGroupMembershipDTO;
 public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
+    @Mapping(target = "sessionToken", ignore = true)
+    @Mapping(target = "emailVerificationToken", ignore = true)
+    @Mapping(target = "emailToVerify", ignore = true)
     RegisteredUser map(RegisteredUserDTO source);
 
+    @Mapping(target = "firstLogin", ignore = true)
     RegisteredUserDTO map(RegisteredUser source);
     UserAuthenticationSettingsDTO map(UserAuthenticationSettings source);
     AnonymousUserDTO map(AnonymousUser source);
@@ -68,20 +72,31 @@ public interface UserMapper {
         }
     }
 
+    @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryDTO mapUserToSummary(RegisteredUserDTO source);
 
+    @Mapping(target = "token", ignore = true)
+    @Mapping(target = "ownerSummary", ignore = true)
+    @Mapping(target = "mongoId", ignore = true)
+    @Mapping(target = "additionalManagersUserIds", ignore = true)
+    @Mapping(target = "additionalManagers", ignore = true)
     UserGroupDTO map(UserGroup source);
 
+    @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryForAdminUsersDTO mapUserToAdminSummaryDTO(RegisteredUserDTO source);
 
+    @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryWithEmailAddressDTO mapUserToSummaryWithEmailDTO(RegisteredUserDTO source);
 
     GroupMembership map(GroupMembershipDTO source);
 
     GroupMembershipDTO map(GroupMembership source);
 
+    @Mapping(target = "status", ignore = true)
     UserGroup map(UserGroupDTO source);
 
+    @Mapping(target = "groupMembershipInformation", ignore = true)
+    @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryWithGroupMembershipDTO mapUserToSummaryWithGroupMembershipDTO(RegisteredUserDTO source);
 
     RegisteredUser copy(RegisteredUser source);
@@ -89,12 +104,28 @@ public interface UserMapper {
 
     GroupMembershipDTO copy(GroupMembershipDTO source);
 
+    @Mapping(target = "sessionToken", ignore = true)
+    @Mapping(target = "emailVerificationToken", ignore = true)
+    @Mapping(target = "emailToVerify", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
             nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     void merge(RegisteredUserDTO source, @MappingTarget RegisteredUser target);
 
+    @Mapping(target = "sessionToken", ignore = true)
+    @Mapping(target = "schoolOther", ignore = true)
+    @Mapping(target = "schoolId", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "registrationDate", ignore = true)
+    @Mapping(target = "registeredContextsLastConfirmed", ignore = true)
+    @Mapping(target = "registeredContexts", ignore = true)
+    @Mapping(target = "lastUpdated", ignore = true)
+    @Mapping(target = "lastSeen", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "emailVerificationToken", ignore = true)
+    @Mapping(target = "emailToVerify", ignore = true)
     RegisteredUser mapUserFromAuthProviderToRegisteredUser(UserFromAuthProvider source);
 
+    @Mapping(target = "groupMembershipInformation", ignore = true)
     @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     @SubclassMapping(source = UserSummaryWithGroupMembershipDTO.class, target = UserSummaryWithGroupMembershipDTO.class)

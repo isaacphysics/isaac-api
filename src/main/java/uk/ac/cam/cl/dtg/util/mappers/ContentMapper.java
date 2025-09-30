@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.util.mappers;
 
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.SubclassExhaustiveStrategy;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
@@ -48,19 +49,82 @@ public interface ContentMapper {
         }
     }
 
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "supersededBy", ignore = true)
+    @Mapping(target = "summary", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Mapping(target = "deprecated", ignore = true)
     ContentSummaryDTO mapContentDTOtoContentSummaryDTO(ContentDTO source);
 
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "description", ignore = true)
     IsaacWildcard mapContentToIsaacWildcard(Content source);
 
+    @Mapping(target = "supersededBy", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartsTotal", ignore = true)
+    @Mapping(target = "questionPartsNotAttempted", ignore = true)
+    @Mapping(target = "questionPartsIncorrect", ignore = true)
+    @Mapping(target = "questionPartsCorrect", ignore = true)
+    @Mapping(target = "questionPartStates", ignore = true)
+    @Mapping(target = "passMark", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "creationContext", ignore = true)
+    @Mapping(target = "contentType", ignore = true)
+    @Mapping(target = "boardId", ignore = true)
     GameboardItem mapContentDTOtoGameboardItem(ContentDTO source);
 
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "supersededBy", ignore = true)
+    @Mapping(target = "summary", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "hiddenFromRoles", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Mapping(target = "deprecated", ignore = true)
     QuizSummaryDTO mapContentDTOtoQuizSummaryDTO(ContentDTO source);
 
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "supersededBy", ignore = true)
+    @Mapping(target = "summary", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "rubric", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "hiddenFromRoles", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Mapping(target = "deprecated", ignore = true)
     @SubclassMapping(source = IsaacQuizDTO.class, target = DetailedQuizSummaryDTO.class)
     DetailedQuizSummaryDTO mapContentDTOtoDetailedQuizSummaryDTO(ContentDTO source);
 
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
     DetailedQuizSummaryDTO map(IsaacQuizDTO source);
 
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "value", ignore = true)
+    @Mapping(target = "type", ignore = true)
+    @Mapping(target = "title", ignore = true)
+    @Mapping(target = "tags", ignore = true)
+    @Mapping(target = "subtitle", ignore = true)
+    @Mapping(target = "sidebarEntries", ignore = true)
+    @Mapping(target = "relatedContent", ignore = true)
+    @Mapping(target = "published", ignore = true)
+    @Mapping(target = "level", ignore = true)
+    @Mapping(target = "layout", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "expandable", ignore = true)
+    @Mapping(target = "encoding", ignore = true)
+    @Mapping(target = "display", ignore = true)
+    @Mapping(target = "children", ignore = true)
+    @Mapping(target = "canonicalSourceFile", ignore = true)
+    @Mapping(target = "author", ignore = true)
+    @Mapping(target = "audience", ignore = true)
+    @Mapping(target = "attribution", ignore = true)
     SidebarDTO map(String source);
 
     @InheritInverseConfiguration(name = "mapChoice")
