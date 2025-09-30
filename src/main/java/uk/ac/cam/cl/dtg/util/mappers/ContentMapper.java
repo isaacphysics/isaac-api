@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.util.mappers;
 
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.SubclassExhaustiveStrategy;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
@@ -49,28 +48,10 @@ public interface ContentMapper {
         }
     }
 
-    @Mapping(target = "url", ignore = true)
-    @Mapping(target = "supersededBy", ignore = true)
-    @Mapping(target = "summary", ignore = true)
-    @Mapping(target = "questionPartIds", ignore = true)
-    @Mapping(target = "difficulty", ignore = true)
     ContentSummaryDTO mapContentDTOtoContentSummaryDTO(ContentDTO source);
 
     IsaacWildcard mapContentToIsaacWildcard(Content source);
 
-    @Mapping(target = "supersededBy", ignore = true)
-    @Mapping(target = "state", ignore = true)
-    @Mapping(target = "questionPartsTotal", ignore = true)
-    @Mapping(target = "questionPartsNotAttempted", ignore = true)
-    @Mapping(target = "questionPartsIncorrect", ignore = true)
-    @Mapping(target = "questionPartsCorrect", ignore = true)
-    @Mapping(target = "questionPartStates", ignore = true)
-    @Mapping(target = "passMark", ignore = true)
-    @Mapping(target = "difficulty", ignore = true)
-    @Mapping(target = "description", ignore = true)
-    @Mapping(target = "creationContext", ignore = true)
-    @Mapping(target = "contentType", ignore = true)
-    @Mapping(target = "boardId", ignore = true)
     GameboardItem mapContentDTOtoGameboardItem(ContentDTO source);
 
     QuizSummaryDTO mapContentDTOtoQuizSummaryDTO(ContentDTO source);
@@ -82,9 +63,6 @@ public interface ContentMapper {
 
     SidebarDTO map(String source);
 
-    @Mapping(target = "searchableContent", ignore = true)
-    @Mapping(target = "correct", ignore = true)
-    @Mapping(target = "explanation", ignore = true)
     @InheritInverseConfiguration(name = "mapChoice")
     Choice mapChoice(ChoiceDTO source);
 
@@ -105,7 +83,6 @@ public interface ContentMapper {
         return new ResultsWrapper<>(copyListOfString(source.getResults()), source.getTotalResults());
     }
 
-    @Mapping(target = "searchableContent", ignore = true)
     @InheritInverseConfiguration(name = "mapContent")
     Content mapContent(ContentDTO source);
 
