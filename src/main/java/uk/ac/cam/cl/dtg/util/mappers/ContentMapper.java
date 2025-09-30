@@ -88,9 +88,12 @@ public interface ContentMapper {
     @InheritInverseConfiguration(name = "mapChoice")
     Choice mapChoice(ChoiceDTO source);
 
+    @SubclassMapping(source = ChemicalFormula.class, target = ChemicalFormulaDTO.class)
     @SubclassMapping(source = Formula.class, target = FormulaDTO.class)
     @SubclassMapping(source = FreeTextRule.class, target = FreeTextRuleDTO.class)
+    @SubclassMapping(source = GraphChoice.class, target = GraphChoiceDTO.class)
     @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
+    @SubclassMapping(source = LLMFreeTextChoice.class, target = LLMFreeTextChoiceDTO.class)
     @SubclassMapping(source = LogicFormula.class, target = LogicFormulaDTO.class)
     @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
     @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
@@ -112,18 +115,21 @@ public interface ContentMapper {
     @SubclassMapping(source = CodeTabs.class, target = CodeTabsDTO.class)
     @SubclassMapping(source = EmailTemplate.class, target = EmailTemplateDTO.class)
     @SubclassMapping(source = GlossaryTerm.class, target = GlossaryTermDTO.class)
+    @SubclassMapping(source = InlineRegion.class, target = InlineRegionDTO.class)
     @SubclassMapping(source = IsaacCard.class, target = IsaacCardDTO.class)
     @SubclassMapping(source = IsaacCardDeck.class, target = IsaacCardDeckDTO.class)
     @SubclassMapping(source = IsaacEventPage.class, target = IsaacEventPageDTO.class)
     @SubclassMapping(source = IsaacFeaturedProfile.class, target = IsaacFeaturedProfileDTO.class)
     @SubclassMapping(source = IsaacPageFragment.class, target = IsaacPageFragmentDTO.class)
     @SubclassMapping(source = IsaacPod.class, target = IsaacPodDTO.class)
+    @SubclassMapping(source = IsaacQuiz.class, target = IsaacQuizDTO.class)
     @SubclassMapping(source = IsaacQuizSection.class, target = IsaacQuizSectionDTO.class)
     @SubclassMapping(source = IsaacWildcard.class, target = IsaacWildcardDTO.class)
     @SubclassMapping(source = Item.class, target = ItemDTO.class)
     @SubclassMapping(source = Notification.class, target = NotificationDTO.class)
     @SubclassMapping(source = Question.class, target = QuestionDTO.class)
-    @SubclassMapping(source = IsaacQuiz.class, target = IsaacQuizDTO.class)
+    @SubclassMapping(source = Sidebar.class, target = SidebarDTO.class)
+    @SubclassMapping(source = SidebarEntry.class, target = SidebarEntryDTO.class)
     ContentDTO mapContent(Content source);
 
     List<String> mapListOfContentSummaryDtoToListOfString(List<ContentSummaryDTO> source);
