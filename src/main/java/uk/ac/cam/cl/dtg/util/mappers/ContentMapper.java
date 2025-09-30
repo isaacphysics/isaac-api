@@ -23,6 +23,7 @@ public interface ContentMapper {
     @SubclassMapping(source = Content.class, target = ContentDTO.class)
     ContentBaseDTO map(ContentBase source);
 
+    @SuppressWarnings("unchecked")
     default <T> T map(ContentDTO source, Class<T> targetClass) {
         if (targetClass.equals(ContentSummaryDTO.class)) {
             return (T) mapContentDTOtoContentSummaryDTO(source);
@@ -39,6 +40,7 @@ public interface ContentMapper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     default <T> T map(Content source, Class<T> targetClass) {
         if (targetClass.equals(IsaacWildcard.class)) {
             return (T) mapContentToIsaacWildcard(source);

@@ -10,6 +10,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 
 @Mapper(uses = UserMapper.class)
 public interface EventMapper {
+
+    @SuppressWarnings("unchecked")
     default <T extends EventBookingDTO> T map(DetailedEventBookingDTO source, Class<T> targetClass) {
         if (targetClass.equals(EventBookingDTO.class)) {
             return (T) mapDetailedEventBookingDTOtoEventBookingDTO(source);
@@ -18,6 +20,7 @@ public interface EventMapper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     default <S extends EventBookingDTO, T extends EventBookingDTO> List<T> mapAsList(List<S> source, Class<S> sourceClass, Class<T> targetClass) {
         if (sourceClass.equals(EventBookingDTO.class) && targetClass.equals(EventBookingDTO.class)) {
             return (List<T>) copyListOfEventBookingDTO((List<EventBookingDTO>) source);

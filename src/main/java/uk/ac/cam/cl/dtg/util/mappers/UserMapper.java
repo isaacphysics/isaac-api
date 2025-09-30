@@ -40,6 +40,7 @@ public interface UserMapper {
     UserAuthenticationSettingsDTO map(UserAuthenticationSettings source);
     AnonymousUserDTO map(AnonymousUser source);
 
+    @SuppressWarnings("unchecked")
     default <T extends UserSummaryDTO> T map(RegisteredUserDTO source, Class<T> targetClass) {
         if (targetClass.equals(UserSummaryDTO.class)) {
             return (T) mapUserToSummary(source);
@@ -54,6 +55,7 @@ public interface UserMapper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     default <T> T map(UserFromAuthProvider source, Class<T> targetClass) {
         if (targetClass.equals(RegisteredUser.class)) {
             return (T) mapUserFromAuthProviderToRegisteredUser(source);
@@ -62,6 +64,7 @@ public interface UserMapper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     default <T> T map(UserSummaryDTO source, Class<T> targetClass) {
         if (targetClass.equals(UserSummaryWithGroupMembershipDTO.class)) {
             return (T) mapUserSummaryDTOtoUserSummaryWithGroupMembershipDTO(source);
