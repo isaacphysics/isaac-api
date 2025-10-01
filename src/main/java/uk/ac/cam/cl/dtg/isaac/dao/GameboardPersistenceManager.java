@@ -39,7 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
@@ -100,7 +100,7 @@ public class GameboardPersistenceManager {
      */
     @Inject
     public GameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                       final MainMapper mapper, final ContentMapperUtils objectMapper) {
+                                       final MainMapper mapper, final ContentSubclassMapper objectMapper) {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;

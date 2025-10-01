@@ -327,7 +327,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             throws SegueDatabaseException, ContentManagerException {
         List<ContentDTO> filteredResults = Lists.newArrayList();
 
-        List<EventBookingDTO> userReservationList = this.mapper.mapAsList(bookingManager.getAllEventReservationsForUser(currentUser.getId()), DetailedEventBookingDTO.class, EventBookingDTO.class);
+        List<EventBookingDTO> userReservationList = this.mapper.map(bookingManager.getAllEventReservationsForUser(currentUser.getId()));
 
         for (EventBookingDTO booking : userReservationList) {
 
@@ -565,7 +565,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings,
                     booking -> booking.getUserBooked().getId());
 
-            return Response.ok(this.mapper.mapAsList(eventBookings, EventBookingDTO.class, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.copy(eventBookings)).build();
         } catch (SegueDatabaseException e) {
             String errorMsg = String.format(
                     "Database error occurred while trying retrieve bookings for group (%s) on event (%s).",
@@ -598,7 +598,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
 
-            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), DetailedEventBookingDTO.class, EventBookingDTO.class);
+            List<EventBookingDTO> eventBookings = this.mapper.map(bookingManager.getBookingsByEventId(eventId));
 
             // Only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(
@@ -861,7 +861,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                             USER_ID_LIST_FKEY_FIELDNAME, userIds.toArray(),
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
-            return Response.ok(this.mapper.mapAsList(bookings, EventBookingDTO.class, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.copy(bookings)).build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

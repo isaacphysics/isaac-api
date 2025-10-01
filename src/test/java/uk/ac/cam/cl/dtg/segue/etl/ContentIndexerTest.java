@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -48,7 +48,7 @@ public class ContentIndexerTest {
     private GitDb database;
     private ElasticSearchIndexer searchProvider;
     private ContentMapper contentMapper;
-    private ContentMapperUtils contentMapperUtils;
+    private ContentSubclassMapper contentSubclassMapper;
 
     private ContentIndexer defaultContentIndexer;
 
@@ -65,8 +65,8 @@ public class ContentIndexerTest {
         this.database = createMock(GitDb.class);
         this.searchProvider = createMock(ElasticSearchIndexer.class);
         this.contentMapper = createMock(ContentMapper.class);
-        this.contentMapperUtils = createMock(ContentMapperUtils.class);
-        this.defaultContentIndexer = new ContentIndexer(database, searchProvider, contentMapperUtils);
+        this.contentSubclassMapper = createMock(ContentSubclassMapper.class);
+        this.defaultContentIndexer = new ContentIndexer(database, searchProvider, contentSubclassMapper);
     }
 
     /**
@@ -109,7 +109,7 @@ public class ContentIndexerTest {
 
         // prepare pre-canned responses for the object mapper
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-		expect(contentMapperUtils.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
+		expect(contentSubclassMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
 				.once();
 		expect(objectMapper.writeValueAsString(content)).andReturn(
 				uniqueObjectHash).once();
@@ -152,9 +152,9 @@ public class ContentIndexerTest {
         searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
 		expectLastCall().once();
 
-		replay(searchProvider, contentMapper, contentMapperUtils, objectMapper);
+		replay(searchProvider, contentMapper, contentSubclassMapper, objectMapper);
 
-        ContentIndexer contentIndexer = new ContentIndexer(database, searchProvider, contentMapperUtils);
+        ContentIndexer contentIndexer = new ContentIndexer(database, searchProvider, contentSubclassMapper);
 
         // Method under test
 		Whitebox.invokeMethod(contentIndexer,
@@ -476,6 +476,6 @@ public class ContentIndexerTest {
         Map<String, Content> contents = new TreeMap<String, Content>();
         contents.put(INITIAL_VERSION, content);
 
-        return new GitContentManager(database, searchProvider, contentMapper, contentMapperUtils);
+        return new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper);
     }
 }

@@ -54,8 +54,8 @@ import java.util.Set;
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass.
  */
-public class ContentMapperUtils {
-    private static final Logger log = LoggerFactory.getLogger(ContentMapperUtils.class);
+public class ContentSubclassMapper {
+    private static final Logger log = LoggerFactory.getLogger(ContentSubclassMapper.class);
 
     // Used for serialization into the correct POJO as well as deserialization.
     // Currently depends on the string key being the same text value as the type
@@ -72,7 +72,7 @@ public class ContentMapperUtils {
      * 
      */
     @Inject
-    public ContentMapperUtils() {
+    public ContentSubclassMapper() {
         jsonTypes = Maps.newConcurrentMap();
         mapOfDOsToDTOs = Maps.newConcurrentMap();
     }
@@ -84,7 +84,7 @@ public class ContentMapperUtils {
      *            - string representing the parent package to search for content classes. e.g. uk.ac.cam.cl.dtg.segue
      */
     @SuppressWarnings("unchecked")
-    public ContentMapperUtils(final Reflections configuredReflectionClass) {
+    public ContentSubclassMapper(final Reflections configuredReflectionClass) {
         this();
         Objects.requireNonNull(configuredReflectionClass);
 
@@ -294,7 +294,7 @@ public class ContentMapperUtils {
      * @return a jackson object mapper.
      */
     public ObjectMapper getSharedContentObjectMapper() {
-        if (ContentMapperUtils.preconfiguredObjectMapper != null) {
+        if (ContentSubclassMapper.preconfiguredObjectMapper != null) {
             return preconfiguredObjectMapper;
         }
 

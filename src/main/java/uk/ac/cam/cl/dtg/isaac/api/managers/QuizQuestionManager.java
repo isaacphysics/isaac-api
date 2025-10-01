@@ -300,7 +300,7 @@ public class QuizQuestionManager {
                 } else {
                     // Manual extract only the safe details (questionId, answer).
                     lastAttempt = new QuestionValidationResponseDTO();
-                    lastAttempt.setAnswer(mapper.mapChoice(lastResponse.getAnswer()));
+                    lastAttempt.setAnswer(mapper.map(lastResponse.getAnswer()));
                     lastAttempt.setQuestionId(lastResponse.getQuestionId());
                 }
                 lastAttempt.setDateAttempted(null);  // Strip timestamps, since quiz responses may be seen by other users.

@@ -8,32 +8,17 @@ import org.mapstruct.Mapping;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 
+/**
+ * MapStruct mapper for EventBooking objects.
+ */
 @Mapper(uses = UserMapper.class)
 public interface EventMapper {
 
-    @SuppressWarnings("unchecked")
-    default <T extends EventBookingDTO> T map(DetailedEventBookingDTO source, Class<T> targetClass) {
-        if (targetClass.equals(EventBookingDTO.class)) {
-            return (T) mapDetailedEventBookingDTOtoEventBookingDTO(source);
-        } else {
-            throw new UnimplementedMappingException(DetailedEventBookingDTO.class, targetClass);
-        }
-    }
+    EventBookingDTO map(DetailedEventBookingDTO source);
 
-    @SuppressWarnings("unchecked")
-    default <S extends EventBookingDTO, T extends EventBookingDTO> List<T> mapAsList(List<S> source, Class<S> sourceClass, Class<T> targetClass) {
-        if (sourceClass.equals(EventBookingDTO.class) && targetClass.equals(EventBookingDTO.class)) {
-            return (List<T>) copyListOfEventBookingDTO((List<EventBookingDTO>) source);
-        } else if (sourceClass.equals(DetailedEventBookingDTO.class) && targetClass.equals(EventBookingDTO.class)) {
-            return (List<T>) mapListOfDetailedEventBookingDTOtoEventBookingDTO((List<DetailedEventBookingDTO>) source);
-        } else {
-            throw new UnimplementedMappingException(sourceClass, targetClass);
-        }
-    }
+    List<EventBookingDTO> copy(List<EventBookingDTO> source);
+    List<EventBookingDTO> map(List<DetailedEventBookingDTO> source);
 
     @Mapping(source = "userBooked", target = "userBooked", qualifiedByName = "copyUserSummaryDTO")
     EventBookingDTO copy(EventBookingDTO source);
-    List<EventBookingDTO> copyListOfEventBookingDTO(List<EventBookingDTO> source);
-    EventBookingDTO mapDetailedEventBookingDTOtoEventBookingDTO(DetailedEventBookingDTO source);
-    List<EventBookingDTO> mapListOfDetailedEventBookingDTOtoEventBookingDTO(List<DetailedEventBookingDTO> source);
 }

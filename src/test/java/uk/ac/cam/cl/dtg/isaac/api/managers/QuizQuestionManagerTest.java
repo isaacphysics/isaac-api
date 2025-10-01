@@ -84,9 +84,9 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
 
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
 
-        expect(contentMapper.mapChoice(correctAnswer)).andStubReturn(correctAnswerDTO);
-        expect(contentMapper.mapChoice(wrongAnswer)).andStubReturn(wrongAnswerDTO);
-        expect(contentMapper.mapChoice((ChoiceDTO) null)).andStubReturn(null);
+        expect(contentMapper.map(correctAnswer)).andStubReturn(correctAnswerDTO);
+        expect(contentMapper.map(wrongAnswer)).andStubReturn(wrongAnswerDTO);
+        expect(contentMapper.map((ChoiceDTO) null)).andStubReturn(null);
 
 
         registerDefaultsFor(questionManager, m -> {

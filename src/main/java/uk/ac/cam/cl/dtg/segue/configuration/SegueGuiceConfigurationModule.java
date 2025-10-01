@@ -109,7 +109,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
@@ -183,7 +183,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
-    private static ContentMapperUtils mapper = null;
+    private static ContentSubclassMapper mapper = null;
     private static GitContentManager contentManager = null;
     private static RestHighLevelClient elasticSearchClient = null;
     private static UserAccountManager userManager = null;
@@ -555,7 +555,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper contentMapper,
-                                                       final ContentMapperUtils mapperUtils, final AbstractConfigLoader globalProperties) {
+                                                       final ContentSubclassMapper mapperUtils, final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
             contentManager = new GitContentManager(database, searchProvider, contentMapper, mapperUtils, globalProperties);
             log.info("Creating singleton of ContentManager");
@@ -610,9 +610,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ContentMapperUtils getContentMapper() {
+    private static ContentSubclassMapper getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapperUtils(getReflectionsClass("uk.ac.cam.cl.dtg"));
+            mapper = new ContentSubclassMapper(getReflectionsClass("uk.ac.cam.cl.dtg"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
@@ -833,7 +833,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapperUtils objectMapper) {
+    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentSubclassMapper objectMapper) {
         // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
         if (null == questionPersistenceManager) {
             questionPersistenceManager = new PgQuestionAttempts(ds, objectMapper);
@@ -1248,7 +1248,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                                                              final MainMapper mapper, final ContentMapperUtils objectMapper) {
+                                                                              final MainMapper mapper, final ContentSubclassMapper objectMapper) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");

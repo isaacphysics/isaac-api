@@ -26,19 +26,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryForAdminUsersDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithGroupMembershipDTO;
 
+/**
+ * MapStruct mapper for User objects.
+ */
 @Mapper
 public interface UserMapper {
+
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
-
-    @Mapping(target = "sessionToken", ignore = true)
-    @Mapping(target = "emailVerificationToken", ignore = true)
-    @Mapping(target = "emailToVerify", ignore = true)
-    RegisteredUser map(RegisteredUserDTO source);
-
-    @Mapping(target = "firstLogin", ignore = true)
-    RegisteredUserDTO map(RegisteredUser source);
-    UserAuthenticationSettingsDTO map(UserAuthenticationSettings source);
-    AnonymousUserDTO map(AnonymousUser source);
 
     @SuppressWarnings("unchecked")
     default <T extends UserSummaryDTO> T map(RegisteredUserDTO source, Class<T> targetClass) {
@@ -52,15 +46,6 @@ public interface UserMapper {
             return (T) mapUserToSummaryWithGroupMembershipDTO(source);
         } else {
             throw new UnimplementedMappingException(RegisteredUserDTO.class, targetClass);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    default <T> T map(UserFromAuthProvider source, Class<T> targetClass) {
-        if (targetClass.equals(RegisteredUser.class)) {
-            return (T) mapUserFromAuthProviderToRegisteredUser(source);
-        } else {
-            throw new UnimplementedMappingException(UserFromAuthProvider.class, targetClass);
         }
     }
 
@@ -102,9 +87,20 @@ public interface UserMapper {
     @Mapping(target = "authorisedFullAccess", ignore = true)
     UserSummaryWithGroupMembershipDTO mapUserToSummaryWithGroupMembershipDTO(RegisteredUserDTO source);
 
+    @Mapping(target = "sessionToken", ignore = true)
+    @Mapping(target = "emailVerificationToken", ignore = true)
+    @Mapping(target = "emailToVerify", ignore = true)
+    RegisteredUser map(RegisteredUserDTO source);
+
+    @Mapping(target = "firstLogin", ignore = true)
+    RegisteredUserDTO map(RegisteredUser source);
+
+    UserAuthenticationSettingsDTO map(UserAuthenticationSettings source);
+
+    AnonymousUserDTO map(AnonymousUser source);
+
     RegisteredUser copy(RegisteredUser source);
     RegisteredUserDTO copy(RegisteredUserDTO source);
-
     GroupMembershipDTO copy(GroupMembershipDTO source);
 
     @Mapping(target = "sessionToken", ignore = true)
@@ -126,7 +122,7 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "emailVerificationToken", ignore = true)
     @Mapping(target = "emailToVerify", ignore = true)
-    RegisteredUser mapUserFromAuthProviderToRegisteredUser(UserFromAuthProvider source);
+    RegisteredUser map(UserFromAuthProvider source);
 
     @Mapping(target = "groupMembershipInformation", ignore = true)
     @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
@@ -137,11 +133,13 @@ public interface UserMapper {
     @BeanMapping(resultType = UserSummaryDTO.class)
     UserSummaryDTO mapExtendedUserSummaryDTOtoBaseUserSummaryDTO(UserSummaryDTO source);
 
+    // Named mapping for use in EventMapper
     @Named("copyUserSummaryDTO")
     @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryForAdminUsersDTO.class)
     @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithEmailAddressDTO.class)
     @SubclassMapping(source = UserSummaryWithGroupMembershipDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     UserSummaryDTO copy(UserSummaryDTO source);
+
     UserSummaryForAdminUsersDTO copy(UserSummaryForAdminUsersDTO source);
     UserSummaryWithEmailAddressDTO copy(UserSummaryWithEmailAddressDTO source);
     UserSummaryWithGroupMembershipDTO copy(UserSummaryWithGroupMembershipDTO source);

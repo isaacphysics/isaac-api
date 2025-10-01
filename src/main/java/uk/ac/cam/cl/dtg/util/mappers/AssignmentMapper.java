@@ -14,6 +14,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 
+/**
+ * MapStruct mapper for Gameboard, Assignment, QuizAssignment and QuizAttempt objects.
+ */
 @Mapper
 public interface AssignmentMapper {
 

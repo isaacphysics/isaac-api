@@ -13,6 +13,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.*;
 
 import java.util.List;
 
+/**
+ * MapStruct mapper for Content objects.
+ */
 @Mapper(subclassExhaustiveStrategy = SubclassExhaustiveStrategy.RUNTIME_EXCEPTION)
 public interface ContentMapper {
     ContentMapper INSTANCE = Mappers.getMapper(ContentMapper.class);
@@ -129,8 +132,11 @@ public interface ContentMapper {
     @Mapping(target = "attribution", ignore = true)
     SidebarDTO map(String source);
 
-    @InheritInverseConfiguration(name = "mapChoice")
-    Choice mapChoice(ChoiceDTO source);
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "prioritisedSearchableContent", ignore = true)
+    @Mapping(target = "explanation", ignore = true)
+    @Mapping(target = "correct", ignore = true)
+    Choice map(ChoiceDTO source);
 
     @SubclassMapping(source = ChemicalFormula.class, target = ChemicalFormulaDTO.class)
     @SubclassMapping(source = Formula.class, target = FormulaDTO.class)
@@ -142,11 +148,12 @@ public interface ContentMapper {
     @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
     @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
     @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
-    ChoiceDTO mapChoice(Choice source);
+    ChoiceDTO map(Choice source);
 
-    List<String> copyListOfString(List<String> source);
+    List<String> copyStringList(List<String> source);
+
     default ResultsWrapper<String> copy(ResultsWrapper<String> source) {
-        return new ResultsWrapper<>(copyListOfString(source.getResults()), source.getTotalResults());
+        return new ResultsWrapper<>(copyStringList(source.getResults()), source.getTotalResults());
     }
 
     @InheritInverseConfiguration(name = "mapContent")
@@ -175,21 +182,29 @@ public interface ContentMapper {
     @SubclassMapping(source = SidebarEntry.class, target = SidebarEntryDTO.class)
     ContentDTO mapContent(Content source);
 
-    List<String> mapListOfContentSummaryDtoToListOfString(List<ContentSummaryDTO> source);
+    List<String> mapContentSummaryDTOListToStringList(List<ContentSummaryDTO> source);
 
-    List<ContentSummaryDTO> mapListOfStringToListOfContentSummaryDTO(List<String> source);
+    List<ContentSummaryDTO> mapStringListToContentSummaryDTOList(List<String> source);
 
     @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
     ContentDTO copy(ContentDTO source);
 
-    default ContentSummaryDTO mapStringToContentSummaryDTO(String source) {
-        if (source == null) {
-            return null;
-        }
-        ContentSummaryDTO contentSummaryDTO = new ContentSummaryDTO();
-        contentSummaryDTO.setId(source);
-        return contentSummaryDTO;
-    }
+    // Create a new ContentSummaryDTO and set the id to the source string
+    @Mapping(source = "source", target = "id")
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "type", ignore = true)
+    @Mapping(target = "title", ignore = true)
+    @Mapping(target = "tags", ignore = true)
+    @Mapping(target = "supersededBy", ignore = true)
+    @Mapping(target = "summary", ignore = true)
+    @Mapping(target = "subtitle", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "level", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Mapping(target = "deprecated", ignore = true)
+    @Mapping(target = "audience", ignore = true)
+    ContentSummaryDTO mapStringToContentSummaryDTO(String source);
 
     default String mapContentSummaryDTOtoString(ContentSummaryDTO source) {
         if (source == null) {

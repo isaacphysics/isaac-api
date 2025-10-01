@@ -60,7 +60,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapperUtils;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.ws.rs.BadRequestException;
@@ -87,7 +87,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY
 public class QuestionManager {
     private static final Logger log = LoggerFactory.getLogger(QuestionManager.class);
 
-    private final ContentMapperUtils mapperUtils;
+    private final ContentSubclassMapper mapperUtils;
     private final MainMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
     /**
@@ -98,7 +98,7 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentMapperUtils mapperUtils, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+    public QuestionManager(final ContentSubclassMapper mapperUtils, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
         this.mapperUtils = mapperUtils;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
@@ -351,7 +351,7 @@ public class QuestionManager {
             // For each test, check its actual results against the response of the validator on the fake question
             List<TestCase> results = Lists.newArrayList();
             for (TestCase testCase : testDefinition.getTestCases()) {
-                Choice inferredChoiceSubclass = mapper.mapChoice(mapper.mapChoice(testCase.getAnswer()));
+                Choice inferredChoiceSubclass = mapper.map(mapper.map(testCase.getAnswer()));
                 QuestionValidationResponse questionValidationResponse = questionValidator
                         .validateQuestionResponse(testQuestion, inferredChoiceSubclass);
                 testCase.setCorrect(questionValidationResponse.isCorrect());
@@ -646,7 +646,7 @@ public class QuestionManager {
             // convert submitted JSON into a Choice:
             Choice answerFromClient = mapperUtils.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
-            answerFromClientDTO = mapper.mapChoice(answerFromClient);
+            answerFromClientDTO = mapper.map(answerFromClient);
         } catch (JsonMappingException | JsonParseException e) {
             log.info("Failed to map to any expected input...", e);
             SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
