@@ -11,7 +11,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <segue.version>v3.20.6-SNAPSHOT</segue.version>
-        <log4j.version>2.25.1</log4j.version>
+        <log4j.version>2.25.2</log4j.version>
         <resteasy.version>6.2.12.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
         <oauth-client.version>1.39.0</oauth-client.version>
@@ -31,7 +31,7 @@
         <web.xml.local>web-api-local.xml</web.xml.local>
         <dependency-check.version>12.1.6</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <swagger-core.version>2.2.37</swagger-core.version>
+        <swagger-core.version>2.2.38</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
