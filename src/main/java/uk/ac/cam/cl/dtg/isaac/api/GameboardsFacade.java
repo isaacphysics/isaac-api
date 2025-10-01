@@ -311,7 +311,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     this.questionManager.getQuestionAttemptsByUser(currentUser);
 
             List<GameboardItem> conceptQuestionsProgress = Lists.newArrayList();
-            if (upperQuestionId.isEmpty()) {
+            if (null == upperQuestionId || upperQuestionId.isEmpty()) {
                 List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
                         gameboard, upperAndLower, currentConceptTitle, userQuestionAttempts));
