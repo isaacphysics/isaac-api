@@ -6,9 +6,28 @@ import org.mapstruct.Mapping;
 import org.mapstruct.SubclassExhaustiveStrategy;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
-import uk.ac.cam.cl.dtg.isaac.dos.*;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacPageFragment;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.content.*;
-import uk.ac.cam.cl.dtg.isaac.dto.*;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacCardDeckDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPageFragmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPodDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.LLMFreeTextChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.*;
 
 import java.util.List;
@@ -20,12 +39,17 @@ import java.util.List;
 public interface ContentMapper {
     ContentMapper INSTANCE = Mappers.getMapper(ContentMapper.class);
 
-    @SubclassMapping(source = ContentDTO.class, target = Content.class)
-    ContentBase map(ContentBaseDTO source);
-
-    @SubclassMapping(source = Content.class, target = ContentDTO.class)
-    ContentBaseDTO map(ContentBase source);
-
+    /**
+     * Mapping method to convert a ContentDTO to various other types of DTO or a Wildcard.
+     *
+     * @param <T>
+     *            - the target type.
+     * @param source
+     *            - the source ContentDTO.
+     * @param targetClass
+     *            - the target class to convert to.
+     * @return Returns an instance of the targetClass type mapped via the appropriate mapping method.
+     */
     @SuppressWarnings("unchecked")
     default <T> T map(ContentDTO source, Class<T> targetClass) {
         if (targetClass.equals(ContentSummaryDTO.class)) {
@@ -43,16 +67,79 @@ public interface ContentMapper {
         }
     }
 
+    /**
+     * Mapping method to convert a Content object to a ContentDTO or a Wildcard.
+     *
+     * @param <T>
+     *            - the target type.
+     * @param source
+     *            - the source Content object.
+     * @param targetClass
+     *            - the target class to convert to.
+     * @return Returns an instance of the targetClass type mapped via the appropriate mapping method.
+     */
     @SuppressWarnings("unchecked")
     default <T> T map(Content source, Class<T> targetClass) {
-        if (targetClass.equals(IsaacWildcard.class)) {
-            return (T) mapContentToIsaacWildcard(source);
-        } else if (targetClass.equals(ContentDTO.class)) {
+        if (targetClass.equals(ContentDTO.class)) {
             return (T) mapContent(source);
+        } else if (targetClass.equals(IsaacWildcard.class)) {
+            return (T) mapContentToIsaacWildcard(source);
         } else {
             throw new UnimplementedMappingException(Content.class, targetClass);
         }
     }
+
+    @SubclassMapping(source = ContentDTO.class, target = Content.class)
+    ContentBase map(ContentBaseDTO source);
+
+    @SubclassMapping(source = Content.class, target = ContentDTO.class)
+    ContentBaseDTO map(ContentBase source);
+
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "value", ignore = true)
+    @Mapping(target = "type", ignore = true)
+    @Mapping(target = "title", ignore = true)
+    @Mapping(target = "tags", ignore = true)
+    @Mapping(target = "subtitle", ignore = true)
+    @Mapping(target = "sidebarEntries", ignore = true)
+    @Mapping(target = "relatedContent", ignore = true)
+    @Mapping(target = "published", ignore = true)
+    @Mapping(target = "level", ignore = true)
+    @Mapping(target = "layout", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "expandable", ignore = true)
+    @Mapping(target = "encoding", ignore = true)
+    @Mapping(target = "display", ignore = true)
+    @Mapping(target = "children", ignore = true)
+    @Mapping(target = "canonicalSourceFile", ignore = true)
+    @Mapping(target = "author", ignore = true)
+    @Mapping(target = "audience", ignore = true)
+    @Mapping(target = "attribution", ignore = true)
+    SidebarDTO map(String source);
+
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "prioritisedSearchableContent", ignore = true)
+    @Mapping(target = "explanation", ignore = true)
+    @Mapping(target = "correct", ignore = true)
+    Choice map(ChoiceDTO source);
+
+    @SubclassMapping(source = ChemicalFormula.class, target = ChemicalFormulaDTO.class)
+    @SubclassMapping(source = Formula.class, target = FormulaDTO.class)
+    @SubclassMapping(source = FreeTextRule.class, target = FreeTextRuleDTO.class)
+    @SubclassMapping(source = GraphChoice.class, target = GraphChoiceDTO.class)
+    @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
+    @SubclassMapping(source = LLMFreeTextChoice.class, target = LLMFreeTextChoiceDTO.class)
+    @SubclassMapping(source = LogicFormula.class, target = LogicFormulaDTO.class)
+    @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
+    @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
+    @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
+    ChoiceDTO map(Choice source);
+
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    DetailedQuizSummaryDTO map(IsaacQuizDTO source);
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
@@ -104,58 +191,6 @@ public interface ContentMapper {
     @SubclassMapping(source = IsaacQuizDTO.class, target = DetailedQuizSummaryDTO.class)
     DetailedQuizSummaryDTO mapContentDTOtoDetailedQuizSummaryDTO(ContentDTO source);
 
-    @Mapping(target = "url", ignore = true)
-    @Mapping(target = "state", ignore = true)
-    @Mapping(target = "questionPartIds", ignore = true)
-    @Mapping(target = "difficulty", ignore = true)
-    DetailedQuizSummaryDTO map(IsaacQuizDTO source);
-
-    @Mapping(target = "version", ignore = true)
-    @Mapping(target = "value", ignore = true)
-    @Mapping(target = "type", ignore = true)
-    @Mapping(target = "title", ignore = true)
-    @Mapping(target = "tags", ignore = true)
-    @Mapping(target = "subtitle", ignore = true)
-    @Mapping(target = "sidebarEntries", ignore = true)
-    @Mapping(target = "relatedContent", ignore = true)
-    @Mapping(target = "published", ignore = true)
-    @Mapping(target = "level", ignore = true)
-    @Mapping(target = "layout", ignore = true)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "expandable", ignore = true)
-    @Mapping(target = "encoding", ignore = true)
-    @Mapping(target = "display", ignore = true)
-    @Mapping(target = "children", ignore = true)
-    @Mapping(target = "canonicalSourceFile", ignore = true)
-    @Mapping(target = "author", ignore = true)
-    @Mapping(target = "audience", ignore = true)
-    @Mapping(target = "attribution", ignore = true)
-    SidebarDTO map(String source);
-
-    @Mapping(target = "searchableContent", ignore = true)
-    @Mapping(target = "prioritisedSearchableContent", ignore = true)
-    @Mapping(target = "explanation", ignore = true)
-    @Mapping(target = "correct", ignore = true)
-    Choice map(ChoiceDTO source);
-
-    @SubclassMapping(source = ChemicalFormula.class, target = ChemicalFormulaDTO.class)
-    @SubclassMapping(source = Formula.class, target = FormulaDTO.class)
-    @SubclassMapping(source = FreeTextRule.class, target = FreeTextRuleDTO.class)
-    @SubclassMapping(source = GraphChoice.class, target = GraphChoiceDTO.class)
-    @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
-    @SubclassMapping(source = LLMFreeTextChoice.class, target = LLMFreeTextChoiceDTO.class)
-    @SubclassMapping(source = LogicFormula.class, target = LogicFormulaDTO.class)
-    @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
-    @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
-    @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
-    ChoiceDTO map(Choice source);
-
-    List<String> copyStringList(List<String> source);
-
-    default ResultsWrapper<String> copy(ResultsWrapper<String> source) {
-        return new ResultsWrapper<>(copyStringList(source.getResults()), source.getTotalResults());
-    }
-
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
     @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)
@@ -186,9 +221,6 @@ public interface ContentMapper {
 
     List<ContentSummaryDTO> mapStringListToContentSummaryDTOList(List<String> source);
 
-    @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
-    ContentDTO copy(ContentDTO source);
-
     // Create a new ContentSummaryDTO and set the id to the source string
     @Mapping(source = "source", target = "id")
     @Mapping(target = "url", ignore = true)
@@ -206,10 +238,26 @@ public interface ContentMapper {
     @Mapping(target = "audience", ignore = true)
     ContentSummaryDTO mapStringToContentSummaryDTO(String source);
 
+    /**
+     * Mapping method to convert a ContentSummaryDTO to a String of its ID.
+     *
+     * @param source
+     *            - the source Content object.
+     * @return Returns the source Content object's ID.
+     */
     default String mapContentSummaryDTOtoString(ContentSummaryDTO source) {
         if (source == null) {
             return null;
         }
         return source.getId();
     }
+
+    List<String> copyStringList(List<String> source);
+
+    default ResultsWrapper<String> copy(ResultsWrapper<String> source) {
+        return new ResultsWrapper<>(copyStringList(source.getResults()), source.getTotalResults());
+    }
+
+    @SubclassMapping(source = IsaacEventPageDTO.class, target = IsaacEventPageDTO.class)
+    ContentDTO copy(ContentDTO source);
 }

@@ -27,6 +27,7 @@ public interface AssignmentMapper {
     @Mapping(target = "lastVisited", ignore = true)
     @Mapping(target = "startedQuestion", ignore = true)
     GameboardDTO map(GameboardDO source);
+
     GameboardDO map(GameboardDTO source);
 
     @Mapping(target = "legacyId", ignore = true)
@@ -34,6 +35,7 @@ public interface AssignmentMapper {
     @Mapping(target = "groupName", ignore = true)
     @Mapping(target = "assignerSummary", ignore = true)
     AssignmentDTO map(AssignmentDO source);
+
     AssignmentDO map(AssignmentDTO source);
 
     @Mapping(target = "quizSummary", ignore = true)
@@ -42,6 +44,7 @@ public interface AssignmentMapper {
     @Mapping(target = "userFeedback", ignore = true)
     @Mapping(target = "quiz", ignore = true)
     QuizAssignmentDTO map(QuizAssignmentDO source);
+
     QuizAssignmentDO map(QuizAssignmentDTO source);
 
     @Mapping(target = "quizSummary", ignore = true)
@@ -49,6 +52,7 @@ public interface AssignmentMapper {
     @Mapping(target = "quizAssignment", ignore = true)
     @Mapping(target = "feedbackMode", ignore = true)
     QuizAttemptDTO map(QuizAttemptDO source);
+
     QuizAttemptDO map(QuizAttemptDTO source);
 
     // Handle mapping the "content" field for GameboardD(T)Os
