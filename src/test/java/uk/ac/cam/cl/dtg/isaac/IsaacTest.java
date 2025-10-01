@@ -274,9 +274,9 @@ public class IsaacTest {
         groupDatabase = createMock(IUserGroupPersistenceManager.class);
         UserAccountManager userAccountManager = createMock(UserAccountManager.class);
         GameManager gameManager = createMock(GameManager.class);
-        MainMapper mapperFacade = createMock(MainMapper.class);
+        MainMapper mainMapper = createMock(MainMapper.class);
         groupManager = partialMockBuilder(GroupManager.class)
-                .withConstructor(groupDatabase, userAccountManager, gameManager, mapperFacade)
+                .withConstructor(groupDatabase, userAccountManager, gameManager, mainMapper)
                 .addMockedMethod("getGroupById").addMockedMethod("isUserInGroup").addMockedMethod("getGroupMembershipList", RegisteredUserDTO.class, boolean.class)
                 .addMockedMethod("getUsersInGroup").addMockedMethod("getUserMembershipMapForGroup").addMockedMethod("getAllGroupsOwnedAndManagedByUser")
                 .createMock();
@@ -311,7 +311,7 @@ public class IsaacTest {
                 studentGroup.getId(), new GroupMembership(studentGroup.getId(), secondStudent.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate)
         ));
 
-        replay(quizManager, groupManager, groupDatabase, userAccountManager, gameManager, mapperFacade);
+        replay(quizManager, groupManager, groupDatabase, userAccountManager, gameManager, mainMapper);
     }
 
 

@@ -156,9 +156,6 @@ public interface ContentMapper {
         return new ResultsWrapper<>(copyStringList(source.getResults()), source.getTotalResults());
     }
 
-    @InheritInverseConfiguration(name = "mapContent")
-    Content mapContent(ContentDTO source);
-
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
     @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)
@@ -181,6 +178,9 @@ public interface ContentMapper {
     @SubclassMapping(source = Sidebar.class, target = SidebarDTO.class)
     @SubclassMapping(source = SidebarEntry.class, target = SidebarEntryDTO.class)
     ContentDTO mapContent(Content source);
+
+    @InheritInverseConfiguration(name = "mapContent")
+    Content mapContent(ContentDTO source);
 
     List<String> mapContentSummaryDTOListToStringList(List<ContentSummaryDTO> source);
 

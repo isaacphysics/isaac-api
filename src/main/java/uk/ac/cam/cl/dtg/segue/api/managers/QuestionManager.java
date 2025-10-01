@@ -87,7 +87,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY
 public class QuestionManager {
     private static final Logger log = LoggerFactory.getLogger(QuestionManager.class);
 
-    private final ContentSubclassMapper mapperUtils;
+    private final ContentSubclassMapper contentSubclassMapper;
     private final MainMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
     /**
@@ -98,8 +98,8 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentSubclassMapper mapperUtils, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
-        this.mapperUtils = mapperUtils;
+    public QuestionManager(final ContentSubclassMapper contentSubclassMapper, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+        this.contentSubclassMapper = contentSubclassMapper;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
     }
@@ -123,7 +123,7 @@ public class QuestionManager {
                     .build();
         }
 
-        Choice answerFromUser = mapper.map(submittedAnswer, Choice.class);
+        Choice answerFromUser = mapper.map(submittedAnswer);
         QuestionValidationResponse validateQuestionResponse;
         Histogram.Timer validatorTimer =
                 VALIDATOR_LATENCY_HISTOGRAM.labels(validator.getClass().getSimpleName()).startTimer();
@@ -337,7 +337,7 @@ public class QuestionManager {
             throws BadRequestException, ValidatorUnavailableException {
         try {
             // Create a fake question
-            Class<? extends Content> questionClass = mapperUtils.getClassByType(questionType);
+            Class<? extends Content> questionClass = contentSubclassMapper.getClassByType(questionType);
             if (null == questionClass || !ChoiceQuestion.class.isAssignableFrom(questionClass)) {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
@@ -622,7 +622,7 @@ public class QuestionManager {
                 .build();
         }
 
-        Choice answerFromUser = mapper.map(answer, Choice.class);
+        Choice answerFromUser = mapper.map(answer);
         String specification;
         try {
             specification = specifier.createSpecification(answerFromUser);
@@ -644,7 +644,7 @@ public class QuestionManager {
         ChoiceDTO answerFromClientDTO;
         try {
             // convert submitted JSON into a Choice:
-            Choice answerFromClient = mapperUtils.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            Choice answerFromClient = contentSubclassMapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
             answerFromClientDTO = mapper.map(answerFromClient);
         } catch (JsonMappingException | JsonParseException e) {

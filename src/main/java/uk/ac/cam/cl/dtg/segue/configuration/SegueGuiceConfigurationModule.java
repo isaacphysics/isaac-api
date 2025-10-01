@@ -547,7 +547,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - search provider to use
      * @param contentMapper
      *            - defines the mappings for content objects
-     * @param mapperUtils
+     * @param contentSubclassMapper
      *           - the utility class for mapping content objects
      * @return a fully configured content Manager.
      */
@@ -555,9 +555,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper contentMapper,
-                                                       final ContentSubclassMapper mapperUtils, final AbstractConfigLoader globalProperties) {
+                                                       final ContentSubclassMapper contentSubclassMapper, final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, contentMapper, mapperUtils, globalProperties);
+            contentManager = new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper, globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
@@ -792,7 +792,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - to manage temporary anonymous users
      * @param logManager
      *            - so that we can log interesting user based events.
-     * @param mapperFacade
+     * @param userMapper
      *            - for DO and DTO mapping.
      * @param userAuthenticationManager
      *            - Responsible for handling the various authentication functions.
