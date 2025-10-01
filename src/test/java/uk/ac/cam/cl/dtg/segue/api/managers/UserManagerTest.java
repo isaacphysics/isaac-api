@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAutoLinkingConfig;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
@@ -788,7 +789,7 @@ public class UserManagerTest {
         return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
                 providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
                 buildTestAuthenticationManager(provider, authenticator), dummySecondFactorAuthenticator,
-                dummyUserPreferenceManager);
+                dummyUserPreferenceManager, new MicrosoftAutoLinkingConfig("{}"));
     }
     
     private UserAuthenticationManager buildTestAuthenticationManager() {

@@ -60,6 +60,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAutoLinkingConfig;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
@@ -151,6 +152,7 @@ public class AbstractIsaacIntegrationTest {
     protected static IQuizQuestionAttemptPersistenceManager quizQuestionAttemptPersistenceManager;
     protected static QuizQuestionManager quizQuestionManager;
     protected static PgUsers pgUsers;
+    protected static MicrosoftAutoLinkingConfig microsoftAutoLinkingConfig;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -282,7 +284,8 @@ public class AbstractIsaacIntegrationTest {
         }
         replay(secondFactorManager);
 
-        userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
+        microsoftAutoLinkingConfig = new MicrosoftAutoLinkingConfig(properties.getProperty("MICROSOFT_ALLOW_AUTO_LINKING"));
+        userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager, microsoftAutoLinkingConfig);
 
         ObjectMapper objectMapper = new ObjectMapper();
         mailGunEmailManager = new MailGunEmailManager(globalTokens, properties, userPreferenceManager);

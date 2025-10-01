@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
+import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
@@ -86,7 +87,21 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
 
                     response.assertError(notUsingMicrosoftMessage, Response.Status.FORBIDDEN);
                     response.assertNoUserLoggedIn();
+                }
 
+                @Test
+                public void matchedAccountNotConnectedAutoLinkingEnabled_signsInAndReturnsUser() throws Exception {
+                    var client = prepareTestCase(token.valid(s -> s, u -> {
+                        u.put("oid", UUID.randomUUID().toString());
+                        u.put("email", "not_linked@linkable.com");
+                        return null;
+                    }));
+                    var userId = client.register("not_linked@linkable.com");
+
+                    var response = client.get("/auth/microsoft/callback" + validQuery);
+
+                    response.assertEntityReturned(userAccountManager.getUserDTOById(userId));
+                    response.assertUserLoggedIn(userId);
                 }
 
                 @Test
@@ -171,7 +186,11 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     TestServer subject() throws Exception {
-        return startServer(new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor));
+        return startServer(
+                new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
+                new UsersFacade(properties, userAccountManager, logManager, userAssociationManager,
+                        misuseMonitor, userPreferenceManager, schoolListReader)
+        );
     }
 
     TestClient prepareTestCase(final String token) throws Exception {

@@ -92,6 +92,7 @@ import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAutoLinkingConfig;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv2SCryptv1;
@@ -367,6 +368,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         // Microsoft
         try {
+            this.bindConstantToNullableProperty(MICROSOFT_ALLOW_AUTO_LINKING, globalProperties);
             new MicrosoftAuthenticator(
                     globalProperties.getProperty(Constants.MICROSOFT_CLIENT_ID),
                     globalProperties.getProperty(Constants.MICROSOFT_TENANT_ID),
@@ -807,11 +809,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                final ILogManager logManager, final MapperFacade mapperFacade,
                                                final UserAuthenticationManager userAuthenticationManager,
                                                final ISecondFactorAuthenticator secondFactorManager,
-                                               final AbstractUserPreferenceManager userPreferenceManager) {
+                                               final AbstractUserPreferenceManager userPreferenceManager,
+                                               final MicrosoftAutoLinkingConfig microsoftAutoLinkingConfig) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
                     mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
-                    secondFactorManager, userPreferenceManager);
+                    secondFactorManager, userPreferenceManager, microsoftAutoLinkingConfig);
             log.info("Creating singleton of UserManager");
         }
 

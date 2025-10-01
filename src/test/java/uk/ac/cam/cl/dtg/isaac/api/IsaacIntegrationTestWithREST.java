@@ -19,6 +19,7 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -123,7 +124,7 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
             this.baseUrl = baseUrl;
             this.registerCleanup = registerCleanup;
             this.builder = builder;
-            this.client =  ClientBuilder.newClient().register(new CookieJarFilter());
+            this.client = ClientBuilder.newClient();
         }
 
         public TestResponse get(final String url) {
@@ -141,11 +142,29 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         public void loginAs(final RegisteredUser user) {
+            this.client.register(new CookieJarFilter());
             var request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
             var body = new LocalAuthDTO();
             body.setEmail(user.getEmail());
             body.setPassword("test1234");
             this.currentUser = builder.apply(request).post(Entity.json(body), RegisteredUserDTO.class);
+        }
+
+        public long register(final String email) {
+            var user = new HashMap<>();
+            user.put("email", email);
+            user.put("password", ITConstants.TEST_SIGNUP_PASSWORD);
+            user.put("familyName", "signup");
+            user.put("givenName", "test");
+
+            var payload = new HashMap<>();
+            payload.put("registeredUser", user);
+            payload.put("userPreferences", new HashMap<>());
+            payload.put("passwordCurrent", null);
+
+            TestResponse response = this.post("/users", payload);
+            response.assertStatus(Response.Status.OK.getStatusCode());
+            return response.readEntity(RegisteredUserDTO.class).getId();
         }
     }
 
@@ -178,8 +197,12 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         <T> T readEntity(final Class<T> klass) {
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            this.assertStatus(Response.Status.OK.getStatusCode());
             return response.readEntity(klass);
+        }
+
+        void assertStatus(int expectedStatus) {
+            assertEquals(expectedStatus, response.getStatus());
         }
     }
 

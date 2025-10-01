@@ -123,7 +123,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
 
         UserAccountManager userAccountManagerForTest = new UserAccountManager(pgUsers, questionManager,
                 propertiesForTest, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager,
-                userAuthenticationManager, secondFactorManager, userPreferenceManager);
+                userAuthenticationManager, secondFactorManager, userPreferenceManager, microsoftAutoLinkingConfig);
 
         UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManagerForTest, logManager,
                 userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
@@ -833,7 +833,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                 pgUsers, dummyDeletionTokenManager, properties, providersToRegister, dummyEmailManager);
         UserAccountManager userAccountManager = new UserAccountManager(
                 pgUsers, questionManager, properties, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers,
-                logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
+                logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager, microsoftAutoLinkingConfig);
         UsersFacade usersFacadeForTest = new UsersFacade(properties, userAccountManager, logManager,
                 userAssociationManager, misuseMonitor, userPreferenceManager, schoolListReader);
 
