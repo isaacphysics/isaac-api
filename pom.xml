@@ -19,7 +19,7 @@
         <jackson-databind.version>2.19.2</jackson-databind.version>
         <powermock.version>2.0.9</powermock.version>
         <junit-4.version>4.13.2</junit-4.version>
-        <junit-5.version>5.13.4</junit-5.version>
+        <junit-5.version>5.14.0</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
         <jetty-version>11.0.25</jetty-version>
@@ -325,7 +325,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.18.0</version>
+            <version>3.19.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -471,7 +471,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.81</version>
+            <version>1.82</version>
         </dependency>
 
         <dependency>
