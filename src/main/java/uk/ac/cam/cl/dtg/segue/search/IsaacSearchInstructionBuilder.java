@@ -350,10 +350,7 @@ public class IsaacSearchInstructionBuilder {
                 boolean isSearchableContentField = searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME) ||
                         searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME);
                 for (String term : searchInField.getTerms()) {
-                    if (isSearchableContentField) {
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term,
-                                SEARCHABLE_CONTENT_FIELD_BOOST, true));
-                    } else if (searchInField.getStrategy() == Strategy.DEFAULT) {
+                    if (searchInField.getStrategy() == Strategy.DEFAULT) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
                                 ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
                         Long fuzzyBoost = searchInField.getPriority() == Priority.HIGH
@@ -391,6 +388,10 @@ public class IsaacSearchInstructionBuilder {
                         generatedSubInstructions.add(
                             new MatchInstruction(searchInField.getField(), term, boost, false)
                         );
+                    } else if (isSearchableContentField) {
+                        // Only reached if we haven't specified another strategy to use instead
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term,
+                                SEARCHABLE_CONTENT_FIELD_BOOST, true));
                     }
                 }
             }
