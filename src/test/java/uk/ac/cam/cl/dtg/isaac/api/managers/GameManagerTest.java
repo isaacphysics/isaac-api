@@ -33,9 +33,9 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager.BooleanSearchClause;
-import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Collections;
 import java.util.List;

@@ -554,10 +554,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper contentMapper,
-                                                       final ContentSubclassMapper contentSubclassMapper, final AbstractConfigLoader globalProperties) {
+    private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
+                                                       final ContentMapper contentMapper,
+                                                       final ContentSubclassMapper contentSubclassMapper,
+                                                       final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper, globalProperties);
+            contentManager = new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper,
+                    globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
@@ -1247,8 +1250,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                                                              final MainMapper mapper, final ContentSubclassMapper objectMapper) {
+    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
+                                                                              final GitContentManager contentManager,
+                                                                              final MainMapper mapper,
+                                                                              final ContentSubclassMapper objectMapper) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");

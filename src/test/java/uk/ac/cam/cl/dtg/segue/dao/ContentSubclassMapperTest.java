@@ -3,14 +3,14 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import org.junit.Before;
 import org.junit.Test;
 import org.reflections.Reflections;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 
 import static org.junit.Assert.assertTrue;
 
-public class ContentMapperTest {
+public class ContentSubclassMapperTest {
 
     private ContentSubclassMapper contentSubclassMapper;
 

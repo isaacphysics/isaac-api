@@ -113,8 +113,9 @@ public class GitContentManager {
      *            - global properties.
      */
     @Inject
-    public GitContentManager(final GitDb database, final ISearchProvider searchProvider, final ContentMapper contentMapper,
-                             final ContentSubclassMapper contentSubclassMapper, final AbstractConfigLoader globalProperties) {
+    public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
+                             final ContentMapper contentMapper, final ContentSubclassMapper contentSubclassMapper,
+                             final AbstractConfigLoader globalProperties) {
         this.database = database;
         this.mapper = contentMapper;
         this.contentSubclassMapper = contentSubclassMapper;
@@ -156,7 +157,7 @@ public class GitContentManager {
      *           - the utility class for mapping content objects.
      */
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-                             final ContentMapper contentMapper, ContentSubclassMapper contentSubclassMapper) {
+                             final ContentMapper contentMapper, final ContentSubclassMapper contentSubclassMapper) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
@@ -257,7 +258,8 @@ public class GitContentManager {
                         CONTENT_TYPE, id,
                         Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
                         getBaseFilters());
-                List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(rawResults.getResults());
+                List<Content> searchResults = contentSubclassMapper
+                        .mapFromStringListToContentList(rawResults.getResults());
 
                 return new ResultsWrapper<>(searchResults, rawResults.getTotalResults());
             });

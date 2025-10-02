@@ -98,7 +98,8 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentSubclassMapper contentSubclassMapper, final MainMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+    public QuestionManager(final ContentSubclassMapper contentSubclassMapper, final MainMapper mapper,
+                           final IQuestionAttemptManager questionPersistenceManager) {
         this.contentSubclassMapper = contentSubclassMapper;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
@@ -644,7 +645,8 @@ public class QuestionManager {
         ChoiceDTO answerFromClientDTO;
         try {
             // convert submitted JSON into a Choice:
-            Choice answerFromClient = contentSubclassMapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            Choice answerFromClient = contentSubclassMapper.getSharedContentObjectMapper()
+                    .readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
             answerFromClientDTO = mapper.map(answerFromClient);
         } catch (JsonMappingException | JsonParseException e) {
