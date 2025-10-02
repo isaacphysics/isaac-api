@@ -371,10 +371,8 @@ public class GitContentManager {
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
 
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
@@ -461,10 +459,8 @@ public class GitContentManager {
                         .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
-                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.SUBSTRING))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.SUBSTRING));
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms));
 
         if (searchString != null && !searchString.isBlank()) {
             // High priority matches on untokenised search string

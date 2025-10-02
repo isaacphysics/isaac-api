@@ -347,8 +347,13 @@ public class IsaacSearchInstructionBuilder {
 
             } else {
                 // Generic fields
+                boolean isSearchableContentField = searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME) ||
+                        searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME);
                 for (String term : searchInField.getTerms()) {
-                    if (searchInField.getStrategy() == Strategy.DEFAULT) {
+                    if (isSearchableContentField) {
+                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term,
+                                SEARCHABLE_CONTENT_FIELD_BOOST, true));
+                    } else if (searchInField.getStrategy() == Strategy.DEFAULT) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
                                 ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
                         Long fuzzyBoost = searchInField.getPriority() == Priority.HIGH
@@ -369,19 +374,16 @@ public class IsaacSearchInstructionBuilder {
                                 new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
 
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
-                        boolean isSearchableContentField = searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME) ||
-                                searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME);
-                        Long boost = isSearchableContentField
-                                ? SEARCHABLE_CONTENT_FIELD_BOOST : searchInField.getPriority() == Priority.HIGH
+                        Long boost = searchInField.getPriority() == Priority.HIGH
                                         ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
+
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
-                        if (!isSearchableContentField) {
-                                generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
-                                // Use a multi-match instruction, and ensure multi-match instructions for a
-                                // particular term are grouped together
-                                multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
-                                multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
-                        }
+                        generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
+
+                        // Use a multi-match instruction, and ensure multi-match instructions for a
+                        // particular term are grouped together
+                        multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
+                        multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
                         
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
