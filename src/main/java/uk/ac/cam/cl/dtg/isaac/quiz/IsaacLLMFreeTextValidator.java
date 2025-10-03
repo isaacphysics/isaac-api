@@ -297,7 +297,6 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         validationResponse.setMaxMarks(question.getMaxMarks());
         validationResponse.setMarksAwarded(markTotal);
         validationResponse.setMarkBreakdown(markBreakdown);
-        validationResponse.setAdditionalMarkingInstructions(question.getAdditionalMarkingInstructions());
         return validationResponse;
     }
 
