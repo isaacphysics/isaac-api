@@ -11,7 +11,6 @@ import java.util.List;
 
 @DTOMapping(LLMFreeTextQuestionValidationResponseDTO.class)
 public class LLMFreeTextQuestionValidationResponse extends QuestionValidationResponse {
-    private Integer maxMarks;
     private Integer marksAwarded;
     private List<LLMFreeTextMarkSchemeEntry> markBreakdown;
 
@@ -22,13 +21,6 @@ public class LLMFreeTextQuestionValidationResponse extends QuestionValidationRes
     public LLMFreeTextQuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
                                       final Content explanation, final Date dateAttempted) {
         super(questionId, answer, correct, explanation, dateAttempted);
-    }
-
-    public Integer getMaxMarks() {
-        return maxMarks;
-    }
-    public void setMaxMarks(Integer maxMarks) {
-        this.maxMarks = maxMarks;
     }
 
     public Integer getMarksAwarded() {
