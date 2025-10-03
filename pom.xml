@@ -38,6 +38,7 @@
         <ossindex.version>3.2.0</ossindex.version>
         <swagger-core.version>2.2.38</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
     </properties>
@@ -142,12 +143,6 @@
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
             <version>${jgit.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ma.glasnost.orika</groupId>
-            <artifactId>orika-core</artifactId>
-            <version>1.5.4</version>
         </dependency>
 
         <dependency>
@@ -485,6 +480,12 @@
             <version>4.4.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
              promise to make them available in the deployment environment, but we aren't going to because they are
              not needed at runtime anyway. -->
@@ -541,6 +542,13 @@
                 <version>3.10.1</version>
                 <configuration>
                     <release>11</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

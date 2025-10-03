@@ -37,7 +37,7 @@ public class SignupFlowIT extends IsaacIntegrationTest {
 
         // set up email facade
         UserAccountManager userAccountManagerForTest = new UserAccountManager(pgUsers, questionManager,
-                propertiesForTest, providersToRegister, mapperFacade, emailManager, pgAnonymousUsers, logManager,
+                propertiesForTest, providersToRegister, mainMapper, emailManager, pgAnonymousUsers, logManager,
                 userAuthenticationManager, secondFactorManager, userPreferenceManager);
 
         EmailFacade emailFacade = new EmailFacade(propertiesForTest, logManager, emailManager,

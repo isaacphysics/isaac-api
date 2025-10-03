@@ -32,16 +32,14 @@ import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.core.Response;
@@ -58,7 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_SEPARATOR;
 
 public class QuizQuestionManager {
     private final QuestionManager questionManager;
-    private final ContentMapper mapper;
+    private final MainMapper mapper;
     private final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager;
     private final QuizManager quizManager;
     private final QuizAttemptManager quizAttemptManager;
@@ -83,7 +81,7 @@ public class QuizQuestionManager {
      *            - for attempts, particularly checking attempts are completed before revealing feedback.
      */
     @Inject
-    public QuizQuestionManager(final QuestionManager questionManager, final ContentMapper mapper,
+    public QuizQuestionManager(final QuestionManager questionManager, final MainMapper mapper,
                                final IQuizQuestionAttemptPersistenceManager quizQuestionAttemptManager,
                                final QuizManager quizManager, final QuizAttemptManager quizAttemptManager) {
         this.questionManager = questionManager;
@@ -109,7 +107,7 @@ public class QuizQuestionManager {
     }
 
     public void recordQuestionAttempt(QuizAttemptDTO quizAttempt, QuestionValidationResponseDTO questionResponse) throws SegueDatabaseException {
-        QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse, QuestionValidationResponse.class);
+        QuestionValidationResponse questionResponseDO = this.mapper.map(questionResponse);
 
         this.quizQuestionAttemptManager.registerQuestionAttempt(quizAttempt.getId(), questionResponseDO);
     }
@@ -301,11 +299,8 @@ public class QuizQuestionManager {
                     lastAttempt = questionManager.convertQuestionValidationResponseToDTO(lastResponse);
                 } else {
                     // Manual extract only the safe details (questionId, answer).
-                    Choice answer = lastResponse.getAnswer();
                     lastAttempt = new QuestionValidationResponseDTO();
-                    DTOMapping dtoMapping = answer.getClass().getAnnotation(DTOMapping.class);
-                    lastAttempt.setAnswer(mapper.getAutoMapper().map(lastResponse.getAnswer(),
-                        (Class<? extends ChoiceDTO>) dtoMapping.value()));
+                    lastAttempt.setAnswer(mapper.map(lastResponse.getAnswer()));
                     lastAttempt.setQuestionId(lastResponse.getQuestionId());
                 }
                 lastAttempt.setDateAttempted(null);  // Strip timestamps, since quiz responses may be seen by other users.
