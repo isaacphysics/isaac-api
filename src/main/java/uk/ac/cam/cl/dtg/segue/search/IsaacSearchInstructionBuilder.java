@@ -50,16 +50,14 @@ public class IsaacSearchInstructionBuilder {
     private static final float PRIORITY_CONTENT_BOOST = 5L;
 
     private List<SearchInField> searchesInFields;
-    private static final Long NO_BOOST = 1L;
+    public static final Long NO_BOOST = 1L;
     private static final Long FIELD_BOOST = 5L;
     private static final Long FIELD_BOOST_FUZZY = 1L;
     private static final Long WILDCARD_FIELD_BOOST = 1L;
 
     private static final Long HIGH_PRIORITY_FIELD_BOOST = 10L;
-    private static final Long HIGH_PRIORITY_FIELD_BOOST_FUZZY = 8L;
-    private static final Long HIGH_PRIORITY_WILDCARD_FIELD_BOOST = 5L;
-
-    private static final Long SEARCHABLE_CONTENT_FIELD_BOOST = 2L;
+    private static final Long HIGH_PRIORITY_FIELD_BOOST_FUZZY = 3L;
+    private static final Long HIGH_PRIORITY_WILDCARD_FIELD_BOOST = 2L;
 
     private static final Long EVENT_ADDRESS_FIELD_BOOST = 3L;
     private static final Long EVENT_ADDRESS_FIELD_BOOST_FUZZY = 1L;
@@ -347,13 +345,8 @@ public class IsaacSearchInstructionBuilder {
 
             } else {
                 // Generic fields
-                boolean isSearchableContentField = searchInField.getField().equals(Constants.SEARCHABLE_CONTENT_FIELDNAME) ||
-                        searchInField.getField().equals(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME);
                 for (String term : searchInField.getTerms()) {
-                    if (isSearchableContentField) {
-                        generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term,
-                                SEARCHABLE_CONTENT_FIELD_BOOST, true));
-                    } else if (searchInField.getStrategy() == Strategy.DEFAULT) {
+                    if (searchInField.getStrategy() == Strategy.DEFAULT) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
                                 ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
                         Long fuzzyBoost = searchInField.getPriority() == Priority.HIGH
@@ -366,7 +359,7 @@ public class IsaacSearchInstructionBuilder {
 
                     } else if (searchInField.getStrategy() == Strategy.SUBSTRING) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
-                                ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
+                                ? HIGH_PRIORITY_FIELD_BOOST : FIELD_BOOST;
 
                         generatedSubInstructions.add(
                                 new MatchInstruction(searchInField.getField(), term, boost, false));
@@ -375,16 +368,16 @@ public class IsaacSearchInstructionBuilder {
 
                     } else if (searchInField.getStrategy() == Strategy.FUZZY) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
-                                        ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
+                                ? HIGH_PRIORITY_WILDCARD_FIELD_BOOST : WILDCARD_FIELD_BOOST;
 
                         generatedSubInstructions.add(new MatchInstruction(searchInField.getField(), term, boost, true));
-                        generatedSubInstructions.add(new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
-
-                        // Use a multi-match instruction, and ensure multi-match instructions for a
-                        // particular term are grouped together
+                        generatedSubInstructions.add(
+                                new WildcardInstruction(searchInField.getField(), "*" + term + "*", boost));
+                        // Use a multi-match instruction, and ensure multi-match instructions for a particular term are
+                        // grouped together
                         multiMatchSearchesGroupedByTerm.putIfAbsent(term, Sets.newHashSet());
                         multiMatchSearchesGroupedByTerm.get(term).add(searchInField.getField());
-                        
+
                     } else if (searchInField.getStrategy() == Strategy.SIMPLE) {
                         Long boost = searchInField.getPriority() == Priority.HIGH
                                 ? HIGH_PRIORITY_FIELD_BOOST : NO_BOOST;
