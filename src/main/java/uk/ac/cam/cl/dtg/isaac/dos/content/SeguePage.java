@@ -99,6 +99,22 @@ public class SeguePage extends Content {
         this.supersededBy = supersededBy;
     }
 
+    public String getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(final String permissions) {
+        this.permissions = permissions;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(final String notes) {
+        this.notes = notes;
+    }
+
     public String getTeacherNotes() {
         return teacherNotes;
     }

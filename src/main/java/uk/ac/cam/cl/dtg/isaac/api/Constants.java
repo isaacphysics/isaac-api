@@ -65,11 +65,6 @@ public final class Constants {
     public static final Set<String> SEARCHABLE_DOC_TYPES = ImmutableSet.of(
             QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE, TOPIC_SUMMARY_PAGE_TYPE, BOOK_INDEX_TYPE, BOOK_DETAIL_TYPE, PAGE_TYPE, EVENT_TYPE);
 
-    /*
-     * Game specific variables.
-     */
-    public static final int GAME_BOARD_TARGET_SIZE = 10;
-
     public enum CompletionState {
         ALL_CORRECT, ALL_ATTEMPTED, ALL_INCORRECT, IN_PROGRESS, NOT_ATTEMPTED;
 

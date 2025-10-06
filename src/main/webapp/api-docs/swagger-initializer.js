@@ -6,9 +6,6 @@ window.onload = function () {
 
     if (document.location.hostname === "localhost") {
         baseUrl ="http://" + window.location.host + "/isaac-api/api";
-    } else if (document.location.hostname.endsWith(".eu.ngrok.io")) {
-        // Have reserved domains on ngrok.io, hardcode them for ease of use:
-        baseUrl = "https://isaacscience.eu.ngrok.io/isaac-api/api";
     }
 
     // the following lines will be replaced by docker/configurator, when it runs in a docker-container
