@@ -19,7 +19,11 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -32,6 +36,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -164,6 +170,58 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_HIDDEN_FROM_ROLE_TUTORS_QUIZ_ID)));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ITConstants.TEST_TUTOR_EMAIL,
+            ITConstants.TEST_TEACHER_EMAIL,
+    })
+    public void getAvailableQuizzesEndpoint_getQuizzesAsNonStaff_omitsNofilterTaggedQuizzes(String email) throws Exception {
+        // Arrange
+        // log in, create request
+        LoginResult login = loginAs(httpSession, email, "test1234");
+        HttpServletRequest availableQuizzesRequest = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(availableQuizzesRequest);
+
+        // Act
+        // make request
+        Response getQuizzesResponse = quizFacade.getAvailableQuizzes(createNiceMock(Request.class), availableQuizzesRequest);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
+
+        // check nofilter quizzes are not returned as available
+        @SuppressWarnings("unchecked") ResultsWrapper<QuizSummaryDTO> responseBody =
+                (ResultsWrapper<QuizSummaryDTO>) getQuizzesResponse.getEntity();
+        assertFalse(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_NOFILTER_QUIZ_ID)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ITConstants.TEST_EVENTMANAGER_EMAIL,
+            ITConstants.TEST_EDITOR_EMAIL
+    })
+    public void getAvailableQuizzesEndpoint_getQuizzesAsStaff_includesNofilterTaggedQuizzes(String email) throws Exception {
+        // Arrange
+        // log in, create request
+        LoginResult login = loginAs(httpSession, email, "test1234");
+        HttpServletRequest availableQuizzesRequest = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(availableQuizzesRequest);
+
+        // Act
+        // make request
+        Response getQuizzesResponse = quizFacade.getAvailableQuizzes(createNiceMock(Request.class), availableQuizzesRequest);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), getQuizzesResponse.getStatus());
+
+        // check nofilter quizzes are returned as available
+        @SuppressWarnings("unchecked") ResultsWrapper<QuizSummaryDTO> responseBody =
+                (ResultsWrapper<QuizSummaryDTO>) getQuizzesResponse.getEntity();
+        assertTrue(responseBody.getResults().stream().anyMatch(q -> q.getId().equals(QUIZ_TEST_NOFILTER_QUIZ_ID)));
+    }
+
     @Test
     public void previewQuizEndpoint_previewInvisibleToStudentQuizAsTeacher_succeeds() throws Exception {
         // Arrange
@@ -206,6 +264,34 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
         assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        ITConstants.TEST_TUTOR_EMAIL,
+        ITConstants.TEST_TEACHER_EMAIL,
+        ITConstants.TEST_EVENTMANAGER_EMAIL,
+        ITConstants.TEST_EDITOR_EMAIL
+    })
+    public void previewQuizEndpoint_previewNofilterQuizAsTutorOrAbove_succeeds(String email) throws Exception {
+        // Arrange
+        // log in as user, create request
+        LoginResult login = loginAs(httpSession, email, "test1234");
+        HttpServletRequest previewQuizRequest = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(previewQuizRequest);
+
+        // Act
+        // make request
+        Response previewQuizResponse = quizFacade.previewQuiz(createNiceMock(Request.class), previewQuizRequest,
+                QUIZ_TEST_NOFILTER_QUIZ_ID);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), previewQuizResponse.getStatus());
+
+        // check the quiz is returned for preview
+        IsaacQuizDTO responseBody = (IsaacQuizDTO) previewQuizResponse.getEntity();
+        assertEquals(QUIZ_TEST_NOFILTER_QUIZ_ID, responseBody.getId());
     }
 
     @Test

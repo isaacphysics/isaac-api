@@ -197,9 +197,16 @@ public class QuizFacade extends AbstractIsaacFacade {
         try {
 
             String userRoleString = Role.STUDENT.name();  // Allow anonymous users to list STUDENT quizzes.
+            boolean showNofilterQuizzes = false;
+
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
             if (currentUser instanceof RegisteredUserDTO) {
                 userRoleString = ((RegisteredUserDTO) currentUser).getRole().name();
+                try {
+                    showNofilterQuizzes = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                } catch (final NoUserLoggedInException e) {
+                    // Not possible inside this if block!
+                }
             }
 
             // Cache the list of quizzes based on current content version, user's role, and startIndex:
@@ -217,7 +224,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             // FIXME: ** HARD-CODED DANGER AHEAD **
             // The limit parameter in the following call is hard-coded and should be returned to a more reasonable
             // number once we have a front-end pagination/load-more system in place.
-            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(userRoleString, startIndex, 9000);
+            ResultsWrapper<ContentSummaryDTO> summary = this.quizManager.getAvailableQuizzes(userRoleString, startIndex, 9000, showNofilterQuizzes);
 
             return ok(summary).tag(etag)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))

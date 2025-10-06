@@ -58,7 +58,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     @Inject
     public ElasticSearchIndexer(RestHighLevelClient searchClient) {
         super(searchClient);
-        rawFieldsListByType.put("content", Lists.newArrayList("id", "title"));
+        rawFieldsListByType.put("content", Lists.newArrayList("id", "title", "subtitle"));
         rawFieldsListByType.put("school", Lists.newArrayList("urn"));
         nestedFieldsByType.put("content", Lists.newArrayList("audience"));
     }

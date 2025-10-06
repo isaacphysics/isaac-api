@@ -84,11 +84,16 @@ public class QuizManager {
         this.contentSummarizerService = contentSummarizerService;
     }
 
-    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit) throws ContentManagerException {
+    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit, boolean showNoFilterQuizzes) throws ContentManagerException {
 
         List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
         fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
                 TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
+
+        if (!showNoFilterQuizzes) {
+            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
+                    Collections.singletonList(HIDE_FROM_FILTER_TAG)));
+        }
 
         if (null != visibleToRole) {
             fieldsToMatch.add(new GitContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,

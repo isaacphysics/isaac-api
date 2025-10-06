@@ -349,9 +349,20 @@ public class GitContentManager {
                 // Restrict content types
                 .includeContentTypes(contentTypes)
 
+                // High priority matches on untokenised search string
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
+                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
+                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
+                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                        .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+
                 // Fuzzy search term matches
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
+                        .priority(Priority.HIGH).strategy(Strategy.DEFAULT))
                 .searchFor(new SearchInField(Constants.TITLE_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME, searchTerms)
@@ -360,10 +371,8 @@ public class GitContentManager {
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.FUZZY))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.FUZZY))
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
 
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
@@ -450,10 +459,22 @@ public class GitContentManager {
                         .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
                 .searchFor(new SearchInField(Constants.TAGS_FIELDNAME, searchTerms)
                         .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
-                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .priority(Priority.HIGH).strategy(Strategy.SUBSTRING))
-                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms)
-                        .strategy(Strategy.SUBSTRING));
+                .searchFor(new SearchInField(Constants.PRIORITISED_SEARCHABLE_CONTENT_FIELDNAME, searchTerms))
+                .searchFor(new SearchInField(Constants.SEARCHABLE_CONTENT_FIELDNAME, searchTerms));
+
+        if (searchString != null && !searchString.isBlank()) {
+            // High priority matches on untokenised search string
+            searchInstructionBuilder
+                    .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
+                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                            .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                    .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
+                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                            .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
+                    .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
+                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                            .priority(Priority.HIGH).strategy(Strategy.SIMPLE));
+        }
 
         // FIXME: Make this and PageFacade agnostic
         // It doesn't need to know about books, just have required tags
