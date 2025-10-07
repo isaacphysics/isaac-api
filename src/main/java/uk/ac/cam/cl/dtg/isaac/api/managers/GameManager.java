@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -56,10 +55,11 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,7 +93,7 @@ public class GameManager {
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
-    private final MapperFacade mapper;
+    private final MainMapper mapper;
     private final GitContentManager contentManager;
     private final QuestionManager questionManager;
 
@@ -111,7 +111,7 @@ public class GameManager {
      */
     @Inject
     public GameManager(final GitContentManager contentManager,
-                       final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
+                       final GameboardPersistenceManager gameboardPersistenceManager, final MainMapper mapper,
                        final QuestionManager questionManager,
                        final AbstractConfigLoader properties) {
         this.contentManager = contentManager;

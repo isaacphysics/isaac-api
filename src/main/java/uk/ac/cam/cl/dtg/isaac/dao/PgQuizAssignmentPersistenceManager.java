@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentCancelledException;
@@ -26,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -43,7 +43,7 @@ import java.util.List;
 public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(PgQuizAssignmentPersistenceManager.class);
 
-    private final MapperFacade mapper;
+    private final MainMapper mapper;
     private final PostgresSqlDb database;
 
     /**
@@ -55,15 +55,14 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
      *            - An instance of an automapper that can be used for mapping to and from AssignmentDOs and DTOs.
      */
     @Inject
-    public PgQuizAssignmentPersistenceManager(final PostgresSqlDb database,
-                                              final MapperFacade mapper) {
+    public PgQuizAssignmentPersistenceManager(final PostgresSqlDb database, final MainMapper mapper) {
         this.database = database;
         this.mapper = mapper;
     }
 
     @Override
     public Long saveAssignment(final QuizAssignmentDTO assignment) throws SegueDatabaseException {
-        QuizAssignmentDO assignmentToSave = mapper.map(assignment, QuizAssignmentDO.class);
+        QuizAssignmentDO assignmentToSave = mapper.map(assignment);
 
         String query = "INSERT INTO quiz_assignments(quiz_id, group_id, owner_user_id, creation_date, due_date, scheduled_start_date, quiz_feedback_mode)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?);";
@@ -267,7 +266,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
      * @return QuizAssignmentDTO
      */
     private QuizAssignmentDTO convertToQuizAssignmentDTO(final QuizAssignmentDO quizAssignmentDO) {
-        return mapper.map(quizAssignmentDO, QuizAssignmentDTO.class);
+        return mapper.map(quizAssignmentDO);
     }
 
     /**

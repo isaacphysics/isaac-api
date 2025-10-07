@@ -23,7 +23,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 
@@ -51,7 +51,7 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
      *            - the ContentMapper to get a Jackson ObjectMapper for persisting question answers.
      */
     @Inject
-    public PgQuizQuestionAttemptPersistenceManager(final PostgresSqlDb database, final ContentMapper objectMapper) {
+    public PgQuizQuestionAttemptPersistenceManager(final PostgresSqlDb database, final ContentSubclassMapper objectMapper) {
         this.database = database;
         this.objectMapper = objectMapper.getSharedContentObjectMapper();
     }

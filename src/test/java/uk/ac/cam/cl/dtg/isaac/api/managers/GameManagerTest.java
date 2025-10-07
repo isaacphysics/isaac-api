@@ -16,11 +16,9 @@
 
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -37,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager.BooleanSearchClause;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +55,7 @@ public class GameManagerTest {
 
     private GitContentManager dummyContentManager;
     private GameboardPersistenceManager dummyGameboardPersistenceManager;
-    private MapperFacade dummyMapper;
+    private MainMapper dummyMapper;
     private QuestionManager dummyQuestionManager;
     private AbstractConfigLoader dummyConfigLoader;
 
@@ -64,7 +63,7 @@ public class GameManagerTest {
     public void setUp() {
         this.dummyContentManager = PowerMock.createMock(GitContentManager.class);
         this.dummyGameboardPersistenceManager = PowerMock.createMock(GameboardPersistenceManager.class);
-        this.dummyMapper = PowerMock.createMock(MapperFacade.class);
+        this.dummyMapper = PowerMock.createMock(MainMapper.class);
         this.dummyQuestionManager = PowerMock.createMock(QuestionManager.class);
         this.dummyConfigLoader = PowerMock.createMock(YamlLoader.class);
 
