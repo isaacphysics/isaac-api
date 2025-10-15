@@ -1,0 +1,1 @@
+UPDATE user_preferences SET preference_type = 'ACCESSIBILITY' WHERE preference_name = 'REDUCED_MOTION' OR preference_name = 'PREFER_MATHML';
