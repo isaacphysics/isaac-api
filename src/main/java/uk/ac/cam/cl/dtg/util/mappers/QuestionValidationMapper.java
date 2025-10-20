@@ -3,8 +3,10 @@ package uk.ac.cam.cl.dtg.util.mappers;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.SubclassMapping;
+import org.mapstruct.factory.Mappers;
 import uk.ac.cam.cl.dtg.isaac.dos.FormulaValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.FormulaValidationResponseDTO;
@@ -19,12 +21,14 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 @Mapper(uses = ContentMapper.class)
 public interface QuestionValidationMapper {
 
-    @SubclassMapping(source = FormulaValidationResponseDTO.class, target = FormulaValidationResponse.class)
-    @SubclassMapping(source = ItemValidationResponseDTO.class, target = ItemValidationResponse.class)
-    @SubclassMapping(source = LLMFreeTextQuestionValidationResponseDTO.class, target = QuestionValidationResponse.class)
-    @SubclassMapping(source = QuantityValidationResponseDTO.class, target = QuantityValidationResponse.class)
-    QuestionValidationResponse map(QuestionValidationResponseDTO source);
+    QuestionValidationMapper INSTANCE = Mappers.getMapper(QuestionValidationMapper.class);
+
+    @SubclassMapping(source = FormulaValidationResponse.class, target = FormulaValidationResponseDTO.class)
+    @SubclassMapping(source = ItemValidationResponse.class, target = ItemValidationResponseDTO.class)
+    @SubclassMapping(source = LLMFreeTextQuestionValidationResponse.class, target = LLMFreeTextQuestionValidationResponseDTO.class)
+    @SubclassMapping(source = QuantityValidationResponse.class, target = QuantityValidationResponseDTO.class)
+    QuestionValidationResponseDTO map(QuestionValidationResponse source);
 
     @InheritInverseConfiguration
-    QuestionValidationResponseDTO map(QuestionValidationResponse source);
+    QuestionValidationResponse map(QuestionValidationResponseDTO source);
 }

@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.util.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
@@ -19,6 +20,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
  */
 @Mapper
 public interface AssignmentMapper {
+    AssignmentMapper INSTANCE = Mappers.getMapper(AssignmentMapper.class);
 
     @Mapping(target = "ownerUserInformation", ignore = true)
     @Mapping(target = "savedToCurrentUser", ignore = true)

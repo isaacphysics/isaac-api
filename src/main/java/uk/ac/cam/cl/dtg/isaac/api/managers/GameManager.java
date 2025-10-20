@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -677,7 +678,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we cannot access the content requested.
      */
-    public List<IsaacWildcard> getWildcards() throws NoWildcardException, ContentManagerException {
+    public List<IsaacWildcardDTO> getWildcards() throws NoWildcardException, ContentManagerException {
         List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
@@ -693,10 +694,12 @@ public class GameManager {
             throw new NoWildcardException();
         }
 
-        List<IsaacWildcard> result = Lists.newArrayList();
+        List<IsaacWildcardDTO> result = Lists.newArrayList();
         for (ContentDTO c : wildcardResults.getResults()) {
-            IsaacWildcard wildcard = mapper.map(c, IsaacWildcard.class);
-            result.add(wildcard);
+            if ((c instanceof IsaacWildcardDTO)) {
+                IsaacWildcardDTO wildcard = (IsaacWildcardDTO) c;
+                result.add(wildcard);
+            }
         }
 
         return result;

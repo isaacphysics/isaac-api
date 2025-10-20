@@ -35,14 +35,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SidebarEntry;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
-import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -190,39 +188,6 @@ public class ContentSubclassMapper {
     }
 
     /**
-     * Populate relatedContent fields on the result and its children with IDs recursively.
-     * Only recurses to children of type Content, but this is currently the only possibility.
-     * When another subclass of ContentBase is introduced which also has relatedContent,
-     * we can decide whether we want to move relatedContent up to the abstract base class etc.
-     * @param content
-     *            - DO class.
-     * @param result
-     *            - target DTO class.
-     */
-    private void populateRelatedContentWithIDs(final Content content, final ContentDTO result) {
-        List<ContentBase> contentChildren = content.getChildren();
-        if (contentChildren != null) {
-            List<ContentBaseDTO> resultChildren = result.getChildren();
-            for (int i = 0; i < contentChildren.size(); i++) {
-                ContentBase contentChild = contentChildren.get(i);
-                ContentBaseDTO resultChild = resultChildren.get(i);
-                if (contentChild instanceof Content && resultChild instanceof ContentDTO) {
-                    this.populateRelatedContentWithIDs((Content) contentChild, (ContentDTO) resultChild);
-                }
-            }
-        }
-        if (result.getRelatedContent() != null) {
-            List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
-            for (String relatedId : content.getRelatedContent()) {
-                ContentSummaryDTO contentSummary = new ContentSummaryDTO();
-                contentSummary.setId(relatedId);
-                relatedContent.add(contentSummary);
-            }
-            result.setRelatedContent(relatedContent);
-        }
-    }
-
-    /**
      *  Populate the DTO object sidebar with a placeholder, if a page type.
      *
      *  This is necessary since the DO has a String but the DTO has a Sidebar object,
@@ -256,8 +221,7 @@ public class ContentSubclassMapper {
         if (null == content) {
             return null;
         }
-        ContentDTO result = ContentMapper.INSTANCE.mapContent(content);
-        populateRelatedContentWithIDs(content, result);
+        ContentDTO result = MainMapper.INSTANCE.mapContent(content);
         populateSidebarWithIDs(content, result);
         return result;
     }

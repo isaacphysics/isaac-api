@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.util.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 
@@ -12,6 +13,8 @@ import java.util.List;
  */
 @Mapper(uses = UserMapper.class)
 public interface EventMapper {
+
+    EventMapper INSTANCE = Mappers.getMapper(EventMapper.class);
 
     EventBookingDTO map(DetailedEventBookingDTO source);
 

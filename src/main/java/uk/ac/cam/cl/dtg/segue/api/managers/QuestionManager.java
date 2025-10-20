@@ -137,8 +137,7 @@ public class QuestionManager {
             validatorTimer.observeDuration();
         }
 
-        return Response.ok(
-                mapper.map(validateQuestionResponse)).build();
+        return Response.ok(mapper.map(validateQuestionResponse)).build();
 
     }
 
@@ -634,7 +633,7 @@ public class QuestionManager {
 
         ResultsWrapper<String> results = new ResultsWrapper<>(Collections.singletonList(specification), 1L);
 
-        return Response.ok(mapper.copy(results)).build();
+        return Response.ok(results).build();
     }
 
     public static String extractPageIdFromQuestionId(String questionId) {
