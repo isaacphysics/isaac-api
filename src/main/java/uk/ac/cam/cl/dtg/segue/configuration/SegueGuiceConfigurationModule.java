@@ -147,8 +147,12 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
+import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
+import uk.ac.cam.cl.dtg.util.mappers.EventMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
+import uk.ac.cam.cl.dtg.util.mappers.QuestionMapper;
+import uk.ac.cam.cl.dtg.util.mappers.QuestionValidationMapper;
 import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import jakarta.annotation.Nullable;
@@ -620,6 +624,55 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return mapper;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static MainMapper getMainMapperInstance() {
+        return MainMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static ContentMapper getContentMapperInstance() {
+        return ContentMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static UserMapper getUserMapperInstance() {
+        return UserMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static EventMapper getEventMapperInstance() {
+        return EventMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static AssignmentMapper getAssignmentMapperInstance() {
+        return AssignmentMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static QuestionMapper getQuestionMapperInstance() {
+        return QuestionMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    @Inject
+    public static QuestionValidationMapper getQuestionValidationMapperInstance() {
+        return QuestionValidationMapper.INSTANCE;
     }
 
     /**
