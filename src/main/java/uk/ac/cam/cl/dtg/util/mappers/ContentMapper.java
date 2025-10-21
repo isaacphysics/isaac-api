@@ -135,6 +135,7 @@ public interface ContentMapper {
     @SubclassMapping(source = Sidebar.class, target = SidebarDTO.class)
     @SubclassMapping(source = SidebarEntry.class, target = SidebarEntryDTO.class)
     @SubclassMapping(source = IsaacEventPage.class, target = IsaacEventPageDTO.class)
+    @SubclassMapping(source = IsaacQuiz.class, target = IsaacQuizDTO.class)
     @SubclassMapping(source = SeguePage.class, target = SeguePageDTO.class)
     ContentDTO mapContent(Content source);
 
@@ -243,6 +244,10 @@ public interface ContentMapper {
     @Mapping(target = "sidebar", ignore = true)
     @InheritConfiguration(name = "mapContent")
     IsaacEventPageDTO map(IsaacEventPage source);
+
+    @Mapping(target = "sidebar", ignore = true)
+    @InheritConfiguration(name = "mapContent")
+    IsaacQuizDTO map(IsaacQuiz source);
 
     @Mapping(target = "sidebar", ignore = true)
     @Mapping(target = "linkedGameboards", ignore = true)
