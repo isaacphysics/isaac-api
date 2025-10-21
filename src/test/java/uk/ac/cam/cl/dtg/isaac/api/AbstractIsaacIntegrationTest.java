@@ -243,8 +243,13 @@ public class AbstractIsaacIntegrationTest {
         passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
         ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
+
+        Git git = createNiceMock(Git.class);
+        GitDb gitDb = new GitDb(git);
+        contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, properties);
+
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
-        questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
+        questionManager = new QuestionManager(contentMapper, pgQuestionAttempts, contentManager);
 
         mapperFacade = contentMapper.getAutoMapper();
 
@@ -264,9 +269,6 @@ public class AbstractIsaacIntegrationTest {
         EmailCommunicator communicator = new EmailCommunicator("localhost", "default@localhost", "Howdy!");
         userPreferenceManager = new PgUserPreferenceManager(postgresSqlDb);
 
-        Git git = createNiceMock(Git.class);
-        GitDb gitDb = new GitDb(git);
-        contentManager = new GitContentManager(gitDb, elasticSearchProvider, contentMapper, properties);
         logManager = createNiceMock(ILogManager.class);
         IDeletionTokenPersistenceManager deletionTokenPersistenceManager = new PgDeletionTokenPersistenceManager(postgresSqlDb);
 

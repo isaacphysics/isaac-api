@@ -22,6 +22,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -254,7 +256,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
 
     @Override
-    public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByQuestionId(final Long userId, final String questionId)
+    public List<LLMFreeTextQuestionValidationResponse> getQuestionAttemptsByQuestionId(final Long userId, final String questionId)
             throws SegueDatabaseException {
         String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id = ? ORDER BY \"timestamp\" ASC";
         try (Connection conn = database.getDatabaseConnection();
@@ -262,9 +264,18 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         ) {
             pst.setLong(1, userId);
             pst.setString(2, questionId);
+            log.warn("ick {} {}", userId, questionId);
 
             try (ResultSet results = pst.executeQuery()) {
-                return resultsToMapValidationResponseByPagePart(results);
+                List<LLMFreeTextQuestionValidationResponse> c = new LinkedList<>();
+
+                while (results.next()) {
+                    LLMFreeTextQuestionValidationResponse questionAttempt = objectMapper.readValue(
+                            results.getString("question_attempt"), LLMFreeTextQuestionValidationResponse.class);
+
+                    c.add(questionAttempt);
+                }
+                return c;
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

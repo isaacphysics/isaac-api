@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.InlineRegionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -652,7 +653,7 @@ public class GameManager {
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                 questionAttemptsForAllUsersOfInterest =
-                questionManager.getMatchingLightweightQuestionAttempts(users, questionPageIds);
+                questionManager.getMatchingDecoratedLightweightQuestionAttempts(users, questionPageIds);
 
         for (RegisteredUserDTO user : users) {
             List<GameboardItem> userGameItems = Lists.newArrayList();
@@ -1150,15 +1151,11 @@ public class GameManager {
             for (Content questionPart : listOfQuestionParts) {
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts =
                         questionAttempts.get(questionPart.getId());
-                log.warn("queue {}", questionPart);
                 if (Objects.equals(questionPart.getType(), "isaacLLMFreeTextQuestion")) {
                     int maxMarks = ((IsaacLLMFreeTextQuestion) questionPart).getMaxMarks();
-                    if (questionPartAttempts != null) {
-                        // Go through the attempts for this question part to determine the attempt with the
-                        // greatest number of marks awarded.
+                    if (questionPartAttempts != null && !questionPartAttempts.isEmpty()) {
                         int greatestMarksForThisQuestion = 0;
                         for (LightweightQuestionValidationResponse attempt: questionPartAttempts) {
-                            log.warn(attempt.toString());
                             if (attempt instanceof LLMFreeTextQuestionValidationResponse) {
                                 LLMFreeTextQuestionValidationResponse llmFreeTextAttempt = (LLMFreeTextQuestionValidationResponse) attempt;
                                 if (llmFreeTextAttempt.getMarksAwarded() > greatestMarksForThisQuestion) {

@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -79,7 +80,7 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - If there is a database error.
      */
-    Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByQuestionId(final Long userId, String questionId)
+    List<LLMFreeTextQuestionValidationResponse> getQuestionAttemptsByQuestionId(final Long userId, String questionId)
             throws SegueDatabaseException;
 
     /**
