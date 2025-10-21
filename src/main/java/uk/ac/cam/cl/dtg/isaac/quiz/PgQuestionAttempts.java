@@ -253,6 +253,26 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         }
     }
 
+    @Override
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByQuestionId(final Long userId, final String questionId)
+            throws SegueDatabaseException {
+        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id = ? ORDER BY \"timestamp\" ASC";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setLong(1, userId);
+            pst.setString(2, questionId);
+
+            try (ResultSet results = pst.executeQuery()) {
+                return resultsToMapValidationResponseByPagePart(results);
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (IOException e) {
+            throw new SegueDatabaseException("Exception while parsing json", e);
+        }
+    }
+
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getLightweightQuestionAttemptsByUsers(final List<Long> userIds)
             throws SegueDatabaseException {
 
