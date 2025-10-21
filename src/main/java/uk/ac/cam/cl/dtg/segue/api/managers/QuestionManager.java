@@ -461,35 +461,32 @@ public class QuestionManager {
      */
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingDecoratedLightweightQuestionAttempts(
             final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException, ContentManagerException {
-        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> a = getMatchingLightweightQuestionAttempts(users, questionPageIds);
+        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> decoratedLightweightQuestionAttempts =
+                getMatchingLightweightQuestionAttempts(users, questionPageIds);
 
-        // Loop over all users, question pages, and question part, and if the question part is an LLMFreeTextQuestion, log.warn("LLM")
-        for (Map.Entry<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> userEntry : a.entrySet()) {
+        // Iterate over all question parts in the mapping, replacing those on an isaacLLMFreeTextQuestion with a full QuestionValidationResponse
+        for (Map.Entry<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> userEntry : decoratedLightweightQuestionAttempts.entrySet()) {
             Long userId = userEntry.getKey();
             Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionPages = userEntry.getValue();
 
             for (Map.Entry<String, Map<String, List<LightweightQuestionValidationResponse>>> pageEntry : questionPages.entrySet()) {
                 String questionPageId = pageEntry.getKey();
-                Map<String, List<LightweightQuestionValidationResponse>> questionPartResponseMap = pageEntry.getValue();
-
+                Map<String, List<LightweightQuestionValidationResponse>> questionParts = pageEntry.getValue();
                 IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(questionPageId);
-                // get all question parts in the question page: depends on each question
-                // having an id that starts with the question page id.
-                Collection<Question> listOfQuestionParts = getAllMarkableDOQuestionPartsDFSOrder(questionPage);
+                Collection<Question> contentQuestionParts = getAllMarkableDOQuestionPartsDFSOrder(questionPage);
 
-                for (Question questionPart : listOfQuestionParts) {
+                for (Question questionPart : contentQuestionParts) {
                     if (Objects.equals(questionPart.getType(), "isaacLLMFreeTextQuestion")) {
                         String questionPartId = questionPart.getId();
-                        List<LLMFreeTextQuestionValidationResponse> decoratedQuestionValidationResponses = this.questionAttemptPersistenceManager.getQuestionAttemptsByQuestionId(userId, questionPartId);
+                        List<QuestionValidationResponse> decoratedQuestionValidationResponses = this.questionAttemptPersistenceManager.getQuestionAttemptsByQuestionId(userId, questionPartId);
                         List<LightweightQuestionValidationResponse> lightweightList = new ArrayList<>(decoratedQuestionValidationResponses);
-                        questionPartResponseMap.put(questionPartId, lightweightList);
-                        // questionPartResponseMap.put(questionPartId, decoratedQuestionValidationResponses);
+                        questionParts.put(questionPartId, lightweightList);
                     }
                 }
             }
         }
 
-        return a;
+        return decoratedLightweightQuestionAttempts;
     }
 
     /**

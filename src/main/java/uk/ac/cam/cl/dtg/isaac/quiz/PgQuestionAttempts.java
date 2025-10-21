@@ -256,7 +256,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
 
     @Override
-    public List<LLMFreeTextQuestionValidationResponse> getQuestionAttemptsByQuestionId(final Long userId, final String questionId)
+    public List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(final Long userId, final String questionId)
             throws SegueDatabaseException {
         String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id = ? ORDER BY \"timestamp\" ASC";
         try (Connection conn = database.getDatabaseConnection();
@@ -264,19 +264,18 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         ) {
             pst.setLong(1, userId);
             pst.setString(2, questionId);
-            log.warn("ick {} {}", userId, questionId);
+
+            List<QuestionValidationResponse> questionAttemptList = new LinkedList<>();
 
             try (ResultSet results = pst.executeQuery()) {
-                List<LLMFreeTextQuestionValidationResponse> c = new LinkedList<>();
-
                 while (results.next()) {
                     LLMFreeTextQuestionValidationResponse questionAttempt = objectMapper.readValue(
                             results.getString("question_attempt"), LLMFreeTextQuestionValidationResponse.class);
 
-                    c.add(questionAttempt);
+                    questionAttemptList.add(questionAttempt);
                 }
-                return c;
             }
+            return questionAttemptList;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {
