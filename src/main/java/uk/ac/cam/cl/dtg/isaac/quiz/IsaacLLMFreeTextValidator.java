@@ -276,12 +276,13 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @param question the question being marked so that we can return the mark scheme.
      * @param answer the user's attempt at the question.
      * @param awardedMarks the marks awarded for each field in the mark scheme according to the LLM response.
+     * @param markTotal the calculated mark value based on which individual marks were awarded
      * @return a response to the user's attempt at the question.
      */
     private LLMFreeTextQuestionValidationResponse generateQuestionValidationResponse(
             final IsaacLLMFreeTextQuestion question, final Choice answer,
             final Map<String, Integer> awardedMarks, final int markTotal) {
-        boolean isConsideredCorrect = markTotal > 0;
+        boolean isConsideredCorrect = markTotal == question.getMaxMarks();
 
         // We create a fresh copy of the mark scheme with the full description and the awarded mark values.
         List<LLMFreeTextMarkSchemeEntry> markBreakdown = question.getMarkScheme().stream().map(mark -> {
