@@ -478,7 +478,8 @@ public class QuestionManager {
                 for (Question questionPart : contentQuestionParts) {
                     if (Objects.equals(questionPart.getType(), "isaacLLMFreeTextQuestion")) {
                         String questionPartId = questionPart.getId();
-                        List<QuestionValidationResponse> decoratedQuestionValidationResponses = this.questionAttemptPersistenceManager.getQuestionAttemptsByQuestionId(userId, questionPartId);
+                        List<QuestionValidationResponse> decoratedQuestionValidationResponses =
+                                this.questionAttemptPersistenceManager.getQuestionAttemptsByQuestionId(userId, questionPartId, LLMFreeTextQuestionValidationResponse.class);
                         List<LightweightQuestionValidationResponse> lightweightList = new ArrayList<>(decoratedQuestionValidationResponses);
                         questionParts.put(questionPartId, lightweightList);
                     }

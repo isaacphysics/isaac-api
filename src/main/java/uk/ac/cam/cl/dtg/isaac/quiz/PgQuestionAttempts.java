@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseLockTimoutException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -256,8 +257,9 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     }
 
     @Override
-    public List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(final Long userId, final String questionId)
-            throws SegueDatabaseException {
+    public <T extends QuestionValidationResponse> List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(
+            final Long userId, final String questionId,
+            Class<T> responseType) throws SegueDatabaseException {
         String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id = ? ORDER BY \"timestamp\" ASC";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
@@ -269,8 +271,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             try (ResultSet results = pst.executeQuery()) {
                 while (results.next()) {
-                    LLMFreeTextQuestionValidationResponse questionAttempt = objectMapper.readValue(
-                            results.getString("question_attempt"), LLMFreeTextQuestionValidationResponse.class);
+                    QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                            results.getString("question_attempt"), responseType);
 
                     questionAttemptList.add(questionAttempt);
                 }
