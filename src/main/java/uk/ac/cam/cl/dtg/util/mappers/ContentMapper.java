@@ -115,6 +115,54 @@ public interface ContentMapper {
     @SubclassMapping(source = CoordinateItemDTO.class, target = CoordinateItem.class)
     Item map(ItemDTO source);
 
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    DetailedQuizSummaryDTO map(IsaacQuizDTO source);
+
+    @Mapping(target = "sidebar", ignore = true)
+    @SubclassMapping(source = IsaacFastTrackQuestionPage.class, target = IsaacFastTrackQuestionPageDTO.class)
+    @SubclassMapping(source = IsaacQuestionPage.class, target = IsaacQuestionPageDTO.class)
+    @SubclassMapping(source = IsaacConceptPage.class, target = IsaacConceptPageDTO.class)
+    @SubclassMapping(source = IsaacBookIndexPage.class, target = IsaacBookIndexPageDTO.class)
+    SeguePageDTO map(SeguePage source);
+
+    @Mapping(target = "userBookingStatus", ignore = true)
+    @Mapping(target = "placesAvailable", ignore = true)
+    @Mapping(target = "sidebar", ignore = true)
+    @Mapping(target = "end_date", ignore = true)
+    @InheritConfiguration(name = "mapContent")
+    IsaacEventPageDTO map(IsaacEventPage source);
+
+    @Mapping(target = "total", ignore = true)
+    @Mapping(target = "sectionTotals", ignore = true)
+    @Mapping(target = "individualFeedback", ignore = true)
+    @Mapping(target = "defaultFeedbackMode", ignore = true)
+    @Mapping(target = "sidebar", ignore = true)
+    @InheritConfiguration(name = "mapContent")
+    IsaacQuizDTO map(IsaacQuiz source);
+
+    @Mapping(target = "sidebar", ignore = true)
+    @Mapping(target = "linkedGameboards", ignore = true)
+    @InheritConfiguration(name = "mapContent")
+    IsaacTopicSummaryPageDTO map(IsaacTopicSummaryPage source);
+
+    @Mapping(target = "sidebar", ignore = true)
+    @Mapping(target = "gameboards", ignore = true)
+    @Mapping(target = "extensionGameboards", ignore = true)
+    @InheritConfiguration(name = "mapContent")
+    IsaacBookDetailPageDTO map(IsaacBookDetailPage source);
+
+    @Mapping(target = "sidebar", ignore = true)
+    @Mapping(target = "gameboards", ignore = true)
+    @InheritConfiguration(name = "mapContent")
+    IsaacRevisionDetailPageDTO map(IsaacRevisionDetailPage source);
+
+    @InheritConfiguration(name = "mapContent")
+    @SubclassMapping(source = SidebarGroup.class, target = SidebarGroupDTO.class)
+    SidebarEntryDTO map(SidebarEntry source);
+
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
     @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)
@@ -138,12 +186,6 @@ public interface ContentMapper {
     @SubclassMapping(source = IsaacQuiz.class, target = IsaacQuizDTO.class)
     @SubclassMapping(source = SeguePage.class, target = SeguePageDTO.class)
     ContentDTO mapContent(Content source);
-
-    @Mapping(target = "url", ignore = true)
-    @Mapping(target = "state", ignore = true)
-    @Mapping(target = "questionPartIds", ignore = true)
-    @Mapping(target = "difficulty", ignore = true)
-    DetailedQuizSummaryDTO map(IsaacQuizDTO source);
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
@@ -232,42 +274,4 @@ public interface ContentMapper {
 
     @Mapping(target = "end_date", ignore = true)
     IsaacEventPageDTO copy(IsaacEventPageDTO source);
-
-    @Mapping(target = "sidebar", ignore = true)
-    @SubclassMapping(source = IsaacFastTrackQuestionPage.class, target = IsaacFastTrackQuestionPageDTO.class)
-    @SubclassMapping(source = IsaacQuestionPage.class, target = IsaacQuestionPageDTO.class)
-    @SubclassMapping(source = IsaacConceptPage.class, target = IsaacConceptPageDTO.class)
-    @SubclassMapping(source = IsaacBookIndexPage.class, target = IsaacBookIndexPageDTO.class)
-    SeguePageDTO map(SeguePage source);
-
-    @Mapping(target = "userBookingStatus", ignore = true)
-    @Mapping(target = "placesAvailable", ignore = true)
-    @Mapping(target = "sidebar", ignore = true)
-    @Mapping(target = "end_date", ignore = true)
-    @InheritConfiguration(name = "mapContent")
-    IsaacEventPageDTO map(IsaacEventPage source);
-
-    @Mapping(target = "sidebar", ignore = true)
-    @InheritConfiguration(name = "mapContent")
-    IsaacQuizDTO map(IsaacQuiz source);
-
-    @Mapping(target = "sidebar", ignore = true)
-    @Mapping(target = "linkedGameboards", ignore = true)
-    @InheritConfiguration(name = "mapContent")
-    IsaacTopicSummaryPageDTO map(IsaacTopicSummaryPage source);
-
-    @Mapping(target = "sidebar", ignore = true)
-    @Mapping(target = "gameboards", ignore = true)
-    @Mapping(target = "extensionGameboards", ignore = true)
-    @InheritConfiguration(name = "mapContent")
-    IsaacBookDetailPageDTO map(IsaacBookDetailPage source);
-
-    @Mapping(target = "sidebar", ignore = true)
-    @Mapping(target = "gameboards", ignore = true)
-    @InheritConfiguration(name = "mapContent")
-    IsaacRevisionDetailPageDTO map(IsaacRevisionDetailPage source);
-
-    @InheritConfiguration(name = "mapContent")
-    @SubclassMapping(source = SidebarGroup.class, target = SidebarGroupDTO.class)
-    SidebarEntryDTO map(SidebarEntry source);
 }
