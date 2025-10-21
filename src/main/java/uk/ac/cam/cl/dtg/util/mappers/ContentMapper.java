@@ -230,6 +230,7 @@ public interface ContentMapper {
 
     List<String> copyStringList(List<String> source);
 
+    @Mapping(target = "end_date", ignore = true)
     IsaacEventPageDTO copy(IsaacEventPageDTO source);
 
     @Mapping(target = "sidebar", ignore = true)
@@ -242,6 +243,7 @@ public interface ContentMapper {
     @Mapping(target = "userBookingStatus", ignore = true)
     @Mapping(target = "placesAvailable", ignore = true)
     @Mapping(target = "sidebar", ignore = true)
+    @Mapping(target = "end_date", ignore = true)
     @InheritConfiguration(name = "mapContent")
     IsaacEventPageDTO map(IsaacEventPage source);
 
