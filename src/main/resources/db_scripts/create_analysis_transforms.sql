@@ -203,3 +203,13 @@ CREATE TABLE anonymous.teacher_engagement_v2_events AS
         )
     UNION
         (SELECT user_id, timestamp from anonymous.workshop_join_events);
+
+CREATE TABLE anonymous.england_scotland_state_schools_v2 AS
+    SELECT *
+    FROM anonymous.schools_2024 as schools
+    WHERE
+       -- Scottish school info comes from schools_2024 - we need to filter for LA-run schools.
+        (schools.school_type_group = 'Local Authority' AND schools.data_source IN ('GOVERNMENT_SCO'))
+       -- For English schools, we have a pre-prepared table of state schools. Additionally, we want to include Colleges.
+       OR urn IN (SELECT urn FROM anonymous.schools_2024_english_state)
+       OR schools.school_type_group = 'Colleges'
