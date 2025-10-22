@@ -45,27 +45,6 @@ public interface ContentMapper {
         }
     }
 
-    /**
-     * Mapping method to convert a Content object to a ContentDTO or a Wildcard.
-     *
-     * @param <T>
-     *            - the target type.
-     * @param source
-     *            - the source Content object.
-     * @param targetClass
-     *            - the target class to convert to.
-     * @return Returns an instance of the targetClass type mapped via the appropriate mapping method.
-     */
-    @SuppressWarnings("unchecked")
-    default <T> T map(Content source, Class<T> targetClass) {
-        // TODO fix the getWildcardById usage that makes this method necessary
-        if (targetClass.equals(ContentDTO.class)) {
-            return (T) map(source);
-        } else {
-            throw new UnimplementedMappingException(Content.class, targetClass);
-        }
-    }
-
     @SubclassMapping(source = ContentDTO.class, target = Content.class)
     ContentBase map(ContentBaseDTO source);
 
@@ -279,6 +258,8 @@ public interface ContentMapper {
         }
         return source.getId();
     }
+
+    IsaacWildcard copy(IsaacWildcard source);
 
     @Mapping(target = "end_date", ignore = true)
     IsaacEventPageDTO copy(IsaacEventPageDTO source);

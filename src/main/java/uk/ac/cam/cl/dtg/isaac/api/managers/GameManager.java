@@ -1215,7 +1215,12 @@ public class GameManager {
 
         Content wildcardResults = this.contentManager.getContentDOById(id);
 
-        return mapper.map(wildcardResults, IsaacWildcard.class);
+        if (wildcardResults instanceof IsaacWildcard) {
+            // Create a copy to avoid modifying the original object
+            IsaacWildcard wildcard = (IsaacWildcard) wildcardResults;
+            return mapper.copy(wildcard);
+        }
+        return null;
     }
 
     /**
