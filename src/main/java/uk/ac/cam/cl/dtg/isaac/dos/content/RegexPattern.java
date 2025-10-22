@@ -35,7 +35,7 @@ public class RegexPattern extends Choice {
     /**
      * @return Whether this regex choice should allow any case to match.
      */
-    public boolean isCaseInsensitive() {
+    public Boolean isCaseInsensitive() {
         return caseInsensitive;
     }
 
@@ -51,7 +51,7 @@ public class RegexPattern extends Choice {
     /**
      * @return Whether this regex pattern should have the multiline flag set.
      */
-    public boolean isMultiLineRegex() {
+    public Boolean isMultiLineRegex() {
         return multiLineRegex;
     }
 
@@ -67,7 +67,7 @@ public class RegexPattern extends Choice {
     /**
      * @return Whether this regex pattern is partial or exact match.
      */
-    public boolean isMatchWholeString() {
+    public Boolean isMatchWholeString() {
         return matchWholeString;
     }
 
