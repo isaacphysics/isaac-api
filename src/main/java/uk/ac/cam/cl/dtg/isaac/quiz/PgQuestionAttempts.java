@@ -258,8 +258,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
     @Override
     public <T extends QuestionValidationResponse> List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(
-            final Long userId, final String questionId,
-            Class<T> responseType) throws SegueDatabaseException {
+            final Long userId, final String questionId, Class<T> responseType) throws SegueDatabaseException {
         String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id = ? ORDER BY \"timestamp\" ASC";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
@@ -470,7 +469,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     private LightweightQuestionValidationResponse resultsToLightweightValidationResponse(final ResultSet results) throws SQLException {
         LightweightQuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
 
-        partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
+        partialQuestionAttempt.setCorrect(results.getInt("marks") > 0);
         partialQuestionAttempt.setQuestionId(results.getString("question_id"));
         partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
 
