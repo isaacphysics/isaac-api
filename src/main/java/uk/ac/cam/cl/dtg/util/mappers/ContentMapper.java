@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.util.mappers;
 
-import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.SubclassExhaustiveStrategy;
@@ -21,7 +20,7 @@ public interface ContentMapper {
     ContentMapper INSTANCE = Mappers.getMapper(ContentMapper.class);
 
     /**
-     * Mapping method to convert a ContentDTO to various other types of DTO or a Wildcard.
+     * Mapping method to convert a ContentDTO to other types of DTO.
      *
      * @param <T>
      *            - the target type.
@@ -59,8 +58,9 @@ public interface ContentMapper {
      */
     @SuppressWarnings("unchecked")
     default <T> T map(Content source, Class<T> targetClass) {
+        // TODO fix the getWildcardById usage that makes this method necessary
         if (targetClass.equals(ContentDTO.class)) {
-            return (T) mapContent(source);
+            return (T) map(source);
         } else {
             throw new UnimplementedMappingException(Content.class, targetClass);
         }
@@ -72,19 +72,19 @@ public interface ContentMapper {
     @SubclassMapping(source = Content.class, target = ContentDTO.class)
     ContentBaseDTO map(ContentBase source);
 
-
     @SubclassMapping(source = ChemicalFormula.class, target = ChemicalFormulaDTO.class)
     @SubclassMapping(source = Formula.class, target = FormulaDTO.class)
     @SubclassMapping(source = FreeTextRule.class, target = FreeTextRuleDTO.class)
     @SubclassMapping(source = GraphChoice.class, target = GraphChoiceDTO.class)
-    @SubclassMapping(source = ParsonsChoice.class, target = ParsonsChoiceDTO.class)
-    @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
     @SubclassMapping(source = LLMFreeTextChoice.class, target = LLMFreeTextChoiceDTO.class)
     @SubclassMapping(source = LogicFormula.class, target = LogicFormulaDTO.class)
     @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
     @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
     @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
+    // ItemChoice subclasses must come before ItemChoice
     @SubclassMapping(source = CoordinateChoice.class, target = CoordinateChoiceDTO.class)
+    @SubclassMapping(source = ParsonsChoice.class, target = ParsonsChoiceDTO.class)
+    @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
     ChoiceDTO map(Choice source);
 
     @Mapping(target = "searchableContent", ignore = true)
@@ -95,14 +95,15 @@ public interface ContentMapper {
     @SubclassMapping(source = FormulaDTO.class, target = Formula.class)
     @SubclassMapping(source = FreeTextRuleDTO.class, target = FreeTextRule.class)
     @SubclassMapping(source = GraphChoiceDTO.class, target = GraphChoice.class)
-    @SubclassMapping(source = ParsonsChoiceDTO.class, target = ParsonsChoice.class)
-    @SubclassMapping(source = ItemChoiceDTO.class, target = ItemChoice.class)
     @SubclassMapping(source = LLMFreeTextChoiceDTO.class, target = LLMFreeTextChoice.class)
     @SubclassMapping(source = LogicFormulaDTO.class, target = LogicFormula.class)
     @SubclassMapping(source = QuantityDTO.class, target = Quantity.class)
     @SubclassMapping(source = RegexPatternDTO.class, target = RegexPattern.class)
     @SubclassMapping(source = StringChoiceDTO.class, target = StringChoice.class)
+    // ItemChoiceDTO subclasses must come before ItemChoiceDTO
     @SubclassMapping(source = CoordinateChoiceDTO.class, target = CoordinateChoice.class)
+    @SubclassMapping(source = ParsonsChoiceDTO.class, target = ParsonsChoice.class)
+    @SubclassMapping(source = ItemChoiceDTO.class, target = ItemChoice.class)
     Choice map(ChoiceDTO source);
 
     @SubclassMapping(source = ParsonsItem.class, target = ParsonsItemDTO.class)
@@ -131,8 +132,7 @@ public interface ContentMapper {
     @Mapping(target = "userBookingStatus", ignore = true)
     @Mapping(target = "placesAvailable", ignore = true)
     @Mapping(target = "sidebar", ignore = true)
-    @Mapping(target = "end_date", ignore = true)
-    @InheritConfiguration(name = "mapContent")
+    @Mapping(target = "end_date", ignore = true) // end_date isn't actually ignored - see implementation
     IsaacEventPageDTO map(IsaacEventPage source);
 
     @Mapping(target = "total", ignore = true)
@@ -140,28 +140,31 @@ public interface ContentMapper {
     @Mapping(target = "individualFeedback", ignore = true)
     @Mapping(target = "defaultFeedbackMode", ignore = true)
     @Mapping(target = "sidebar", ignore = true)
-    @InheritConfiguration(name = "mapContent")
     IsaacQuizDTO map(IsaacQuiz source);
 
     @Mapping(target = "sidebar", ignore = true)
     @Mapping(target = "linkedGameboards", ignore = true)
-    @InheritConfiguration(name = "mapContent")
     IsaacTopicSummaryPageDTO map(IsaacTopicSummaryPage source);
 
     @Mapping(target = "sidebar", ignore = true)
     @Mapping(target = "gameboards", ignore = true)
     @Mapping(target = "extensionGameboards", ignore = true)
-    @InheritConfiguration(name = "mapContent")
     IsaacBookDetailPageDTO map(IsaacBookDetailPage source);
 
     @Mapping(target = "sidebar", ignore = true)
     @Mapping(target = "gameboards", ignore = true)
-    @InheritConfiguration(name = "mapContent")
     IsaacRevisionDetailPageDTO map(IsaacRevisionDetailPage source);
 
-    @InheritConfiguration(name = "mapContent")
     @SubclassMapping(source = SidebarGroup.class, target = SidebarGroupDTO.class)
     SidebarEntryDTO map(SidebarEntry source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = ChoiceQuestion.class, target = ChoiceQuestionDTO.class)
+    QuestionDTO map(Question source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacQuestionBase.class, target = IsaacQuestionBaseDTO.class)
+    ChoiceQuestionDTO map(ChoiceQuestion source);
 
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
@@ -182,10 +185,17 @@ public interface ContentMapper {
     @SubclassMapping(source = Question.class, target = QuestionDTO.class)
     @SubclassMapping(source = Sidebar.class, target = SidebarDTO.class)
     @SubclassMapping(source = SidebarEntry.class, target = SidebarEntryDTO.class)
+    // Media subclasses. Figure must come before Image.
+    @SubclassMapping(source = Figure.class, target = FigureDTO.class)
+    @SubclassMapping(source = Image.class, target = ImageDTO.class)
+    @SubclassMapping(source = Video.class, target = VideoDTO.class)
+    // Segue pages. More specific subclasses must come first.
+    @SubclassMapping(source = IsaacBookDetailPage.class, target = IsaacBookDetailPageDTO.class)
+    @SubclassMapping(source = IsaacRevisionDetailPage.class, target = IsaacRevisionDetailPageDTO.class)
     @SubclassMapping(source = IsaacEventPage.class, target = IsaacEventPageDTO.class)
     @SubclassMapping(source = IsaacQuiz.class, target = IsaacQuizDTO.class)
     @SubclassMapping(source = SeguePage.class, target = SeguePageDTO.class)
-    ContentDTO mapContent(Content source);
+    ContentDTO map(Content source);
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
@@ -257,7 +267,7 @@ public interface ContentMapper {
     ContentSummaryDTO mapStringToContentSummaryDTO(String source);
 
     /**
-     * Mapping method to convert a ContentSummaryDTO to a String of its ID.
+     * Mapping method to convert a ContentSummaryDTO to a String of its ID. Needed to map related content.
      *
      * @param source
      *            - the source Content object.
@@ -270,8 +280,36 @@ public interface ContentMapper {
         return source.getId();
     }
 
-    List<String> copyStringList(List<String> source);
-
     @Mapping(target = "end_date", ignore = true)
     IsaacEventPageDTO copy(IsaacEventPageDTO source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacQuickQuestion.class, target = IsaacQuickQuestionDTO.class)
+    @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
+    @SubclassMapping(source = IsaacFreeTextQuestion.class, target = IsaacFreeTextQuestionDTO.class)
+    @SubclassMapping(source = IsaacGraphSketcherQuestion.class, target = IsaacGraphSketcherQuestionDTO.class)
+    @SubclassMapping(source = IsaacItemQuestion.class, target = IsaacItemQuestionDTO.class)
+    @SubclassMapping(source = IsaacMultiChoiceQuestion.class, target = IsaacMultiChoiceQuestionDTO.class)
+    @SubclassMapping(source = IsaacNumericQuestion.class, target = IsaacNumericQuestionDTO.class)
+    @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
+    @SubclassMapping(source = IsaacRegexMatchQuestion.class, target = IsaacRegexMatchQuestionDTO.class)
+    @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
+    @SubclassMapping(source = IsaacStringMatchQuestion.class, target = IsaacStringMatchQuestionDTO.class)
+    @SubclassMapping(source = IsaacSymbolicChemistryQuestion.class, target = IsaacSymbolicChemistryQuestionDTO.class)
+    @SubclassMapping(source = IsaacSymbolicLogicQuestion.class, target = IsaacSymbolicLogicQuestionDTO.class)
+    @SubclassMapping(source = IsaacSymbolicQuestion.class, target = IsaacSymbolicQuestionDTO.class)
+    @SubclassMapping(source = IsaacCoordinateQuestion.class, target = IsaacCoordinateQuestionDTO.class)
+    @SubclassMapping(source = IsaacLLMFreeTextQuestion.class, target = IsaacLLMFreeTextQuestionDTO.class)
+    @SubclassMapping(source = IsaacAnvilQuestion.class, target = IsaacAnvilQuestionDTO.class)
+    IsaacQuestionBaseDTO mapIsaacQuestionBase(IsaacQuestionBase source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
+    @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
+    @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
+    IsaacItemQuestionDTO mapIsaacItemQuestion(IsaacItemQuestion source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacSymbolicLogicQuestion.class, target = IsaacSymbolicLogicQuestionDTO.class)
+    IsaacSymbolicQuestionDTO mapIsaacSymbolicQuestion(IsaacSymbolicQuestion source);
 }

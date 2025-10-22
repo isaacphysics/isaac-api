@@ -151,7 +151,6 @@ import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.EventMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
-import uk.ac.cam.cl.dtg.util.mappers.QuestionMapper;
 import uk.ac.cam.cl.dtg.util.mappers.QuestionValidationMapper;
 import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
@@ -659,13 +658,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     public static AssignmentMapper getAssignmentMapperInstance() {
         return AssignmentMapper.INSTANCE;
-    }
-
-    @Provides
-    @Singleton
-    @Inject
-    public static QuestionMapper getQuestionMapperInstance() {
-        return QuestionMapper.INSTANCE;
     }
 
     @Provides

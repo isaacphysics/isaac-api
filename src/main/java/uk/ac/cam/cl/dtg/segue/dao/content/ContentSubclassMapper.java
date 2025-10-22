@@ -221,7 +221,7 @@ public class ContentSubclassMapper {
         if (null == content) {
             return null;
         }
-        ContentDTO result = MainMapper.INSTANCE.mapContent(content);
+        ContentDTO result = MainMapper.INSTANCE.map(content);
         populateSidebarWithIDs(content, result);
         return result;
     }
