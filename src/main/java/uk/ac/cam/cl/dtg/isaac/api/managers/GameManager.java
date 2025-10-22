@@ -1157,7 +1157,8 @@ public class GameManager {
                         int greatestMarksForThisQuestion = 0;
                         for (LightweightQuestionValidationResponse attempt: questionPartAttempts) {
                             if (attempt instanceof LLMFreeTextQuestionValidationResponse) {
-                                LLMFreeTextQuestionValidationResponse llmFreeTextAttempt = (LLMFreeTextQuestionValidationResponse) attempt;
+                                LLMFreeTextQuestionValidationResponse llmFreeTextAttempt =
+                                        (LLMFreeTextQuestionValidationResponse) attempt;
                                 if (llmFreeTextAttempt.getMarksAwarded() > greatestMarksForThisQuestion) {
                                     greatestMarksForThisQuestion = llmFreeTextAttempt.getMarksAwarded();
                                 }

@@ -487,6 +487,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         partialQuestionAttempt.setCorrect(results.getInt("marks") > 0);
         partialQuestionAttempt.setQuestionId(results.getString("question_id"));
         partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
+        partialQuestionAttempt.setMarks(results.getInt("marks"));
 
         return partialQuestionAttempt;
     }

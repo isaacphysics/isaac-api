@@ -80,9 +80,8 @@ public interface IQuestionAttemptManager {
      * @throws SegueDatabaseException
      *             - If there is a database error.
      */
-    <T extends QuestionValidationResponse> List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(final Long userId,
-                                                                                                            String questionId, Class<T> responseType)
-            throws SegueDatabaseException;
+    <T extends QuestionValidationResponse> List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(Long userId,
+            String questionId, Class<T> responseType) throws SegueDatabaseException;
 
     /**
      * A method that makes a single database request for a group of users and questions to get all of their attempt

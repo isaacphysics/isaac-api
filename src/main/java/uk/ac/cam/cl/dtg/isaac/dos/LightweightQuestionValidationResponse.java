@@ -10,6 +10,7 @@ public class LightweightQuestionValidationResponse {
     private String questionId;
     private Boolean correct;
     private Date dateAttempted;
+    private Integer marks;
 
     /**
      * Default Constructor for mappers.
@@ -27,12 +28,15 @@ public class LightweightQuestionValidationResponse {
      *            -
      * @param dateAttempted
      *            -
+     * @param marks
+     *            -
      */
     public LightweightQuestionValidationResponse(final String questionId, final Boolean correct,
-                                                 final Date dateAttempted) {
+                                                 final Date dateAttempted, final Integer marks) {
         this.questionId = questionId;
         this.correct = correct;
         this.dateAttempted = dateAttempted;
+        this.marks = marks;
     }
 
     /**
@@ -90,6 +94,25 @@ public class LightweightQuestionValidationResponse {
      */
     public void setDateAttempted(final Date dateAttempted) {
         this.dateAttempted = dateAttempted;
+    }
+
+    /**
+     * Gets the marks.
+     *
+     * @return the marks
+     */
+    public Integer getMarks() {
+        return marks;
+    }
+
+    /**
+     * Sets the marks.
+     *
+     * @param marks
+     *            the marks to set
+     */
+    public void setMarks(final Integer marks) {
+        this.marks = marks;
     }
 
     @Override
