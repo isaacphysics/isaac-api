@@ -22,6 +22,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -60,7 +61,7 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     public void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponse) throws SegueDatabaseException {
 
         String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, \"timestamp\", marks)" +
-                " VALUES (?, ?, ?::text::jsonb, ?, ?);";
+                " VALUES (?, ?, ?::text::jsonb, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -74,6 +75,20 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
                 pst.setNull(4, Types.BOOLEAN);
             }
             pst.setTimestamp(5, new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
+
+            if (questionResponse.getMarks() != null) {
+                if (questionResponse instanceof LLMFreeTextQuestionValidationResponse) {
+                    pst.setInt(6, ((LLMFreeTextQuestionValidationResponse) questionResponse).getMarksAwarded());
+                } else {
+                    if (questionResponse.isCorrect()) {
+                        pst.setInt(6, 1);
+                    } else {
+                        pst.setInt(6, 0);
+                    }
+                }
+            } else {
+                pst.setInt(6, java.sql.Types.NULL);
+            }
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save quiz question attempt.");

@@ -208,14 +208,11 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             if (questionAttempt.getMarks() != null) {
                 if (questionAttempt instanceof LLMFreeTextQuestionValidationResponse) {
                     pst.setInt(7, ((LLMFreeTextQuestionValidationResponse) questionAttempt).getMarksAwarded());
-                    log.warn("LLM response");
                 } else {
                     if (questionAttempt.isCorrect()) {
                         pst.setInt(7, 1);
-                        log.warn("1 mark response");
                     } else {
                         pst.setInt(7, 0);
-                        log.warn("0 mark response");
                     }
                 }
             } else {
