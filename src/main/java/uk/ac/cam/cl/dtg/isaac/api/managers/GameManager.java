@@ -29,11 +29,9 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
-import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -1150,68 +1148,33 @@ public class GameManager {
             for (Content questionPart : listOfQuestionParts) {
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts =
                         questionAttempts.get(questionPart.getId());
-                if (questionPart instanceof IsaacLLMFreeTextQuestion) {
-                    int maxMarks = ((IsaacLLMFreeTextQuestion) questionPart).getMaxMarks();
-                    if (questionPartAttempts != null && !questionPartAttempts.isEmpty()) {
-                        int greatestMarksForThisQuestion = 0;
-                        for (LightweightQuestionValidationResponse attempt: questionPartAttempts) {
-                            if (attempt.getMarks() > greatestMarksForThisQuestion) {
-                                greatestMarksForThisQuestion = attempt.getMarks();
-                            }
-                        }
-                        for (int markCorrect = 0; markCorrect < greatestMarksForThisQuestion; markCorrect++) {
-                            questionPartStates.add(QuestionPartState.CORRECT);
-                            questionPartsCorrect++;
-                        }
-                        for (int markIncorrect = 0; markIncorrect < (maxMarks - greatestMarksForThisQuestion); markIncorrect++) {
-                            questionPartStates.add(QuestionPartState.INCORRECT);
-                            questionPartsIncorrect++;
-                        }
-                    } else {
-                        for (int mark = 0; mark < maxMarks; mark++) {
-                            questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
-                            questionPartsNotAttempted++;
+                if (questionPartAttempts != null) {
+                    // Go through the attempts in reverse chronological order for this question part to determine if
+                    // there is a correct answer somewhere.
+                    boolean foundCorrectForThisQuestion = false;
+                    for (int i = questionPartAttempts.size() - 1; i >= 0; i--) {
+                        if (questionPartAttempts.get(i).isCorrect() != null
+                                && questionPartAttempts.get(i).isCorrect()) {
+                            foundCorrectForThisQuestion = true;
+                            break;
                         }
                     }
-                }
-                else {
-                    if (questionPartAttempts != null) {
-                        // Go through the attempts in reverse chronological order for this question part to determine if
-                        // there is a correct answer somewhere.
-                        boolean foundCorrectForThisQuestion = false;
-                        for (int i = questionPartAttempts.size() - 1; i >= 0; i--) {
-                            if (questionPartAttempts.get(i).isCorrect() != null
-                                    && questionPartAttempts.get(i).isCorrect()) {
-                                foundCorrectForThisQuestion = true;
-                                break;
-                            }
-                        }
-                        if (foundCorrectForThisQuestion) {
-                            questionPartStates.add(QuestionPartState.CORRECT);
-                            questionPartsCorrect++;
-                        } else {
-                            questionPartStates.add(QuestionPartState.INCORRECT);
-                            questionPartsIncorrect++;
-                        }
+                    if (foundCorrectForThisQuestion) {
+                        questionPartStates.add(QuestionPartState.CORRECT);
+                        questionPartsCorrect++;
                     } else {
-                        questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
-                        questionPartsNotAttempted++;
-                    }
-                }
-            }
-        } else {
-            for (Content questionPart : listOfQuestionParts) {
-                if (questionPart instanceof IsaacLLMFreeTextQuestion) {
-                    int maxMarks = ((IsaacLLMFreeTextQuestion) questionPart).getMaxMarks();
-                    for (int mark = 0; mark < maxMarks; mark++) {
-                        questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
-                        questionPartsNotAttempted++;
+                        questionPartStates.add(QuestionPartState.INCORRECT);
+                        questionPartsIncorrect++;
                     }
                 } else {
                     questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
                     questionPartsNotAttempted++;
                 }
             }
+        } else {
+            questionPartsNotAttempted = listOfQuestionParts.size();
+            questionPartStates = listOfQuestionParts.stream()
+                    .map(_q -> QuestionPartState.NOT_ATTEMPTED).collect(Collectors.toList());
         }
 
         // Get the pass mark for the question page
