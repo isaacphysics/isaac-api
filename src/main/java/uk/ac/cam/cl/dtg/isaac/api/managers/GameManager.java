@@ -53,7 +53,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.InlineRegionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -653,7 +652,7 @@ public class GameManager {
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                 questionAttemptsForAllUsersOfInterest =
-                questionManager.getMatchingDecoratedLightweightQuestionAttempts(users, questionPageIds);
+                questionManager.getMatchingLightweightQuestionAttempts(users, questionPageIds);
 
         for (RegisteredUserDTO user : users) {
             List<GameboardItem> userGameItems = Lists.newArrayList();

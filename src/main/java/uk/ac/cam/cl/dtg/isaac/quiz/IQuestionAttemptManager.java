@@ -72,18 +72,6 @@ public interface IQuestionAttemptManager {
             throws SegueDatabaseException;
 
     /**
-     * Get a users question attempts on a specific question part.
-     *
-     * @param userId - the id of the user to search for.
-     * @param questionId - the id of the question part.
-     * @return the questionAttempts map or an empty map if the user has not yet registered any attempts.
-     * @throws SegueDatabaseException
-     *             - If there is a database error.
-     */
-    <T extends QuestionValidationResponse> List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(Long userId,
-            String questionId, Class<T> responseType) throws SegueDatabaseException;
-
-    /**
      * A method that makes a single database request for a group of users and questions to get all of their attempt
      * information back.
      * 

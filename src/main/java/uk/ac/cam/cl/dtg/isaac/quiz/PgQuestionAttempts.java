@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -264,34 +263,6 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             try (ResultSet results = pst.executeQuery()) {
                 return resultsToMapValidationResponseByPagePart(results);
             }
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        } catch (IOException e) {
-            throw new SegueDatabaseException("Exception while parsing json", e);
-        }
-    }
-
-    @Override
-    public <T extends QuestionValidationResponse> List<QuestionValidationResponse> getQuestionAttemptsByQuestionId(
-            final Long userId, final String questionId, Class<T> responseType) throws SegueDatabaseException {
-        String query = "SELECT * FROM question_attempts WHERE user_id = ? AND question_id = ? ORDER BY \"timestamp\" ASC";
-        try (Connection conn = database.getDatabaseConnection();
-             PreparedStatement pst = conn.prepareStatement(query);
-        ) {
-            pst.setLong(1, userId);
-            pst.setString(2, questionId);
-
-            List<QuestionValidationResponse> questionAttemptList = new LinkedList<>();
-
-            try (ResultSet results = pst.executeQuery()) {
-                while (results.next()) {
-                    QuestionValidationResponse questionAttempt = objectMapper.readValue(
-                            results.getString("question_attempt"), responseType);
-
-                    questionAttemptList.add(questionAttempt);
-                }
-            }
-            return questionAttemptList;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {

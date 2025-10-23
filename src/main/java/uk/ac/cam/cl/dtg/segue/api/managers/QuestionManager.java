@@ -452,44 +452,7 @@ public class QuestionManager {
 
         return this.questionAttemptPersistenceManager.getMatchingLightweightQuestionAttempts(userIds, questionPageIds);
     }
-
-    /**
-     * @param users who we are interested in.
-     * @param questionPageIds we want to look up.
-     * @return a map of user id to question page id to question_id to list of attempts.
-     * @throws SegueDatabaseException if there is a database error.
-     */
-    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingDecoratedLightweightQuestionAttempts(
-            final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException, ContentManagerException {
-        Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> decoratedLightweightQuestionAttempts =
-                getMatchingLightweightQuestionAttempts(users, questionPageIds);
-
-        // Iterate over all question parts in the mapping, replacing those on an isaacLLMFreeTextQuestion with a full QuestionValidationResponse
-        for (Map.Entry<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> userEntry : decoratedLightweightQuestionAttempts.entrySet()) {
-            Long userId = userEntry.getKey();
-            Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionPages = userEntry.getValue();
-
-            for (Map.Entry<String, Map<String, List<LightweightQuestionValidationResponse>>> pageEntry : questionPages.entrySet()) {
-                String questionPageId = pageEntry.getKey();
-                Map<String, List<LightweightQuestionValidationResponse>> questionParts = pageEntry.getValue();
-                IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(questionPageId);
-                Collection<Question> contentQuestionParts = getAllMarkableDOQuestionPartsDFSOrder(questionPage);
-
-                for (Question questionPart : contentQuestionParts) {
-                    if (Objects.equals(questionPart.getType(), "isaacLLMFreeTextQuestion")) {
-                        String questionPartId = questionPart.getId();
-                        List<QuestionValidationResponse> decoratedQuestionValidationResponses =
-                                this.questionAttemptPersistenceManager.getQuestionAttemptsByQuestionId(userId, questionPartId, LLMFreeTextQuestionValidationResponse.class);
-                        List<LightweightQuestionValidationResponse> lightweightList = new ArrayList<>(decoratedQuestionValidationResponses);
-                        questionParts.put(questionPartId, lightweightList);
-                    }
-                }
-            }
-        }
-
-        return decoratedLightweightQuestionAttempts;
-    }
-
+    
     /**
      *  Helper method for attempts from a single user.
      *
