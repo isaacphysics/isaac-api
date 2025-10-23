@@ -452,7 +452,7 @@ public class QuestionManager {
 
         return this.questionAttemptPersistenceManager.getMatchingLightweightQuestionAttempts(userIds, questionPageIds);
     }
-    
+
     /**
      *  Helper method for attempts from a single user.
      *
