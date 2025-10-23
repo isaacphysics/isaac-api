@@ -151,7 +151,8 @@ CREATE TABLE anonymous.question_attempts AS
         question_id,
         question_attempt,
         correct,
-        timestamp
+        timestamp,
+        marks
     FROM public.question_attempts;
 
 CREATE TABLE anonymous.user_streak_freezes AS
@@ -200,7 +201,8 @@ CREATE TABLE anonymous.quiz_question_attempts AS
         question_id,
         question_attempt,
         correct,
-        timestamp
+        timestamp,
+        marks
     FROM public.quiz_question_attempts;
 
 -- Logged events:

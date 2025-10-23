@@ -191,7 +191,7 @@ COPY public.quiz_attempts (id, user_id, quiz_id, quiz_assignment_id, start_date,
 -- Data for Name: quiz_question_attempts; Type: TABLE DATA; Schema: public; Owner: rutherford
 --
 
-COPY public.quiz_question_attempts (id, quiz_attempt_id, question_id, question_attempt, correct, "timestamp") FROM stdin;
+COPY public.quiz_question_attempts (id, quiz_attempt_id, question_id, question_attempt, correct, "timestamp", marks) FROM stdin;
 \.
 
 

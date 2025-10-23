@@ -346,7 +346,8 @@ CREATE TABLE public.question_attempts (
     question_id text NOT NULL,
     question_attempt jsonb,
     correct boolean,
-    "timestamp" timestamp without time zone
+    "timestamp" timestamp without time zone,
+    marks integer
 );
 
 
@@ -460,7 +461,8 @@ CREATE TABLE public.quiz_question_attempts (
     question_id text NOT NULL,
     question_attempt jsonb,
     correct boolean,
-    "timestamp" timestamp without time zone
+    "timestamp" timestamp without time zone,
+    marks integer
 );
 
 

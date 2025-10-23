@@ -59,7 +59,7 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     @Override
     public void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponse) throws SegueDatabaseException {
 
-        String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, \"timestamp\")" +
+        String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, \"timestamp\", marks)" +
                 " VALUES (?, ?, ?::text::jsonb, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
