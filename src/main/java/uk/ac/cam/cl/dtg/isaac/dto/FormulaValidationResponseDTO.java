@@ -130,6 +130,6 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
 
     @Override
     public String toString() {
-        return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + ", marks=" + marks"]";
+        return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
     }
 }
