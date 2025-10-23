@@ -52,12 +52,14 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
      *            -
      * @param dateAttempted
      *            -
+     * @param marks
+     *            -
      */
     public FormulaValidationResponseDTO(final String questionId, final ChoiceDTO answer,
                                         final ContentDTO explanation, final Boolean correctExact,
                                         final Boolean correctSymbolic, final Boolean correctNumeric,
-                                        final Date dateAttempted) {
-        super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
+                                        final Date dateAttempted, final Integer marks) {
+        super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted, marks);
         this.correctExact = correctExact;
         this.correctSymbolic = correctSymbolic;
         this.correctNumeric = correctNumeric;
@@ -128,6 +130,6 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
 
     @Override
     public String toString() {
-        return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
+        return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + ", marks=" + marks"]";
     }
 }

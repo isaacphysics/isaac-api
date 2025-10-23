@@ -26,7 +26,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseLockTimoutException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -209,11 +208,14 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             if (questionAttempt.getMarks() != null) {
                 if (questionAttempt instanceof LLMFreeTextQuestionValidationResponse) {
                     pst.setInt(7, ((LLMFreeTextQuestionValidationResponse) questionAttempt).getMarksAwarded());
+                    log.warn("LLM response");
                 } else {
                     if (questionAttempt.isCorrect()) {
                         pst.setInt(7, 1);
+                        log.warn("1 mark response");
                     } else {
                         pst.setInt(7, 0);
+                        log.warn("0 mark response");
                     }
                 }
             } else {

@@ -30,6 +30,7 @@ public class QuestionValidationResponseDTO {
     private Boolean correct;
     private ContentDTO explanation;
     private Date dateAttempted;
+    private Integer marks;
 
     /**
      * Default Constructor for mappers.
@@ -51,14 +52,17 @@ public class QuestionValidationResponseDTO {
      *            -
      * @param dateAttempted
      *            -
+     * @param marks
+     *            -
      */
     public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
-            final ContentDTO explanation, final Date dateAttempted) {
+            final ContentDTO explanation, final Date dateAttempted, final Integer marks) {
         this.questionId = questionId;
         this.answer = answer;
         this.correct = correct;
         this.explanation = explanation;
         this.dateAttempted = dateAttempted;
+        this.marks = marks;
     }
 
     /**
@@ -156,9 +160,28 @@ public class QuestionValidationResponseDTO {
         this.dateAttempted = dateAttempted;
     }
 
+    /**
+     * Gets the marks.
+     *
+     * @return the marks
+     */
+    public Integer getMarks() {
+        return marks;
+    }
+
+    /**
+     * Sets the marks.
+     *
+     * @param marks
+     *            the marks to set
+     */
+    public void setMarks(final Integer marks) {
+        this.marks = marks;
+    }
+
     @Override
     public String toString() {
         return "QuestionValidationResponseDTO [questionId=" + questionId + ", answer=" + answer + ", correct="
-                + correct + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + "]";
+                + correct + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + ", marks=" + marks + "]";
     }
 }

@@ -62,7 +62,7 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
     }
 
     /**
-     * Constructor without specifying marks (derived from correct)
+     * Constructor without specifying marks (instead derived from 'correct')
      *
      * @param questionId
      *            -
@@ -77,7 +77,7 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
      */
     public QuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
             final Content explanation, final Date dateAttempted) {
-        super(questionId, correct, dateAttempted, (correct != null && correct) ? 1 : 0);
+        super(questionId, correct, dateAttempted, Boolean.TRUE.equals(correct) ? 1 : 0);
         this.answer = answer;
         this.explanation = explanation;
     }
@@ -124,7 +124,7 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
     public String toString() {
         return "QuestionValidationResponse [questionId=" + super.getQuestionId() + ", answer=" + answer +
                 ", correct=" + super.isCorrect() + ", explanation=" + explanation +
-                ", dateAttempted=" + super.getDateAttempted() + "]";
+                ", dateAttempted=" + super.getDateAttempted() + ", marks=" + super.getMarks() + "]";
     }
 
 }
