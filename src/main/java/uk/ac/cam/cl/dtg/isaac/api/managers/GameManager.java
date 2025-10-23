@@ -151,7 +151,7 @@ public class GameManager {
      *            list of question categories (i.e. problem_solving, book) to include in filtered results
      * @param boardOwner
      *            The user that should be marked as the creator of the gameBoard.
-     * @return a gameboard if possible that satisifies the conditions provided by the parameters. Will return null if no
+     * @return a gameboard if possible that satisfies the conditions provided by the parameters. Will return null if no
      *         questions can be provided.
      * @throws SegueDatabaseException
      *             - if there is an error contacting the database.
@@ -1150,17 +1150,13 @@ public class GameManager {
             for (Content questionPart : listOfQuestionParts) {
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts =
                         questionAttempts.get(questionPart.getId());
-                if (Objects.equals(questionPart.getType(), "isaacLLMFreeTextQuestion")) {
+                if (questionPart instanceof IsaacLLMFreeTextQuestion) {
                     int maxMarks = ((IsaacLLMFreeTextQuestion) questionPart).getMaxMarks();
                     if (questionPartAttempts != null && !questionPartAttempts.isEmpty()) {
                         int greatestMarksForThisQuestion = 0;
                         for (LightweightQuestionValidationResponse attempt: questionPartAttempts) {
-                            if (attempt instanceof LLMFreeTextQuestionValidationResponse) {
-                                LLMFreeTextQuestionValidationResponse llmFreeTextAttempt =
-                                        (LLMFreeTextQuestionValidationResponse) attempt;
-                                if (llmFreeTextAttempt.getMarksAwarded() > greatestMarksForThisQuestion) {
-                                    greatestMarksForThisQuestion = llmFreeTextAttempt.getMarksAwarded();
-                                }
+                            if (attempt.getMarks() > greatestMarksForThisQuestion) {
+                                greatestMarksForThisQuestion = attempt.getMarks();
                             }
                         }
                         for (int markCorrect = 0; markCorrect < greatestMarksForThisQuestion; markCorrect++) {
