@@ -77,7 +77,7 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
      */
     public QuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
             final Content explanation, final Date dateAttempted) {
-        super(questionId, correct, dateAttempted, Boolean.TRUE.equals(correct) ? 1 : 0);
+        super(questionId, correct, dateAttempted, (correct != null && correct) ? 1 : 0);
         this.answer = answer;
         this.explanation = explanation;
     }
