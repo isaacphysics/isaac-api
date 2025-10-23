@@ -19,7 +19,7 @@ public class ContentMapperTest {
 
     @SuppressWarnings("unchecked")
     private static Stream<Arguments> testCasesDOtoDTO() {
-        Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.isaac.dos.content");
+        Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.isaac.dos");
         Set<Class<? extends Content>> contentSubclasses = reflections.getSubTypesOf(Content.class);
         contentSubclasses.add(Content.class);
 
