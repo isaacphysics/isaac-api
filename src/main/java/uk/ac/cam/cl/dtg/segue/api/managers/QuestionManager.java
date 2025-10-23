@@ -26,8 +26,6 @@ import ma.glasnost.orika.MapperFacade;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
-import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
@@ -63,16 +61,13 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -80,7 +75,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
-import static uk.ac.cam.cl.dtg.isaac.api.managers.GameManager.getAllMarkableDOQuestionPartsDFSOrder;
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY_HISTOGRAM;
 
 /**
@@ -95,8 +89,6 @@ public class QuestionManager {
 
     private final ContentMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
-    private final GitContentManager contentManager;
-
     /**
      * Create a default Question manager object.
      * 
@@ -105,13 +97,9 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(
-            final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager,
-            final GitContentManager contentManager
-    ) {
+    public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
-        this.contentManager = contentManager;
     }
 
     /**
