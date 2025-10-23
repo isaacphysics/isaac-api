@@ -22,6 +22,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -186,8 +187,8 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public void registerQuestionAttempt(final Long userId, final String questionPageId, final String fullQuestionId,
             final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
 
-        String query = "INSERT INTO question_attempts(user_id, page_id, question_id, question_attempt, correct, \"timestamp\")"
-                + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?);";
+        String query = "INSERT INTO question_attempts(user_id, page_id, question_id, question_attempt, correct, \"timestamp\", marks)"
+                + " VALUES (?, ?, ?, ?::text::jsonb, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -201,7 +202,22 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             } else {
                 pst.setNull(5, java.sql.Types.NULL);
             }
+
             pst.setTimestamp(6, new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
+
+            if (questionAttempt.getMarks() != null) {
+                if (questionAttempt instanceof LLMFreeTextQuestionValidationResponse) {
+                    pst.setInt(7, ((LLMFreeTextQuestionValidationResponse) questionAttempt).getMarksAwarded());
+                } else {
+                    if (questionAttempt.isCorrect()) {
+                        pst.setInt(7, 1);
+                    } else {
+                        pst.setInt(7, 0);
+                    }
+                }
+            } else {
+                pst.setInt(7, java.sql.Types.NULL);
+            }
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save question attempt.");
@@ -260,7 +276,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             return Collections.emptyMap();
         }
 
-        String query = "SELECT id, user_id, question_id, correct, timestamp FROM question_attempts"
+        String query = "SELECT id, user_id, question_id, correct, timestamp, marks FROM question_attempts"
                      + " WHERE user_id = ANY(?) ORDER BY \"timestamp\" ASC";
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
@@ -307,7 +323,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));;
 
         try (Connection conn = database.getDatabaseConnection()) {
-            String query = "SELECT id, user_id, question_id, correct, timestamp FROM question_attempts"
+            String query = "SELECT id, user_id, question_id, correct, timestamp, marks FROM question_attempts"
                          + " WHERE user_id = ANY(?) AND page_id = ANY(?)"
                          + " ORDER BY \"timestamp\" ASC";
 
@@ -438,9 +454,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     private LightweightQuestionValidationResponse resultsToLightweightValidationResponse(final ResultSet results) throws SQLException {
         LightweightQuestionValidationResponse partialQuestionAttempt = new QuestionValidationResponse();
 
-        partialQuestionAttempt.setCorrect(results.getBoolean("correct"));
+        partialQuestionAttempt.setCorrect(results.getInt("marks") > 0);
         partialQuestionAttempt.setQuestionId(results.getString("question_id"));
         partialQuestionAttempt.setDateAttempted(results.getTimestamp("timestamp"));
+        partialQuestionAttempt.setMarks(results.getInt("marks"));
 
         return partialQuestionAttempt;
     }

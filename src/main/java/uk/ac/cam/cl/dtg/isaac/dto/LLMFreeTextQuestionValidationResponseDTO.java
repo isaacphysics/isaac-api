@@ -5,17 +5,16 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.LLMFreeTextMarkSchemeEntryDTO;
 import java.util.List;
 
 public class LLMFreeTextQuestionValidationResponseDTO extends QuestionValidationResponseDTO {
-    private Integer marksAwarded;
     private List<LLMFreeTextMarkSchemeEntryDTO> markBreakdown;
 
     public LLMFreeTextQuestionValidationResponseDTO() {
     }
 
     public Integer getMarksAwarded() {
-        return marksAwarded;
+        return super.getMarks();
     }
     public void setMarksAwarded(Integer marksAwarded) {
-        this.marksAwarded = marksAwarded;
+        super.setMarks(marksAwarded);
     }
 
     public List<LLMFreeTextMarkSchemeEntryDTO> getMarkBreakdown() {

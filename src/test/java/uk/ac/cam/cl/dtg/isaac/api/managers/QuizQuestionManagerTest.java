@@ -111,8 +111,8 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
         correctResponse = new QuestionValidationResponse(question.getId(), correctAnswer, true, correctExplanation, somePastDate);
         wrongResponse = new QuestionValidationResponse(question.getId(), wrongAnswer, false, wrongExplanation, somePastDate);
 
-        correctResponseDTO = new QuestionValidationResponseDTO(question.getId(), correctAnswerDTO, true, correctExplanationDTO, somePastDate);
-        wrongResponseDTO = new QuestionValidationResponseDTO(question.getId(), wrongAnswerDTO, false, wrongExplanationDTO, somePastDate);
+        correctResponseDTO = new QuestionValidationResponseDTO(question.getId(), correctAnswerDTO, true, correctExplanationDTO, somePastDate, 1);
+        wrongResponseDTO = new QuestionValidationResponseDTO(question.getId(), wrongAnswerDTO, false, wrongExplanationDTO, somePastDate, 0);
 
         quantityResponse = new QuantityValidationResponse(question.getId(), correctAnswer, true, correctExplanation, true, true, somePastDate);
 
