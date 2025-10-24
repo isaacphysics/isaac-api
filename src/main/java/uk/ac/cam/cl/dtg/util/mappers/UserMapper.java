@@ -59,26 +59,6 @@ public interface UserMapper {
         }
     }
 
-    /**
-     * Mapping method to convert a UserSummaryDTO to a UserSummaryWithGroupMembershipDTO or UserSummaryDTO.
-     *
-     * @param <T>
-     *            - the target type.
-     * @param source
-     *            - the source UserSummaryDTO.
-     * @param targetClass
-     *            - the target class to convert to.
-     * @return Returns an instance of the targetClass type mapped via the appropriate mapping method.
-     */
-    @SuppressWarnings("unchecked")
-    default <T> T map(UserSummaryDTO source, Class<T> targetClass) {
-        if (targetClass.equals(UserSummaryDTO.class)) {
-            return (T) mapExtendedUserSummaryDTOtoBaseUserSummaryDTO(source);
-        } else {
-            throw new UnimplementedMappingException(UserSummaryDTO.class, targetClass);
-        }
-    }
-
     @Mapping(target = "token", ignore = true)
     @Mapping(target = "ownerSummary", ignore = true)
     @Mapping(target = "mongoId", ignore = true)
@@ -144,9 +124,6 @@ public interface UserMapper {
     @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     @SubclassMapping(source = UserSummaryWithGroupMembershipDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     UserSummaryWithGroupMembershipDTO mapToUserSummaryWithGroupMembershipDTO(UserSummaryDTO source);
-
-    @BeanMapping(resultType = UserSummaryDTO.class)
-    UserSummaryDTO mapExtendedUserSummaryDTOtoBaseUserSummaryDTO(UserSummaryDTO source);
 
     RegisteredUser copy(RegisteredUser source);
 
