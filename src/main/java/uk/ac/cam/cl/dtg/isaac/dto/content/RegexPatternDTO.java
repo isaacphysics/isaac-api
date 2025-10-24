@@ -34,7 +34,7 @@ public class RegexPatternDTO extends ChoiceDTO {
     /**
      * @return Whether this regex choice should allow any case to match.
      */
-    public boolean isCaseInsensitive() {
+    public Boolean isCaseInsensitive() {
         return caseInsensitive;
     }
 
@@ -50,7 +50,7 @@ public class RegexPatternDTO extends ChoiceDTO {
     /**
      * @return Whether this regex pattern should have the multiline flag set.
      */
-    public boolean isMultiLineRegex() {
+    public Boolean isMultiLineRegex() {
         return multiLineRegex;
     }
 
@@ -66,7 +66,7 @@ public class RegexPatternDTO extends ChoiceDTO {
     /**
      * @return Whether this regex pattern is partial or exact match.
      */
-    public boolean ismatchWholeString() {
+    public Boolean ismatchWholeString() {
         return matchWholeString;
     }
 

@@ -22,7 +22,6 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.prometheus.client.Histogram;
-import ma.glasnost.orika.MapperFacade;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +60,8 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
@@ -87,7 +87,8 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY
 public class QuestionManager {
     private static final Logger log = LoggerFactory.getLogger(QuestionManager.class);
 
-    private final ContentMapper mapper;
+    private final ContentSubclassMapper contentSubclassMapper;
+    private final MainMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
     /**
      * Create a default Question manager object.
@@ -97,7 +98,9 @@ public class QuestionManager {
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
+    public QuestionManager(final ContentSubclassMapper contentSubclassMapper, final MainMapper mapper,
+                           final IQuestionAttemptManager questionPersistenceManager) {
+        this.contentSubclassMapper = contentSubclassMapper;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
     }
@@ -121,7 +124,7 @@ public class QuestionManager {
                     .build();
         }
 
-        Choice answerFromUser = mapper.getAutoMapper().map(submittedAnswer, Choice.class);
+        Choice answerFromUser = mapper.map(submittedAnswer);
         QuestionValidationResponse validateQuestionResponse;
         Histogram.Timer validatorTimer =
                 VALIDATOR_LATENCY_HISTOGRAM.labels(validator.getClass().getSimpleName()).startTimer();
@@ -134,8 +137,7 @@ public class QuestionManager {
             validatorTimer.observeDuration();
         }
 
-        return Response.ok(
-                mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
+        return Response.ok(mapper.map(validateQuestionResponse)).build();
 
     }
 
@@ -295,8 +297,7 @@ public class QuestionManager {
         // Determine what kind of ValidationResponse to turn it in to.
         DTOMapping dtoMapping = questionValidationResponse.getClass().getAnnotation(DTOMapping.class);
         if (QuestionValidationResponseDTO.class.isAssignableFrom(dtoMapping.value())) {
-            return mapper.getAutoMapper().map(questionValidationResponse,
-                    (Class<? extends QuestionValidationResponseDTO>) dtoMapping.value());
+            return mapper.map(questionValidationResponse);
         } else {
             log.error("Unable to set best attempt as we cannot match the answer to a DTO type.");
             throw new ClassCastException("Unable to cast " + questionValidationResponse.getClass()
@@ -311,8 +312,7 @@ public class QuestionManager {
      */
     public void recordQuestionAttempt(final AbstractSegueUserDTO user,
             final QuestionValidationResponseDTO questionResponse) throws SegueDatabaseException {
-        QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse,
-                QuestionValidationResponse.class);
+        QuestionValidationResponse questionResponseDO = this.mapper.map(questionResponse);
 
         String questionPageId = extractPageIdFromQuestionId(questionResponse.getQuestionId());
         if (user instanceof RegisteredUserDTO) {
@@ -336,10 +336,8 @@ public class QuestionManager {
     public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
         try {
-            MapperFacade autoMapper = mapper.getAutoMapper();
-
             // Create a fake question
-            Class<? extends Content> questionClass = mapper.getClassByType(questionType);
+            Class<? extends Content> questionClass = contentSubclassMapper.getClassByType(questionType);
             if (null == questionClass || !ChoiceQuestion.class.isAssignableFrom(questionClass)) {
                 throw new BadRequestException(String.format("Not a valid questionType (%s)", questionType));
             }
@@ -353,8 +351,7 @@ public class QuestionManager {
             // For each test, check its actual results against the response of the validator on the fake question
             List<TestCase> results = Lists.newArrayList();
             for (TestCase testCase : testDefinition.getTestCases()) {
-                Choice inferredChoiceSubclass =
-                        autoMapper.map(autoMapper.map(testCase.getAnswer(), ChoiceDTO.class), Choice.class);
+                Choice inferredChoiceSubclass = mapper.map(mapper.map(testCase.getAnswer()));
                 QuestionValidationResponse questionValidationResponse = questionValidator
                         .validateQuestionResponse(testQuestion, inferredChoiceSubclass);
                 testCase.setCorrect(questionValidationResponse.isCorrect());
@@ -625,7 +622,7 @@ public class QuestionManager {
                 .build();
         }
 
-        Choice answerFromUser = mapper.getAutoMapper().map(answer, Choice.class);
+        Choice answerFromUser = mapper.map(answer);
         String specification;
         try {
             specification = specifier.createSpecification(answerFromUser);
@@ -636,8 +633,7 @@ public class QuestionManager {
 
         ResultsWrapper<String> results = new ResultsWrapper<>(Collections.singletonList(specification), 1L);
 
-        return Response.ok(
-            mapper.getAutoMapper().map(results, ResultsWrapper.class)).build();
+        return Response.ok(results).build();
     }
 
     public static String extractPageIdFromQuestionId(String questionId) {
@@ -648,9 +644,10 @@ public class QuestionManager {
         ChoiceDTO answerFromClientDTO;
         try {
             // convert submitted JSON into a Choice:
-            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            Choice answerFromClient = contentSubclassMapper.getSharedContentObjectMapper()
+                    .readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
-            answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
+            answerFromClientDTO = mapper.map(answerFromClient);
         } catch (JsonMappingException | JsonParseException e) {
             log.info("Failed to map to any expected input...", e);
             SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "

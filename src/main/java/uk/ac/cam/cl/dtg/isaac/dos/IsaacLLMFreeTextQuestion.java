@@ -17,7 +17,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LLM_FREE_TEXT_QUESTION_TYPE;
 @DTOMapping(IsaacLLMFreeTextQuestionDTO.class)
 @JsonContentType(LLM_FREE_TEXT_QUESTION_TYPE)
 @ValidatesWith(IsaacLLMFreeTextValidator.class)
-public class IsaacLLMFreeTextQuestion extends Question {
+public class IsaacLLMFreeTextQuestion extends IsaacQuestionBase {
     private String promptInstructionOverride;
     private List<LLMFreeTextMarkSchemeEntry> markScheme;
     private Integer maxMarks;

@@ -9,7 +9,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LLM_FREE_TEXT_QUESTION_TYPE;
 
 @JsonContentType(LLM_FREE_TEXT_QUESTION_TYPE)
 @ValidatesWith(IsaacLLMFreeTextValidator.class)
-public class IsaacLLMFreeTextQuestionDTO extends QuestionDTO {
+public class IsaacLLMFreeTextQuestionDTO extends IsaacQuestionBaseDTO {
     private Integer maxMarks;
 
     public IsaacLLMFreeTextQuestionDTO() {
