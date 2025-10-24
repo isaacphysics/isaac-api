@@ -72,9 +72,7 @@ public interface UserMapper {
      */
     @SuppressWarnings("unchecked")
     default <T> T map(UserSummaryDTO source, Class<T> targetClass) {
-        if (targetClass.equals(UserSummaryWithGroupMembershipDTO.class)) {
-            return (T) mapUserSummaryDTOtoUserSummaryWithGroupMembershipDTO(source);
-        } else if (targetClass.equals(UserSummaryDTO.class)) {
+        if (targetClass.equals(UserSummaryDTO.class)) {
             return (T) mapExtendedUserSummaryDTOtoBaseUserSummaryDTO(source);
         } else {
             throw new UnimplementedMappingException(UserSummaryDTO.class, targetClass);
@@ -145,7 +143,7 @@ public interface UserMapper {
     @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
     @SubclassMapping(source = UserSummaryWithGroupMembershipDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
-    UserSummaryWithGroupMembershipDTO mapUserSummaryDTOtoUserSummaryWithGroupMembershipDTO(UserSummaryDTO source);
+    UserSummaryWithGroupMembershipDTO mapToUserSummaryWithGroupMembershipDTO(UserSummaryDTO source);
 
     @BeanMapping(resultType = UserSummaryDTO.class)
     UserSummaryDTO mapExtendedUserSummaryDTOtoBaseUserSummaryDTO(UserSummaryDTO source);
