@@ -12,9 +12,9 @@ import java.util.List;
  * MapStruct mapper for EventBooking objects.
  */
 @Mapper(uses = UserMapper.class)
-public interface EventMapper {
+public interface EventBookingMapper {
 
-    EventMapper INSTANCE = Mappers.getMapper(EventMapper.class);
+    EventBookingMapper INSTANCE = Mappers.getMapper(EventBookingMapper.class);
 
     EventBookingDTO mapToEventBookingDTO(DetailedEventBookingDTO source);
 

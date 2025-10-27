@@ -149,7 +149,7 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
-import uk.ac.cam.cl.dtg.util.mappers.EventMapper;
+import uk.ac.cam.cl.dtg.util.mappers.EventBookingMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 import uk.ac.cam.cl.dtg.util.mappers.QuestionValidationMapper;
 import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
@@ -649,8 +649,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    public static EventMapper getEventMapperInstance() {
-        return EventMapper.INSTANCE;
+    public static EventBookingMapper getEventBookingMapperInstance() {
+        return EventBookingMapper.INSTANCE;
     }
 
     @Provides

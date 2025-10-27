@@ -134,7 +134,7 @@ public interface UserMapper {
 
     GroupMembershipDTO copy(GroupMembershipDTO source);
 
-    // Named mapping for use in EventMapper
+    // Named mapping for use in EventBookingMapper
     @Named("copyUserSummaryDTO")
     @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryForAdminUsersDTO.class)
     @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithEmailAddressDTO.class)
