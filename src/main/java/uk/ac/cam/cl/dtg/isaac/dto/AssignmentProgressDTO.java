@@ -12,6 +12,8 @@ public class AssignmentProgressDTO {
     public UserSummaryDTO user;
     public List<Integer> correctPartResults;
     public List<Integer> incorrectPartResults;
+    public List<List<Integer>> correctMarkResults;
+    public List<List<Integer>> markTotals;
     public List<Constants.CompletionState> questionResults;
     public List<List<Constants.QuestionPartState>> questionPartResults;
 
@@ -26,10 +28,12 @@ public class AssignmentProgressDTO {
      * @param results
      *            - Array of results.
      */
-    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, List<Constants.CompletionState> results, List<List<Constants.QuestionPartState>> partResults) {
+    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, List<List<Integer>> correctMarkResults, List<List<Integer>> markTotals, List<Constants.CompletionState> results, List<List<Constants.QuestionPartState>> partResults) {
         this.user = user;
         this.correctPartResults = correctPartResults;
         this.incorrectPartResults = incorrectPartResults;
+        this.correctMarkResults = correctMarkResults;
+        this.markTotals = markTotals;
         this.questionResults = results;
         this.questionPartResults = partResults;
     }
@@ -59,6 +63,22 @@ public class AssignmentProgressDTO {
 
     public void setIncorrectPartResults(List<Integer> incorrectPartResults) {
         this.incorrectPartResults = incorrectPartResults;
+    }
+
+    public List<List<Integer>> getCorrectMarkResults() {
+        return correctMarkResults;
+    }
+
+    public void setCorrectMarkResults(List<List<Integer>> correctMarkResults) {
+        this.correctMarkResults = correctMarkResults;
+    }
+
+    public List<List<Integer>> getMarkTotals() {
+        return markTotals;
+    }
+
+    public void setMarkTotals(List<List<Integer>> markTotals) {
+        this.markTotals = markTotals;
     }
 
     public List<Constants.CompletionState> getQuestionResults() {

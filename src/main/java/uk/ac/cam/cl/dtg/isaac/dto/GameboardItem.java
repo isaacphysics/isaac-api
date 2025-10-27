@@ -44,6 +44,10 @@ public class GameboardItem {
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
     private Integer questionPartsTotal;
+    private List<Integer> questionMarksCorrect;
+    private List<Integer> questionMarksIncorrect;
+    private List<Integer> questionMarksNotAttempted;
+    private List<Integer> questionMarksTotal;
     private Float passMark;
     private Constants.CompletionState state;
     private List<Constants.QuestionPartState> questionPartStates = Lists.newArrayList();
@@ -319,6 +323,82 @@ public class GameboardItem {
      */
     public final void setQuestionPartsTotal(final Integer questionPartsTotal) {
         this.questionPartsTotal = questionPartsTotal;
+    }
+
+    /**
+     * Gets the number of questionMarksCorrect.
+     *
+     * @return the number of questionMarksCorrect
+     */
+    public final List<Integer> getQuestionMarksCorrect() {
+        return questionMarksCorrect;
+    }
+
+    /**
+     * Sets the number of correct question parts.
+     *
+     * @param questionMarksCorrect
+     *            the number of correct question parts to set
+     */
+    public final void setQuestionMarksCorrect(final List<Integer> questionMarksCorrect) {
+        this.questionMarksCorrect = questionMarksCorrect;
+    }
+
+    /**
+     * Gets the number of questionMarksIncorrect.
+     *
+     * @return the number of questionMarksIncorrect
+     */
+    public final List<Integer> getQuestionMarksIncorrect() {
+        return questionMarksIncorrect;
+    }
+
+    /**
+     * Sets the number of incorrect question parts.
+     *
+     * @param questionMarksIncorrect
+     *            the number of incorrect question parts to set
+     */
+    public final void setQuestionMarksIncorrect(final List<Integer> questionMarksIncorrect) {
+        this.questionMarksIncorrect = questionMarksIncorrect;
+    }
+
+    /**
+     * Gets the number of questionMarksNotAttempted.
+     *
+     * @return the number of questionMarksNotAttempted
+     */
+    public final List<Integer> getQuestionMarksNotAttempted() {
+        return questionMarksNotAttempted;
+    }
+
+    /**
+     * Sets the number of question parts not attempted.
+     *
+     * @param questionMarksNotAttempted
+     *            the number of question parts to set
+     */
+    public final void setQuestionMarksNotAttempted(final List<Integer> questionMarksNotAttempted) {
+        this.questionMarksNotAttempted = questionMarksNotAttempted;
+    }
+
+    /**
+     * When question part information is included gets the total number of question parts.
+     *
+     * @return the total number of question parts
+     */
+    public final List<Integer> getQuestionMarksTotal() {
+        return this.questionMarksTotal;
+    }
+
+    /**
+     * Sets the total number of question parts.
+     *
+     * @param questionMarksTotal
+     *            the number of question parts to set
+     */
+    public final void setQuestionMarksTotal(final List<Integer> questionMarksTotal) {
+        this.questionMarksTotal = questionMarksTotal;
     }
 
     /**

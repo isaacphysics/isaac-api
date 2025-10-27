@@ -410,22 +410,30 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     ArrayList<List<QuestionPartState>> questionPartStates = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
+                    ArrayList<List<Integer>> correctQuestionMarks = Lists.newArrayList();
+                    ArrayList<List<Integer>> markTotals = Lists.newArrayList();
                     for (GameboardItem questionResult : userGameboardItems.getRight()) {
                         questionStates.add(questionResult.getState());
                         questionPartStates.add(questionResult.getQuestionPartStates());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
+                        correctQuestionMarks.add(questionResult.getQuestionMarksCorrect());
+                        markTotals.add(questionResult.getQuestionMarksTotal());
                     }
                     result.add(new AssignmentProgressDTO(
                             userSummary,
                             correctQuestionParts,
                             incorrectQuestionParts,
+                            correctQuestionMarks,
+                            markTotals,
                             questionStates,
                             questionPartStates
                     ));
                 } else {
                     result.add(new AssignmentProgressDTO(
                             userSummary,
+                            null,
+                            null,
                             null,
                             null,
                             null,

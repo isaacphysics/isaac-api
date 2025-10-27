@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacLLMFreeTextQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
@@ -1136,6 +1137,10 @@ public class GameManager {
         int questionPartsCorrect = 0;
         int questionPartsIncorrect = 0;
         int questionPartsNotAttempted = 0;
+        List<Integer> questionMarksCorrect = Lists.newArrayList();
+        List<Integer> questionMarksIncorrect = Lists.newArrayList();
+        List<Integer> questionMarksNotAttempted = Lists.newArrayList();
+        List<Integer> questionMarksTotal = Lists.newArrayList();
         String questionPageId = gameItem.getId();
 
         IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(questionPageId);
@@ -1148,6 +1153,11 @@ public class GameManager {
             for (Content questionPart : listOfQuestionParts) {
                 List<? extends LightweightQuestionValidationResponse> questionPartAttempts =
                         questionAttempts.get(questionPart.getId());
+                int maximumMarksForThisQuestion = 1;
+                if (questionPart instanceof IsaacLLMFreeTextQuestion) {
+                    maximumMarksForThisQuestion = ((IsaacLLMFreeTextQuestion) questionPart).getMaxMarks();
+                }
+                questionMarksTotal.add(maximumMarksForThisQuestion);
                 if (questionPartAttempts != null) {
                     // Go through the attempts in reverse chronological order for this question part to determine if
                     // there is a correct answer somewhere.
@@ -1159,6 +1169,12 @@ public class GameManager {
                             break;
                         }
                     }
+                    int greatestMarksForThisQuestion = 0;
+                    for (LightweightQuestionValidationResponse attempt: questionPartAttempts) {
+                        if (attempt.getMarks() > greatestMarksForThisQuestion) {
+                            greatestMarksForThisQuestion = attempt.getMarks();
+                        }
+                    }
                     if (foundCorrectForThisQuestion) {
                         questionPartStates.add(QuestionPartState.CORRECT);
                         questionPartsCorrect++;
@@ -1166,15 +1182,26 @@ public class GameManager {
                         questionPartStates.add(QuestionPartState.INCORRECT);
                         questionPartsIncorrect++;
                     }
+                    questionMarksCorrect.add(greatestMarksForThisQuestion);
+                    if (greatestMarksForThisQuestion != maximumMarksForThisQuestion) {
+                        questionMarksIncorrect.add(maximumMarksForThisQuestion - greatestMarksForThisQuestion);
+                    }
                 } else {
                     questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
                     questionPartsNotAttempted++;
+                    questionMarksNotAttempted.add(maximumMarksForThisQuestion);
                 }
             }
         } else {
             questionPartsNotAttempted = listOfQuestionParts.size();
             questionPartStates = listOfQuestionParts.stream()
                     .map(_q -> QuestionPartState.NOT_ATTEMPTED).collect(Collectors.toList());
+            questionMarksNotAttempted = listOfQuestionParts.stream()
+                    .map(q -> q instanceof IsaacLLMFreeTextQuestion ?
+                            ((IsaacLLMFreeTextQuestion) q).getMaxMarks() :
+                            1
+                    ).collect(Collectors.toList());
+            questionMarksTotal = questionMarksNotAttempted;
         }
 
         // Get the pass mark for the question page
@@ -1182,14 +1209,21 @@ public class GameManager {
             throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
                     questionPageId));
         }
+
         float passMark = questionPage.getPassMark() != null ? questionPage.getPassMark() : DEFAULT_QUESTION_PASS_MARK;
         gameItem.setPassMark(passMark);
+
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
-        gameItem.setQuestionPartStates(questionPartStates);
         int questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
+        gameItem.setQuestionPartStates(questionPartStates);
+
+        gameItem.setQuestionMarksCorrect(questionMarksCorrect);
+        gameItem.setQuestionMarksIncorrect(questionMarksIncorrect);
+        gameItem.setQuestionMarksNotAttempted(questionMarksNotAttempted);
+        gameItem.setQuestionMarksTotal(questionMarksTotal);
 
         CompletionState state = UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
         gameItem.setState(state);
