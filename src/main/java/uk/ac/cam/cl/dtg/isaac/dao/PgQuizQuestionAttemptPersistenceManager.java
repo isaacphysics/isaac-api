@@ -77,15 +77,7 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
             pst.setTimestamp(5, new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
 
             if (questionResponse.getMarks() != null) {
-                if (questionResponse instanceof LLMFreeTextQuestionValidationResponse) {
-                    pst.setInt(6, ((LLMFreeTextQuestionValidationResponse) questionResponse).getMarksAwarded());
-                } else {
-                    if (questionResponse.isCorrect()) {
-                        pst.setInt(6, 1);
-                    } else {
-                        pst.setInt(6, 0);
-                    }
-                }
+                pst.setInt(6, questionResponse.getMarks());
             } else {
                 pst.setInt(6, java.sql.Types.NULL);
             }

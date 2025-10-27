@@ -206,15 +206,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             pst.setTimestamp(6, new java.sql.Timestamp(questionAttempt.getDateAttempted().getTime()));
 
             if (questionAttempt.getMarks() != null) {
-                if (questionAttempt instanceof LLMFreeTextQuestionValidationResponse) {
-                    pst.setInt(7, ((LLMFreeTextQuestionValidationResponse) questionAttempt).getMarksAwarded());
-                } else {
-                    if (questionAttempt.isCorrect()) {
-                        pst.setInt(7, 1);
-                    } else {
-                        pst.setInt(7, 0);
-                    }
-                }
+                pst.setInt(7, questionAttempt.getMarks());
             } else {
                 pst.setInt(7, java.sql.Types.NULL);
             }
