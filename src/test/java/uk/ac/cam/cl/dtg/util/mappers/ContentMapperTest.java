@@ -36,12 +36,12 @@ public class ContentMapperTest {
 
     @ParameterizedTest
     @MethodSource("testCasesDOtoDTO")
-    void testDOtoDTOMapping(final Class<? extends Content> sourceClass, final Class<? extends ContentDTO> expectedDTOClass) {
+    void testDOtoDTOMapping(final Class<? extends Content> sourceDOClass, final Class<? extends ContentDTO> expectedDTOClass) {
         Content source;
         try {
-            source = sourceClass.getDeclaredConstructor().newInstance();
+            source = sourceDOClass.getConstructor().newInstance();
         } catch (final Exception e) {
-            throw new RuntimeException("Failed to instantiate source class: " + sourceClass.getName(), e);
+            throw new RuntimeException("Failed to instantiate source class: " + sourceDOClass.getName(), e);
         }
         Assertions.assertEquals(expectedDTOClass, mapper.map(source).getClass());
     }

@@ -38,7 +38,7 @@ public class QuestionValidationMapperTest {
     void testDOtoDTOMapping(final Class<? extends QuestionValidationResponse> sourceDOClass, final Class<? extends QuestionValidationResponse> expectedDTOClass) {
         QuestionValidationResponse source;
         try {
-            source = sourceDOClass.getDeclaredConstructor().newInstance();
+            source = sourceDOClass.getConstructor().newInstance();
         } catch (final Exception e) {
             throw new RuntimeException("Failed to instantiate source class: " + sourceDOClass.getName(), e);
         }
