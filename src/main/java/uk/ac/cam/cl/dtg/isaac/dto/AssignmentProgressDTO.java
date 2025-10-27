@@ -13,6 +13,7 @@ public class AssignmentProgressDTO {
     public List<Integer> correctPartResults;
     public List<Integer> incorrectPartResults;
     public List<List<Integer>> correctMarkResults;
+    public List<List<Integer>> incorrectMarkResults;
     public List<List<Integer>> markTotals;
     public List<Constants.CompletionState> questionResults;
     public List<List<Constants.QuestionPartState>> questionPartResults;
@@ -28,11 +29,16 @@ public class AssignmentProgressDTO {
      * @param results
      *            - Array of results.
      */
-    public AssignmentProgressDTO(UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults, List<List<Integer>> correctMarkResults, List<List<Integer>> markTotals, List<Constants.CompletionState> results, List<List<Constants.QuestionPartState>> partResults) {
+    public AssignmentProgressDTO(
+            UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults,
+            List<List<Integer>> correctMarkResults, List<List<Integer>> incorrectMarkResults,
+            List<List<Integer>> markTotals, List<Constants.CompletionState> results,
+            List<List<Constants.QuestionPartState>> partResults) {
         this.user = user;
         this.correctPartResults = correctPartResults;
         this.incorrectPartResults = incorrectPartResults;
         this.correctMarkResults = correctMarkResults;
+        this.incorrectMarkResults = incorrectMarkResults;
         this.markTotals = markTotals;
         this.questionResults = results;
         this.questionPartResults = partResults;
@@ -71,6 +77,14 @@ public class AssignmentProgressDTO {
 
     public void setCorrectMarkResults(List<List<Integer>> correctMarkResults) {
         this.correctMarkResults = correctMarkResults;
+    }
+
+    public List<List<Integer>> getIncorrectMarkResults() {
+        return incorrectMarkResults;
+    }
+
+    public void setIncorrectMarkResults(List<List<Integer>> incorrectMarkResults) {
+        this.incorrectMarkResults = incorrectMarkResults;
     }
 
     public List<List<Integer>> getMarkTotals() {

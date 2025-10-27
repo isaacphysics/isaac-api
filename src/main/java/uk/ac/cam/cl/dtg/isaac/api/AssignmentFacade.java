@@ -406,25 +406,28 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    ArrayList<CompletionState> questionStates = Lists.newArrayList();
-                    ArrayList<List<QuestionPartState>> questionPartStates = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
                     ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
                     ArrayList<List<Integer>> correctQuestionMarks = Lists.newArrayList();
+                    ArrayList<List<Integer>> incorrectQuestionMarks = Lists.newArrayList();
                     ArrayList<List<Integer>> markTotals = Lists.newArrayList();
+                    ArrayList<CompletionState> questionStates = Lists.newArrayList();
+                    ArrayList<List<QuestionPartState>> questionPartStates = Lists.newArrayList();
                     for (GameboardItem questionResult : userGameboardItems.getRight()) {
-                        questionStates.add(questionResult.getState());
-                        questionPartStates.add(questionResult.getQuestionPartStates());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
                         incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
                         correctQuestionMarks.add(questionResult.getQuestionMarksCorrect());
+                        incorrectQuestionMarks.add(questionResult.getQuestionMarksIncorrect());
                         markTotals.add(questionResult.getQuestionMarksTotal());
+                        questionStates.add(questionResult.getState());
+                        questionPartStates.add(questionResult.getQuestionPartStates());
                     }
                     result.add(new AssignmentProgressDTO(
                             userSummary,
                             correctQuestionParts,
                             incorrectQuestionParts,
                             correctQuestionMarks,
+                            incorrectQuestionMarks,
                             markTotals,
                             questionStates,
                             questionPartStates
@@ -432,6 +435,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 } else {
                     result.add(new AssignmentProgressDTO(
                             userSummary,
+                            null,
                             null,
                             null,
                             null,
