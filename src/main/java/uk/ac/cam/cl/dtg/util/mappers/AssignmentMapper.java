@@ -60,7 +60,7 @@ public interface AssignmentMapper {
     // Handle mapping the "content" field for GameboardD(T)Os
 
     @Mapping(source = "creationContext", target = "context")
-    GameboardContentDescriptor mapGameboardItemToGameboardContentDescriptor(GameboardItem source);
+    GameboardContentDescriptor mapToGameboardContentDescriptor(GameboardItem source);
 
     @Mapping(target = "title", ignore = true)
     @Mapping(target = "subtitle", ignore = true)
@@ -79,5 +79,5 @@ public interface AssignmentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "audience", ignore = true)
     @Mapping(source = "context", target = "creationContext")
-    GameboardItem mapGameboardItemToGameboardContentDescriptor(GameboardContentDescriptor source);
+    GameboardItem mapToGameboardItem(GameboardContentDescriptor source);
 }

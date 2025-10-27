@@ -47,13 +47,13 @@ public interface UserMapper {
     @SuppressWarnings("unchecked")
     default <T extends UserSummaryDTO> T map(RegisteredUserDTO source, Class<T> targetClass) {
         if (targetClass.equals(UserSummaryDTO.class)) {
-            return (T) mapUserToSummary(source);
+            return (T) mapToUserSummaryDTO(source);
         } else if (targetClass.equals(UserSummaryForAdminUsersDTO.class)) {
-            return (T) mapUserToAdminSummaryDTO(source);
+            return (T) mapToUserSummaryForAdminUsersDTO(source);
         } else if (targetClass.equals(UserSummaryWithEmailAddressDTO.class)) {
-            return (T) mapUserToSummaryWithEmailDTO(source);
+            return (T) mapToUserSummaryWithEmailAddressDTO(source);
         } else if (targetClass.equals(UserSummaryWithGroupMembershipDTO.class)) {
-            return (T) mapUserToSummaryWithGroupMembershipDTO(source);
+            return (T) mapToUserSummaryWithGroupMembershipDTO(source);
         } else {
             throw new UnimplementedMappingException(RegisteredUserDTO.class, targetClass);
         }
@@ -97,20 +97,29 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "emailVerificationToken", ignore = true)
     @Mapping(target = "emailToVerify", ignore = true)
-    RegisteredUser map(UserFromAuthProvider source);
+    RegisteredUser mapToRegisteredUser(UserFromAuthProvider source);
 
     @Mapping(target = "authorisedFullAccess", ignore = true)
-    UserSummaryDTO mapUserToSummary(RegisteredUserDTO source);
+    UserSummaryDTO mapToUserSummaryDTO(RegisteredUserDTO source);
+
+    // Map subclasses of UserSummaryDTO to UserSummaryDTO
+    UserSummaryDTO mapToUserSummaryDTO(UserSummaryDTO source);
 
     @Mapping(target = "authorisedFullAccess", ignore = true)
-    UserSummaryForAdminUsersDTO mapUserToAdminSummaryDTO(RegisteredUserDTO source);
+    UserSummaryForAdminUsersDTO mapToUserSummaryForAdminUsersDTO(RegisteredUserDTO source);
 
     @Mapping(target = "authorisedFullAccess", ignore = true)
-    UserSummaryWithEmailAddressDTO mapUserToSummaryWithEmailDTO(RegisteredUserDTO source);
+    UserSummaryWithEmailAddressDTO mapToUserSummaryWithEmailAddressDTO(RegisteredUserDTO source);
 
     @Mapping(target = "groupMembershipInformation", ignore = true)
     @Mapping(target = "authorisedFullAccess", ignore = true)
-    UserSummaryWithGroupMembershipDTO mapUserToSummaryWithGroupMembershipDTO(RegisteredUserDTO source);
+    UserSummaryWithGroupMembershipDTO mapToUserSummaryWithGroupMembershipDTO(RegisteredUserDTO source);
+
+    @Mapping(target = "groupMembershipInformation", ignore = true)
+    @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
+    @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
+    @SubclassMapping(source = UserSummaryWithGroupMembershipDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
+    UserSummaryWithGroupMembershipDTO mapToUserSummaryWithGroupMembershipDTO(UserSummaryDTO source);
 
     @Mapping(target = "sessionToken", ignore = true)
     @Mapping(target = "emailVerificationToken", ignore = true)
@@ -118,15 +127,6 @@ public interface UserMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
             nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     void merge(RegisteredUserDTO source, @MappingTarget RegisteredUser target);
-
-    // Map subclasses of UserSummaryDTO to UserSummaryDTO
-    UserSummaryDTO mapToUserSummaryDTO(UserSummaryDTO source);
-
-    @Mapping(target = "groupMembershipInformation", ignore = true)
-    @SubclassMapping(source = UserSummaryForAdminUsersDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
-    @SubclassMapping(source = UserSummaryWithEmailAddressDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
-    @SubclassMapping(source = UserSummaryWithGroupMembershipDTO.class, target = UserSummaryWithGroupMembershipDTO.class)
-    UserSummaryWithGroupMembershipDTO mapToUserSummaryWithGroupMembershipDTO(UserSummaryDTO source);
 
     RegisteredUser copy(RegisteredUser source);
 

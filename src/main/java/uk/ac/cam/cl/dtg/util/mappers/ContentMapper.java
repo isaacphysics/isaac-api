@@ -95,12 +95,6 @@ public interface ContentMapper {
     @SubclassMapping(source = CoordinateItemDTO.class, target = CoordinateItem.class)
     Item map(ItemDTO source);
 
-    @Mapping(target = "url", ignore = true)
-    @Mapping(target = "state", ignore = true)
-    @Mapping(target = "questionPartIds", ignore = true)
-    @Mapping(target = "difficulty", ignore = true)
-    DetailedQuizSummaryDTO map(IsaacQuizDTO source);
-
     @Mapping(target = "sidebar", ignore = true)
     @SubclassMapping(source = IsaacFastTrackQuestionPage.class, target = IsaacFastTrackQuestionPageDTO.class)
     @SubclassMapping(source = IsaacQuestionPage.class, target = IsaacQuestionPageDTO.class)
@@ -183,6 +177,42 @@ public interface ContentMapper {
     @SubclassMapping(source = ItemDTO.class, target = Item.class)
     Content map(ContentDTO source);
 
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacQuickQuestion.class, target = IsaacQuickQuestionDTO.class)
+    @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
+    @SubclassMapping(source = IsaacFreeTextQuestion.class, target = IsaacFreeTextQuestionDTO.class)
+    @SubclassMapping(source = IsaacGraphSketcherQuestion.class, target = IsaacGraphSketcherQuestionDTO.class)
+    @SubclassMapping(source = IsaacItemQuestion.class, target = IsaacItemQuestionDTO.class)
+    @SubclassMapping(source = IsaacMultiChoiceQuestion.class, target = IsaacMultiChoiceQuestionDTO.class)
+    @SubclassMapping(source = IsaacNumericQuestion.class, target = IsaacNumericQuestionDTO.class)
+    @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
+    @SubclassMapping(source = IsaacRegexMatchQuestion.class, target = IsaacRegexMatchQuestionDTO.class)
+    @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
+    @SubclassMapping(source = IsaacStringMatchQuestion.class, target = IsaacStringMatchQuestionDTO.class)
+    @SubclassMapping(source = IsaacSymbolicChemistryQuestion.class, target = IsaacSymbolicChemistryQuestionDTO.class)
+    @SubclassMapping(source = IsaacSymbolicLogicQuestion.class, target = IsaacSymbolicLogicQuestionDTO.class)
+    @SubclassMapping(source = IsaacSymbolicQuestion.class, target = IsaacSymbolicQuestionDTO.class)
+    @SubclassMapping(source = IsaacCoordinateQuestion.class, target = IsaacCoordinateQuestionDTO.class)
+    @SubclassMapping(source = IsaacLLMFreeTextQuestion.class, target = IsaacLLMFreeTextQuestionDTO.class)
+    @SubclassMapping(source = IsaacAnvilQuestion.class, target = IsaacAnvilQuestionDTO.class)
+    IsaacQuestionBaseDTO map(IsaacQuestionBase source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
+    @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
+    @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
+    IsaacItemQuestionDTO map(IsaacItemQuestion source);
+
+    @Mapping(target = "bestAttempt", ignore = true)
+    @SubclassMapping(source = IsaacSymbolicLogicQuestion.class, target = IsaacSymbolicLogicQuestionDTO.class)
+    IsaacSymbolicQuestionDTO map(IsaacSymbolicQuestion source);
+
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    DetailedQuizSummaryDTO mapToDetailedQuizSummaryDTO(IsaacQuizDTO source);
+
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
@@ -250,7 +280,7 @@ public interface ContentMapper {
     @Mapping(target = "difficulty", ignore = true)
     @Mapping(target = "deprecated", ignore = true)
     @Mapping(target = "audience", ignore = true)
-    ContentSummaryDTO map(String source);
+    ContentSummaryDTO mapToContentSummaryDTO(String source);
 
     /**
      * Mapping method to convert a ContentSummaryDTO to a String of its ID. Needed to map related content.
@@ -259,7 +289,7 @@ public interface ContentMapper {
      *            - the source Content object.
      * @return Returns the source Content object's ID.
      */
-    default String map(ContentSummaryDTO source) {
+    default String mapToString(ContentSummaryDTO source) {
         if (source == null) {
             return null;
         }
@@ -270,34 +300,4 @@ public interface ContentMapper {
 
     @Mapping(target = "end_date", ignore = true)
     IsaacEventPageDTO copy(IsaacEventPageDTO source);
-
-    @Mapping(target = "bestAttempt", ignore = true)
-    @SubclassMapping(source = IsaacQuickQuestion.class, target = IsaacQuickQuestionDTO.class)
-    @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
-    @SubclassMapping(source = IsaacFreeTextQuestion.class, target = IsaacFreeTextQuestionDTO.class)
-    @SubclassMapping(source = IsaacGraphSketcherQuestion.class, target = IsaacGraphSketcherQuestionDTO.class)
-    @SubclassMapping(source = IsaacItemQuestion.class, target = IsaacItemQuestionDTO.class)
-    @SubclassMapping(source = IsaacMultiChoiceQuestion.class, target = IsaacMultiChoiceQuestionDTO.class)
-    @SubclassMapping(source = IsaacNumericQuestion.class, target = IsaacNumericQuestionDTO.class)
-    @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
-    @SubclassMapping(source = IsaacRegexMatchQuestion.class, target = IsaacRegexMatchQuestionDTO.class)
-    @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
-    @SubclassMapping(source = IsaacStringMatchQuestion.class, target = IsaacStringMatchQuestionDTO.class)
-    @SubclassMapping(source = IsaacSymbolicChemistryQuestion.class, target = IsaacSymbolicChemistryQuestionDTO.class)
-    @SubclassMapping(source = IsaacSymbolicLogicQuestion.class, target = IsaacSymbolicLogicQuestionDTO.class)
-    @SubclassMapping(source = IsaacSymbolicQuestion.class, target = IsaacSymbolicQuestionDTO.class)
-    @SubclassMapping(source = IsaacCoordinateQuestion.class, target = IsaacCoordinateQuestionDTO.class)
-    @SubclassMapping(source = IsaacLLMFreeTextQuestion.class, target = IsaacLLMFreeTextQuestionDTO.class)
-    @SubclassMapping(source = IsaacAnvilQuestion.class, target = IsaacAnvilQuestionDTO.class)
-    IsaacQuestionBaseDTO map(IsaacQuestionBase source);
-
-    @Mapping(target = "bestAttempt", ignore = true)
-    @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
-    @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
-    @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
-    IsaacItemQuestionDTO map(IsaacItemQuestion source);
-
-    @Mapping(target = "bestAttempt", ignore = true)
-    @SubclassMapping(source = IsaacSymbolicLogicQuestion.class, target = IsaacSymbolicLogicQuestionDTO.class)
-    IsaacSymbolicQuestionDTO map(IsaacSymbolicQuestion source);
 }

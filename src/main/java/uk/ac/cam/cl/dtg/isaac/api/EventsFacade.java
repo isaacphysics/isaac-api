@@ -327,7 +327,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             throws SegueDatabaseException, ContentManagerException {
         List<ContentDTO> filteredResults = Lists.newArrayList();
 
-        List<EventBookingDTO> userReservationList = this.mapper.map(bookingManager.getAllEventReservationsForUser(currentUser.getId()));
+        List<EventBookingDTO> userReservationList = this.mapper.mapToListOfEventBookingDTO(bookingManager.getAllEventReservationsForUser(currentUser.getId()));
 
         for (EventBookingDTO booking : userReservationList) {
 
@@ -598,7 +598,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
 
-            List<EventBookingDTO> eventBookings = this.mapper.map(bookingManager.getBookingsByEventId(eventId));
+            List<EventBookingDTO> eventBookings = this.mapper.mapToListOfEventBookingDTO(bookingManager.getBookingsByEventId(eventId));
 
             // Only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(

@@ -390,7 +390,7 @@ public class UserManagerTest {
 
         RegisteredUserDTO mappedUserDTO = new RegisteredUserDTO();
 
-        expect(dummyMapper.map(providerUser)).andReturn(mappedUser).atLeastOnce();
+        expect(dummyMapper.mapToRegisteredUser(providerUser)).andReturn(mappedUser).atLeastOnce();
         expect(dummyMapper.map(mappedUser)).andReturn(mappedUserDTO).atLeastOnce();
         expect(dummyMapper.map(au)).andReturn(someAnonymousUserDTO).anyTimes();
 

@@ -16,9 +16,9 @@ public interface EventMapper {
 
     EventMapper INSTANCE = Mappers.getMapper(EventMapper.class);
 
-    EventBookingDTO map(DetailedEventBookingDTO source);
+    EventBookingDTO mapToEventBookingDTO(DetailedEventBookingDTO source);
 
-    List<EventBookingDTO> map(List<DetailedEventBookingDTO> source);
+    List<EventBookingDTO> mapToListOfEventBookingDTO(List<DetailedEventBookingDTO> source);
 
     @Mapping(source = "userBooked", target = "userBooked", qualifiedByName = "copyUserSummaryDTO")
     EventBookingDTO copy(EventBookingDTO source);

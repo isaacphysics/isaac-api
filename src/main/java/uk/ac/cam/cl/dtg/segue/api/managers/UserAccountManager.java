@@ -1822,7 +1822,7 @@ public class UserAccountManager implements IUserAccountManager {
             throw new NoUserException("No user returned by the provider!");
         }
 
-        RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider);
+        RegisteredUser newLocalUser = this.dtoMapper.mapToRegisteredUser(userFromProvider);
         newLocalUser.setRegistrationDate(new Date());
 
         // register user
