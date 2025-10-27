@@ -627,42 +627,36 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     @Provides
     @Singleton
-    @Inject
     public static MainMapper getMainMapperInstance() {
         return MainMapper.INSTANCE;
     }
 
     @Provides
     @Singleton
-    @Inject
     public static ContentMapper getContentMapperInstance() {
         return ContentMapper.INSTANCE;
     }
 
     @Provides
     @Singleton
-    @Inject
     public static UserMapper getUserMapperInstance() {
         return UserMapper.INSTANCE;
     }
 
     @Provides
     @Singleton
-    @Inject
     public static EventBookingMapper getEventBookingMapperInstance() {
         return EventBookingMapper.INSTANCE;
     }
 
     @Provides
     @Singleton
-    @Inject
     public static AssignmentMapper getAssignmentMapperInstance() {
         return AssignmentMapper.INSTANCE;
     }
 
     @Provides
     @Singleton
-    @Inject
     public static QuestionValidationMapper getQuestionValidationMapperInstance() {
         return QuestionValidationMapper.INSTANCE;
     }
