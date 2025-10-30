@@ -604,8 +604,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             eventBookings = userAssociationManager.filterUnassociatedRecords(
                     currentUser, eventBookings, booking -> booking.getUserBooked().getId());
 
-            eventBookings.forEach(booking -> booking.setUserBooked(mapper.mapToUserSummaryDTO(booking.getUserBooked())));
-
             return Response.ok(eventBookings).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
