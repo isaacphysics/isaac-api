@@ -698,9 +698,6 @@ public class GroupManager {
                 float passMark = 0.0f;
 
                 for (GameboardItem gameboardItem : progress) {
-                    questionPartsCorrect += gameboardItem.getQuestionPartsCorrect();
-                    questionPartsIncorrect += gameboardItem.getQuestionPartsIncorrect();
-                    questionPartsNotAttempted += gameboardItem.getQuestionPartsNotAttempted();
                     questionPartsTotal += gameboardItem.getQuestionPartsTotal();
                     passMark += gameboardItem.getPassMark();
                     Constants.CompletionState state = gameboardItem.getState();
@@ -716,9 +713,6 @@ public class GroupManager {
                 summary.setGameboardTitle(gameboard.getTitle());
                 summary.setDueDate(assignment.getDueDate());
                 summary.setCreationDate(assignment.getCreationDate());
-                summary.setQuestionPartsCorrect(questionPartsCorrect);
-                summary.setQuestionPartsIncorrect(questionPartsIncorrect);
-                summary.setQuestionPartsNotAttempted(questionPartsNotAttempted);
                 summary.setQuestionPartsTotal(questionPartsTotal);
                 summary.setPassMark(passMark);
                 summary.setQuestionPagesPerfect(questionPagesPerfect);

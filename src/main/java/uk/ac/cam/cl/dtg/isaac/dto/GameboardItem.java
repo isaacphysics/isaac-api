@@ -40,9 +40,6 @@ public class GameboardItem {
     private Integer level;
     private Integer difficulty;
 
-    private Integer questionPartsCorrect;
-    private Integer questionPartsIncorrect;
-    private Integer questionPartsNotAttempted;
     private Integer questionPartsTotal;
     private List<Integer> questionMarksCorrect;
     private List<Integer> questionMarksIncorrect;
@@ -98,9 +95,6 @@ public class GameboardItem {
         this.setLevel(original.getLevel());
         this.setDifficulty(original.getDifficulty());
         this.setCreationContext(original.getCreationContext());
-        this.setQuestionPartsCorrect(original.getQuestionPartsCorrect());
-        this.setQuestionPartsIncorrect(original.getQuestionPartsIncorrect());
-        this.setQuestionPartsNotAttempted(original.getQuestionPartsNotAttempted());
         this.setPassMark(original.getPassMark());
         this.setState(original.getState());
         this.setTags(original.getTags());
@@ -245,65 +239,6 @@ public class GameboardItem {
 
     public final void setQuestionPartStates(final List<Constants.QuestionPartState> questionPartStates) {
         this.questionPartStates = questionPartStates;
-    }
-
-    // TODO in time we should be able to remove the question part counters and just use questionPartStates instead,
-    // that will require altering some of the front end code - the assignment progress page in particular.
-    /**
-     * Gets the number of questionPartsCorrect.
-     *
-     * @return the number of questionPartsCorrect
-     */
-    public final Integer getQuestionPartsCorrect() {
-        return questionPartsCorrect;
-    }
-
-    /**
-     * Sets the number of correct question parts.
-     *
-     * @param questionPartsCorrect
-     *            the number of correct question parts to set
-     */
-    public final void setQuestionPartsCorrect(final Integer questionPartsCorrect) {
-        this.questionPartsCorrect = questionPartsCorrect;
-    }
-
-    /**
-     * Gets the number of questionPartsIncorrect.
-     *
-     * @return the number of questionPartsIncorrect
-     */
-    public final Integer getQuestionPartsIncorrect() {
-        return questionPartsIncorrect;
-    }
-
-    /**
-     * Sets the number of incorrect question parts.
-     *
-     * @param questionPartsIncorrect
-     *            the number of incorrect question parts to set
-     */
-    public final void setQuestionPartsIncorrect(final Integer questionPartsIncorrect) {
-        this.questionPartsIncorrect = questionPartsIncorrect;
-    }
-
-    /**
-     * Gets the number of questionPartsNotAttempted.
-     *
-     * @return the number of questionPartsNotAttempted
-     */
-    public final Integer getQuestionPartsNotAttempted() {
-        return questionPartsNotAttempted;
-    }
-
-    /**
-     * Sets the number of question parts not attempted.
-     *
-     * @param questionPartsNotAttempted
-     *            the number of question parts to set
-     */
-    public final void setQuestionPartsNotAttempted(final Integer questionPartsNotAttempted) {
-        this.questionPartsNotAttempted = questionPartsNotAttempted;
     }
 
     /**
