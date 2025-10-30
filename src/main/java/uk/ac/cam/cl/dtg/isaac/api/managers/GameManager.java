@@ -804,9 +804,9 @@ public class GameManager {
 
         boolean gameboardStarted = false;
         List<GameboardItem> questions = gameboardDTO.getContents();
-        int totalNumberOfQuestionsParts = 0;
-        int totalNumberOfAttemptedQuestionParts = 0;
-        int totalNumberOfCorrectQuestionParts = 0;
+        int totalNumberOfQuestionsMarks = 0;
+        int totalNumberOfAttemptedQuestionMarks = 0;
+        int totalNumberOfCorrectQuestionMarks = 0;
         for (GameboardItem gameItem : questions) {
             try {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
@@ -821,13 +821,13 @@ public class GameManager {
                 gameboardStarted = true;
                 gameboardDTO.setStartedQuestion(gameboardStarted);
             }
-            totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
-            totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
-            totalNumberOfAttemptedQuestionParts += gameItem.getQuestionPartsCorrect() + gameItem.getQuestionPartsIncorrect();
+            totalNumberOfQuestionsMarks += gameItem.getQuestionMarksTotal().stream().mapToInt(Integer::intValue).sum();
+            totalNumberOfCorrectQuestionMarks += gameItem.getQuestionMarksCorrect().stream().mapToInt(Integer::intValue).sum();
+            totalNumberOfAttemptedQuestionMarks += gameItem.getQuestionMarksCorrect().stream().mapToInt(Integer::intValue).sum() + gameItem.getQuestionMarksIncorrect().stream().mapToInt(Integer::intValue).sum();
         }
 
-        gameboardDTO.setPercentageAttempted(Math.round(100f * totalNumberOfAttemptedQuestionParts / totalNumberOfQuestionsParts));
-        gameboardDTO.setPercentageCorrect(Math.round(100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts));
+        gameboardDTO.setPercentageAttempted(Math.round(100f * totalNumberOfAttemptedQuestionMarks / totalNumberOfQuestionsMarks));
+        gameboardDTO.setPercentageCorrect(Math.round(100f * totalNumberOfCorrectQuestionMarks / totalNumberOfQuestionsMarks));
 
         return gameboardDTO;
     }
@@ -1211,9 +1211,6 @@ public class GameManager {
         float passMark = questionPage.getPassMark() != null ? questionPage.getPassMark() : DEFAULT_QUESTION_PASS_MARK;
         gameItem.setPassMark(passMark);
 
-        gameItem.setQuestionPartsCorrect(questionPartsCorrect);
-        gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
-        gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
         int questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
         gameItem.setQuestionPartsTotal(questionPartsTotal);
         gameItem.setQuestionPartStates(questionPartStates);

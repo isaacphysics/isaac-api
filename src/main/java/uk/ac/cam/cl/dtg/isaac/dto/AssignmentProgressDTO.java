@@ -10,8 +10,6 @@ import java.util.List;
  */
 public class AssignmentProgressDTO {
     public UserSummaryDTO user;
-    public List<Integer> correctPartResults;
-    public List<Integer> incorrectPartResults;
     public List<List<Integer>> correctMarkResults;
     public List<List<Integer>> incorrectMarkResults;
     public List<List<Integer>> markTotals;
@@ -22,21 +20,15 @@ public class AssignmentProgressDTO {
      * Complete AssignmentProgressDTO constructor with all dependencies.
      * @param user
      *            - UserSummaryDTO of the user.
-     * @param correctPartResults
-     *            - List of correct part results.
-     * @param incorrectPartResults
-     *            - List of incorrect part results.
      * @param results
      *            - Array of results.
      */
     public AssignmentProgressDTO(
-            UserSummaryDTO user, List<Integer> correctPartResults, List<Integer> incorrectPartResults,
+            UserSummaryDTO user,
             List<List<Integer>> correctMarkResults, List<List<Integer>> incorrectMarkResults,
             List<List<Integer>> markTotals, List<Constants.CompletionState> results,
             List<List<Constants.QuestionPartState>> partResults) {
         this.user = user;
-        this.correctPartResults = correctPartResults;
-        this.incorrectPartResults = incorrectPartResults;
         this.correctMarkResults = correctMarkResults;
         this.incorrectMarkResults = incorrectMarkResults;
         this.markTotals = markTotals;
@@ -53,22 +45,6 @@ public class AssignmentProgressDTO {
 
     public void setUser(UserSummaryDTO user) {
         this.user = user;
-    }
-
-    public List<Integer> getCorrectPartResults() {
-        return correctPartResults;
-    }
-
-    public void setCorrectPartResults(List<Integer> correctPartResults) {
-        this.correctPartResults = correctPartResults;
-    }
-
-    public List<Integer> getIncorrectPartResults() {
-        return incorrectPartResults;
-    }
-
-    public void setIncorrectPartResults(List<Integer> incorrectPartResults) {
-        this.incorrectPartResults = incorrectPartResults;
     }
 
     public List<List<Integer>> getCorrectMarkResults() {

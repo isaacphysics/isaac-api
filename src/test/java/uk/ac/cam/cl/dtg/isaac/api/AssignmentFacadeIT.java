@@ -505,8 +505,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         AssignmentProgressDTO progressDTO = responseData.get(0);
         Assertions.assertNotNull(progressDTO.getUser());
         Assertions.assertNotNull(progressDTO.getQuestionResults());
-        Assertions.assertNotNull(progressDTO.getCorrectPartResults());
-        Assertions.assertNotNull(progressDTO.getIncorrectPartResults());
+        Assertions.assertNotNull(progressDTO.getCorrectMarkResults());
+        Assertions.assertNotNull(progressDTO.getIncorrectMarkResults());
     }
 
     @Test
@@ -539,8 +539,8 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         AssignmentProgressDTO progressDTO = responseData.get(0);
         Assertions.assertNotNull(progressDTO.getUser());
         Assertions.assertNotNull(progressDTO.getQuestionResults());
-        Assertions.assertNotNull(progressDTO.getCorrectPartResults());
-        Assertions.assertNotNull(progressDTO.getIncorrectPartResults());
+        Assertions.assertNotNull(progressDTO.getCorrectMarkResults());
+        Assertions.assertNotNull(progressDTO.getIncorrectMarkResults());
     }
 
     @Test
