@@ -1183,9 +1183,7 @@ public class GameManager {
                         questionPartsIncorrect++;
                     }
                     questionMarksCorrect.add(greatestMarksForThisQuestion);
-                    if (greatestMarksForThisQuestion != maximumMarksForThisQuestion) {
-                        questionMarksIncorrect.add(maximumMarksForThisQuestion - greatestMarksForThisQuestion);
-                    }
+                    questionMarksIncorrect.add(maximumMarksForThisQuestion - greatestMarksForThisQuestion);
                 } else {
                     questionPartStates.add(QuestionPartState.NOT_ATTEMPTED);
                     questionPartsNotAttempted++;
