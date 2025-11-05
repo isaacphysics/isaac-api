@@ -10,13 +10,6 @@ public class LLMFreeTextQuestionValidationResponseDTO extends QuestionValidation
     public LLMFreeTextQuestionValidationResponseDTO() {
     }
 
-    public Integer getMarksAwarded() {
-        return super.getMarks();
-    }
-    public void setMarksAwarded(Integer marksAwarded) {
-        super.setMarks(marksAwarded);
-    }
-
     public List<LLMFreeTextMarkSchemeEntryDTO> getMarkBreakdown() {
         return markBreakdown;
     }

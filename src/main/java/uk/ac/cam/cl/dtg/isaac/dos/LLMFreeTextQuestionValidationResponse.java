@@ -22,13 +22,6 @@ public class LLMFreeTextQuestionValidationResponse extends QuestionValidationRes
         super(questionId, answer, correct, explanation, dateAttempted);
     }
 
-    public Integer getMarksAwarded() {
-        return super.getMarks();
-    }
-    public void setMarksAwarded(Integer marksAwarded) {
-        super.setMarks(marksAwarded);
-    }
-
     public List<LLMFreeTextMarkSchemeEntry> getMarkBreakdown() {
         return markBreakdown;
     }

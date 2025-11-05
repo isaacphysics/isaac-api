@@ -295,7 +295,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
         LLMFreeTextQuestionValidationResponse validationResponse = new LLMFreeTextQuestionValidationResponse(
                 question.getId(), answer, isConsideredCorrect, null, new Date());
-        validationResponse.setMarksAwarded(markTotal);
+        validationResponse.setMarks(markTotal);
         validationResponse.setMarkBreakdown(markBreakdown);
         return validationResponse;
     }
