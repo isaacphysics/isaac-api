@@ -52,14 +52,12 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
      *            -
      * @param dateAttempted
      *            -
-     * @param marks
-     *            -
      */
     public FormulaValidationResponseDTO(final String questionId, final ChoiceDTO answer,
                                         final ContentDTO explanation, final Boolean correctExact,
                                         final Boolean correctSymbolic, final Boolean correctNumeric,
-                                        final Date dateAttempted, final Integer marks) {
-        super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted, marks);
+                                        final Date dateAttempted) {
+        super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
         this.correctExact = correctExact;
         this.correctSymbolic = correctSymbolic;
         this.correctNumeric = correctNumeric;

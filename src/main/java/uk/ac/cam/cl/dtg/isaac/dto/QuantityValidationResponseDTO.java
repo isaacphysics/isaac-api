@@ -53,13 +53,11 @@ public class QuantityValidationResponseDTO extends QuestionValidationResponseDTO
      *            -
      * @param dateAttempted
      *            -
-     * @param marks
-     *            -
      */
     public QuantityValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
             final ContentDTO explanation, final Boolean correctValue, 
-            final Boolean correctUnits, final Date dateAttempted, final Integer marks) {
-        super(questionId, answer, correct, explanation, dateAttempted, marks);
+            final Boolean correctUnits, final Date dateAttempted) {
+        super(questionId, answer, correct, explanation, dateAttempted);
         this.correctValue = correctValue;
         this.correctUnits = correctUnits;
     }

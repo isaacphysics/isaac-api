@@ -26,17 +26,35 @@ public class LightweightQuestionValidationResponse {
      *            -
      * @param correct
      *            -
-     * @param dateAttempted
-     *            -
      * @param marks
+     *            -
+     * @param dateAttempted
      *            -
      */
     public LightweightQuestionValidationResponse(final String questionId, final Boolean correct,
-                                                 final Date dateAttempted, final Integer marks) {
+                                                 final Integer marks, final Date dateAttempted) {
         this.questionId = questionId;
         this.correct = correct;
-        this.dateAttempted = dateAttempted;
         this.marks = marks;
+        this.dateAttempted = dateAttempted;
+    }
+
+    /**
+     * Constructor without specifying marks (instead derived from 'correct')
+     *
+     * @param questionId
+     *            -
+     * @param correct
+     *            -
+     * @param dateAttempted
+     *            -
+     */
+    public LightweightQuestionValidationResponse(final String questionId, final Boolean correct,
+                                                 final Date dateAttempted) {
+        this.questionId = questionId;
+        this.correct = correct;
+        this.marks = (correct != null && correct) ? 1 : 0;
+        this.dateAttempted = dateAttempted;
     }
 
     /**
@@ -78,25 +96,6 @@ public class LightweightQuestionValidationResponse {
     }
 
     /**
-     * Gets the dateAttempted.
-     *
-     * @return the dateAttempted
-     */
-    public Date getDateAttempted() {
-        return dateAttempted;
-    }
-
-    /**
-     * Sets the dateAttempted.
-     *
-     * @param dateAttempted
-     *            the dateAttempted to set
-     */
-    public void setDateAttempted(final Date dateAttempted) {
-        this.dateAttempted = dateAttempted;
-    }
-
-    /**
      * Gets the marks.
      *
      * @return the marks
@@ -115,9 +114,28 @@ public class LightweightQuestionValidationResponse {
         this.marks = marks;
     }
 
+    /**
+     * Gets the dateAttempted.
+     *
+     * @return the dateAttempted
+     */
+    public Date getDateAttempted() {
+        return dateAttempted;
+    }
+
+    /**
+     * Sets the dateAttempted.
+     *
+     * @param dateAttempted
+     *            the dateAttempted to set
+     */
+    public void setDateAttempted(final Date dateAttempted) {
+        this.dateAttempted = dateAttempted;
+    }
+
     @Override
     public String toString() {
         return "QuestionValidationResponse [questionId=" + questionId + ", correct=" + correct +
-                ", dateAttempted=" + dateAttempted + ", marks=" + marks + "]";
+                ", marks=" + marks + ", dateAttempted=" + dateAttempted + "]";
     }
 }

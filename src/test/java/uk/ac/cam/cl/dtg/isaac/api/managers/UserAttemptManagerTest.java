@@ -29,14 +29,14 @@ public class UserAttemptManagerTest {
     private ContentSummaryDTO fakeQuestionSummary;
     private ContentSummaryDTO fakeConceptSummary;
 
-    private final LightweightQuestionValidationResponse p1CorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_1_ID, true, null, 1);
-    private final LightweightQuestionValidationResponse p1IncorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_1_ID, false, null, 0);
-    private final LightweightQuestionValidationResponse p2CorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_2_ID, true, null, 1);
-    private final LightweightQuestionValidationResponse p2IncorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_2_ID, false, null, 0);
-    private final LightweightQuestionValidationResponse p3CorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_3_ID, true, null, 1);
-    private final LightweightQuestionValidationResponse p3IncorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_3_ID, false, null, 0);
+    private final LightweightQuestionValidationResponse p1CorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_1_ID, true, null);
+    private final LightweightQuestionValidationResponse p1IncorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_1_ID, false, null);
+    private final LightweightQuestionValidationResponse p2CorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_2_ID, true, null);
+    private final LightweightQuestionValidationResponse p2IncorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_2_ID, false, null);
+    private final LightweightQuestionValidationResponse p3CorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_3_ID, true, null);
+    private final LightweightQuestionValidationResponse p3IncorrectAttempt = new LightweightQuestionValidationResponse(QUESTION_PART_3_ID, false, null);
 
-    private final LightweightQuestionValidationResponse someOtherCorrectAttempt = new LightweightQuestionValidationResponse("some-other-part-id", true, null, 1);
+    private final LightweightQuestionValidationResponse someOtherCorrectAttempt = new LightweightQuestionValidationResponse("some-other-part-id", true, null);
 
     @Before
     public void setUp() throws Exception {
