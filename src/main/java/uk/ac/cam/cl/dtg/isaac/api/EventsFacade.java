@@ -557,7 +557,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .collect(Collectors.toList());
 
             // Filter eventBookings based on whether the booked user is a member of the given group
-            List<EventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)
+            List<DetailedEventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)
                     .stream().filter(booking -> groupMemberIds.contains(booking.getUserBooked().getId()))
                     .collect(Collectors.toList());
 
@@ -565,7 +565,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings,
                     booking -> booking.getUserBooked().getId());
 
-            return Response.ok(this.mapper.copy(eventBookings)).build();
+            return Response.ok(this.mapper.mapToListOfEventBookingDTO(eventBookings)).build();
         } catch (SegueDatabaseException e) {
             String errorMsg = String.format(
                     "Database error occurred while trying retrieve bookings for group (%s) on event (%s).",
