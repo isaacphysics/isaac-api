@@ -1199,31 +1199,6 @@ public class GameManager {
     }
 
     /**
-     * Get a wildcard by id.
-     * 
-     * @param id
-     *            - of wildcard
-     * @return wildcard or an exception.
-     * @throws ContentManagerException
-     *             - if we cannot access the content requested.
-     */
-    private IsaacWildcard getWildCardById(final String id) throws ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
-
-        Content wildcardResults = this.contentManager.getContentDOById(id);
-
-        if (wildcardResults instanceof IsaacWildcard) {
-            // Create a copy to avoid modifying the original object
-            IsaacWildcard wildcard = (IsaacWildcard) wildcardResults;
-            return mapper.copy(wildcard);
-        }
-        return null;
-    }
-
-    /**
      * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
      * 
      * This method will decide what should be AND and what should be OR based on the field names used.
