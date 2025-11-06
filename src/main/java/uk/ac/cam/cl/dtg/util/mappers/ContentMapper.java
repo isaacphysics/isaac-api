@@ -220,7 +220,14 @@ public interface ContentMapper {
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     @Mapping(target = "deprecated", ignore = true)
+    @SubclassMapping(source = SeguePageDTO.class, target = ContentSummaryDTO.class)
     ContentSummaryDTO mapContentDTOtoContentSummaryDTO(ContentDTO source);
+
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    ContentSummaryDTO mapSeguePageDTOtoContentSummaryDTO(SeguePageDTO source);
 
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "state", ignore = true)
