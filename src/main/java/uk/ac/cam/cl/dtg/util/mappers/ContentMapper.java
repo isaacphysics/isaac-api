@@ -235,7 +235,22 @@ public interface ContentMapper {
     @Mapping(target = "creationContext", ignore = true)
     @Mapping(target = "contentType", ignore = true)
     @Mapping(target = "boardId", ignore = true)
+    @SubclassMapping(source = SeguePageDTO.class, target = GameboardItem.class)
     GameboardItem mapContentDTOtoGameboardItem(ContentDTO source);
+
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartsTotal", ignore = true)
+    @Mapping(target = "questionPartsNotAttempted", ignore = true)
+    @Mapping(target = "questionPartsIncorrect", ignore = true)
+    @Mapping(target = "questionPartsCorrect", ignore = true)
+    @Mapping(target = "questionPartStates", ignore = true)
+    @Mapping(target = "passMark", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "creationContext", ignore = true)
+    @Mapping(target = "contentType", ignore = true)
+    @Mapping(target = "boardId", ignore = true)
+    GameboardItem mapSeguePageDTOtoGameboardItem(SeguePageDTO source);
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
