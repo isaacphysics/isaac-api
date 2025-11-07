@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.util.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.SubclassExhaustiveStrategy;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
@@ -267,7 +268,15 @@ public interface ContentMapper {
     @Mapping(target = "hiddenFromRoles", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     @Mapping(target = "deprecated", ignore = true)
+    @SubclassMapping(source = IsaacQuizDTO.class, target = QuizSummaryDTO.class, qualifiedByName = "mapQuizDTOtoQuizSummaryDTO")
     QuizSummaryDTO mapContentDTOtoQuizSummaryDTO(ContentDTO source);
+
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "questionPartIds", ignore = true)
+    @Mapping(target = "difficulty", ignore = true)
+    @Named("mapQuizDTOtoQuizSummaryDTO")
+    QuizSummaryDTO mapQuizDTOtoQuizSummaryDTO(IsaacQuizDTO source);
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
