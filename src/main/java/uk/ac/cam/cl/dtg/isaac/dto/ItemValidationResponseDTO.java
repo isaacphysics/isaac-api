@@ -46,12 +46,11 @@ public class ItemValidationResponseDTO extends QuestionValidationResponseDTO {
      * @param itemsCorrect - ordered list of correctness status of each submitted item.
      * @param explanation - explanation.
      * @param dateAttempted - dateAttempted.
-     * @param marks - marks
      */
     public ItemValidationResponseDTO(final String questionId, final ChoiceDTO answer,
                                      final Boolean correct, final List<Boolean> itemsCorrect,
-                                     final ContentDTO explanation, final Date dateAttempted, final Integer marks) {
-        super(questionId, answer, correct, explanation, dateAttempted, marks);
+                                     final ContentDTO explanation, final Date dateAttempted) {
+        super(questionId, answer, correct, explanation, dateAttempted);
         this.itemsCorrect = itemsCorrect;
     }
 

@@ -106,7 +106,7 @@ public class IsaacLLMFreeTextValidatorTest {
                     {"A two-mark answer for a default marking formula two-mark question gets recognised as correct",
                             question, "{\"reasonFoo\": 1, \"reasonBar\": 1, \"reasonFizz\": 0}", CORRECT, TWO_MARKS},
                     {"A one-mark answer for a default marking formula two-mark question receives exactly one mark",
-                            question, "{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}", INCORRECT, ONE_MARK}};
+                            question, "{\"reasonFoo\": 1, \"reasonBar\": 0, \"reasonFizz\": 0}", CORRECT, ONE_MARK}};
         }
 
         /*
@@ -127,9 +127,9 @@ public class IsaacLLMFreeTextValidatorTest {
                     {"An answer containing an advantage and a disadvantage mark receives two marks",
                             question, "{\"adv1\": 1, \"adv2\": 0, \"dis1\": 1, \"dis2\": 0}", CORRECT, TWO_MARKS},
                     {"An answer containing only a disadvantage mark receives one mark",
-                            question, "{\"adv1\": 0, \"adv2\": 0, \"dis1\": 1, \"dis2\": 0}", INCORRECT, ONE_MARK},
+                            question, "{\"adv1\": 0, \"adv2\": 0, \"dis1\": 1, \"dis2\": 0}", CORRECT, ONE_MARK},
                     {"An answer containing two advantage marks receives one mark",
-                            question, "{\"adv1\": 1, \"adv2\": 1, \"dis1\": 0, \"dis2\": 0}", INCORRECT, ONE_MARK}};
+                            question, "{\"adv1\": 1, \"adv2\": 1, \"dis1\": 0, \"dis2\": 0}", CORRECT, ONE_MARK}};
         }
 
 
@@ -156,7 +156,7 @@ public class IsaacLLMFreeTextValidatorTest {
                     {"An answer containing an explanation without a matching point receives zero marks",
                             question, "{\"pnt1\": 0, \"pnt2\": 0, \"expl1\": 1, \"expl2\": 0}", INCORRECT, NO_MARKS},
                     {"An answer containing a point and a mismatched explanation receives one mark",
-                            question, "{\"pnt1\": 1, \"pnt2\": 0, \"expl1\": 0, \"expl2\": 0}", INCORRECT, ONE_MARK}};
+                            question, "{\"pnt1\": 1, \"pnt2\": 0, \"expl1\": 0, \"expl2\": 0}", CORRECT, ONE_MARK}};
         }
     }
 
@@ -257,7 +257,7 @@ public class IsaacLLMFreeTextValidatorTest {
                                       int marksAwarded,
                                       List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
             assertEquals(isCorrect, response.isCorrect());
-            assertEquals(marksAwarded, (long) response.getMarksAwarded());
+            assertEquals(marksAwarded, (long) response.getMarks());
             assertTrue(expectedMarks.containsAll(response.getMarkBreakdown()));
             assertTrue(response.getMarkBreakdown().containsAll(expectedMarks));
         }

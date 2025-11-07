@@ -1,20 +1,15 @@
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import uk.ac.cam.cl.dtg.isaac.dto.content.LLMFreeTextMarkSchemeEntryDTO;
 
 import java.util.List;
 
+@JsonIgnoreProperties({ "marksAwarded" })
 public class LLMFreeTextQuestionValidationResponseDTO extends QuestionValidationResponseDTO {
     private List<LLMFreeTextMarkSchemeEntryDTO> markBreakdown;
 
     public LLMFreeTextQuestionValidationResponseDTO() {
-    }
-
-    public Integer getMarksAwarded() {
-        return super.getMarks();
-    }
-    public void setMarksAwarded(Integer marksAwarded) {
-        super.setMarks(marksAwarded);
     }
 
     public List<LLMFreeTextMarkSchemeEntryDTO> getMarkBreakdown() {
