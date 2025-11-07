@@ -29,6 +29,7 @@ public class Question extends Content {
     protected ContentBase answer;
     protected List<ContentBase> hints;
     protected Content defaultFeedback;
+    protected Integer passMark;
 
 
     public Question() {
@@ -74,7 +75,7 @@ public class Question extends Content {
     }
 
     /**
-     * Gets the default feedback to be used when no other feedback is generated..
+     * Gets the default feedback to be used when no other feedback is generated.
      *
      * @return the defaultFeedback
      */
@@ -91,5 +92,20 @@ public class Question extends Content {
     public final void setDefaultFeedback(final Content defaultFeedback) {
         this.defaultFeedback = defaultFeedback;
     }
+
+    /**
+     * Gets the pass mark - the number of marks needed for a question to be considered correct.
+     *
+     * @return the passMark
+     */
+    public Integer getPassMark() { return passMark; }
+
+    /**
+     * Sets the pass mark - the number of marks needed for a question to be considered correct.
+     *
+     * @param passMark
+     *            the passMark to set
+     */
+    public void setPassMark(Integer passMark) { this.passMark = passMark; }
 
 }
