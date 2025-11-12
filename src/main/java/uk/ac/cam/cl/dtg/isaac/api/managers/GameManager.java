@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -44,6 +43,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -56,10 +56,11 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,7 +94,7 @@ public class GameManager {
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
-    private final MapperFacade mapper;
+    private final MainMapper mapper;
     private final GitContentManager contentManager;
     private final QuestionManager questionManager;
 
@@ -111,7 +112,7 @@ public class GameManager {
      */
     @Inject
     public GameManager(final GitContentManager contentManager,
-                       final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
+                       final GameboardPersistenceManager gameboardPersistenceManager, final MainMapper mapper,
                        final QuestionManager questionManager,
                        final AbstractConfigLoader properties) {
         this.contentManager = contentManager;
@@ -677,7 +678,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we cannot access the content requested.
      */
-    public List<IsaacWildcard> getWildcards() throws NoWildcardException, ContentManagerException {
+    public List<IsaacWildcardDTO> getWildcards() throws NoWildcardException, ContentManagerException {
         List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
@@ -693,10 +694,12 @@ public class GameManager {
             throw new NoWildcardException();
         }
 
-        List<IsaacWildcard> result = Lists.newArrayList();
+        List<IsaacWildcardDTO> result = Lists.newArrayList();
         for (ContentDTO c : wildcardResults.getResults()) {
-            IsaacWildcard wildcard = mapper.map(c, IsaacWildcard.class);
-            result.add(wildcard);
+            if ((c instanceof IsaacWildcardDTO)) {
+                IsaacWildcardDTO wildcard = (IsaacWildcardDTO) c;
+                result.add(wildcard);
+            }
         }
 
         return result;
@@ -1193,26 +1196,6 @@ public class GameManager {
 
         CompletionState state = UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
         gameItem.setState(state);
-    }
-
-    /**
-     * Get a wildcard by id.
-     * 
-     * @param id
-     *            - of wildcard
-     * @return wildcard or an exception.
-     * @throws ContentManagerException
-     *             - if we cannot access the content requested.
-     */
-    private IsaacWildcard getWildCardById(final String id) throws ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
-
-        Content wildcardResults = this.contentManager.getContentDOById(id);
-
-        return mapper.map(wildcardResults, IsaacWildcard.class);
     }
 
     /**

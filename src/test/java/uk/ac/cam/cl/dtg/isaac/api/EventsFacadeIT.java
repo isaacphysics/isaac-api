@@ -35,7 +35,8 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() {
         // Get an instance of the facade to test
-        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager, userAssociationManager, groupManager, userAccountManager, schoolListReader, mapperFacade);
+        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager,
+                userAssociationManager, groupManager, userAccountManager, schoolListReader, mainMapper);
     }
 
     @Test

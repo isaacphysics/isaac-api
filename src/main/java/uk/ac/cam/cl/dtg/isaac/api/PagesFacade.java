@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -102,7 +102,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
     private final ContentService api;
-    private final MapperFacade mapper;
+    private final MainMapper mapper;
     private final UserAccountManager userManager;
     private final URIManager uriManager;
     private final QuestionManager questionManager;
@@ -134,7 +134,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      */
     @Inject
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
-                       final ILogManager logManager, final MapperFacade mapper, final GitContentManager contentManager,
+                       final ILogManager logManager, final MainMapper mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager,
                        final QuestionManager questionManager, final GameManager gameManager,
                        final UserAttemptManager userAttemptManager) {

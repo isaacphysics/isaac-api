@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import ma.glasnost.orika.MapperFacade;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +65,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
@@ -117,7 +117,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final UserAccountManager userAccountManager;
     private final SchoolListReader schoolListReader;
 
-    private final MapperFacade mapper;
+    private final MainMapper mapper;
 
     /**
      * EventsFacade.
@@ -136,7 +136,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final UserAssociationManager userAssociationManager,
                         final GroupManager groupManager,
                         final UserAccountManager userAccountManager, final SchoolListReader schoolListReader,
-                        final MapperFacade mapper) {
+                        final MainMapper mapper) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
@@ -327,7 +327,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             throws SegueDatabaseException, ContentManagerException {
         List<ContentDTO> filteredResults = Lists.newArrayList();
 
-        List<EventBookingDTO> userReservationList = this.mapper.mapAsList(bookingManager.getAllEventReservationsForUser(currentUser.getId()), EventBookingDTO.class);
+        List<EventBookingDTO> userReservationList = this.mapper.mapToListOfEventBookingDTO(bookingManager.getAllEventReservationsForUser(currentUser.getId()));
 
         for (EventBookingDTO booking : userReservationList) {
 
@@ -557,7 +557,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .collect(Collectors.toList());
 
             // Filter eventBookings based on whether the booked user is a member of the given group
-            List<EventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)
+            List<DetailedEventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)
                     .stream().filter(booking -> groupMemberIds.contains(booking.getUserBooked().getId()))
                     .collect(Collectors.toList());
 
@@ -565,7 +565,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             eventBookings = userAssociationManager.filterUnassociatedRecords(currentUser, eventBookings,
                     booking -> booking.getUserBooked().getId());
 
-            return Response.ok(this.mapper.mapAsList(eventBookings, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.mapToListOfEventBookingDTO(eventBookings)).build();
         } catch (SegueDatabaseException e) {
             String errorMsg = String.format(
                     "Database error occurred while trying retrieve bookings for group (%s) on event (%s).",
@@ -598,7 +598,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to use this endpoint.").toResponse();
             }
 
-            List<EventBookingDTO> eventBookings = this.mapper.mapAsList(bookingManager.getBookingsByEventId(eventId), EventBookingDTO.class);
+            List<EventBookingDTO> eventBookings = this.mapper.mapToListOfEventBookingDTO(bookingManager.getBookingsByEventId(eventId));
 
             // Only allowed to see the bookings of connected users
             eventBookings = userAssociationManager.filterUnassociatedRecords(
@@ -778,7 +778,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                             ADMIN_BOOKING_REASON_FIELDNAME, additionalInformation.get("authorisation") == null ? "NOT_PROVIDED" : additionalInformation.get("authorisation")
                     ));
 
-            return Response.ok(this.mapper.map(booking, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.copy(booking)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -859,7 +859,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                             USER_ID_LIST_FKEY_FIELDNAME, userIds.toArray(),
                             BOOKING_STATUS_FIELDNAME, BookingStatus.RESERVED.toString()
                     ));
-            return Response.ok(this.mapper.mapAsList(bookings, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.copy(bookings)).build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -1017,7 +1017,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     SegueServerLogType.EVENT_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
-            return Response.ok(this.mapper.map(eventBookingDTO, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.copy(eventBookingDTO)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -1072,7 +1072,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     SegueServerLogType.EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
-            return Response.ok(this.mapper.map(eventBookingDTO, EventBookingDTO.class)).build();
+            return Response.ok(this.mapper.copy(eventBookingDTO)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -1608,7 +1608,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
             // the original object else we will poison the contentManager's cache!
             // TODO: might it be better to get the DO from the cache and map it to DTO here to reduce overhead?
-            return mapper.map(possibleEvent, IsaacEventPageDTO.class);
+            IsaacEventPageDTO eventPageDTO = (IsaacEventPageDTO) possibleEvent;
+            return mapper.copy(eventPageDTO);
         }
         return null;
     }

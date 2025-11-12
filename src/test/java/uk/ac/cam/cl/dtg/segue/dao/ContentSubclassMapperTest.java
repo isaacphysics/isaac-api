@@ -3,20 +3,20 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import org.junit.Before;
 import org.junit.Test;
 import org.reflections.Reflections;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 
 import static org.junit.Assert.assertTrue;
 
-public class ContentMapperTest {
+public class ContentSubclassMapperTest {
 
-    private ContentMapper contentMapper;
+    private ContentSubclassMapper contentSubclassMapper;
 
     @Before
     public void setUp() {
-        this.contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg.isaac"));
+        this.contentSubclassMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg.isaac"));
     }
 
     @Test
@@ -27,7 +27,7 @@ public class ContentMapperTest {
         codeSnippet.setExpandable(true);
 
         // Act
-        ContentDTO codeSnippetDTO = contentMapper.getDTOByDO(codeSnippet);
+        ContentDTO codeSnippetDTO = contentSubclassMapper.getDTOByDO(codeSnippet);
 
         // Assert
         assertTrue(codeSnippetDTO.getExpandable());
@@ -41,7 +41,7 @@ public class ContentMapperTest {
         content.setExpandable(true);
 
         // Act
-        ContentDTO contentDTO = contentMapper.getDTOByDO(content);
+        ContentDTO contentDTO = contentSubclassMapper.getDTOByDO(content);
 
         // Assert
         assertTrue(contentDTO.getExpandable());
