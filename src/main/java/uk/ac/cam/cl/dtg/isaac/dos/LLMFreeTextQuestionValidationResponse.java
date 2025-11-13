@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
@@ -9,9 +10,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.LLMFreeTextQuestionValidationResponseDTO;
 import java.util.Date;
 import java.util.List;
 
+@JsonIgnoreProperties({ "marksAwarded" })
 @DTOMapping(LLMFreeTextQuestionValidationResponseDTO.class)
 public class LLMFreeTextQuestionValidationResponse extends QuestionValidationResponse {
-    private Integer marksAwarded;
     private List<LLMFreeTextMarkSchemeEntry> markBreakdown;
 
     public LLMFreeTextQuestionValidationResponse() {
@@ -21,13 +22,6 @@ public class LLMFreeTextQuestionValidationResponse extends QuestionValidationRes
     public LLMFreeTextQuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
                                       final Content explanation, final Date dateAttempted) {
         super(questionId, answer, correct, explanation, dateAttempted);
-    }
-
-    public Integer getMarksAwarded() {
-        return marksAwarded;
-    }
-    public void setMarksAwarded(Integer marksAwarded) {
-        this.marksAwarded = marksAwarded;
     }
 
     public List<LLMFreeTextMarkSchemeEntry> getMarkBreakdown() {

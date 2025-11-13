@@ -17,6 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.Date;
 
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
@@ -28,6 +30,7 @@ public class QuestionValidationResponseDTO {
     private String questionId;
     private ChoiceDTO answer;
     private Boolean correct;
+    private Integer marks;
     private ContentDTO explanation;
     private Date dateAttempted;
 
@@ -47,19 +50,47 @@ public class QuestionValidationResponseDTO {
      *            -
      * @param correct
      *            -
+     * @param marks
+     *            -
      * @param explanation
      *            -
      * @param dateAttempted
      *            -
      */
     public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
-            final ContentDTO explanation, final Date dateAttempted) {
+            final Integer marks, final ContentDTO explanation, final Date dateAttempted) {
         this.questionId = questionId;
         this.answer = answer;
         this.correct = correct;
+        this.marks = marks;
         this.explanation = explanation;
         this.dateAttempted = dateAttempted;
     }
+
+    /**
+     * Constructor without specifying marks (instead derived from 'correct')
+     *
+     * @param questionId
+     *            -
+     * @param answer
+     *            -
+     * @param correct
+     *            -
+     * @param explanation
+     *            -
+     * @param dateAttempted
+     *            -
+     */
+    public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
+                                      final ContentDTO explanation, final Date dateAttempted) {
+        this.questionId = questionId;
+        this.answer = answer;
+        this.correct = correct;
+        this.marks = (correct != null && correct) ? 1 : 0;
+        this.explanation = explanation;
+        this.dateAttempted = dateAttempted;
+    }
+
 
     /**
      * Gets the questionId.
@@ -119,6 +150,25 @@ public class QuestionValidationResponseDTO {
     }
 
     /**
+     * Gets the marks.
+     *
+     * @return the marks
+     */
+    public Integer getMarks() {
+        return marks;
+    }
+
+    /**
+     * Sets the marks.
+     *
+     * @param marks
+     *            the marks to set
+     */
+    public void setMarks(final Integer marks) {
+        this.marks = marks;
+    }
+
+    /**
      * Gets the explanation.
      * 
      * @return the explanation
@@ -159,6 +209,6 @@ public class QuestionValidationResponseDTO {
     @Override
     public String toString() {
         return "QuestionValidationResponseDTO [questionId=" + questionId + ", answer=" + answer + ", correct="
-                + correct + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + "]";
+                + correct + ", marks=" + marks + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + "]";
     }
 }
