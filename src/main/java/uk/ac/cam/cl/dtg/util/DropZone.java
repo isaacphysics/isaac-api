@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.util;
 public class DropZone {
     private String id;
     private String minWidth;
-    private String minHeight;
+    private Float width;
     private Float left;
     private Float top;
 
@@ -23,12 +23,12 @@ public class DropZone {
         this.minWidth = minWidth;
     }
 
-    public String getMinHeight() {
-        return minHeight;
+    public Float getWidth() {
+        return width;
     }
 
-    public void setMinHeight(String minHeight) {
-        this.minHeight = minHeight;
+    public void setWidth(Float width) {
+        this.width = width;
     }
 
     public Float getLeft() {
