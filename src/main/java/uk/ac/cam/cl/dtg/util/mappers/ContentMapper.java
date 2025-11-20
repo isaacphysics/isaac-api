@@ -143,6 +143,7 @@ public interface ContentMapper {
 
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
+    @SubclassMapping(source = InteractiveCodeSnippet.class, target = InteractiveCodeSnippetDTO.class)
     @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)
     @SubclassMapping(source = CodeTabs.class, target = CodeTabsDTO.class)
     @SubclassMapping(source = EmailTemplate.class, target = EmailTemplateDTO.class)
