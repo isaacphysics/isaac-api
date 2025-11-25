@@ -27,6 +27,7 @@ import java.util.List;
 @JsonContentType("figure")
 public class Figure extends Image {
     private List<DropZone> dropZones;
+    private String condensedMaxWidth;
 
     public List<DropZone> getDropZones() {
         return dropZones;
@@ -34,5 +35,13 @@ public class Figure extends Image {
 
     public void setDropZones(List<DropZone> dropZones) {
         this.dropZones = dropZones;
+    }
+
+    public String getCondensedMaxWidth() {
+        return condensedMaxWidth;
+    }
+
+    public void setCondensedMaxWidth(String condensedMaxWidth) {
+        this.condensedMaxWidth = condensedMaxWidth;
     }
 }

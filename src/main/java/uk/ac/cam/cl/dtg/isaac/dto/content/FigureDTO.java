@@ -25,6 +25,7 @@ import java.util.List;
  */
 public class FigureDTO extends ImageDTO {
     private List<DropZone> dropZones;
+    private String condensedMaxWidth;
 
     public List<DropZone> getDropZones() {
         return dropZones;
@@ -32,5 +33,13 @@ public class FigureDTO extends ImageDTO {
 
     public void setDropZones(List<DropZone> dropZones) {
         this.dropZones = dropZones;
+    }
+
+    public String getCondensedMaxWidth() {
+        return condensedMaxWidth;
+    }
+
+    public void setCondensedMaxWidth(String condensedMaxWidth) {
+        this.condensedMaxWidth = condensedMaxWidth;
     }
 }
