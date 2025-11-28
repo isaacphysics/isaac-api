@@ -11,6 +11,8 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
@@ -28,21 +30,23 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Test
     public void incorrectAnswerToStringMatchQuestion() throws Exception {
-        var questionId = "/questions/_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_/answer";
-        var response = subject().client().post(questionId, "{\"type\": \"stringChoice\", \"value\": \"13\"}")
-                .readEntityAsJson();
+        var response = subject().client().post(
+            "/questions/_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_/answer",
+            "{\"type\": \"stringChoice\", \"value\": \"13\"}"
+        ).readEntityAsJson();
 
-        assertEquals(false, response.getBoolean("correct"));
+        assertFalse(response.getBoolean("correct"));
         assertEquals("13", response.getJSONObject("answer").getString("value"));
     }
 
     @Test
     public void correctAnswerToStringMatchQuestion() throws Exception {
-        var questionId = "/questions/_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_/answer";
-        var response = subject().client().post(questionId, "{\"type\": \"stringChoice\", \"value\": \"hello\"}")
-                .readEntityAsJson();
+        var response = subject().client().post(
+            "/questions/_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_/answer",
+            "{\"type\": \"stringChoice\", \"value\": \"hello\"}"
+        ).readEntityAsJson();
 
-        assertEquals(true, response.getBoolean("correct"));
+        assertTrue(response.getBoolean("correct"));
         assertEquals("hello", response.getJSONObject("answer").getString("value"));
     }
 
