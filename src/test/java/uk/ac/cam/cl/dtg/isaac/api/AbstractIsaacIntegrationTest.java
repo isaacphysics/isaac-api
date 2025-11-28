@@ -47,9 +47,11 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
@@ -149,6 +151,7 @@ public class AbstractIsaacIntegrationTest {
     protected static IQuizQuestionAttemptPersistenceManager quizQuestionAttemptPersistenceManager;
     protected static QuizQuestionManager quizQuestionManager;
     protected static PgUsers pgUsers;
+    protected static ContentMapper contentMapper;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -240,7 +243,7 @@ public class AbstractIsaacIntegrationTest {
         pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
-        ContentMapper contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
+        contentMapper = new ContentMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
         questionManager = new QuestionManager(contentMapper, pgQuestionAttempts);
 
@@ -314,6 +317,8 @@ public class AbstractIsaacIntegrationTest {
         misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(), new EmailVerificationMisuseHandler());
         misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(), new TeacherPasswordResetMisuseHandler());
         misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.getSimpleName(), new TokenOwnerLookupMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.getSimpleName(), new AnonQuestionAttemptMisuseHandler());
+        misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.getSimpleName(), new IPQuestionAttemptMisuseHandler(emailManager, properties));
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";

@@ -8,10 +8,16 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.json.JSONObject;
 import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.AfterEach;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dto.LocalAuthDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
+import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.Map;
@@ -110,22 +116,37 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         String baseUrl;
         Consumer<ThrowingRunnable> registerCleanup;
         RequestBuilder builder;
+        RegisteredUserDTO currentUser;
+        Client client;
 
-        TestClient(
-            final String baseUrl, final Consumer<ThrowingRunnable> registerCleanup, final RequestBuilder builder
-        ) {
+        TestClient(final String baseUrl, final Consumer<ThrowingRunnable> registerCleanup, final RequestBuilder builder) {
             this.baseUrl = baseUrl;
             this.registerCleanup = registerCleanup;
             this.builder = builder;
+            this.client =  ClientBuilder.newClient().register(new CookieJarFilter());
         }
 
         public TestResponse get(final String url) {
-            try (var client = ClientBuilder.newClient()) {
-                var request = client.target(baseUrl + url).request();
-                var response = builder.apply(request).get();
-                registerCleanup.accept(response::close);
-                return new TestResponse(response);
-            }
+            var request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
+            var response = builder.apply(request).get();
+            registerCleanup.accept(response::close);
+            return new TestResponse(response);
+        }
+
+        public TestResponse post(final String url, final Object body) {
+            var request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
+            var response = builder.apply(request).post(Entity.json(body));
+            registerCleanup.accept(response::close);
+            return new TestResponse(response);
+        }
+
+        public TestClient loginAs(final RegisteredUser user) {
+            var request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
+            var body = new LocalAuthDTO();
+            body.setEmail(user.getEmail());
+            body.setPassword("test1234");
+            this.currentUser = builder.apply(request).post(Entity.json(body), RegisteredUserDTO.class);
+            return this;
         }
     }
 
@@ -160,6 +181,12 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         <T> T readEntity(final Class<T> klass) {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
             return response.readEntity(klass);
+        }
+
+        JSONObject readEntityAsJson() {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            String body = response.readEntity(String.class);
+            return new JSONObject(body);
         }
     }
 
