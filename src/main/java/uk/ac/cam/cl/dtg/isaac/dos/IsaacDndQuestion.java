@@ -15,12 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacClozeQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacDndQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacItemQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacClozeValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacItemQuestionValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
+
+import java.util.List;
 
 
 /**
@@ -29,8 +39,37 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
  */
 @DTOMapping(IsaacDndQuestionDTO.class)
 @JsonContentType("isaacDndQuestion")
-@ValidatesWith(IsaacClozeValidator.class)
-public class IsaacDndQuestion extends IsaacItemQuestion {
+@ValidatesWith(IsaacDndValidator.class)
+public class IsaacDndQuestion extends Question {
+    private List<Item> items;
+    private Boolean randomiseItems;
+
+    public List<Item> getItems() {
+        return items;
+    }
+
+    public void setItems(final List<Item> items) {
+        this.items = items;
+    }
+
+    /**
+     * Gets whether to randomiseItems.
+     *
+     * @return randomiseItems
+     */
+    public Boolean getRandomiseItems() {
+        return randomiseItems;
+    }
+
+    /**
+     * Sets the randomiseItems.
+     *
+     * @param randomiseItems
+     *            the randomiseItems to set
+     */
+    public void setRandomiseItems(final Boolean randomiseItems) {
+        this.randomiseItems = randomiseItems;
+    }
 
     private Boolean withReplacement;
     // Detailed feedback option not needed in the client so not in DTO:
@@ -50,5 +89,46 @@ public class IsaacDndQuestion extends IsaacItemQuestion {
 
     public void setDetailedItemFeedback(final Boolean detailedItemFeedback) {
         this.detailedItemFeedback = detailedItemFeedback;
+    }
+
+    protected List<DndItemChoice> choices;
+    protected Boolean randomiseChoices;
+
+    /**
+     * Gets the choices.
+     *
+     * @return the choices
+     */
+    public final List<DndItemChoice> getChoices() {
+        return choices;
+    }
+
+    /**
+     * Sets the choices.
+     *
+     * @param choices
+     *            the choices to set
+     */
+    public final void setChoices(final List<DndItemChoice> choices) {
+        this.choices = choices;
+    }
+
+    /**
+     * Gets the whether to randomlyOrderUnits.
+     *
+     * @return randomiseChoices
+     */
+    public Boolean getRandomiseChoices() {
+        return randomiseChoices;
+    }
+
+    /**
+     * Sets the randomiseChoices.
+     *
+     * @param randomiseChoices
+     *            the randomiseChoices to set
+     */
+    public void setRandomiseChoices(final Boolean randomiseChoices) {
+        this.randomiseChoices = randomiseChoices;
     }
 }
