@@ -640,8 +640,11 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (null == group || !(group.getOwnerId().equals(user.getId()) || isUserAnAdmin(userManager, user))) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
+            boolean userIsAdditionalManagerWithPrivileges = group.isAdditionalManagerPrivileges()
+                    && GroupManager.isInAdditionalManagerList(group, user.getId());
+            if (null == group || !(group.getOwnerId().equals(user.getId()) || userIsAdditionalManagerWithPrivileges || isUserAnAdmin(userManager, user))) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners or additional group managers "
+                        + "with privileges can modify additional group managers!").toResponse();
             }
 
             // Tutors cannot add additional group managers
@@ -780,10 +783,12 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             boolean userIsGroupOwner = group.getOwnerId().equals(user.getId());
             boolean userIsAdditionalManager = GroupManager.isInAdditionalManagerList(group, user.getId());
+            boolean userIsAdditionalManagerWithPrivileges = userIsAdditionalManager && group.isAdditionalManagerPrivileges();
             boolean managerRemovingThemselves = userIsAdditionalManager && user.getId().equals(userIdToRemove);
 
-            if (!userIsGroupOwner && !managerRemovingThemselves && !isUserAnAdmin(userManager, user)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners can modify additional group managers!").toResponse();
+            if (!userIsGroupOwner && !userIsAdditionalManagerWithPrivileges && !managerRemovingThemselves && !isUserAnAdmin(userManager, user)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners or additional group managers "
+                        + "with privileges can modify additional group managers!").toResponse();
             }
 
             RegisteredUserDTO userToRemove = this.userManager.getUserDTOById(userIdToRemove);
