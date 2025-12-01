@@ -35,9 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
 
-    // Test that correct answers are recognised.
+    // Test that correct answers are recognised, g
     @Test
-    public final void correctItems_CorrectResponseShouldBeReturned() {
+    public final void singleCorrectMatch_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -50,11 +50,24 @@ public class IsaacDndValidatorTest {
 
     // Test that incorrect answers are not recognised.
     @Test
-    public final void incorrectItems_IncorrectResponseShouldBeReturned() {
+    public final void singleIncorrectMatch_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertFalse(response.isCorrect());
+    }
+
+    @Test
+    public final void moreSpecificIncorrectMatchOverridesCorrect_IncorrectResponseShouldBeReturned() {
+        var question = createQuestion(
+            correct(answer(choose(item_5cm, "hypothenuse"))),
+            incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        var answer = answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
         var response = testValidate(question, answer);
 
@@ -126,6 +139,11 @@ public class IsaacDndValidatorTest {
 
     public static DndItemChoice correct(final DndItemChoice choice) {
         choice.setCorrect(true);
+        return choice;
+    }
+
+    public static DndItemChoice incorrect(final DndItemChoice choice) {
+        choice.setCorrect(false);
         return choice;
     }
 

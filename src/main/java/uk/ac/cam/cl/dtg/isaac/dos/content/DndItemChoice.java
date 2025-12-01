@@ -53,17 +53,20 @@ public class DndItemChoice extends Choice {
         this.allowSubsetMatch = allowSubsetMatch;
     }
 
-    public boolean matches(final DndItemChoice rhs) {
-        return this.items.stream().allMatch(lhsItem ->
-            rhs.getItemByDropZone(lhsItem.getDropZoneId())
-                .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
-                .orElse(false)
-        );
-    }
-
     private Optional<DndItem> getItemByDropZone(final String dropZoneId) {
         return this.items.stream()
                 .filter(item -> item.getDropZoneId().equals(dropZoneId))
                 .findFirst();
+    }
+
+    public int matchStrength(final DndItemChoice rhs) {
+        return this.items.stream()
+            .map(lhsItem ->
+                rhs.getItemByDropZone(lhsItem.getDropZoneId())
+                    .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()) ? -1 : 0)
+                    .orElse(0)
+            )
+            .mapToInt(Integer::intValue)
+            .sum();
     }
 }

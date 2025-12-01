@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -62,18 +63,20 @@ public class IsaacDndValidator implements IValidator {
         }
         IsaacDndQuestion dndQuestion = (IsaacDndQuestion) question;
         DndItemChoice userAnswer = (DndItemChoice) answer;
-        var correctAnswers = dndQuestion.getChoices().stream().filter(Choice::isCorrect);
-        var isCorrect = correctAnswers.anyMatch(correctAnswer -> correctAnswer.matches(userAnswer));
-        var explanation = dndQuestion.getChoices().stream()
-                .filter(choice -> choice.matches(userAnswer))
-                .findFirst()
-                .map(choice -> (Content) choice.getExplanation())
-                .orElse(dndQuestion.getDefaultFeedback());
-        return new ItemValidationResponse(question.getId(), answer, isCorrect, null, explanation, new Date());
+
+        var match = dndQuestion.getChoices().stream().sorted(
+                Comparator.comparingInt(c -> c.matchStrength(userAnswer))
+            ).filter(choice -> choice.matchStrength(userAnswer) < 0)
+            .findFirst()
+            .orElse(defaultChoice(dndQuestion));
+
+        return new ItemValidationResponse(question.getId(), answer, match.isCorrect(), null, (Content) match.getExplanation(), new Date());
     }
 
-    @Override
-    public List<Choice> getOrderedChoices(final List<Choice> choices) {
-        return IsaacItemQuestionValidator.getOrderedChoicesWithSubsets(choices);
+    private DndItemChoice defaultChoice(final IsaacDndQuestion question) {
+        var choice = new DndItemChoice();
+        choice.setCorrect(false);
+        choice.setExplanation(question.getDefaultFeedback());
+        return choice;
     }
 }
