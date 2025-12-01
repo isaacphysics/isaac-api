@@ -247,9 +247,9 @@ public class AbstractIsaacIntegrationTest {
 
         contentMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
+        mainMapper = MainMapper.INSTANCE;
         questionManager = new QuestionManager(contentMapper, mainMapper, pgQuestionAttempts);
 
-        mainMapper = MainMapper.INSTANCE;
 
         providersToRegister = new HashMap<>();
         providersToRegister.put(AuthenticationProvider.RASPBERRYPI, new RaspberryPiOidcAuthenticator(
