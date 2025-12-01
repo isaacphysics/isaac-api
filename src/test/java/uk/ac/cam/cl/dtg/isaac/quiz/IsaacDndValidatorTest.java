@@ -19,6 +19,8 @@ import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
@@ -26,40 +28,71 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
 
-    /*
-        Test that correct answers are recognised.
-    */
+    // Test that correct answers are recognised.
     @Test
     public final void correctItems_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
-        var choices = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
-        var response = testValidate(question, choices);
+        var response = testValidate(question, answer);
 
         assertTrue(response.isCorrect());
     }
 
-    /*
-        Test that incorrect answers are not recognised.
-    */
+    // Test that incorrect answers are not recognised.
     @Test
     public final void incorrectItems_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
-        var choices = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
+        var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
 
-        var response = testValidate(question, choices);
+        var response = testValidate(question, answer);
 
         assertFalse(response.isCorrect());
+    }
+
+    // TODO: what if correct? Do we then show default explanation?
+
+    // Test that subset match answers return an appropriate explanation
+    // TODO: what if? correct: A1, no other criteria. incorrect: A1, B1, no other criteria
+    @Test
+    public final void matchingFeedback_shouldReturnMatchingFeedback() {
+        var hypothenuseMustBeLargest = new Content("The hypothenuse must be the longest side of a right triangle");
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
+            incorrect(answer(choose(item_3cm, "hypothenuse")), hypothenuseMustBeLargest)
+        );
+        var answer = answer(choose(item_3cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertFalse(response.isCorrect());
+        assertEquals(response.getExplanation(), hypothenuseMustBeLargest);
+    }
+
+    @Test
+    public final void noMatchingFeedback_shouldReturnDefaultFeedback() {
+        var question = createQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        var defaultFeedback = new Content("Isaac cannot help you.");
+        question.setDefaultFeedback(defaultFeedback);
+        var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertFalse(response.isCorrect());
+        assertEquals(response.getExplanation(), defaultFeedback);
     }
 
     private static QuestionValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
@@ -93,6 +126,12 @@ public class IsaacDndValidatorTest {
 
     public static DndItemChoice correct(final DndItemChoice choice) {
         choice.setCorrect(true);
+        return choice;
+    }
+
+    public static DndItemChoice incorrect(final DndItemChoice choice, ContentBase explanation) {
+        choice.setCorrect(false);
+        choice.setExplanation(explanation);
         return choice;
     }
 

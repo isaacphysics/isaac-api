@@ -146,7 +146,7 @@ public class IsaacClozeValidatorTest {
 
     /*
     Test that known incorrect answers can be matched.
-*/
+    */
     @Test
     public final void isaacClozeValidator_KnownIncorrectDetailedFeedback_IncorrectResponseShouldBeReturned() {
         // Set up the question object:

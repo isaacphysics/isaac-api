@@ -64,7 +64,12 @@ public class IsaacDndValidator implements IValidator {
         DndItemChoice userAnswer = (DndItemChoice) answer;
         var correctAnswers = dndQuestion.getChoices().stream().filter(Choice::isCorrect);
         var isCorrect = correctAnswers.anyMatch(correctAnswer -> correctAnswer.matches(userAnswer));
-        return new ItemValidationResponse(question.getId(), answer, isCorrect, null, null, new Date());
+        var explanation = dndQuestion.getChoices().stream()
+                .filter(choice -> choice.matches(userAnswer))
+                .findFirst()
+                .map(choice -> (Content) choice.getExplanation())
+                .orElse(dndQuestion.getDefaultFeedback());
+        return new ItemValidationResponse(question.getId(), answer, isCorrect, null, explanation, new Date());
     }
 
     @Override
