@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.util;
 
-public class DropZone {
+public class FigureRegion {
     private String id;
     private String minWidth;
     private Float width;
