@@ -1,4 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.api;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Injector;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class StringMatchQuestion {
         @Test
-        public void incorrect() throws Exception {
+        public void wrongAnswer() throws Exception {
             var response = subject().client().post(
                 url("_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_"),
                 "{\"type\": \"stringChoice\", \"value\": \"13\"}"
@@ -50,7 +51,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test
-        public void correct() throws Exception {
+        public void rightAnswer() throws Exception {
             var response = subject().client().post(
                 url("_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_"),
                 "{\"type\": \"stringChoice\", \"value\": \"hello\"}"
@@ -64,7 +65,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class DndQuestion {
         @Test
-        public void incorrect() throws Exception {
+        public void wrongAnswer() throws Exception {
             var dndQuestion = persist(createQuestion(
                 correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             ));
@@ -73,9 +74,20 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertFalse(response.getBoolean("correct"));
-            DndItemChoice answerFromResponse = contentMapper.getSharedContentObjectMapper()
-                .readValue(response.getJSONObject("answer").toString(), DndItemChoice.class);
-            assertEquals(answer, answerFromResponse);
+            assertEquals(answer, readAnswer(response.getJSONObject("answer").toString()));
+        }
+
+        @Test
+        public void rightAnswer() throws Exception {
+            var dndQuestion = persist(createQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            ));
+            var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+
+            assertTrue(response.getBoolean("correct"));
+            assertEquals(answer, readAnswer(response.getJSONObject("answer").toString()));
         }
     }
 
@@ -105,6 +117,10 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
     private String url(final String questionId) {
         return String.format("/questions/%s/answer", questionId);
+    }
+
+    private DndItemChoice readAnswer(final String str) throws JsonProcessingException {
+        return contentMapper.getSharedContentObjectMapper().readValue(str, DndItemChoice.class);
     }
 
     private static final IsaacStringMatchValidator stringMatchValidator = new IsaacStringMatchValidator();
