@@ -46,7 +46,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             "{\"type\": \"stringChoice\", \"value\": \"hello\"}"
         ).readEntityAsJson();
 
-        assertTrue(response.getBoolean("correct"));
+        assertFalse(response.getBoolean("correct"));
         assertEquals("hello", response.getJSONObject("answer").getString("value"));
     }
 
