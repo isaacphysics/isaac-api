@@ -640,9 +640,14 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO userToAdd = this.userManager.getUserDTOByEmail(responseMap.get("email"));
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
+            if (null == group) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Group specified does not exist.").toResponse();
+            }
+
             boolean userIsAdditionalManagerWithPrivileges = group.isAdditionalManagerPrivileges()
                     && GroupManager.isInAdditionalManagerList(group, user.getId());
-            if (null == group || !(group.getOwnerId().equals(user.getId()) || userIsAdditionalManagerWithPrivileges || isUserAnAdmin(userManager, user))) {
+
+            if (!(group.getOwnerId().equals(user.getId()) || userIsAdditionalManagerWithPrivileges || isUserAnAdmin(userManager, user))) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Only group owners or additional group managers "
                         + "with privileges can modify additional group managers!").toResponse();
             }
