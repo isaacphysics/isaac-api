@@ -62,6 +62,7 @@ public interface ContentMapper {
     @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
     @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
     // ItemChoice subclasses must come before ItemChoice
+    @SubclassMapping(source = DndItemChoice.class, target = DndItemChoiceDTO.class)
     @SubclassMapping(source = CoordinateChoice.class, target = CoordinateChoiceDTO.class)
     @SubclassMapping(source = ParsonsChoice.class, target = ParsonsChoiceDTO.class)
     @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
@@ -81,6 +82,7 @@ public interface ContentMapper {
     @SubclassMapping(source = RegexPatternDTO.class, target = RegexPattern.class)
     @SubclassMapping(source = StringChoiceDTO.class, target = StringChoice.class)
     // ItemChoiceDTO subclasses must come before ItemChoiceDTO
+    @SubclassMapping(source = DndItemChoiceDTO.class, target = DndItemChoice.class)
     @SubclassMapping(source = CoordinateChoiceDTO.class, target = CoordinateChoice.class)
     @SubclassMapping(source = ParsonsChoiceDTO.class, target = ParsonsChoice.class)
     @SubclassMapping(source = ItemChoiceDTO.class, target = ItemChoice.class)

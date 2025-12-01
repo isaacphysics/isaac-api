@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -23,18 +22,14 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
+@SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
 
     /*
@@ -71,30 +66,45 @@ public class IsaacDndValidatorTest {
         return new IsaacDndValidator().validateQuestionResponse(question, choice);
     }
 
-    private static DndItemChoice answer(final DndItem... list) {
+    @SuppressWarnings("checkstyle:MissingJavadocType")
+    public static DndItemChoice answer(final DndItem... list) {
         var c = new DndItemChoice();
         c.setItems(List.of(list));
+        c.setType("dndChoice");
         return c;
     }
 
-    private static DndItem choose(final Item item, final String str) {
-        return new DndItem(item.getId(), item.getValue(), str);
+    @SuppressWarnings("checkstyle:MissingJavadocType")
+    public static DndItem choose(final Item item, final String dropZoneId) {
+        var value =  new DndItem(item.getId(), item.getValue(), dropZoneId);
+        value.setType("dndItem");
+        return value;
     }
 
-    private static IsaacDndQuestion createQuestion(final DndItemChoice... answers) {
+    @SuppressWarnings("checkstyle:MissingJavadocType")
+    public static IsaacDndQuestion createQuestion(final DndItemChoice... answers) {
         var question = new IsaacDndQuestion();
+        question.setId(UUID.randomUUID().toString());
         question.setItems(List.of(item_3cm, item_4cm, item_5cm, item_6cm));
         question.setChoices(List.of(answers));
+        question.setType("isaacDndQuestion");
         return question;
     }
 
-    private static DndItemChoice correct(final DndItemChoice choice) {
+    public static DndItemChoice correct(final DndItemChoice choice) {
         choice.setCorrect(true);
         return choice;
     }
 
-    private static final Item item_3cm = new Item("6d3d", "3 cm");
-    private static final Item item_4cm = new Item("6d3e", "4 cm");
-    private static final Item item_5cm = new Item("6d3f", "5 cm");
-    private static final Item item_6cm = new Item("6d3g", "5 cm");
+    @SuppressWarnings("checkstyle:MissingJavadocType")
+    public static Item item(final String id, final String value) {
+        Item item = new Item(id, value);
+        item.setType("item");
+        return item;
+    }
+
+    public static final Item item_3cm = item("6d3d", "3 cm");
+    public static final Item item_4cm = item("6d3e", "4 cm");
+    public static final Item item_5cm = item("6d3f", "5 cm");
+    public static final Item item_6cm = item("6d3g", "5 cm");
 }

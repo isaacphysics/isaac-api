@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import uk.ac.cam.cl.dtg.isaac.dto.content.ItemChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.DndItemChoiceDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +24,8 @@ import java.util.Optional;
  * Choice for Item Questions, containing a list of Items.
  *
  */
-@DTOMapping(ItemChoiceDTO.class)
-@JsonContentType("itemChoice")
+@DTOMapping(DndItemChoiceDTO.class)
+@JsonContentType("dndChoice")
 public class DndItemChoice extends Choice {
 
     private Boolean allowSubsetMatch;

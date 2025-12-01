@@ -1,11 +1,17 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.inject.Injector;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 import jakarta.ws.rs.core.Response;
+
+import java.util.List;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -13,6 +19,8 @@ import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testcontainers.shaded.com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest.*;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
@@ -28,31 +36,64 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         response.assertError("No question object found for given id: no_such_question", Response.Status.NOT_FOUND);
     }
 
-    @Test
-    public void incorrectAnswerToStringMatchQuestion() throws Exception {
-        var response = subject().client().post(
-            "/questions/_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_/answer",
-            "{\"type\": \"stringChoice\", \"value\": \"13\"}"
-        ).readEntityAsJson();
+    @Nested
+    class StringMatchQuestion {
+        @Test
+        public void incorrect() throws Exception {
+            var response = subject().client().post(
+                url("_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_"),
+                "{\"type\": \"stringChoice\", \"value\": \"13\"}"
+            ).readEntityAsJson();
 
-        assertFalse(response.getBoolean("correct"));
-        assertEquals("13", response.getJSONObject("answer").getString("value"));
+            assertFalse(response.getBoolean("correct"));
+            assertEquals("13", response.getJSONObject("answer").getString("value"));
+        }
+
+        @Test
+        public void correct() throws Exception {
+            var response = subject().client().post(
+                url("_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_"),
+                "{\"type\": \"stringChoice\", \"value\": \"hello\"}"
+            ).readEntityAsJson();
+
+            assertTrue(response.getBoolean("correct"));
+            assertEquals("hello", response.getJSONObject("answer").getString("value"));
+        }
     }
 
-    @Test
-    public void correctAnswerToStringMatchQuestion() throws Exception {
-        var response = subject().client().post(
-            "/questions/_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_/answer",
-            "{\"type\": \"stringChoice\", \"value\": \"hello\"}"
-        ).readEntityAsJson();
+    @Nested
+    class DndQuestion {
+        @Test
+        public void incorrect() throws Exception {
+            var dndQuestion = persist(createQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            ));
+            var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "hypothenuse"), choose(item_5cm, "leg_1"));
 
-        assertTrue(response.getBoolean("correct"));
-        assertEquals("hello", response.getJSONObject("answer").getString("value"));
+            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+
+            assertFalse(response.getBoolean("correct"));
+            DndItemChoice answerFromResponse = contentMapper.getSharedContentObjectMapper()
+                .readValue(response.getJSONObject("answer").toString(), DndItemChoice.class);
+            assertEquals(answer, answerFromResponse);
+        }
     }
 
-    TestServer subject() throws Exception {
+    private IsaacDndQuestion persist(final IsaacDndQuestion question) throws Exception {
+        elasticSearchProvider.bulkIndexWithIDs(
+            "6c2ba42c5c83d8f31b3b385b3a9f9400a12807c9",
+            "content",
+            List.of(immutableEntry(
+                question.getId(), contentMapper.getSharedContentObjectMapper().writeValueAsString(question))
+            )
+        );
+        return question;
+    }
+
+    private TestServer subject() throws Exception {
         Injector testInjector = createNiceMock(Injector.class);
         expect(testInjector.getInstance(IsaacStringMatchValidator.class)).andReturn(stringMatchValidator).anyTimes();
+        expect(testInjector.getInstance(IsaacDndValidator.class)).andReturn(dndValidator).anyTimes();
         replay(testInjector);
         SegueGuiceConfigurationModule.setInjector(testInjector);
 
@@ -62,5 +103,10 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         );
     }
 
+    private String url(final String questionId) {
+        return String.format("/questions/%s/answer", questionId);
+    }
+
     private static final IsaacStringMatchValidator stringMatchValidator = new IsaacStringMatchValidator();
+    private static final IsaacDndValidator dndValidator = new IsaacDndValidator();
 }

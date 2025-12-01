@@ -83,6 +83,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.etl.ElasticSearchIndexer;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
@@ -121,7 +122,7 @@ public class AbstractIsaacIntegrationTest {
     protected static AbstractConfigLoader properties;
     protected static Map<String, String> globalTokens;
     protected static PostgresSqlDb postgresSqlDb;
-    protected static ElasticSearchProvider elasticSearchProvider;
+    protected static ElasticSearchIndexer elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MainMapper mainMapper;
     protected static ContentSummarizerService contentSummarizerService;
@@ -184,7 +185,7 @@ public class AbstractIsaacIntegrationTest {
         elasticsearch.start();
 
         try {
-            elasticSearchProvider = new ElasticSearchProvider(ElasticSearchProvider.getClient(
+            elasticSearchProvider = new ElasticSearchIndexer(ElasticSearchProvider.getClient(
                     "localhost",
                     elasticsearch.getMappedPort(9200),
                     "elastic",
