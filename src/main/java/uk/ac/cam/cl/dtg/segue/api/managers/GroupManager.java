@@ -19,7 +19,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -47,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,7 +72,7 @@ public class GroupManager {
     private final IUserGroupPersistenceManager groupDatabase;
     private final UserAccountManager userManager;
     private final GameManager gameManager;
-    private final MapperFacade dtoMapper;
+    private final UserMapper dtoMapper;
     private List<IGroupObserver> groupsObservers;
 
     /**
@@ -87,7 +87,7 @@ public class GroupManager {
      */
     @Inject
     public GroupManager(final IUserGroupPersistenceManager groupDatabase, final UserAccountManager userManager,
-                        final GameManager gameManager, final MapperFacade dtoMapper) {
+                        final GameManager gameManager, final UserMapper dtoMapper) {
         Objects.requireNonNull(groupDatabase);
         Objects.requireNonNull(userManager);
         Objects.requireNonNull(gameManager);
@@ -133,7 +133,7 @@ public class GroupManager {
      */
     public UserGroupDTO editUserGroup(final UserGroupDTO groupToEdit) throws SegueDatabaseException {
         Objects.requireNonNull(groupToEdit);
-        UserGroup userGroup = dtoMapper.map(groupToEdit, UserGroup.class);
+        UserGroup userGroup = dtoMapper.map(groupToEdit);
         userGroup.setLastUpdated(new Date());
 
         UserGroup existingGroup = groupDatabase.findGroupById(groupToEdit.getId());
@@ -195,7 +195,7 @@ public class GroupManager {
     public Map<Long, GroupMembershipDTO> getUserMembershipMapForGroup(Long groupId) throws SegueDatabaseException {
         Map<Long, GroupMembershipDTO> result = Maps.newHashMap();
         for(Map.Entry<Long, GroupMembership> entry : this.groupDatabase.getGroupMembershipMap(groupId).entrySet()) {
-            result.put(entry.getKey(), dtoMapper.map(entry.getValue(), GroupMembershipDTO.class));
+            result.put(entry.getKey(), dtoMapper.map(entry.getValue()));
         }
         return result;
     }
@@ -547,7 +547,7 @@ public class GroupManager {
      *            - if there is a database problem.
      */
     private UserGroupDTO convertGroupToDTO(final UserGroup group) throws SegueDatabaseException {
-        UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+        UserGroupDTO dtoToReturn = dtoMapper.map(group);
 
         try {
             dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(group.getOwnerId()), UserSummaryWithEmailAddressDTO.class));
@@ -583,7 +583,7 @@ public class GroupManager {
 
         // go through each group and get the related user information in the correct format
         for (UserGroup group : groups) {
-            UserGroupDTO dtoToReturn = dtoMapper.map(group, UserGroupDTO.class);
+            UserGroupDTO dtoToReturn = dtoMapper.map(group);
             result.add(dtoToReturn);
         }
 
@@ -650,9 +650,9 @@ public class GroupManager {
         Map<Long, GroupMembershipDTO> userMembershipMapforMap = this.getUserMembershipMapForGroup(group.getId());
 
         for(UserSummaryDTO dto : summarisedMemberInfo) {
-            UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.map(dto, UserSummaryWithGroupMembershipDTO.class);
+            UserSummaryWithGroupMembershipDTO newDTO = dtoMapper.mapToUserSummaryWithGroupMembershipDTO(dto);
             GroupMembershipDTO groupMembershipDTO = userMembershipMapforMap.get(newDTO.getId());
-            newDTO.setGroupMembershipInformation(dtoMapper.map(groupMembershipDTO, GroupMembershipDTO.class));
+            newDTO.setGroupMembershipInformation(groupMembershipDTO);
             result.add(newDTO);
         }
 

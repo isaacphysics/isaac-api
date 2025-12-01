@@ -70,6 +70,9 @@ public class UnhandledExceptionMapper implements ExceptionMapper<Exception> {
 
         // Otherwise a completely generic error message that leaks little information:
         log.error("{} for {} {} - ({})", e.getClass().getSimpleName(), e.getMessage(), request.getMethod(), request.getRequestURI());
+        if (e instanceof NullPointerException) {
+            log.error("NPE stack trace:", e);  // Help diagnose bugs in our code.
+        }
         return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, UNEXPECTED_ERROR).toResponse();
     }
 }

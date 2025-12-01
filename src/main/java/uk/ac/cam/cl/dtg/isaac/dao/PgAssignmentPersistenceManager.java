@@ -17,13 +17,13 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -43,7 +43,7 @@ import java.util.List;
 public class PgAssignmentPersistenceManager implements IAssignmentPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(PgAssignmentPersistenceManager.class);
 
-    private final MapperFacade mapper;
+    private final AssignmentMapper mapper;
     private final PostgresSqlDb database;
 
     /**
@@ -55,15 +55,14 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
      *            - An instance of an automapper that can be used for mapping to and from AssignmentDOs and DTOs.
      */
     @Inject
-    public PgAssignmentPersistenceManager(final PostgresSqlDb database,
-            final MapperFacade mapper) {
+    public PgAssignmentPersistenceManager(final PostgresSqlDb database, final AssignmentMapper mapper) {
         this.database = database;
         this.mapper = mapper;
     }
 
     @Override
     public Long saveAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
-        AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
+        AssignmentDO assignmentToSave = mapper.map(assignment);
 
         String query = "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date, due_date, notes, scheduled_start_date)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?);";
@@ -262,7 +261,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
      * @return Assignment DTO
      */
     private AssignmentDTO convertToAssignmentDTO(final AssignmentDO assignmentDO) {
-        return mapper.map(assignmentDO, AssignmentDTO.class);
+        return mapper.map(assignmentDO);
     }
 
     /**

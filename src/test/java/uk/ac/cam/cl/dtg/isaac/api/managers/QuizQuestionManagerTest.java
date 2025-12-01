@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ma.glasnost.orika.MapperFacade;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
@@ -27,7 +26,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -37,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,22 +79,20 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
     public void setUp() {
         quizQuestionAttemptPersistenceManager = createMock(IQuizQuestionAttemptPersistenceManager.class);
         questionManager = createMock(QuestionManager.class);
-        ContentMapper contentMapper = createMock(ContentMapper.class);
-        MapperFacade mapperFacade = createMock(MapperFacade.class);
+        MainMapper contentMapper = createMock(MainMapper.class);
         quizAttemptManager = createMock(QuizAttemptManager.class);
 
         quizQuestionManager = new QuizQuestionManager(questionManager, contentMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
 
-        expect(contentMapper.getAutoMapper()).andStubReturn(mapperFacade);
-        expect(mapperFacade.map(correctAnswer, ChoiceDTO.class)).andStubReturn(correctAnswerDTO);
-        expect(mapperFacade.map(wrongAnswer, ChoiceDTO.class)).andStubReturn(wrongAnswerDTO);
+        expect(contentMapper.map(correctAnswer)).andStubReturn(correctAnswerDTO);
+        expect(contentMapper.map(wrongAnswer)).andStubReturn(wrongAnswerDTO);
 
         registerDefaultsFor(questionManager, m -> {
             expect(m.convertQuestionValidationResponseToDTO(wrongResponse)).andStubReturn(wrongResponseDTO);
             expect(m.convertQuestionValidationResponseToDTO(correctResponse)).andStubReturn(correctResponseDTO);
         });
 
-        replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, mapperFacade, quizAttemptManager);
+        replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, quizAttemptManager);
     }
 
     @Before

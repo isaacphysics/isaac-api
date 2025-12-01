@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.content;
+package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.segue.dto.content.InteractiveCodeSnippetDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.InteractiveCodeSnippetDTO;
 
 /**
  * Interactive code snippet is a code snippet that can be run and edited

@@ -33,7 +33,6 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.reflections.Reflections;
@@ -110,7 +109,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IAnonymousUserDataManager;
@@ -148,6 +147,12 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
+import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
+import uk.ac.cam.cl.dtg.util.mappers.EventBookingMapper;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
+import uk.ac.cam.cl.dtg.util.mappers.QuestionValidationMapper;
+import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.ServletContextEvent;
@@ -181,7 +186,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
-    private static ContentMapper mapper = null;
+    private static ContentSubclassMapper mapper = null;
     private static GitContentManager contentManager = null;
     private static RestHighLevelClient elasticSearchClient = null;
     private static UserAccountManager userManager = null;
@@ -544,16 +549,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param searchProvider
      *            - search provider to use
      * @param contentMapper
-     *            - content mapper to use.
+     *            - defines the mappings for content objects
+     * @param contentSubclassMapper
+     *           - the utility class for mapping content objects
      * @return a fully configured content Manager.
      */
     @Inject
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
-                                                       final ContentMapper contentMapper, final AbstractConfigLoader globalProperties) {
+                                                       final ContentMapper contentMapper,
+                                                       final ContentSubclassMapper contentSubclassMapper,
+                                                       final AbstractConfigLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, contentMapper, globalProperties);
+            contentManager = new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper,
+                    globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
@@ -606,13 +616,49 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ContentMapper getContentMapper() {
+    private static ContentSubclassMapper getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg"));
+            mapper = new ContentSubclassMapper(getReflectionsClass("uk.ac.cam.cl.dtg"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
         return mapper;
+    }
+
+    @Provides
+    @Singleton
+    public static MainMapper getMainMapperInstance() {
+        return MainMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    public static ContentMapper getContentMapperInstance() {
+        return ContentMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    public static UserMapper getUserMapperInstance() {
+        return UserMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    public static EventBookingMapper getEventBookingMapperInstance() {
+        return EventBookingMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    public static AssignmentMapper getAssignmentMapperInstance() {
+        return AssignmentMapper.INSTANCE;
+    }
+
+    @Provides
+    @Singleton
+    public static QuestionValidationMapper getQuestionValidationMapperInstance() {
+        return QuestionValidationMapper.INSTANCE;
     }
 
     /**
@@ -788,7 +834,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - to manage temporary anonymous users
      * @param logManager
      *            - so that we can log interesting user based events.
-     * @param mapperFacade
+     * @param userMapper
      *            - for DO and DTO mapping.
      * @param userAuthenticationManager
      *            - Responsible for handling the various authentication functions.
@@ -804,13 +850,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private IUserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
                                                final AbstractConfigLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
                                                final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
-                                               final ILogManager logManager, final MapperFacade mapperFacade,
+                                               final ILogManager logManager, final UserMapper userMapper,
                                                final UserAuthenticationManager userAuthenticationManager,
                                                final ISecondFactorAuthenticator secondFactorManager,
                                                final AbstractUserPreferenceManager userPreferenceManager) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
-                    mapperFacade, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
+                    userMapper, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,
                     secondFactorManager, userPreferenceManager);
             log.info("Creating singleton of UserManager");
         }
@@ -829,7 +875,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapper objectMapper) {
+    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentSubclassMapper objectMapper) {
         // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
         if (null == questionPersistenceManager) {
             questionPersistenceManager = new PgQuestionAttempts(ds, objectMapper);
@@ -857,7 +903,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private GroupManager getGroupManager(final IUserGroupPersistenceManager userGroupDataManager,
                                          final UserAccountManager userManager, final GameManager gameManager,
-                                         final MapperFacade dtoMapper) {
+                                         final MainMapper dtoMapper) {
 
         if (null == groupManager) {
             groupManager = new GroupManager(userGroupDataManager, userManager, gameManager, dtoMapper);
@@ -986,20 +1032,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             log.info("Creating singleton of CountryLookupManager");
         }
         return countryLookupManager;
-    }
-
-
-
-    /**
-     * Gets the instance of the dozer mapper object.
-     *
-     * @return a preconfigured instance of an Auto Mapper. This is specialised for mapping SegueObjects.
-     */
-    @Provides
-    @Singleton
-    @Inject
-    public static MapperFacade getDOtoDTOMapper() {
-        return SegueGuiceConfigurationModule.getContentMapper().getAutoMapper();
     }
 
     /**
@@ -1257,8 +1289,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database, final GitContentManager contentManager,
-                                                                              final MapperFacade mapper, final ContentMapper objectMapper) {
+    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
+                                                                              final GitContentManager contentManager,
+                                                                              final MainMapper mapper,
+                                                                              final ContentSubclassMapper objectMapper) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper, objectMapper);
             log.info("Creating Singleton of GameboardPersistenceManager");

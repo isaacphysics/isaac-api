@@ -10,29 +10,35 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v3.20.5-SNAPSHOT</segue.version>
-        <log4j.version>2.25.1</log4j.version>
-        <resteasy.version>6.2.12.Final</resteasy.version>
+        <segue.version>v3.21.2-SNAPSHOT</segue.version>
+        <log4j.version>2.25.2</log4j.version>
+        <resteasy.version>6.2.14.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
         <oauth-client.version>1.39.0</oauth-client.version>
-        <jackson.version>2.19.2</jackson.version>
-        <jackson-databind.version>2.19.2</jackson-databind.version>
+        <jackson.version>2.20.0</jackson.version>
+        <!-- 'jackson-databind' is kept separate to make it easier to update to later patch versions for security
+         reasons. -->
+        <jackson-databind.version>2.20.0</jackson-databind.version>
+        <!-- todo: 'jackson-annotations' would normally have the same version string as 'jackson'. This looks like a
+         typo from the maintainers - hopefully we can remove this next update. -->
+        <jackson-annotations.version>2.20</jackson-annotations.version>
         <powermock.version>2.0.9</powermock.version>
         <junit-4.version>4.13.2</junit-4.version>
-        <junit-5.version>5.13.4</junit-5.version>
+        <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty-version>11.0.25</jetty-version>
+        <jetty-version>11.0.26</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>1.21.3</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <dependency-check.version>12.1.3</dependency-check.version>
+        <dependency-check.version>12.1.8</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <swagger-core.version>2.2.34</swagger-core.version>
+        <swagger-core.version>2.2.40</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
     </properties>
@@ -52,7 +58,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>2.4</version>
+            <version>2.5</version>
         </dependency>
         <dependency>
             <groupId>org.isaacphysics.thirdparty</groupId>
@@ -140,15 +146,9 @@
         </dependency>
 
         <dependency>
-            <groupId>ma.glasnost.orika</groupId>
-            <artifactId>orika-core</artifactId>
-            <version>1.5.4</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.4.8-jre</version>
+            <version>33.5.0-jre</version>
         </dependency>
 
         <dependency>
@@ -172,7 +172,7 @@
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.47.1</version>
+            <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -223,7 +223,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.27.3</version>
+            <version>3.27.6</version>
             <scope>test</scope>
         </dependency>
 
@@ -235,7 +235,7 @@
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>jwks-rsa</artifactId>
-            <version>0.22.2</version>
+            <version>0.23.0</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -314,7 +314,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson-annotations.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
@@ -325,7 +325,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.18.0</version>
+            <version>3.19.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -382,7 +382,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.7</version>
+            <version>42.7.8</version>
         </dependency>
 
         <dependency>
@@ -423,7 +423,7 @@
         <dependency>
             <groupId>com.mailjet</groupId>
             <artifactId>mailjet-client</artifactId>
-            <version>5.2.6</version>
+            <version>6.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.mailgun</groupId>
@@ -471,13 +471,19 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.81</version>
+            <version>1.82</version>
         </dependency>
 
         <dependency>
             <groupId>com.maxmind.geoip2</groupId>
             <artifactId>geoip2</artifactId>
-            <version>4.3.1</version>
+            <version>4.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
         </dependency>
 
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
@@ -536,6 +542,13 @@
                 <version>3.10.1</version>
                 <configuration>
                     <release>11</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -557,7 +570,7 @@
                         See https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit.html#manually-specifying-a-provider -->
                         <groupId>org.apache.maven.surefire</groupId>
                         <artifactId>surefire-junit47</artifactId>
-                        <version>3.5.3</version>
+                        <version>3.5.4</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -641,7 +654,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
+                <version>0.8.14</version>
                 <executions>
                     <execution>
                         <id>before-unit-test-execution</id>
@@ -722,29 +735,19 @@
         </resources>
     </build>
 
-    <!-- This block pins versions of indirect dependencies - useful to address security issues -->
+    <!-- This block pins versions of indirect dependencies - useful to address security issues, or to resolve
+    incompatibilities. -->
     <!-- TODO: When doing dependency updates, please make sure these are still necessary, and remove them if not -->
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>2.19.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk8</artifactId>
-                <version>2.19.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
-                <artifactId>jackson-jakarta-rs-base</artifactId>
-                <version>2.19.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
-                <version>2.19.2</version>
+                <!-- This "BOM" package ensures we get a compatible set of Jackson plugins across our indirect
+                 dependencies. More info here: https://github.com/FasterXML/jackson-bom -->
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

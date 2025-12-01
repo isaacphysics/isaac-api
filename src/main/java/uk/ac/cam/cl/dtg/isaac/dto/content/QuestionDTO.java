@@ -27,6 +27,7 @@ import java.util.List;
 public class QuestionDTO extends ContentDTO {
     protected ContentBaseDTO answer;
     protected List<ContentBaseDTO> hints;
+    protected Integer passMark;
 
     // Set if the user is logged in and we have information.
     protected QuestionValidationResponseDTO bestAttempt;
@@ -96,5 +97,20 @@ public class QuestionDTO extends ContentDTO {
     public void setBestAttempt(final QuestionValidationResponseDTO bestAttempt) {
         this.bestAttempt = bestAttempt;
     }
+
+    /**
+     * Gets the pass mark - the number of marks needed for a question to be considered correct.
+     *
+     * @return the passMark
+     */
+    public Integer getPassMark() { return passMark; }
+
+    /**
+     * Sets the pass mark - the number of marks needed for a question to be considered correct.
+     *
+     * @param passMark
+     *            the passMark to set
+     */
+    public void setPassMark(Integer passMark) { this.passMark = passMark; }
 
 }

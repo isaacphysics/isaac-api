@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-import ma.glasnost.orika.MapperFacade;
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -52,7 +52,7 @@ public class GroupManagerTest {
 
 	private AbstractConfigLoader dummyPropertiesLoader;
 
-	private MapperFacade dummyMapper;
+	private MainMapper dummyMapper;
 	private ICommunicator<EmailCommunicationMessage> dummyCommunicator;
 	private SimpleDateFormat sdf;
 	
@@ -68,7 +68,7 @@ public class GroupManagerTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.dummyMapper = createMock(MapperFacade.class);
+		this.dummyMapper = createMock(MainMapper.class);
 		this.dummyCommunicator = createMock(ICommunicator.class);
 		this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 		this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
@@ -112,7 +112,7 @@ public class GroupManagerTest {
 					.andReturn(someSetOfManagers).atLeastOnce();
 			expect(this.userManager.findUsers(someSetOfManagers)).andReturn(someListOfUsers);
 			expect(this.userManager.convertToDetailedUserSummaryObjectList(someListOfUsers, UserSummaryWithEmailAddressDTO.class)).andReturn(someListOfUsersDTOs);
-			expect(this.dummyMapper.map(resultFromDB, UserGroupDTO.class)).andReturn(mappedGroup).atLeastOnce();
+			expect(this.dummyMapper.map(resultFromDB)).andReturn(mappedGroup).atLeastOnce();
 
 			replay(this.userManager, this.groupDataManager, this.dummyMapper);
 

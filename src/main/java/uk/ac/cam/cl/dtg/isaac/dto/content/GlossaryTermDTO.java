@@ -38,7 +38,7 @@ public class GlossaryTermDTO extends ContentDTO {
                            @JsonProperty("examBoard") String examBoard,
                            @Nullable @JsonProperty("stage") Set<String> stages) {
         this.explanation = explanation;
-        this.examBoard = examBoard != null ? examBoard : "";
+        this.examBoard = examBoard;
         this.stages = stages;
     }
 
