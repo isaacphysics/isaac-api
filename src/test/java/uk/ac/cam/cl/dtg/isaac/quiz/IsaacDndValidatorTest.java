@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
 
-    // Test that correct answers are recognised, g
+    // Test that correct answers are recognised
     @Test
     public final void singleCorrectMatch_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
@@ -74,10 +74,12 @@ public class IsaacDndValidatorTest {
         assertFalse(response.isCorrect());
     }
 
-    // TODO: what if correct? Do we then show default explanation?
-
     // Test that subset match answers return an appropriate explanation
-    // TODO: what if? correct: A1, no other criteria. incorrect: A1, B1, no other criteria
+    // TODO: correct-incorrect contradiction among levels should be invalid question (during ETL?)
+    // TODO: multiple matching explanations
+    //  - on same level? (or even across levels?)
+    //  - should return all?
+    //  - should return just one, but predictably?
     @Test
     public final void matchingFeedback_shouldReturnMatchingFeedback() {
         var hypothenuseMustBeLargest = new Content("The hypothenuse must be the longest side of a right triangle");
@@ -94,9 +96,9 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void noMatchingFeedback_shouldReturnDefaultFeedback() {
+    public final void noMatchingFeedbackIncorrect_shouldReturnDefaultFeedback() {
         var question = createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         var defaultFeedback = new Content("Isaac cannot help you.");
         question.setDefaultFeedback(defaultFeedback);
@@ -106,6 +108,21 @@ public class IsaacDndValidatorTest {
 
         assertFalse(response.isCorrect());
         assertEquals(response.getExplanation(), defaultFeedback);
+    }
+
+    @Test
+    public final void noMatchingFeedbackCorrect_shouldReturnNoFeedback() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        var defaultFeedback = new Content("Isaac cannot help you.");
+        question.setDefaultFeedback(defaultFeedback);
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertTrue(response.isCorrect());
+        assertEquals(response.getExplanation(), null);
     }
 
     private static QuestionValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {

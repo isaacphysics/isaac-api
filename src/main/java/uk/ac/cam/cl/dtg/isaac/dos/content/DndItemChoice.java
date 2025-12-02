@@ -53,12 +53,6 @@ public class DndItemChoice extends Choice {
         this.allowSubsetMatch = allowSubsetMatch;
     }
 
-    private Optional<DndItem> getItemByDropZone(final String dropZoneId) {
-        return this.items.stream()
-                .filter(item -> item.getDropZoneId().equals(dropZoneId))
-                .findFirst();
-    }
-
     public int matchStrength(final DndItemChoice rhs) {
         return this.items.stream()
             .map(lhsItem ->
@@ -68,5 +62,11 @@ public class DndItemChoice extends Choice {
             )
             .mapToInt(Integer::intValue)
             .sum();
+    }
+
+    private Optional<DndItem> getItemByDropZone(final String dropZoneId) {
+        return this.items.stream()
+                .filter(item -> item.getDropZoneId().equals(dropZoneId))
+                .findFirst();
     }
 }

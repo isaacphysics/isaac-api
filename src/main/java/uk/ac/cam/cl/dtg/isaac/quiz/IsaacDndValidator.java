@@ -15,37 +15,25 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import com.google.api.client.util.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * Validator that only provides functionality to validate Cloze questions.
  */
 public class IsaacDndValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacClozeValidator.class);
-    protected static final String NULL_CLOZE_ITEM_ID = "NULL_CLOZE_ITEM";
 
     @Override
     public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
@@ -61,19 +49,27 @@ public class IsaacDndValidator implements IValidator {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
-        IsaacDndQuestion dndQuestion = (IsaacDndQuestion) question;
-        DndItemChoice userAnswer = (DndItemChoice) answer;
-
-        var match = dndQuestion.getChoices().stream().sorted(
-                Comparator.comparingInt(c -> c.matchStrength(userAnswer))
-            ).filter(choice -> choice.matchStrength(userAnswer) < 0)
-            .findFirst()
-            .orElse(defaultChoice(dndQuestion));
-
-        return new ItemValidationResponse(question.getId(), answer, match.isCorrect(), null, (Content) match.getExplanation(), new Date());
+        return performValidate((IsaacDndQuestion) question, (DndItemChoice) answer);
     }
 
-    private DndItemChoice defaultChoice(final IsaacDndQuestion question) {
+    private QuestionValidationResponse performValidate(final IsaacDndQuestion question, final DndItemChoice answer) {
+        DndItemChoice match = question.getChoices().stream()
+            .sorted(Comparator.comparingInt(c -> c.matchStrength(answer)))
+            .filter(choice -> choice.matchStrength(answer) < 0)
+            .findFirst()
+            .orElse(incorrectAnswer(question));
+
+        return new ItemValidationResponse(
+            question.getId(),
+            answer,
+            match.isCorrect(),
+            null,
+            (Content) match.getExplanation(),
+            new Date()
+        );
+    }
+
+    private DndItemChoice incorrectAnswer(final IsaacDndQuestion question) {
         var choice = new DndItemChoice();
         choice.setCorrect(false);
         choice.setExplanation(question.getDefaultFeedback());
