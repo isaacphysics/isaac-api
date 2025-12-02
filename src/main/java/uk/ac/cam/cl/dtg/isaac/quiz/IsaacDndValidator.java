@@ -16,8 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -30,13 +28,16 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
- * Validator that only provides functionality to validate Cloze questions.
+ * Validator that only provides functionality to validate Drag and drop questions.
  */
 public class IsaacDndValidator implements IValidator {
-    private static final Logger log = LoggerFactory.getLogger(IsaacClozeValidator.class);
-
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+        validate(question, answer);
+        return mark((IsaacDndQuestion) question, (DndItemChoice) answer);
+    }
+
+    private void validate(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
@@ -49,10 +50,9 @@ public class IsaacDndValidator implements IValidator {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
-        return performValidate((IsaacDndQuestion) question, (DndItemChoice) answer);
     }
 
-    private DndValidationResponse performValidate(final IsaacDndQuestion question, final DndItemChoice answer) {
+    private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
         DndItemChoice match = question.getChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
             .filter(choice -> choice.matches(answer))

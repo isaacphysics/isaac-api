@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dos;
+package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 import java.util.Date;
 import java.util.Map;
 
-
 /**
  *  Class for providing correctness feedback about drag and drop questions in a submitted Choice.
  */
-public class DndValidationResponse extends QuestionValidationResponse {
+public class DndValidationResponseDTO extends QuestionValidationResponseDTO {
     private Map<String, Boolean> dropZonesCorrect;
 
     /**
      * Default constructor for Jackson.
      */
-    public DndValidationResponse() {
+    public DndValidationResponseDTO() {
     }
 
     /**
@@ -44,9 +43,9 @@ public class DndValidationResponse extends QuestionValidationResponse {
      * @param explanation - explanation.
      * @param dateAttempted - dateAttempted.
      */
-    public DndValidationResponse(final String questionId, final Choice answer,
+    public DndValidationResponseDTO(final String questionId, final ChoiceDTO answer,
                                  final Boolean correct, final Map<String, Boolean> dropZonesCorrect,
-                                 final Content explanation, final Date dateAttempted) {
+                                 final ContentDTO explanation, final Date dateAttempted) {
         super(questionId, answer, correct, explanation, dateAttempted);
         this.dropZonesCorrect = dropZonesCorrect;
     }
@@ -55,7 +54,7 @@ public class DndValidationResponse extends QuestionValidationResponse {
         return dropZonesCorrect;
     }
 
-    public void setDropZonesCorrect(final Map<String, Boolean> itemsCorrect) {
-        this.dropZonesCorrect = itemsCorrect;
+    public void setDropZonesCorrect(final Map<String, Boolean> dropZonesCorrect) {
+        this.dropZonesCorrect = dropZonesCorrect;
     }
 }

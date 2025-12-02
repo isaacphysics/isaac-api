@@ -256,7 +256,7 @@ public class IsaacDndValidatorTest {
         return item;
     }
 
-    private static class DropZonesCorrectFactory {
+    public static class DropZonesCorrectFactory {
         private final Map<String, Boolean> map = new HashMap<>();
 
         public DropZonesCorrectFactory setLeg1(final boolean value) {

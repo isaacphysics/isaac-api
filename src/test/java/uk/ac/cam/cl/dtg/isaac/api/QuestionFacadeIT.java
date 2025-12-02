@@ -14,6 +14,7 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import jakarta.ws.rs.core.Response;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -104,6 +105,24 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
             assertTrue(response.getBoolean("correct"));
             assertEquals(explanation, readEntity(response.getJSONObject("explanation"), Content.class));
+        }
+
+        @Test
+        public void dropZonesCorrect() throws Exception {
+            var dndQuestion = createQuestion(correct(
+                    answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
+            ));
+            dndQuestion.setDetailedItemFeedback(true);
+            persist(dndQuestion);
+            var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+
+            assertTrue(response.getBoolean("correct"));
+            assertEquals(
+                new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).getMap(),
+                readEntity(response.getJSONObject("dropZonesCorrect"), Map.class)
+            );
         }
     }
 
