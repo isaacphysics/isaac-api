@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.junit.Test;
+import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
@@ -25,17 +25,18 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
-
-    // Test that correct answers are recognised
     @Test
     public final void singleCorrectMatch_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
@@ -48,13 +49,24 @@ public class IsaacDndValidatorTest {
         assertTrue(response.isCorrect());
     }
 
-    // Test that incorrect answers are not recognised.
     @Test
     public final void singleIncorrectMatch_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertFalse(response.isCorrect());
+    }
+
+    @Test
+    public final void partialMatchForCorrect_IncorrectResponseShouldBeReturned() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        var answer = answer(choose(item_4cm, "leg_2"), choose(item_5cm, "leg_1"), choose(item_3cm, "hypothenuse"));
 
         var response = testValidate(question, answer);
 
@@ -76,10 +88,13 @@ public class IsaacDndValidatorTest {
 
     // Test that subset match answers return an appropriate explanation
     // TODO: correct-incorrect contradiction among levels should be invalid question (during ETL?)
+    //  - James says we should just accept as correct when contradiction
     // TODO: multiple matching explanations
     //  - on same level? (or even across levels?)
     //  - should return all?
     //  - should return just one, but predictably?
+    // TODO: test for empty answer
+    //
     @Test
     public final void matchingFeedback_shouldReturnMatchingFeedback() {
         var hypothenuseMustBeLargest = new Content("The hypothenuse must be the longest side of a right triangle");
@@ -122,10 +137,52 @@ public class IsaacDndValidatorTest {
         var response = testValidate(question, answer);
 
         assertTrue(response.isCorrect());
-        assertEquals(response.getExplanation(), null);
+        assertNull(response.getExplanation());
     }
 
-    private static QuestionValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
+    @Test
+    public final void dropZonesCorrect_incorrectNotRequested_shouldReturnNull() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(false);
+        var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "leg_1"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertNull(response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void dropZonesCorrect_correctNotRequested_shouldReturnNull() {
+        var question = createQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(false);
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+        assertTrue(response.isCorrect());
+        assertNull(response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void dropZonesCorrect_allCorrect() {
+        var question = createQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+        assertTrue(response.isCorrect());
+        assertEquals(
+            new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).getMap(),
+            response.getDropZonesCorrect()
+        );
+    }
+
+    private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
         return new IsaacDndValidator().validateQuestionResponse(question, choice);
     }
 
@@ -177,8 +234,32 @@ public class IsaacDndValidatorTest {
         return item;
     }
 
+    private static class DropZonesCorrectFactory {
+        private final Map<String, Boolean> map = new HashMap<>();
+
+        public DropZonesCorrectFactory setLeg1(final boolean value) {
+            map.put("leg_1", value);
+            return this;
+        }
+
+        public DropZonesCorrectFactory setLeg2(final boolean value) {
+            map.put("leg_2", value);
+            return this;
+        }
+
+        public DropZonesCorrectFactory setHypothenuse(final boolean value) {
+            map.put("hypothenuse", value);
+            return this;
+        }
+
+        public Map<String, Boolean> getMap() {
+            return map;
+        }
+    }
+
     public static final Item item_3cm = item("6d3d", "3 cm");
     public static final Item item_4cm = item("6d3e", "4 cm");
     public static final Item item_5cm = item("6d3f", "5 cm");
     public static final Item item_6cm = item("6d3g", "5 cm");
 }
+

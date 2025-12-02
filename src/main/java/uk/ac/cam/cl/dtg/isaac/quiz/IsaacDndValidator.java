@@ -15,11 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
@@ -36,7 +36,7 @@ public class IsaacDndValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacClozeValidator.class);
 
     @Override
-    public final QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+    public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
@@ -52,18 +52,18 @@ public class IsaacDndValidator implements IValidator {
         return performValidate((IsaacDndQuestion) question, (DndItemChoice) answer);
     }
 
-    private QuestionValidationResponse performValidate(final IsaacDndQuestion question, final DndItemChoice answer) {
+    private DndValidationResponse performValidate(final IsaacDndQuestion question, final DndItemChoice answer) {
         DndItemChoice match = question.getChoices().stream()
-            .sorted(Comparator.comparingInt(c -> c.matchStrength(answer)))
-            .filter(choice -> choice.matchStrength(answer) < 0)
+            .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
+            .filter(choice -> choice.matches(answer))
             .findFirst()
             .orElse(incorrectAnswer(question));
 
-        return new ItemValidationResponse(
+        return new DndValidationResponse(
             question.getId(),
             answer,
             match.isCorrect(),
-            null,
+            BooleanUtils.isTrue(question.getDetailedItemFeedback()) && match.isCorrect() ? match.getDropZonesCorrect() : null,
             (Content) match.getExplanation(),
             new Date()
         );

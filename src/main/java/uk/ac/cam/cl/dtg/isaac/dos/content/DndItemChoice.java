@@ -18,7 +18,9 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DndItemChoiceDTO;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Choice for Item Questions, containing a list of Items.
@@ -53,7 +55,15 @@ public class DndItemChoice extends Choice {
         this.allowSubsetMatch = allowSubsetMatch;
     }
 
-    public int matchStrength(final DndItemChoice rhs) {
+    public boolean matches(final DndItemChoice rhs) {
+        return this.items.stream().allMatch(lhsItem ->
+            rhs.getItemByDropZone(lhsItem.getDropZoneId())
+                .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
+                .orElse(false)
+        );
+    }
+
+    public int countPartialMatchesIn(final DndItemChoice rhs) {
         return this.items.stream()
             .map(lhsItem ->
                 rhs.getItemByDropZone(lhsItem.getDropZoneId())
@@ -62,6 +72,10 @@ public class DndItemChoice extends Choice {
             )
             .mapToInt(Integer::intValue)
             .sum();
+    }
+
+    public Map<String, Boolean> getDropZonesCorrect() {
+        return this.items.stream().collect(Collectors.toMap(DndItem::getDropZoneId, d -> true));
     }
 
     private Optional<DndItem> getItemByDropZone(final String dropZoneId) {

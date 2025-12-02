@@ -77,6 +77,7 @@ public class IsaacClozeValidatorTest {
         someIncorrectChoice.setExplanation(new Content(incorrectExplanation));
         someSubsetChoice.setItems(ImmutableList.of(NULL_PLACEHOLDER, item3));
         someSubsetChoice.setAllowSubsetMatch(true);
+        someSubsetChoice.setCorrect(false);
         someSubsetChoice.setExplanation(new Content(subsetMatchExplanation));
 
         // Add both choices to question, incorrect first:
