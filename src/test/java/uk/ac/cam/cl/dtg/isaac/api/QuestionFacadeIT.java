@@ -1,9 +1,10 @@
 package uk.ac.cam.cl.dtg.isaac.api;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Injector;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
@@ -74,7 +75,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertFalse(response.getBoolean("correct"));
-            assertEquals(answer, readAnswer(response.getJSONObject("answer").toString()));
+            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
         }
 
         @Test
@@ -87,7 +88,22 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertTrue(response.getBoolean("correct"));
-            assertEquals(answer, readAnswer(response.getJSONObject("answer").toString()));
+            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
+        }
+
+        @Test
+        public void explanation() throws Exception {
+            var explanation = new Content("That's right!");
+            var dndQuestion = persist(createQuestion(correct(
+                answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+                explanation
+            )));
+            var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+
+            assertTrue(response.getBoolean("correct"));
+            assertEquals(explanation, readEntity(response.getJSONObject("explanation"), Content.class));
         }
     }
 
@@ -119,8 +135,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         return String.format("/questions/%s/answer", questionId);
     }
 
-    private DndItemChoice readAnswer(final String str) throws JsonProcessingException {
-        return contentMapper.getSharedContentObjectMapper().readValue(str, DndItemChoice.class);
+    private <T> T readEntity(final JSONObject value, final Class<T> klass)  throws Exception {
+        return contentMapper.getSharedContentObjectMapper().readValue(value.toString(), klass);
     }
 
     private static final IsaacStringMatchValidator stringMatchValidator = new IsaacStringMatchValidator();

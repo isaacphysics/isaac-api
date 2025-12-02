@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
     @Test
-    public final void singleCorrectMatch_CorrectResponseShouldBeReturned() {
+    public final void correctness_singleCorrectMatch_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -50,7 +50,7 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void singleIncorrectMatch_IncorrectResponseShouldBeReturned() {
+    public final void correctness_singleIncorrectMatch_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -62,7 +62,7 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void partialMatchForCorrect_IncorrectResponseShouldBeReturned() {
+    public final void correctness_partialMatchForCorrect_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -74,7 +74,7 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void moreSpecificIncorrectMatchOverridesCorrect_IncorrectResponseShouldBeReturned() {
+    public final void correctness_moreSpecificIncorrectMatchOverridesCorrect_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
             correct(answer(choose(item_5cm, "hypothenuse"))),
             incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
@@ -96,7 +96,7 @@ public class IsaacDndValidatorTest {
     // TODO: test for empty answer
     //
     @Test
-    public final void matchingFeedback_shouldReturnMatchingFeedback() {
+    public final void explanation_exactMatchIncorrect_shouldReturnMatching() {
         var hypothenuseMustBeLargest = new Content("The hypothenuse must be the longest side of a right triangle");
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
@@ -111,7 +111,23 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void noMatchingFeedbackIncorrect_shouldReturnDefaultFeedback() {
+    public final void explanation_exactMatchCorrect_shouldReturnMatching() {
+        var correctFeedback = new Content("That's how it's done! Observe that the hypothenuse is always the longest"
+            + " side of a right triangle");
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+            correctFeedback)
+        );
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertTrue(response.isCorrect());
+        assertEquals(response.getExplanation(), correctFeedback);
+    }
+
+    @Test
+    public final void explanation_defaultIncorrect_shouldReturnDefault() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -126,7 +142,7 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void noMatchingFeedbackCorrect_shouldReturnNoFeedback() {
+    public final void explanation_defaultCorrect_shouldReturnNone() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -167,7 +183,7 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
-    public final void dropZonesCorrect_allCorrect() {
+    public final void dropZonesCorrect_allCorrect_shouldReturnAllCorrect() {
         var question = createQuestion(
                 correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
@@ -213,6 +229,12 @@ public class IsaacDndValidatorTest {
 
     public static DndItemChoice correct(final DndItemChoice choice) {
         choice.setCorrect(true);
+        return choice;
+    }
+
+    public static DndItemChoice correct(final DndItemChoice choice, ContentBase explanation) {
+        choice.setCorrect(true);
+        choice.setExplanation(explanation);
         return choice;
     }
 
