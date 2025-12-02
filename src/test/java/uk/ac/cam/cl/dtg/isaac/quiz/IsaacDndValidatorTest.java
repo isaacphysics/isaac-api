@@ -214,6 +214,23 @@ public class IsaacDndValidatorTest {
         );
     }
 
+    @Test
+    public final void dropZonesCorrect_multipleCorrectAnswers_decidesCorrectnessBasedOnClosestOne() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
+            correct(answer(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2"), choose(item_13cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_5cm, "leg_1"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(
+            new DropZonesCorrectFactory().setLeg1(true).setLeg2(false).setHypothenuse(false).build(),
+            response.getDropZonesCorrect()
+        );
+    }
+
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
         return new IsaacDndValidator().validateQuestionResponse(question, choice);
     }
@@ -237,7 +254,7 @@ public class IsaacDndValidatorTest {
     public static IsaacDndQuestion createQuestion(final DndItemChoice... answers) {
         var question = new IsaacDndQuestion();
         question.setId(UUID.randomUUID().toString());
-        question.setItems(List.of(item_3cm, item_4cm, item_5cm, item_6cm));
+        question.setItems(List.of(item_3cm, item_4cm, item_5cm, item_6cm, item_12cm, item_13cm));
         question.setChoices(List.of(answers));
         question.setType("isaacDndQuestion");
         return question;
@@ -299,5 +316,7 @@ public class IsaacDndValidatorTest {
     public static final Item item_4cm = item("6d3e", "4 cm");
     public static final Item item_5cm = item("6d3f", "5 cm");
     public static final Item item_6cm = item("6d3g", "5 cm");
+    public static final Item item_12cm = item("6d3h", "12 cm");
+    public static final Item item_13cm = item("6d3i", "13 cm");
 }
 

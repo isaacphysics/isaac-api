@@ -25,7 +25,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Validator that only provides functionality to validate Drag and drop questions.
@@ -53,22 +56,26 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
-        DndItemChoice matchedAnswer = question.getChoices().stream()
+        List<DndItemChoice> sortedItems = question.getChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
+            .collect(Collectors.toList());
+
+        DndItemChoice matchedAnswer = sortedItems.stream()
             .filter(choice -> choice.matches(answer))
             .findFirst()
             .orElse(incorrectAnswer(question));
 
-        DndItemChoice closestCorrectAnswer = question.getChoices().stream()
+        Optional<DndItemChoice> closestCorrectAnswer = sortedItems.stream()
             .filter(Choice::isCorrect)
-            .findFirst()
-            .orElse(null);
+            .findFirst();
 
         return new DndValidationResponse(
             question.getId(),
             answer,
             matchedAnswer.isCorrect(),
-            BooleanUtils.isTrue(question.getDetailedItemFeedback()) ? closestCorrectAnswer.getDropZonesCorrect(answer) : null,
+            BooleanUtils.isTrue(question.getDetailedItemFeedback())
+                    ? closestCorrectAnswer.map(c -> c.getDropZonesCorrect(answer)).orElse(null)
+                    : null,
             (Content) matchedAnswer.getExplanation(),
             new Date()
         );
