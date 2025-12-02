@@ -56,35 +56,23 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
-        List<DndItemChoice> sortedItems = question.getChoices().stream()
+        List<DndItemChoice> sortedAnswers = question.getChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
             .collect(Collectors.toList());
 
-        DndItemChoice matchedAnswer = sortedItems.stream()
-            .filter(choice -> choice.matches(answer))
-            .findFirst()
-            .orElse(incorrectAnswer(question));
+        Optional<DndItemChoice> matchedAnswer = sortedAnswers.stream().filter(lhs -> lhs.matches(answer)).findFirst();
 
-        Optional<DndItemChoice> closestCorrectAnswer = sortedItems.stream()
-            .filter(Choice::isCorrect)
-            .findFirst();
+        Optional<DndItemChoice> closestCorrectAnswer = sortedAnswers.stream().filter(Choice::isCorrect).findFirst();
 
-        return new DndValidationResponse(
-            question.getId(),
-            answer,
-            matchedAnswer.isCorrect(),
-            BooleanUtils.isTrue(question.getDetailedItemFeedback())
-                    ? closestCorrectAnswer.map(c -> c.getDropZonesCorrect(answer)).orElse(null)
-                    : null,
-            (Content) matchedAnswer.getExplanation(),
-            new Date()
+        var id = question.getId();
+        var isCorrect = matchedAnswer.map(Choice::isCorrect).orElse(false);
+        var dropZonesCorrect = BooleanUtils.isTrue(question.getDetailedItemFeedback())
+            ? closestCorrectAnswer.map(c -> c.getDropZonesCorrect(answer)).orElse(null)
+            : null;
+        var explanation = (Content) matchedAnswer.map(Choice::getExplanation).orElse(
+            isCorrect ? null : question.getDefaultFeedback()
         );
-    }
-
-    private DndItemChoice incorrectAnswer(final IsaacDndQuestion question) {
-        var choice = new DndItemChoice();
-        choice.setCorrect(false);
-        choice.setExplanation(question.getDefaultFeedback());
-        return choice;
+        var date = new Date();
+        return new DndValidationResponse(id, answer, isCorrect, dropZonesCorrect, explanation, date);
     }
 }

@@ -127,6 +127,22 @@ public class IsaacDndValidatorTest {
     }
 
     @Test
+    public final void explanation_exactMatchIncorrectDefault_shouldReturnDefault() {
+        var defaultFeedback = new Content("Isaac can't help you.");
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
+            incorrect(answer(choose(item_4cm, "hypothenuse")))
+        );
+        question.setDefaultFeedback(defaultFeedback);
+        var answer = answer(choose(item_4cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+
+        assertFalse(response.isCorrect());
+        assertEquals(response.getExplanation(), defaultFeedback);
+    }
+
+    @Test
     public final void explanation_defaultIncorrect_shouldReturnDefault() {
         var question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
