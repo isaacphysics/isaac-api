@@ -53,18 +53,23 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
-        DndItemChoice match = question.getChoices().stream()
+        DndItemChoice matchedAnswer = question.getChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
             .filter(choice -> choice.matches(answer))
             .findFirst()
             .orElse(incorrectAnswer(question));
 
+        DndItemChoice closestCorrectAnswer = question.getChoices().stream()
+            .filter(Choice::isCorrect)
+            .findFirst()
+            .orElse(null);
+
         return new DndValidationResponse(
             question.getId(),
             answer,
-            match.isCorrect(),
-            BooleanUtils.isTrue(question.getDetailedItemFeedback()) && match.isCorrect() ? match.getDropZonesCorrect() : null,
-            (Content) match.getExplanation(),
+            matchedAnswer.isCorrect(),
+            BooleanUtils.isTrue(question.getDetailedItemFeedback()) ? closestCorrectAnswer.getDropZonesCorrect(answer) : null,
+            (Content) matchedAnswer.getExplanation(),
             new Date()
         );
     }

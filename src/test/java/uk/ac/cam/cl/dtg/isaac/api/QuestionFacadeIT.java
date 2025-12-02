@@ -120,7 +120,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
             assertTrue(response.getBoolean("correct"));
             assertEquals(
-                new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).getMap(),
+                new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).build(),
                 readEntity(response.getJSONObject("dropZonesCorrect"), Map.class)
             );
         }

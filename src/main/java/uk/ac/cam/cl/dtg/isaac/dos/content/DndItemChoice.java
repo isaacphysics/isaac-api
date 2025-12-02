@@ -56,31 +56,32 @@ public class DndItemChoice extends Choice {
     }
 
     public boolean matches(final DndItemChoice rhs) {
-        return this.items.stream().allMatch(lhsItem ->
-            rhs.getItemByDropZone(lhsItem.getDropZoneId())
-                .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
-                .orElse(false)
-        );
+        return this.items.stream().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs));
     }
 
     public int countPartialMatchesIn(final DndItemChoice rhs) {
         return this.items.stream()
-            .map(lhsItem ->
-                rhs.getItemByDropZone(lhsItem.getDropZoneId())
-                    .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()) ? -1 : 0)
-                    .orElse(0)
-            )
+            .map(lhsItem -> dropZoneEql(lhsItem, rhs) ? -1 : 0)
             .mapToInt(Integer::intValue)
             .sum();
     }
 
-    public Map<String, Boolean> getDropZonesCorrect() {
-        return this.items.stream().collect(Collectors.toMap(DndItem::getDropZoneId, d -> true));
+    public Map<String, Boolean> getDropZonesCorrect(final DndItemChoice rhs) {
+        return this.items.stream().collect(Collectors.toMap(
+            DndItem::getDropZoneId,
+            lhsItem -> dropZoneEql(lhsItem, rhs))
+        );
+    }
+
+    private static boolean dropZoneEql(DndItem lhsItem, DndItemChoice rhs) {
+        return rhs.getItemByDropZone(lhsItem.getDropZoneId())
+            .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
+            .orElse(false);
     }
 
     private Optional<DndItem> getItemByDropZone(final String dropZoneId) {
         return this.items.stream()
-                .filter(item -> item.getDropZoneId().equals(dropZoneId))
-                .findFirst();
+            .filter(item -> item.getDropZoneId().equals(dropZoneId))
+            .findFirst();
     }
 }

@@ -172,7 +172,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_correctNotRequested_shouldReturnNull() {
         var question = createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         question.setDetailedItemFeedback(false);
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
@@ -185,7 +185,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_allCorrect_shouldReturnAllCorrect() {
         var question = createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         question.setDetailedItemFeedback(true);
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
@@ -193,7 +193,23 @@ public class IsaacDndValidatorTest {
         var response = testValidate(question, answer);
         assertTrue(response.isCorrect());
         assertEquals(
-            new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).getMap(),
+            new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).build(),
+            response.getDropZonesCorrect()
+        );
+    }
+
+    @Test
+    public final void dropZonesCorrect_someIncorrect_shouldReturnWhetherCorrect() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_6cm, "leg_1"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(
+            new DropZonesCorrectFactory().setLeg1(false).setLeg2(false).setHypothenuse(true).build(),
             response.getDropZonesCorrect()
         );
     }
@@ -274,7 +290,7 @@ public class IsaacDndValidatorTest {
             return this;
         }
 
-        public Map<String, Boolean> getMap() {
+        public Map<String, Boolean> build() {
             return map;
         }
     }
