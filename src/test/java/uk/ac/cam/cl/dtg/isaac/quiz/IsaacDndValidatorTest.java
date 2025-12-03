@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.junit.Test;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -240,10 +241,7 @@ public class IsaacDndValidatorTest {
 
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
-        assertEquals(
-            new DropZonesCorrectFactory().setLeg1(true).build(),
-            response.getDropZonesCorrect()
-        );
+        assertEquals(new DropZonesCorrectFactory().setLeg1(true).build(), response.getDropZonesCorrect());
     }
 
     @Test
@@ -256,11 +254,22 @@ public class IsaacDndValidatorTest {
 
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
-        assertEquals(new Content("You did not provide an answer."), response.getExplanation());
-        assertEquals(
-            new DropZonesCorrectFactory().build(),
-            response.getDropZonesCorrect()
+        assertEquals(new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED), response.getExplanation());
+        assertNull(response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void answerValidation_emptyNoItems_incorrect() {
+        var question = createQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
+        question.setDetailedItemFeedback(true);
+        var answer = new DndItemChoice();
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED), response.getExplanation());
+        assertNull(response.getDropZonesCorrect());
     }
 
     @Test
@@ -274,15 +283,14 @@ public class IsaacDndValidatorTest {
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("does not contain an item for each gap"));
-        assertEquals(
-            new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).build(),
-            response.getDropZonesCorrect()
-        );
+        assertEquals(new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).build(), response.getDropZonesCorrect());
     }
 
     /*
      * Test that when the user submits an answer with missing items, we first show any matching feedback
      * about the incorrect answer, rather than the more generic feedback about missing items.
+     *
+     * Cloze questions don't even look at matches in that case, but I think this is better UX.
      */
     @Test
     public final void answerValidation_someMissing_providesSpecificExplanationFirst() {
@@ -297,11 +305,54 @@ public class IsaacDndValidatorTest {
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
         assertEquals(incorrectFeedback, response.getExplanation());
-        assertEquals(
-            new DropZonesCorrectFactory().setLeg1(false).build(),
-            response.getDropZonesCorrect()
-        );
+        assertEquals(new DropZonesCorrectFactory().setLeg1(false).build(), response.getDropZonesCorrect());
     }
+
+    // TODO: when a partial match contains incorrect items, show feedback about this,
+    // rather than telling the user they needed to submit more items.
+
+    // TODO: invalid questions that are not producible on the UI should never be marked
+    @Test
+    public final void answerValidation_tooMany_explainsTooManyItems() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("it contains more items than gaps"));
+        assertEquals(new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).build(), response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void answerValidation_unknownItems_explainsUnknownItems() {
+        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(new Item("unknown", null), "leg_1"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_ITEMS), response.getExplanation());
+        assertEquals(new DropZonesCorrectFactory().setLeg1(false).build(), response.getDropZonesCorrect());
+    }
+
+//    @Test
+//    public final void answerValidation_wrongItems_explainsIncorrectItems() {
+//        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
+//        question.setDetailedItemFeedback(true);
+//        var item = new ParsonsItem(item_3cm.getId(), null, null);
+//        var answer = new ItemChoice();
+//        answer.setItems(List.of(item));
+//
+//        var response = testValidate(question, answer);
+//        assertFalse(response.isCorrect());
+//        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_FORMAT), response.getExplanation());
+//        assertEquals(new DropZonesCorrectFactory().setLeg1(false).build(), response.getDropZonesCorrect());
+//    }
+
+    // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
         return new IsaacDndValidator().validateQuestionResponse(question, choice);

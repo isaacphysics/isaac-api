@@ -67,7 +67,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class DndQuestion {
         @Test
-        public void emptyAnswer() throws Exception {
+        public void emptyAnswerEmptyItems() throws Exception {
             var dndQuestion = persist(createQuestion(
                     correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             ));
@@ -78,6 +78,31 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             assertFalse(response.getBoolean("correct"));
             assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
         }
+
+        @Test
+        public void emptyAnswerEmptyNoItems() throws Exception {
+            var dndQuestion = persist(createQuestion(
+                    correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            ));
+            var answer = new DndItemChoice();
+            answer.setType("dndChoice");
+            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+
+            assertFalse(response.getBoolean("correct"));
+            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
+        }
+
+//        @Test
+//        public void invalidAnswer() throws Exception {
+//            var dndQuestion = persist(createQuestion(
+//                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+//            ));
+//            var answer = "{}";
+//
+//            var response = subject().client().post(url(dndQuestion.getId()), answer);
+//            response.assertError("hello",  Response.Status.NOT_FOUND);
+//        }
+
         @Test
         public void wrongAnswer() throws Exception {
             var dndQuestion = persist(createQuestion(

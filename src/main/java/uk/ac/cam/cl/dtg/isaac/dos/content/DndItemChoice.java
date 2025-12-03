@@ -56,7 +56,8 @@ public class DndItemChoice extends Choice {
     }
 
     public boolean matches(final DndItemChoice rhs) {
-        return this.items.stream().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs));
+        return this.items.stream().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs))
+            && this.items.size() == rhs.getItems().size();
     }
 
     public int countPartialMatchesIn(final DndItemChoice rhs) {

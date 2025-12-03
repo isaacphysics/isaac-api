@@ -202,7 +202,12 @@ public class IsaacClozeValidatorTest {
 
 
     /*
-        Test that known incorrect answers can be matched.
+    * Test that when the user submits an answer with missing items, we show the generic
+    * feedback about missing items, even though we have more specific feedback about
+    * some of the submitted answers being wrong.
+    *
+    * I think it'd be better to show specific feedback. This test is here to prove that
+    * this is not how the current implementation works.
     */
     @Test
     public final void isaacClozeValidator_NotEnoughItemsMatchingIncorrectResponse_NotEnoughResponseShouldBeReturned_() {
