@@ -3,6 +3,9 @@ import com.google.inject.Injector;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
@@ -66,42 +69,53 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Nested
     class DndQuestion {
-        @Test
-        public void emptyAnswerEmptyItems() throws Exception {
-            var dndQuestion = persist(createQuestion(
-                    correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-            ));
-            var answer = answer();
-
-            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
-
-            assertFalse(response.getBoolean("correct"));
-            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
+        @ParameterizedTest
+        @CsvSource(value = {
+            "{};Unable to map response to a Choice;404",
+            "{\"type\": \"unknown\"};This validator only works with DndItemChoices;400",
+            "{\"type\": \"dndChoice\", \"items\": [{\"dropZoneId\": \"leg_1\"}]};Cannot validate answer with missing ids;400",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]};Cannot validate answer with missing dropZoneIds;400",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"a\": \"a\"}]};Unable to map response to a Choice;404",
+            "{\"type\": \"dndChoice\", \"items\": \"some_string\"};Unable to map response to a Choice;404",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": [{}], \"dropZoneId\": \"leg_1\"}]};Unable to map response to a Choice;404"
+        }, delimiter = ';')
+        public void invalidAnswer(final String answerStr, final String emsg, final String estate) throws Exception {
+            var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
+            var response = subject().client().post(url(dndQuestion.getId()), answerStr);
+            response.assertError(emsg, estate);
         }
 
-        @Test
-        public void emptyAnswerEmptyNoItems() throws Exception {
-            var dndQuestion = persist(createQuestion(
-                    correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-            ));
-            var answer = new DndItemChoice();
-            answer.setType("dndChoice");
-            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
-
+        @ParameterizedTest
+        @CsvSource(value = {
+            "{\"type\": \"dndChoice\"}",
+            "{\"type\": \"dndChoice\", \"items\": []}"
+        }, delimiter = ';')
+        public void validEmptyAnswer(final String answerStr) throws Exception {
+            var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
+            var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
-            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
+            assertEquals(
+                readEntity(new JSONObject(answerStr), DndItemChoice.class),
+                readEntity(response.getJSONObject("answer"), DndItemChoice.class)
+            );
         }
 
-//        @Test
-//        public void invalidAnswer() throws Exception {
-//            var dndQuestion = persist(createQuestion(
-//                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-//            ));
-//            var answer = "{}";
-//
-//            var response = subject().client().post(url(dndQuestion.getId()), answer);
-//            response.assertError("hello",  Response.Status.NOT_FOUND);
-//        }
+        @ParameterizedTest
+        @CsvSource(value = {
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\"}]}",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
+        }, delimiter = ';')
+        public void validCorrectAnswer(final String answerStr) throws Exception {
+            var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
+
+            var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
+            assertTrue(response.getBoolean("correct"));
+            assertEquals(
+                readEntity(new JSONObject(answerStr), DndItemChoice.class),
+                readEntity(response.getJSONObject("answer"), DndItemChoice.class)
+            );
+        }
 
         @Test
         public void wrongAnswer() throws Exception {
@@ -116,18 +130,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
         }
 
-        @Test
-        public void rightAnswer() throws Exception {
-            var dndQuestion = persist(createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-            ));
-            var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
-            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
-
-            assertTrue(response.getBoolean("correct"));
-            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
-        }
 
         @Test
         public void explanation() throws Exception {

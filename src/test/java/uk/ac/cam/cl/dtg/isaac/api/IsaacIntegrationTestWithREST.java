@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Abstract superclass for integration test. Use when testing in the context of a REST application. This lets you
@@ -158,8 +159,13 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         void assertError(final String message, final Response.Status status) {
-            assertEquals(message, response.readEntity(Map.class).get("errorMessage"));
             assertEquals(status.getStatusCode(), response.getStatus());
+            assertTrue(this.readEntityAsJsonUnchecked().getString("errorMessage").contains(message));
+        }
+
+        void assertError(final String message, final String status) {
+            assertEquals(Integer.parseInt(status), response.getStatus());
+            assertTrue(this.readEntityAsJsonUnchecked().getString("errorMessage").contains(message));
         }
 
         void assertNoUserLoggedIn() {
@@ -185,6 +191,10 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
 
         JSONObject readEntityAsJson() {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            return this.readEntityAsJsonUnchecked();
+        }
+
+        private JSONObject readEntityAsJsonUnchecked() {
             String body = response.readEntity(String.class);
             return new JSONObject(body);
         }

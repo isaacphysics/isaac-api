@@ -21,9 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Comparator;
@@ -31,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -105,6 +104,15 @@ public class IsaacDndValidator implements IValidator {
 
         var dndAnswer = (DndItemChoice) answer;
 
-        return dndAnswer.getItems() != null && !dndAnswer.getItems().isEmpty();
+        Supplier<Boolean> hasItems = () -> dndAnswer.getItems() != null && !dndAnswer.getItems().isEmpty();
+        Supplier<Boolean> itemsHaveId = () -> dndAnswer.getItems().stream().allMatch(i -> i.getId() != null);
+        Supplier<Boolean> itemsHaveDropZoneId = () -> dndAnswer.getItems().stream().allMatch(i -> i.getDropZoneId() != null);
+        if (hasItems.get() && !itemsHaveId.get()) {
+            throw new IllegalArgumentException("Cannot validate answer with missing ids");
+        }
+        if (hasItems.get() && !itemsHaveDropZoneId.get()) {
+            throw new IllegalArgumentException("Cannot validate answer with missing dropZoneIds");
+        }
+        return hasItems.get();
     }
 }
