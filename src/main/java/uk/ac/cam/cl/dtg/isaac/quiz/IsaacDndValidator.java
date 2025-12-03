@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.apache.commons.lang3.BooleanUtils;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -62,17 +63,28 @@ public class IsaacDndValidator implements IValidator {
 
         Optional<DndItemChoice> matchedAnswer = sortedAnswers.stream().filter(lhs -> lhs.matches(answer)).findFirst();
 
-        Optional<DndItemChoice> closestCorrectAnswer = sortedAnswers.stream().filter(Choice::isCorrect).findFirst();
+        DndItemChoice closestCorrectAnswer = sortedAnswers.stream().filter(Choice::isCorrect).findFirst().orElse(null);
 
         var id = question.getId();
         var isCorrect = matchedAnswer.map(Choice::isCorrect).orElse(false);
         var dropZonesCorrect = BooleanUtils.isTrue(question.getDetailedItemFeedback())
-            ? closestCorrectAnswer.map(c -> c.getDropZonesCorrect(answer)).orElse(null)
+            ? closestCorrectAnswer.getDropZonesCorrect(answer)
             : null;
-        var explanation = (Content) matchedAnswer.map(Choice::getExplanation).orElse(
-            isCorrect ? null : question.getDefaultFeedback()
-        );
+        var explanation = (Content) matchedAnswer.map(Choice::getExplanation).orElse(explain(isCorrect, closestCorrectAnswer, question, answer));
         var date = new Date();
         return new DndValidationResponse(id, answer, isCorrect, dropZonesCorrect, explanation, date);
+    }
+
+    private Content explain(final boolean isCorrect, final DndItemChoice closestCorrectAnswer, final IsaacDndQuestion question, final DndItemChoice answer) {
+        if (isCorrect) {
+            return null;
+        }
+        if (answer.getItems().isEmpty()) {
+            return new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED);
+        }
+        if (answer.getItems().size() < closestCorrectAnswer.getItems().size()) {
+            return new Content("You did not provide a valid answer; it does not contain an item for each gap.");
+        }
+        return question.getDefaultFeedback();
     }
 }

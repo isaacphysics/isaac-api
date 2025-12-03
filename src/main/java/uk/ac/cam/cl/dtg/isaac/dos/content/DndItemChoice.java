@@ -67,10 +67,12 @@ public class DndItemChoice extends Choice {
     }
 
     public Map<String, Boolean> getDropZonesCorrect(final DndItemChoice rhs) {
-        return this.items.stream().collect(Collectors.toMap(
-            DndItem::getDropZoneId,
-            lhsItem -> dropZoneEql(lhsItem, rhs))
-        );
+        return this.items.stream()
+            .filter(lhsItem -> rhs.getItemByDropZone(lhsItem.getDropZoneId()).isPresent())
+            .collect(Collectors.toMap(
+                DndItem::getDropZoneId,
+                lhsItem -> dropZoneEql(lhsItem, rhs))
+            );
     }
 
     private static boolean dropZoneEql(DndItem lhsItem, DndItemChoice rhs) {

@@ -93,7 +93,6 @@ public class IsaacDndValidatorTest {
     //  - on same level? (or even across levels?)
     //  - should return all?
     //  - should return just one, but predictably?
-    // TODO: test for empty answer
     //
     @Test
     public final void explanation_exactMatchIncorrect_shouldReturnMatching() {
@@ -134,7 +133,7 @@ public class IsaacDndValidatorTest {
             incorrect(answer(choose(item_4cm, "hypothenuse")))
         );
         question.setDefaultFeedback(defaultFeedback);
-        var answer = answer(choose(item_4cm, "hypothenuse"));
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_4cm, "hypothenuse"));
 
         var response = testValidate(question, answer);
 
@@ -220,7 +219,7 @@ public class IsaacDndValidatorTest {
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_6cm, "leg_1"), choose(item_5cm, "hypothenuse"));
+        var answer = answer(choose(item_6cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
@@ -242,7 +241,64 @@ public class IsaacDndValidatorTest {
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
         assertEquals(
-            new DropZonesCorrectFactory().setLeg1(true).setLeg2(false).setHypothenuse(false).build(),
+            new DropZonesCorrectFactory().setLeg1(true).build(),
+            response.getDropZonesCorrect()
+        );
+    }
+
+    @Test
+    public final void answerValidation_empty_incorrect() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer();
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content("You did not provide an answer."), response.getExplanation());
+        assertEquals(
+            new DropZonesCorrectFactory().build(),
+            response.getDropZonesCorrect()
+        );
+    }
+
+    @Test
+    public final void answerValidation_someMissing_explainsMissingItems() {
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("does not contain an item for each gap"));
+        assertEquals(
+            new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).build(),
+            response.getDropZonesCorrect()
+        );
+    }
+
+    /*
+     * Test that when the user submits an answer with missing items, we first show any matching feedback
+     * about the incorrect answer, rather than the more generic feedback about missing items.
+     */
+    @Test
+    public final void answerValidation_someMissing_providesSpecificExplanationFirst() {
+        var incorrectFeedback = new Content("Leg 1 should be less than 4 cm");
+        var question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
+            incorrect(answer(choose(item_4cm, "leg_1")), incorrectFeedback)
+        );
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_4cm, "leg_1"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(incorrectFeedback, response.getExplanation());
+        assertEquals(
+            new DropZonesCorrectFactory().setLeg1(false).build(),
             response.getDropZonesCorrect()
         );
     }
@@ -308,7 +364,7 @@ public class IsaacDndValidatorTest {
     public static class DropZonesCorrectFactory {
         private final Map<String, Boolean> map = new HashMap<>();
 
-        public DropZonesCorrectFactory setLeg1(final boolean value) {
+        public DropZonesCorrectFactory setLeg1(final Boolean value) {
             map.put("leg_1", value);
             return this;
         }

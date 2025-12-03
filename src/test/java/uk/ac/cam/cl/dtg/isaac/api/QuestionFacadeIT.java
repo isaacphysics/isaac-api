@@ -67,6 +67,18 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class DndQuestion {
         @Test
+        public void emptyAnswer() throws Exception {
+            var dndQuestion = persist(createQuestion(
+                    correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            ));
+            var answer = answer();
+
+            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+
+            assertFalse(response.getBoolean("correct"));
+            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
+        }
+        @Test
         public void wrongAnswer() throws Exception {
             var dndQuestion = persist(createQuestion(
                 correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
