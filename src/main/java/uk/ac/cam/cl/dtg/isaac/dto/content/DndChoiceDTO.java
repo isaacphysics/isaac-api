@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Stephen Cummins
+ * Copyright 2019 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,31 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.util.DropZone;
-
-import java.util.List;
-
 /**
- * Figure DTO.
+ * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
-public class FigureDTO extends ImageDTO {
-    private List<DropZone> dropZones;
-    private String condensedMaxWidth;
+public class DndChoiceDTO extends ItemChoiceDTO {
 
-    public List<DropZone> getDropZones() {
-        return dropZones;
+    /**
+     * Default constructor required for mapping.
+     */
+    public DndChoiceDTO() {
     }
 
-    public void setDropZones(List<DropZone> dropZones) {
-        this.dropZones = dropZones;
-    }
-
-    public String getCondensedMaxWidth() {
-        return condensedMaxWidth;
-    }
-
-    public void setCondensedMaxWidth(String condensedMaxWidth) {
-        this.condensedMaxWidth = condensedMaxWidth;
-    }
 }

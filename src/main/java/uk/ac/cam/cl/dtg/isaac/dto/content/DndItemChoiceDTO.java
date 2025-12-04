@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Stephen Cummins
+ * Copyright 2019 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,31 +15,33 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.util.DropZone;
-
 import java.util.List;
 
 /**
- * Figure DTO.
+ * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
-public class FigureDTO extends ImageDTO {
-    private List<DropZone> dropZones;
-    private String condensedMaxWidth;
+public class DndItemChoiceDTO extends ChoiceDTO {
 
-    public List<DropZone> getDropZones() {
-        return dropZones;
+    private Boolean allowSubsetMatch;
+    private List<DndItemDTO> items;
+
+    /**
+     * Default constructor required for mapping.
+     */
+    public DndItemChoiceDTO() {
     }
 
-    public void setDropZones(List<DropZone> dropZones) {
-        this.dropZones = dropZones;
+    public List<DndItemDTO> getItems() {
+        return items;
     }
 
-    public String getCondensedMaxWidth() {
-        return condensedMaxWidth;
+    public void setItems(final List<DndItemDTO> items) {
+        this.items = items;
     }
 
-    public void setCondensedMaxWidth(String condensedMaxWidth) {
-        this.condensedMaxWidth = condensedMaxWidth;
-    }
+    public Boolean isAllowSubsetMatch() { return this.allowSubsetMatch; }
+
+    public void setAllowSubsetMatch(final boolean allowSubsetMatch) { this.allowSubsetMatch = allowSubsetMatch; }
+
 }
