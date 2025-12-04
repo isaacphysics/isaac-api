@@ -261,7 +261,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void answerValidation_emptyNoItems_incorrect() {
         var question = createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         question.setDetailedItemFeedback(true);
         var answer = new DndItemChoice();
@@ -311,7 +311,7 @@ public class IsaacDndValidatorTest {
     // TODO: when a partial match contains incorrect items, show feedback about this,
     // rather than telling the user they needed to submit more items.
 
-    // TODO: invalid questions that are not producible on the UI should never be marked
+    // TODO: invalid questions that are not producible on the UI should never be marked (still return explanation)
     @Test
     public final void answerValidation_tooMany_explainsTooManyItems() {
         var question = createQuestion(
@@ -330,12 +330,36 @@ public class IsaacDndValidatorTest {
     public final void answerValidation_unknownItems_explainsUnknownItems() {
         var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
         question.setDetailedItemFeedback(true);
-        var answer = answer(choose(new Item("unknown", null), "leg_1"));
+        var answer = answer(choose(new Item("bad_id", "some_value"), "leg_1"));
 
         var response = testValidate(question, answer);
         assertFalse(response.isCorrect());
         assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_ITEMS), response.getExplanation());
-        assertEquals(new DropZonesCorrectFactory().setLeg1(false).build(), response.getDropZonesCorrect());
+        assertEquals(null, response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void answerValidation_missingId_explainsUnrecognisedFormat() {
+        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(new Item(null, null), "leg_1"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_FORMAT), response.getExplanation());
+        assertNull(response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void answerValidation_missingDropZoneId_explainsUnrecognisedFormat() {
+        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_3cm, null));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_FORMAT), response.getExplanation());
+        assertNull(response.getDropZonesCorrect());
     }
 
 //    @Test

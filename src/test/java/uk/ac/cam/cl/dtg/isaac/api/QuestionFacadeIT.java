@@ -73,13 +73,11 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @CsvSource(value = {
             "{};Unable to map response to a Choice;404",
             "{\"type\": \"unknown\"};This validator only works with DndItemChoices;400",
-            "{\"type\": \"dndChoice\", \"items\": [{\"dropZoneId\": \"leg_1\"}]};Cannot validate answer with missing ids;400",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]};Cannot validate answer with missing dropZoneIds;400",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"a\": \"a\"}]};Unable to map response to a Choice;404",
             "{\"type\": \"dndChoice\", \"items\": \"some_string\"};Unable to map response to a Choice;404",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": [{}], \"dropZoneId\": \"leg_1\"}]};Unable to map response to a Choice;404"
         }, delimiter = ';')
-        public void invalidAnswer(final String answerStr, final String emsg, final String estate) throws Exception {
+        public void badRequest_ErrorReturned(final String answerStr, final String emsg, final String estate) throws Exception {
             var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr);
             response.assertError(emsg, estate);
@@ -87,10 +85,22 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
         @ParameterizedTest
         @CsvSource(value = {
+            "{\"type\": \"dndChoice\", \"items\": [{\"dropZoneId\": \"leg_1\"}]};Your answer is not in a recognised format.",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]};Your answer is not in a recognised format."
+        }, delimiter = ';')
+        public void badRequest_IncorrectReturnedWithExplanation(final String answerStr, final String emsg) throws Exception {
+            var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
+            var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
+            assertFalse(response.getBoolean("correct"));
+            assertEquals(emsg, response.getJSONObject("explanation").getString("value"));
+        }
+
+        @ParameterizedTest
+        @CsvSource(value = {
             "{\"type\": \"dndChoice\"}",
             "{\"type\": \"dndChoice\", \"items\": []}"
         }, delimiter = ';')
-        public void validEmptyAnswer(final String answerStr) throws Exception {
+        public void emptyAnswer_IncorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
@@ -106,7 +116,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
         }, delimiter = ';')
-        public void validCorrectAnswer(final String answerStr) throws Exception {
+        public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(correct(answer(choose(item_3cm, "leg_1")))));
 
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
@@ -118,7 +128,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test
-        public void wrongAnswer() throws Exception {
+        public void wrongAnswer_IncorrectReturned() throws Exception {
             var dndQuestion = persist(createQuestion(
                 correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             ));
@@ -133,7 +143,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
 
         @Test
-        public void explanation() throws Exception {
+        public void answerWithMatchingExplanation_ExplanationReturned() throws Exception {
             var explanation = new Content("That's right!");
             var dndQuestion = persist(createQuestion(correct(
                 answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
@@ -148,7 +158,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test
-        public void dropZonesCorrect() throws Exception {
+        public void detailedItemFeedbackRequested_DropZonesCorrectReturned() throws Exception {
             var dndQuestion = createQuestion(correct(
                     answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             ));

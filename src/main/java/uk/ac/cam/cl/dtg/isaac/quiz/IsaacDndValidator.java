@@ -26,10 +26,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 /**
@@ -38,14 +39,12 @@ import java.util.stream.Collectors;
 public class IsaacDndValidator implements IValidator {
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        boolean valid = validate(question, answer);
-        if (valid) {
-            return mark((IsaacDndQuestion) question, (DndItemChoice) answer);
-        }
-        return new DndValidationResponse(question.getId(), answer, false, null, new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED), new Date());
+        return validateSyntax(question, answer).orElseGet(
+            () -> validateMarks((IsaacDndQuestion) question, (DndItemChoice) answer)
+        );
     }
 
-    private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
+    private DndValidationResponse validateMarks(final IsaacDndQuestion question, final DndItemChoice answer) {
         List<DndItemChoice> sortedAnswers = question.getChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
             .collect(Collectors.toList());
@@ -72,14 +71,8 @@ public class IsaacDndValidator implements IValidator {
             if (isCorrect) {
                 return null;
             }
-            if (answer.getItems().isEmpty()) {
-                return new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED);
-            }
             if (answer.getItems().size() < correctAnswer.getItems().size()) {
                 return new Content("You did not provide a valid answer; it does not contain an item for each gap.");
-            }
-            if (answer.getItems().stream().anyMatch(answerItem -> !question.getItems().contains(answerItem))) {
-                return new Content(Constants.FEEDBACK_UNRECOGNISED_ITEMS);
             }
             if (answer.getItems().size() > correctAnswer.getItems().size()) {
                 return new Content("You did not provide a valid answer; it contains more items than gaps.");
@@ -88,31 +81,37 @@ public class IsaacDndValidator implements IValidator {
         });
     }
 
-    private boolean validate(final Question question, final Choice answer) {
+    private Optional<DndValidationResponse> validateSyntax(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
         if (!(answer instanceof DndItemChoice)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with DndItemChoices (%s is not DndItemChoice)", question.getId()));
+                "This validator only works with DndItemChoices (%s is not DndItemChoice)", question.getId()));
         }
 
         if (!(question instanceof IsaacDndQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
+                "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        var dndAnswer = (DndItemChoice) answer;
-
-        Supplier<Boolean> hasItems = () -> dndAnswer.getItems() != null && !dndAnswer.getItems().isEmpty();
-        Supplier<Boolean> itemsHaveId = () -> dndAnswer.getItems().stream().allMatch(i -> i.getId() != null);
-        Supplier<Boolean> itemsHaveDropZoneId = () -> dndAnswer.getItems().stream().allMatch(i -> i.getDropZoneId() != null);
-        if (hasItems.get() && !itemsHaveId.get()) {
-            throw new IllegalArgumentException("Cannot validate answer with missing ids");
-        }
-        if (hasItems.get() && !itemsHaveDropZoneId.get()) {
-            throw new IllegalArgumentException("Cannot validate answer with missing dropZoneIds");
-        }
-        return hasItems.get();
+        Rules rules = new Rules();
+        rules.put(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty());
+        rules.put(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
+                 (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)));
+        rules.put(Constants.FEEDBACK_UNRECOGNISED_FORMAT,
+                  (q, a) -> a.getItems().stream().anyMatch(i -> i.getId() == null)
+                      || a.getItems().stream().anyMatch(i -> i.getDropZoneId() == null)
+        );
+        return check(rules, (IsaacDndQuestion) question, (DndItemChoice) answer);
     }
+
+    private Optional<DndValidationResponse> check(final Rules r, final IsaacDndQuestion q, final DndItemChoice a) {
+        return r.entrySet().stream()
+            .filter(e -> e.getValue().test(q, a))
+            .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.getKey()), new Date()))
+            .findFirst();
+    }
+
+    private static class Rules extends LinkedHashMap<String, BiPredicate<IsaacDndQuestion, DndItemChoice>> {}
 }
