@@ -15,8 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
+import uk.ac.cam.cl.dtg.isaac.api.TestAppender;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -35,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.apache.logging.log4j.core.Logger;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
@@ -362,24 +367,51 @@ public class IsaacDndValidatorTest {
         assertNull(response.getDropZonesCorrect());
     }
 
-//    @Test
-//    public final void answerValidation_wrongItems_explainsIncorrectItems() {
-//        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
-//        question.setDetailedItemFeedback(true);
-//        var item = new ParsonsItem(item_3cm.getId(), null, null);
-//        var answer = new ItemChoice();
-//        answer.setItems(List.of(item));
-//
-//        var response = testValidate(question, answer);
-//        assertFalse(response.isCorrect());
-//        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_FORMAT), response.getExplanation());
-//        assertEquals(new DropZonesCorrectFactory().setLeg1(false).build(), response.getDropZonesCorrect());
-//    }
 
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
+    @Test
+    public final void questionValidation_NoChoices_ExplainsNoChoices() {
+        var question = createQuestion();
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_3cm, "leg_1"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content(Constants.FEEDBACK_NO_CORRECT_ANSWERS), response.getExplanation());
+        assertNull(response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void questionValidation_NoChoices_LogsThisProblem() {
+        var question = createQuestion();
+        question.setDetailedItemFeedback(true);
+        question.setId("id1");
+        question.setCanonicalSourceFile("file1");
+        var answer = answer(choose(item_3cm, "leg_1"));
+
+        var appender = testValidateWithLogs(question, answer);
+
+        appender.assertLevel(Level.ERROR);
+        appender.assertMessage("Question does not have any answers. id1 src: file1");
+    }
+
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
-        return new IsaacDndValidator().validateQuestionResponse(question, choice);
+       return new IsaacDndValidator().validateQuestionResponse(question, choice);
+    }
+
+    private static TestAppender testValidateWithLogs(final IsaacDndQuestion question, final Choice choice) {
+        var appender = new TestAppender();
+        Logger logger = (Logger) LogManager.getLogger(IsaacDndValidator.class);
+        logger.addAppender(appender);
+        logger.setLevel(Level.WARN);
+
+        try {
+            testValidate(question, choice);
+            return appender;
+        } finally {
+            logger.removeAppender(new TestAppender());
+        }
     }
 
     @SuppressWarnings("checkstyle:MissingJavadocType")

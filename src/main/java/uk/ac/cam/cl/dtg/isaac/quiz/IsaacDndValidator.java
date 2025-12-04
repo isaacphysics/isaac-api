@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +42,10 @@ import java.util.stream.Collectors;
 public class IsaacDndValidator implements IValidator {
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        return validateSyntax(question, answer).orElseGet(
+        var errorResponse = validateSyntax(question, answer);
+        errorResponse.ifPresent(r -> getConfiguredLogger((IsaacDndQuestion) question).log(r.getExplanation().getValue()));
+
+        return errorResponse.orElseGet(
             () -> validateMarks((IsaacDndQuestion) question, (DndItemChoice) answer)
         );
     }
@@ -95,23 +101,63 @@ public class IsaacDndValidator implements IValidator {
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        Rules rules = new Rules();
-        rules.put(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty());
-        rules.put(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
-                 (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)));
-        rules.put(Constants.FEEDBACK_UNRECOGNISED_FORMAT,
+        return new ValidatorRules()
+            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> q.getChoices() == null || q.getChoices().isEmpty())
+            .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
+            .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
+                 (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)))
+            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT,
                   (q, a) -> a.getItems().stream().anyMatch(i -> i.getId() == null)
-                      || a.getItems().stream().anyMatch(i -> i.getDropZoneId() == null)
-        );
-        return check(rules, (IsaacDndQuestion) question, (DndItemChoice) answer);
+                      || a.getItems().stream().anyMatch(i -> i.getDropZoneId() == null))
+            .check((IsaacDndQuestion) question, (DndItemChoice) answer);
     }
 
-    private Optional<DndValidationResponse> check(final Rules r, final IsaacDndQuestion q, final DndItemChoice a) {
-        return r.entrySet().stream()
-            .filter(e -> e.getValue().test(q, a))
-            .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.getKey()), new Date()))
-            .findFirst();
+    private LoggerRules getConfiguredLogger(IsaacDndQuestion question) {
+        return new LoggerRules(question)
+            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q) -> {
+                var file = question.getCanonicalSourceFile();
+                LoggerRules.log.error("Question does not have any answers. " + q.getId() + " src: " + file);
+            });
     }
 
-    private static class Rules extends LinkedHashMap<String, BiPredicate<IsaacDndQuestion, DndItemChoice>> {}
+    private static class ValidatorRules {
+        private final LinkedHashMap<String, BiPredicate<IsaacDndQuestion, DndItemChoice>> rules = new LinkedHashMap<>();
+
+        public ValidatorRules add(final String key, final BiPredicate<IsaacDndQuestion, DndItemChoice> rule) {
+            rules.put(key, rule);
+            return this;
+        }
+
+        public Optional<DndValidationResponse> check(final IsaacDndQuestion q, final DndItemChoice a) {
+            return rules.entrySet().stream()
+                .filter(e -> e.getValue().test(q, a))
+                .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.getKey()), new Date()))
+                .findFirst();
+        }
+    }
+
+    private static class LoggerRules {
+        private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
+        private final LinkedHashMap<String, Consumer<IsaacDndQuestion>> rules = new LinkedHashMap<>();
+        private final IsaacDndQuestion question;
+        public LoggerRules(IsaacDndQuestion question) {
+            this.question = question;
+        }
+
+
+        public LoggerRules add(final String key, final Consumer<IsaacDndQuestion> rule) {
+            rules.put(key, rule);
+            return this;
+        }
+
+        public void log(final String event) {
+            rules.entrySet().stream()
+                .filter(e -> e.getKey().equals(event))
+                .findFirst()
+                .map(e -> {
+                    e.getValue().accept(question);
+                    return true;
+                });
+        }
+    }
 }
