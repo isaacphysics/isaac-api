@@ -89,6 +89,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
                 return getSingletonChoiceMapper().readValue(root.toString(), ParsonsChoice.class);
             case "coordinateChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), CoordinateChoice.class);
+            case "dndChoice":
+                return getSingletonChoiceMapper().readValue(root.toString(), DndChoice.class);
             case "itemChoice":
                 return getSingletonChoiceMapper().readValue(root.toString(), ItemChoice.class);
             default:

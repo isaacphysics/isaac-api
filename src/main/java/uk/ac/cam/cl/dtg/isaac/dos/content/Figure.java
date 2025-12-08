@@ -16,6 +16,9 @@
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.FigureDTO;
+import uk.ac.cam.cl.dtg.util.FigureRegion;
+
+import java.util.List;
 
 /**
  * Figure class is a specialisation of an Image.
@@ -23,5 +26,22 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.FigureDTO;
 @DTOMapping(FigureDTO.class)
 @JsonContentType("figure")
 public class Figure extends Image {
+    private List<FigureRegion> figureRegions;
+    private String condensedMaxWidth;
 
+    public List<FigureRegion> getFigureRegions() {
+        return figureRegions;
+    }
+
+    public void setFigureRegions(List<FigureRegion> figureRegions) {
+        this.figureRegions = figureRegions;
+    }
+
+    public String getCondensedMaxWidth() {
+        return condensedMaxWidth;
+    }
+
+    public void setCondensedMaxWidth(String condensedMaxWidth) {
+        this.condensedMaxWidth = condensedMaxWidth;
+    }
 }
