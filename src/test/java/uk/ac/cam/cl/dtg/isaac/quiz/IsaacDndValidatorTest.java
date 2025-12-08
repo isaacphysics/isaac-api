@@ -326,18 +326,18 @@ public class IsaacDndValidatorTest {
 
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
-        new QuestionValidationTestCase().setTitle("choicesEmpty")
+        new QuestionValidationTestCase().setTitle("answers empty")
             .setQuestion(q -> q.setChoices(List.of()))
             .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
             .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("choicesNull")
+        new QuestionValidationTestCase().setTitle("answers null")
             .setQuestion(q -> q.setChoices(null))
             .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
             .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
-//        new QuestionValidationTestCase().setTitle("answer not dndItem")
-//            .setQuestion()
-//            .expectExplanation("This question contains invalid answers.")
-//            .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found Item!", q.getId())),
+        new QuestionValidationTestCase().setTitle("answer not for a DnD question")
+            .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx())))
+            .expectExplanation("This question contains invalid answers.")
+            .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
     };
 
     @Theory
@@ -346,7 +346,7 @@ public class IsaacDndValidatorTest {
 
         var response = testValidate(testCase.question, testCase.answer);
         assertFalse(response.isCorrect());
-        assertEquals(testCase.feedback, response.getExplanation());
+        assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
 
         var appender = testValidateWithLogs(testCase.question, testCase.answer);
@@ -512,5 +512,7 @@ public class IsaacDndValidatorTest {
     public static class AnswerValidationTestCase extends TestCase<AnswerValidationTestCase> {}
 
     public static class QuestionValidationTestCase extends TestCase<QuestionValidationTestCase> {}
+
+    public static class DndItemChoiceEx extends DndItemChoice {}
 }
 

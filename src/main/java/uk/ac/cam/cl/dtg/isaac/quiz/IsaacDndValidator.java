@@ -40,11 +40,11 @@ import java.util.stream.Collectors;
  * Validator that only provides functionality to validate Drag and drop questions.
  */
 public class IsaacDndValidator implements IValidator {
+    private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
+
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
         var errorResponse = validateSyntax(question, answer);
-        errorResponse.ifPresent(r -> getConfiguredLogger((IsaacDndQuestion) question).log(r.getExplanation().getValue()));
-
         return errorResponse.orElseGet(
             () -> validateMarks((IsaacDndQuestion) question, (DndItemChoice) answer)
         );
@@ -102,7 +102,23 @@ public class IsaacDndValidator implements IValidator {
         }
 
         return new ValidatorRules()
-            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> q.getChoices() == null || q.getChoices().isEmpty())
+            // question
+            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> {
+                var res = q.getChoices() == null || q.getChoices().isEmpty();
+                if (res) {
+                    log.error(String.format("Question does not have any answers. %s src: %s",  question.getId(), q.getCanonicalSourceFile()));
+                }
+                return res;
+            })
+            .add("This question contains invalid answers.", (q, a) -> !q.getChoices().stream().allMatch(c -> {
+                var res = DndItemChoice.class.equals(c.getClass());
+                if (!res) {
+                    log.error(String.format("Expected DndItem in question (%s), instead found %s!",  question.getId(), c.getClass()));
+                }
+                return res;
+            }))
+
+            // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
             .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
                  (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)))
@@ -110,14 +126,6 @@ public class IsaacDndValidator implements IValidator {
                   (q, a) -> a.getItems().stream().anyMatch(i -> i.getId() == null)
                       || a.getItems().stream().anyMatch(i -> i.getDropZoneId() == null))
             .check((IsaacDndQuestion) question, (DndItemChoice) answer);
-    }
-
-    private LoggerRules getConfiguredLogger(final IsaacDndQuestion question) {
-        return new LoggerRules(question)
-            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q) -> {
-                var file = question.getCanonicalSourceFile();
-                LoggerRules.log.error("Question does not have any answers. " + q.getId() + " src: " + file);
-            });
     }
 
     private static class ValidatorRules {
@@ -133,31 +141,6 @@ public class IsaacDndValidator implements IValidator {
                 .filter(e -> e.getValue().test(q, a))
                 .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.getKey()), new Date()))
                 .findFirst();
-        }
-    }
-
-    private static class LoggerRules {
-        private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
-        private final LinkedHashMap<String, Consumer<IsaacDndQuestion>> rules = new LinkedHashMap<>();
-        private final IsaacDndQuestion question;
-
-        public LoggerRules(final IsaacDndQuestion question) {
-            this.question = question;
-        }
-
-        public LoggerRules add(final String key, final Consumer<IsaacDndQuestion> rule) {
-            rules.put(key, rule);
-            return this;
-        }
-
-        public void log(final String event) {
-            rules.entrySet().stream()
-                .filter(e -> e.getKey().equals(event))
-                .findFirst()
-                .map(e -> {
-                    e.getValue().accept(question);
-                    return true;
-                });
         }
     }
 }
