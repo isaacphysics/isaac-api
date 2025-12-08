@@ -18,6 +18,10 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.runner.RunWith;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.TestAppender;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
@@ -33,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,8 +46,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.logging.log4j.core.Logger;
 
+@RunWith(Theories.class)
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
+
+
+    public static final Item item_3cm = item("6d3d", "3 cm");
+    public static final Item item_4cm = item("6d3e", "4 cm");
+    public static final Item item_5cm = item("6d3f", "5 cm");
+    public static final Item item_6cm = item("6d3g", "5 cm");
+    public static final Item item_12cm = item("6d3h", "12 cm");
+    public static final Item item_13cm = item("6d3i", "13 cm");
+
     @Test
     public final void correctness_singleCorrectMatch_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
@@ -249,46 +264,47 @@ public class IsaacDndValidatorTest {
         assertEquals(new DropZonesCorrectFactory().setLeg1(true).build(), response.getDropZonesCorrect());
     }
 
-    @Test
-    public final void answerValidation_empty_incorrect() {
-        var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-        );
+    @DataPoints
+    public static AnswerValidationTestCase[] answerValidationTestCases = {
+        new AnswerValidationTestCase().setTitle("itemsNull")
+            .setAnswer(answer())
+            .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
+        new AnswerValidationTestCase().setTitle("itemsEmpty")
+            .setAnswer(new DndItemChoice())
+            .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
+        new AnswerValidationTestCase().setTitle("itemsNotEnough")
+            .setQuestion(correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"))))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectExplanation("You did not provide a valid answer; it does not contain an item for each gap.")
+            .expectDropZonesCorrect(feedback -> feedback.setLeg1(true)),
+        new AnswerValidationTestCase().setTitle("itemsTooMany")
+            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
+            .expectExplanation("You did not provide a valid answer; it contains more items than gaps.")
+            .expectDropZonesCorrect(feedback -> feedback.setLeg1(true)),
+        new AnswerValidationTestCase().setTitle("itemUnknown")
+            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setAnswer(answer(choose(new Item("bad_id", "some_value"), "leg_1")))
+            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_ITEMS),
+        new AnswerValidationTestCase().setTitle("itemMissingId")
+            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setAnswer(answer(choose(new Item(null, null), "leg_1")))
+            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT),
+        new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
+            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setAnswer(answer(choose(item_3cm, null)))
+            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT)
+    };
+
+    @Theory
+    public final void testAnswerValidation(final AnswerValidationTestCase testCase) {
+        var question = createQuestion(testCase.question);
         question.setDetailedItemFeedback(true);
-        var answer = answer();
 
-        var response = testValidate(question, answer);
+        var response = testValidate(question, testCase.answer);
         assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED), response.getExplanation());
-        assertNull(response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void answerValidation_emptyNoItems_incorrect() {
-        var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = new DndItemChoice();
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_NO_ANSWER_PROVIDED), response.getExplanation());
-        assertNull(response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void answerValidation_someMissing_explainsMissingItems() {
-        var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("does not contain an item for each gap"));
-        assertEquals(new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).build(), response.getDropZonesCorrect());
+        assertEquals(testCase.feedback, response.getExplanation());
+        assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
 
     /*
@@ -317,59 +333,8 @@ public class IsaacDndValidatorTest {
     // rather than telling the user they needed to submit more items.
 
     // TODO: invalid questions that are not producible on the UI should never be marked (still return explanation)
-    @Test
-    public final void answerValidation_tooMany_explainsTooManyItems() {
-        var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("it contains more items than gaps"));
-        assertEquals(new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).build(), response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void answerValidation_unknownItems_explainsUnknownItems() {
-        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(new Item("bad_id", "some_value"), "leg_1"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_ITEMS), response.getExplanation());
-        assertEquals(null, response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void answerValidation_missingId_explainsUnrecognisedFormat() {
-        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(new Item(null, null), "leg_1"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_FORMAT), response.getExplanation());
-        assertNull(response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void answerValidation_missingDropZoneId_explainsUnrecognisedFormat() {
-        var question = createQuestion(correct(answer(choose(item_3cm, "leg_1"))));
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_3cm, null));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_UNRECOGNISED_FORMAT), response.getExplanation());
-        assertNull(response.getDropZonesCorrect());
-    }
-
 
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
-
     @Test
     public final void questionValidation_NoChoicesEmpty_ExplainsNoChoices() {
         var question = createQuestion();
@@ -408,6 +373,14 @@ public class IsaacDndValidatorTest {
         appender.assertLevel(Level.ERROR);
         appender.assertMessage("Question does not have any answers. id1 src: file1");
     }
+
+    // TODO: instead of wrongTypeChoices, assert that each choice has a drop zone id and id
+
+    // TODO: exclude invalid choices from question
+    //   - not DndItemChoice
+    //   - choice without items
+    //   - choice with items other than Item (maybe here: DnDItem)
+    //   - no correct answer
 
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
        return new IsaacDndValidator().validateQuestionResponse(question, choice);
@@ -504,11 +477,37 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    public static final Item item_3cm = item("6d3d", "3 cm");
-    public static final Item item_4cm = item("6d3e", "4 cm");
-    public static final Item item_5cm = item("6d3f", "5 cm");
-    public static final Item item_6cm = item("6d3g", "5 cm");
-    public static final Item item_12cm = item("6d3h", "12 cm");
-    public static final Item item_13cm = item("6d3i", "13 cm");
+    static class AnswerValidationTestCase {
+        public DndItemChoice question = correct(
+            answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
+        );
+        public DndItemChoice answer;
+        public Content feedback;
+        public Map<String, Boolean> dropZonesCorrect;
+
+        public AnswerValidationTestCase setTitle(final String title) {
+            return this;
+        }
+
+        public AnswerValidationTestCase setQuestion(final DndItemChoice question) {
+            this.question = question;
+            return this;
+        }
+
+        public AnswerValidationTestCase setAnswer(final DndItemChoice answer) {
+            this.answer = answer;
+            return this;
+        }
+
+        public AnswerValidationTestCase expectExplanation(final String feedback) {
+            this.feedback = new Content(feedback);
+            return this;
+        }
+
+        public AnswerValidationTestCase expectDropZonesCorrect(UnaryOperator<DropZonesCorrectFactory> op) {
+            this.dropZonesCorrect = op.apply(new DropZonesCorrectFactory()).build();
+            return this;
+        }
+    }
 }
 
