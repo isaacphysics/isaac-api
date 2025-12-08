@@ -78,7 +78,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }, delimiter = ';')
         public void badRequest_ErrorReturned(final String answerStr, final String emsg, final String estate) throws Exception {
             var dndQuestion = persist(createQuestion(
-                correct(answer(choose(item_3cm, "leg_1")))
+                correct(choose(item_3cm, "leg_1"))
             ));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr);
             response.assertError(emsg, estate);
@@ -91,7 +91,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }, delimiter = ';')
         public void badRequest_IncorrectReturnedWithExplanation(final String answerStr, final String emsg) throws Exception {
             var dndQuestion = persist(createQuestion(
-                correct(answer(choose(item_3cm, "leg_1")))
+                correct(choose(item_3cm, "leg_1"))
             ));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
@@ -105,7 +105,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }, delimiter = ';')
         public void emptyAnswer_IncorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(
-                correct(answer(choose(item_3cm, "leg_1")))
+                correct(choose(item_3cm, "leg_1"))
             ));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
@@ -123,7 +123,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }, delimiter = ';')
         public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(
-                correct(answer(choose(item_3cm, "leg_1")))
+                correct(choose(item_3cm, "leg_1"))
             ));
 
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
@@ -137,7 +137,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @Test
         public void wrongAnswer_IncorrectReturned() throws Exception {
             var dndQuestion = persist(createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             ));
             var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "hypothenuse"), choose(item_5cm, "leg_1"));
 
@@ -151,8 +151,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         public void answerWithMatchingExplanation_ExplanationReturned() throws Exception {
             var explanation = new Content("That's right!");
             var dndQuestion = persist(createQuestion(correct(
-                answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
-                explanation
+                explanation,
+                choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")
             )));
             var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
@@ -165,7 +165,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @Test
         public void detailedItemFeedbackRequested_DropZonesCorrectReturned() throws Exception {
             var dndQuestion = createQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             );
             dndQuestion.setDetailedItemFeedback(true);
             persist(dndQuestion);

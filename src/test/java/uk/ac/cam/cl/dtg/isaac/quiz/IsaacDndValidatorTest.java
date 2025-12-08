@@ -63,7 +63,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void correctness_singleCorrectMatch_CorrectResponseShouldBeReturned() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
@@ -75,7 +75,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void correctness_singleIncorrectMatch_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
 
@@ -87,7 +87,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void correctness_partialMatchForCorrect_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         var answer = answer(choose(item_4cm, "leg_2"), choose(item_5cm, "leg_1"), choose(item_3cm, "hypothenuse"));
 
@@ -99,7 +99,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void correctness_moreSpecificIncorrectMatchOverridesCorrect_IncorrectResponseShouldBeReturned() {
         var question = createQuestion(
-            correct(answer(choose(item_5cm, "hypothenuse"))),
+            correct(choose(item_5cm, "hypothenuse")),
             incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         var answer = answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse"));
@@ -121,8 +121,8 @@ public class IsaacDndValidatorTest {
     public final void explanation_exactMatchIncorrect_shouldReturnMatching() {
         var hypothenuseMustBeLargest = new Content("The hypothenuse must be the longest side of a right triangle");
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
-            incorrect(answer(choose(item_3cm, "hypothenuse")), hypothenuseMustBeLargest)
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+            incorrect(hypothenuseMustBeLargest, choose(item_3cm, "hypothenuse"))
         );
         var answer = answer(choose(item_3cm, "hypothenuse"));
 
@@ -136,10 +136,10 @@ public class IsaacDndValidatorTest {
     public final void explanation_exactMatchCorrect_shouldReturnMatching() {
         var correctFeedback = new Content("That's how it's done! Observe that the hypothenuse is always the longest"
             + " side of a right triangle");
-        var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
-            correctFeedback)
-        );
+        var question = createQuestion(correct(
+            correctFeedback,
+            choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")
+        ));
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
         var response = testValidate(question, answer);
@@ -152,8 +152,8 @@ public class IsaacDndValidatorTest {
     public final void explanation_exactMatchIncorrectDefault_shouldReturnDefault() {
         var defaultFeedback = new Content("Isaac can't help you.");
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
-            incorrect(answer(choose(item_4cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+            incorrect(choose(item_4cm, "hypothenuse"))
         );
         question.setDefaultFeedback(defaultFeedback);
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_4cm, "hypothenuse"));
@@ -167,7 +167,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void explanation_defaultIncorrect_shouldReturnDefault() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         var defaultFeedback = new Content("Isaac cannot help you.");
         question.setDefaultFeedback(defaultFeedback);
@@ -182,7 +182,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void explanation_defaultCorrect_shouldReturnNone() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         var defaultFeedback = new Content("Isaac cannot help you.");
         question.setDefaultFeedback(defaultFeedback);
@@ -197,7 +197,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_incorrectNotRequested_shouldReturnNull() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         question.setDetailedItemFeedback(false);
         var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "leg_1"), choose(item_5cm, "hypothenuse"));
@@ -210,7 +210,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_correctNotRequested_shouldReturnNull() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         question.setDetailedItemFeedback(false);
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
@@ -223,7 +223,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_allCorrect_shouldReturnAllCorrect() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         question.setDetailedItemFeedback(true);
         var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
@@ -239,7 +239,7 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_someIncorrect_shouldReturnWhetherCorrect() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         question.setDetailedItemFeedback(true);
         var answer = answer(choose(item_6cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_5cm, "hypothenuse"));
@@ -255,8 +255,8 @@ public class IsaacDndValidatorTest {
     @Test
     public final void dropZonesCorrect_multipleCorrectAnswers_decidesCorrectnessBasedOnClosestOne() {
         var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
-            correct(answer(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2"), choose(item_13cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+            correct(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2"), choose(item_13cm, "hypothenuse"))
         );
         question.setDetailedItemFeedback(true);
         var answer = answer(choose(item_5cm, "leg_1"));
@@ -275,34 +275,35 @@ public class IsaacDndValidatorTest {
             .setAnswer(new DndItemChoice())
             .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
         new AnswerValidationTestCase().setTitle("itemsNotEnough")
-            .setQuestion(correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"))))
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectExplanation("You did not provide a valid answer; it does not contain an item for each gap.")
             .expectDropZonesCorrect(feedback -> feedback.setLeg1(true)),
         new AnswerValidationTestCase().setTitle("itemsTooMany")
-            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
             .expectExplanation("You did not provide a valid answer; it contains more items than gaps.")
             .expectDropZonesCorrect(feedback -> feedback.setLeg1(true)),
-        new AnswerValidationTestCase().setTitle("itemUnknown")
-            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+        new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item("bad_id", "some_value"), "leg_1")))
             .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_ITEMS),
         new AnswerValidationTestCase().setTitle("itemMissingId")
-            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item(null, null), "leg_1")))
             .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT),
         new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
-            .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, null)))
             .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT),
         new AnswerValidationTestCase().setTitle("itemsNotEnough_providesSpecificExplanationFirst")
             .setQuestion(
-                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
-                incorrect(answer(choose(item_4cm, "leg_1")), new Content("Leg 1 should be less than 4 cm"))
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+                incorrect(new Content("Leg 1 should be less than 4 cm"), choose(item_4cm, "leg_1"))
             ).setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectExplanation("Leg 1 should be less than 4 cm")
             .expectDropZonesCorrect(feedback -> feedback.setLeg1(false))
+        // TODO: if drop zone does not exist in question
     };
 
     @Theory
@@ -327,14 +328,16 @@ public class IsaacDndValidatorTest {
     public static QuestionValidationTestCase[] questionValidationTestCases = {
         new QuestionValidationTestCase().setTitle("choicesEmpty")
             .setQuestion(q -> q.setChoices(List.of()))
-            .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
             .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("choicesNull")
             .setQuestion(q -> q.setChoices(null))
-            .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
             .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
+//        new QuestionValidationTestCase().setTitle("answer not dndItem")
+//            .setQuestion()
+//            .expectExplanation("This question contains invalid answers.")
+//            .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found Item!", q.getId())),
     };
 
     @Theory
@@ -402,24 +405,26 @@ public class IsaacDndValidatorTest {
         return question;
     }
 
-    public static DndItemChoice correct(final DndItemChoice choice) {
+    public static DndItemChoice correct(final DndItem... list) {
+        var choice = answer(list);
         choice.setCorrect(true);
         return choice;
     }
 
-    public static DndItemChoice correct(final DndItemChoice choice, ContentBase explanation) {
-        choice.setCorrect(true);
+    public static DndItemChoice correct(final ContentBase explanation, final DndItem... list) {
+        var choice = correct(list);
         choice.setExplanation(explanation);
         return choice;
     }
 
-    public static DndItemChoice incorrect(final DndItemChoice choice) {
+    public static DndItemChoice incorrect(final DndItem... list) {
+        var choice = answer(list);
         choice.setCorrect(false);
         return choice;
     }
 
-    public static DndItemChoice incorrect(final DndItemChoice choice, ContentBase explanation) {
-        choice.setCorrect(false);
+    public static DndItemChoice incorrect(final ContentBase explanation, final DndItem... list) {
+        var choice = incorrect(list);
         choice.setExplanation(explanation);
         return choice;
     }
@@ -458,7 +463,7 @@ public class IsaacDndValidatorTest {
         public IsaacDndQuestion question = createQuestion(
             correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
-        public DndItemChoice answer;
+        public DndItemChoice answer= answer();
         public Content feedback;
         public Map<String, Boolean> dropZonesCorrect;
         public String loggedMessage;
