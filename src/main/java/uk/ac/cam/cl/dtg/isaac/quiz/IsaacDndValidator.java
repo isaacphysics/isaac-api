@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -103,20 +102,18 @@ public class IsaacDndValidator implements IValidator {
 
         return new ValidatorRules()
             // question
-            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> {
-                var res = q.getChoices() == null || q.getChoices().isEmpty();
-                if (res) {
-                    log.error(String.format("Question does not have any answers. %s src: %s",  question.getId(), q.getCanonicalSourceFile()));
-                }
-                return res;
-            })
-            .add("This question contains invalid answers.", (q, a) -> !q.getChoices().stream().allMatch(c -> {
-                var res = DndItemChoice.class.equals(c.getClass());
-                if (!res) {
-                    log.error(String.format("Expected DndItem in question (%s), instead found %s!",  question.getId(), c.getClass()));
-                }
-                return res;
-            }))
+            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> logged(
+                q.getChoices() == null || q.getChoices().isEmpty(),
+                "Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()
+            ))
+            .add("This question contains invalid answers.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+                !DndItemChoice.class.equals(c.getClass()),
+                "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
+            )))
+            .add("This question contains an empty answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+                c.getItems() == null,
+                "Expected list of DndItems, but none found in choice for question id (%s)", q.getId()
+            )))
 
             // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
@@ -126,6 +123,13 @@ public class IsaacDndValidator implements IValidator {
                   (q, a) -> a.getItems().stream().anyMatch(i -> i.getId() == null)
                       || a.getItems().stream().anyMatch(i -> i.getDropZoneId() == null))
             .check((IsaacDndQuestion) question, (DndItemChoice) answer);
+    }
+
+    private boolean logged(final boolean result, final String message, final Object... args) {
+        if (result) {
+            log.error(String.format(message, args));
+        }
+        return result;
     }
 
     private static class ValidatorRules {

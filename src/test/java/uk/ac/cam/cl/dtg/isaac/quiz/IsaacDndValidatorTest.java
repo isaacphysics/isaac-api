@@ -51,8 +51,6 @@ import org.apache.logging.log4j.core.Logger;
 @RunWith(Theories.class)
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class IsaacDndValidatorTest {
-
-
     public static final Item item_3cm = item("6d3d", "3 cm");
     public static final Item item_4cm = item("6d3e", "4 cm");
     public static final Item item_5cm = item("6d3f", "5 cm");
@@ -313,7 +311,7 @@ public class IsaacDndValidatorTest {
         var response = testValidate(testCase.question, testCase.answer);
 
         assertFalse(response.isCorrect());
-        assertEquals(testCase.feedback, response.getExplanation());
+        assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
 
@@ -338,6 +336,10 @@ public class IsaacDndValidatorTest {
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx())))
             .expectExplanation("This question contains invalid answers.")
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
+        new QuestionValidationTestCase().setTitle("answer with no items")
+            .setQuestion(q -> q.setChoices(List.of(new DndItemChoice())))
+            .expectExplanation("This question contains an empty answer.")
+            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)", q.getId()))
     };
 
     @Theory
@@ -357,7 +359,6 @@ public class IsaacDndValidatorTest {
     // TODO: instead of wrongTypeChoices, assert that each choice has a drop zone id and id
 
     // TODO: exclude invalid choices from question
-    //   - not DndItemChoice
     //   - choice without items
     //   - choice with items other than Item (maybe here: DnDItem)
     //   - no correct answer
@@ -461,9 +462,9 @@ public class IsaacDndValidatorTest {
 
     static class TestCase<T extends TestCase<T>> {
         public IsaacDndQuestion question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
-        public DndItemChoice answer= answer();
+        public DndItemChoice answer = answer();
         public Content feedback;
         public Map<String, Boolean> dropZonesCorrect;
         public String loggedMessage;
