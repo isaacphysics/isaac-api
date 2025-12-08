@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -293,40 +295,25 @@ public class IsaacDndValidatorTest {
         new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
             .setQuestion(correct(answer(choose(item_3cm, "leg_1"))))
             .setAnswer(answer(choose(item_3cm, null)))
-            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT)
+            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT),
+        new AnswerValidationTestCase().setTitle("itemsNotEnough_providesSpecificExplanationFirst")
+            .setQuestion(
+                correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
+                incorrect(answer(choose(item_4cm, "leg_1")), new Content("Leg 1 should be less than 4 cm"))
+            ).setAnswer(answer(choose(item_4cm, "leg_1")))
+            .expectExplanation("Leg 1 should be less than 4 cm")
+            .expectDropZonesCorrect(feedback -> feedback.setLeg1(false))
     };
 
     @Theory
     public final void testAnswerValidation(final AnswerValidationTestCase testCase) {
-        var question = createQuestion(testCase.question);
-        question.setDetailedItemFeedback(true);
+        testCase.question.setDetailedItemFeedback(true);
 
-        var response = testValidate(question, testCase.answer);
+        var response = testValidate(testCase.question, testCase.answer);
+
         assertFalse(response.isCorrect());
         assertEquals(testCase.feedback, response.getExplanation());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
-    }
-
-    /*
-     * Test that when the user submits an answer with missing items, we first show any matching feedback
-     * about the incorrect answer, rather than the more generic feedback about missing items.
-     *
-     * Cloze questions don't even look at matches in that case, but I think this is better UX.
-     */
-    @Test
-    public final void answerValidation_someMissing_providesSpecificExplanationFirst() {
-        var incorrectFeedback = new Content("Leg 1 should be less than 4 cm");
-        var question = createQuestion(
-            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))),
-            incorrect(answer(choose(item_4cm, "leg_1")), incorrectFeedback)
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_4cm, "leg_1"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(incorrectFeedback, response.getExplanation());
-        assertEquals(new DropZonesCorrectFactory().setLeg1(false).build(), response.getDropZonesCorrect());
     }
 
     // TODO: when a partial match contains incorrect items, show feedback about this,
@@ -335,43 +322,33 @@ public class IsaacDndValidatorTest {
     // TODO: invalid questions that are not producible on the UI should never be marked (still return explanation)
 
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
-    @Test
-    public final void questionValidation_NoChoicesEmpty_ExplainsNoChoices() {
-        var question = createQuestion();
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_3cm, "leg_1"));
 
-        var response = testValidate(question, answer);
+    @DataPoints
+    public static QuestionValidationTestCase[] questionValidationTestCases = {
+        new QuestionValidationTestCase().setTitle("choicesEmpty")
+            .setQuestion(q -> q.setChoices(List.of()))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
+            .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("choicesNull")
+            .setQuestion(q -> q.setChoices(null))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
+            .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
+    };
+
+    @Theory
+    public final void testQuestionValidation(final QuestionValidationTestCase testCase) {
+        testCase.question.setDetailedItemFeedback(true);
+
+        var response = testValidate(testCase.question, testCase.answer);
         assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_NO_CORRECT_ANSWERS), response.getExplanation());
-        assertNull(response.getDropZonesCorrect());
-    }
+        assertEquals(testCase.feedback, response.getExplanation());
+        assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
 
-    @Test
-    public final void questionValidation_NoChoicesNull_ExplainsNoChoices() {
-        var question = createQuestion();
-        question.setChoices(null);
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_3cm, "leg_1"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(new Content(Constants.FEEDBACK_NO_CORRECT_ANSWERS), response.getExplanation());
-        assertNull(response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void questionValidation_NoChoices_LogsThisProblem() {
-        var question = createQuestion();
-        question.setDetailedItemFeedback(true);
-        question.setId("id1");
-        question.setCanonicalSourceFile("file1");
-        var answer = answer(choose(item_3cm, "leg_1"));
-
-        var appender = testValidateWithLogs(question, answer);
-
+        var appender = testValidateWithLogs(testCase.question, testCase.answer);
         appender.assertLevel(Level.ERROR);
-        appender.assertMessage("Question does not have any answers. id1 src: file1");
+        appender.assertMessage(testCase.loggedMessage);
     }
 
     // TODO: instead of wrongTypeChoices, assert that each choice has a drop zone id and id
@@ -477,37 +454,58 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    static class AnswerValidationTestCase {
-        public DndItemChoice question = correct(
-            answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
+    static class TestCase<T extends TestCase<T>> {
+        public IsaacDndQuestion question = createQuestion(
+            correct(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
         );
         public DndItemChoice answer;
         public Content feedback;
         public Map<String, Boolean> dropZonesCorrect;
+        public String loggedMessage;
 
-        public AnswerValidationTestCase setTitle(final String title) {
-            return this;
+        public T setTitle(final String title) {
+            return self();
         }
 
-        public AnswerValidationTestCase setQuestion(final DndItemChoice question) {
+        public T setQuestion(final DndItemChoice... choices) {
+            this.question = createQuestion(choices);
+            return self();
+        }
+
+        public T setQuestion(final Consumer<IsaacDndQuestion> op) {
+            var question = createQuestion();
+            op.accept(question);
             this.question = question;
-            return this;
+            return self();
         }
 
-        public AnswerValidationTestCase setAnswer(final DndItemChoice answer) {
+        public T setAnswer(final DndItemChoice answer) {
             this.answer = answer;
-            return this;
+            return self();
         }
 
-        public AnswerValidationTestCase expectExplanation(final String feedback) {
+        public T expectExplanation(final String feedback) {
             this.feedback = new Content(feedback);
-            return this;
+            return self();
         }
 
-        public AnswerValidationTestCase expectDropZonesCorrect(UnaryOperator<DropZonesCorrectFactory> op) {
+        public T expectDropZonesCorrect(UnaryOperator<DropZonesCorrectFactory> op) {
             this.dropZonesCorrect = op.apply(new DropZonesCorrectFactory()).build();
-            return this;
+            return self();
+        }
+
+        public T expectLogMessage(Function<IsaacDndQuestion, String> op) {
+            this.loggedMessage = op.apply(question);
+            return self();
+        }
+
+        private T self() {
+            return (T) this;
         }
     }
+
+    public static class AnswerValidationTestCase extends TestCase<AnswerValidationTestCase> {}
+
+    public static class QuestionValidationTestCase extends TestCase<QuestionValidationTestCase> {}
 }
 
