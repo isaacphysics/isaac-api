@@ -21,10 +21,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
-import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.converter.ConverterFactory;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,15 +35,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SidebarEntry;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
-import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
-import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,17 +52,14 @@ import java.util.Set;
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass.
  */
-public class ContentMapper {
-    private static final Logger log = LoggerFactory.getLogger(ContentMapper.class);
+public class ContentSubclassMapper {
+    private static final Logger log = LoggerFactory.getLogger(ContentSubclassMapper.class);
 
     // Used for serialization into the correct POJO as well as deserialization.
     // Currently depends on the string key being the same text value as the type
     // field.
     private final Map<String, Class<? extends Content>> jsonTypes;
     private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
-
-    // this autoMapper is initialised lazily in the getAutoMapper method
-    private MapperFacade autoMapper = null;
     
     private static ObjectMapper preconfiguredObjectMapper;
 
@@ -80,7 +70,7 @@ public class ContentMapper {
      * 
      */
     @Inject
-    public ContentMapper() {
+    public ContentSubclassMapper() {
         jsonTypes = Maps.newConcurrentMap();
         mapOfDOsToDTOs = Maps.newConcurrentMap();
     }
@@ -92,7 +82,7 @@ public class ContentMapper {
      *            - string representing the parent package to search for content classes. e.g. uk.ac.cam.cl.dtg.segue
      */
     @SuppressWarnings("unchecked")
-    public ContentMapper(final Reflections configuredReflectionClass) {
+    public ContentSubclassMapper(final Reflections configuredReflectionClass) {
         this();
         Objects.requireNonNull(configuredReflectionClass);
 
@@ -198,39 +188,6 @@ public class ContentMapper {
     }
 
     /**
-     * Populate relatedContent fields on the result and its children with IDs recursively.
-     * Only recurses to children of type Content, but this is currently the only possibility.
-     * When another subclass of ContentBase is introduced which also has relatedContent,
-     * we can decide whether we want to move relatedContent up to the abstract base class etc.
-     * @param content
-     *            - DO class.
-     * @param result
-     *            - target DTO class.
-     */
-    private void populateRelatedContentWithIDs(final Content content, final ContentDTO result) {
-        List<ContentBase> contentChildren = content.getChildren();
-        if (contentChildren != null) {
-            List<ContentBaseDTO> resultChildren = result.getChildren();
-            for (int i = 0; i < contentChildren.size(); i++) {
-                ContentBase contentChild = contentChildren.get(i);
-                ContentBaseDTO resultChild = resultChildren.get(i);
-                if (contentChild instanceof Content && resultChild instanceof ContentDTO) {
-                    this.populateRelatedContentWithIDs((Content) contentChild, (ContentDTO) resultChild);
-                }
-            }
-        }
-        if (result.getRelatedContent() != null) {
-            List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
-            for (String relatedId : content.getRelatedContent()) {
-                ContentSummaryDTO contentSummary = new ContentSummaryDTO();
-                contentSummary.setId(relatedId);
-                relatedContent.add(contentSummary);
-            }
-            result.setRelatedContent(relatedContent);
-        }
-    }
-
-    /**
      *  Populate the DTO object sidebar with a placeholder, if a page type.
      *
      *  This is necessary since the DO has a String but the DTO has a Sidebar object,
@@ -264,9 +221,7 @@ public class ContentMapper {
         if (null == content) {
             return null;
         }
-
-        ContentDTO result = getAutoMapper().map(content, this.mapOfDOsToDTOs.get(content.getClass()));
-        populateRelatedContentWithIDs(content, result);
+        ContentDTO result = MainMapper.INSTANCE.map(content);
         populateSidebarWithIDs(content, result);
         return result;
     }
@@ -296,14 +251,14 @@ public class ContentMapper {
 
     /**
      * Provides a pre-configured module that can be added to an object mapper so that contentBase objects can be
-     * deseerialized using the custom deserializer.
+     * deserialized using the custom deserializer.
      * 
      * This object Mapper is shared and should be treated as immutable.
      * 
      * @return a jackson object mapper.
      */
     public ObjectMapper getSharedContentObjectMapper() {
-        if (ContentMapper.preconfiguredObjectMapper != null) {
+        if (ContentSubclassMapper.preconfiguredObjectMapper != null) {
             return preconfiguredObjectMapper;
         }
 
@@ -337,34 +292,6 @@ public class ContentMapper {
         }
         return contentList;
     }
-
-    /**
-     * Get an instance of the automapper which has been configured to cope with recursive content objects. This
-     * automapper is more efficient than the jackson one as there is no intermediate representation.
-     * 
-     * @return autoMapper
-     */
-    public MapperFacade getAutoMapper() {
-        if (null == this.autoMapper) {
-            log.info("Creating instance of content auto mapper.");
-            MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
-            ContentBaseOrikaConverter contentBaseOrikaConverter = new ContentBaseOrikaConverter(this);
-
-            ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-            converterFactory.registerConverter(contentBaseOrikaConverter);
-            converterFactory.registerConverter(new QuestionBaseOrikaConverter(contentBaseOrikaConverter));
-            converterFactory.registerConverter(new ChoiceOrikaConverter());
-            converterFactory.registerConverter(new ItemOrikaConverter());
-            converterFactory.registerConverter(new QuestionValidationResponseOrikaConverter());
-            converterFactory.registerConverter(new AnonymousUserQuestionAttemptsOrikaConverter());
-            converterFactory.registerConverter(new AudienceOrikaConverter());
-            converterFactory.registerConverter(new SidebarEntryOrikaConverter());
-
-            this.autoMapper = mapperFactory.getMapperFacade();
-        }
-
-        return this.autoMapper;
-    }
     
     /**
      * Creates a brand new object mapper.
@@ -376,7 +303,7 @@ public class ContentMapper {
         ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
         contentDeserializer.registerTypeMap(jsonTypes);
 
-        /* When deserialising from Git, the top-level content mapper needs to have an ItemDeseriaizer,
+        /* When deserialising from Git, the top-level content mapper needs to have an ItemDeserializer,
            and when deserialising a Choice object directly then the ChoiceDeserializer needs to have an
            ItemDeserializer inside it too. The perils of a recursive content model! */
         ItemDeserializer itemDeserializer = new ItemDeserializer(contentDeserializer);

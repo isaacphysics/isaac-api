@@ -19,13 +19,11 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapperFacade;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
@@ -45,6 +43,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
@@ -57,9 +56,12 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -87,10 +89,12 @@ public class GameManager {
     private static final float DEFAULT_QUESTION_PASS_MARK = 75;
 
     private static final int MAX_QUESTIONS_TO_SEARCH = 20;
+    private static final int GAMEBOARD_QUESTIONS_DEFAULT = 10;
+    private static int gameboardQuestionsLimit;
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
-    private final MapperFacade mapper;
+    private final MainMapper mapper;
     private final GitContentManager contentManager;
     private final QuestionManager questionManager;
 
@@ -108,8 +112,9 @@ public class GameManager {
      */
     @Inject
     public GameManager(final GitContentManager contentManager,
-                       final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
-                       final QuestionManager questionManager) {
+                       final GameboardPersistenceManager gameboardPersistenceManager, final MainMapper mapper,
+                       final QuestionManager questionManager,
+                       final AbstractConfigLoader properties) {
         this.contentManager = contentManager;
         this.gameboardPersistenceManager = gameboardPersistenceManager;
         this.questionManager = questionManager;
@@ -117,6 +122,12 @@ public class GameManager {
         this.randomGenerator = new Random();
 
         this.mapper = mapper;
+
+        try {
+            GameManager.gameboardQuestionsLimit = Integer.parseInt(properties.getProperty(GAMEBOARD_QUESTION_LIMIT));
+        } catch (NumberFormatException e) {
+            GameManager.gameboardQuestionsLimit = GAMEBOARD_QUESTIONS_DEFAULT;
+        }
     }
 
     /**
@@ -667,7 +678,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we cannot access the content requested.
      */
-    public List<IsaacWildcard> getWildcards() throws NoWildcardException, ContentManagerException {
+    public List<IsaacWildcardDTO> getWildcards() throws NoWildcardException, ContentManagerException {
         List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
 
         fieldsToMap.add(new GitContentManager.BooleanSearchClause(
@@ -683,10 +694,12 @@ public class GameManager {
             throw new NoWildcardException();
         }
 
-        List<IsaacWildcard> result = Lists.newArrayList();
+        List<IsaacWildcardDTO> result = Lists.newArrayList();
         for (ContentDTO c : wildcardResults.getResults()) {
-            IsaacWildcard wildcard = mapper.map(c, IsaacWildcard.class);
-            result.add(wildcard);
+            if ((c instanceof IsaacWildcardDTO)) {
+                IsaacWildcardDTO wildcard = (IsaacWildcardDTO) c;
+                result.add(wildcard);
+            }
         }
 
         return result;
@@ -995,7 +1008,7 @@ public class GameManager {
         Set<GameboardItem> gameboardReadyQuestions = Sets.newHashSet();
         List<GameboardItem> completedQuestions = Lists.newArrayList();
         // choose the gameboard questions to include.
-        while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
+        while (gameboardReadyQuestions.size() < GAMEBOARD_QUESTIONS_DEFAULT && !selectionOfGameboardQuestions.isEmpty()) {
             for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
                 CompletionState questionState;
                 try {
@@ -1015,12 +1028,12 @@ public class GameManager {
                 }
 
                 // stop inner loop if we have reached our target
-                if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
+                if (gameboardReadyQuestions.size() == GAMEBOARD_QUESTIONS_DEFAULT) {
                     break;
                 }
             }
 
-            if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
+            if (gameboardReadyQuestions.size() == GAMEBOARD_QUESTIONS_DEFAULT) {
                 break;
             }
 
@@ -1032,11 +1045,11 @@ public class GameManager {
         }
 
         // Try and make up the difference with completed ones if we haven't reached our target size
-        if (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !completedQuestions.isEmpty()) {
+        if (gameboardReadyQuestions.size() < GAMEBOARD_QUESTIONS_DEFAULT && !completedQuestions.isEmpty()) {
             for (GameboardItem completedQuestion : completedQuestions) {
-                if (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE) {
+                if (gameboardReadyQuestions.size() < GAMEBOARD_QUESTIONS_DEFAULT) {
                     gameboardReadyQuestions.add(completedQuestion);
-                } else if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
+                } else if (gameboardReadyQuestions.size() == GAMEBOARD_QUESTIONS_DEFAULT) {
                     break;
                 }
             }
@@ -1183,26 +1196,6 @@ public class GameManager {
 
         CompletionState state = UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
         gameItem.setState(state);
-    }
-
-    /**
-     * Get a wildcard by id.
-     * 
-     * @param id
-     *            - of wildcard
-     * @return wildcard or an exception.
-     * @throws ContentManagerException
-     *             - if we cannot access the content requested.
-     */
-    private IsaacWildcard getWildCardById(final String id) throws ContentManagerException {
-        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
-
-        Content wildcardResults = this.contentManager.getContentDOById(id);
-
-        return mapper.map(wildcardResults, IsaacWildcard.class);
     }
 
     /**
@@ -1373,9 +1366,9 @@ public class GameManager {
                     "Your gameboard must not contain illegal characters e.g. spaces");
         }
 
-        if (gameboardDTO.getContents().size() > Constants.GAME_BOARD_TARGET_SIZE) {
+        if (gameboardDTO.getContents().size() > gameboardQuestionsLimit) {
             throw new InvalidGameboardException(String.format("Your gameboard must not contain more than %s questions",
-                    GAME_BOARD_TARGET_SIZE));
+                    gameboardQuestionsLimit));
         }
 
         if (gameboardDTO.getGameFilter() == null || !validateFilterQuery(gameboardDTO.getGameFilter())) {

@@ -17,13 +17,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LLM_FREE_TEXT_QUESTION_TYPE;
 @DTOMapping(IsaacLLMFreeTextQuestionDTO.class)
 @JsonContentType(LLM_FREE_TEXT_QUESTION_TYPE)
 @ValidatesWith(IsaacLLMFreeTextValidator.class)
-public class IsaacLLMFreeTextQuestion extends Question {
+public class IsaacLLMFreeTextQuestion extends IsaacQuestionBase {
     private String promptInstructionOverride;
     private List<LLMFreeTextMarkSchemeEntry> markScheme;
     private Integer maxMarks;
     private String additionalMarkingInstructions;
-    @Deprecated
-    private String markCalculationInstructions;
     private List<LLMFreeTextMarkedExample> markedExamples;
     private LLMMarkingExpression markingFormula;
     @Deprecated
@@ -58,15 +56,6 @@ public class IsaacLLMFreeTextQuestion extends Question {
     }
     public void setAdditionalMarkingInstructions(String additionalMarkingInstructions) {
         this.additionalMarkingInstructions = additionalMarkingInstructions;
-    }
-
-    @Deprecated
-    public String getMarkCalculationInstructions() {
-        return markCalculationInstructions;
-    }
-    @Deprecated
-    public void setMarkCalculationInstructions(String markCalculationInstructions) {
-        this.markCalculationInstructions = markCalculationInstructions;
     }
 
     public List<LLMFreeTextMarkedExample> getMarkedExamples() {

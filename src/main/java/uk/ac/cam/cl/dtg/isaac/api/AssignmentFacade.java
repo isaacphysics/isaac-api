@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
@@ -802,15 +803,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = assignmentGameboards.get(assignment);
+                gameboardQuestionIds.put(gameboard, Lists.newArrayList());
                 for (GameboardItem questionPage : gameboard.getContents()) {
                     int b = 1;
                     for (Question question : gameManager.getAllMarkableDOQuestionPartsDFSOrder(questionPage.getId())) {
-                        List<String> questionIds = gameboardQuestionIds.get(gameboard);
-                        if (null == questionIds) {
-                            questionIds = Lists.newArrayList();
-                        }
-                        questionIds.add(question.getId());
-                        gameboardQuestionIds.put(gameboard, questionIds);
+                        gameboardQuestionIds.get(gameboard).add(question.getId());
 
                         StringBuilder s = new StringBuilder();
                         if (question.getTitle() != null) {
@@ -940,6 +937,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ResourceNotFoundException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("The group id specified does not exist.");
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to view assignment progress", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();

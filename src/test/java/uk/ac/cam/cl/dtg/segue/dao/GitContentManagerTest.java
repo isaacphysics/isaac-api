@@ -19,12 +19,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
 import java.util.*;
 
@@ -41,6 +42,7 @@ public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
 	private ContentMapper contentMapper;
+	private ContentSubclassMapper contentSubclassMapper;
 
 	private GitContentManager defaultGCM;
 
@@ -57,8 +59,9 @@ public class GitContentManagerTest {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);
 		this.contentMapper = createMock(ContentMapper.class);
+		this.contentSubclassMapper = createMock(ContentSubclassMapper.class);
 
-		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper);
+		this.defaultGCM = new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper);
 	}
 	/**
 	 * Test that the getById method returns null if it is passed a null id.
@@ -109,6 +112,6 @@ public class GitContentManagerTest {
 		Map<String, Content> contents = new TreeMap<String, Content>();
 		contents.put(INITIAL_VERSION, content);
 
-		return new GitContentManager(database, searchProvider, contentMapper);
+		return new GitContentManager(database, searchProvider, contentMapper, contentSubclassMapper);
 	}
 }

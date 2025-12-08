@@ -1,0 +1,2 @@
+UPDATE question_attempts SET question_attempt = question_attempt - 'maxMarks' - 'additionalMarkingInstructions' - 'markCalculationInstructions'
+WHERE question_attempt @? '$.maxMarks' OR question_attempt @? '$.additionalMarkingInstructions' OR question_attempt @? '$.markCalculationInstructions';

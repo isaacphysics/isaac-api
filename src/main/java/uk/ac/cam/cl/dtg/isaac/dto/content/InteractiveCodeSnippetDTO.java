@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.isaac.dto.content;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.isaac.dto.content.CodeSnippetDTO;
 
 /**
  * Interactive code snippet is a code snippet that can be run and edited

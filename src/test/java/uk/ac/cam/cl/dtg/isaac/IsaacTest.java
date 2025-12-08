@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ma.glasnost.orika.MapperFacade;
 import org.junit.Before;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -46,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -258,8 +258,8 @@ public class IsaacTest {
         quizManager = createMock(QuizManager.class);
 
         registerDefaultsFor(quizManager, m -> {
-            expect(m.getAvailableQuizzes("STUDENT", 0, 9000)).andStubReturn(wrap(studentQuizSummary));
-            expect(m.getAvailableQuizzes("TEACHER", 0, 9000)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
+            expect(m.getAvailableQuizzes("STUDENT", 0, 9000, false)).andStubReturn(wrap(studentQuizSummary));
+            expect(m.getAvailableQuizzes("TEACHER", 0, 9000, false)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
             expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
             expect(m.findQuiz(studentQuizPreQuizAnswerChange.getId())).andStubReturn(studentQuizPreQuizAnswerChange);
             expect(m.findQuiz(studentQuizPostQuizAnswerChange.getId())).andStubReturn(studentQuizPostQuizAnswerChange);
@@ -274,9 +274,9 @@ public class IsaacTest {
         groupDatabase = createMock(IUserGroupPersistenceManager.class);
         UserAccountManager userAccountManager = createMock(UserAccountManager.class);
         GameManager gameManager = createMock(GameManager.class);
-        MapperFacade mapperFacade = createMock(MapperFacade.class);
+        MainMapper mainMapper = createMock(MainMapper.class);
         groupManager = partialMockBuilder(GroupManager.class)
-                .withConstructor(groupDatabase, userAccountManager, gameManager, mapperFacade)
+                .withConstructor(groupDatabase, userAccountManager, gameManager, mainMapper)
                 .addMockedMethod("getGroupById").addMockedMethod("isUserInGroup").addMockedMethod("getGroupMembershipList", RegisteredUserDTO.class, boolean.class)
                 .addMockedMethod("getUsersInGroup").addMockedMethod("getUserMembershipMapForGroup").addMockedMethod("getAllGroupsOwnedAndManagedByUser")
                 .createMock();
@@ -311,7 +311,7 @@ public class IsaacTest {
                 studentGroup.getId(), new GroupMembership(studentGroup.getId(), secondStudent.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate)
         ));
 
-        replay(quizManager, groupManager, groupDatabase, userAccountManager, gameManager, mapperFacade);
+        replay(quizManager, groupManager, groupDatabase, userAccountManager, gameManager, mainMapper);
     }
 
 

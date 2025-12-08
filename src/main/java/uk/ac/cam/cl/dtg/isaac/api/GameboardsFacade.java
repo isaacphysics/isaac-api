@@ -29,12 +29,12 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
@@ -311,7 +311,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     this.questionManager.getQuestionAttemptsByUser(currentUser);
 
             List<GameboardItem> conceptQuestionsProgress = Lists.newArrayList();
-            if (upperQuestionId.isEmpty()) {
+            if (null == upperQuestionId || upperQuestionId.isEmpty()) {
                 List<FASTTRACK_LEVEL> upperAndLower = Arrays.asList(FASTTRACK_LEVEL.ft_upper, FASTTRACK_LEVEL.ft_lower);
                 conceptQuestionsProgress.addAll(fastTrackManger.getConceptProgress(
                         gameboard, upperAndLower, currentConceptTitle, userQuestionAttempts));
@@ -741,7 +741,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     public final Response getWildCards(@Context final Request request) {
 
         try {
-            List<IsaacWildcard> wildcards = gameManager.getWildcards();
+            List<IsaacWildcardDTO> wildcards = gameManager.getWildcards();
             if (null == wildcards || wildcards.isEmpty()) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "No wildcards found.").toResponse();
             }
