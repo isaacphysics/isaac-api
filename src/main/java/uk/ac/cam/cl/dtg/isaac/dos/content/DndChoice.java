@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DndChoiceDTO;
 
 /**
- * Choice for Parsons Questions, containing a list of ParsonsItems.
+ * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
 @DTOMapping(DndChoiceDTO.class)
