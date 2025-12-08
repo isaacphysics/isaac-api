@@ -371,8 +371,21 @@ public class IsaacDndValidatorTest {
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
     @Test
-    public final void questionValidation_NoChoices_ExplainsNoChoices() {
+    public final void questionValidation_NoChoicesEmpty_ExplainsNoChoices() {
         var question = createQuestion();
+        question.setDetailedItemFeedback(true);
+        var answer = answer(choose(item_3cm, "leg_1"));
+
+        var response = testValidate(question, answer);
+        assertFalse(response.isCorrect());
+        assertEquals(new Content(Constants.FEEDBACK_NO_CORRECT_ANSWERS), response.getExplanation());
+        assertNull(response.getDropZonesCorrect());
+    }
+
+    @Test
+    public final void questionValidation_NoChoicesNull_ExplainsNoChoices() {
+        var question = createQuestion();
+        question.setChoices(null);
         question.setDetailedItemFeedback(true);
         var answer = answer(choose(item_3cm, "leg_1"));
 

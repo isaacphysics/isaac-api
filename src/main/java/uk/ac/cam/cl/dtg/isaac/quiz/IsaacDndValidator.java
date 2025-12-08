@@ -112,7 +112,7 @@ public class IsaacDndValidator implements IValidator {
             .check((IsaacDndQuestion) question, (DndItemChoice) answer);
     }
 
-    private LoggerRules getConfiguredLogger(IsaacDndQuestion question) {
+    private LoggerRules getConfiguredLogger(final IsaacDndQuestion question) {
         return new LoggerRules(question)
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q) -> {
                 var file = question.getCanonicalSourceFile();
@@ -140,10 +140,10 @@ public class IsaacDndValidator implements IValidator {
         private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
         private final LinkedHashMap<String, Consumer<IsaacDndQuestion>> rules = new LinkedHashMap<>();
         private final IsaacDndQuestion question;
-        public LoggerRules(IsaacDndQuestion question) {
+
+        public LoggerRules(final IsaacDndQuestion question) {
             this.question = question;
         }
-
 
         public LoggerRules add(final String key, final Consumer<IsaacDndQuestion> rule) {
             rules.put(key, rule);
