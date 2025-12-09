@@ -111,7 +111,7 @@ public class IsaacDndValidator implements IValidator {
                 "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
             )))
             .add("This question contains an empty answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
-                c.getItems() == null,
+                c.getItems() == null || c.getItems().isEmpty(),
                 "Expected list of DndItems, but none found in choice for question id (%s)", q.getId()
             )))
 

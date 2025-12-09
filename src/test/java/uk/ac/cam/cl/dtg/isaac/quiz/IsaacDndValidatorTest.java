@@ -336,7 +336,11 @@ public class IsaacDndValidatorTest {
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx())))
             .expectExplanation("This question contains invalid answers.")
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
-        new QuestionValidationTestCase().setTitle("answer with no items")
+        new QuestionValidationTestCase().setTitle("answer with empty items")
+            .setQuestion(correct())
+            .expectExplanation("This question contains an empty answer.")
+            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)", q.getId())),
+        new QuestionValidationTestCase().setTitle("answer with null items")
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoice())))
             .expectExplanation("This question contains an empty answer.")
             .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)", q.getId()))
@@ -359,7 +363,6 @@ public class IsaacDndValidatorTest {
     // TODO: instead of wrongTypeChoices, assert that each choice has a drop zone id and id
 
     // TODO: exclude invalid choices from question
-    //   - choice without items
     //   - choice with items other than Item (maybe here: DnDItem)
     //   - no correct answer
 
