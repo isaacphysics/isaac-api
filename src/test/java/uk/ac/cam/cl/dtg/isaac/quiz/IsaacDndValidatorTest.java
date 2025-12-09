@@ -36,10 +36,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -325,40 +325,47 @@ public class IsaacDndValidatorTest {
 
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
+    static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
+        .expectExplanation("This question contains at least one answer in an unrecognised format.")
+        .expectLogMessage(q -> String.format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()));
+
+    static Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
+        .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
+        .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()));
+
+    static Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> noAnswersTestCase.get()
+        .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()));
+
+    static Supplier<QuestionValidationTestCase> emptyItemsTestCase = () -> new QuestionValidationTestCase()
+        .expectExplanation("This question contains an empty answer.")
+        .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()));
+
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
-        new QuestionValidationTestCase().setTitle("answers empty")
-            .setQuestion(q -> q.setChoices(List.of()))
-            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
-            .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("answers null")
-            .setQuestion(q -> q.setChoices(null))
-            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
-            .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("only incorrect answers")
-            .setQuestion(incorrect(choose(item_3cm, "leg_1")))
-            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
-            .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("answers without explicit correctness are treated as incorrect")
-            .setQuestion(answer(choose(item_3cm, "leg_1")))
-            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
-            .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
+        noAnswersTestCase.get().setTitle("answers empty").setQuestion(q -> q.setChoices(List.of())),
+        noAnswersTestCase.get().setTitle("answers null").setQuestion(q -> q.setChoices(null)),
+        noCorrectAnswersTestCase.get().setTitle("only incorrect answers").setQuestion(incorrect(choose(item_3cm, "leg_1"))),
+        noCorrectAnswersTestCase.get().setTitle("answers without explicit correctness are treated as incorrect")
+            .setQuestion(answer(choose(item_3cm, "leg_1"))),
         new QuestionValidationTestCase().setTitle("answer not for a DnD question")
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx("correct"))))
             .expectExplanation("This question contains at least one invalid answer.")
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
-        new QuestionValidationTestCase().setTitle("answer with empty items")
-            .setQuestion(correct())
-            .expectExplanation("This question contains an empty answer.")
-            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())),
-        new QuestionValidationTestCase().setTitle("answer with null items")
-            .setQuestion(q -> q.setChoices(Stream.of(new DndItemChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList())))
-            .expectExplanation("This question contains an empty answer.")
-            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())),
+        emptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
+        emptyItemsTestCase.get().setTitle("answer with null items")
+            .setQuestion(q -> q.setChoices(Stream.of(new DndItemChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
         new QuestionValidationTestCase().setTitle("answer with non-dnd items")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
             .expectExplanation("This question contains at least one invalid answer.")
-            .expectLogMessage(q -> String.format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId()))
+            .expectLogMessage(q -> String.format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())),
+        itemUnrecognisedFormatCase.get().setTitle("answer with missing item_id")
+            .setQuestion(correct(new DndItem(null, "value", "dropZoneId"))),
+        itemUnrecognisedFormatCase.get().setTitle("answer with empty item_id")
+            .setQuestion(correct(new DndItem("", "value", "dropZoneId"))),
+        itemUnrecognisedFormatCase.get().setTitle("answer with missing dropZoneId")
+            .setQuestion(correct(new DndItem("item_id", "value", null))),
+        itemUnrecognisedFormatCase.get().setTitle("answer with empty dropZoneId")
+            .setQuestion(correct(new DndItem("item_id", "value", "")))
     };
 
     @Theory
@@ -483,6 +490,7 @@ public class IsaacDndValidatorTest {
         public Content feedback;
         public Map<String, Boolean> dropZonesCorrect;
         public String loggedMessage;
+        private Function<IsaacDndQuestion, String> logMessageOp;
 
         public T setTitle(final String title) {
             return self();
@@ -510,17 +518,20 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
-        public T expectDropZonesCorrect(UnaryOperator<DropZonesCorrectFactory> op) {
+        public T expectDropZonesCorrect(final UnaryOperator<DropZonesCorrectFactory> op) {
             this.dropZonesCorrect = op.apply(new DropZonesCorrectFactory()).build();
             return self();
         }
 
-        public T expectLogMessage(Function<IsaacDndQuestion, String> op) {
-            this.loggedMessage = op.apply(question);
+        public T expectLogMessage(final Function<IsaacDndQuestion, String> op) {
+            this.logMessageOp = op;
             return self();
         }
 
         private T self() {
+            if (this.logMessageOp != null) {
+                this.loggedMessage = logMessageOp.apply(this.question);
+            }
             return (T) this;
         }
     }

@@ -44,13 +44,12 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        var errorResponse = validateSyntax(question, answer);
-        return errorResponse.orElseGet(
-            () -> validateMarks((IsaacDndQuestion) question, (DndItemChoice) answer)
+        return validate(question, answer).orElseGet(
+            () -> mark((IsaacDndQuestion) question, (DndItemChoice) answer)
         );
     }
 
-    private DndValidationResponse validateMarks(final IsaacDndQuestion question, final DndItemChoice answer) {
+    private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
         List<DndItemChoice> sortedAnswers = question.getChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
             .collect(Collectors.toList());
@@ -87,7 +86,7 @@ public class IsaacDndValidator implements IValidator {
         });
     }
 
-    private Optional<DndValidationResponse> validateSyntax(final Question question, final Choice answer) {
+    private Optional<DndValidationResponse> validate(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
@@ -121,7 +120,11 @@ public class IsaacDndValidator implements IValidator {
             )))
             .add("This question contains at least one invalid answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
                 c.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class),
-                "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId(), c.getClass()
+                "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId()
+            )))
+            .add("This question contains at least one answer in an unrecognised format.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+                c.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
+                "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
             )))
 
             // answer
