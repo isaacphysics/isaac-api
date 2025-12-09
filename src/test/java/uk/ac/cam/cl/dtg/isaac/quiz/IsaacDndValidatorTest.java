@@ -334,16 +334,20 @@ public class IsaacDndValidatorTest {
             .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("answer not for a DnD question")
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx())))
-            .expectExplanation("This question contains invalid answers.")
+            .expectExplanation("This question contains at least one invalid answer.")
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
         new QuestionValidationTestCase().setTitle("answer with empty items")
             .setQuestion(correct())
             .expectExplanation("This question contains an empty answer.")
-            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)", q.getId())),
+            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())),
         new QuestionValidationTestCase().setTitle("answer with null items")
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoice())))
             .expectExplanation("This question contains an empty answer.")
-            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)", q.getId()))
+            .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())),
+        new QuestionValidationTestCase().setTitle("answer with non-dnd items")
+            .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
+            .expectExplanation("This question contains at least one invalid answer.")
+            .expectLogMessage(q -> String.format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId()))
     };
 
     @Theory
@@ -518,5 +522,11 @@ public class IsaacDndValidatorTest {
     public static class QuestionValidationTestCase extends TestCase<QuestionValidationTestCase> {}
 
     public static class DndItemChoiceEx extends DndItemChoice {}
+
+    public static class DndItemEx extends DndItem {
+        public DndItemEx(String id, String value, String dropZoneId) {
+            super(id, value, dropZoneId);
+        }
+    }
 }
 

@@ -23,12 +23,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -106,13 +107,17 @@ public class IsaacDndValidator implements IValidator {
                 q.getChoices() == null || q.getChoices().isEmpty(),
                 "Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()
             ))
-            .add("This question contains invalid answers.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+            .add("This question contains at least one invalid answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
                 !DndItemChoice.class.equals(c.getClass()),
                 "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
             )))
             .add("This question contains an empty answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
                 c.getItems() == null || c.getItems().isEmpty(),
-                "Expected list of DndItems, but none found in choice for question id (%s)", q.getId()
+                "Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()
+            )))
+            .add("This question contains at least one invalid answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+                c.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class),
+                "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId(), c.getClass()
             )))
 
             // answer
@@ -133,18 +138,28 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private static class ValidatorRules {
-        private final LinkedHashMap<String, BiPredicate<IsaacDndQuestion, DndItemChoice>> rules = new LinkedHashMap<>();
+        private final List<Rule> rules = new ArrayList<>();
 
         public ValidatorRules add(final String key, final BiPredicate<IsaacDndQuestion, DndItemChoice> rule) {
-            rules.put(key, rule);
+            rules.add(new Rule(key, rule));
             return this;
         }
 
         public Optional<DndValidationResponse> check(final IsaacDndQuestion q, final DndItemChoice a) {
-            return rules.entrySet().stream()
-                .filter(e -> e.getValue().test(q, a))
-                .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.getKey()), new Date()))
+            return rules.stream()
+                .filter(r -> r.predicate.test(q, a))
+                .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.message), new Date()))
                 .findFirst();
+        }
+
+        private static class Rule {
+            public final String message;
+            public final BiPredicate<IsaacDndQuestion, DndItemChoice> predicate;
+
+            public Rule(final String message, final BiPredicate<IsaacDndQuestion, DndItemChoice> predicate) {
+                this.message = message;
+                this.predicate = predicate;
+            }
         }
     }
 }
