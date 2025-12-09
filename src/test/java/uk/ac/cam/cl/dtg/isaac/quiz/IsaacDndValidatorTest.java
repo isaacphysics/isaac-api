@@ -339,6 +339,10 @@ public class IsaacDndValidatorTest {
             .setQuestion(incorrect(choose(item_3cm, "leg_1")))
             .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
             .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("answers without explicit correctness are treated as incorrect")
+            .setQuestion(answer(choose(item_3cm, "leg_1")))
+            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
+            .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("answer not for a DnD question")
             .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx("correct"))))
             .expectExplanation("This question contains at least one invalid answer.")
