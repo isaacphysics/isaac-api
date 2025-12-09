@@ -36,10 +36,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -332,8 +335,12 @@ public class IsaacDndValidatorTest {
             .setQuestion(q -> q.setChoices(null))
             .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
             .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("only incorrect answers")
+            .setQuestion(incorrect(choose(item_3cm, "leg_1")))
+            .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
+            .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("answer not for a DnD question")
-            .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx())))
+            .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx("correct"))))
             .expectExplanation("This question contains at least one invalid answer.")
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
         new QuestionValidationTestCase().setTitle("answer with empty items")
@@ -341,7 +348,7 @@ public class IsaacDndValidatorTest {
             .expectExplanation("This question contains an empty answer.")
             .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())),
         new QuestionValidationTestCase().setTitle("answer with null items")
-            .setQuestion(q -> q.setChoices(List.of(new DndItemChoice())))
+            .setQuestion(q -> q.setChoices(Stream.of(new DndItemChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList())))
             .expectExplanation("This question contains an empty answer.")
             .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())),
         new QuestionValidationTestCase().setTitle("answer with non-dnd items")
@@ -366,9 +373,6 @@ public class IsaacDndValidatorTest {
 
     // TODO: instead of wrongTypeChoices, assert that each choice has a drop zone id and id
 
-    // TODO: exclude invalid choices from question
-    //   - choice with items other than Item (maybe here: DnDItem)
-    //   - no correct answer
 
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
        return new IsaacDndValidator().validateQuestionResponse(question, choice);
@@ -521,7 +525,11 @@ public class IsaacDndValidatorTest {
 
     public static class QuestionValidationTestCase extends TestCase<QuestionValidationTestCase> {}
 
-    public static class DndItemChoiceEx extends DndItemChoice {}
+    public static class DndItemChoiceEx extends DndItemChoice {
+        public DndItemChoiceEx(String correct) {
+            this.correct = correct.equals("correct");
+        }
+    }
 
     public static class DndItemEx extends DndItem {
         public DndItemEx(String id, String value, String dropZoneId) {

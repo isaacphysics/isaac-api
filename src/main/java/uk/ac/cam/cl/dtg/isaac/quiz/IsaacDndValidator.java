@@ -107,6 +107,10 @@ public class IsaacDndValidator implements IValidator {
                 q.getChoices() == null || q.getChoices().isEmpty(),
                 "Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()
             ))
+            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> logged(
+                q.getChoices().stream().noneMatch(Choice::isCorrect),
+                "Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()
+            ))
             .add("This question contains at least one invalid answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
                 !DndItemChoice.class.equals(c.getClass()),
                 "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
