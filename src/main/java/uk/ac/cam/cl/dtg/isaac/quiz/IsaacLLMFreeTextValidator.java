@@ -123,10 +123,9 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         return contextAndInstructions + questionText + markScheme + additionalMarkingInstructions + maxMarks;
     }
 
-    private String reportMarksAsJsonString(final Map<String, Integer> markBreakdown, Integer marksAwarded) {
+    private String reportMarksAsJsonString(final Map<String, Integer> markBreakdown) {
         try {
             Map<String, Integer> marks = new LinkedHashMap<>(markBreakdown);
-            marks.put(MARK_TOTAL_FIELD_NAME, marksAwarded);
             return mapper.writeValueAsString(marks);
         } catch (JsonProcessingException e) {
             log.error("Failed to generate JSON from example marks in content - should never happen", e);
@@ -148,8 +147,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         // Add N-shot examples
         for (LLMFreeTextMarkedExample example : question.getMarkedExamples()) {
             chatMessages.add(new ChatRequestUserMessage(example.getAnswer()));
-            chatMessages.add(new ChatRequestAssistantMessage(
-                    reportMarksAsJsonString(example.getMarks(), example.getMarksAwarded())));
+            chatMessages.add(new ChatRequestAssistantMessage(reportMarksAsJsonString(example.getMarks())));
         }
 
         // Add default examples that should receive zero marks to improve robustness to prompt injection
@@ -158,7 +156,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
                         field -> field, field -> 0, (a, b) -> a, LinkedHashMap::new));
         for (String zeroMarkAttempt : zeroMarkAttempts) {
             chatMessages.add(new ChatRequestUserMessage(zeroMarkAttempt));
-            chatMessages.add(new ChatRequestAssistantMessage(reportMarksAsJsonString(noAwardedMarks, 0)));
+            chatMessages.add(new ChatRequestAssistantMessage(reportMarksAsJsonString(noAwardedMarks)));
         }
 
         return chatMessages;
