@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.FigureDTO;
-import uk.ac.cam.cl.dtg.util.DropZone;
+import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.List;
 
@@ -26,15 +26,15 @@ import java.util.List;
 @DTOMapping(FigureDTO.class)
 @JsonContentType("figure")
 public class Figure extends Image {
-    private List<DropZone> dropZones;
+    private List<FigureRegion> figureRegions;
     private String condensedMaxWidth;
 
-    public List<DropZone> getDropZones() {
-        return dropZones;
+    public List<FigureRegion> getFigureRegions() {
+        return figureRegions;
     }
 
-    public void setDropZones(List<DropZone> dropZones) {
-        this.dropZones = dropZones;
+    public void setFigureRegions(List<FigureRegion> figureRegions) {
+        this.figureRegions = figureRegions;
     }
 
     public String getCondensedMaxWidth() {

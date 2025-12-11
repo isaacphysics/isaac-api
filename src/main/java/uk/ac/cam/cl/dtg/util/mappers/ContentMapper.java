@@ -65,6 +65,7 @@ public interface ContentMapper {
     @SubclassMapping(source = DndItemChoice.class, target = DndItemChoiceDTO.class)
     @SubclassMapping(source = CoordinateChoice.class, target = CoordinateChoiceDTO.class)
     @SubclassMapping(source = ParsonsChoice.class, target = ParsonsChoiceDTO.class)
+    @SubclassMapping(source = DndChoice.class, target = DndChoiceDTO.class)
     @SubclassMapping(source = ItemChoice.class, target = ItemChoiceDTO.class)
     ChoiceDTO map(Choice source);
 
@@ -85,16 +86,19 @@ public interface ContentMapper {
     @SubclassMapping(source = DndItemChoiceDTO.class, target = DndItemChoice.class)
     @SubclassMapping(source = CoordinateChoiceDTO.class, target = CoordinateChoice.class)
     @SubclassMapping(source = ParsonsChoiceDTO.class, target = ParsonsChoice.class)
+    @SubclassMapping(source = DndChoiceDTO.class, target = DndChoice.class)
     @SubclassMapping(source = ItemChoiceDTO.class, target = ItemChoice.class)
     Choice map(ChoiceDTO source);
 
     @SubclassMapping(source = ParsonsItem.class, target = ParsonsItemDTO.class)
+    @SubclassMapping(source = DndItem.class, target = DndItemDTO.class)
     @SubclassMapping(source = CoordinateItem.class, target = CoordinateItemDTO.class)
     ItemDTO map(Item source);
 
     @Mapping(target = "searchableContent", ignore = true)
     @Mapping(target = "prioritisedSearchableContent", ignore = true)
     @SubclassMapping(source = ParsonsItemDTO.class, target = ParsonsItem.class)
+    @SubclassMapping(source = DndItemDTO.class, target = DndItem.class)
     @SubclassMapping(source = CoordinateItemDTO.class, target = CoordinateItem.class)
     Item map(ItemDTO source);
 
@@ -190,6 +194,7 @@ public interface ContentMapper {
     @SubclassMapping(source = IsaacMultiChoiceQuestion.class, target = IsaacMultiChoiceQuestionDTO.class)
     @SubclassMapping(source = IsaacNumericQuestion.class, target = IsaacNumericQuestionDTO.class)
     @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
+    @SubclassMapping(source = IsaacDndQuestion.class, target = IsaacDndQuestionDTO.class)
     @SubclassMapping(source = IsaacRegexMatchQuestion.class, target = IsaacRegexMatchQuestionDTO.class)
     @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
     @SubclassMapping(source = IsaacStringMatchQuestion.class, target = IsaacStringMatchQuestionDTO.class)
@@ -204,6 +209,7 @@ public interface ContentMapper {
     @Mapping(target = "bestAttempt", ignore = true)
     @SubclassMapping(source = IsaacClozeQuestion.class, target = IsaacClozeQuestionDTO.class)
     @SubclassMapping(source = IsaacParsonsQuestion.class, target = IsaacParsonsQuestionDTO.class)
+    @SubclassMapping(source = IsaacDndQuestion.class, target = IsaacDndQuestionDTO.class)
     @SubclassMapping(source = IsaacReorderQuestion.class, target = IsaacReorderQuestionDTO.class)
     IsaacItemQuestionDTO map(IsaacItemQuestion source);
 

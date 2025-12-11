@@ -25,6 +25,7 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
     private List<String> placeholderValues;
     private Boolean useBrackets;
     private String separator;
+    private String[] prefixes;
     private String[] suffixes;
     private String buttonText;
 
@@ -137,6 +138,25 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
      */
     public void setSeparator(final String separator) {
         this.separator = separator;
+    }
+
+    /**
+     * Gets the prefixes to use before each value.
+     *
+     * @return the prefixes to use before each value.
+     */
+    public String[] getPrefixes() {
+        return prefixes;
+    }
+
+    /**
+     * Sets the prefixes to use before each value.
+     *
+     * @param prefixes
+     *           - prefixes to use before each value
+     */
+    public void setPrefixes(final String[] prefixes) {
+        this.prefixes = prefixes;
     }
 
     /**
