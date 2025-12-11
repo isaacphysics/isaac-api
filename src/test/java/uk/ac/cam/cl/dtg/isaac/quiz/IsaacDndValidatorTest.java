@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.logging.log4j.core.Logger;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
 
 @RunWith(Theories.class)
 @SuppressWarnings("checkstyle:MissingJavadocType")
@@ -61,53 +62,33 @@ public class IsaacDndValidatorTest {
     public static final Item item_12cm = item("6d3h", "12 cm");
     public static final Item item_13cm = item("6d3i", "13 cm");
 
-    @Test
-    public final void correctness_singleCorrectMatch_CorrectResponseShouldBeReturned() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+    @DataPoints
+    public static CorrectnessTestCase[] correctnessTestCases = {
+        new CorrectnessTestCase().setTitle("singleCorrectMatch_Correct")
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .expectCorrect(true),
+        new CorrectnessTestCase().setTitle("singleIncorrectMatch_Incorrect")
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .setAnswer(answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse")))
+            .expectCorrect(false),
+        new CorrectnessTestCase().setTitle("partialMatchForCorrect_Incorrect")
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_3cm, "hypothenuse")))
+            .expectCorrect(false),
+        new CorrectnessTestCase().setTitle("moreSpecificIncorrectMatchOverridesCorrect_Incorrect")
+            .setQuestion(
+                correct(choose(item_5cm, "hypothenuse")),
+                incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            ).setAnswer(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .expectCorrect(false)
+    };
 
-        var response = testValidate(question, answer);
+    @Theory
+    public final void testCorrectness(final CorrectnessTestCase testCase) {
+        var response = testValidate(testCase.question, testCase.answer);
 
-        assertTrue(response.isCorrect());
-    }
-
-    @Test
-    public final void correctness_singleIncorrectMatch_IncorrectResponseShouldBeReturned() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-
-        assertFalse(response.isCorrect());
-    }
-
-    @Test
-    public final void correctness_partialMatchForCorrect_IncorrectResponseShouldBeReturned() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        var answer = answer(choose(item_4cm, "leg_2"), choose(item_5cm, "leg_1"), choose(item_3cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-
-        assertFalse(response.isCorrect());
-    }
-
-    @Test
-    public final void correctness_moreSpecificIncorrectMatchOverridesCorrect_IncorrectResponseShouldBeReturned() {
-        var question = createQuestion(
-            correct(choose(item_5cm, "hypothenuse")),
-            incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-        );
-        var answer = answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-
-        assertFalse(response.isCorrect());
+        assertEquals(testCase.correct, response.isCorrect());
     }
 
     // Test that subset match answers return an appropriate explanation
@@ -348,9 +329,9 @@ public class IsaacDndValidatorTest {
         noCorrectAnswersTestCase.get().setTitle("answers without explicit correctness are treated as incorrect")
             .setQuestion(answer(choose(item_3cm, "leg_1"))),
         new QuestionValidationTestCase().setTitle("answer not for a DnD question")
-            .setQuestion(q -> q.setChoices(List.of(new DndItemChoiceEx("correct"))))
+            .setQuestion(q -> q.setChoices(List.of(new ParsonsChoice() {{correct = true; setItems(List.of(new Item("", ""))); }})))
             .expectExplanation("This question contains at least one invalid answer.")
-            .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$DndItemChoiceEx!", q.getId())),
+            .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$1!", q.getId())),
         emptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
         emptyItemsTestCase.get().setTitle("answer with null items")
             .setQuestion(q -> q.setChoices(Stream.of(new DndItemChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
@@ -490,6 +471,7 @@ public class IsaacDndValidatorTest {
         public Content feedback;
         public Map<String, Boolean> dropZonesCorrect;
         public String loggedMessage;
+        public boolean correct = false;
         private Function<IsaacDndQuestion, String> logMessageOp;
 
         public T setTitle(final String title) {
@@ -510,6 +492,11 @@ public class IsaacDndValidatorTest {
 
         public T setAnswer(final DndItemChoice answer) {
             this.answer = answer;
+            return self();
+        }
+
+        public T expectCorrect(final boolean correct) {
+            this.correct = correct;
             return self();
         }
 
@@ -540,11 +527,7 @@ public class IsaacDndValidatorTest {
 
     public static class QuestionValidationTestCase extends TestCase<QuestionValidationTestCase> {}
 
-    public static class DndItemChoiceEx extends DndItemChoice {
-        public DndItemChoiceEx(String correct) {
-            this.correct = correct.equals("correct");
-        }
-    }
+    public static class CorrectnessTestCase extends TestCase<CorrectnessTestCase> {}
 
     public static class DndItemEx extends DndItem {
         public DndItemEx(String id, String value, String dropZoneId) {
