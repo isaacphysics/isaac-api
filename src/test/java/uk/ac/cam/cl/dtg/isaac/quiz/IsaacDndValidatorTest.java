@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
-import org.junit.Test;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -46,8 +45,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.logging.log4j.core.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
@@ -248,9 +245,13 @@ public class IsaacDndValidatorTest {
     static Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> noAnswersTestCase.get()
         .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()));
 
-    static Supplier<QuestionValidationTestCase> emptyItemsTestCase = () -> new QuestionValidationTestCase()
+    static Supplier<QuestionValidationTestCase> answerEmptyItemsTestCase = () -> new QuestionValidationTestCase()
         .expectExplanation("This question contains an empty answer.")
         .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()));
+
+    static Supplier<QuestionValidationTestCase> questionEmptyAnswersTestCase = () -> new QuestionValidationTestCase()
+        .expectExplanation("This question is missing items")
+        .expectLogMessage(q -> String.format("Expected items in question (%s), but didn't find any!", q.getId()));
 
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
@@ -264,8 +265,8 @@ public class IsaacDndValidatorTest {
             .setQuestion(q -> q.setChoices(List.of(new ParsonsChoice() {{correct = true; setItems(List.of(new Item("", ""))); }})))
             .expectExplanation("This question contains at least one invalid answer.")
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$1!", q.getId())),
-        emptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
-        emptyItemsTestCase.get().setTitle("answer with null items")
+        answerEmptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
+        answerEmptyItemsTestCase.get().setTitle("answer with null items")
             .setQuestion(q -> q.setChoices(Stream.of(new DndItemChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
         new QuestionValidationTestCase().setTitle("answer with non-dnd items")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
@@ -278,7 +279,11 @@ public class IsaacDndValidatorTest {
         itemUnrecognisedFormatCase.get().setTitle("answer with missing dropZoneId")
             .setQuestion(correct(new DndItem("item_id", "value", null))),
         itemUnrecognisedFormatCase.get().setTitle("answer with empty dropZoneId")
-            .setQuestion(correct(new DndItem("item_id", "value", "")))
+            .setQuestion(correct(new DndItem("item_id", "value", ""))),
+        questionEmptyAnswersTestCase.get().setTitle("items is null")
+            .tapQuestion(q -> q.setItems(null)),
+        questionEmptyAnswersTestCase.get().setTitle("items is empty")
+            .tapQuestion(q -> q.setItems(List.of()))
     };
 
     @Theory

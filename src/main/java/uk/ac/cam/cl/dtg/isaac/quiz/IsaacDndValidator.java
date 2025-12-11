@@ -126,6 +126,10 @@ public class IsaacDndValidator implements IValidator {
                 c.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
                 "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
             )))
+            .add("This question is missing items", (q, a) -> logged(
+                q.getItems() == null || q.getItems().isEmpty(),
+                "Expected items in question (%s), but didn't find any!", q.getId()
+            ))
 
             // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
