@@ -125,8 +125,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
     private String reportMarksAsJsonString(final Map<String, Integer> markBreakdown) {
         try {
-            Map<String, Integer> marks = new LinkedHashMap<>(markBreakdown);
-            return mapper.writeValueAsString(marks);
+            return mapper.writeValueAsString(markBreakdown);
         } catch (JsonProcessingException e) {
             log.error("Failed to generate JSON from example marks in content - should never happen", e);
             throw new IllegalArgumentException("Malformed question - failed to generate JSON from example marks");
