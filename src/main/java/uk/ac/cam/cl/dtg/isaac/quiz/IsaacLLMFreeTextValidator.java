@@ -274,6 +274,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @param question the question being marked so that we can return the mark scheme.
      * @param answer the user's attempt at the question.
      * @param awardedMarks the marks awarded for each field in the mark scheme according to the LLM response.
+     * @param markTotal the calculated mark value based on which individual marks were awarded
      * @return a response to the user's attempt at the question.
      */
     private LLMFreeTextQuestionValidationResponse generateQuestionValidationResponse(
@@ -292,7 +293,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
         LLMFreeTextQuestionValidationResponse validationResponse = new LLMFreeTextQuestionValidationResponse(
                 question.getId(), answer, isConsideredCorrect, null, new Date());
-        validationResponse.setMarksAwarded(markTotal);
+        validationResponse.setMarks(markTotal);
         validationResponse.setMarkBreakdown(markBreakdown);
         return validationResponse;
     }
