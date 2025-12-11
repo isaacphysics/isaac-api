@@ -50,7 +50,7 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
-        List<DndItemChoice> sortedAnswers = question.getChoices().stream()
+        List<DndItemChoice> sortedAnswers = question.getDndItemChoices().stream()
             .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
             .collect(Collectors.toList());
 
@@ -114,15 +114,15 @@ public class IsaacDndValidator implements IValidator {
                 !DndItemChoice.class.equals(c.getClass()),
                 "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
             )))
-            .add("This question contains an empty answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+            .add("This question contains an empty answer.", (q, a) -> q.getDndItemChoices().stream().anyMatch(c -> logged(
                 c.getItems() == null || c.getItems().isEmpty(),
                 "Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()
             )))
-            .add("This question contains at least one invalid answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+            .add("This question contains at least one invalid answer.", (q, a) -> q.getDndItemChoices().stream().anyMatch(c -> logged(
                 c.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class),
                 "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId()
             )))
-            .add("This question contains at least one answer in an unrecognised format.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+            .add("This question contains at least one answer in an unrecognised format.", (q, a) -> q.getDndItemChoices().stream().anyMatch(c -> logged(
                 c.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
                 "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
             )))
