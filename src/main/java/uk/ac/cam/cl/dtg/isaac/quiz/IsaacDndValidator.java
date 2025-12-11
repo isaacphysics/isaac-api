@@ -44,9 +44,9 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        return validate(question, answer).orElseGet(
-            () -> mark((IsaacDndQuestion) question, (DndItemChoice) answer)
-        );
+        return validate(question, answer)
+            .map(msg -> new DndValidationResponse(question.getId(), answer, false, null, new Content(msg), new Date()))
+            .orElseGet(() -> mark((IsaacDndQuestion) question, (DndItemChoice) answer));
     }
 
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
@@ -59,40 +59,27 @@ public class IsaacDndValidator implements IValidator {
                 return compared;
             })
             .collect(Collectors.toList());
-
         Optional<DndItemChoice> matchedAnswer = sortedAnswers.stream().filter(lhs -> lhs.matches(answer)).findFirst();
+        DndItemChoice closestCorrect = sortedAnswers.stream().filter(Choice::isCorrect).findFirst().orElse(null);
 
-        DndItemChoice closestCorrectAnswer = sortedAnswers.stream().filter(Choice::isCorrect).findFirst().orElse(null);
-
-        var id = question.getId();
         var isCorrect = matchedAnswer.map(Choice::isCorrect).orElse(false);
-        var dropZonesCorrect = BooleanUtils.isTrue(question.getDetailedItemFeedback())
-            ? closestCorrectAnswer.getDropZonesCorrect(answer)
-            : null;
-        var explanation = explain(isCorrect, closestCorrectAnswer, question, answer, matchedAnswer);
-        var date = new Date();
-        return new DndValidationResponse(id, answer, isCorrect, dropZonesCorrect, explanation, date);
-    }
-
-    private Content explain(
-        final boolean isCorrect, final DndItemChoice correctAnswer, final IsaacDndQuestion question,
-        final DndItemChoice answer, final Optional<DndItemChoice> matchedAnswer
-    ) {
-        return (Content) matchedAnswer.map(Choice::getExplanation).orElseGet(() -> {
+        var dropZonesCorrect = question.getDetailedItemFeedback() ? closestCorrect.getDropZonesCorrect(answer) : null;
+        var feedback = (Content) matchedAnswer.map(Choice::getExplanation).orElseGet(() -> {
             if (isCorrect) {
                 return null;
             }
-            if (answer.getItems().size() < correctAnswer.getItems().size()) {
+            if (answer.getItems().size() < closestCorrect.getItems().size()) {
                 return new Content("You did not provide a valid answer; it does not contain an item for each gap.");
             }
-            if (answer.getItems().size() > correctAnswer.getItems().size()) {
+            if (answer.getItems().size() > closestCorrect.getItems().size()) {
                 return new Content("You did not provide a valid answer; it contains more items than gaps.");
             }
             return question.getDefaultFeedback();
         });
+        return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
     }
 
-    private Optional<DndValidationResponse> validate(final Question question, final Choice answer) {
+    private Optional<String> validate(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
@@ -106,7 +93,7 @@ public class IsaacDndValidator implements IValidator {
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        return new ValidatorRules()
+        return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndItemChoice>()
             // question
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> logged(
                 q.getChoices() == null || q.getChoices().isEmpty(),
@@ -152,31 +139,5 @@ public class IsaacDndValidator implements IValidator {
             log.error(String.format(message, args));
         }
         return result;
-    }
-
-    private static class ValidatorRules {
-        private final List<Rule> rules = new ArrayList<>();
-
-        public ValidatorRules add(final String key, final BiPredicate<IsaacDndQuestion, DndItemChoice> rule) {
-            rules.add(new Rule(key, rule));
-            return this;
-        }
-
-        public Optional<DndValidationResponse> check(final IsaacDndQuestion q, final DndItemChoice a) {
-            return rules.stream()
-                .filter(r -> r.predicate.test(q, a))
-                .map(e -> new DndValidationResponse(q.getId(), a, false, null, new Content(e.message), new Date()))
-                .findFirst();
-        }
-
-        private static class Rule {
-            public final String message;
-            public final BiPredicate<IsaacDndQuestion, DndItemChoice> predicate;
-
-            public Rule(final String message, final BiPredicate<IsaacDndQuestion, DndItemChoice> predicate) {
-                this.message = message;
-                this.predicate = predicate;
-            }
-        }
     }
 }

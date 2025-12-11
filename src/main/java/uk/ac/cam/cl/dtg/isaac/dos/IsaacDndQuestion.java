@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
-import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
+import org.apache.commons.lang3.BooleanUtils;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
@@ -52,8 +52,8 @@ public class IsaacDndQuestion extends IsaacItemQuestion {
         this.withReplacement = withReplacement;
     }
 
-    public Boolean getDetailedItemFeedback() {
-        return detailedItemFeedback;
+    public boolean getDetailedItemFeedback() {
+        return BooleanUtils.isTrue(detailedItemFeedback);
     }
 
     public void setDetailedItemFeedback(final Boolean detailedItemFeedback) {

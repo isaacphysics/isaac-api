@@ -167,8 +167,7 @@ public class IsaacDndValidatorTest {
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
                 correct(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2"), choose(item_13cm, "hypothenuse"))
-            )
-            .setAnswer(answer(choose(item_5cm, "leg_1")))
+            ).setAnswer(answer(choose(item_5cm, "leg_1")))
             .expectCorrect(false)
             .expectDropZonesCorrect(d -> d.setLeg1(true))
     };
