@@ -99,81 +99,44 @@ public class IsaacDndValidatorTest {
     //  - should return all?
     //  - should return just one, but predictably?
     //
-    @Test
-    public final void explanation_exactMatchIncorrect_shouldReturnMatching() {
-        var hypothenuseMustBeLargest = new Content("The hypothenuse must be the longest side of a right triangle");
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
-            incorrect(hypothenuseMustBeLargest, choose(item_3cm, "hypothenuse"))
-        );
-        var answer = answer(choose(item_3cm, "hypothenuse"));
 
-        var response = testValidate(question, answer);
+    @DataPoints
+    public static ExplanationTestCase[] explanationTestCases = {
+        new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnMatching")
+            .setQuestion(
+               correct(choose(item_3cm, "leg_1")),
+               incorrect(ExplanationTestCase.testFeedback, choose(item_4cm, "leg_1"))
+            ).setAnswer(answer(choose(item_4cm, "leg_1")))
+            .expectCorrect(false),
+        new ExplanationTestCase().setTitle("exactMatchCorrect_shouldReturnMatching")
+            .setQuestion(correct(ExplanationTestCase.testFeedback, choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectCorrect(true),
+        new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
+            .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_4cm, "leg_1")))
+            .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
+            .setAnswer(answer(choose(item_4cm, "leg_1")))
+            .expectCorrect(false),
+        new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
+            .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
+            .setAnswer(answer(choose(item_4cm, "leg_1")))
+            .expectCorrect(false),
+        new ExplanationTestCase().setTitle("defaultCorrect_shouldReturnNone")
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectNoExplanation()
+            .expectCorrect(true)
+        // todo expect null explanation on incorrect answer? (check cloze behaviour)
+    };
 
-        assertFalse(response.isCorrect());
-        assertEquals(response.getExplanation(), hypothenuseMustBeLargest);
-    }
 
-    @Test
-    public final void explanation_exactMatchCorrect_shouldReturnMatching() {
-        var correctFeedback = new Content("That's how it's done! Observe that the hypothenuse is always the longest"
-            + " side of a right triangle");
-        var question = createQuestion(correct(
-            correctFeedback,
-            choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")
-        ));
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+    @Theory
+    public final void testExplanation(ExplanationTestCase testCase) {
+        var response = testValidate(testCase.question, testCase.answer);
 
-        var response = testValidate(question, answer);
-
-        assertTrue(response.isCorrect());
-        assertEquals(response.getExplanation(), correctFeedback);
-    }
-
-    @Test
-    public final void explanation_exactMatchIncorrectDefault_shouldReturnDefault() {
-        var defaultFeedback = new Content("Isaac can't help you.");
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
-            incorrect(choose(item_4cm, "hypothenuse"))
-        );
-        question.setDefaultFeedback(defaultFeedback);
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_4cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-
-        assertFalse(response.isCorrect());
-        assertEquals(response.getExplanation(), defaultFeedback);
-    }
-
-    @Test
-    public final void explanation_defaultIncorrect_shouldReturnDefault() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        var defaultFeedback = new Content("Isaac cannot help you.");
-        question.setDefaultFeedback(defaultFeedback);
-        var answer = answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-
-        assertFalse(response.isCorrect());
-        assertEquals(response.getExplanation(), defaultFeedback);
-    }
-
-    @Test
-    public final void explanation_defaultCorrect_shouldReturnNone() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        var defaultFeedback = new Content("Isaac cannot help you.");
-        question.setDefaultFeedback(defaultFeedback);
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-
-        assertTrue(response.isCorrect());
-        assertNull(response.getExplanation());
+        assertEquals(response.isCorrect(), testCase.correct);
+        assertEquals(response.getExplanation(), testCase.feedback);
     }
 
     @Test
@@ -464,11 +427,13 @@ public class IsaacDndValidatorTest {
     }
 
     static class TestCase<T extends TestCase<T>> {
+        public static Content testFeedback = new Content("some test feedback");
+
         public IsaacDndQuestion question = createQuestion(
             correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
         public DndItemChoice answer = answer();
-        public Content feedback;
+        public Content feedback = testFeedback;
         public Map<String, Boolean> dropZonesCorrect;
         public String loggedMessage;
         public boolean correct = false;
@@ -480,6 +445,11 @@ public class IsaacDndValidatorTest {
 
         public T setQuestion(final DndItemChoice... choices) {
             this.question = createQuestion(choices);
+            return self();
+        }
+
+        public T tapQuestion(final Consumer<IsaacDndQuestion> op) {
+            op.accept(question);
             return self();
         }
 
@@ -502,6 +472,11 @@ public class IsaacDndValidatorTest {
 
         public T expectExplanation(final String feedback) {
             this.feedback = new Content(feedback);
+            return self();
+        }
+
+        public T expectNoExplanation() {
+            this.feedback = null;
             return self();
         }
 
@@ -529,10 +504,11 @@ public class IsaacDndValidatorTest {
 
     public static class CorrectnessTestCase extends TestCase<CorrectnessTestCase> {}
 
+    public static class ExplanationTestCase extends TestCase<ExplanationTestCase> {}
+
     public static class DndItemEx extends DndItem {
         public DndItemEx(String id, String value, String dropZoneId) {
             super(id, value, dropZoneId);
         }
     }
 }
-
