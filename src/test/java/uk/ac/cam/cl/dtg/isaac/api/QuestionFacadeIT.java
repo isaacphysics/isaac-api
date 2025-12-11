@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.inject.Injector;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -68,6 +69,30 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Nested
     class DndQuestion {
+        @Test
+        public void invalidQuestion() throws Exception {
+            var question = persistJSON("i1", new JSONObject()
+                .put("type", "isaacDndQuestion")
+                .put("choices", new JSONArray().put(
+                    new JSONObject()
+                        .put("type", "dndChoice")
+                        .put("correct", true)
+                        .put("items", new JSONArray().put(
+                            new JSONObject().put("dropZoneId", "dzid") // bad because missing id
+                        ))
+                ))
+            );
+            var answer = "{\"type\": \"dndChoice\"}";
+
+            var response = subject().client().post(url(question.getString("id")), answer).readEntityAsJson();
+
+            assertFalse(response.getBoolean("correct"));
+            assertEquals(
+                "This question contains at least one answer in an unrecognised format.",
+                response.getJSONObject("explanation").getString("value")
+            );
+        }
+
         @ParameterizedTest
         @CsvSource(value = {
             "{};Unable to map response to a Choice;404",
@@ -191,6 +216,17 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         );
         return question;
     }
+
+    private JSONObject persistJSON(final String id, final JSONObject questionJSON) throws Exception {
+        questionJSON.put("id", id);
+        elasticSearchProvider.bulkIndexWithIDs(
+            "6c2ba42c5c83d8f31b3b385b3a9f9400a12807c9",
+            "content",
+            List.of(immutableEntry(id, questionJSON.toString()))
+        );
+        return questionJSON;
+    }
+
 
     private TestServer subject() throws Exception {
         Injector testInjector = createNiceMock(Injector.class);

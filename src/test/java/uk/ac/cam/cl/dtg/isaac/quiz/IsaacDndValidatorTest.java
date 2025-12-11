@@ -87,7 +87,6 @@ public class IsaacDndValidatorTest {
     @Theory
     public final void testCorrectness(final CorrectnessTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
-
         assertEquals(testCase.correct, response.isCorrect());
     }
 
@@ -134,7 +133,6 @@ public class IsaacDndValidatorTest {
     @Theory
     public final void testExplanation(ExplanationTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
-
         assertEquals(response.isCorrect(), testCase.correct);
         assertEquals(response.getExplanation(), testCase.feedback);
     }
@@ -237,8 +235,6 @@ public class IsaacDndValidatorTest {
     // TODO: when a partial match contains incorrect items, show feedback about this,
     // rather than telling the user they needed to submit more items.
 
-    // TODO: invalid questions that are not producible on the UI should never be marked (still return explanation)
-
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
     static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
@@ -260,7 +256,8 @@ public class IsaacDndValidatorTest {
     public static QuestionValidationTestCase[] questionValidationTestCases = {
         noAnswersTestCase.get().setTitle("answers empty").setQuestion(q -> q.setChoices(List.of())),
         noAnswersTestCase.get().setTitle("answers null").setQuestion(q -> q.setChoices(null)),
-        noCorrectAnswersTestCase.get().setTitle("only incorrect answers").setQuestion(incorrect(choose(item_3cm, "leg_1"))),
+        noCorrectAnswersTestCase.get().setTitle("only incorrect answers")
+            .setQuestion(incorrect(choose(item_3cm, "leg_1"))),
         noCorrectAnswersTestCase.get().setTitle("answers without explicit correctness are treated as incorrect")
             .setQuestion(answer(choose(item_3cm, "leg_1"))),
         new QuestionValidationTestCase().setTitle("answer not for a DnD question")
@@ -298,11 +295,8 @@ public class IsaacDndValidatorTest {
         appender.assertMessage(testCase.loggedMessage);
     }
 
-    // TODO: instead of wrongTypeChoices, assert that each choice has a drop zone id and id
-
-
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
-       return new IsaacDndValidator().validateQuestionResponse(question, choice);
+        return new IsaacDndValidator().validateQuestionResponse(question, choice);
     }
 
     private static TestAppender testValidateWithLogs(final IsaacDndQuestion question, final Choice choice) {
@@ -319,7 +313,6 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocType")
     public static DndItemChoice answer(final DndItem... list) {
         var c = new DndItemChoice();
         c.setItems(List.of(list));
@@ -327,14 +320,12 @@ public class IsaacDndValidatorTest {
         return c;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocType")
     public static DndItem choose(final Item item, final String dropZoneId) {
         var value =  new DndItem(item.getId(), item.getValue(), dropZoneId);
         value.setType("dndItem");
         return value;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocType")
     public static IsaacDndQuestion createQuestion(final DndItemChoice... answers) {
         var question = new IsaacDndQuestion();
         question.setId(UUID.randomUUID().toString());
@@ -368,7 +359,6 @@ public class IsaacDndValidatorTest {
         return choice;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocType")
     public static Item item(final String id, final String value) {
         Item item = new Item(id, value);
         item.setType("item");
@@ -421,15 +411,15 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
-        public T tapQuestion(final Consumer<IsaacDndQuestion> op) {
-            this.questionOp = op;
-            return self();
-        }
-
         public T setQuestion(final Consumer<IsaacDndQuestion> op) {
             var question = createQuestion();
             op.accept(question);
             this.question = question;
+            return self();
+        }
+
+        public T tapQuestion(final Consumer<IsaacDndQuestion> op) {
+            this.questionOp = op;
             return self();
         }
 
@@ -490,7 +480,7 @@ public class IsaacDndValidatorTest {
     public static class DropZonesTestCase extends TestCase<DropZonesTestCase> {}
 
     public static class DndItemEx extends DndItem {
-        public DndItemEx(String id, String value, String dropZoneId) {
+        public DndItemEx(final String id, final String value, final String dropZoneId) {
             super(id, value, dropZoneId);
         }
     }
