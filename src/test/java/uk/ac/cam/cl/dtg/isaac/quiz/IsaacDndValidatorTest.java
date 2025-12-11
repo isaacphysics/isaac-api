@@ -139,76 +139,48 @@ public class IsaacDndValidatorTest {
         assertEquals(response.getExplanation(), testCase.feedback);
     }
 
-    @Test
-    public final void dropZonesCorrect_incorrectNotRequested_shouldReturnNull() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        question.setDetailedItemFeedback(false);
-        var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "leg_1"), choose(item_5cm, "hypothenuse"));
+    static Supplier<DropZonesTestCase> disabledItemFeedbackNoDropZones = () -> new DropZonesTestCase()
+        .tapQuestion(q -> q.setDetailedItemFeedback(false))
+        .expectNoDropZones();
 
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertNull(response.getDropZonesCorrect());
-    }
+    static Supplier<DropZonesTestCase> enabledItemFeedback = () -> new DropZonesTestCase()
+        .tapQuestion(q -> q.setDetailedItemFeedback(true));
 
-    @Test
-    public final void dropZonesCorrect_correctNotRequested_shouldReturnNull() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        question.setDetailedItemFeedback(false);
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
+    @DataPoints
+    public static DropZonesTestCase[] dropZonesCorrectTestCases = {
+        disabledItemFeedbackNoDropZones.get().setTitle("incorrectNotRequestsed_NotReturned")
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_4cm, "leg_1")))
+            .expectCorrect(false),
+        disabledItemFeedbackNoDropZones.get().setTitle("correctNotRequested_NotReturned")
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectCorrect(true),
+        enabledItemFeedback.get().setTitle("allCorrect_ShouldReturnAllCorrect")
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .expectCorrect(true)
+            .expectDropZonesCorrect(d -> d.setLeg1(true).setLeg2(true).setHypothenuse(true)),
+        enabledItemFeedback.get().setTitle("someIncorrect_ShouldReturnWhetherCorrect")
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .setAnswer(answer(choose(item_6cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_5cm, "hypothenuse")))
+            .expectCorrect(false)
+            .expectDropZonesCorrect(d -> d.setLeg1(false).setLeg2(false).setHypothenuse(true)),
+        enabledItemFeedback.get().setTitle("multipleCorrectAnswers_decidesCorrectnessBasedOnClosesMatch")
+            .setQuestion(
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
+                correct(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2"), choose(item_13cm, "hypothenuse"))
+            )
+            .setAnswer(answer(choose(item_5cm, "leg_1")))
+            .expectCorrect(false)
+            .expectDropZonesCorrect(d -> d.setLeg1(true))
+    };
 
-        var response = testValidate(question, answer);
-        assertTrue(response.isCorrect());
-        assertNull(response.getDropZonesCorrect());
-    }
-
-    @Test
-    public final void dropZonesCorrect_allCorrect_shouldReturnAllCorrect() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-        assertTrue(response.isCorrect());
-        assertEquals(
-            new DropZonesCorrectFactory().setLeg1(true).setLeg2(true).setHypothenuse(true).build(),
-            response.getDropZonesCorrect()
-        );
-    }
-
-    @Test
-    public final void dropZonesCorrect_someIncorrect_shouldReturnWhetherCorrect() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_6cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_5cm, "hypothenuse"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(
-            new DropZonesCorrectFactory().setLeg1(false).setLeg2(false).setHypothenuse(true).build(),
-            response.getDropZonesCorrect()
-        );
-    }
-
-    @Test
-    public final void dropZonesCorrect_multipleCorrectAnswers_decidesCorrectnessBasedOnClosestOne() {
-        var question = createQuestion(
-            correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
-            correct(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2"), choose(item_13cm, "hypothenuse"))
-        );
-        question.setDetailedItemFeedback(true);
-        var answer = answer(choose(item_5cm, "leg_1"));
-
-        var response = testValidate(question, answer);
-        assertFalse(response.isCorrect());
-        assertEquals(new DropZonesCorrectFactory().setLeg1(true).build(), response.getDropZonesCorrect());
+    @Theory
+    public final void testDropZonesCorrect(final DropZonesTestCase testCase) {
+        var response = testValidate(testCase.question, testCase.answer);
+        assertEquals(response.isCorrect(), testCase.correct);
+        assertEquals(response.getDropZonesCorrect(), testCase.dropZonesCorrect);
     }
 
     @DataPoints
@@ -438,6 +410,7 @@ public class IsaacDndValidatorTest {
         public String loggedMessage;
         public boolean correct = false;
         private Function<IsaacDndQuestion, String> logMessageOp;
+        private Consumer<IsaacDndQuestion> questionOp;
 
         public T setTitle(final String title) {
             return self();
@@ -449,7 +422,7 @@ public class IsaacDndValidatorTest {
         }
 
         public T tapQuestion(final Consumer<IsaacDndQuestion> op) {
-            op.accept(question);
+            this.questionOp = op;
             return self();
         }
 
@@ -485,6 +458,11 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
+        public T expectNoDropZones() {
+            this.dropZonesCorrect = null;
+            return self();
+        }
+
         public T expectLogMessage(final Function<IsaacDndQuestion, String> op) {
             this.logMessageOp = op;
             return self();
@@ -493,6 +471,9 @@ public class IsaacDndValidatorTest {
         private T self() {
             if (this.logMessageOp != null) {
                 this.loggedMessage = logMessageOp.apply(this.question);
+            }
+            if (this.questionOp != null) {
+                questionOp.accept(this.question);
             }
             return (T) this;
         }
@@ -505,6 +486,8 @@ public class IsaacDndValidatorTest {
     public static class CorrectnessTestCase extends TestCase<CorrectnessTestCase> {}
 
     public static class ExplanationTestCase extends TestCase<ExplanationTestCase> {}
+
+    public static class DropZonesTestCase extends TestCase<DropZonesTestCase> {}
 
     public static class DndItemEx extends DndItem {
         public DndItemEx(String id, String value, String dropZoneId) {
