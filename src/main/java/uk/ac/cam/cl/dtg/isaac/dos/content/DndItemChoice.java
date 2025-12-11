@@ -62,7 +62,7 @@ public class DndItemChoice extends Choice {
 
     public int countPartialMatchesIn(final DndItemChoice rhs) {
         return this.items.stream()
-            .map(lhsItem -> dropZoneEql(lhsItem, rhs) ? -1 : 0)
+            .map(lhsItem -> dropZoneEql(lhsItem, rhs) ? 1 : 0)
             .mapToInt(Integer::intValue)
             .sum();
     }

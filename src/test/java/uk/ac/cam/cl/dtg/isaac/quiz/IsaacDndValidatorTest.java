@@ -78,7 +78,11 @@ public class IsaacDndValidatorTest {
                 correct(choose(item_5cm, "hypothenuse")),
                 incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             ).setAnswer(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-            .expectCorrect(false)
+            .expectCorrect(false),
+        new CorrectnessTestCase().setTitle("sameAnswerCorrectAndIncorrect_Correct")
+            .setQuestion(incorrect(choose(item_3cm, "leg_1")), correct(choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_3cm, "leg_1")))
+            .expectCorrect(true)
     };
 
     @Theory
@@ -88,8 +92,6 @@ public class IsaacDndValidatorTest {
     }
 
     // Test that subset match answers return an appropriate explanation
-    // TODO: correct-incorrect contradiction among levels should be invalid question (during ETL?)
-    //  - James says we should just accept as correct when contradiction
     // TODO: multiple matching explanations
     //  - on same level? (or even across levels?)
     //  - should return all?

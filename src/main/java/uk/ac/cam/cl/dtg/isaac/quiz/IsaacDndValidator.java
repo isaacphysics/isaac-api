@@ -51,7 +51,13 @@ public class IsaacDndValidator implements IValidator {
 
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndItemChoice answer) {
         List<DndItemChoice> sortedAnswers = question.getDndItemChoices().stream()
-            .sorted(Comparator.comparingInt(c -> c.countPartialMatchesIn(answer)))
+            .sorted((rhs, lhs) -> {
+                int compared = lhs.countPartialMatchesIn(answer) - rhs.countPartialMatchesIn(answer);
+                if (compared == 0) {
+                    return lhs.isCorrect() && rhs.isCorrect() ? 0 : (lhs.isCorrect() ? 1 : -1);
+                }
+                return compared;
+            })
             .collect(Collectors.toList());
 
         Optional<DndItemChoice> matchedAnswer = sortedAnswers.stream().filter(lhs -> lhs.matches(answer)).findFirst();
