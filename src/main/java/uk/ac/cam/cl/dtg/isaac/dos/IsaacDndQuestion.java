@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import org.apache.commons.lang3.BooleanUtils;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacDndQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
@@ -40,8 +40,8 @@ public class IsaacDndQuestion extends IsaacItemQuestion {
     // Detailed feedback option not needed in the client so not in DTO:
     private Boolean detailedItemFeedback;
 
-    public List<DndItemChoice> getDndItemChoices() {
-        return this.choices.stream().map(c -> (DndItemChoice) c).collect(Collectors.toList());
+    public List<DndChoice> getDndChoices() {
+        return this.choices.stream().map(c -> (DndChoice) c).collect(Collectors.toList());
     }
 
     public Boolean getWithReplacement() {

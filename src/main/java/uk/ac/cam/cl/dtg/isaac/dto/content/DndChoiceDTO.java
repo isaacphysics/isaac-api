@@ -15,16 +15,33 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
+import java.util.List;
+
 /**
  * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
-public class DndChoiceDTO extends ItemChoiceDTO {
+public class DndChoiceDTO extends ChoiceDTO {
+
+    private Boolean allowSubsetMatch;
+    private List<DndItemDTO> items;
 
     /**
      * Default constructor required for mapping.
      */
     public DndChoiceDTO() {
     }
+
+    public List<DndItemDTO> getItems() {
+        return items;
+    }
+
+    public void setItems(final List<DndItemDTO> items) {
+        this.items = items;
+    }
+
+    public Boolean isAllowSubsetMatch() { return this.allowSubsetMatch; }
+
+    public void setAllowSubsetMatch(final boolean allowSubsetMatch) { this.allowSubsetMatch = allowSubsetMatch; }
 
 }

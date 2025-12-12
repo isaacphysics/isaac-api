@@ -28,8 +28,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 
 import java.util.HashMap;
@@ -185,18 +185,18 @@ public class IsaacDndValidatorTest {
             .setAnswer(answer())
             .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
         new AnswerValidationTestCase().setTitle("itemsEmpty")
-            .setAnswer(new DndItemChoice())
+            .setAnswer(new DndChoice())
             .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
         new AnswerValidationTestCase().setTitle("itemsNotEnough")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectExplanation("You did not provide a valid answer; it does not contain an item for each gap.")
-            .expectDropZonesCorrect(feedback -> feedback.setLeg1(true)),
+            .expectDropZonesCorrect(f -> f.setLeg1(true)),
         new AnswerValidationTestCase().setTitle("itemsTooMany")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
             .expectExplanation("You did not provide a valid answer; it contains more items than gaps.")
-            .expectDropZonesCorrect(feedback -> feedback.setLeg1(true)),
+            .expectDropZonesCorrect(f -> f.setLeg1(true)),
         new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item("bad_id", "some_value"), "leg_1")))
@@ -215,7 +215,7 @@ public class IsaacDndValidatorTest {
                 incorrect(new Content("Leg 1 should be less than 4 cm"), choose(item_4cm, "leg_1"))
             ).setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectExplanation("Leg 1 should be less than 4 cm")
-            .expectDropZonesCorrect(feedback -> feedback.setLeg1(false))
+            .expectDropZonesCorrect(f -> f.setLeg1(false))
         // TODO: if drop zone does not exist in question
     };
 
@@ -268,7 +268,7 @@ public class IsaacDndValidatorTest {
             .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$1!", q.getId())),
         answerEmptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
         answerEmptyItemsTestCase.get().setTitle("answer with null items")
-            .setQuestion(q -> q.setChoices(Stream.of(new DndItemChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
+            .setQuestion(q -> q.setChoices(Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
         new QuestionValidationTestCase().setTitle("answer with non-dnd items")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
             .expectExplanation("This question contains at least one invalid answer.")
@@ -319,8 +319,8 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    public static DndItemChoice answer(final DndItem... list) {
-        var c = new DndItemChoice();
+    public static DndChoice answer(final DndItem... list) {
+        var c = new DndChoice();
         c.setItems(List.of(list));
         c.setType("dndChoice");
         return c;
@@ -332,7 +332,7 @@ public class IsaacDndValidatorTest {
         return value;
     }
 
-    public static IsaacDndQuestion createQuestion(final DndItemChoice... answers) {
+    public static IsaacDndQuestion createQuestion(final DndChoice... answers) {
         var question = new IsaacDndQuestion();
         question.setId(UUID.randomUUID().toString());
         question.setItems(List.of(item_3cm, item_4cm, item_5cm, item_6cm, item_12cm, item_13cm));
@@ -341,25 +341,25 @@ public class IsaacDndValidatorTest {
         return question;
     }
 
-    public static DndItemChoice correct(final DndItem... list) {
+    public static DndChoice correct(final DndItem... list) {
         var choice = answer(list);
         choice.setCorrect(true);
         return choice;
     }
 
-    public static DndItemChoice correct(final ContentBase explanation, final DndItem... list) {
+    public static DndChoice correct(final ContentBase explanation, final DndItem... list) {
         var choice = correct(list);
         choice.setExplanation(explanation);
         return choice;
     }
 
-    public static DndItemChoice incorrect(final DndItem... list) {
+    public static DndChoice incorrect(final DndItem... list) {
         var choice = answer(list);
         choice.setCorrect(false);
         return choice;
     }
 
-    public static DndItemChoice incorrect(final ContentBase explanation, final DndItem... list) {
+    public static DndChoice incorrect(final ContentBase explanation, final DndItem... list) {
         var choice = incorrect(list);
         choice.setExplanation(explanation);
         return choice;
@@ -400,7 +400,7 @@ public class IsaacDndValidatorTest {
         public IsaacDndQuestion question = createQuestion(
             correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
-        public DndItemChoice answer = answer();
+        public DndChoice answer = answer();
         public Content feedback = testFeedback;
         public Map<String, Boolean> dropZonesCorrect;
         public String loggedMessage;
@@ -412,7 +412,7 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
-        public T setQuestion(final DndItemChoice... choices) {
+        public T setQuestion(final DndChoice... choices) {
             this.question = createQuestion(choices);
             return self();
         }
@@ -429,7 +429,7 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
-        public T setAnswer(final DndItemChoice answer) {
+        public T setAnswer(final DndChoice answer) {
             this.answer = answer;
             return self();
         }

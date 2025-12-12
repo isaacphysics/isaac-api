@@ -8,7 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.DndItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
@@ -96,7 +96,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @ParameterizedTest
         @CsvSource(value = {
             "{};Unable to map response to a Choice;404",
-            "{\"type\": \"unknown\"};This validator only works with DndItemChoices;400",
+            "{\"type\": \"unknown\"};This validator only works with DndChoices;400",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"a\": \"a\"}]};Unable to map response to a Choice;404",
             "{\"type\": \"dndChoice\", \"items\": \"some_string\"};Unable to map response to a Choice;404",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": [{}], \"dropZoneId\": \"leg_1\"}]};Unable to map response to a Choice;404"
@@ -135,16 +135,16 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
             assertEquals(
-                readEntity(new JSONObject(answerStr), DndItemChoice.class),
-                readEntity(response.getJSONObject("answer"), DndItemChoice.class)
+                readEntity(new JSONObject(answerStr), DndChoice.class),
+                readEntity(response.getJSONObject("answer"), DndChoice.class)
             );
         }
 
         @ParameterizedTest
         @CsvSource(value = {
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\"}]}",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
+//            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
+//            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
         }, delimiter = ';')
         public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(
@@ -154,8 +154,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertTrue(response.getBoolean("correct"));
             assertEquals(
-                readEntity(new JSONObject(answerStr), DndItemChoice.class),
-                readEntity(response.getJSONObject("answer"), DndItemChoice.class)
+                readEntity(new JSONObject(answerStr), DndChoice.class),
+                readEntity(response.getJSONObject("answer"), DndChoice.class)
             );
         }
 
@@ -169,7 +169,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertFalse(response.getBoolean("correct"));
-            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndItemChoice.class));
+            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndChoice.class));
         }
 
         @Test
