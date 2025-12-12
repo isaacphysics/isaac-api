@@ -116,6 +116,13 @@ public class IsaacDndValidatorTest {
             .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
             .setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false),
+        new ExplanationTestCase().setTitle("matchIncorrectWildcard_shouldReturnMatching")
+            .setQuestion(
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
+                incorrect(new Content("leg_1 is not 5"), choose(item_5cm, "leg_1"))
+            ).setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2")))
+            .expectCorrect(false)
+            .expectExplanation("leg_1 is not 5"),
         new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
@@ -209,8 +216,7 @@ public class IsaacDndValidatorTest {
         new AnswerValidationTestCase().setTitle("itemsTooMany")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
-            .expectExplanation("You did not provide a valid answer; it contains more items than gaps.")
-            .expectDropZonesCorrect(f -> f.setLeg1(true)),
+            .expectExplanation("You did not provide a valid answer; it contains more items than gaps."),
         new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item("bad_id", "some_value"), "leg_1")))

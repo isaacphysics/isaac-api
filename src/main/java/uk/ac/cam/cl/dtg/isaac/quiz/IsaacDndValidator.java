@@ -71,9 +71,6 @@ public class IsaacDndValidator implements IValidator {
             if (answer.getItems().size() < closestCorrect.getItems().size()) {
                 return new Content("You did not provide a valid answer; it does not contain an item for each gap.");
             }
-            if (answer.getItems().size() > closestCorrect.getItems().size()) {
-                return new Content("You did not provide a valid answer; it contains more items than gaps.");
-            }
             return question.getDefaultFeedback();
         });
         return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
@@ -128,9 +125,10 @@ public class IsaacDndValidator implements IValidator {
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
             .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
                  (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)))
-            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT,
-                  (q, a) -> a.getDndItems().anyMatch(i -> i.getId() == null)
+            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> a.getDndItems().anyMatch(i -> i.getId() == null)
                       || a.getDndItems().anyMatch(i -> i.getDropZoneId() == null))
+            .add("You did not provide a valid answer; it contains more items than gaps.",
+                (q, a) -> a.getItems().size() > q.getAnyCorrect().map(c -> c.getItems().size()).orElse(0))
             .check(IsaacDndQuestionEx.of(question), DndChoiceEx.of(answer));
     }
 
@@ -164,6 +162,10 @@ public class IsaacDndValidator implements IValidator {
         public Boolean getDetailedItemFeedback() {
             return BooleanUtils.isTrue(super.getDetailedItemFeedback());
         }
+
+        public Optional<DndChoiceEx> getAnyCorrect() {
+            return this.getDndChoices().filter(DndChoiceEx::isCorrect).findFirst();
+        }
     }
 
     private static class DndChoiceEx extends DndChoice {
@@ -184,8 +186,7 @@ public class IsaacDndValidator implements IValidator {
         }
 
         public boolean matches(final DndChoiceEx rhs) {
-            return this.getDndItems().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs))
-                && super.getItems().size() == rhs.getItems().size();
+            return this.getDndItems().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs));
         }
 
         public int countPartialMatchesIn(final DndChoiceEx rhs) {
