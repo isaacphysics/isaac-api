@@ -92,13 +92,6 @@ public class IsaacDndValidatorTest {
         assertEquals(testCase.correct, response.isCorrect());
     }
 
-    // Test that subset match answers return an appropriate explanation
-    // TODO: multiple matching explanations
-    //  - on same level? (or even across levels?)
-    //  - should return all?
-    //  - should return just one, but predictably?
-    //
-
     @DataPoints
     public static ExplanationTestCase[] explanationTestCases = {
         new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnMatching")
@@ -116,13 +109,20 @@ public class IsaacDndValidatorTest {
             .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
             .setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false),
-        new ExplanationTestCase().setTitle("matchIncorrectWildcard_shouldReturnMatching")
+        new ExplanationTestCase().setTitle("matchIncorrectSubset_shouldReturnMatching")
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
-                incorrect(new Content("leg_1 is not 5"), choose(item_5cm, "leg_1"))
+                incorrect(ExplanationTestCase.testFeedback, choose(item_5cm, "leg_1"))
+            ).setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2")))
+            .expectCorrect(false),
+        new ExplanationTestCase().setTitle("multiMatchIncorrectSubset_shouldReturnMatching")
+            .setQuestion(
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
+                incorrect(new Content("leg_1 can't be 5"), choose(item_5cm, "leg_1")),
+                incorrect(new Content("leg_2 can't be 6"), choose(item_6cm, "leg_2"))
             ).setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2")))
             .expectCorrect(false)
-            .expectExplanation("leg_1 is not 5"),
+            .expectExplanation("leg_2 can't be 6"),
         new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
@@ -132,8 +132,7 @@ public class IsaacDndValidatorTest {
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
                 incorrect(new Content("feedback for choice"), choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2"))
-            )
-            .tapQuestion(q -> q.setDefaultFeedback(new Content("feedback for question")))
+            ).tapQuestion(q -> q.setDefaultFeedback(new Content("feedback for question")))
             .setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2")))
             .expectCorrect(false)
             .expectExplanation("feedback for question"),
