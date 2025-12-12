@@ -5,7 +5,11 @@ import org.slf4j.Logger;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiPredicate;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -279,4 +283,29 @@ public final class ValidationUtils {
         return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
     }
 
+    public static class BiRuleValidator<T, U> {
+        private final List<Rule> rules = new ArrayList<>();
+
+        public BiRuleValidator<T, U> add(final String key, final BiPredicate<T, U> rule) {
+            rules.add(new Rule(key, rule));
+            return this;
+        }
+
+        public Optional<String> check(final T t, final U u) {
+            return rules.stream()
+                .filter(r -> r.predicate.test(t, u))
+                .map(r -> r.message)
+                .findFirst();
+        }
+
+        private class Rule {
+            public final String message;
+            public final BiPredicate<T, U> predicate;
+
+            public Rule(final String message, final BiPredicate<T, U> predicate) {
+                this.message = message;
+                this.predicate = predicate;
+            }
+        }
+    }
 }

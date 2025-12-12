@@ -17,11 +17,9 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacClozeQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacDndQuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacClozeValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
-
 
 /**
  * Content DO for IsaacDndQuestions.
@@ -29,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
  */
 @DTOMapping(IsaacDndQuestionDTO.class)
 @JsonContentType("isaacDndQuestion")
-@ValidatesWith(IsaacClozeValidator.class)
+@ValidatesWith(IsaacDndValidator.class)
 public class IsaacDndQuestion extends IsaacItemQuestion {
 
     private Boolean withReplacement;
