@@ -22,8 +22,6 @@ import java.util.List;
  *
  */
 public class DndChoiceDTO extends ChoiceDTO {
-
-    private Boolean allowSubsetMatch;
     private List<DndItemDTO> items;
 
     /**
@@ -39,9 +37,4 @@ public class DndChoiceDTO extends ChoiceDTO {
     public void setItems(final List<DndItemDTO> items) {
         this.items = items;
     }
-
-    public Boolean isAllowSubsetMatch() { return this.allowSubsetMatch; }
-
-    public void setAllowSubsetMatch(final boolean allowSubsetMatch) { this.allowSubsetMatch = allowSubsetMatch; }
-
 }

@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
@@ -28,9 +29,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Validator that only provides functionality to validate Drag and drop questions.
@@ -42,11 +45,12 @@ public class IsaacDndValidator implements IValidator {
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
         return validate(question, answer)
             .map(msg -> new DndValidationResponse(question.getId(), answer, false, null, new Content(msg), new Date()))
-            .orElseGet(() -> mark((IsaacDndQuestion) question, (DndChoice) answer));
+            .orElseGet(() -> mark(IsaacDndQuestionEx.of(question), DndChoiceEx.of(answer)));
     }
 
-    private DndValidationResponse mark(final IsaacDndQuestion question, final DndChoice answer) {
-        List<DndChoice> sortedAnswers = question.getDndChoices().stream()
+    private DndValidationResponse mark(final IsaacDndQuestionEx question, final DndChoiceEx answer) {
+        // TODO: extract sorting, to comply with IValidator interface
+        List<DndChoiceEx> sortedAnswers = question.getDndChoices()
             .sorted((rhs, lhs) -> {
                 int compared = lhs.countPartialMatchesIn(answer) - rhs.countPartialMatchesIn(answer);
                 if (compared == 0) {
@@ -55,10 +59,10 @@ public class IsaacDndValidator implements IValidator {
                 return compared;
             })
             .collect(Collectors.toList());
-        Optional<DndChoice> matchedAnswer = sortedAnswers.stream().filter(lhs -> lhs.matches(answer)).findFirst();
-        DndChoice closestCorrect = sortedAnswers.stream().filter(Choice::isCorrect).findFirst().orElse(null);
+        Optional<DndChoiceEx> matchedAnswer = sortedAnswers.stream().filter(lhs -> lhs.matches(answer)).findFirst();
+        DndChoiceEx closestCorrect = sortedAnswers.stream().filter(DndChoiceEx::isCorrect).findFirst().orElse(null);
 
-        var isCorrect = matchedAnswer.map(Choice::isCorrect).orElse(false);
+        var isCorrect = matchedAnswer.map(DndChoiceEx::isCorrect).orElse(false);
         var dropZonesCorrect = question.getDetailedItemFeedback() ? closestCorrect.getDropZonesCorrect(answer) : null;
         var feedback = (Content) matchedAnswer.map(Choice::getExplanation).orElseGet(() -> {
             if (isCorrect) {
@@ -89,7 +93,7 @@ public class IsaacDndValidator implements IValidator {
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
+        return new ValidationUtils.BiRuleValidator<IsaacDndQuestionEx, DndChoiceEx>()
             // question
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, (q, a) -> logged(
                 q.getChoices() == null || q.getChoices().isEmpty(),
@@ -103,16 +107,16 @@ public class IsaacDndValidator implements IValidator {
                 !DndChoice.class.equals(c.getClass()),
                 "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
             )))
-            .add("This question contains an empty answer.", (q, a) -> q.getDndChoices().stream().anyMatch(c -> logged(
+            .add("This question contains an empty answer.", (q, a) -> q.getDndChoices().anyMatch(c -> logged(
                 c.getItems() == null || c.getItems().isEmpty(),
                 "Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()
             )))
-            .add("This question contains at least one invalid answer.", (q, a) -> q.getDndChoices().stream().anyMatch(c -> logged(
+            .add("This question contains at least one invalid answer.", (q, a) -> q.getDndChoices().anyMatch(c -> logged(
                 c.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class),
                 "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId()
             )))
-            .add("This question contains at least one answer in an unrecognised format.", (q, a) -> q.getDndChoices().stream().anyMatch(c -> logged(
-                c.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
+            .add("This question contains at least one answer in an unrecognised format.", (q, a) -> q.getDndChoices().anyMatch(c -> logged(
+                c.getDndItems().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
                 "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
             )))
             .add("This question is missing items", (q, a) -> logged(
@@ -125,9 +129,9 @@ public class IsaacDndValidator implements IValidator {
             .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
                  (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)))
             .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT,
-                  (q, a) -> a.getItems().stream().anyMatch(i -> i.getId() == null)
-                      || a.getItems().stream().anyMatch(i -> i.getDropZoneId() == null))
-            .check((IsaacDndQuestion) question, (DndChoice) answer);
+                  (q, a) -> a.getDndItems().anyMatch(i -> i.getId() == null)
+                      || a.getDndItems().anyMatch(i -> i.getDropZoneId() == null))
+            .check(IsaacDndQuestionEx.of(question), DndChoiceEx.of(answer));
     }
 
     private boolean logged(final boolean result, final String message, final Object... args) {
@@ -135,5 +139,81 @@ public class IsaacDndValidator implements IValidator {
             log.error(String.format(message, args));
         }
         return result;
+    }
+
+    private static class IsaacDndQuestionEx extends IsaacDndQuestion {
+        public static IsaacDndQuestionEx of(final Question question) {
+            return new IsaacDndQuestionEx((IsaacDndQuestion) question);
+        }
+
+        public IsaacDndQuestionEx(final IsaacDndQuestion question) {
+            super();
+            setItems(question.getItems());
+            setId(question.getId());
+            setCanonicalSourceFile(question.getCanonicalSourceFile());
+            setChoices(question.getChoices());
+            setDetailedItemFeedback(question.getDetailedItemFeedback());
+            setDefaultFeedback(question.getDefaultFeedback());
+        }
+
+        public Stream<DndChoiceEx> getDndChoices() {
+            return super.getChoices().stream().map(DndChoiceEx::of);
+        }
+
+        @Override
+        public Boolean getDetailedItemFeedback() {
+            return BooleanUtils.isTrue(super.getDetailedItemFeedback());
+        }
+    }
+
+    private static class DndChoiceEx extends DndChoice {
+        public static DndChoiceEx of(final Choice c) {
+            return new DndChoiceEx((DndChoice) c);
+        }
+
+        DndChoiceEx(final DndChoice choice) {
+            super();
+            setItems(choice.getItems());
+            setCorrect(choice.isCorrect());
+            setExplanation(choice.getExplanation());
+            setType(choice.getType());
+        }
+
+        public Stream<DndItem> getDndItems() {
+            return super.getItems().stream().map(i -> (DndItem) i);
+        }
+
+        public boolean matches(final DndChoiceEx rhs) {
+            return this.getDndItems().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs))
+                && super.getItems().size() == rhs.getItems().size();
+        }
+
+        public int countPartialMatchesIn(final DndChoiceEx rhs) {
+            return this.getDndItems()
+                .map(lhsItem -> dropZoneEql(lhsItem, rhs) ? 1 : 0)
+                .mapToInt(Integer::intValue)
+                .sum();
+        }
+
+        public Map<String, Boolean> getDropZonesCorrect(final DndChoiceEx rhs) {
+            return this.getDndItems()
+                .filter(lhsItem -> rhs.getItemByDropZone(lhsItem.getDropZoneId()).isPresent())
+                .collect(Collectors.toMap(
+                    DndItem::getDropZoneId,
+                    lhsItem -> dropZoneEql(lhsItem, rhs))
+                );
+        }
+
+        private static boolean dropZoneEql(final DndItem lhsItem, final DndChoiceEx rhs) {
+            return rhs.getItemByDropZone(lhsItem.getDropZoneId())
+            .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
+            .orElse(false);
+        }
+
+        private Optional<DndItem> getItemByDropZone(final String dropZoneId) {
+            return this.getDndItems()
+            .filter(item -> item.getDropZoneId().equals(dropZoneId))
+            .findFirst();
+        }
     }
 }

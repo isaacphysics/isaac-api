@@ -143,8 +143,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @ParameterizedTest
         @CsvSource(value = {
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\"}]}",
-//            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
-//            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
         }, delimiter = ';')
         public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(
@@ -153,10 +153,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertTrue(response.getBoolean("correct"));
-            assertEquals(
-                readEntity(new JSONObject(answerStr), DndChoice.class),
-                readEntity(response.getJSONObject("answer"), DndChoice.class)
-            );
+
+            assertEquals(readChoice(new JSONObject(answerStr)), readChoice(response.getJSONObject("answer")));
         }
 
         @Test
@@ -247,6 +245,13 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
     private <T> T readEntity(final JSONObject value, final Class<T> klass)  throws Exception {
         return contentMapper.getSharedContentObjectMapper().readValue(value.toString(), klass);
+    }
+
+    private String readChoice(final JSONObject value)  throws Exception {
+        value.put("tags", new JSONArray());
+        value.getJSONArray("items").getJSONObject(0).put("tags", new JSONArray());
+        DndChoice parsed = contentMapper.getSharedContentObjectMapper().readValue(value.toString(), DndChoice.class);
+        return contentMapper.getSharedContentObjectMapper().writeValueAsString(parsed);
     }
 
     private static final IsaacStringMatchValidator stringMatchValidator = new IsaacStringMatchValidator();

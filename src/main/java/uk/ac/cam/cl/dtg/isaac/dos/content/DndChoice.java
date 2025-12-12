@@ -18,9 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DndChoiceDTO;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Choice for Item Questions, containing a list of Items.
@@ -29,8 +26,6 @@ import java.util.stream.Collectors;
 @DTOMapping(DndChoiceDTO.class)
 @JsonContentType("dndChoice")
 public class DndChoice extends Choice {
-
-    private Boolean allowSubsetMatch;
     private List<DndItem> items;
 
     /**
@@ -45,46 +40,5 @@ public class DndChoice extends Choice {
 
     public void setItems(final List<DndItem> items) {
         this.items = items;
-    }
-
-    public Boolean isAllowSubsetMatch() {
-        return this.allowSubsetMatch;
-    }
-
-    public void setAllowSubsetMatch(final boolean allowSubsetMatch) {
-        this.allowSubsetMatch = allowSubsetMatch;
-    }
-
-    public boolean matches(final DndChoice rhs) {
-        return this.items.stream().allMatch(lhsItem -> dropZoneEql(lhsItem, rhs))
-                && this.items.size() == rhs.getItems().size();
-    }
-
-    public int countPartialMatchesIn(final DndChoice rhs) {
-        return this.items.stream()
-                .map(lhsItem -> dropZoneEql(lhsItem, rhs) ? 1 : 0)
-                .mapToInt(Integer::intValue)
-                .sum();
-    }
-
-    public Map<String, Boolean> getDropZonesCorrect(final DndChoice rhs) {
-        return this.items.stream()
-                .filter(lhsItem -> rhs.getItemByDropZone(lhsItem.getDropZoneId()).isPresent())
-                .collect(Collectors.toMap(
-                        DndItem::getDropZoneId,
-                        lhsItem -> dropZoneEql(lhsItem, rhs))
-                );
-    }
-
-    private static boolean dropZoneEql(DndItem lhsItem, DndChoice rhs) {
-        return rhs.getItemByDropZone(lhsItem.getDropZoneId())
-                .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
-                .orElse(false);
-    }
-
-    private Optional<DndItem> getItemByDropZone(final String dropZoneId) {
-        return this.items.stream()
-                .filter(item -> item.getDropZoneId().equals(dropZoneId))
-                .findFirst();
     }
 }
