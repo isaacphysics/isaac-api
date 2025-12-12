@@ -43,6 +43,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -120,6 +121,15 @@ public class IsaacDndValidatorTest {
             .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
             .setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false),
+        new ExplanationTestCase().setTitle("partialMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
+            .setQuestion(
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
+                incorrect(new Content("feedback for choice"), choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2"))
+            )
+            .tapQuestion(q -> q.setDefaultFeedback(new Content("feedback for question")))
+            .setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2")))
+            .expectCorrect(false)
+            .expectExplanation("feedback for question"),
         new ExplanationTestCase().setTitle("defaultCorrect_shouldReturnNone")
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
@@ -133,7 +143,11 @@ public class IsaacDndValidatorTest {
     public final void testExplanation(ExplanationTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
         assertEquals(response.isCorrect(), testCase.correct);
-        assertEquals(response.getExplanation(), testCase.feedback);
+        if (testCase.feedback != null) {
+            assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
+        } else {
+            assertNull(response.getExplanation());
+        }
     }
 
     static Supplier<DropZonesTestCase> disabledItemFeedbackNoDropZones = () -> new DropZonesTestCase()
@@ -229,9 +243,6 @@ public class IsaacDndValidatorTest {
         assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
-
-    // TODO: when a partial match contains incorrect items, show feedback about this,
-    // rather than telling the user they needed to submit more items.
 
     // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
