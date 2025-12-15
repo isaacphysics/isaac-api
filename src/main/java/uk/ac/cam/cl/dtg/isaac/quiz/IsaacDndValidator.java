@@ -172,13 +172,13 @@ public class IsaacDndValidator implements IValidator {
         }
 
         public static Stream<String> getContentDropZones(final ContentBase content) {
-            if (content instanceof Figure) {
+            if (content instanceof Figure && ((Figure) content).getFigureRegions() != null) {
                 var figure = (Figure) content;
                 return figure.getFigureRegions().stream().map(FigureRegion::getId);
             }
             if (content instanceof Content && ((Content) content).getValue() != null) {
                 var textContent = (Content) content;
-                String dndDropZoneRegexStr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?\\]";
+                String dndDropZoneRegexStr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?]";
                 Pattern dndDropZoneRegex = Pattern.compile(dndDropZoneRegexStr);
                 return dndDropZoneRegex.matcher(textContent.getValue()).results().map(mr -> mr.group(1));
             }

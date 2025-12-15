@@ -366,6 +366,9 @@ public class IsaacDndValidatorTest {
             .addContentChild("[drop-zone:A2]")
             .tapQuestion(q -> ((Content) q.getChildren().get(0)).setChildren(List.of(new Content("[drop-zone:A1]"))))
             .expectDropZones("A1", "A2"),
+        new GetDropZonesTestCase().setTitle("figureContentWithoutDropZones_returnsNoZones")
+            .setChildren(List.of(new Figure()))
+            .expectDropZones(),
         new GetDropZonesTestCase().setTitle("figureContent_returnsDropZones")
             .setChildren(List.of(createFigure("A1", "A2")))
             .expectDropZones("A1", "A2"),
