@@ -135,6 +135,10 @@ public class IsaacDndValidator implements IValidator {
                 QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
                 "Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
             ))
+            .add("This question contains a correct answer that doesn't use all drop zones.", (q, a) -> QuestionHelpers.getChoices(q).filter(DndChoice::isCorrect).anyMatch(c -> logged(
+                QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
+                "Question contains correct answer that doesn't use all drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
+            )))
 
             // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())

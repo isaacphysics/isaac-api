@@ -116,7 +116,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }, delimiter = ';')
         public void badRequest_IncorrectReturnedWithExplanation(final String answerStr, final String emsg) throws Exception {
             var dndQuestion = persist(createQuestion(
-                correct(choose(item_3cm, "leg_1"))
+                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             ));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
@@ -147,9 +147,9 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
         }, delimiter = ';')
         public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
-            var dndQuestion = persist(createQuestion(
-                correct(choose(item_3cm, "leg_1"))
-            ));
+            var dndQuestion = createQuestion(correct(choose(item_3cm, "leg_1")));
+            dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
+            persist(dndQuestion);
 
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertTrue(response.getBoolean("correct"));
