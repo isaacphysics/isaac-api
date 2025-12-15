@@ -32,7 +32,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -304,7 +306,11 @@ public class IsaacDndValidatorTest {
         questionEmptyAnswersTestCase.get().setTitle("items is null")
             .tapQuestion(q -> q.setItems(null)),
         questionEmptyAnswersTestCase.get().setTitle("items is empty")
-            .tapQuestion(q -> q.setItems(List.of()))
+            .tapQuestion(q -> q.setItems(List.of())),
+        new QuestionValidationTestCase().setTitle("has no drop zones")
+            .setChildren(null)
+            .expectExplanation("Question without dropZones found")
+            .expectLogMessage(q -> String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()) )
     };
 
     @Theory
@@ -319,6 +325,49 @@ public class IsaacDndValidatorTest {
         var appender = testValidateWithLogs(testCase.question, testCase.answer);
         appender.assertLevel(Level.ERROR);
         appender.assertMessage(testCase.loggedMessage);
+    }
+
+    static Supplier<GetDropZonesTestCase> invalidDropZone = () -> new GetDropZonesTestCase()
+        .expectDropZones(List.of());
+
+    @DataPoints
+    public static GetDropZonesTestCase[] getDropZonesTestCases = {
+        invalidDropZone.get().setContentChild(""),
+        invalidDropZone.get().setContentChild("no drop zone"),
+        invalidDropZone.get().setContentChild("[drop-zone A1]"),
+        invalidDropZone.get().setContentChild("[drop-zone: A1]"),
+        invalidDropZone.get().setContentChild("[drop-zone:A1 | w-100]"),
+        invalidDropZone.get().setContentChild("[drop-zone:A1|w-100 h-50]"),
+        invalidDropZone.get().setContentChild("[drop-zone:A1|h-100w-50]"),
+        new GetDropZonesTestCase().setTitle("noContent_noDropZones").setChildren(null).expectDropZones(List.of()),
+        new GetDropZonesTestCase().setTitle("singleDropZoneSingleText_returnsDropZone")
+            .setContentChild("[drop-zone:A1]")
+            .expectDropZones(List.of("A1")),
+        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContent_returnsDropZone")
+            .setContentChild("[drop-zone:A1|w-100]")
+            .expectDropZones(List.of("A1")),
+        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentHeight_returnsDropZone")
+            .setContentChild("[drop-zone:A1|h-100]")
+            .expectDropZones(List.of("A1")),
+        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWidthHeight_returnsDropZone")
+            .setContentChild("[drop-zone:A1|w-100h-50]")
+            .expectDropZones(List.of("A1")),
+        new GetDropZonesTestCase().setTitle("multiDropZoneSingleContent_returnsDropZone")
+            .setContentChild("Some text [drop-zone:A1], other text [drop-zone:A2]")
+            .expectDropZones(List.of("A1", "A2")),
+        new GetDropZonesTestCase().setTitle("singleDropZoneMultiContent_returnsDropZone")
+            .setContentChild("[drop-zone:A1]").addContentChild("[drop-zone:A2]")
+            .expectDropZones(List.of("A1", "A2")),
+        new GetDropZonesTestCase().setTitle("singleDropZoneNestedContent_returnsDropZone")
+            .setChildren(new LinkedList<>(List.of(new Content()))).addContentChild("[drop-zone:A2]")
+            .tapQuestion(q -> ((Content) q.getChildren().get(0)).setChildren(List.of(new Content("[drop-zone:A1]"))))
+            .expectDropZones(List.of("A1", "A2"))
+    };
+
+    @Theory
+    public final void testGetDropZones(final GetDropZonesTestCase testCase) {
+        var dropZones = IsaacDndValidator.QuestionHelpers.getDropZones(testCase.question);
+        assertEquals(testCase.dropZones, dropZones);
     }
 
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
@@ -358,6 +407,7 @@ public class IsaacDndValidatorTest {
         question.setItems(List.of(item_3cm, item_4cm, item_5cm, item_6cm, item_12cm, item_13cm));
         question.setChoices(List.of(answers));
         question.setType("isaacDndQuestion");
+        question.setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2] [drop-zone:hypothenuse]")));
         return question;
     }
 
@@ -423,6 +473,7 @@ public class IsaacDndValidatorTest {
         public DndChoice answer = answer();
         public Content feedback = testFeedback;
         public Map<String, Boolean> dropZonesCorrect;
+        public List<String> dropZones;
         public String loggedMessage;
         public boolean correct = false;
         private Function<IsaacDndQuestion, String> logMessageOp;
@@ -441,6 +492,21 @@ public class IsaacDndValidatorTest {
             var question = createQuestion();
             op.accept(question);
             this.question = question;
+            return self();
+        }
+
+        public T setChildren(final List<ContentBase> content) {
+            question.setChildren(content);
+            return self();
+        }
+
+        public T setContentChild(final String content) {
+            question.setChildren(new ArrayList<>(List.of(new Content(content))));
+            return self();
+        }
+
+        public T addContentChild(final String content) {
+            question.getChildren().add(new Content(content));
             return self();
         }
 
@@ -484,6 +550,11 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
+        public T expectDropZones(final List<String> dropZones) {
+            this.dropZones = dropZones;
+            return self();
+        }
+
         private T self() {
             if (this.logMessageOp != null) {
                 this.loggedMessage = logMessageOp.apply(this.question);
@@ -505,9 +576,12 @@ public class IsaacDndValidatorTest {
 
     public static class DropZonesTestCase extends TestCase<DropZonesTestCase> {}
 
+    public static class GetDropZonesTestCase extends TestCase<GetDropZonesTestCase> {}
+
     public static class DndItemEx extends DndItem {
         public DndItemEx(final String id, final String value, final String dropZoneId) {
             super(id, value, dropZoneId);
         }
     }
+
 }

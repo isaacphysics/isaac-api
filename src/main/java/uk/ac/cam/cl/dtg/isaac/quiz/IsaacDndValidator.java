@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,18 +54,20 @@ public class IsaacDndValidator implements IValidator {
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndChoice answer) {
         List<DndChoice> sortedAnswers = QuestionHelpers.getChoices(question)
             .sorted((rhs, lhs) -> {
-                int compared = ChoiceHelpers.countPartialMatchesIn(lhs, answer) - ChoiceHelpers.countPartialMatchesIn(rhs, answer);
+                int compared = ChoiceHelpers.countPartialMatchesIn(lhs, answer)
+                    - ChoiceHelpers.countPartialMatchesIn(rhs, answer);
                 if (compared == 0) {
                     return lhs.isCorrect() && rhs.isCorrect() ? 0 : (lhs.isCorrect() ? 1 : -1);
                 }
                 return compared;
             })
             .collect(Collectors.toList());
-        Optional<DndChoice> matchedAnswer = sortedAnswers.stream().filter(lhs -> ChoiceHelpers.matches(lhs, answer)).findFirst();
-        DndChoice closestCorrect = sortedAnswers.stream().filter(DndChoice::isCorrect).findFirst().orElse(null);
+        var matchedAnswer = sortedAnswers.stream().filter(lhs -> ChoiceHelpers.matches(lhs, answer)).findFirst();
+        var closestCorrect = sortedAnswers.stream().filter(DndChoice::isCorrect).findFirst().orElse(null);
 
         var isCorrect = matchedAnswer.map(DndChoice::isCorrect).orElse(false);
-        var dropZonesCorrect = QuestionHelpers.getDetailedItemFeedback(question) ? ChoiceHelpers.getDropZonesCorrect(closestCorrect, answer) : null;
+        var dropZonesCorrect = QuestionHelpers.getDetailedItemFeedback(question)
+                ? ChoiceHelpers.getDropZonesCorrect(closestCorrect, answer) : null;
         var feedback = (Content) matchedAnswer.map(Choice::getExplanation).orElseGet(() -> {
             if (isCorrect) {
                 return null;
@@ -119,6 +124,10 @@ public class IsaacDndValidator implements IValidator {
                 q.getItems() == null || q.getItems().isEmpty(),
                 "Expected items in question (%s), but didn't find any!", q.getId()
             ))
+            .add("Question without dropZones found", (q, a) -> logged(
+                QuestionHelpers.getDropZones(q).isEmpty(),
+                "Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
+            ))
 
             // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
@@ -131,14 +140,14 @@ public class IsaacDndValidator implements IValidator {
             .check((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
-    private boolean logged(final boolean result, final String message, final Object... args) {
+    private static boolean logged(final boolean result, final String message, final Object... args) {
         if (result) {
             log.error(String.format(message, args));
         }
         return result;
     }
 
-    private static class QuestionHelpers {
+    public static class QuestionHelpers {
         public static Stream<DndChoice> getChoices(final IsaacDndQuestion question) {
             return question.getChoices().stream().map(c -> (DndChoice) c);
         }
@@ -149,6 +158,28 @@ public class IsaacDndValidator implements IValidator {
 
         public static boolean getDetailedItemFeedback(final IsaacDndQuestion question) {
             return BooleanUtils.isTrue(question.getDetailedItemFeedback());
+        }
+
+        public static List<String> getDropZones(final IsaacDndQuestion question) {
+            if (question.getChildren() == null) {
+                return List.of();
+            }
+            return question.getChildren().stream()
+                .flatMap(QuestionHelpers::getContentDropZones)
+                .collect(Collectors.toList());
+        }
+
+        public static Stream<String> getContentDropZones(final ContentBase content) {
+            if (content instanceof Content && ((Content) content).getValue() != null) {
+                var textContent = (Content) content;
+                String dndDropZoneRegexStr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?\\]";
+                Pattern dndDropZoneRegex = Pattern.compile(dndDropZoneRegexStr);
+                return dndDropZoneRegex.matcher(textContent.getValue()).results().map(mr -> mr.group(1));
+            }
+            if (content instanceof Content && ((Content) content).getChildren() != null) {
+                return ((Content) content).getChildren().stream().flatMap(QuestionHelpers::getContentDropZones);
+            }
+            return Stream.of();
         }
     }
 
@@ -177,9 +208,9 @@ public class IsaacDndValidator implements IValidator {
                 );
         }
 
-        private static boolean dropZoneEql(final DndChoice choice, final DndItem lhsItem) {
-            return getItemByDropZone(choice, lhsItem.getDropZoneId())
-                .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
+        private static boolean dropZoneEql(final DndChoice choice, final DndItem item) {
+            return getItemByDropZone(choice, item.getDropZoneId())
+                .map(choiceItem -> choiceItem.getId().equals(item.getId()))
                 .orElse(false);
         }
 
