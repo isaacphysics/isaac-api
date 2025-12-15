@@ -275,7 +275,7 @@ public class IsaacDndValidatorTest {
         .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()));
 
     static Supplier<QuestionValidationTestCase> questionEmptyAnswersTestCase = () -> new QuestionValidationTestCase()
-        .expectExplanation("This question is missing items")
+        .expectExplanation("This question is missing items.")
         .expectLogMessage(q -> String.format("Expected items in question (%s), but didn't find any!", q.getId()));
 
     @DataPoints
@@ -311,8 +311,12 @@ public class IsaacDndValidatorTest {
             .tapQuestion(q -> q.setItems(List.of())),
         new QuestionValidationTestCase().setTitle("has no drop zones")
             .setChildren(null)
-            .expectExplanation("Question without dropZones found")
-            .expectLogMessage(q -> String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()))
+            .expectExplanation("This question doesn't have any drop zones.")
+            .expectLogMessage(q -> String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("has id duplication among drop zones")
+            .setContentChild("[drop-zone:A1]").addContentChild("[drop-zone:A1]")
+            .expectExplanation("This question contains duplicate drop zones.")
+            .expectLogMessage(q -> String.format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()))
     };
 
     @Theory

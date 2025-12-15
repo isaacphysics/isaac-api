@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,13 +123,17 @@ public class IsaacDndValidator implements IValidator {
                 ChoiceHelpers.getItems(c).anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
                 "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
             )))
-            .add("This question is missing items", (q, a) -> logged(
+            .add("This question is missing items.", (q, a) -> logged(
                 q.getItems() == null || q.getItems().isEmpty(),
                 "Expected items in question (%s), but didn't find any!", q.getId()
             ))
-            .add("Question without dropZones found", (q, a) -> logged(
+            .add("This question doesn't have any drop zones.", (q, a) -> logged(
                 QuestionHelpers.getDropZones(q).isEmpty(),
                 "Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
+            ))
+            .add("This question contains duplicate drop zones.", (q, a) -> logged(
+                QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
+                "Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
             ))
 
             // answer
@@ -171,7 +176,7 @@ public class IsaacDndValidator implements IValidator {
                 .collect(Collectors.toList());
         }
 
-        public static Stream<String> getContentDropZones(final ContentBase content) {
+        private static Stream<String> getContentDropZones(final ContentBase content) {
             if (content instanceof Figure && ((Figure) content).getFigureRegions() != null) {
                 var figure = (Figure) content;
                 return figure.getFigureRegions().stream().map(FigureRegion::getId);
