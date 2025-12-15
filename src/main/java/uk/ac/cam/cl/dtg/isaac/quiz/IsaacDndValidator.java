@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -144,13 +143,15 @@ public class IsaacDndValidator implements IValidator {
                 "Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile()
             )))
 
-
             // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
-            .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS,
-                 (q, a) -> a.getItems().stream().anyMatch(answerItem -> !q.getItems().contains(answerItem)))
-            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> ChoiceHelpers.getItems(a).anyMatch(i -> i.getId() == null)
-                      || ChoiceHelpers.getItems(a).anyMatch(i -> i.getDropZoneId() == null))
+            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> ChoiceHelpers.getItems(a).anyMatch(i ->
+                i.getId() == null || i.getDropZoneId() == null
+            ))
+            .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS, (q, a) -> a.getItems().stream().anyMatch(i ->
+                !q.getItems().contains(i)
+                || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
+            )
             .add("You did not provide a valid answer; it contains more items than gaps.",
                 (q, a) -> a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0))
             .check((IsaacDndQuestion) question, (DndChoice) answer);

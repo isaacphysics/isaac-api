@@ -236,7 +236,7 @@ public class IsaacDndValidatorTest {
         new AnswerValidationTestCase().setTitle("itemsTooMany")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
-            .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
+            .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_1")))
             .expectExplanation("You did not provide a valid answer; it contains more items than gaps."),
         new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
@@ -259,8 +259,12 @@ public class IsaacDndValidatorTest {
                 incorrect(new Content("Leg 1 should be less than 4 cm"), choose(item_4cm, "leg_1"))
             ).setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectExplanation("Leg 1 should be less than 4 cm")
-            .expectDropZonesCorrect(f -> f.setLeg1(false))
-        // TODO: if drop zone does not exist in question
+            .expectDropZonesCorrect(f -> f.setLeg1(false)),
+        new AnswerValidationTestCase().setTitle("unrecognized drop zone")
+            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_3cm, "leg_2")))
+            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_ITEMS)
     };
 
     @Theory
