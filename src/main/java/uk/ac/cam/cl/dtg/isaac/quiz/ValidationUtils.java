@@ -284,13 +284,17 @@ public final class ValidationUtils {
     }
 
     public static class BiRuleValidator<T, U> {
-        private final List<Rule> rules = new ArrayList<>();
+        private final List<Rule<T, U>> rules = new ArrayList<>();
 
         public BiRuleValidator<T, U> add(final String key, final BiPredicate<T, U> rule) {
-            rules.add(new Rule(key, rule));
+            rules.add(new Rule<>(key, rule));
             return this;
         }
 
+        /**
+         * Applies the ruleset and returns the result. If an error was found, a description of the issue is available in
+         * the optional. If validation has passed, the optional is empty.
+         */
         public Optional<String> check(final T t, final U u) {
             return rules.stream()
                 .filter(r -> r.predicate.test(t, u))
@@ -298,7 +302,7 @@ public final class ValidationUtils {
                 .findFirst();
         }
 
-        private class Rule {
+        private static class Rule<T, U> {
             public final String message;
             public final BiPredicate<T, U> predicate;
 
