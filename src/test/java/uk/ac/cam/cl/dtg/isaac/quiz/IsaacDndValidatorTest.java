@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.apache.logging.log4j.core.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
+import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 @RunWith(Theories.class)
 @SuppressWarnings("checkstyle:MissingJavadocType")
@@ -310,7 +312,7 @@ public class IsaacDndValidatorTest {
         new QuestionValidationTestCase().setTitle("has no drop zones")
             .setChildren(null)
             .expectExplanation("Question without dropZones found")
-            .expectLogMessage(q -> String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()) )
+            .expectLogMessage(q -> String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()))
     };
 
     @Theory
@@ -328,7 +330,7 @@ public class IsaacDndValidatorTest {
     }
 
     static Supplier<GetDropZonesTestCase> invalidDropZone = () -> new GetDropZonesTestCase()
-        .expectDropZones(List.of());
+        .expectDropZones();
 
     @DataPoints
     public static GetDropZonesTestCase[] getDropZonesTestCases = {
@@ -339,29 +341,48 @@ public class IsaacDndValidatorTest {
         invalidDropZone.get().setContentChild("[drop-zone:A1 | w-100]"),
         invalidDropZone.get().setContentChild("[drop-zone:A1|w-100 h-50]"),
         invalidDropZone.get().setContentChild("[drop-zone:A1|h-100w-50]"),
-        new GetDropZonesTestCase().setTitle("noContent_noDropZones").setChildren(null).expectDropZones(List.of()),
+        new GetDropZonesTestCase().setTitle("noContent_noDropZones").setChildren(null).expectDropZones(),
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleText_returnsDropZone")
             .setContentChild("[drop-zone:A1]")
-            .expectDropZones(List.of("A1")),
+            .expectDropZones("A1"),
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContent_returnsDropZone")
             .setContentChild("[drop-zone:A1|w-100]")
-            .expectDropZones(List.of("A1")),
+            .expectDropZones("A1"),
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentHeight_returnsDropZone")
             .setContentChild("[drop-zone:A1|h-100]")
-            .expectDropZones(List.of("A1")),
+            .expectDropZones("A1"),
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWidthHeight_returnsDropZone")
             .setContentChild("[drop-zone:A1|w-100h-50]")
-            .expectDropZones(List.of("A1")),
-        new GetDropZonesTestCase().setTitle("multiDropZoneSingleContent_returnsDropZone")
+            .expectDropZones("A1"),
+        new GetDropZonesTestCase().setTitle("multiDropZoneSingleContent_returnsDropZones")
             .setContentChild("Some text [drop-zone:A1], other text [drop-zone:A2]")
-            .expectDropZones(List.of("A1", "A2")),
-        new GetDropZonesTestCase().setTitle("singleDropZoneMultiContent_returnsDropZone")
-            .setContentChild("[drop-zone:A1]").addContentChild("[drop-zone:A2]")
-            .expectDropZones(List.of("A1", "A2")),
-        new GetDropZonesTestCase().setTitle("singleDropZoneNestedContent_returnsDropZone")
-            .setChildren(new LinkedList<>(List.of(new Content()))).addContentChild("[drop-zone:A2]")
+            .expectDropZones("A1", "A2"),
+        new GetDropZonesTestCase().setTitle("multiDropZoneMultiContent_returnsDropZones")
+            .setContentChild("[drop-zone:A1] [drop-zone:A2]")
+            .addContentChild("[drop-zone:A3] [drop-zone:A4]")
+            .expectDropZones("A1", "A2", "A3", "A4"),
+        new GetDropZonesTestCase().setTitle("singleDropZoneNestedContent_returnsDropZones")
+            .setChildren(new LinkedList<>(List.of(new Content())))
+            .addContentChild("[drop-zone:A2]")
             .tapQuestion(q -> ((Content) q.getChildren().get(0)).setChildren(List.of(new Content("[drop-zone:A1]"))))
-            .expectDropZones(List.of("A1", "A2"))
+            .expectDropZones("A1", "A2"),
+        new GetDropZonesTestCase().setTitle("figureContent_returnsDropZones")
+            .setChildren(List.of(createFigure("A1", "A2")))
+            .expectDropZones("A1", "A2"),
+        new GetDropZonesTestCase().setTitle("mixedButNoNesting_returnsDropZones")
+            .setChildren(new LinkedList<>(List.of(createFigure("A1", "A2"))))
+            .addContentChild("[drop-zone:A3]")
+            .expectDropZones("A1", "A2", "A3"),
+        new GetDropZonesTestCase().setTitle("mixedNested_returnsDropZones")
+            .setChildren(new LinkedList<>(List.of(new Content())))
+            .addContentChild("[drop-zone:A2]")
+            .tapQuestion(q -> {
+                Content content = (Content) q.getChildren().get(0);
+                content.setChildren(List.of(
+                    new Content("[drop-zone:A1]"),
+                    createFigure("F1", "F2")
+                ));
+            }).expectDropZones("A1", "F1", "F2", "A2")
     };
 
     @Theory
@@ -464,6 +485,17 @@ public class IsaacDndValidatorTest {
         }
     }
 
+    public static Figure createFigure(final String... dropZones) {
+        var figure = new Figure();
+        figure.setFigureRegions(new ArrayList<>(List.of()));
+        List.of(dropZones).forEach(dropZoneId -> {
+            var region = new FigureRegion();
+            region.setId(dropZoneId);
+            figure.getFigureRegions().add(region);
+        });
+        return figure;
+    }
+
     static class TestCase<T extends TestCase<T>> {
         public static Content testFeedback = new Content("some test feedback");
 
@@ -550,8 +582,8 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
-        public T expectDropZones(final List<String> dropZones) {
-            this.dropZones = dropZones;
+        public T expectDropZones(final String... dropZones) {
+            this.dropZones = List.of(dropZones);
             return self();
         }
 

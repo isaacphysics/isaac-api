@@ -26,7 +26,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.Date;
 import java.util.List;
@@ -170,6 +172,10 @@ public class IsaacDndValidator implements IValidator {
         }
 
         public static Stream<String> getContentDropZones(final ContentBase content) {
+            if (content instanceof Figure) {
+                var figure = (Figure) content;
+                return figure.getFigureRegions().stream().map(FigureRegion::getId);
+            }
             if (content instanceof Content && ((Content) content).getValue() != null) {
                 var textContent = (Content) content;
                 String dndDropZoneRegexStr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?\\]";
@@ -179,6 +185,7 @@ public class IsaacDndValidator implements IValidator {
             if (content instanceof Content && ((Content) content).getChildren() != null) {
                 return ((Content) content).getChildren().stream().flatMap(QuestionHelpers::getContentDropZones);
             }
+
             return Stream.of();
         }
     }
