@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,6 +45,21 @@ import java.util.stream.Stream;
  * Validator that only provides functionality to validate Drag and drop questions.
  */
 public class IsaacDndValidator implements IValidator {
+    public static final String FEEDBACK_QUESTION_INVALID_ANS = "This question contains at least one invalid answer.";
+    public static final String FEEDBACK_QUESTION_EMPTY_ANS = "This question contains an empty answer.";
+    public static final String FEEDBACK_QUESTION_UNRECOGNISED_ANS = "This question contains at least one answer in an "
+                                                                  + "unrecognised format.";
+    public static final String FEEDBACK_QUESTION_MISSING_ITEMS = "This question is missing items.";
+    public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
+    public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
+    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
+                                                           + "all drop zones.";
+    public static final String FEEDBACK_QUESTION_INVALID_DZ = "One of the answers to this question references an "
+                                                            + "invalid drop zone.";
+    public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
+                                                          + "an item for each gap.";
+    public static final String FEEDBACK_ANSWER_TOO_MUCH = "You did not provide a valid answer; it contains more items "
+                                                        + "than gaps.";
     private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
 
     @Override
@@ -75,7 +91,7 @@ public class IsaacDndValidator implements IValidator {
                 return null;
             }
             if (answer.getItems().size() < closestCorrect.getItems().size()) {
-                return new Content("You did not provide a valid answer; it does not contain an item for each gap.");
+                return new Content(FEEDBACK_ANSWER_NOT_ENOUGH);
             }
             return question.getDefaultFeedback();
         });
@@ -106,39 +122,42 @@ public class IsaacDndValidator implements IValidator {
                 q.getChoices().stream().noneMatch(Choice::isCorrect),
                 "Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()
             ))
-            .add("This question contains at least one invalid answer.", (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
+            .add(FEEDBACK_QUESTION_INVALID_ANS, (q, a) -> q.getChoices().stream().anyMatch(c -> logged(
                 !DndChoice.class.equals(c.getClass()),
                 "Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass()
             )))
-            .add("This question contains an empty answer.", (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
+            .add(FEEDBACK_QUESTION_EMPTY_ANS, (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
                 c.getItems() == null || c.getItems().isEmpty(),
                 "Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()
             )))
-            .add("This question contains at least one invalid answer.", (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
+            .add(FEEDBACK_QUESTION_INVALID_ANS, (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
                 c.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class),
                 "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId()
             )))
-            .add("This question contains at least one answer in an unrecognised format.", (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
-                ChoiceHelpers.getItems(c).anyMatch(i -> i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")),
-                "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
+            .add(FEEDBACK_QUESTION_UNRECOGNISED_ANS, (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
+                ChoiceHelpers.getItems(c).anyMatch(i ->
+                    i.getId() == null || i.getDropZoneId() == null
+                    || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")
+                ), "Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()
             )))
-            .add("This question is missing items.", (q, a) -> logged(
+            .add(FEEDBACK_QUESTION_MISSING_ITEMS, (q, a) -> logged(
                 q.getItems() == null || q.getItems().isEmpty(),
                 "Expected items in question (%s), but didn't find any!", q.getId()
             ))
-            .add("This question doesn't have any drop zones.", (q, a) -> logged(
+            .add(FEEDBACK_QUESTION_NO_DZ, (q, a) -> logged(
                 QuestionHelpers.getDropZones(q).isEmpty(),
                 "Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
             ))
-            .add("This question contains duplicate drop zones.", (q, a) -> logged(
+            .add(FEEDBACK_QUESTION_DUP_DZ, (q, a) -> logged(
                 QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
                 "Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
             ))
-            .add("This question contains a correct answer that doesn't use all drop zones.", (q, a) -> QuestionHelpers.getChoices(q).filter(DndChoice::isCorrect).anyMatch(c -> logged(
+            .add(FEEDBACK_QUESTION_UNUSED_DZ, (q, a) -> QuestionHelpers.anyCorrectMatch(q, c -> logged(
                 QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
-                "Question contains correct answer that doesn't use all drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
+                "Question contains correct answer that doesn't use all drop zones. %s src %s",
+                q.getId(), q.getCanonicalSourceFile()
             )))
-            .add("One of the answers to this question references an invalid drop zone", (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
+            .add(FEEDBACK_QUESTION_INVALID_DZ, (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
                 c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
                 "Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile()
             )))
@@ -152,8 +171,9 @@ public class IsaacDndValidator implements IValidator {
                 !q.getItems().contains(i)
                 || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
             )
-            .add("You did not provide a valid answer; it contains more items than gaps.",
-                (q, a) -> a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0))
+            .add(FEEDBACK_ANSWER_TOO_MUCH, (q, a) ->
+                a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0)
+            )
             .check((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
@@ -164,6 +184,7 @@ public class IsaacDndValidator implements IValidator {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocType")
     public static class QuestionHelpers {
         public static Stream<DndChoice> getChoices(final IsaacDndQuestion question) {
             return question.getChoices().stream().map(c -> (DndChoice) c);
@@ -173,10 +194,18 @@ public class IsaacDndValidator implements IValidator {
             return getChoices(question).filter(DndChoice::isCorrect).findFirst();
         }
 
+        public static boolean anyCorrectMatch(final IsaacDndQuestion question, final Predicate<DndChoice> p) {
+            return getChoices(question).filter(DndChoice::isCorrect).anyMatch(p);
+
+        }
+
         public static boolean getDetailedItemFeedback(final IsaacDndQuestion question) {
             return BooleanUtils.isTrue(question.getDetailedItemFeedback());
         }
 
+        /**
+         * Collects the drop zone ids from any content within the question.
+         */
         public static List<String> getDropZones(final IsaacDndQuestion question) {
             if (question.getChildren() == null) {
                 return List.of();
@@ -193,8 +222,8 @@ public class IsaacDndValidator implements IValidator {
             }
             if (content instanceof Content && ((Content) content).getValue() != null) {
                 var textContent = (Content) content;
-                String dndDropZoneRegexStr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?]";
-                Pattern dndDropZoneRegex = Pattern.compile(dndDropZoneRegexStr);
+                String expr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?]";
+                Pattern dndDropZoneRegex = Pattern.compile(expr);
                 return dndDropZoneRegex.matcher(textContent.getValue()).results().map(mr -> mr.group(1));
             }
             if (content instanceof Content && ((Content) content).getChildren() != null) {
