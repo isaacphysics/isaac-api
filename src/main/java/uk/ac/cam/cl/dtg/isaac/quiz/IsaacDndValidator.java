@@ -179,14 +179,14 @@ public class IsaacDndValidator implements IValidator {
 
         private static boolean dropZoneEql(final DndChoice choice, final DndItem lhsItem) {
             return getItemByDropZone(choice, lhsItem.getDropZoneId())
-                    .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
-                    .orElse(false);
+                .map(rhsItem -> rhsItem.getId().equals(lhsItem.getId()))
+                .orElse(false);
         }
 
         private static Optional<DndItem> getItemByDropZone(final DndChoice choice, final String dropZoneId) {
             return getItems(choice)
-                    .filter(item -> item.getDropZoneId().equals(dropZoneId))
-                    .findFirst();
+                .filter(item -> item.getDropZoneId().equals(dropZoneId))
+                .findFirst();
         }
     }
 }

@@ -140,8 +140,12 @@ public class IsaacDndValidatorTest {
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectNoExplanation()
-            .expectCorrect(true)
-        // todo expect null explanation on incorrect answer? (check cloze behaviour)
+            .expectCorrect(true),
+        new ExplanationTestCase().setTitle("noDefaultIncorrect_shouldReturnNone")
+            .setQuestion(correct(choose(item_3cm, "leg_1")))
+            .setAnswer(answer(choose(item_4cm, "leg_1")))
+            .expectNoExplanation()
+            .expectCorrect(false)
     };
 
 
