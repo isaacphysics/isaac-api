@@ -139,6 +139,11 @@ public class IsaacDndValidator implements IValidator {
                 QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
                 "Question contains correct answer that doesn't use all drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()
             )))
+            .add("One of the answers to this question references an invalid drop zone", (q, a) -> QuestionHelpers.getChoices(q).anyMatch(c -> logged(
+                c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
+                "Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile()
+            )))
+
 
             // answer
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())

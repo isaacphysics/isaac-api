@@ -339,9 +339,13 @@ public class IsaacDndValidatorTest {
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
                 correct(choose(item_3cm, "leg_1"))
-            )
-            .expectExplanation("This question contains a correct answer that doesn't use all drop zones.")
-            .expectLogMessage(q -> String.format("Question contains correct answer that doesn't use all drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile()))
+            ).expectExplanation("This question contains a correct answer that doesn't use all drop zones.")
+            .expectLogMessage(q -> String.format("Question contains correct answer that doesn't use all drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("drop zone references must be valid")
+            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+            .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
+            .expectExplanation("One of the answers to this question references an invalid drop zone")
+            .expectLogMessage(q -> String.format("Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile()))
     };
 
     @Theory
