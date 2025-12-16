@@ -17,6 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.isaac.dto.DndValidationResponseDTO;
 
 import java.util.Date;
 import java.util.Map;
@@ -25,6 +27,7 @@ import java.util.Map;
 /**
  *  Class for providing correctness feedback about drag and drop questions in a submitted Choice.
  */
+@DTOMapping(DndValidationResponseDTO.class)
 public class DndValidationResponse extends QuestionValidationResponse {
     private Map<String, Boolean> dropZonesCorrect;
 
