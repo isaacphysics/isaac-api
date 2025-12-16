@@ -417,7 +417,7 @@ public class IsaacDndValidatorTest {
 
     @Theory
     public final void testGetDropZones(final GetDropZonesTestCase testCase) {
-        var dropZones = IsaacDndValidator.QuestionHelpers.getDropZones(testCase.question);
+        var dropZones = IsaacDndValidator.QuestionHelpers.getDropZonesFromContent(testCase.question);
         assertEquals(testCase.dropZones, dropZones);
     }
 

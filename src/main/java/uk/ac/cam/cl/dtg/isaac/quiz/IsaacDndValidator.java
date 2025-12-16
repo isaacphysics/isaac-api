@@ -113,7 +113,7 @@ public class IsaacDndValidator implements IValidator {
             ))
             .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS, (q, a) -> a.getItems().stream().anyMatch(i ->
                 !q.getItems().contains(i)
-                || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
+                || !QuestionHelpers.getDropZonesFromContent(q).contains(i.getDropZoneId()))
             )
             .add(FEEDBACK_ANSWER_TOO_MUCH, (q, a) ->
                 a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0)
@@ -157,20 +157,20 @@ public class IsaacDndValidator implements IValidator {
                 String.format("Expected items in question (%s), but didn't find any!", q.getId())
             ))
             .add(FEEDBACK_QUESTION_NO_DZ, q -> logged.apply(
-                QuestionHelpers.getDropZones(q).isEmpty(),
+                QuestionHelpers.getDropZonesFromContent(q).isEmpty(),
                 String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_DUP_DZ, q -> logged.apply(
-                QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
+                QuestionHelpers.getDropZonesFromContent(q).size() != new HashSet<>(QuestionHelpers.getDropZonesFromContent(q)).size(),
                 String.format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.anyCorrectMatch(q, c -> logged.apply(
-                QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
+                QuestionHelpers.getDropZonesFromContent(q).size() != c.getItems().size(),
                 String.format("Question contains correct answer that doesn't use all drop zones. %s src %s",
                 q.getId(), q.getCanonicalSourceFile())
             )))
             .add(FEEDBACK_QUESTION_INVALID_DZ, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
-                c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
+                c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZonesFromContent(q).contains(i.getDropZoneId())),
                 String.format("Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )));
     }
@@ -204,16 +204,16 @@ public class IsaacDndValidator implements IValidator {
         /**
          * Collects the drop zone ids from any content within the question.
          */
-        public static List<String> getDropZones(final IsaacDndQuestion question) {
+        public static List<String> getDropZonesFromContent(final IsaacDndQuestion question) {
             if (question.getChildren() == null) {
                 return List.of();
             }
             return question.getChildren().stream()
-                .flatMap(QuestionHelpers::getDropZones)
+                .flatMap(QuestionHelpers::getDropZonesFromContent)
                 .collect(Collectors.toList());
         }
 
-        private static Stream<String> getDropZones(final ContentBase content) {
+        private static Stream<String> getDropZonesFromContent(final ContentBase content) {
             if (content instanceof Figure && ((Figure) content).getFigureRegions() != null) {
                 var figure = (Figure) content;
                 return figure.getFigureRegions().stream().map(FigureRegion::getId);
@@ -225,7 +225,7 @@ public class IsaacDndValidator implements IValidator {
                 return dndDropZoneRegex.matcher(textContent.getValue()).results().map(mr -> mr.group(1));
             }
             if (content instanceof Content && ((Content) content).getChildren() != null) {
-                return ((Content) content).getChildren().stream().flatMap(QuestionHelpers::getDropZones);
+                return ((Content) content).getChildren().stream().flatMap(QuestionHelpers::getDropZonesFromContent);
             }
 
             return Stream.of();
