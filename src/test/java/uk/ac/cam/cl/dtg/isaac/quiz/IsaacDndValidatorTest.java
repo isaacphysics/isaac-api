@@ -132,7 +132,7 @@ public class IsaacDndValidatorTest {
                 incorrect(new Content("leg_2 can't be 6"), choose(item_6cm, "leg_2"))
             ).setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2")))
             .expectCorrect(false)
-            .expectExplanation("leg_2 can't be 6"),
+            .expectExplanation("leg_1 can't be 5"),
         new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
@@ -277,8 +277,6 @@ public class IsaacDndValidatorTest {
         assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
-
-    // TODO: check when a non-existing drop zone was used? (and anything that doesn't exist in a correct answer is invalid?)
 
     static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
         .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNRECOGNISED_ANS)
