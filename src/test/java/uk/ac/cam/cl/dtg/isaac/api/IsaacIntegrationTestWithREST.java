@@ -164,7 +164,7 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         void assertError(final String message, final String status) {
-            assertEquals(Integer.parseInt(status), response.getStatus());
+            assertEquals(status, Integer.toString(response.getStatus()));
             assertTrue(this.readEntityAsJsonUnchecked().getString("errorMessage").contains(message));
         }
 
