@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -45,6 +46,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
@@ -67,6 +69,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -1151,6 +1154,14 @@ public class ContentIndexer {
                     numberItems = items;
                 }
             }
+        }
+
+        if (content instanceof IsaacDndQuestion) {
+            BiFunction<Boolean, String, Boolean> noLog = (res, msg) -> res;
+            IsaacDndValidator.questionValidator(noLog).check((IsaacDndQuestion) content).ifPresent(err -> {
+                var template = "Drag-and-drop Question: %s has a problem. %s";
+                this.registerContentProblem(content, String.format(template, content.getId(), err), indexProblemCache);
+            });
         }
 
         if (content instanceof IsaacCoordinateQuestion) {

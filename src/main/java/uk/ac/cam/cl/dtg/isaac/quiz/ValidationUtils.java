@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -283,18 +284,29 @@ public final class ValidationUtils {
         return sigFigsFromUser.sigFigsMin > maxAllowedSigFigs;
     }
 
+    /** Validate a set of rules. Each rule takes two arguments. `.add` some rules, then `.check` whether they held.*/
     public static class BiRuleValidator<T, U> {
-        private final List<Rule<T, U>> rules = new ArrayList<>();
+        protected final List<Rule<T, U>> rules = new ArrayList<>();
+        private Logger log = null;
 
-        public BiRuleValidator<T, U> add(final String key, final BiPredicate<T, U> rule) {
-            rules.add(new Rule<>(key, rule));
+        /** Create a BiRuleValidator from a RuleValidator. */
+        public static <T, U> BiRuleValidator<T, U> of(final RuleValidator<T> validator) {
+            BiRuleValidator<T, U> biValidator = new BiRuleValidator<>();
+            validator.rules.forEach(r -> biValidator.add(r.message, (t, u) -> r.predicate.test(t, null)));
+            return biValidator;
+        }
+
+        public BiRuleValidator<T, U> add(final String message, final BiPredicate<T, U> rule) {
+            rules.add(new Rule<>(message, rule));
             return this;
         }
 
-        /**
-         * Applies the ruleset and returns the result. If an error was found, a description of the issue is available in
-         * the optional. If validation has passed, the optional is empty.
-         */
+        public BiRuleValidator<T, U> setLogger(final Logger log) {
+            this.log = log;
+            return this;
+        }
+
+        /** Apply the validation rules on a set of objects. */
         public Optional<String> check(final T t, final U u) {
             return rules.stream()
                 .filter(r -> r.predicate.test(t, u))
@@ -302,7 +314,8 @@ public final class ValidationUtils {
                 .findFirst();
         }
 
-        private static class Rule<T, U> {
+        /** A rule used by either a BiRuleValidator or a RuleValidator. */
+        protected static class Rule<T, U> {
             public final String message;
             public final BiPredicate<T, U> predicate;
 
@@ -310,6 +323,18 @@ public final class ValidationUtils {
                 this.message = message;
                 this.predicate = predicate;
             }
+        }
+    }
+
+    /** A specialized BiRuleValidator whose rules take a single argument. */
+    public static class RuleValidator<T> extends BiRuleValidator<T, Void> {
+        public RuleValidator<T> add(final String message, final Predicate<T> rule) {
+            super.add(message, (t, ignored) -> rule.test(t));
+            return this;
+        }
+
+        public Optional<String> check(final T t) {
+            return super.check(t, null);
         }
     }
 }

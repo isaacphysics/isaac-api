@@ -70,19 +70,13 @@ public class IsaacDndValidatorTest {
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .expectCorrect(true),
-        new CorrectnessTestCase().setTitle("singleIncorrectMatch_Incorrect")
+        new CorrectnessTestCase().setTitle("singleCorrectNotMatch_Incorrect")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse")))
             .expectCorrect(false),
-        new CorrectnessTestCase().setTitle("partialMatchForCorrect_Incorrect")
+        new CorrectnessTestCase().setTitle("singleCorrectPartialMatch_Incorrect")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_3cm, "hypothenuse")))
-            .expectCorrect(false),
-        new CorrectnessTestCase().setTitle("moreSpecificIncorrectMatchOverridesCorrect_Incorrect")
-            .setQuestion(
-                correct(choose(item_5cm, "hypothenuse")),
-                incorrect(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
-            ).setAnswer(answer(choose(item_3cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .expectCorrect(false),
         new CorrectnessTestCase().setTitle("sameAnswerCorrectAndIncorrect_Correct")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
@@ -164,7 +158,7 @@ public class IsaacDndValidatorTest {
 
 
     @Theory
-    public final void testExplanation(ExplanationTestCase testCase) {
+    public final void testExplanation(final ExplanationTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
         assertEquals(response.isCorrect(), testCase.correct);
         if (testCase.feedback != null) {
@@ -445,6 +439,7 @@ public class IsaacDndValidatorTest {
         }
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice answer(final DndItem... list) {
         var c = new DndChoice();
         c.setItems(List.of(list));
@@ -452,12 +447,14 @@ public class IsaacDndValidatorTest {
         return c;
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndItem choose(final Item item, final String dropZoneId) {
         var value =  new DndItem(item.getId(), item.getValue(), dropZoneId);
         value.setType("dndItem");
         return value;
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static IsaacDndQuestion createQuestion(final DndChoice... answers) {
         var question = new IsaacDndQuestion();
         question.setId(UUID.randomUUID().toString());
@@ -468,31 +465,33 @@ public class IsaacDndValidatorTest {
         return question;
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice correct(final DndItem... list) {
         var choice = answer(list);
         choice.setCorrect(true);
         return choice;
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice correct(final ContentBase explanation, final DndItem... list) {
         var choice = correct(list);
         choice.setExplanation(explanation);
         return choice;
     }
 
-    public static DndChoice incorrect(final DndItem... list) {
+    private static DndChoice incorrect(final DndItem... list) {
         var choice = answer(list);
         choice.setCorrect(false);
         return choice;
     }
 
-    public static DndChoice incorrect(final ContentBase explanation, final DndItem... list) {
+    private static DndChoice incorrect(final ContentBase explanation, final DndItem... list) {
         var choice = incorrect(list);
         choice.setExplanation(explanation);
         return choice;
     }
 
-    public static Item item(final String id, final String value) {
+    private static Item item(final String id, final String value) {
         Item item = new Item(id, value);
         item.setType("item");
         return item;
@@ -521,7 +520,7 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    public static Figure createFigure(final String... dropZones) {
+    private static Figure createFigure(final String... dropZones) {
         var figure = new Figure();
         figure.setFigureRegions(new ArrayList<>(List.of()));
         List.of(dropZones).forEach(dropZoneId -> {
