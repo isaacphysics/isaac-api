@@ -287,7 +287,6 @@ public final class ValidationUtils {
     /** Validate a set of rules. Each rule takes two arguments. `.add` some rules, then `.check` whether they held.*/
     public static class BiRuleValidator<T, U> {
         protected final List<Rule<T, U>> rules = new ArrayList<>();
-        private Logger log = null;
 
         /** Create a BiRuleValidator from a RuleValidator. */
         public static <T, U> BiRuleValidator<T, U> of(final RuleValidator<T> validator) {
@@ -298,11 +297,6 @@ public final class ValidationUtils {
 
         public BiRuleValidator<T, U> add(final String message, final BiPredicate<T, U> rule) {
             rules.add(new Rule<>(message, rule));
-            return this;
-        }
-
-        public BiRuleValidator<T, U> setLogger(final Logger log) {
-            this.log = log;
             return this;
         }
 
