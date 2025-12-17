@@ -43,6 +43,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
+
 /** Validator that only provides functionality to validate Drag and drop questions. */
 public class IsaacDndValidator implements IValidator {
     public static final String FEEDBACK_QUESTION_INVALID_ANS = "This question contains at least one invalid answer.";
@@ -95,12 +97,12 @@ public class IsaacDndValidator implements IValidator {
         Objects.requireNonNull(answer);
 
         if (!(answer instanceof DndChoice)) {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(format(
                 "This validator only works with DndChoices (%s is not DndChoice)", question.getId()));
         }
 
         if (!(question instanceof IsaacDndQuestion)) {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(format(
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
@@ -113,7 +115,7 @@ public class IsaacDndValidator implements IValidator {
             ))
             .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS, (q, a) -> a.getItems().stream().anyMatch(i ->
                 !q.getItems().contains(i)
-                || !QuestionHelpers.getDropZonesFromContent(q).contains(i.getDropZoneId()))
+                || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
             )
             .add(FEEDBACK_ANSWER_TOO_MUCH, (q, a) ->
                 a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0)
@@ -128,50 +130,50 @@ public class IsaacDndValidator implements IValidator {
         return new ValidationUtils.RuleValidator<IsaacDndQuestion>()
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
                 q.getChoices() == null || q.getChoices().isEmpty(),
-                String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
+                format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
                 q.getChoices().stream().noneMatch(Choice::isCorrect),
-                String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
+                format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_INVALID_ANS, q -> q.getChoices().stream().anyMatch(c -> logged.apply(
                 !DndChoice.class.equals(c.getClass()),
-                String.format("Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass())
+                format("Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass())
             )))
             .add(FEEDBACK_QUESTION_EMPTY_ANS, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
                 c.getItems() == null || c.getItems().isEmpty(),
-                String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())
+                format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())
             )))
             .add(FEEDBACK_QUESTION_INVALID_ANS, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
                 c.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class),
-                String.format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())
+                format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())
             )))
             .add(FEEDBACK_QUESTION_UNRECOGNISED_ANS, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
                 c.getItems().stream().anyMatch(i ->
                     i.getId() == null || i.getDropZoneId() == null
                         || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), "")
-                ), String.format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId())
+                ), format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId())
             )))
             .add(FEEDBACK_QUESTION_MISSING_ITEMS, q -> logged.apply(
                 q.getItems() == null || q.getItems().isEmpty(),
-                String.format("Expected items in question (%s), but didn't find any!", q.getId())
+                format("Expected items in question (%s), but didn't find any!", q.getId())
             ))
             .add(FEEDBACK_QUESTION_NO_DZ, q -> logged.apply(
-                QuestionHelpers.getDropZonesFromContent(q).isEmpty(),
-                String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
+                QuestionHelpers.getDropZones(q).isEmpty(),
+                format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_DUP_DZ, q -> logged.apply(
-                QuestionHelpers.getDropZonesFromContent(q).size() != new HashSet<>(QuestionHelpers.getDropZonesFromContent(q)).size(),
-                String.format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
+                QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
+                format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.anyCorrectMatch(q, c -> logged.apply(
-                QuestionHelpers.getDropZonesFromContent(q).size() != c.getItems().size(),
-                String.format("Question contains correct answer that doesn't use all drop zones. %s src %s",
+                QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
+                format("Question contains correct answer that doesn't use all drop zones. %s src %s",
                 q.getId(), q.getCanonicalSourceFile())
             )))
             .add(FEEDBACK_QUESTION_INVALID_DZ, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
-                c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZonesFromContent(q).contains(i.getDropZoneId())),
-                String.format("Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile())
+                c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
+                format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )));
     }
 
@@ -204,7 +206,7 @@ public class IsaacDndValidator implements IValidator {
         /**
          * Collects the drop zone ids from any content within the question.
          */
-        public static List<String> getDropZonesFromContent(final IsaacDndQuestion question) {
+        public static List<String> getDropZones(final IsaacDndQuestion question) {
             if (question.getChildren() == null) {
                 return List.of();
             }

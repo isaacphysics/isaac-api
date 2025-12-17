@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -32,6 +33,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
+import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,13 +49,10 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-
-import org.apache.logging.log4j.core.Logger;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
-import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 @RunWith(Theories.class)
 @SuppressWarnings("checkstyle:MissingJavadocType")
@@ -157,6 +157,7 @@ public class IsaacDndValidatorTest {
     };
 
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     @Theory
     public final void testExplanation(final ExplanationTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
@@ -206,6 +207,7 @@ public class IsaacDndValidatorTest {
             .expectDropZonesCorrect(d -> d.setLeg1(true))
     };
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     @Theory
     public final void testDropZonesCorrect(final DropZonesTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
@@ -261,6 +263,7 @@ public class IsaacDndValidatorTest {
             .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_ITEMS)
     };
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     @Theory
     public final void testAnswerValidation(final AnswerValidationTestCase testCase) {
         testCase.question.setDetailedItemFeedback(true);
@@ -274,22 +277,22 @@ public class IsaacDndValidatorTest {
 
     static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
         .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNRECOGNISED_ANS)
-        .expectLogMessage(q -> String.format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()));
-
+        .expectLogMessage(q -> format("Found item with missing id or drop zone id in answer for question id (%s)!",
+                                      q.getId()));
     static Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
         .expectExplanation(Constants.FEEDBACK_NO_CORRECT_ANSWERS)
-        .expectLogMessage(q -> String.format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()));
-
+        .expectLogMessage(q -> format("Question does not have any answers. %s src: %s",
+                                      q.getId(), q.getCanonicalSourceFile()));
     static Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> noAnswersTestCase.get()
-        .expectLogMessage(q -> String.format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile()));
-
+        .expectLogMessage(q -> format("Question does not have any correct answers. %s src: %s",
+                                      q.getId(), q.getCanonicalSourceFile()));
     static Supplier<QuestionValidationTestCase> answerEmptyItemsTestCase = () -> new QuestionValidationTestCase()
         .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_EMPTY_ANS)
-        .expectLogMessage(q -> String.format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId()));
-
+        .expectLogMessage(q -> format("Expected list of DndItems, but none found in choice for question id (%s)!",
+                                      q.getId()));
     static Supplier<QuestionValidationTestCase> questionEmptyAnswersTestCase = () -> new QuestionValidationTestCase()
         .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS)
-        .expectLogMessage(q -> String.format("Expected items in question (%s), but didn't find any!", q.getId()));
+        .expectLogMessage(q -> format("Expected items in question (%s), but didn't find any!", q.getId()));
 
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
@@ -299,17 +302,20 @@ public class IsaacDndValidatorTest {
             .setQuestion(incorrect(choose(item_3cm, "leg_1"))),
         noCorrectAnswersTestCase.get().setTitle("answers without explicit correctness are treated as incorrect")
             .setQuestion(answer(choose(item_3cm, "leg_1"))),
-        new QuestionValidationTestCase().setTitle("answer not for a DnD question")
-            .setQuestion(q -> q.setChoices(List.of(new ParsonsChoice() {{correct = true; setItems(List.of(new Item("", ""))); }})))
+        new QuestionValidationTestCase().setTitle("answer type incompatible with DnD question")
+            .setQuestion(q -> q.setChoices(List.of(parsonsChoice())))
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS)
-            .expectLogMessage(q -> String.format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest$1!", q.getId())),
+            .expectLogMessage(q -> format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg."
+                                         + "isaac.dos.content.ParsonsChoice!", q.getId())),
         answerEmptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
         answerEmptyItemsTestCase.get().setTitle("answer with null items")
-            .setQuestion(q -> q.setChoices(Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
+            .setQuestion(q -> q.setChoices(
+                Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
         new QuestionValidationTestCase().setTitle("answer with non-dnd items")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS)
-            .expectLogMessage(q -> String.format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())),
+            .expectLogMessage(q -> format(
+                "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())),
         itemUnrecognisedFormatCase.get().setTitle("answer with missing item_id")
             .setQuestion(correct(new DndItem(null, "value", "dropZoneId"))),
         itemUnrecognisedFormatCase.get().setTitle("answer with empty item_id")
@@ -325,25 +331,30 @@ public class IsaacDndValidatorTest {
         new QuestionValidationTestCase().setTitle("has no drop zones")
             .setChildren(null)
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_NO_DZ)
-            .expectLogMessage(q -> String.format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())),
+            .expectLogMessage(q -> format("Question does not have any drop zones. %s src %s",
+                                          q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("has id duplication among drop zones")
             .setChildren(List.of(new Content("[drop-zone:A1] [drop-zone:A1]")))
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
-            .expectLogMessage(q -> String.format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())),
+            .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
+                                          q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("correct answers contain a choice for each drop zone")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
                 correct(choose(item_3cm, "leg_1"))
             ).expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ)
-            .expectLogMessage(q -> String.format("Question contains correct answer that doesn't use all drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())),
+            .expectLogMessage(q -> format("Question contains correct answer that doesn't use all drop zones. %s src %s",
+                                          q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("drop zone references must be valid")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_DZ)
-            .expectLogMessage(q -> String.format("Question contains invalid drop zone reference. %s src %s", q.getId(), q.getCanonicalSourceFile()))
+            .expectLogMessage(q -> format("Question contains invalid drop zone ref. %s src %s",
+                                          q.getId(), q.getCanonicalSourceFile()))
     };
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     @Theory
     public final void testQuestionValidation(final QuestionValidationTestCase testCase) {
         testCase.question.setDetailedItemFeedback(true);
@@ -417,7 +428,7 @@ public class IsaacDndValidatorTest {
 
     @Theory
     public final void testGetDropZones(final GetDropZonesTestCase testCase) {
-        var dropZones = IsaacDndValidator.QuestionHelpers.getDropZonesFromContent(testCase.question);
+        var dropZones = IsaacDndValidator.QuestionHelpers.getDropZones(testCase.question);
         assertEquals(testCase.dropZones, dropZones);
     }
 
@@ -491,6 +502,13 @@ public class IsaacDndValidatorTest {
         return choice;
     }
 
+    private static ParsonsChoice parsonsChoice() {
+        var parsonsChoice = new ParsonsChoice();
+        parsonsChoice.setCorrect(true);
+        parsonsChoice.setItems(List.of(new Item("", "")));
+        return parsonsChoice;
+    }
+
     private static Item item(final String id, final String value) {
         Item item = new Item(id, value);
         item.setType("item");
@@ -534,6 +552,7 @@ public class IsaacDndValidatorTest {
     static class TestCase<T extends TestCase<T>> {
         public static Content testFeedback = new Content("some test feedback");
 
+        public String title;
         public IsaacDndQuestion question = createQuestion(
             correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
         );
@@ -547,6 +566,7 @@ public class IsaacDndValidatorTest {
         private final List<Consumer<IsaacDndQuestion>> questionOps = new ArrayList<>();
 
         public T setTitle(final String title) {
+            this.title = title;
             return self();
         }
 
@@ -612,6 +632,7 @@ public class IsaacDndValidatorTest {
             return self();
         }
 
+        @SuppressWarnings("unchecked")
         private T self() {
             this.questionOps.forEach(op -> op.accept(this.question));
             if (this.logMessageOp != null) {
@@ -638,5 +659,4 @@ public class IsaacDndValidatorTest {
             super(id, value, dropZoneId);
         }
     }
-
 }

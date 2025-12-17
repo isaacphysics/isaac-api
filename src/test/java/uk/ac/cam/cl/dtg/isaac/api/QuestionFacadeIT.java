@@ -71,7 +71,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     class DndQuestion {
         @Test
         public void invalidQuestion() throws Exception {
-            var question = persistJSON("i1", new JSONObject()
+            var question = persistJSON(new JSONObject()
                 .put("type", "isaacDndQuestion")
                 .put("choices", new JSONArray().put(
                     new JSONObject()
@@ -95,26 +95,31 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
         @ParameterizedTest
         @CsvSource(value = {
-            "{};Unable to map response to a Choice;404",
-            "{\"type\": \"unknown\"};This validator only works with DndChoices;400",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"a\": \"a\"}]};Unable to map response to a Choice;404",
-            "{\"type\": \"dndChoice\", \"items\": \"some_string\"};Unable to map response to a Choice;404",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": [{}], \"dropZoneId\": \"leg_1\"}]};Unable to map response to a Choice;404"
-        }, delimiter = ';')
-        public void badRequest_ErrorReturned(final String answerStr, final String emsg, final String estate) throws Exception {
-            var dndQuestion = persist(createQuestion(
-                correct(choose(item_3cm, "leg_1"))
-            ));
+            "{}|Unable to map response to a Choice|404",
+            "{\"type\": \"unknown\"}|This validator only works with DndChoices|400",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"a\": \"a\"}]}"
+                + "|Unable to map response to a Choice|404",
+            "{\"type\": \"dndChoice\", \"items\": \"some_string\"}|Unable to map response to a Choice|404",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": [{}], \"dropZoneId\": \"leg_1\"}]}"
+                + "|Unable to map response to a Choice|404"
+        }, delimiter = '|')
+        public void badRequest_ErrorReturned(
+            final String answerStr, final String emsg, final String estate
+        ) throws Exception {
+            var dndQuestion = persist(createQuestion(correct(choose(item_3cm, "leg_1"))));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr);
             response.assertError(emsg, estate);
         }
 
         @ParameterizedTest
         @CsvSource(value = {
-            "{\"type\": \"dndChoice\", \"items\": [{\"dropZoneId\": \"leg_1\"}]};Your answer is not in a recognised format.",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]};Your answer is not in a recognised format."
-        }, delimiter = ';')
-        public void badRequest_IncorrectReturnedWithExplanation(final String answerStr, final String emsg) throws Exception {
+            "{\"type\": \"dndChoice\", \"items\": [{\"dropZoneId\": \"leg_1\"}]}"
+                + "|Your answer is not in a recognised format.",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]}|Your answer is not in a recognised format."
+        }, delimiter = '|')
+        public void badRequest_IncorrectReturnedWithExplanation(
+            final String answerStr, final String emsg
+        ) throws Exception {
             var dndQuestion = persist(createQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             ));
@@ -127,11 +132,9 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @CsvSource(value = {
             "{\"type\": \"dndChoice\"}",
             "{\"type\": \"dndChoice\", \"items\": []}"
-        }, delimiter = ';')
+        }, delimiter = '|')
         public void emptyAnswer_IncorrectReturned(final String answerStr) throws Exception {
-            var dndQuestion = persist(createQuestion(
-                correct(choose(item_3cm, "leg_1"))
-            ));
+            var dndQuestion = persist(createQuestion(correct(choose(item_3cm, "leg_1"))));
             var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
             assertEquals(
@@ -143,8 +146,10 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @ParameterizedTest
         @CsvSource(value = {
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\"}]}",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
+            "{\"type\": \"dndChoice\", "
+                + "\"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"dndItem\"}]}",
+            "{\"type\": \"dndChoice\", "
+                + "\"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"type\": \"unknown\"}]}"
         }, delimiter = ';')
         public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = createQuestion(correct(choose(item_3cm, "leg_1")));
@@ -215,12 +220,12 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         return question;
     }
 
-    private JSONObject persistJSON(final String id, final JSONObject questionJSON) throws Exception {
-        questionJSON.put("id", id);
+    private JSONObject persistJSON(final JSONObject questionJSON) throws Exception {
+        questionJSON.put("id", "i1");
         elasticSearchProvider.bulkIndexWithIDs(
             "6c2ba42c5c83d8f31b3b385b3a9f9400a12807c9",
             "content",
-            List.of(immutableEntry(id, questionJSON.toString()))
+            List.of(immutableEntry("i1", questionJSON.toString()))
         );
         return questionJSON;
     }
