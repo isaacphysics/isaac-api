@@ -288,15 +288,20 @@ public final class ValidationUtils {
     public static class BiRuleValidator<T, U> {
         protected final List<Rule<T, U>> rules = new ArrayList<>();
 
-        /** Create a BiRuleValidator from a RuleValidator. */
-        public static <T, U> BiRuleValidator<T, U> of(final RuleValidator<T> validator) {
-            BiRuleValidator<T, U> biValidator = new BiRuleValidator<>();
-            validator.rules.forEach(r -> biValidator.add(r.message, (t, u) -> r.predicate.test(t, null)));
-            return biValidator;
-        }
-
         public BiRuleValidator<T, U> add(final String message, final BiPredicate<T, U> rule) {
             rules.add(new Rule<>(message, rule));
+            return this;
+        }
+
+        /** Add rules from another RuleValidator. */
+        public BiRuleValidator<T, U> addRulesFrom(final RuleValidator<T> validator) {
+            validator.rules.forEach(r -> add(r.message, (t, u) -> r.predicate.test(t, null)));
+            return this;
+        }
+
+        /** Add rules from another BiRuleValidator. */
+        public BiRuleValidator<T, U> addRulesFrom(final BiRuleValidator<T, U> validator) {
+            validator.rules.forEach(r -> add(r.message, r.predicate));
             return this;
         }
 

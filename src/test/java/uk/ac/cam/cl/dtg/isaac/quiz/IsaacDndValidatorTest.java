@@ -338,20 +338,26 @@ public class IsaacDndValidatorTest {
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
             .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
                                           q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("correct answers contain a choice for each drop zone")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(
-                correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
-                correct(choose(item_3cm, "leg_1"))
-            ).expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ)
-            .expectLogMessage(q -> format("Question contains correct answer that doesn't use all drop zones. %s src %s",
-                                          q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("drop zone references must be valid")
+        new QuestionValidationTestCase().setTitle("answers: drop zone references must be valid")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_DZ)
             .expectLogMessage(q -> format("Question contains invalid drop zone ref. %s src %s",
-                                          q.getId(), q.getCanonicalSourceFile()))
+                                          q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("answers: must not contain duplicate drop zones")
+            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_3cm, "leg_1")))
+            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
+            .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
+                              q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("answers: correct must contain a choice for each drop zone")
+                .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                .setQuestion(
+                    correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
+                    correct(choose(item_3cm, "leg_1"))
+                ).expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ)
+                .expectLogMessage(q -> format("Question contains correct answer that doesn't use all drop zones. %s src %s",
+                                              q.getId(), q.getCanonicalSourceFile()))
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")

@@ -106,20 +106,9 @@ public class IsaacDndValidator implements IValidator {
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        return ValidationUtils.BiRuleValidator.<IsaacDndQuestion, DndChoice>of(
-                questionValidator(IsaacDndValidator::logIfTrue)
-            )
-            .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
-            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> a.getItems().stream().anyMatch(i ->
-                i.getId() == null || i.getDropZoneId() == null
-            ))
-            .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS, (q, a) -> a.getItems().stream().anyMatch(i ->
-                !q.getItems().contains(i)
-                || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
-            )
-            .add(FEEDBACK_ANSWER_TOO_MUCH, (q, a) ->
-                a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0)
-            )
+        return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
+            .addRulesFrom(questionValidator(IsaacDndValidator::logIfTrue))
+            .addRulesFrom(answerValidator())
             .check((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
@@ -166,6 +155,10 @@ public class IsaacDndValidator implements IValidator {
                 QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
                 format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
+            .add(FEEDBACK_QUESTION_DUP_DZ, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
+                ChoiceHelpers.getDropZoneIds(c).size() != new HashSet<>(ChoiceHelpers.getDropZoneIds(c)).size(),
+                format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
+            )))
             .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.anyCorrectMatch(q, c -> logged.apply(
                 QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
                 format("Question contains correct answer that doesn't use all drop zones. %s src %s",
@@ -175,6 +168,20 @@ public class IsaacDndValidator implements IValidator {
                 c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
                 format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )));
+    }
+
+    private ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice> answerValidator() {
+        return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
+            .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
+            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> a.getItems().stream().anyMatch(i ->
+                i.getId() == null || i.getDropZoneId() == null
+            ))
+            .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS, (q, a) -> a.getItems().stream().anyMatch(i ->
+                !q.getItems().contains(i) || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
+            )
+            .add(FEEDBACK_ANSWER_TOO_MUCH, (q, a) ->
+                a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0)
+            );
     }
 
     private static boolean logIfTrue(final boolean result, final String message) {
@@ -253,6 +260,10 @@ public class IsaacDndValidator implements IValidator {
                     DndItem::getDropZoneId,
                     lhsItem -> dropZoneEql(rhs, lhsItem))
                 );
+        }
+
+        public static List<String> getDropZoneIds(final DndChoice choice) {
+            return choice.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
         }
 
         private static boolean dropZoneEql(final DndChoice choice, final DndItem item) {
