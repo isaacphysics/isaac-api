@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static java.lang.Math.max;
@@ -287,6 +289,7 @@ public final class ValidationUtils {
     /** Validate a set of rules. Each rule takes two arguments. `.add` some rules, then `.check` whether they held.*/
     public static class BiRuleValidator<T, U> {
         protected final List<Rule<T, U>> rules = new ArrayList<>();
+        protected List<Consumer<T>> dynamicRules = new ArrayList<>();
 
         public BiRuleValidator<T, U> add(final String message, final BiPredicate<T, U> rule) {
             rules.add(new Rule<>(message, rule));
@@ -296,17 +299,31 @@ public final class ValidationUtils {
         /** Add rules from another RuleValidator. */
         public BiRuleValidator<T, U> addRulesFrom(final RuleValidator<T> validator) {
             validator.rules.forEach(r -> add(r.message, (t, u) -> r.predicate.test(t, null)));
+            this.dynamicRules.addAll(validator.dynamicRules);
             return this;
         }
 
         /** Add rules from another BiRuleValidator. */
         public BiRuleValidator<T, U> addRulesFrom(final BiRuleValidator<T, U> validator) {
             validator.rules.forEach(r -> add(r.message, r.predicate));
+            this.dynamicRules.addAll(validator.dynamicRules);
             return this;
+        }
+
+        public void addDynamic(final Consumer<T> dynamicRules) {
+            this.dynamicRules.add(dynamicRules);
         }
 
         /** Apply the validation rules on a set of objects. */
         public Optional<String> check(final T t, final U u) {
+            return this.doCheck(t, u)
+                .or(() -> {
+                    this.dynamicRules.forEach(createRule -> createRule.accept(t));
+                    return this.doCheck(t, u);
+                });
+        }
+
+        private Optional<String> doCheck(final T t, final U u) {
             return rules.stream()
                 .filter(r -> r.predicate.test(t, u))
                 .map(r -> r.message)
@@ -330,6 +347,11 @@ public final class ValidationUtils {
         public RuleValidator<T> add(final String message, final Predicate<T> rule) {
             super.add(message, (t, ignored) -> rule.test(t));
             return this;
+        }
+
+        public <U> void addRulesFrom(final BiRuleValidator<T, U> validator, final U u) {
+            validator.rules.forEach(r -> add(r.message, (t, ignored) -> r.predicate.test(t, u)));
+            this.dynamicRules.addAll(validator.dynamicRules);
         }
 
         public Optional<String> check(final T t) {

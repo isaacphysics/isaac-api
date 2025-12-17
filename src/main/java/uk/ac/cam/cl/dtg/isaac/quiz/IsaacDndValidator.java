@@ -116,7 +116,7 @@ public class IsaacDndValidator implements IValidator {
     public static ValidationUtils.RuleValidator<IsaacDndQuestion> questionValidator(
         final BiFunction<Boolean, String, Boolean> logged
     ) {
-        return new ValidationUtils.RuleValidator<IsaacDndQuestion>()
+        var validator = new ValidationUtils.RuleValidator<IsaacDndQuestion>()
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
                 q.getChoices() == null || q.getChoices().isEmpty(),
                 format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
@@ -168,9 +168,13 @@ public class IsaacDndValidator implements IValidator {
                 c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
                 format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )));
+        validator.addDynamic(q ->
+            q.getChoices().forEach(c -> validator.addRulesFrom(answerValidator(), (DndChoice) c))
+        );
+        return validator;
     }
 
-    private ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice> answerValidator() {
+    private static ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice> answerValidator() {
         return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
             .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
             .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> a.getItems().stream().anyMatch(i ->
