@@ -219,10 +219,10 @@ public class IsaacDndValidatorTest {
     public static AnswerValidationTestCase[] answerValidationTestCases = {
         new AnswerValidationTestCase().setTitle("itemsNull")
             .setAnswer(answer())
-            .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
+            .expectExplanation("You provided an empty answer."),
         new AnswerValidationTestCase().setTitle("itemsEmpty")
             .setAnswer(new DndChoice())
-            .expectExplanation(Constants.FEEDBACK_NO_ANSWER_PROVIDED),
+            .expectExplanation("You provided an empty answer."),
         new AnswerValidationTestCase().setTitle("itemsNotEnough")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
@@ -233,22 +233,22 @@ public class IsaacDndValidatorTest {
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_1")))
-            .expectExplanation(IsaacDndValidator.FEEDBACK_ANSWER_TOO_MUCH),
+            .expectExplanation("You provided an answer that contains more items than there are gaps."),
         new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item("bad_id", "some_value"), "leg_1")))
-            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_ITEMS),
+            .expectExplanation("You provided an answer with unrecognised items."),
         new AnswerValidationTestCase().setTitle("itemMissingId")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item(null, null), "leg_1")))
-            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT),
+            .expectExplanation("You provided an answer in an unrecognised format."),
         new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, null)))
-            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_FORMAT),
+            .expectExplanation("You provided an answer in an unrecognised format."),
         new AnswerValidationTestCase().setTitle("itemsNotEnough_providesSpecificExplanationFirst")
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
@@ -260,7 +260,7 @@ public class IsaacDndValidatorTest {
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_2")))
-            .expectExplanation(Constants.FEEDBACK_UNRECOGNISED_ITEMS)
+            .expectExplanation("You provided an answer with unrecognised items.")
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")

@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.lang.Math.max;
@@ -288,56 +288,68 @@ public final class ValidationUtils {
 
     /** Validate a set of rules. Each rule takes two arguments. `.add` some rules, then `.check` whether they held.*/
     public static class BiRuleValidator<T, U> {
-        protected final List<Rule<T, U>> rules = new ArrayList<>();
-        protected List<Consumer<T>> dynamicRules = new ArrayList<>();
+        protected final List<IRule<T, U>> rules = new ArrayList<>();
 
         public BiRuleValidator<T, U> add(final String message, final BiPredicate<T, U> rule) {
             rules.add(new Rule<>(message, rule));
             return this;
         }
 
-        /** Add rules from another RuleValidator. */
-        public BiRuleValidator<T, U> addRulesFrom(final RuleValidator<T> validator) {
-            validator.rules.forEach(r -> add(r.message, (t, u) -> r.predicate.test(t, null)));
-            this.dynamicRules.addAll(validator.dynamicRules);
+        public BiRuleValidator<T, U> add(final BiFunction<T, U, Optional<String>> msgProducer) {
+            rules.add(new MessageRule<>(msgProducer));
             return this;
-        }
-
-        /** Add rules from another BiRuleValidator. */
-        public BiRuleValidator<T, U> addRulesFrom(final BiRuleValidator<T, U> validator) {
-            validator.rules.forEach(r -> add(r.message, r.predicate));
-            this.dynamicRules.addAll(validator.dynamicRules);
-            return this;
-        }
-
-        public void addDynamic(final Consumer<T> dynamicRules) {
-            this.dynamicRules.add(dynamicRules);
         }
 
         /** Apply the validation rules on a set of objects. */
         public Optional<String> check(final T t, final U u) {
-            return this.doCheck(t, u)
-                .or(() -> {
-                    this.dynamicRules.forEach(createRule -> createRule.accept(t));
-                    return this.doCheck(t, u);
-                });
-        }
-
-        private Optional<String> doCheck(final T t, final U u) {
             return rules.stream()
-                .filter(r -> r.predicate.test(t, u))
-                .map(r -> r.message)
+                .filter(r -> r.run(t, u))
+                .map(IRule::getMessage)
                 .findFirst();
         }
 
         /** A rule used by either a BiRuleValidator or a RuleValidator. */
-        protected static class Rule<T, U> {
-            public final String message;
-            public final BiPredicate<T, U> predicate;
+        protected interface IRule<T, U> {
+            String getMessage();
+
+            boolean run(T t, U u);
+        }
+
+        protected static class Rule<T, U> implements IRule<T, U> {
+            private final String message;
+            private final BiPredicate<T, U> predicate;
 
             public Rule(final String message, final BiPredicate<T, U> predicate) {
                 this.message = message;
                 this.predicate = predicate;
+            }
+
+            public boolean run(final T t, final U u) {
+                return this.predicate.test(t, u);
+            }
+
+            public String getMessage() {
+                return this.message;
+            }
+        }
+
+        protected static class MessageRule<T, U> implements IRule<T, U> {
+            private String message = null;
+            private final BiFunction<T, U, Optional<String>> msgProducer;
+
+            public MessageRule(final BiFunction<T, U, Optional<String>> msgProducer) {
+                this.msgProducer = msgProducer;
+            }
+
+            public boolean run(final T t, final U u) {
+                return this.msgProducer.apply(t, u).map(m -> {
+                    message = m;
+                    return m;
+                }).isPresent();
+            }
+
+            public String getMessage() {
+                return this.message;
             }
         }
     }
@@ -349,9 +361,9 @@ public final class ValidationUtils {
             return this;
         }
 
-        public <U> void addRulesFrom(final BiRuleValidator<T, U> validator, final U u) {
-            validator.rules.forEach(r -> add(r.message, (t, ignored) -> r.predicate.test(t, u)));
-            this.dynamicRules.addAll(validator.dynamicRules);
+        public RuleValidator<T> add(final Function<T, Optional<String>> msgProducer) {
+            super.add((t, ignored) -> msgProducer.apply(t));
+            return this;
         }
 
         public Optional<String> check(final T t) {

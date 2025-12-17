@@ -60,8 +60,6 @@ public class IsaacDndValidator implements IValidator {
                                                             + "invalid drop zone.";
     public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
                                                           + "an item for each gap.";
-    public static final String FEEDBACK_ANSWER_TOO_MUCH = "You did not provide a valid answer; it contains more items "
-                                                        + "than gaps.";
     private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
 
     @Override
@@ -107,8 +105,8 @@ public class IsaacDndValidator implements IValidator {
         }
 
         return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
-            .addRulesFrom(questionValidator(IsaacDndValidator::logIfTrue))
-            .addRulesFrom(answerValidator())
+            .add((q, a) -> questionValidator(IsaacDndValidator::logIfTrue).check(q))
+            .add((q, a) -> answerValidator("You provided ").check(q, a))
             .check((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
@@ -116,7 +114,7 @@ public class IsaacDndValidator implements IValidator {
     public static ValidationUtils.RuleValidator<IsaacDndQuestion> questionValidator(
         final BiFunction<Boolean, String, Boolean> logged
     ) {
-        var validator = new ValidationUtils.RuleValidator<IsaacDndQuestion>()
+        return new ValidationUtils.RuleValidator<IsaacDndQuestion>()
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
                 q.getChoices() == null || q.getChoices().isEmpty(),
                 format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
@@ -167,23 +165,25 @@ public class IsaacDndValidator implements IValidator {
             .add(FEEDBACK_QUESTION_INVALID_DZ, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
                 c.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
                 format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
-            )));
-        validator.addDynamic(q ->
-            q.getChoices().forEach(c -> validator.addRulesFrom(answerValidator(), (DndChoice) c))
-        );
-        return validator;
+            )))
+            .add(q -> q.getChoices().stream()
+                .flatMap(c -> answerValidator("The question is invalid, because it has ").check(q, (DndChoice) c).stream())
+                .findFirst()
+            );
     }
 
-    private static ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice> answerValidator() {
+    private static ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice> answerValidator(
+        final String pre
+    ) {
         return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
-            .add(Constants.FEEDBACK_NO_ANSWER_PROVIDED, (q, a) -> a.getItems() == null || a.getItems().isEmpty())
-            .add(Constants.FEEDBACK_UNRECOGNISED_FORMAT, (q, a) -> a.getItems().stream().anyMatch(i ->
+            .add(pre + "an empty answer.", (q, a) -> a.getItems() == null || a.getItems().isEmpty())
+            .add(pre + "an answer in an unrecognised format.", (q, a) -> a.getItems().stream().anyMatch(i ->
                 i.getId() == null || i.getDropZoneId() == null
             ))
-            .add(Constants.FEEDBACK_UNRECOGNISED_ITEMS, (q, a) -> a.getItems().stream().anyMatch(i ->
+            .add(pre + "an answer with unrecognised items.", (q, a) -> a.getItems().stream().anyMatch(i ->
                 !q.getItems().contains(i) || !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()))
             )
-            .add(FEEDBACK_ANSWER_TOO_MUCH, (q, a) ->
+            .add(pre + "an answer that contains more items than there are gaps.", (q, a) ->
                 a.getItems().size() > QuestionHelpers.getAnyCorrect(q).map(c -> c.getItems().size()).orElse(0)
             );
     }
