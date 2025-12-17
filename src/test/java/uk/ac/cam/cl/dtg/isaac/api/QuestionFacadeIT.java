@@ -113,8 +113,9 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @ParameterizedTest
         @CsvSource(value = {
             "{\"type\": \"dndChoice\", \"items\": [{\"dropZoneId\": \"leg_1\"}]}"
-                + "|Your answer is not in a recognised format.",
-            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]}|Your answer is not in a recognised format."
+                + "|You provided an answer in an unrecognised format.",
+            "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\"}]}"
+                + "|You provided an answer in an unrecognised format."
         }, delimiter = '|')
         public void badRequest_IncorrectReturnedWithExplanation(
             final String answerStr, final String emsg
