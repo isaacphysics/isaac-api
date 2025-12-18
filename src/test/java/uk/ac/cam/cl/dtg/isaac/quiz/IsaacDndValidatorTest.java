@@ -296,68 +296,68 @@ public class IsaacDndValidatorTest {
 
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
-        noAnswersTestCase.get().setTitle("answers empty").setQuestion(q -> q.setChoices(List.of())),
-        noAnswersTestCase.get().setTitle("answers null").setQuestion(q -> q.setChoices(null)),
-        noCorrectAnswersTestCase.get().setTitle("only incorrect answers")
+        noAnswersTestCase.get().setTitle("answersEmpty").setQuestion(q -> q.setChoices(List.of())),
+        noAnswersTestCase.get().setTitle("answersNull").setQuestion(q -> q.setChoices(null)),
+        noCorrectAnswersTestCase.get().setTitle("answersAllIncorrect")
             .setQuestion(incorrect(choose(item_3cm, "leg_1"))),
-        noCorrectAnswersTestCase.get().setTitle("answers without explicit correctness are treated as incorrect")
+        noCorrectAnswersTestCase.get().setTitle("answerNoExplicitCorrectness_Incorrect")
             .setQuestion(answer(choose(item_3cm, "leg_1"))),
-        new QuestionValidationTestCase().setTitle("answer type incompatible with DnD question")
+        new QuestionValidationTestCase().setTitle("answerWrongType")
             .setQuestion(q -> q.setChoices(List.of(parsonsChoice())))
             .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS)
             .expectLogMessage(q -> format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg."
                                          + "isaac.dos.content.ParsonsChoice!", q.getId())),
-        answerEmptyItemsTestCase.get().setTitle("answer with empty items").setQuestion(correct()),
-        answerEmptyItemsTestCase.get().setTitle("answer with null items")
+        answerEmptyItemsTestCase.get().setTitle("answerItemsEmpty").setQuestion(correct()),
+        answerEmptyItemsTestCase.get().setTitle("answerItemsNull")
             .setQuestion(q -> q.setChoices(
                 Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
-        new QuestionValidationTestCase().setTitle("answer with non-dnd items")
+        new QuestionValidationTestCase().setTitle("answerItemNonDnd")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
             .expectExplanation("The question is invalid, because it has an invalid answer.")
             .expectLogMessage(q -> format(
                 "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())),
-        itemUnrecognisedFormatCase.get().setTitle("answer with missing item_id")
+        itemUnrecognisedFormatCase.get().setTitle("answerItemMissingItemId")
             .setQuestion(correct(new DndItem(null, "value", "dropZoneId"))),
-        itemUnrecognisedFormatCase.get().setTitle("answer with empty item_id")
+        itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyItemId")
             .setQuestion(correct(new DndItem("", "value", "dropZoneId"))),
-        itemUnrecognisedFormatCase.get().setTitle("answer with missing dropZoneId")
+        itemUnrecognisedFormatCase.get().setTitle("answerItemMissingDropZoneId")
             .setQuestion(correct(new DndItem("item_id", "value", null))),
-        itemUnrecognisedFormatCase.get().setTitle("answer with empty dropZoneId")
+        itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyDropZoneId")
             .setQuestion(correct(new DndItem("item_id", "value", ""))),
-        questionEmptyAnswersTestCase.get().setTitle("items is null")
+        questionEmptyAnswersTestCase.get().setTitle("itemsNull")
             .tapQuestion(q -> q.setItems(null)),
-        questionEmptyAnswersTestCase.get().setTitle("items is empty")
+        questionEmptyAnswersTestCase.get().setTitle("itemsEmpty")
             .tapQuestion(q -> q.setItems(List.of())),
-        new QuestionValidationTestCase().setTitle("has no drop zones")
-            .setChildren(null)
-            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_NO_DZ)
-            .expectLogMessage(q -> format("Question does not have any drop zones. %s src %s",
-                                          q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("has id duplication among drop zones")
-            .setChildren(List.of(new Content("[drop-zone:A1] [drop-zone:A1]")))
-            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
-            .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
-                                          q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("answers: drop zone references must be valid")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
-            .expectExplanation("The question is invalid, because it has an answer with unrecognised drop zones.")
-            .expectLogMessage(q -> format("Question contains invalid drop zone ref. %s src %s",
-                                          q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("answers: must not contain duplicate drop zones")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_3cm, "leg_1")))
-            .expectExplanation("The question is invalid, because it has an answer with duplicate drop zones.")
-            .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
-                              q.getId(), q.getCanonicalSourceFile())),
-        new QuestionValidationTestCase().setTitle("answers: correct must contain a choice for each drop zone")
+        new QuestionValidationTestCase().setTitle("answerInvalidDropZoneReference")
+                .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
+                .expectExplanation("The question is invalid, because it has an answer with unrecognised drop zones.")
+                .expectLogMessage(q -> format("Question contains invalid drop zone ref. %s src %s",
+                q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("answerDuplicateDropZones")
+                .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_3cm, "leg_1")))
+                .expectExplanation("The question is invalid, because it has an answer with duplicate drop zones.")
+                .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
+                q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("answerCorrectNotAllDropZones")
                 .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
                 .setQuestion(
                     correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
                     correct(choose(item_3cm, "leg_1"))
                 ).expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ)
                 .expectLogMessage(q -> format("Question contains correct answer that doesn't use all drop zones. %s src %s",
-                                              q.getId(), q.getCanonicalSourceFile()))
+                q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("noDropZones")
+            .setChildren(null)
+            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_NO_DZ)
+            .expectLogMessage(q -> format("Question does not have any drop zones. %s src %s",
+                                          q.getId(), q.getCanonicalSourceFile())),
+        new QuestionValidationTestCase().setTitle("dropZoneDuplication")
+            .setChildren(List.of(new Content("[drop-zone:A1] [drop-zone:A1]")))
+            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
+            .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
+                                          q.getId(), q.getCanonicalSourceFile()))
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")
