@@ -291,12 +291,12 @@ public final class ValidationUtils {
         protected final List<IRule<T, U>> rules = new ArrayList<>();
 
         public BiRuleValidator<T, U> add(final String message, final BiPredicate<T, U> rule) {
-            rules.add(new Rule<>(message, rule));
+            rules.add(new StaticMessageRule<>(message, rule));
             return this;
         }
 
         public BiRuleValidator<T, U> add(final BiFunction<T, U, Optional<String>> msgProducer) {
-            rules.add(new MessageRule<>(msgProducer));
+            rules.add(new DynamicMessageRule<>(msgProducer));
             return this;
         }
 
@@ -315,32 +315,37 @@ public final class ValidationUtils {
             boolean run(T t, U u);
         }
 
-        protected static class Rule<T, U> implements IRule<T, U> {
+        @SuppressWarnings("checkstyle:MissingJavadocType")
+        protected static class StaticMessageRule<T, U> implements IRule<T, U> {
             private final String message;
             private final BiPredicate<T, U> predicate;
 
-            public Rule(final String message, final BiPredicate<T, U> predicate) {
+            public StaticMessageRule(final String message, final BiPredicate<T, U> predicate) {
                 this.message = message;
                 this.predicate = predicate;
             }
 
+            @Override
             public boolean run(final T t, final U u) {
                 return this.predicate.test(t, u);
             }
 
+            @Override
             public String getMessage() {
                 return this.message;
             }
         }
 
-        protected static class MessageRule<T, U> implements IRule<T, U> {
+        @SuppressWarnings("checkstyle:MissingJavadocType")
+        protected static class DynamicMessageRule<T, U> implements IRule<T, U> {
             private String message = null;
             private final BiFunction<T, U, Optional<String>> msgProducer;
 
-            public MessageRule(final BiFunction<T, U, Optional<String>> msgProducer) {
+            public DynamicMessageRule(final BiFunction<T, U, Optional<String>> msgProducer) {
                 this.msgProducer = msgProducer;
             }
 
+            @Override
             public boolean run(final T t, final U u) {
                 return this.msgProducer.apply(t, u).map(m -> {
                     message = m;
@@ -348,6 +353,7 @@ public final class ValidationUtils {
                 }).isPresent();
             }
 
+            @Override
             public String getMessage() {
                 return this.message;
             }
