@@ -1,4 +1,4 @@
-CREATE INDEX CONCURRENTLY quiz_attempts_index_by_user_id_and_quiz_id
+CREATE INDEX CONCURRENTLY IF NOT EXISTS quiz_attempts_index_by_user_id_and_quiz_id
     ON public.quiz_attempts USING btree (user_id, quiz_id);
 
 VACUUM public.quiz_attempts;
