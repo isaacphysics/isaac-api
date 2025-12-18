@@ -110,14 +110,12 @@ public class IsaacDndValidator implements IValidator {
         final BiFunction<Boolean, String, Boolean> logged
     ) {
         return new ValidationUtils.RuleValidator<IsaacDndQuestion>()
-            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
-                q.getChoices() == null || q.getChoices().isEmpty(),
-                format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
-            ))
+            // items
             .add(FEEDBACK_QUESTION_MISSING_ITEMS, q -> logged.apply(
                 q.getItems() == null || q.getItems().isEmpty(),
                 format("Expected items in question (%s), but didn't find any!", q.getId())
             ))
+            // dropZones
             .add(FEEDBACK_QUESTION_NO_DZ, q -> logged.apply(
                 QuestionHelpers.getDropZones(q).isEmpty(),
                 format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
@@ -126,23 +124,28 @@ public class IsaacDndValidator implements IValidator {
                 QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
                 format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
+            // answers
+            .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
+                q.getChoices() == null || q.getChoices().isEmpty(),
+                format("Question does not have any answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
+            ))
             .add(FEEDBACK_QUESTION_INVALID_ANS, q -> q.getChoices().stream().anyMatch(c -> logged.apply(
                 !DndChoice.class.equals(c.getClass()),
                 format("Expected DndItem in question (%s), instead found %s!", q.getId(), c.getClass())
             )))
+            .add(q -> q.getChoices().stream()
+                .flatMap(c -> answerValidator(IsaacDndValidator::logIfTrue).check(q, (DndChoice) c)
+                    .map(m -> "The question is invalid, because it has " + m).stream())
+                .findFirst()
+            )
             .add(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q -> logged.apply(
                 q.getChoices().stream().noneMatch(Choice::isCorrect),
                 format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
             ))
-            .add(q -> q.getChoices().stream()
-                .flatMap(c -> answerValidator(IsaacDndValidator::logIfTrue).check(q, (DndChoice) c)
-                        .map(m -> "The question is invalid, because it has " + m).stream())
-                .findFirst()
-            )
             .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.anyCorrectMatch(q, c -> logged.apply(
                 QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
                 format("Question contains correct answer that doesn't use all drop zones. %s src %s",
-                        q.getId(), q.getCanonicalSourceFile())
+                    q.getId(), q.getCanonicalSourceFile())
             )));
     }
 
@@ -159,7 +162,8 @@ public class IsaacDndValidator implements IValidator {
                 format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())
             )))
             .add("an answer in an unrecognised format.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
-                i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""),
+                i.getId() == null || i.getDropZoneId() == null
+                    || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""),
                 format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()))
             ))
             .add("an answer with unrecognised items.", (q, a) -> a.getItems().stream().anyMatch(i ->
