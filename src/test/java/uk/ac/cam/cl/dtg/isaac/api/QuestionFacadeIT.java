@@ -73,7 +73,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var question = persistJSON(new JSONObject()
                 .put("type", "isaacDndQuestion")
                 .put("items", new JSONArray().put(new JSONObject().put("id", "item_id").put("type", "item")))
-                .put("children", new JSONArray().put(new JSONObject().put("type", "content").put("value", "[drop-zone:A1]")))
+                .put("children", new JSONArray().put(
+                    new JSONObject().put("type", "content").put("value", "[drop-zone:A1]")))
                 .put("choices", new JSONArray().put(
                     new JSONObject()
                         .put("type", "dndChoice")
