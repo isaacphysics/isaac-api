@@ -53,8 +53,6 @@ public class IsaacDndValidator implements IValidator {
     public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
     public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
                                                            + "all drop zones.";
-    public static final String FEEDBACK_QUESTION_INVALID_DZ = "One of the answers to this question references an "
-                                                            + "invalid drop zone.";
     public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
                                                           + "an item for each gap.";
     private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
@@ -103,7 +101,7 @@ public class IsaacDndValidator implements IValidator {
 
         return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
             .add((q, a) -> questionValidator(IsaacDndValidator::logIfTrue).check(q))
-            .add((q, a) -> answerValidator("You provided ", IsaacDndValidator::noLog).check(q, a))
+            .add((q, a) -> answerValidator(IsaacDndValidator::noLog).check(q, a).map(m -> "You provided " + m))
             .check((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
@@ -121,12 +119,12 @@ public class IsaacDndValidator implements IValidator {
                 format("Expected items in question (%s), but didn't find any!", q.getId())
             ))
             .add(FEEDBACK_QUESTION_NO_DZ, q -> logged.apply(
-                    QuestionHelpers.getDropZones(q).isEmpty(),
-                    format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
+                QuestionHelpers.getDropZones(q).isEmpty(),
+                format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_DUP_DZ, q -> logged.apply(
-                    QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
-                    format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
+                QuestionHelpers.getDropZones(q).size() != new HashSet<>(QuestionHelpers.getDropZones(q)).size(),
+                format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_INVALID_ANS, q -> q.getChoices().stream().anyMatch(c -> logged.apply(
                 !DndChoice.class.equals(c.getClass()),
@@ -137,9 +135,9 @@ public class IsaacDndValidator implements IValidator {
                 format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(q -> q.getChoices().stream()
-                    .flatMap(c -> answerValidator("The question is invalid, because it has ", IsaacDndValidator::logIfTrue)
-                            .check(q, (DndChoice) c).stream())
-                    .findFirst()
+                .flatMap(c -> answerValidator(IsaacDndValidator::logIfTrue).check(q, (DndChoice) c)
+                        .map(m -> "The question is invalid, because it has " + m).stream())
+                .findFirst()
             )
             .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.anyCorrectMatch(q, c -> logged.apply(
                 QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
@@ -149,38 +147,34 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private static ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice> answerValidator(
-        final String pre, final BiFunction<Boolean, String, Boolean> logged
+        final BiFunction<Boolean, String, Boolean> logged
     ) {
         return new ValidationUtils.BiRuleValidator<IsaacDndQuestion, DndChoice>()
-            .add(pre + "an empty answer.", (q, a) -> logged.apply(
+            .add("an empty answer.", (q, a) -> logged.apply(
                 a.getItems() == null || a.getItems().isEmpty(),
                 format("Expected list of DndItems, but none found in choice for question id (%s)!", q.getId())
             ))
-            .add(FEEDBACK_QUESTION_INVALID_ANS, (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
+            .add("an invalid answer.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
                 i.getClass() != DndItem.class,
                 format("Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())
             )))
-            .add(pre + "an answer in an unrecognised format.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
+            .add("an answer in an unrecognised format.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
                 i.getId() == null || i.getDropZoneId() == null || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""),
                 format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()))
             ))
-            .add(pre + "an answer with unrecognised items.", (q, a) -> a.getItems().stream().anyMatch(i ->
+            .add("an answer with unrecognised items.", (q, a) -> a.getItems().stream().anyMatch(i ->
                 !q.getItems().contains(i)
             ))
-            .add(pre + "an answer with unrecognised drop zones.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
+            .add("an answer with unrecognised drop zones.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
                 !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()),
                 format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )))
-            .add(pre + "an answer that contains more items than there are gaps.", (q, a) ->
+            .add("an answer that contains more items than there are gaps.", (q, a) ->
                 a.getItems().size() > QuestionHelpers.getDropZones(q).size()
             )
-            .add(FEEDBACK_QUESTION_DUP_DZ, (q, a) -> logged.apply(
+            .add("an answer with duplicate drop zones.", (q, a) -> logged.apply(
                 ChoiceHelpers.getDropZoneIds(a).size() != new HashSet<>(ChoiceHelpers.getDropZoneIds(a)).size(),
                 format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
-            ))
-            .add(FEEDBACK_QUESTION_INVALID_DZ, (q, a) -> logged.apply(
-                a.getItems().stream().anyMatch(i -> !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId())),
-                format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ));
     }
 

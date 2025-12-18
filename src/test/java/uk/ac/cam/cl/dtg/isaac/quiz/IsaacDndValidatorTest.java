@@ -313,7 +313,7 @@ public class IsaacDndValidatorTest {
                 Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList()))),
         new QuestionValidationTestCase().setTitle("answer with non-dnd items")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
-            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS)
+            .expectExplanation("The question is invalid, because it has an invalid answer.")
             .expectLogMessage(q -> format(
                 "Expected list of DndItems, but something else found in choice for question id (%s)!", q.getId())),
         itemUnrecognisedFormatCase.get().setTitle("answer with missing item_id")
@@ -347,7 +347,7 @@ public class IsaacDndValidatorTest {
         new QuestionValidationTestCase().setTitle("answers: must not contain duplicate drop zones")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_3cm, "leg_1")))
-            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
+            .expectExplanation("The question is invalid, because it has an answer with duplicate drop zones.")
             .expectLogMessage(q -> format("Question contains duplicate drop zones. %s src %s",
                               q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("answers: correct must contain a choice for each drop zone")
