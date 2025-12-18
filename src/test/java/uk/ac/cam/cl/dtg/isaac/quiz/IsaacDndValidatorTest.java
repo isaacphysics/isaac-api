@@ -233,7 +233,7 @@ public class IsaacDndValidatorTest {
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_1")))
-            .expectExplanation("You provided an answer that contains more items than there are gaps."),
+            .expectExplanation("You provided an answer with more items than we have gaps."),
         new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
@@ -317,6 +317,14 @@ public class IsaacDndValidatorTest {
         new QuestionValidationTestCase().setTitle("itemsEmpty")
             .tapQuestion(q -> q.setItems(List.of()))
             .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
+        new QuestionValidationTestCase().setTitle("answerInvalidItemReference")
+            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+            .setQuestion(correct(new DndItem("invalid_id", "some_value", "leg_1")))
+            .expectExplLog("The question is invalid, because it has an answer with unrecognised items."),
+        new QuestionValidationTestCase().setTitle("answerTooManuItems")
+            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+            .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_1")))
+            .expectExplLog("The question is invalid, because it has an answer with more items than we have gaps."),
         new QuestionValidationTestCase().setTitle("answerInvalidDropZoneReference")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
@@ -613,9 +621,13 @@ public class IsaacDndValidatorTest {
                         return format("Question contains duplicate drop zones. %s src %s", idFile);
                     case "The question is invalid, because it has an answer with unrecognised drop zones.":
                         return format("Question contains invalid drop zone ref. %s src %s", idFile);
+                    case "The question is invalid, because it has an answer with unrecognised items.":
+                        return format("Question contains invalid item ref. %s src %s", idFile);
                     case "The question is invalid, because it has an invalid answer.":
                         return format(
                             "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
+                    case "The question is invalid, because it has an answer with more items than we have gaps.":
+                        return format("Question has answer with more items than we have gaps. %s src %s", idFile);
                     case IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ:
                         return format(
                             "Question contains correct answer that doesn't use all drop zones. %s src %s", idFile);

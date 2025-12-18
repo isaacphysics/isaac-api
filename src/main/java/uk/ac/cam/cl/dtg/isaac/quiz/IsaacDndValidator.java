@@ -166,16 +166,19 @@ public class IsaacDndValidator implements IValidator {
                     || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""),
                 format("Found item with missing id or drop zone id in answer for question id (%s)!", q.getId()))
             ))
-            .add("an answer with unrecognised items.", (q, a) -> a.getItems().stream().anyMatch(i ->
-                !q.getItems().contains(i)
-            ))
+            .add("an answer with unrecognised items.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
+                !q.getItems().contains(i),
+                format("Question contains invalid item ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
+            )))
             .add("an answer with unrecognised drop zones.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
                 !QuestionHelpers.getDropZones(q).contains(i.getDropZoneId()),
                 format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )))
-            .add("an answer that contains more items than there are gaps.", (q, a) ->
-                a.getItems().size() > QuestionHelpers.getDropZones(q).size()
-            )
+            .add("an answer with more items than we have gaps.", (q, a) -> logged.apply(
+                a.getItems().size() > QuestionHelpers.getDropZones(q).size(),
+                format("Question has answer with more items than we have gaps. %s src %s",
+                       q.getId(), q.getCanonicalSourceFile())
+            ))
             .add("an answer with duplicate drop zones.", (q, a) -> logged.apply(
                 ChoiceHelpers.getDropZoneIds(a).size() != new HashSet<>(ChoiceHelpers.getDropZoneIds(a)).size(),
                 format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
@@ -189,7 +192,7 @@ public class IsaacDndValidator implements IValidator {
         return result;
     }
 
-    private static boolean noLog(final boolean result, final String message) {
+    public static boolean noLog(final boolean result, final String message) {
         return result;
     }
 
@@ -233,7 +236,6 @@ public class IsaacDndValidator implements IValidator {
             if (content instanceof Content && ((Content) content).getChildren() != null) {
                 return ((Content) content).getChildren().stream().flatMap(QuestionHelpers::getDropZonesFromContent);
             }
-
             return Stream.of();
         }
     }
@@ -253,10 +255,7 @@ public class IsaacDndValidator implements IValidator {
         public static Map<String, Boolean> getDropZonesCorrect(final DndChoice lhs, final DndChoice rhs) {
             return lhs.getItems().stream()
                 .filter(lhsItem -> getItemByDropZone(rhs, lhsItem.getDropZoneId()).isPresent())
-                .collect(Collectors.toMap(
-                    DndItem::getDropZoneId,
-                    lhsItem -> dropZoneEql(rhs, lhsItem))
-                );
+                .collect(Collectors.toMap(DndItem::getDropZoneId, lhsItem -> dropZoneEql(rhs, lhsItem)));
         }
 
         public static List<String> getDropZoneIds(final DndChoice choice) {

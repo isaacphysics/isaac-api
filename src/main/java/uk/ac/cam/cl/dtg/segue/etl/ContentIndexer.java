@@ -1157,8 +1157,8 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacDndQuestion) {
-            BiFunction<Boolean, String, Boolean> noLog = (res, msg) -> res;
-            IsaacDndValidator.questionValidator(noLog).check((IsaacDndQuestion) content).ifPresent(err -> {
+            var validator = IsaacDndValidator.questionValidator(IsaacDndValidator::noLog);
+            validator.check((IsaacDndQuestion) content).ifPresent(err -> {
                 var template = "Drag-and-drop Question: %s has a problem. %s";
                 this.registerContentProblem(content, String.format(template, content.getId(), err), indexProblemCache);
             });
