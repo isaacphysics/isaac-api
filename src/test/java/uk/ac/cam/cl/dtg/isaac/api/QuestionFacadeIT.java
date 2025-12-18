@@ -72,6 +72,8 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         public void invalidQuestion() throws Exception {
             var question = persistJSON(new JSONObject()
                 .put("type", "isaacDndQuestion")
+                .put("items", new JSONArray().put(new JSONObject().put("id", "item_id").put("type", "item")))
+                .put("children", new JSONArray().put(new JSONObject().put("type", "content").put("value", "[drop-zone:A1]")))
                 .put("choices", new JSONArray().put(
                     new JSONObject()
                         .put("type", "dndChoice")
@@ -87,7 +89,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
             assertFalse(response.getBoolean("correct"));
             assertEquals(
-                "This question contains at least one answer in an unrecognised format.",
+                "The question is invalid, because it has an answer in an unrecognised format.",
                 response.getJSONObject("explanation").getString("value")
             );
         }

@@ -260,7 +260,7 @@ public class IsaacDndValidatorTest {
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_2")))
-            .expectExplanation("You provided an answer with unrecognised items.")
+            .expectExplanation("You provided an answer with unrecognised drop zones.")
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")
@@ -276,7 +276,7 @@ public class IsaacDndValidatorTest {
     }
 
     static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
-        .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_UNRECOGNISED_ANS)
+        .expectExplanation("The question is invalid, because it has an answer in an unrecognised format.")
         .expectLogMessage(q -> format("Found item with missing id or drop zone id in answer for question id (%s)!",
                                       q.getId()));
     static Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
@@ -287,7 +287,7 @@ public class IsaacDndValidatorTest {
         .expectLogMessage(q -> format("Question does not have any correct answers. %s src: %s",
                                       q.getId(), q.getCanonicalSourceFile()));
     static Supplier<QuestionValidationTestCase> answerEmptyItemsTestCase = () -> new QuestionValidationTestCase()
-        .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_EMPTY_ANS)
+        .expectExplanation("The question is invalid, because it has an empty answer.")
         .expectLogMessage(q -> format("Expected list of DndItems, but none found in choice for question id (%s)!",
                                       q.getId()));
     static Supplier<QuestionValidationTestCase> questionEmptyAnswersTestCase = () -> new QuestionValidationTestCase()
@@ -341,7 +341,7 @@ public class IsaacDndValidatorTest {
         new QuestionValidationTestCase().setTitle("answers: drop zone references must be valid")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
-            .expectExplanation(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_DZ)
+            .expectExplanation("The question is invalid, because it has an answer with unrecognised drop zones.")
             .expectLogMessage(q -> format("Question contains invalid drop zone ref. %s src %s",
                                           q.getId(), q.getCanonicalSourceFile())),
         new QuestionValidationTestCase().setTitle("answers: must not contain duplicate drop zones")
