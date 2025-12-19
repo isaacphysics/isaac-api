@@ -387,6 +387,9 @@ public class IsaacDndValidatorTest {
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWidthHeight_returnsDropZone")
             .setChildren(List.of(new Content("[drop-zone:A1|w-100h-50]")))
             .expectDropZones("A1"),
+        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWithinLatex_returnsDropZone")
+            .setChildren(List.of(new Content("$$1 + \\text{[drop-zone:A1]}$$")))
+            .expectDropZones("A1"),
         new GetDropZonesTestCase().setTitle("multiDropZoneSingleContent_returnsDropZones")
             .setChildren(List.of(new Content("Some text [drop-zone:A1], other text [drop-zone:A2]")))
             .expectDropZones("A1", "A2"),
