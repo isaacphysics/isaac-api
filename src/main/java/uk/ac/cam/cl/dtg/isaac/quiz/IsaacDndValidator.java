@@ -66,7 +66,7 @@ public class IsaacDndValidator implements IValidator {
     private DndValidationResponse mark(final IsaacDndQuestion question, final DndChoice answer) {
         var sortedAnswers = QuestionHelpers.getChoices(question)
             .sorted(Comparator
-                .comparingInt((DndChoice choice) -> ChoiceHelpers.matchStrength(choice, answer))
+                .comparingLong((DndChoice choice) -> ChoiceHelpers.matchStrength(choice, answer))
                 .thenComparing(DndChoice::isCorrect)
                 .reversed()
             ).collect(Collectors.toList());
@@ -240,11 +240,8 @@ public class IsaacDndValidator implements IValidator {
             return lhs.getItems().stream().allMatch(lhsItem -> dropZoneEql(rhs, lhsItem));
         }
 
-        public static int matchStrength(final DndChoice lhs, final DndChoice rhs) {
-            return lhs.getItems().stream()
-                .map(lhsItem -> dropZoneEql(rhs, lhsItem) ? 1 : 0)
-                .mapToInt(Integer::intValue)
-                .sum();
+        public static long matchStrength(final DndChoice lhs, final DndChoice rhs) {
+            return lhs.getItems().stream().filter(lhsItem -> dropZoneEql(rhs, lhsItem)).count();
         }
 
         public static Map<String, Boolean> getDropZonesCorrect(final DndChoice lhs, final DndChoice rhs) {
