@@ -347,10 +347,8 @@ public final class ValidationUtils {
 
             @Override
             public boolean run(final T t, final U u) {
-                return this.msgProducer.apply(t, u).map(m -> {
-                    message = m;
-                    return m;
-                }).isPresent();
+                this.message = this.msgProducer.apply(t, u).orElse(null);
+                return this.message != null;
             }
 
             @Override
