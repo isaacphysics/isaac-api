@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -149,9 +150,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         }
 
         try {
-            IndexRequest request = new IndexRequest(typedIndex).id(uniqueId).source(content, XContentType.JSON);
-            IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
-            log.debug("Document: {} indexed.", indexResponse.getId());
+            IndexResponse indexResponse = client.index(ir -> ir.index(typedIndex).id(uniqueId).withJson(new StringReader(content)));
+            log.debug("Document: {} indexed.", indexResponse.id());
 
         } catch (ElasticsearchException | IOException e) {
             throw new SegueSearchException("Error during index operation.", e);
