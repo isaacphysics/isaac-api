@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -9,7 +10,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.apache.commons.lang3.SystemUtils;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ class ETLConfigurationModule extends AbstractModule {
     private static Injector injector = null;
     private static AbstractConfigLoader globalProperties = null;
     private static ContentSubclassMapper mapper = null;
-    private static RestHighLevelClient elasticSearchClient = null;
+    private static ElasticsearchClient elasticSearchClient = null;
     private static SchoolIndexer schoolIndexer = null;
     private static ETLManager etlManager = null;
 
@@ -154,7 +154,7 @@ class ETLConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private static RestHighLevelClient getSearchConnectionInformation(
+    private static ElasticsearchClient getSearchConnectionInformation(
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
             @Named(Constants.SEARCH_CLUSTER_INFO_PORT) final int port,
             @Named(Constants.SEARCH_CLUSTER_USERNAME) final String username,

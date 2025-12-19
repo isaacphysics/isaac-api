@@ -15,6 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
+import co.elastic.clients.elasticsearch.transform.Settings;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.base.CaseFormat;
@@ -28,32 +37,8 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.lucene.search.function.CombineFunction;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -89,7 +74,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
     private static final String ES_FIELD_CONNECTOR = ".";
 
-    protected final RestHighLevelClient client;
+    protected final ElasticsearchClient client;
 
     // to try and improve performance of searches with a -1 limit.
     private static final int LARGE_LIMIT = 100;
@@ -110,7 +95,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the client that the provider should be using.
      */
     @Inject
-    public ElasticSearchProvider(final RestHighLevelClient searchClient) {
+    public ElasticSearchProvider(final ElasticsearchClient searchClient) {
         this.client = searchClient;
         this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(10, TimeUnit.MINUTES).build();
     }
@@ -286,19 +271,17 @@ public class ElasticSearchProvider implements ISearchProvider {
      *
      * @return Defaults to http client creation.
      */
-    public static RestHighLevelClient getClient(final String address, final int port, final String username,
+    public static ElasticsearchClient getClient(final String address, final int port, final String username,
                                                 final String password) throws UnknownHostException {
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
 
-        RestHighLevelClient client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(InetAddress.getByName(address), port, "http")
-                )
-                .setHttpClientConfigCallback(
-                        httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-                )
-        );
+        RestClient restClient = RestClient.builder(new HttpHost(InetAddress.getByName(address), port, "http"))
+                .setHttpClientConfigCallback(httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
+                .build();
+
+        ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+        ElasticsearchClient client = new ElasticsearchClient(transport);
 
         log.info("Elastic Search client created: " + address + ":" + port);
         return client;
