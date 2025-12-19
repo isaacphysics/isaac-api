@@ -1204,10 +1204,10 @@ CREATE INDEX quiz_assignments_group_quiz ON public.quiz_assignments USING btree 
 
 
 --
--- Name: quiz_attempts_index_by_quiz_id_and_user_id; Type: INDEX; Schema: public; Owner: rutherford
+-- Name: quiz_attempts_index_by_user_id_and_quiz_id; Type: INDEX; Schema: public; Owner: rutherford
 --
 
-CREATE INDEX quiz_attempts_index_by_quiz_id_and_user_id ON public.quiz_attempts USING btree (quiz_id, user_id);
+CREATE INDEX quiz_attempts_index_by_user_id_and_quiz_id ON public.quiz_attempts USING btree (user_id, quiz_id);
 
 
 --
