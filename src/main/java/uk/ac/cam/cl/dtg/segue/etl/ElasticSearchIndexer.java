@@ -165,7 +165,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     boolean expungeTypedIndexFromSearchCache(final String typedIndex) {
         try {
             log.info("Sending delete request to ElasticSearch for search index: {}", typedIndex);
-            client.indices().delete(new DeleteIndexRequest(typedIndex), RequestOptions.DEFAULT);
+            client.indices().delete(dir -> dir.index(typedIndex));
         } catch (ElasticsearchException | IOException e) {
             log.error("ElasticSearch exception while trying to delete index {}, it might not have existed.", typedIndex, e);
             return false;
