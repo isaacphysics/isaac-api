@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -142,8 +141,8 @@ public class IsaacDndValidator implements IValidator {
                 q.getChoices().stream().noneMatch(Choice::isCorrect),
                 format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
             ))
-            .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.anyCorrectMatch(q, c -> logged.apply(
-                QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
+            .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> QuestionHelpers.getChoices(q).anyMatch(c -> logged.apply(
+                c.isCorrect() && QuestionHelpers.getDropZones(q).size() != c.getItems().size(),
                 format("Question contains correct answer that doesn't use all drop zones. %s src %s",
                     q.getId(), q.getCanonicalSourceFile())
             )));
@@ -200,10 +199,6 @@ public class IsaacDndValidator implements IValidator {
     public static class QuestionHelpers {
         public static Stream<DndChoice> getChoices(final IsaacDndQuestion question) {
             return question.getChoices().stream().map(c -> (DndChoice) c);
-        }
-
-        public static boolean anyCorrectMatch(final IsaacDndQuestion question, final Predicate<DndChoice> p) {
-            return getChoices(question).filter(DndChoice::isCorrect).anyMatch(p);
         }
 
         public static boolean getDetailedItemFeedback(final IsaacDndQuestion question) {
