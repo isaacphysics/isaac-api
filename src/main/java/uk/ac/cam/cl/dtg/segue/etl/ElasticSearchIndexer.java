@@ -2,10 +2,12 @@ package uk.ac.cam.cl.dtg.segue.etl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.Refresh;
+import co.elastic.clients.elasticsearch._types.Time;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
@@ -14,7 +16,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.client.RequestOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,17 +82,9 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         BulkRequest bulkRequest = buildBulkRequest.apply(typedIndex);
 
         try {
-            // increase default timeouts
-            RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout(360000)
-                    .setSocketTimeout(360000)
-                    .build();
-            RequestOptions options = RequestOptions.DEFAULT.toBuilder()
-                    .setRequestConfig(requestConfig)
-                    .build();
-
             // execute bulk request
-            BulkResponse bulkResponse = client.bulk(bulkRequest.timeout("180s").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE), options);
+            BulkResponse bulkResponse = client.bulk(bulkRequest);
+
             if (bulkResponse.errors()) {
                 // process failures by iterating through each bulk response item
                 for (BulkResponseItem responseItem : bulkResponse.items()) {
@@ -114,11 +107,18 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         for (List<String> batch : partitions) {
             executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
                 // build bulk request, these items don't have ids
-                BulkRequest request = new BulkRequest();
-                batch.forEach(itemToIndex -> request.add(
-                    new IndexRequest(typedIndex).source(itemToIndex, XContentType.JSON)
-                ));
-                return request;
+                List<BulkOperation> ops = new java.util.ArrayList<>();
+                batch.forEach(itemToIndex -> ops.add(BulkOperation.of(b -> b
+                    .index(idx -> idx
+                        .index(typedIndex)
+                        .withJson(new StringReader(itemToIndex))
+                ))));
+
+                return new BulkRequest.Builder()
+                    .operations(ops)
+                    .timeout(Time.of(t -> t.time("180s")))
+                    .refresh(Refresh.True)
+                    .build();
             });
         }
     }
@@ -131,11 +131,19 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         for (List<Map.Entry<String, String>> batch : partitions) {
             executeBulkIndexRequest(indexBase, indexType, typedIndex -> {
                 // build bulk request, ids of data items are specified by their keys
-                BulkRequest bulkRequest = new BulkRequest();
-                batch.forEach(itemToIndex -> bulkRequest.add(
-                        new IndexRequest(typedIndex).id(itemToIndex.getKey()).source(itemToIndex.getValue(), XContentType.JSON)
-                ));
-                return bulkRequest;
+                List<BulkOperation> ops = new java.util.ArrayList<>();
+                batch.forEach(itemToIndex -> ops.add(BulkOperation.of(b -> b
+                    .index(idx -> idx
+                        .index(typedIndex)
+                        .id(itemToIndex.getKey())
+                        .withJson(new StringReader(itemToIndex.getValue()))
+                    ))));
+
+                return new BulkRequest.Builder()
+                    .operations(ops)
+                    .timeout(Time.of(t -> t.time("180s")))
+                    .refresh(Refresh.True)
+                    .build();
             });
         }
     }
