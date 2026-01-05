@@ -17,13 +17,18 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
 import co.elastic.clients.elasticsearch.transform.Settings;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.base.CaseFormat;
@@ -365,30 +370,31 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     /**
-     * Utility method to convert sort instructions form external classes into something Elastic search can use.
+     * Utility method to convert sort instructions from external classes into something Elastic search can use.
      *
-     * @param searchRequest
-     *            - the request to be augmented.
+     * @param requestBuilder
+     *            - the builder for the request to be augmented.
      * @param sortInstructions
      *            - the instructions to augment.
-     * @return the augmented search request with sort instructions included.
      */
-    private SearchSourceBuilder addSortInstructions(final SearchSourceBuilder searchRequest,
-                                                     final Map<String, Constants.SortOrder> sortInstructions) {
+    private void addSortInstructions(final SearchRequest.Builder requestBuilder,
+                                      final Map<String, Constants.SortOrder> sortInstructions) {
         // deal with sorting of results
         for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
             String sortField = entry.getKey();
             Constants.SortOrder sortOrder = entry.getValue();
 
-            if (sortOrder == Constants.SortOrder.ASC) {
-                searchRequest.sort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
+            // fully qualified to not conflict with Constants.SortOrder
+            co.elastic.clients.elasticsearch._types.SortOrder clientOrder =
+                    (sortOrder == Constants.SortOrder.ASC)
+                            ? co.elastic.clients.elasticsearch._types.SortOrder.Asc
+                            : co.elastic.clients.elasticsearch._types.SortOrder.Desc;
 
-            } else {
-                searchRequest.sort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
-            }
+            requestBuilder.sort(SortOptions.of(s -> s.field(f -> f
+                .field(sortField)
+                .order(clientOrder)
+                .missing("_last"))));
         }
-
-        return searchRequest;
     }
 
     /**
@@ -523,7 +529,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return list of the search results
      */
     private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
-                                                     final QueryBuilder query, final int startIndex, final int limit)
+                                                     final Query query, final int startIndex, final int limit)
             throws SegueSearchException {
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, null);
     }
@@ -547,7 +553,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return list of the search results
      */
     private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
-                                                     final QueryBuilder query, final int startIndex, final int limit,
+                                                     final Query query, final int startIndex, final int limit,
                                                      @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws SegueSearchException {
         int newLimit = limit;
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
@@ -557,14 +563,18 @@ public class ElasticSearchProvider implements ISearchProvider {
             newLimit = LARGE_LIMIT;
         }
 
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().query(query).size(newLimit).from(startIndex);
+        SearchRequest.Builder requestBuilder = new SearchRequest.Builder()
+                .index(typedIndex)
+                .query(query)
+                .size(newLimit)
+                .from(startIndex);
 
         if (sortInstructions != null) {
-            this.addSortInstructions(sourceBuilder, sortInstructions);
+            this.addSortInstructions(requestBuilder, sortInstructions);
         }
 
-        log.debug("Building Query: " + sourceBuilder);
-        ResultsWrapper<String> results = executeQuery(typedIndex, sourceBuilder);
+        log.debug("Building Query: " + requestBuilder);
+        ResultsWrapper<String> results = executeQuery(requestBuilder.build());
 
         // execute another query to get all results as this is an unlimited
         // query.
@@ -575,8 +585,14 @@ public class ElasticSearchProvider implements ISearchProvider {
                         this.getMaxResultSize(indexBase, indexType)));
             }
 
-            sourceBuilder = new SearchSourceBuilder().query(query).size(results.getTotalResults().intValue()).from(startIndex);
-            results = executeQuery(typedIndex, sourceBuilder);
+            SearchRequest secondRequest = new SearchRequest.Builder()
+                    .index(typedIndex)
+                    .query(query)
+                    .size(results.getTotalResults().intValue())
+                    .from(startIndex)
+                    .build();
+
+            results = executeQuery(secondRequest);
 
             log.debug("Unlimited Search - had to make a second round trip to elasticsearch.");
         }
@@ -586,27 +602,30 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     /**
      * A general method for getting the results of a search.
-     * @param typedIndex
-     *            - the index within which to search
-     * @param searchSourceBuilder
+     * @param searchRequest
      *            - the search request to send to the cluster.
      * @return List of the search results.
      */
-    private ResultsWrapper<String> executeQuery(final String typedIndex, final SearchSourceBuilder searchSourceBuilder)
-            throws SegueSearchException {
+    private ResultsWrapper<String> executeQuery(final SearchRequest searchRequest) throws SegueSearchException {
         try {
-            SearchResponse response = client.search(new SearchRequest(typedIndex).source(searchSourceBuilder), RequestOptions.DEFAULT);
+            SearchResponse<ObjectNode> response = client.search(searchRequest, ObjectNode.class);
 
-            List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
+            List<Hit<ObjectNode>> hits = response.hits().hits();
             List<String> resultList = new ArrayList<>();
 
-            log.debug("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
-            log.debug("Search Request: " + searchSourceBuilder);
-            for (SearchHit item : hitAsList) {
-                resultList.add(item.getSourceAsString());
+            long totalHits = null != response.hits().total()
+                    ? response.hits().total().value()
+                    : 0;
+
+            log.debug("TOTAL SEARCH HITS " + totalHits);
+            log.debug("Search Request: " + searchRequest);
+
+            for (Hit<ObjectNode> hit : hits) {
+                ObjectNode src = hit.source();
+                resultList.add(null != src ? src.toString() : "{}");
             }
 
-            return new ResultsWrapper<>(resultList, response.getHits().getTotalHits().value);
+            return new ResultsWrapper<>(resultList, totalHits);
         } catch (ElasticsearchException | IOException e) {
             throw new SegueSearchException("Error while trying to search", e);
         }
