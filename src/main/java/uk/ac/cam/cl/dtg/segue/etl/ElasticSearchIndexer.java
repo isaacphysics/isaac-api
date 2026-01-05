@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
 import com.google.common.collect.ImmutableMap;
@@ -91,11 +92,11 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // execute bulk request
             BulkResponse bulkResponse = client.bulk(bulkRequest.timeout("180s").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE), options);
-            if (bulkResponse.hasFailures()) {
+            if (bulkResponse.errors()) {
                 // process failures by iterating through each bulk response item
-                for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
-                    if (itemResponse.isFailed()) {
-                        log.error("Unable to index the following item: {}", itemResponse.getFailureMessage());
+                for (BulkResponseItem responseItem : bulkResponse.items()) {
+                    if (null != responseItem.error()) {
+                        log.error("Unable to index the following item: {}", responseItem.error().reason());
                     }
                 }
                 throw new SegueSearchException("Error during bulk index operation, some items failed!");
