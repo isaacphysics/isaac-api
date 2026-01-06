@@ -126,10 +126,13 @@ public class ElasticSearchProvider implements ISearchProvider {
                                               final int limit, final Map<String, Constants.SortOrder> sortInstructions,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
         // build up the query from the fieldsToMatch map
-        QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+        Query query = generateBoolMatchQuery(fieldsToMatch)._toQuery();
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            return BoolQuery.of(bq -> bq
+                    .must(query)
+                    .filter(generateFilterQuery(filterInstructions))
+            )._toQuery();
         }
 
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortInstructions);
@@ -475,22 +478,27 @@ public class ElasticSearchProvider implements ISearchProvider {
      * {@code BooleanSearchClause}, which are instead processed by {@code processMatchInstructions()}.
      */
     @Deprecated
-    private BoolQueryBuilder generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
-        BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
-        Map<String, BoolQueryBuilder> nestedQueriesByPath = Maps.newHashMap();
+    private BoolQuery generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
+        BoolQuery.Builder masterQuery = new BoolQuery.Builder();
+        Map<String, BoolQuery.Builder> nestedQueriesByPath = Maps.newHashMap();
 
         for (GitContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
             // Each search clause is its own boolean query that gets added to the master query as a must match clause
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
+            BoolQuery.Builder query = new BoolQuery.Builder();
 
             // Add the clause to the query value by value
             for (String value : searchClause.getValues()) {
+                Query matchQuery = MatchQuery.of(m -> m
+                        .field(searchClause.getField())
+                        .query(value)
+                )._toQuery();
+
                 if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
-                    query.should(QueryBuilders.matchQuery(searchClause.getField(), value));
+                    query.should(matchQuery);
                 } else if (Constants.BooleanOperator.AND.equals(searchClause.getOperator())) {
-                    query.must(QueryBuilders.matchQuery(searchClause.getField(), value));
+                    query.must(matchQuery);
                 } else if (Constants.BooleanOperator.NOT.equals(searchClause.getOperator())) {
-                    query.mustNot(QueryBuilders.matchQuery(searchClause.getField(), value));
+                    query.mustNot(matchQuery);
                 } else {
                     log.warn("Null argument received in paginated match search... "
                             + "This is not usually expected. Ignoring it and continuing anyway.");
@@ -499,25 +507,30 @@ public class ElasticSearchProvider implements ISearchProvider {
 
             // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
             if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
-                query.minimumShouldMatch(1);
+                query.minimumShouldMatch("1");
             }
 
             if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.getField())) {
-                masterQuery.must(query);
+                masterQuery.must(query.build()._toQuery());
             } else {
                 // Nested fields need to use a nested query which specifies the path of the nested field.
                 String nestedPath = searchClause.getField().split("\\.")[0];
-                nestedQueriesByPath.putIfAbsent(nestedPath, QueryBuilders.boolQuery());
-                nestedQueriesByPath.get(nestedPath).must(query);
+                nestedQueriesByPath.putIfAbsent(nestedPath, new BoolQuery.Builder());
+                nestedQueriesByPath.get(nestedPath).must(query.build()._toQuery());
             }
         }
 
         // Nested queries are grouped so that queries on the same nested path are not queried independently.
-        for (Entry<String, BoolQueryBuilder> entry : nestedQueriesByPath.entrySet()) {
-            masterQuery.must(QueryBuilders.nestedQuery(entry.getKey(), entry.getValue(), ScoreMode.Total));
+        for (Entry<String, BoolQuery.Builder> entry : nestedQueriesByPath.entrySet()) {
+            Query nestedQuery = NestedQuery.of(nq -> nq
+                    .path(entry.getKey())
+                    .query(entry.getValue().build()._toQuery())
+                    .scoreMode(ChildScoreMode.Sum)
+            )._toQuery();
+            masterQuery.must(nestedQuery);
         }
 
-        return masterQuery;
+        return masterQuery.build();
     }
 
     /**
@@ -670,12 +683,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 
     /**
-     * Based on the relatively abstract {@code matchInstruction}, generates a {@code QueryBuilder} which is usable by
+     * Based on the relatively abstract {@code matchInstruction}, generates a {@code Query} which is usable by
      * Elasticsearch.
      *
      * @param matchInstruction An {@code AbstractMatchInstruction} representing a search query.
      *
-     * @return a {@code QueryBuilder} reflecting the instructions in {@code matchInstruction}.
+     * @return a {@code Query} reflecting the instructions in {@code matchInstruction}.
      * @throws SegueSearchException
      */
     private Query processMatchInstructions(final AbstractInstruction matchInstruction)
