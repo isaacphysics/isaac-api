@@ -18,13 +18,23 @@ package uk.ac.cam.cl.dtg.segue.search;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
+import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
 import co.elastic.clients.elasticsearch.transform.Settings;
+import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
@@ -668,65 +678,98 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return a {@code QueryBuilder} reflecting the instructions in {@code matchInstruction}.
      * @throws SegueSearchException
      */
-    private QueryBuilder processMatchInstructions(final AbstractInstruction matchInstruction)
+    private Query processMatchInstructions(final AbstractInstruction matchInstruction)
             throws SegueSearchException {
         if (matchInstruction instanceof BooleanInstruction) {
             BooleanInstruction booleanMatch = (BooleanInstruction) matchInstruction;
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for (AbstractInstruction should : booleanMatch.getShoulds()) {
-                query.should(processMatchInstructions(should));
-            }
-            for (AbstractInstruction must : booleanMatch.getMusts()) {
-                query.must(processMatchInstructions(must));
-            }
-            for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
-                query.mustNot(processMatchInstructions(mustNot));
-            }
-            if (booleanMatch.getBoost() != null) {
-                query.boost(booleanMatch.getBoost());
-            }
-            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
-            return query;
+            return BoolQuery.of(b -> {
+                try {
+                    for (AbstractInstruction should : booleanMatch.getShoulds()) {
+                        b.should(processMatchInstructions(should));
+                    }
+                    for (AbstractInstruction must : booleanMatch.getMusts()) {
+                        b.must(processMatchInstructions(must));
+                    }
+                    for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
+                        b.mustNot(processMatchInstructions(mustNot));
+                    }
+                } catch (SegueSearchException e) {
+                    throw new RuntimeException("Error processing boolean match instructions", e);
+                }
+                if (booleanMatch.getBoost() != null) {
+                    b.boost(booleanMatch.getBoost());
+                }
+                b.minimumShouldMatch(String.valueOf(booleanMatch.getMinimumShouldMatch()));
+
+                return b;
+            })._toQuery();
         } else if (matchInstruction instanceof MatchInstruction) {
             MatchInstruction shouldMatch = (MatchInstruction) matchInstruction;
-            MatchQueryBuilder matchQuery = QueryBuilders
-                    .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
-            if (shouldMatch.getFuzzy()) {
-                matchQuery.fuzziness(Fuzziness.AUTO);
-            }
-            return matchQuery;
+            return MatchQuery.of(m -> {
+                m.field(shouldMatch.getField());
+                m.query(shouldMatch.getValue());
+                if ((shouldMatch).getBoost() != null) {
+                    m.boost((float) shouldMatch.getBoost());
+                }
+                if (shouldMatch.getFuzzy()) {
+                    m.fuzziness("AUTO");
+                }
+                return m;
+            })._toQuery();
         } else if (matchInstruction instanceof RangeInstruction) {
             RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
-            if (rangeMatch.getGreaterThan() != null) {
-                rangeQuery.gt(rangeMatch.getGreaterThan());
-            }
-            if (rangeMatch.getGreaterThanOrEqual() != null) {
-                rangeQuery.gte(rangeMatch.getGreaterThanOrEqual());
-            }
-            if (rangeMatch.getLessThan() != null) {
-                rangeQuery.lt(rangeMatch.getLessThan());
-            }
-            if (rangeMatch.getLessThanOrEqual() != null) {
-                rangeQuery.gt(rangeMatch.getLessThan());
-            }
-            return rangeQuery;
+            return RangeQuery.of(r -> {
+                r.field(rangeMatch.getField());
+                if (rangeMatch.getGreaterThan() != null) {
+                    r.gt(JsonData.of(rangeMatch.getGreaterThan()));
+                }
+                if (rangeMatch.getGreaterThanOrEqual() != null) {
+                    r.gte(JsonData.of(rangeMatch.getGreaterThanOrEqual()));
+                }
+                if (rangeMatch.getLessThan() != null) {
+                    r.lt(JsonData.of(rangeMatch.getLessThan()));
+                }
+                if (rangeMatch.getLessThanOrEqual() != null) {
+                    r.lte(JsonData.of(rangeMatch.getLessThanOrEqual()));
+                }
+                r.boost((float) rangeMatch.getBoost());
+                return r;
+            })._toQuery();
         } else if (matchInstruction instanceof NestedInstruction) {
             NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
-            return QueryBuilders.nestedQuery(nestedMatch.getPath(), processMatchInstructions(nestedMatch.getInstruction()), ScoreMode.Total);
+            return NestedQuery.of(nq -> {
+                try {
+                    return nq
+                        .path(nestedMatch.getPath())
+                        .query(processMatchInstructions(nestedMatch.getInstruction()))
+                        .scoreMode(ChildScoreMode.Sum);
+                } catch (final SegueSearchException e) {
+                    throw new RuntimeException(e);
+                }
+            })._toQuery();
         } else if (matchInstruction instanceof WildcardInstruction) {
             WildcardInstruction wildcardMatch = (WildcardInstruction) matchInstruction;
-            return QueryBuilders.wildcardQuery(wildcardMatch.getField(), wildcardMatch.getValue()).boost(wildcardMatch.getBoost());
+            return WildcardQuery.of(wq -> wq
+                .field(wildcardMatch.getField())
+                .value(wildcardMatch.getValue())
+                .boost(wildcardMatch.getBoost().floatValue()))
+                ._toQuery();
         } else if (matchInstruction instanceof MultiMatchInstruction) {
             MultiMatchInstruction multiMatchInstruction = (MultiMatchInstruction) matchInstruction;
-            return QueryBuilders.multiMatchQuery(multiMatchInstruction.getField(), multiMatchInstruction.getValue())
-                    .boost(multiMatchInstruction.getBoost()).type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)
-                    .prefixLength(2);
+            return MultiMatchQuery.of(mm -> mm
+                .fields(Arrays.asList(multiMatchInstruction.getFields()))
+                .query(multiMatchInstruction.getTerm())
+                .boost(multiMatchInstruction.getBoost().floatValue())
+                .type(TextQueryType.PhrasePrefix)
+                .prefixLength(2)
+            )._toQuery();
         } else if (matchInstruction instanceof ExistsInstruction) {
-            return QueryBuilders.existsQuery(((ExistsInstruction) matchInstruction).getField());
+            return ExistsQuery.of(eq -> eq
+                .field(((ExistsInstruction) matchInstruction).getField()))
+                ._toQuery();
         } else {
-                throw new SegueSearchException(
-                        "Processing match instruction which is not supported: " + matchInstruction.getClass());
+            throw new SegueSearchException(
+                "Processing match instruction which is not supported: " + matchInstruction.getClass());
         }
     }
 
