@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import com.google.api.client.util.Sets;
 import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
@@ -24,10 +27,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -655,12 +654,17 @@ public class GitContentManager {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
         try {
-            SearchResponse r = searchProvider.getAllFromIndex(
+            SearchResponse<JsonData> r = searchProvider.getAllFromIndex(
                     globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
-            SearchHits hits = r.getHits();
-            ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
-            for (SearchHit hit : hits) {
-                units.add((String) hit.getSourceAsMap().get("unit"));
+
+            List<Hit<JsonData>> hits = r.hits().hits();
+            long totalHits = null != r.hits().total()
+                    ? r.hits().total().value()
+                    : 0;
+            ArrayList<String> units = new ArrayList<>((int) totalHits);
+
+            for (Hit<JsonData> hit : hits) {
+                units.add((String) hit.source().to(Map.class).get("unit"));
             }
 
             return units;
@@ -672,14 +676,14 @@ public class GitContentManager {
 
     public final Map<Content, List<String>> getProblemMap() {
         try {
-            SearchResponse r = searchProvider.getAllFromIndex(contentIndex,
+            SearchResponse<JsonData> r = searchProvider.getAllFromIndex(contentIndex,
                     Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
-            SearchHits hits = r.getHits();
+            List<Hit<JsonData>> hits = r.hits().hits();
             Map<Content, List<String>> map = new HashMap<>();
 
-            for (SearchHit hit : hits) {
+            for (Hit<JsonData> hit : hits) {
                 Content partialContentWithErrors = new Content();
-                Map<String, Object> src = hit.getSourceAsMap();
+                Map<String, Object> src = hit.source().to(Map.class);
                 partialContentWithErrors.setId((String) src.get("id"));
                 partialContentWithErrors.setTitle((String) src.get("title"));
                 //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
@@ -687,7 +691,7 @@ public class GitContentManager {
                 partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
                 ArrayList<String> errors = new ArrayList<>();
-                for (Object v : (List<?>) hit.getSourceAsMap().get("errors")) {
+                for (Object v : (List<?>) hit.source().to(Map.class).get("errors")) {
                     errors.add((String) v);
                 }
 
