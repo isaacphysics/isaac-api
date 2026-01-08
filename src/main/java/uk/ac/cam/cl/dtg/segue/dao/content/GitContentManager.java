@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
@@ -635,11 +636,12 @@ public class GitContentManager {
 
     public final Set<String> getTagsList() {
         try {
-            List<Object> tagObjects = (List<Object>) searchProvider.getById(
+            GetResponse<Map<String, Object>> response = searchProvider.getById(
                     contentIndex,
                     Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
                     "tags"
-            ).getSource().get("tags");
+            );
+            List<Object> tagObjects = (List<Object>) response.source().get("tags");
             return tagObjects.stream().map(Functions.toStringFunction()).collect(Collectors.toSet());
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
@@ -778,7 +780,7 @@ public class GitContentManager {
     }
 
     public String getCurrentContentSHA() {
-        GetResponse shaResponse = contentShaCache.getIfPresent(contentIndex);
+        GetResponse<Map<String, Object>> shaResponse = contentShaCache.getIfPresent(contentIndex);
         try {
             if (null == shaResponse) {
                 shaResponse =
@@ -789,7 +791,7 @@ public class GitContentManager {
                         );
                 contentShaCache.put(contentIndex, shaResponse);
             }
-            return (String) shaResponse.getSource().get("version");
+            return (String) shaResponse.source().get("version");
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve current content SHA from search provider", e);
             return "unknown";
