@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.schools;
 
+import co.elastic.clients.elasticsearch.core.GetResponse;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,8 +62,9 @@ public class SchoolListReader {
 
         String modificationDate;
         try {
-            modificationDate = searchProvider.getById(
-                    SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), "sourceFile").getSource().get("lastModified").toString();
+            GetResponse<Map<String, Object>> response = searchProvider.getById(
+                    SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), "sourceFile");
+            modificationDate = response.source().get("lastModified").toString();
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve school list modification date", e);
             modificationDate = "unknown";
