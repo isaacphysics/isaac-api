@@ -10,13 +10,19 @@ import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
+import co.elastic.clients.elasticsearch.indices.GetAliasResponse;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.elasticsearch.indices.IndexState;
+import co.elastic.clients.elasticsearch.indices.UpdateAliasesRequest;
+import co.elastic.clients.elasticsearch.indices.get_alias.IndexAliases;
+import co.elastic.clients.elasticsearch.indices.update_aliases.Action;
+import co.elastic.clients.elasticsearch.indices.update_aliases.AddAction;
+import co.elastic.clients.elasticsearch.indices.update_aliases.RemoveAction;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import org.elasticsearch.client.RequestOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -199,100 +205,94 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             String typedIndexTarget = ElasticSearchProvider.produceTypedIndexName(indexBaseTarget, indexTypeTarget);
 
             // First, find where <alias>_previous points.
-            ImmutableMap<String, Set<AliasMetadata>> returnedPreviousAliases = null;
             try {
-                returnedPreviousAliases = ImmutableMap.copyOf(
-                        client.indices().getAlias(new GetAliasesRequest().aliases(typedAlias + "_previous"), RequestOptions.DEFAULT)
-                        .getAliases());
+                GetAliasResponse previousResponse = client.indices().getAlias(g -> g.name(typedAlias + "_previous"));
+                for (Map.Entry<String, IndexAliases> entry : previousResponse.result().entrySet()) {
+                    if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias + "_previous")) {
+                        indexWithPrevious = entry.getKey();
+                    }
+                }
             } catch (IOException e) {
                 log.error("Failed to retrieve existing previous alias {}, not moving alias!", typedAlias + "_previous");
                 continue;
             }
 
-            Iterator<String> indexIterator = returnedPreviousAliases.keySet().iterator();
-            while (indexIterator.hasNext()) {
-                String indexName = indexIterator.next();
-                for (AliasMetadata aliasMetaData : returnedPreviousAliases.get(indexName)) {
-                    if (aliasMetaData.alias().equals(typedAlias + "_previous")) {
-                        indexWithPrevious = indexName;
+            // Now find where <alias> points
+            try {
+                GetAliasResponse aliasResponse = client.indices().getAlias(g -> g.name(typedAlias));
+                for (Map.Entry<String, IndexAliases> entry : aliasResponse.result().entrySet()) {
+                    if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias)) {
+                        indexWithCurrent = entry.getKey();
                     }
                 }
-            }
-
-            // Now find where <alias> points
-            ImmutableMap<String, Set<AliasMetadata>> returnedAliases = null;
-            try {
-                returnedAliases = ImmutableMap.copyOf(
-                        client.indices().getAlias(new GetAliasesRequest().aliases(typedAlias), RequestOptions.DEFAULT)
-                        .getAliases());
             } catch (IOException e) {
                 log.error("Failed to retrieve existing alias {}, not moving alias!", typedAlias);
                 continue;
             }
 
-            indexIterator = returnedAliases.keySet().iterator();
-            while (indexIterator.hasNext()) {
-                String indexName = indexIterator.next();
-                for (AliasMetadata aliasMetadata : returnedAliases.get(indexName)) {
-                    if (aliasMetadata.alias().equals(typedAlias)) {
-                        indexWithCurrent = indexName;
-                    }
-                }
-            }
-
             if (indexWithCurrent != null && indexWithCurrent.equals(typedIndexTarget)) {
                 log.info("Not moving alias '{}' - it already points to the right index.", typedAlias);
             } else {
-                IndicesAliasesRequest request = new IndicesAliasesRequest();
+                UpdateAliasesRequest.Builder request = new UpdateAliasesRequest.Builder();
 
                 if (indexWithCurrent != null) {
                     // Remove the alias from the place it's currently pointing
-                    request.addAliasAction(
-                            new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE)
-                                    .index(indexWithCurrent)
+                    String finalIndexWithCurrent = indexWithCurrent;
+                    request.actions(Action.of(a -> a
+                            .remove(RemoveAction.of(ra -> ra
+                                    .index(finalIndexWithCurrent)
                                     .alias(typedAlias)
-                    );
+                            ))
+                    ));
+
                     if (indexWithPrevious != null) {
                         // Remove <alias>_previous from wherever it's currently pointing.
-                        request.addAliasAction(
-                                new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE)
-                                .index(indexWithPrevious)
+                        String finalIndexWithPrevious = indexWithPrevious;
+                        request.actions(Action.of(a -> a
+                            .remove(RemoveAction.of(ra -> ra
+                                .index(finalIndexWithPrevious)
                                 .alias(typedAlias + "_previous")
-                        );
+                            ))
+                        ));
                     }
+
                     // Move <alias>_previous to wherever <alias> was pointing.
-                    request.addAliasAction(
-                            new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD)
-                                    .index(indexWithCurrent)
+                    String finalIndexWithCurrent1 = indexWithCurrent;
+                    request.actions(Action.of(a -> a
+                            .add(AddAction.of(aa -> aa
+                                    .index(finalIndexWithCurrent1)
                                     .alias(typedAlias + "_previous")
-                    );
+                            ))
+                    ));
                 }
 
                 // Point <alias> to the right place.
-                request.addAliasAction(
-                        new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD)
+                request.actions(Action.of(a -> a
+                        .add(AddAction.of(aa -> aa
                                 .index(typedIndexTarget)
                                 .alias(typedAlias)
-                );
+                        ))
+                ));
+
                 try {
-                    client.indices().updateAliases(request, RequestOptions.DEFAULT);
-                } catch (IOException e) {
+                    client.indices().updateAliases(request.build());
+                } catch (final IOException e) {
                     log.error("Failed to update alias {}", typedAlias, e);
                     continue;
                 }
             }
-
         }
         return true;
     }
 
     void deleteAllUnaliasedIndices() {
-        // Deleting all unalisaed indices is not a safe operation if alias or index updates are in-progress!
+        // Deleting all unaliased indices is not a safe operation if alias or index updates are in-progress!
         try {
-            GetIndexResponse indices = client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT);
-            ImmutableMap<String, List<AliasMetadata>> aliases = ImmutableMap.copyOf(indices.getAliases());
-            for (String index : indices.getIndices()) {
-                if (!aliases.containsKey(index) || aliases.get(index).isEmpty()) {
+            GetIndexResponse response = client.indices().get(g -> g.index("*"));
+            for (Map.Entry<String, IndexState> entry : response.result().entrySet()) {
+                String index = entry.getKey();
+                IndexState state = entry.getValue();
+                if (null == state.aliases() || state.aliases().isEmpty()) {
                     log.info("Index {} has no aliases. Removing.", index);
                     this.expungeTypedIndexFromSearchCache(index);
                 }
