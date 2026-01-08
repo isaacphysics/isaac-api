@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,7 +15,6 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
@@ -757,10 +757,10 @@ public class ContentIndexer {
             endTime = System.nanoTime();
             log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
             log.info("Search index request sent for: " + sha);
-        } catch (SegueSearchException e) {
+        } catch (final SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
             throw new Exception("Error whilst trying to perform bulk index operation.", e);
-        } catch (ActionRequestValidationException e) {
+        } catch (final ElasticsearchException e) {
             log.error("Error validating content during index", e);
             throw new Exception("Error validating content during index", e);
         }

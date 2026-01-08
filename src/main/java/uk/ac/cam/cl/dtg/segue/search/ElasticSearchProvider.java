@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
@@ -34,13 +35,13 @@ import co.elastic.clients.elasticsearch._types.query_dsl.RegexpQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
-import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
-import co.elastic.clients.elasticsearch.transform.Settings;
+import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.elasticsearch.indices.IndexState;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
@@ -58,7 +59,6 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,12 +132,12 @@ public class ElasticSearchProvider implements ISearchProvider {
                                               final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex,
                                               final int limit, final Map<String, Constants.SortOrder> sortInstructions,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
-        // build up the query from the fieldsToMatch map
         Query query = generateBoolMatchQuery(fieldsToMatch)._toQuery();
 
         if (filterInstructions != null) {
-            return BoolQuery.of(bq -> bq
-                .must(query)
+            Query finalQuery = query;
+            query = BoolQuery.of(bq -> bq
+                .must(finalQuery)
                 .filter(generateFilterQuery(filterInstructions))
             )._toQuery();
         }
@@ -155,26 +155,30 @@ public class ElasticSearchProvider implements ISearchProvider {
             .filter(generateBoolMatchQuery(fieldsToMatch)._toQuery())
         )._toQuery();
 
-        RandomScoreFunction.Builder randomScoreFunctionBuilder;
+        RandomScoreFunction randomScoreFunction;
+
         if (null != randomSeed) {
-            randomScoreFunctionBuilder = new RandomScoreFunction.Builder();
-            randomScoreFunctionBuilder.seed(String.valueOf(randomSeed));
-            randomScoreFunctionBuilder.field("_seq_no");
+            randomScoreFunction = RandomScoreFunction.of(r -> r
+                .seed(String.valueOf(randomSeed))
+                .field("_seq_no")
+            );
         } else {
-            randomScoreFunctionBuilder = ScoreFunctionBuilders.randomFunction();
+            randomScoreFunction = RandomScoreFunction.of(r -> r);
         }
 
         Query constantScoreQuery = query;
         query = FunctionScoreQuery.of(fsq -> fsq
             .query(constantScoreQuery)
-            .functions(fn -> fn.randomScore(randomScoreFunctionBuilder.build()))
+            .functions(fn -> fn
+                .randomScore(randomScoreFunction)
+            )
         )._toQuery();
 
         if (filterInstructions != null) {
             Query functionScoreQuery = query;
             query = BoolQuery.of(bq -> bq
-                    .must(functionScoreQuery)
-                    .filter(generateFilterQuery(filterInstructions))
+                .must(functionScoreQuery)
+                .filter(generateFilterQuery(filterInstructions))
             )._toQuery();
         }
 
@@ -229,7 +233,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         BoolQuery.Builder masterQuery;
         if (null != fieldsThatMustMatch) {
-            masterQuery = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
+            masterQuery = new BoolQuery.Builder().must(this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch))._toQuery());
         } else {
             masterQuery = new BoolQuery.Builder();
         }
@@ -297,7 +301,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         Query query = BoolQuery.of(bq -> {
             if (searchTerm != null) {
-                Query termsQuery = TermsQuery.of(t -> t.field(field).terms(ts -> ts.value(Arrays.asList(JsonData.of(searchTerm)))))._toQuery();
+                Query termsQuery = TermsQuery.of(t -> t.field(field).terms(ts -> ts.value(List.of(FieldValue.of(searchTerm)))))._toQuery();
                 bq.must(termsQuery);
             }
             if (filterInstructions != null) {
@@ -348,7 +352,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         Objects.requireNonNull(indexType);
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
-            return client.indices().exists(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT);
+            return client.indices().exists(gr -> gr.index(typedIndex)).value();
         } catch (IOException e) {
             log.error(String.format("Failed to check existence of index %s", typedIndex), e);
             return false;
@@ -358,7 +362,10 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public Collection<String> getAllIndices() {
         try {
-            return List.of(client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT).getIndices());
+            return client.indices()
+                .get(g -> g.index("*"))
+                .result()
+                .keySet();
         } catch (IOException e) {
             log.error("Exception while retrieving all indices", e);
             return Collections.emptyList();
@@ -508,7 +515,18 @@ public class ElasticSearchProvider implements ISearchProvider {
 
             if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
                 TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
-                filter.must(QueryBuilders.termsQuery(fieldToFilterInstruction.getKey(), sfi.getMatchValues()));
+                filter.must(
+                    TermsQuery.of(t -> t
+                        .field(fieldToFilterInstruction.getKey())
+                        .terms(ts -> ts
+                            .value(
+                                sfi.getMatchValues().stream()
+                                    .map(FieldValue::of)
+                                    .collect(Collectors.toList())
+                            )
+                        )
+                    )._toQuery()
+                );
             }
 
             if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
@@ -848,8 +866,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     public GetResponse getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
-            return client.get(new GetRequest(typedIndex, id).fetchSourceContext(FetchSourceContext.FETCH_SOURCE),
-                    RequestOptions.DEFAULT);
+            return client.get(gr -> gr.index(typedIndex).id(id), ObjectNode.class);
         } catch (IOException e) {
             throw new SegueSearchException(String.format("Failed to get content with ID %s from index %s", id, typedIndex), e);
         }
@@ -858,9 +875,8 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(10000).fetchSource(true);
         try {
-            return client.search(new SearchRequest(typedIndex).source(sourceBuilder), RequestOptions.DEFAULT);
+            return client.search(sr -> sr.index(typedIndex).size(10000), Void.class);
         } catch (IOException e) {
             throw new SegueSearchException(String.format("Failed to retrieve all data from index %s", typedIndex), e);
         }
@@ -884,13 +900,18 @@ public class ElasticSearchProvider implements ISearchProvider {
             final String MAX_WINDOW_SIZE_KEY = typedIndex + "_" + "MAX_WINDOW_SIZE";
             String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
             if (null == max_window_size) {
-                Map<String, Settings> response = client.indices().get(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT).getSettings();
-                for (Settings settings : response.values()) {
-                    if (null == settings) {
+                GetIndexResponse response = client.indices().get(g -> g.index(typedIndex));
+                Map<String, IndexState> indices = response.result();
+                for (IndexState indexState : indices.values()) {
+                    if (null == indexState || null == indexState.settings()) {
                         continue;
                     }
-                    this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(typedIndex + ".max_result_window",
-                            Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
+                    IndexSettings settings = indexState.settings();
+                    Integer maxResultWindow = settings.maxResultWindow();
+                    if (null == maxResultWindow) {
+                        maxResultWindow = SEARCH_MAX_WINDOW_SIZE;
+                    }
+                    this.settingsCache.put(MAX_WINDOW_SIZE_KEY, maxResultWindow.toString());
                 }
             }
             return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));

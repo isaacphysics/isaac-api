@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Time;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
@@ -18,7 +19,6 @@ import co.elastic.clients.elasticsearch.indices.get_alias.IndexAliases;
 import co.elastic.clients.elasticsearch.indices.update_aliases.Action;
 import co.elastic.clients.elasticsearch.indices.update_aliases.AddAction;
 import co.elastic.clients.elasticsearch.indices.update_aliases.RemoveAction;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -33,10 +33,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -278,7 +276,6 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                     client.indices().updateAliases(request.build());
                 } catch (final IOException e) {
                     log.error("Failed to update alias {}", typedAlias, e);
-                    continue;
                 }
             }
         }
@@ -311,45 +308,43 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      * @param typedIndex
      *            - type suffixed index to send the mapping corrections to.
      */
-    private void sendMappingCorrections(final String typedIndex, String indexType) {
+    private void sendMappingCorrections(final String typedIndex, final String indexType) {
         try {
-            // Specify index settings
-            CreateIndexRequest indexRequest = new CreateIndexRequest(typedIndex).settings(
-                    XContentFactory.jsonBuilder()
-                            .startObject()
-                                .field("index.mapping.total_fields.limit", "9999")
-                            .endObject()
-            );
-
-            // Add mapping to specify properties of the index
-            final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject("properties");
+            Map<String, Property> properties = new HashMap<>();
 
             // Add mapping to specify raw, un-analyzed fields
             for (String fieldName : this.rawFieldsListByType.getOrDefault(indexType, Collections.emptyList())) {
                 log.debug("Sending raw mapping correction for {}." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, fieldName);
-                mappingBuilder
-                        .startObject(fieldName)
-                            .field("type", "text")
-                            .field("index", "true")
-                            .startObject("fields")
-                                .startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                                    .field("type", "keyword")
-                                    .field("index", "true")
-                                .endObject()
-                            .endObject()
-                        .endObject();
+                properties.put(fieldName, Property.of(p -> p
+                                            .text(t -> t
+                                                .fields(
+                                                    Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                                                    Property.of(k -> k.keyword(kf -> kf))
+                                                )
+                                            )
+                                    )
+                );
             }
 
             // Add mapping to specify nested object fields
             for (String fieldName : this.nestedFieldsByType.getOrDefault(indexType, Collections.emptyList())) {
                 log.debug("Sending mapping correction for nested field {}", fieldName);
-                mappingBuilder.startObject(fieldName).field("type", "nested").endObject();
+                properties.put(fieldName, Property.of(p -> p.nested(n -> n)));
             }
 
-            mappingBuilder.endObject().endObject();
-            indexRequest.mapping(mappingBuilder);
+            CreateIndexRequest request = new CreateIndexRequest.Builder()
+                .index(typedIndex)
+                .settings(s -> s
+                    .index(i -> i
+                        .mapping(m -> m
+                            .totalFields(t -> t.limit(9999))
+                        )
+                    )
+                )
+                .mappings(m -> m.properties(properties))
+                .build();
 
-            client.indices().create(indexRequest, RequestOptions.DEFAULT);
+            client.indices().create(request);
 
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
