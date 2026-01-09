@@ -207,7 +207,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // First, find where <alias>_previous points.
             try {
-                GetAliasResponse previousResponse = client.indices().getAlias(g -> g.name(typedAlias + "_previous"));
+                GetAliasResponse previousResponse = client.indices().getAlias(g -> g.name("_all"));
                 for (Map.Entry<String, IndexAliases> entry : previousResponse.result().entrySet()) {
                     if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias + "_previous")) {
                         indexWithPrevious = entry.getKey();
@@ -220,7 +220,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // Now find where <alias> points
             try {
-                GetAliasResponse aliasResponse = client.indices().getAlias(g -> g.name(typedAlias));
+                GetAliasResponse aliasResponse = client.indices().getAlias(g -> g.name("_all"));
                 for (Map.Entry<String, IndexAliases> entry : aliasResponse.result().entrySet()) {
                     if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias)) {
                         indexWithCurrent = entry.getKey();
