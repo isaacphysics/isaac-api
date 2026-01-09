@@ -19,6 +19,8 @@ import co.elastic.clients.elasticsearch.indices.get_alias.IndexAliases;
 import co.elastic.clients.elasticsearch.indices.update_aliases.Action;
 import co.elastic.clients.elasticsearch.indices.update_aliases.AddAction;
 import co.elastic.clients.elasticsearch.indices.update_aliases.RemoveAction;
+import co.elastic.clients.util.BinaryData;
+import co.elastic.clients.util.ContentType;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -31,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -115,7 +118,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 batch.forEach(itemToIndex -> ops.add(BulkOperation.of(b -> b
                     .index(idx -> idx
                         .index(typedIndex)
-                        .withJson(new StringReader(itemToIndex))
+                            .document(BinaryData.of(itemToIndex.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_JSON))
                 ))));
 
                 return new BulkRequest.Builder()
@@ -139,8 +142,8 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 batch.forEach(itemToIndex -> ops.add(BulkOperation.of(b -> b
                     .index(idx -> idx
                         .index(typedIndex)
-                        .id(itemToIndex.getKey())
-                        .withJson(new StringReader(itemToIndex.getValue()))
+                            .id(itemToIndex.getKey())
+                                .document(BinaryData.of(itemToIndex.getValue().getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_JSON))
                     ))));
 
                 return new BulkRequest.Builder()
