@@ -19,6 +19,7 @@ import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Sets;
 import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
@@ -780,7 +781,7 @@ public class GitContentManager {
     }
 
     public String getCurrentContentSHA() {
-        GetResponse<Map<String, Object>> shaResponse = contentShaCache.getIfPresent(contentIndex);
+        GetResponse<ObjectNode> shaResponse = contentShaCache.getIfPresent(contentIndex);
         try {
             if (null == shaResponse) {
                 shaResponse =
@@ -791,7 +792,7 @@ public class GitContentManager {
                         );
                 contentShaCache.put(contentIndex, shaResponse);
             }
-            return (String) shaResponse.source().get("version");
+            return shaResponse.source().get("version").toString();
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve current content SHA from search provider", e);
             return "unknown";
