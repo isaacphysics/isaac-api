@@ -19,6 +19,7 @@ import co.elastic.clients.elasticsearch.core.GetResponse;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import jakarta.annotation.Nullable;
@@ -62,7 +63,7 @@ public class SchoolListReader {
 
         String modificationDate;
         try {
-            GetResponse<Map<String, Object>> response = searchProvider.getById(
+            GetResponse<ObjectNode> response = searchProvider.getById(
                     SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), "sourceFile");
             modificationDate = response.source().get("lastModified").toString();
         } catch (SegueSearchException e) {
