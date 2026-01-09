@@ -295,7 +295,10 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
         LLMFreeTextQuestionValidationResponse validationResponse = new LLMFreeTextQuestionValidationResponse(
                 question.getId(), answer, isConsideredCorrect, null, new Date());
+        // TODO: Remove marksAwarded field once database migration has occurred to remove it from question_attempts JSON
+        // (both fields are currently required for backwards compatibility)
         validationResponse.setMarks(markTotal);
+        validationResponse.setMarksAwarded(markTotal);
         validationResponse.setMarkBreakdown(markBreakdown);
         return validationResponse;
     }

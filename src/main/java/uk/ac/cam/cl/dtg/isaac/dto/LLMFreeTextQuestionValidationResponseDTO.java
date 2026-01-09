@@ -5,9 +5,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.LLMFreeTextMarkSchemeEntryDTO;
 
 import java.util.List;
 
-@JsonIgnoreProperties({ "marksAwarded" })
 public class LLMFreeTextQuestionValidationResponseDTO extends QuestionValidationResponseDTO {
     private List<LLMFreeTextMarkSchemeEntryDTO> markBreakdown;
+    private Integer marksAwarded;
 
     public LLMFreeTextQuestionValidationResponseDTO() {
     }
@@ -18,4 +18,7 @@ public class LLMFreeTextQuestionValidationResponseDTO extends QuestionValidation
     public void setMarkBreakdown(List<LLMFreeTextMarkSchemeEntryDTO> markBreakdown) {
         this.markBreakdown = markBreakdown;
     }
+
+    public Integer getMarksAwarded() { return marksAwarded; }
+    public void setMarksAwarded(Integer marksAwarded) { this.marksAwarded = marksAwarded; }
 }
