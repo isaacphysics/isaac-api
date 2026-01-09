@@ -47,6 +47,29 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
      *            -
      * @param correct
      *            -
+     * @param marks
+     *            -
+     * @param explanation
+     *            -
+     * @param dateAttempted
+     *            -
+     */
+    public QuestionValidationResponse(final String questionId, final Choice answer, final Boolean correct,
+            final Integer marks, final Content explanation, final Date dateAttempted) {
+        super(questionId, correct, marks, dateAttempted);
+        this.answer = answer;
+        this.explanation = explanation;
+    }
+
+    /**
+     * Constructor without specifying marks (instead derived from 'correct')
+     *
+     * @param questionId
+     *            -
+     * @param answer
+     *            -
+     * @param correct
+     *            -
      * @param explanation
      *            -
      * @param dateAttempted
@@ -101,7 +124,7 @@ public class QuestionValidationResponse extends LightweightQuestionValidationRes
     public String toString() {
         return "QuestionValidationResponse [questionId=" + super.getQuestionId() + ", answer=" + answer +
                 ", correct=" + super.isCorrect() + ", explanation=" + explanation +
-                ", dateAttempted=" + super.getDateAttempted() + "]";
+                ", marks=" + super.getMarks() + ", dateAttempted=" + super.getDateAttempted() + "]";
     }
 
 }
