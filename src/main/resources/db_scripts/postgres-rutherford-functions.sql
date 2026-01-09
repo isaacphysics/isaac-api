@@ -162,7 +162,7 @@ ALTER FUNCTION mergeuser(targetuseridtokeep bigint, targetuseridtodelete bigint)
 -- Calculate User Streaks
 --
 -- Authors: James Sharkey
--- Last Modified: 2018-04-20
+-- Last Modified: 2026-01-07
 --
 
 CREATE OR REPLACE FUNCTION user_streaks(useridofinterest BIGINT, defaultquestionsperday INTEGER DEFAULT 3)
@@ -196,9 +196,10 @@ BEGIN
     -- Create the list of targets and dates, allowing NULL end dates to mean "to present":
       daily_targets AS (
         SELECT
-          generate_series(start_date, COALESCE(end_date, CURRENT_DATE), INTERVAL '1 DAY')::DATE AS date,
+          generated_datetime::DATE AS date,
           MIN(target_count) AS target_count
-        FROM user_streak_targets
+        FROM user_streak_targets CROSS JOIN LATERAL
+             generate_series(start_date, COALESCE(end_date, CURRENT_DATE), INTERVAL '1 DAY') AS generated_datetime
         WHERE user_id=useridofinterest
         GROUP BY date
     ),
@@ -216,8 +217,9 @@ BEGIN
     -- Create a list of dates streaks were frozen on, allowing NULL end dates to mean "to present":
       frozen_dates AS (
         SELECT
-          DISTINCT generate_series(start_date, COALESCE(end_date, CURRENT_DATE), INTERVAL '1 DAY')::DATE AS date
-        FROM user_streak_freezes
+          DISTINCT generated_datetime::DATE AS date
+        FROM user_streak_freezes CROSS JOIN LATERAL
+             generate_series(start_date, COALESCE(end_date, CURRENT_DATE), INTERVAL '1 DAY') AS generated_datetime
         WHERE user_id=useridofinterest
     ),
 
@@ -261,7 +263,7 @@ ALTER FUNCTION user_streaks(useridofinterest BIGINT, defaultquestionsperday INTE
 -- Calculate Current Progress towards User Streak
 --
 -- Authors: James Sharkey
--- Last Modified: 2018-04-20
+-- Last Modified: 2026-01-07
 --
 
 CREATE OR REPLACE FUNCTION user_streaks_current_progress(useridofinterest BIGINT, defaultquestionsperday INTEGER DEFAULT 3)
@@ -296,9 +298,10 @@ BEGIN
     -- Create the list of targets and dates, allowing NULL end dates to mean "to present":
       daily_targets AS (
         SELECT
-          generate_series(start_date, COALESCE(end_date, CURRENT_DATE), INTERVAL '1 DAY')::DATE AS date,
+          generated_datetime::DATE AS date,
           MIN(target_count) AS target_count
-        FROM user_streak_targets
+        FROM user_streak_targets CROSS JOIN LATERAL
+             generate_series(start_date, COALESCE(end_date, CURRENT_DATE), INTERVAL '1 DAY') AS generated_datetime
         WHERE user_id=useridofinterest
         GROUP BY date
     ),
@@ -333,7 +336,7 @@ ALTER FUNCTION user_streaks_current_progress(useridofinterest BIGINT, defaultque
 -- Calculate User Weekly Streaks
 --
 -- Authors: James Sharkey
--- Last Modified: 2019-12-06
+-- Last Modified: 2026-01-07
 --
 
 CREATE OR REPLACE FUNCTION user_streaks_weekly(useridofinterest BIGINT, defaultquestionsperweek integer DEFAULT 10)
@@ -369,9 +372,10 @@ BEGIN
             -- Create the list of targets and dates, allowing NULL end dates to mean "to present":
             weekly_targets AS (
                 SELECT
-                    generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY')::DATE AS date,
+                    generated_datetime::DATE AS date,
                     MIN(target_count) AS target_count
-                FROM user_streak_targets
+                FROM user_streak_targets CROSS JOIN LATERAL
+                     generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY') AS generated_datetime
                 WHERE user_id=useridofinterest
                 GROUP BY date
             ),
@@ -389,8 +393,9 @@ BEGIN
             -- Create a list of dates streaks were frozen on, allowing NULL end dates to mean "to present":
             frozen_dates AS (
                 SELECT
-                    DISTINCT generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY')::DATE AS date
-                FROM user_streak_freezes
+                    DISTINCT generated_datetime::DATE AS date
+                FROM user_streak_freezes CROSS JOIN LATERAL
+                    generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY') AS generated_datetime
                 WHERE user_id=useridofinterest
             ),
 
@@ -433,7 +438,7 @@ ALTER FUNCTION user_streaks_weekly(BIGINT, INTEGER) OWNER TO rutherford;
 -- Calculate Current Progress towards User Weekly Streak
 --
 -- Authors: James Sharkey
--- Last Modified: 2019-12-06
+-- Last Modified: 2026-01-07
 --
 
 CREATE OR REPLACE FUNCTION user_streaks_weekly_current_progress(useridofinterest BIGINT, defaultquestionsperweek integer DEFAULT 10)
@@ -470,9 +475,10 @@ BEGIN
             -- Create the list of targets and dates, allowing NULL end dates to mean "to present":
             weekly_targets AS (
                 SELECT
-                    generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY')::DATE AS date,
+                    generated_datetime::DATE AS date,
                     MIN(target_count) AS target_count
-                FROM user_streak_targets
+                FROM user_streak_targets CROSS JOIN LATERAL
+                     generate_series(date_trunc('WEEK', start_date), date_trunc('WEEK', COALESCE(end_date, CURRENT_DATE)), INTERVAL '7 DAY') AS generated_datetime
                 WHERE user_id=useridofinterest
                 GROUP BY date
             ),
