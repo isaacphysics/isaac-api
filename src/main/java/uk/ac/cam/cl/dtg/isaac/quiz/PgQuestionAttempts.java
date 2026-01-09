@@ -509,6 +509,11 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             String pageId = extractPageIdFromQuestionId(questionAttempt.getQuestionId());
             String questionId = questionAttempt.getQuestionId();
 
+            // For questions without marks in their question_attempt JSON, inject it here
+            if (questionAttempt.getMarks() == null) {
+                questionAttempt.setMarks(results.getInt("marks"));
+            }
+
             Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage
                     = mapOfQuestionAttemptsByPage.computeIfAbsent(pageId, k -> Maps.newLinkedHashMap());
 
