@@ -45,6 +45,8 @@ import java.util.function.Function;
  */
 class ElasticSearchIndexer extends ElasticSearchProvider {
     private static final Integer BULK_REQUEST_BATCH_SIZE = 10000;  // Huge requests overwhelm ES, so batch!
+    private static final String ALL = "_all";
+    private static final String PREVIOUS = "_previous";
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchIndexer.class);
     private final Map<String, List<String>> rawFieldsListByType = new HashMap<>();
@@ -175,7 +177,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     }
 
     public boolean expungeEntireSearchCache() {
-        return this.expungeTypedIndexFromSearchCache("_all");
+        return this.expungeTypedIndexFromSearchCache(ALL);
     }
 
     boolean expungeTypedIndexFromSearchCache(final String typedIndex) {
@@ -207,20 +209,20 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // First, find where <alias>_previous points.
             try {
-                GetAliasResponse previousResponse = client.indices().getAlias(g -> g.name("_all"));
+                GetAliasResponse previousResponse = client.indices().getAlias(g -> g.name(ALL));
                 for (Map.Entry<String, IndexAliases> entry : previousResponse.result().entrySet()) {
-                    if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias + "_previous")) {
+                    if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias + PREVIOUS)) {
                         indexWithPrevious = entry.getKey();
                     }
                 }
             } catch (IOException e) {
-                log.error("Failed to retrieve existing previous alias {}, not moving alias!", typedAlias + "_previous");
+                log.error("Failed to retrieve existing previous alias {}, not moving alias!", typedAlias + PREVIOUS);
                 continue;
             }
 
             // Now find where <alias> points
             try {
-                GetAliasResponse aliasResponse = client.indices().getAlias(g -> g.name("_all"));
+                GetAliasResponse aliasResponse = client.indices().getAlias(g -> g.name(ALL));
                 for (Map.Entry<String, IndexAliases> entry : aliasResponse.result().entrySet()) {
                     if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias)) {
                         indexWithCurrent = entry.getKey();
@@ -252,7 +254,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                         request.actions(Action.of(a -> a
                             .remove(RemoveAction.of(ra -> ra
                                 .index(finalIndexWithPrevious)
-                                .alias(typedAlias + "_previous")
+                                .alias(typedAlias + PREVIOUS)
                             ))
                         ));
                     }
@@ -262,7 +264,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                     request.actions(Action.of(a -> a
                             .add(AddAction.of(aa -> aa
                                     .index(finalIndexWithCurrent1)
-                                    .alias(typedAlias + "_previous")
+                                    .alias(typedAlias + PREVIOUS)
                             ))
                     ));
                 }
