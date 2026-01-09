@@ -26,7 +26,6 @@ import java.util.List;
 @DTOMapping(ItemChoiceDTO.class)
 @JsonContentType("itemChoice")
 public class ItemChoice extends Choice {
-
     private Boolean allowSubsetMatch;
     private List<Item> items;
 

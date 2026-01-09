@@ -19,6 +19,7 @@ import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
@@ -31,6 +32,7 @@ import org.powermock.reflect.Whitebox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -396,6 +398,62 @@ public class ContentIndexerTest {
         for (Content key : indexProblemCache.keySet()) {
             assertTrue(indexProblemCache.get(key).isEmpty());
         }
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionCorrect_checkNoError() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.createQuestion(
+            IsaacDndValidatorTest.correct(IsaacDndValidatorTest.choose(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        assertEquals(0, indexProblemCache.size());
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionInCorrect_checkErrorIsCorrect() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> indexProblemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.createQuestion(
+            IsaacDndValidatorTest.correct(IsaacDndValidatorTest.choose(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(null);
+        dndQuestion.setCanonicalSourceFile("");
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(
+                    defaultContentIndexer,
+                    "recordContentTypeSpecificError",
+                    "",
+                    content,
+                    indexProblemCache
+            );
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of(
+            String.format("Drag-and-drop Question: %s has a problem. This question doesn't have any drop zones.",
+                          dndQuestion.getId())));
+        assertEquals(expected, List.copyOf(indexProblemCache.values()));
     }
 
     private Content createContentHierarchy(final int numLevels,

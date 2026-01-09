@@ -15,11 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
+import java.util.List;
+
 /**
  * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
-public class DndChoiceDTO extends ItemChoiceDTO {
+public class DndChoiceDTO extends ChoiceDTO {
+    private List<DndItemDTO> items;
 
     /**
      * Default constructor required for mapping.
@@ -27,4 +30,11 @@ public class DndChoiceDTO extends ItemChoiceDTO {
     public DndChoiceDTO() {
     }
 
+    public List<DndItemDTO> getItems() {
+        return items;
+    }
+
+    public void setItems(final List<DndItemDTO> items) {
+        this.items = items;
+    }
 }
