@@ -4,10 +4,6 @@ services:
   equality-checker:
     container_name: equality-checker
     image: ucamcldtg/equality-checker
-    logging:
-      driver: journald
-      options:
-        tag: equality-checker
     restart: unless-stopped
 
   chemistry-checker:
