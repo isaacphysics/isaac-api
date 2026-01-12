@@ -686,14 +686,16 @@ public class GitContentManager {
             for (Hit<ObjectNode> hit : hits) {
                 Content partialContentWithErrors = new Content();
                 ObjectNode src = hit.source();
-                partialContentWithErrors.setId(src.get("id").asText());
-                partialContentWithErrors.setTitle(src.get("title").asText());
-                //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
-                partialContentWithErrors.setPublished(src.get("published").asBoolean());
-                partialContentWithErrors.setCanonicalSourceFile(src.get("canonicalSourceFile").asText());
+                if (src != null) {
+                    partialContentWithErrors.setId(src.get("id").asText());
+                    partialContentWithErrors.setTitle(src.get("title").asText());
+                    //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
+                    partialContentWithErrors.setPublished(src.get("published").asBoolean());
+                    partialContentWithErrors.setCanonicalSourceFile(src.get("canonicalSourceFile").asText());
 
-                List<String> errors = new ObjectMapper().convertValue(src.get("errors"), new TypeReference<>(){});
-                map.put(partialContentWithErrors, errors);
+                    List<String> errors = new ObjectMapper().convertValue(src.get("errors"), new TypeReference<>(){});
+                    map.put(partialContentWithErrors, errors);
+                }
             }
             return map;
 
