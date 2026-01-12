@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.search;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -241,7 +242,7 @@ public interface ISearchProvider {
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things
      */
-    GetResponse getById(String indexBase, String indexType, String id) throws SegueSearchException;
+    GetResponse<ObjectNode> getById(String indexBase, String indexType, String id) throws SegueSearchException;
 
-    SearchResponse getAllFromIndex(String indexBase, String indexType) throws SegueSearchException;
+    SearchResponse<ObjectNode> getAllFromIndex(String indexBase, String indexType) throws SegueSearchException;
 }

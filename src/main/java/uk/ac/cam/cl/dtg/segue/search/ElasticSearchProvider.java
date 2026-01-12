@@ -873,10 +873,10 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
+    public SearchResponse<ObjectNode> getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
-            return client.search(sr -> sr.index(typedIndex).size(10000), Void.class);
+            return client.search(sr -> sr.index(typedIndex).size(10000), ObjectNode.class);
         } catch (IOException e) {
             throw new SegueSearchException(String.format("Failed to retrieve all data from index %s", typedIndex), e);
         }
