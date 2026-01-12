@@ -38,9 +38,13 @@ public class ElasticSearchProviderTest {
             .must(Query.of(q -> q
                 .bool(b -> b
                     .must(Query.of(q2 -> q2
-                        .match(m -> m
-                            .field("published")
-                            .query(p -> p.stringValue("true"))
+                        .bool(b2 -> b2
+                            .must(Query.of(q3 -> q3
+                                .match(m -> m
+                                    .field("published")
+                                    .query(p -> p.stringValue("true"))
+                                )
+                            ))
                         )
                     ))
                 )
@@ -51,7 +55,7 @@ public class ElasticSearchProviderTest {
         Query actualQuery = provider.generateFilterQuery(filters);
 
         // Assert
-        assertEquals(expectedQuery, actualQuery);
+        assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 
     @Test
@@ -63,23 +67,27 @@ public class ElasticSearchProviderTest {
         filters.put("published", new SimpleExclusionInstruction("true"));
 
         Query expectedQuery = BoolQuery.of(bq -> bq
-                .must(Query.of(q -> q
-                        .bool(b -> b
-                                .must(Query.of(q2 -> q2
-                                        .match(m -> m
-                                                .field("published")
-                                                .query(p -> p.stringValue("true"))
-                                        )
-                                ))
+            .mustNot(Query.of(q -> q
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .bool(b2 -> b2
+                            .must(Query.of(q3 -> q3
+                                .match(m -> m
+                                    .field("published")
+                                    .query(p -> p.stringValue("true"))
+                                )
+                            ))
                         )
-                ))
+                    ))
+                )
+            ))
         )._toQuery();
 
         // Act
         Query actualQuery = provider.generateFilterQuery(filters);
 
         // Assert
-        assertEquals(expectedQuery, actualQuery);
+        assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 
     @Test
@@ -93,18 +101,26 @@ public class ElasticSearchProviderTest {
 
         Query expectedMustQuery = BoolQuery.of(bq -> bq
             .must(Query.of(q -> q
-                .match(m -> m
-                    .field("published")
-                    .query(p -> p.stringValue("true"))
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .match(m -> m
+                            .field("published")
+                            .query(p -> p.stringValue("true"))
+                        )
+                    ))
                 )
             ))
         )._toQuery();
 
         Query expectedMustNotQuery = BoolQuery.of(bq -> bq
             .must(Query.of(q -> q
-                .match(m -> m
-                    .field("tags")
-                    .query(p -> p.stringValue("regression_test"))
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .match(m -> m
+                            .field("tags")
+                            .query(p -> p.stringValue("regression_test"))
+                        )
+                    ))
                 )
             ))
         )._toQuery();
@@ -118,6 +134,6 @@ public class ElasticSearchProviderTest {
         Query actualQuery = provider.generateFilterQuery(filters);
 
         // Assert
-        assertEquals(expectedQuery, actualQuery);
+        assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 }
