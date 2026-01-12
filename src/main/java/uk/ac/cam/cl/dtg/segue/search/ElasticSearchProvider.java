@@ -505,12 +505,12 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
                 SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
 
-                filter.must(
-                    MatchQuery.of(m -> m
-                            .field(fieldToFilterInstruction.getKey())
-                            .query(FieldValue.of(sfi.getMustMatchValue()))
-                    )._toQuery()
-                );
+                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
+                        Collections.singletonList(sfi.getMustMatchValue())));
+
+                filter.must(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
             }
 
             if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
@@ -532,12 +532,12 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
                 SimpleExclusionInstruction sfi = (SimpleExclusionInstruction) fieldToFilterInstruction.getValue();
 
-                Query exclusionQuery = MatchQuery.of(m -> m
-                    .field(fieldToFilterInstruction.getKey())
-                    .query(FieldValue.of(sfi.getMustNotMatchValue()))
-                )._toQuery();
+                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
+                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
+                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
+                        Collections.singletonList(sfi.getMustNotMatchValue())));
 
-                filter.mustNot(exclusionQuery);
+                filter.mustNot(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
             }
         }
 
