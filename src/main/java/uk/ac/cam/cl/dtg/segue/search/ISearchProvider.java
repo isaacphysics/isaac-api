@@ -98,7 +98,7 @@ public interface ISearchProvider {
      * @param fields
      *            - array (var args) of fields to search using the searchString
      * @return results
-     * @deprecated in favour of {@code BooleanMatchInstruction}-based searches.
+     * @deprecated in favour of {@code BooleanInstruction}-based searches.
      */
     @Deprecated
     ResultsWrapper<String> fuzzySearch(

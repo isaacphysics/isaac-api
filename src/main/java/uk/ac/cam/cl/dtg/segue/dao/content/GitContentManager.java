@@ -831,7 +831,7 @@ public class GitContentManager {
     /**
      * An abstract representation of a search clause that can be interpreted as desired by different search providers.
      *
-     * @deprecated in favour of {@code BooleanMatchInstruction}, as an attempt to unify approaches to searching.
+     * @deprecated in favour of {@code BooleanInstruction}, as an attempt to unify approaches to searching.
      */
     @Deprecated
     public static class BooleanSearchClause {

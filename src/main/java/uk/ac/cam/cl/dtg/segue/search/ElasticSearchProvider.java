@@ -480,7 +480,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *
      * @param filterInstructions
      *            - in the form "fieldName --> instruction key --> instruction value"
-     * @return filterbuilder
+     * @return filter query
      */
     public Query generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
         BoolQuery.Builder filter = new BoolQuery.Builder();
@@ -550,7 +550,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @param fieldsToMatch
      *            - the fields that the bool query should match.
      * @return a bool query configured to match the fields to match.
-     * @deprecated as {@code AbstractMatchInstruction}-based instructions should be preferred over
+     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
      * {@code BooleanSearchClause}, which are instead processed by {@code processMatchInstructions()}.
      */
     @Deprecated
@@ -738,7 +738,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the map that should be converted into a suitable map for querying.
      * @return Map where each field is using the OR boolean operator.
      *
-     * @deprecated as {@code AbstractMatchInstruction}-based instructions should be preferred over
+     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
      * {@code fieldsToMatch}-style instructions.
      */
     @Deprecated
@@ -762,7 +762,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      * Based on the relatively abstract {@code matchInstruction}, generates a {@code Query} which is usable by
      * Elasticsearch.
      *
-     * @param matchInstruction An {@code AbstractMatchInstruction} representing a search query.
+     * @param matchInstruction An {@code AbstractInstruction} representing a search query.
      *
      * @return a {@code Query} reflecting the instructions in {@code matchInstruction}.
      * @throws SegueSearchException
