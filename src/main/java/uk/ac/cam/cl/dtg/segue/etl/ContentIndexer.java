@@ -757,12 +757,9 @@ public class ContentIndexer {
             endTime = System.nanoTime();
             log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
             log.info("Search index request sent for: " + sha);
-        } catch (final SegueSearchException e) {
+        } catch (final SegueSearchException | ElasticsearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
             throw new Exception("Error whilst trying to perform bulk index operation.", e);
-        } catch (final ElasticsearchException e) {
-            log.error("Error validating content during index", e);
-            throw new Exception("Error validating content during index", e);
         }
     }
 
