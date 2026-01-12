@@ -787,7 +787,7 @@ public class GitContentManager {
                         );
                 contentShaCache.put(contentIndex, shaResponse);
             }
-            return shaResponse.source().get("version").toString();
+            return shaResponse.source().get("version").asText();
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve current content SHA from search provider", e);
             return "unknown";
