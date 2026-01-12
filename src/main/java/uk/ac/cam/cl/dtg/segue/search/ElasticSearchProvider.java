@@ -505,12 +505,12 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
                 SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
 
-                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
-                        Collections.singletonList(sfi.getMustMatchValue())));
-
-                filter.must(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
+                filter.must(
+                    MatchQuery.of(m -> m
+                            .field(fieldToFilterInstruction.getKey())
+                            .query(FieldValue.of(sfi.getMustMatchValue()))
+                    )._toQuery()
+                );
             }
 
             if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
@@ -532,12 +532,12 @@ public class ElasticSearchProvider implements ISearchProvider {
             if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
                 SimpleExclusionInstruction sfi = (SimpleExclusionInstruction) fieldToFilterInstruction.getValue();
 
-                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
-                        Collections.singletonList(sfi.getMustNotMatchValue())));
+                Query exclusionQuery = MatchQuery.of(m -> m
+                    .field(fieldToFilterInstruction.getKey())
+                    .query(FieldValue.of(sfi.getMustNotMatchValue()))
+                )._toQuery();
 
-                filter.mustNot(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
+                filter.mustNot(exclusionQuery);
             }
         }
 
