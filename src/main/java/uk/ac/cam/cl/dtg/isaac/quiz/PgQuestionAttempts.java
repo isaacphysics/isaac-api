@@ -511,7 +511,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
 
             // For questions without marks in their question_attempt JSON, inject it here
             if (questionAttempt.getMarks() == null) {
-                questionAttempt.setMarks(results.getInt("marks"));
+                Integer marks = results.getInt("marks");
+                if (!results.wasNull()) {
+                    questionAttempt.setMarks(marks);
+                }
             }
 
             Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage
