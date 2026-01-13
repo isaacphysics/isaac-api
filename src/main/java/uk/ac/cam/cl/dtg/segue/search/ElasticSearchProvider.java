@@ -797,7 +797,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             return MatchQuery.of(m -> {
                 m.field(shouldMatch.getField());
                 m.query(shouldMatch.getValue());
-                if ((shouldMatch).getBoost() != null) {
+                if (shouldMatch.getBoost() != null) {
                     m.boost((float) shouldMatch.getBoost());
                 }
                 if (shouldMatch.getFuzzy()) {
@@ -863,7 +863,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public GetResponse getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
+    public GetResponse<ObjectNode> getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
             return client.get(gr -> gr.index(typedIndex).id(id), ObjectNode.class);

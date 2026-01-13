@@ -271,7 +271,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
                 // Point <alias> to the right place.
                 request.actions(Action.of(a -> a
-                        .add(AddAction.of(aa -> aa
+                            .add(AddAction.of(aa -> aa
                                 .index(typedIndexTarget)
                                 .alias(typedAlias)
                         ))
