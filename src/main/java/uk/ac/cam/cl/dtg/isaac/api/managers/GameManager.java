@@ -150,7 +150,7 @@ public class GameManager {
      *            list of question categories (i.e. problem_solving, book) to include in filtered results
      * @param boardOwner
      *            The user that should be marked as the creator of the gameBoard.
-     * @return a gameboard if possible that satisifies the conditions provided by the parameters. Will return null if no
+     * @return a gameboard if possible that satisfies the conditions provided by the parameters. Will return null if no
      *         questions can be provided.
      * @throws SegueDatabaseException
      *             - if there is an error contacting the database.

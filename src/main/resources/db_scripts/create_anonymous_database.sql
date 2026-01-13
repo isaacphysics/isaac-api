@@ -151,6 +151,7 @@ CREATE TABLE anonymous.question_attempts AS
         question_id,
         question_attempt,
         correct,
+        marks,
         timestamp
     FROM public.question_attempts;
 
@@ -200,6 +201,7 @@ CREATE TABLE anonymous.quiz_question_attempts AS
         question_id,
         question_attempt,
         correct,
+        marks,
         timestamp
     FROM public.quiz_question_attempts;
 
