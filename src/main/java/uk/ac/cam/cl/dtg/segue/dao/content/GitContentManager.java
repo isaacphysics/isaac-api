@@ -666,7 +666,9 @@ public class GitContentManager {
             ArrayList<String> units = new ArrayList<>((int) totalHits);
 
             for (Hit<ObjectNode> hit : hits) {
-                units.add(hit.source().get("unit").asText());
+                if (null != hit.source()) {
+                    units.add(hit.source().get("unit").asText());
+                }
             }
 
             return units;
