@@ -125,7 +125,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
                 return new BulkRequest.Builder()
                     .operations(ops)
-                    .timeout(Time.of(t -> t.time("180s")))
+                    .timeout(Time.of(t -> t.time("360s")))
                     .refresh(Refresh.True)
                     .build();
             });
@@ -150,7 +150,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
                 return new BulkRequest.Builder()
                     .operations(ops)
-                    .timeout(Time.of(t -> t.time("180s")))
+                    .timeout(Time.of(t -> t.time("360s")))
                     .refresh(Refresh.True)
                     .build();
             });
