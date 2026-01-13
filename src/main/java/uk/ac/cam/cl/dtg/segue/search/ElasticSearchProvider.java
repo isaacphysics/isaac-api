@@ -337,6 +337,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         RestClient restClient = RestClient.builder(new HttpHost(InetAddress.getByName(address), port, "http"))
                 .setHttpClientConfigCallback(httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
+                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder.setSocketTimeout(60000))
                 .build();
 
         ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
