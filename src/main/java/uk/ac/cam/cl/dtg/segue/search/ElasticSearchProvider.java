@@ -490,16 +490,18 @@ public class ElasticSearchProvider implements ISearchProvider {
                 DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
                         .getValue();
                 // Note: assumption that dates are stored in long format.
-                filter.must(RangeQuery.of(r -> {
-                    r.field(fieldToFilterInstruction.getKey());
-                    if (dateRangeInstruction.getFromDate() != null) {
-                        r.gte(JsonData.of(dateRangeInstruction.getFromDate().getTime()));
-                    }
-                    if (dateRangeInstruction.getToDate() != null) {
-                        r.lte(JsonData.of(dateRangeInstruction.getToDate().getTime()));
-                    }
-                    return r;
-                })._toQuery());
+                filter.must(RangeQuery.of(r ->
+                    r.date(d -> {
+                        d.field(fieldToFilterInstruction.getKey());
+                        if (dateRangeInstruction.getFromDate() != null) {
+                            d.gte(String.valueOf(dateRangeInstruction.getFromDate().getTime()));
+                        }
+                        if (dateRangeInstruction.getToDate() != null) {
+                            d.lte(String.valueOf(dateRangeInstruction.getToDate().getTime()));
+                        }
+                        return d;
+                    })
+                )._toQuery());
             }
 
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
@@ -807,23 +809,25 @@ public class ElasticSearchProvider implements ISearchProvider {
             })._toQuery();
         } else if (matchInstruction instanceof RangeInstruction) {
             RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
-            return RangeQuery.of(r -> {
-                r.field(rangeMatch.getField());
-                if (rangeMatch.getGreaterThan() != null) {
-                    r.gt(JsonData.of(rangeMatch.getGreaterThan()));
-                }
-                if (rangeMatch.getGreaterThanOrEqual() != null) {
-                    r.gte(JsonData.of(rangeMatch.getGreaterThanOrEqual()));
-                }
-                if (rangeMatch.getLessThan() != null) {
-                    r.lt(JsonData.of(rangeMatch.getLessThan()));
-                }
-                if (rangeMatch.getLessThanOrEqual() != null) {
-                    r.lte(JsonData.of(rangeMatch.getLessThanOrEqual()));
-                }
-                r.boost((float) rangeMatch.getBoost());
-                return r;
-            })._toQuery();
+            return RangeQuery.of(r ->
+                r.date(d -> {
+                    d.field(rangeMatch.getField());
+                    if (rangeMatch.getGreaterThan() != null) {
+                        d.gt(String.valueOf(rangeMatch.getGreaterThan()));
+                    }
+                    if (rangeMatch.getGreaterThanOrEqual() != null) {
+                        d.gte(String.valueOf(rangeMatch.getGreaterThanOrEqual()));
+                    }
+                    if (rangeMatch.getLessThan() != null) {
+                        d.lt(String.valueOf(rangeMatch.getLessThan()));
+                    }
+                    if (rangeMatch.getLessThanOrEqual() != null) {
+                        d.lte(String.valueOf(rangeMatch.getLessThanOrEqual()));
+                    }
+                    d.boost((float) rangeMatch.getBoost());
+                    return d;
+                })
+            )._toQuery();
         } else if (matchInstruction instanceof NestedInstruction) {
             NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
             return NestedQuery.of(nq -> {

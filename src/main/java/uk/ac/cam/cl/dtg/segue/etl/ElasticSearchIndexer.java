@@ -342,7 +342,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 .settings(s -> s
                     .index(i -> i
                         .mapping(m -> m
-                            .totalFields(t -> t.limit(9999))
+                            .totalFields(t -> t.limit("9999"))
                         )
                     )
                 )
