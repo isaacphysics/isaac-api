@@ -15,9 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -35,16 +34,28 @@ public class ElasticSearchProviderTest {
         Map<String, AbstractFilterInstruction> filters = new HashMap<>();
         filters.put("published", new SimpleFilterInstruction("true"));
 
-        BoolQueryBuilder expectedQuery = QueryBuilders.boolQuery()
-                .must(QueryBuilders.boolQuery()
-                        .must(QueryBuilders.boolQuery()
-                                .must(QueryBuilders.matchQuery("published", "true"))));
+        Query expectedQuery = BoolQuery.of(bq -> bq
+            .must(Query.of(q -> q
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .bool(b2 -> b2
+                            .must(Query.of(q3 -> q3
+                                .match(m -> m
+                                    .field("published")
+                                    .query(p -> p.stringValue("true"))
+                                )
+                            ))
+                        )
+                    ))
+                )
+            ))
+        )._toQuery();
 
         // Act
-        QueryBuilder actualQuery = provider.generateFilterQuery(filters);
+        Query actualQuery = provider.generateFilterQuery(filters);
 
         // Assert
-        assertEquals(expectedQuery, actualQuery);
+        assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 
     @Test
@@ -55,16 +66,28 @@ public class ElasticSearchProviderTest {
         Map<String, AbstractFilterInstruction> filters = new HashMap<>();
         filters.put("published", new SimpleExclusionInstruction("true"));
 
-        BoolQueryBuilder expectedQuery = QueryBuilders.boolQuery()
-                .mustNot(QueryBuilders.boolQuery()
-                        .must(QueryBuilders.boolQuery()
-                                .must(QueryBuilders.matchQuery("published", "true"))));
+        Query expectedQuery = BoolQuery.of(bq -> bq
+            .mustNot(Query.of(q -> q
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .bool(b2 -> b2
+                            .must(Query.of(q3 -> q3
+                                .match(m -> m
+                                    .field("published")
+                                    .query(p -> p.stringValue("true"))
+                                )
+                            ))
+                        )
+                    ))
+                )
+            ))
+        )._toQuery();
 
         // Act
-        QueryBuilder actualQuery = provider.generateFilterQuery(filters);
+        Query actualQuery = provider.generateFilterQuery(filters);
 
         // Assert
-        assertEquals(expectedQuery, actualQuery);
+        assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 
     @Test
@@ -76,21 +99,41 @@ public class ElasticSearchProviderTest {
         filters.put("published", new SimpleFilterInstruction("true"));
         filters.put("tags", new SimpleExclusionInstruction("regression_test"));
 
-        BoolQueryBuilder expectedMustQuery = QueryBuilders.boolQuery()
-                .must(QueryBuilders.boolQuery()
-                                .must(QueryBuilders.matchQuery("published", "true")));
+        Query expectedMustQuery = BoolQuery.of(bq -> bq
+            .must(Query.of(q -> q
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .match(m -> m
+                            .field("published")
+                            .query(p -> p.stringValue("true"))
+                        )
+                    ))
+                )
+            ))
+        )._toQuery();
 
-        BoolQueryBuilder expectedMustNotQuery = QueryBuilders.boolQuery()
-                .must(QueryBuilders.boolQuery()
-                                .must(QueryBuilders.matchQuery("tags", "regression_test")));
+        Query expectedMustNotQuery = BoolQuery.of(bq -> bq
+            .must(Query.of(q -> q
+                .bool(b -> b
+                    .must(Query.of(q2 -> q2
+                        .match(m -> m
+                            .field("tags")
+                            .query(p -> p.stringValue("regression_test"))
+                        )
+                    ))
+                )
+            ))
+        )._toQuery();
 
-        BoolQueryBuilder expectedQuery = QueryBuilders.boolQuery().must(expectedMustQuery);
-        expectedQuery.mustNot(expectedMustNotQuery);
+        Query expectedQuery = BoolQuery.of(bq -> bq
+            .must(expectedMustQuery)
+            .mustNot(expectedMustNotQuery)
+        )._toQuery();
 
         // Act
-        QueryBuilder actualQuery = provider.generateFilterQuery(filters);
+        Query actualQuery = provider.generateFilterQuery(filters);
 
         // Assert
-        assertEquals(expectedQuery, actualQuery);
+        assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 }

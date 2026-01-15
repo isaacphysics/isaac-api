@@ -15,8 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Sets;
-import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -24,10 +29,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -636,12 +637,12 @@ public class GitContentManager {
 
     public final Set<String> getTagsList() {
         try {
-            List<Object> tagObjects = (List<Object>) searchProvider.getById(
+            GetResponse<ObjectNode> response = searchProvider.getById(
                     contentIndex,
                     Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
                     "tags"
-            ).getSource().get("tags");
-            return tagObjects.stream().map(Functions.toStringFunction()).collect(Collectors.toSet());
+            );
+            return new ObjectMapper().convertValue(response.source().get("tags"), new TypeReference<>(){});
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
             return Sets.newHashSet();
@@ -655,12 +656,19 @@ public class GitContentManager {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
         try {
-            SearchResponse r = searchProvider.getAllFromIndex(
-                    globalProperties.getProperty(Constants.CONTENT_INDEX), unitType);
-            SearchHits hits = r.getHits();
-            ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits().value);
-            for (SearchHit hit : hits) {
-                units.add((String) hit.getSourceAsMap().get("unit"));
+            SearchResponse<ObjectNode> r = searchProvider.getAllFromIndex(
+                    globalProperties.getProperty(CONTENT_INDEX), unitType);
+
+            List<Hit<ObjectNode>> hits = r.hits().hits();
+            long totalHits = null != r.hits().total()
+                    ? r.hits().total().value()
+                    : 0;
+            ArrayList<String> units = new ArrayList<>((int) totalHits);
+
+            for (Hit<ObjectNode> hit : hits) {
+                if (null != hit.source()) {
+                    units.add(hit.source().get("unit").asText());
+                }
             }
 
             return units;
@@ -672,26 +680,24 @@ public class GitContentManager {
 
     public final Map<Content, List<String>> getProblemMap() {
         try {
-            SearchResponse r = searchProvider.getAllFromIndex(contentIndex,
+            SearchResponse<ObjectNode> r = searchProvider.getAllFromIndex(contentIndex,
                     Constants.CONTENT_INDEX_TYPE.CONTENT_ERROR.toString());
-            SearchHits hits = r.getHits();
+            List<Hit<ObjectNode>> hits = r.hits().hits();
             Map<Content, List<String>> map = new HashMap<>();
 
-            for (SearchHit hit : hits) {
+            for (Hit<ObjectNode> hit : hits) {
                 Content partialContentWithErrors = new Content();
-                Map<String, Object> src = hit.getSourceAsMap();
-                partialContentWithErrors.setId((String) src.get("id"));
-                partialContentWithErrors.setTitle((String) src.get("title"));
-                //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
-                partialContentWithErrors.setPublished((Boolean) src.get("published"));
-                partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
+                ObjectNode src = hit.source();
+                if (src != null) {
+                    partialContentWithErrors.setId(src.get("id").asText());
+                    partialContentWithErrors.setTitle(src.get("title").asText());
+                    //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
+                    partialContentWithErrors.setPublished(src.get("published").asBoolean());
+                    partialContentWithErrors.setCanonicalSourceFile(src.get("canonicalSourceFile").asText());
 
-                ArrayList<String> errors = new ArrayList<>();
-                for (Object v : (List<?>) hit.getSourceAsMap().get("errors")) {
-                    errors.add((String) v);
+                    List<String> errors = new ObjectMapper().convertValue(src.get("errors"), new TypeReference<>(){});
+                    map.put(partialContentWithErrors, errors);
                 }
-
-                map.put(partialContentWithErrors, errors);
             }
             return map;
 
@@ -774,7 +780,7 @@ public class GitContentManager {
     }
 
     public String getCurrentContentSHA() {
-        GetResponse shaResponse = contentShaCache.getIfPresent(contentIndex);
+        GetResponse<ObjectNode> shaResponse = contentShaCache.getIfPresent(contentIndex);
         try {
             if (null == shaResponse) {
                 shaResponse =
@@ -785,7 +791,7 @@ public class GitContentManager {
                         );
                 contentShaCache.put(contentIndex, shaResponse);
             }
-            return (String) shaResponse.getSource().get("version");
+            return shaResponse.source().get("version").asText();
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve current content SHA from search provider", e);
             return "unknown";
@@ -829,7 +835,7 @@ public class GitContentManager {
     /**
      * An abstract representation of a search clause that can be interpreted as desired by different search providers.
      *
-     * @deprecated in favour of {@code BooleanMatchInstruction}, as an attempt to unify approaches to searching.
+     * @deprecated in favour of {@code BooleanInstruction}, as an attempt to unify approaches to searching.
      */
     @Deprecated
     public static class BooleanSearchClause {

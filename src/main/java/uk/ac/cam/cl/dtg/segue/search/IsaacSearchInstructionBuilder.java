@@ -218,9 +218,9 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * Builds and returns the final BooleanMatchInstruction reflecting the builder's settings.
+     * Builds and returns the final BooleanInstruction reflecting the builder's settings.
      *
-     * @return A BooleanMatchInstruction reflecting the builder's settings.
+     * @return A BooleanInstruction reflecting the builder's settings.
      */
     public BooleanInstruction build() {
         BooleanInstruction masterInstruction = this.buildBaseInstructions(new BooleanInstruction());
@@ -284,7 +284,7 @@ public class IsaacSearchInstructionBuilder {
     /**
      * Augments {@code instruction} with the field search instructions specified via {@code searchFor()}.
      *
-     * @param instruction A BooleanMatchInstruction for a particular content type to augment with the field-search
+     * @param instruction A BooleanInstruction for a particular content type to augment with the field-search
      *                    instructions.
      * @param searchesInFields A list of {@code SearchInField}s encapsulating fields and terms to search for, as well as
      *                         the strategy and priority to use for each.
