@@ -169,6 +169,8 @@ public interface ContentMapper {
     @SubclassMapping(source = Figure.class, target = FigureDTO.class)
     @SubclassMapping(source = Image.class, target = ImageDTO.class)
     @SubclassMapping(source = Video.class, target = VideoDTO.class)
+    @SubclassMapping(source = DesmosEmbedding.class, target = DesmosEmbeddingDTO.class)
+    @SubclassMapping(source = GeogebraEmbedding.class, target = GeogebraEmbeddingDTO.class)
     // Segue pages. More specific subclasses must come first.
     @SubclassMapping(source = IsaacBookDetailPage.class, target = IsaacBookDetailPageDTO.class)
     @SubclassMapping(source = IsaacRevisionDetailPage.class, target = IsaacRevisionDetailPageDTO.class)
