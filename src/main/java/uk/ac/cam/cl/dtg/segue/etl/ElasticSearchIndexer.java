@@ -43,7 +43,7 @@ import java.util.function.Function;
 /**
  * Created by Ian on 17/10/2016.
  */
-class ElasticSearchIndexer extends ElasticSearchProvider {
+public class ElasticSearchIndexer extends ElasticSearchProvider {
     private static final Integer BULK_REQUEST_BATCH_SIZE = 10000;  // Huge requests overwhelm ES, so batch!
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchIndexer.class);
@@ -131,7 +131,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         }
     }
 
-    void bulkIndexWithIDs(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
+    public void bulkIndexWithIDs(final String indexBase, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
             throws SegueSearchException {
 
         Iterable<List<Map.Entry<String, String>>> partitions = Iterables.partition(dataToIndex, BULK_REQUEST_BATCH_SIZE);
