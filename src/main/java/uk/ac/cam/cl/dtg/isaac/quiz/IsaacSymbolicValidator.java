@@ -41,7 +41,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
  * Validator that provides functionality to validate symbolic questions.
  *
  */
-public class IsaacSymbolicValidator implements IValidator {
+public class IsaacSymbolicValidator extends AbstractExternalValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicValidator.class);
 
     private enum MatchType {
@@ -51,14 +51,10 @@ public class IsaacSymbolicValidator implements IValidator {
         EXACT
     }
 
-    private final String hostname;
-    private final String port;
     private final String externalValidatorUrl;
 
     public IsaacSymbolicValidator(final String hostname, final String port) {
-        this.hostname = hostname;
-        this.port = port;
-        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check";
+        this.externalValidatorUrl = "http://" + hostname + ":" + port + "/check";
     }
 
     @Override

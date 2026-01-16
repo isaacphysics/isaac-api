@@ -39,7 +39,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
  * Validator that only provides functionality to validate symbolic chemistry questions.
  *
  */
-public class IsaacSymbolicChemistryValidator implements IValidator {
+public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicChemistryValidator.class);
 
     /**
