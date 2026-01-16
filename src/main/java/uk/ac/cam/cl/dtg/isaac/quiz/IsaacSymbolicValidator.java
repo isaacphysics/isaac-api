@@ -91,8 +91,7 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
         //         won't have feedback yet.
 
         if (null == symbolicQuestion.getChoices() || symbolicQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
 
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
@@ -112,8 +111,7 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof Formula)) {
-                    log.error("Validator for questionId: " + symbolicQuestion.getId()
-                            + " expected there to be a Formula. Instead it found a Choice.");
+                    log.error("Validator for questionId: {} expected there to be a Formula. Instead it found a Choice.", symbolicQuestion.getId());
                     continue;
                 }
 
@@ -121,8 +119,7 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
 
                 // ... and that have a python expression ...
                 if (null == formulaChoice.getPythonExpression() || formulaChoice.getPythonExpression().isEmpty()) {
-                    log.error("Expected python expression, but none found in choice for question id: "
-                            + symbolicQuestion.getId());
+                    log.error("Expected python expression, but none found in choice for question id: {}", symbolicQuestion.getId());
                     continue;
                 }
 
@@ -184,8 +181,8 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
 
                     if (response.containsKey("error")) {
                         if (response.containsKey("code")) {
-                            log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
-                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": " + response.get("error"));
+                            log.error("Failed to check formula \"{}\" against \"{}\": {}",
+                                    submittedFormula.getPythonExpression(), formulaChoice.getPythonExpression(), response.get("error"));
                         } else if (response.containsKey("syntax_error")) {
                             // There's a syntax error in the "test" expression, no use checking it further:
                             closestMatch = null;
@@ -195,8 +192,8 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
                             responseCorrect = false;
                             break;
                         } else {
-                            log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
-                                    + "\" for (" + symbolicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
+                            log.warn("Problem checking formula \"{}\" for ({}) with symbolic checker: {}",
+                                    submittedFormula.getPythonExpression(), symbolicQuestion.getId(), response.get("error"));
                         }
                     } else {
                         if (response.get("equal").equals("true")) {
@@ -255,10 +252,8 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
                 }
 
                 if (closestMatchType == MatchType.NUMERIC) {
-                    log.info("User submitted an answer that was only numerically equivalent to one of our choices "
-                            + "for question " + symbolicQuestion.getId() + ". Choice: "
-                            + closestMatch.getPythonExpression() + ", submitted: "
-                            + submittedFormula.getPythonExpression());
+                    log.info("Submitted answer only numerically equivalent to choice for question {}. Choice: {}, submitted: {}",
+                            symbolicQuestion.getId(), closestMatch.getPythonExpression(), submittedFormula.getPythonExpression());
                 }
 
             }
