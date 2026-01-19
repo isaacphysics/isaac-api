@@ -40,7 +40,7 @@ services:
     container_name: cs-elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.9
     environment:
-      - cluster.name=cs-isaac
+      - cluster.name=ada
       - node.name=localhost
       - discovery.type=single-node
       - http.max_content_length=512mb
