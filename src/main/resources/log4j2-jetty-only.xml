@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="LOG_PATH_VAR">${env:SEGUE_LOGGING_PATH:-${sys:log.path:-/isaac-logs}}</Property>
+        <Property name="LOG_FILE_SUFFIX">${sys:segue.version:-log}</Property>
+    </Properties>
+    <Appenders>
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %encode{%m}{CRLF}%n"/>
+        </Console>
+        <RollingFile name="FileAppender"
+                     fileName="${LOG_PATH_VAR}/jetty-${LOG_FILE_SUFFIX}.log"
+                     filePattern="${LOG_PATH_VAR}/jetty-${LOG_FILE_SUFFIX}.log.%d{yyyy-MM-dd}.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %encode{%m}{CRLF}%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="10"/>
+            </Policies>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <!-- Suppress classpath warnings from the file output, log to console only -->
+        <Logger name="org.eclipse.jetty.annotations" level="INFO" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>
