@@ -31,7 +31,6 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - xpack.ml.enabled=false
-      - ingest.geoip.downloader.enabled=false
     ports:
       - "9200:9200"
     mem_limit: 6G
@@ -49,7 +48,6 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - xpack.ml.enabled=false
-      - ingest.geoip.downloader.enabled=false
     ports:
       - "9201:9200"
     mem_limit: 6G
@@ -67,7 +65,6 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - xpack.ml.enabled=false
-      - ingest.geoip.downloader.enabled=false
     ports:
       - "9501:9200"
     mem_limit: 6G
