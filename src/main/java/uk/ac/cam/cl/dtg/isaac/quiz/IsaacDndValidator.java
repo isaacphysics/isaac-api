@@ -58,8 +58,9 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        return validate(question, answer)
-            .map(msg -> new DndValidationResponse(question.getId(), answer, false, null, new Content(msg), new Date()))
+        return getProblemWithQuestionOrAnswer(question, answer)
+            .map(problem ->
+                new DndValidationResponse(question.getId(), answer, false, null, new Content(problem), new Date()))
             .orElseGet(() -> mark((IsaacDndQuestion) question, (DndChoice) answer));
     }
 
@@ -84,7 +85,7 @@ public class IsaacDndValidator implements IValidator {
         return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
     }
 
-    private Optional<String> validate(final Question question, final Choice answer) {
+    private Optional<String> getProblemWithQuestionOrAnswer(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
