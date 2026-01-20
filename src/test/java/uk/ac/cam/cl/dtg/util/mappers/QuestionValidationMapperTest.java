@@ -40,9 +40,6 @@ public class QuestionValidationMapperTest {
 
         return subclasses.stream()
                 .map(subclass -> {
-                    if (Modifier.isAbstract(subclass.getModifiers())) {
-                        return null;
-                    }
                     DTOMapping mapping = subclass.getAnnotation(DTOMapping.class);
                     if (mapping == null) {
                         return null;
