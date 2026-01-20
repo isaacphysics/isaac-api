@@ -20,7 +20,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.DndChoiceDTO;
 import java.util.List;
 
 /**
- * Choice for Dnd Questions, containing a list of DnDItems.
+ * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
 @DTOMapping(DndChoiceDTO.class)
