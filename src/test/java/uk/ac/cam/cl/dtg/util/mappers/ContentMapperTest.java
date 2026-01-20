@@ -1,24 +1,30 @@
 package uk.ac.cam.cl.dtg.util.mappers;
 
+import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.reflections.Reflections;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
+@RunWith(Parameterized.class)
 public class ContentMapperTest {
     private final MainMapper mapper = MainMapper.INSTANCE;
 
+    Class<? extends Content> sourceDOClass;
+    Class<? extends ContentDTO> expectedDTOClass;
+
     @SuppressWarnings("unchecked")
-    private static Stream<Arguments> testCasesDOtoDTO() {
+    @Parameterized.Parameters
+    public static Collection<Object[]> testCasesDOtoDTO() {
         Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.isaac.dos");
         Set<Class<? extends Content>> contentSubclasses = reflections.getSubTypesOf(Content.class);
         contentSubclasses.add(Content.class);
@@ -28,15 +34,25 @@ public class ContentMapperTest {
                     if (Modifier.isAbstract(subclass.getModifiers())) {
                         return null;
                     }
-                    Class<? extends ContentDTO> dtoClass = (Class<? extends ContentDTO>) subclass.getAnnotation(DTOMapping.class).value();
-                    return dtoClass != null ? Arguments.of(subclass, dtoClass) : null;
+                    DTOMapping mapping = subclass.getAnnotation(DTOMapping.class);
+                    if (mapping == null) {
+                        return null;
+                    }
+                    Class<? extends ContentDTO> dtoClass = (Class<? extends ContentDTO>) mapping.value();
+                    return new Object[]{subclass, dtoClass};
                 })
-                .filter(Objects::nonNull);
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-    @ParameterizedTest
-    @MethodSource("testCasesDOtoDTO")
-    void testDOtoDTOMapping(final Class<? extends Content> sourceDOClass, final Class<? extends ContentDTO> expectedDTOClass) {
+    public ContentMapperTest(final Class<? extends Content> sourceDOClass,
+                             final Class<? extends ContentDTO> expectedDTOClass) {
+        this.sourceDOClass = sourceDOClass;
+        this.expectedDTOClass = expectedDTOClass;
+    }
+
+    @Test
+    public void testDOtoDTOMapping() {
         Content source;
         try {
             source = sourceDOClass.getConstructor().newInstance();
