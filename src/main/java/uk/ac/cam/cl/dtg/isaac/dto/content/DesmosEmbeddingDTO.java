@@ -7,7 +7,7 @@ public class DesmosEmbeddingDTO extends MediaDTO {
         return calculatorId;
     }
 
-    public void setCalculatorId(String calculatorId) {
+    public void setCalculatorId(final String calculatorId) {
         this.calculatorId = calculatorId;
     }
 }

@@ -9,7 +9,7 @@ public class GeogebraEmbeddingDTO extends MediaDTO {
         return materialId;
     }
 
-    public void setMaterialId(String materialId) {
+    public void setMaterialId(final String materialId) {
         this.materialId = materialId;
     }
 
@@ -17,7 +17,7 @@ public class GeogebraEmbeddingDTO extends MediaDTO {
         return appType;
     }
 
-    public void setAppType(String appType) {
+    public void setAppType(final String appType) {
         this.appType = appType;
     }
 
@@ -25,7 +25,7 @@ public class GeogebraEmbeddingDTO extends MediaDTO {
         return allowNewInputs;
     }
 
-    public void setAllowNewInputs(Boolean allowNewInputs) {
+    public void setAllowNewInputs(final Boolean allowNewInputs) {
         this.allowNewInputs = allowNewInputs;
     }
 }
