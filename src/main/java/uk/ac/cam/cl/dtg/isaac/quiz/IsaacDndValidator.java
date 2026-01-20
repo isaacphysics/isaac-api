@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.util.FigureRegion;
 
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,10 +63,25 @@ public class IsaacDndValidator implements IValidator {
         return getProblemWithQuestionOrAnswer(question, answer)
             .map(problem ->
                 new DndValidationResponse(question.getId(), answer, false, null, new Content(problem), new Date()))
-            .orElseGet(() -> mark((IsaacDndQuestion) question, (DndChoice) answer));
+            .orElseGet(() -> getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer));
     }
 
-    private DndValidationResponse mark(final IsaacDndQuestion question, final DndChoice answer) {
+    private DndValidationResponse getMarkedResponse(final IsaacDndQuestion question, final DndChoice answer) {
+        List<Choice> orderedChoices = getOrderedChoices(question.getChoices());
+        boolean responseCorrect = true;
+
+        for (Choice choice : orderedChoices) {
+            DndChoice dndChoice = (DndChoice) choice;
+            List<DndItem> expectedItems = dndChoice.getItems();
+
+            for (DndItem expectedItem : expectedItems) {
+                Optional<DndItem> submittedItem = ChoiceHelpers.getItemByDropZone(answer, expectedItem.getDropZoneId());
+                if (submittedItem.isEmpty() || !submittedItem.get().getId().equals(expectedItem.getId())) {
+                    responseCorrect = false;
+                }
+            }
+        }
+
         var sortedAnswers = QuestionHelpers.getChoices(question)
             .sorted(Comparator
                 .comparingLong((DndChoice choice) -> ChoiceHelpers.matchStrength(choice, answer))
@@ -74,15 +91,15 @@ public class IsaacDndValidator implements IValidator {
         var matchedAnswer = sortedAnswers.stream().filter(lhs -> ChoiceHelpers.matches(lhs, answer)).findFirst();
         var closestCorrect = sortedAnswers.stream().filter(DndChoice::isCorrect).findFirst();
 
-        var isCorrect = matchedAnswer.map(DndChoice::isCorrect).orElse(false);
         var dropZonesCorrect = QuestionHelpers.getDetailedItemFeedback(question)
             ? closestCorrect.map(correct -> ChoiceHelpers.getDropZonesCorrect(correct, answer)).orElse(null) : null;
+        boolean finalResponseCorrect = responseCorrect;
         var feedback = (Content) matchedAnswer.map(Choice::getExplanation)
-            .or(() -> !isCorrect && answer.getItems().size() < closestCorrect.map(c -> c.getItems().size()).orElse(0)
+            .or(() -> !finalResponseCorrect && answer.getItems().size() < closestCorrect.map(c -> c.getItems().size()).orElse(0)
                 ? Optional.of(new Content(FEEDBACK_ANSWER_NOT_ENOUGH)) : Optional.empty())
-            .or(() -> !isCorrect ? Optional.ofNullable(question.getDefaultFeedback()) : Optional.empty())
+            .or(() -> !finalResponseCorrect ? Optional.ofNullable(question.getDefaultFeedback()) : Optional.empty())
             .orElse(null);
-        return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
+        return new DndValidationResponse(question.getId(), answer, responseCorrect, dropZonesCorrect, feedback, new Date());
     }
 
     private Optional<String> getProblemWithQuestionOrAnswer(final Question question, final Choice answer) {
