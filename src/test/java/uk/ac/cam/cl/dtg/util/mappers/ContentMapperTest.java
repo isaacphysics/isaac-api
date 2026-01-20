@@ -44,11 +44,8 @@ public class ContentMapperTest {
                     if (Modifier.isAbstract(subclass.getModifiers())) {
                         return null;
                     }
-                    DTOMapping mapping = subclass.getAnnotation(DTOMapping.class);
-                    if (mapping == null) {
-                        return null;
-                    }
-                    Class<? extends ContentDTO> dtoClass = (Class<? extends ContentDTO>) mapping.value();
+                    Class<? extends ContentDTO> dtoClass =
+                            (Class<? extends ContentDTO>) subclass.getAnnotation(DTOMapping.class).value();
                     return new Object[]{subclass, dtoClass};
                 })
                 .filter(Objects::nonNull)

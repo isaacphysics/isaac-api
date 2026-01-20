@@ -43,11 +43,8 @@ public class QuestionValidationMapperTest {
                     if (Modifier.isAbstract(subclass.getModifiers())) {
                         return null;
                     }
-                    DTOMapping mapping = subclass.getAnnotation(DTOMapping.class);
-                    if (mapping == null) {
-                        return null;
-                    }
-                    Class<? extends QuestionValidationResponseDTO> dtoClass = (Class<? extends QuestionValidationResponseDTO>) mapping.value();
+                    Class<? extends QuestionValidationResponseDTO> dtoClass =
+                            (Class<? extends QuestionValidationResponseDTO>) subclass.getAnnotation(DTOMapping.class).value();
                     return new Object[]{subclass, dtoClass};
                 })
                 .filter(Objects::nonNull)
