@@ -40,7 +40,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
  * Validator that provides functionality to validate symbolic logic questions.
  *
  */
-public class IsaacSymbolicLogicValidator implements IValidator {
+public class IsaacSymbolicLogicValidator extends AbstractExternalValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicLogicValidator.class);
 
     private enum MatchType {
@@ -49,14 +49,10 @@ public class IsaacSymbolicLogicValidator implements IValidator {
         EXACT
     }
 
-    private final String hostname;
-    private final String port;
     private final String externalValidatorUrl;
 
     public IsaacSymbolicLogicValidator(final String hostname, final String port) {
-        this.hostname = hostname;
-        this.port = port;
-        this.externalValidatorUrl = "http://" + this.hostname + ":" + this.port + "/check/logic";
+        this.externalValidatorUrl = "http://" + hostname + ":" + port + "/check/logic";
     }
 
     @Override
@@ -93,8 +89,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
         //         won't have feedback yet.
 
         if (null == symbolicLogicQuestion.getChoices() || symbolicLogicQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
 
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
@@ -114,8 +109,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
                 // ... that are of the LogicFormula type, ...
                 if (!(c instanceof LogicFormula)) {
-                    log.error("Validator for questionId: " + symbolicLogicQuestion.getId()
-                            + " expected there to be a LogicFormula. Instead it found a Choice.");
+                    log.error("Validator for questionId: {} expected a LogicFormula. Instead it found a Choice.", symbolicLogicQuestion.getId());
                     continue;
                 }
 
@@ -123,8 +117,7 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
                 // ... and that have a python expression ...
                 if (null == logicFormulaChoice.getPythonExpression() || logicFormulaChoice.getPythonExpression().isEmpty()) {
-                    log.error("Expected python expression, but none found in choice for question id: "
-                            + symbolicLogicQuestion.getId());
+                    log.error("Expected python expression, but none found in choice for question id: {}", symbolicLogicQuestion.getId());
                     continue;
                 }
 
@@ -186,8 +179,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
 
                     if (response.containsKey("error")) {
                         if (response.containsKey("code")) {
-                            log.error("Failed to check logic formula \"" + submittedLogicFormula.getPythonExpression()
-                                    + "\" against \"" + logicFormulaChoice.getPythonExpression() + "\": " + response.get("error"));
+                            log.error("Failed to check logic formula \"{}\" against \"{}\": {}",
+                                    submittedLogicFormula.getPythonExpression(), logicFormulaChoice.getPythonExpression(), response.get("error"));
                         } else if (response.containsKey("syntax_error")) {
                             // There's a syntax error in the "test" expression, no use checking it further:
                             closestMatch = null;
@@ -197,8 +190,8 @@ public class IsaacSymbolicLogicValidator implements IValidator {
                             responseCorrect = false;
                             break;
                         } else {
-                            log.warn("Problem checking logic formula \"" + submittedLogicFormula.getPythonExpression()
-                                    + "\" for (" + symbolicLogicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
+                            log.warn("Problem checking logic formula \"{}\" for ({}) with symbolic checker: {}",
+                                    submittedLogicFormula.getPythonExpression(), symbolicLogicQuestion.getId(), response.get("error"));
                         }
                     } else {
                         if (response.get("equal").equals("true")) {

@@ -59,8 +59,8 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
     @Override
     public void registerQuestionAttempt(Long quizAttemptId, QuestionValidationResponse questionResponse) throws SegueDatabaseException {
 
-        String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, \"timestamp\")" +
-                " VALUES (?, ?, ?::text::jsonb, ?, ?);";
+        String query = "INSERT INTO quiz_question_attempts(quiz_attempt_id, question_id, question_attempt, correct, marks, \"timestamp\")" +
+                " VALUES (?, ?, ?::text::jsonb, ?, ?, ?);";
         try (Connection conn = database.getDatabaseConnection();
             PreparedStatement pst = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ) {
@@ -73,7 +73,14 @@ public class PgQuizQuestionAttemptPersistenceManager implements IQuizQuestionAtt
             } else {
                 pst.setNull(4, Types.BOOLEAN);
             }
-            pst.setTimestamp(5, new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
+
+            if (questionResponse.getMarks() != null) {
+                pst.setInt(5, questionResponse.getMarks());
+            } else {
+                pst.setInt(5, java.sql.Types.NULL);
+            }
+
+            pst.setTimestamp(6, new java.sql.Timestamp(questionResponse.getDateAttempted().getTime()));
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save quiz question attempt.");

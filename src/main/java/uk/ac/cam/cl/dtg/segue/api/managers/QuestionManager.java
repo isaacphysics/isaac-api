@@ -15,8 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
@@ -65,7 +64,6 @@ import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -644,19 +642,12 @@ public class QuestionManager {
         ChoiceDTO answerFromClientDTO;
         try {
             // convert submitted JSON into a Choice:
-            Choice answerFromClient = contentSubclassMapper.getSharedContentObjectMapper()
-                    .readValue(jsonAnswer, Choice.class);
+            Choice answerFromClient = contentSubclassMapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
             answerFromClientDTO = mapper.map(answerFromClient);
-        } catch (JsonMappingException | JsonParseException e) {
-            log.info("Failed to map to any expected input...", e);
-            SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
-                    + "Choice object so failing with an error", e);
-            throw new ErrorResponseWrapper(error);
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to map response to a "
-                    + "Choice object so failing with an error", e);
-            log.error(error.getErrorMessage(), e);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to map submitted JSON to a Choice!", e);
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.BAD_REQUEST, "Invalid JSON object submitted!");
             throw new ErrorResponseWrapper(error);
         }
         return answerFromClientDTO;

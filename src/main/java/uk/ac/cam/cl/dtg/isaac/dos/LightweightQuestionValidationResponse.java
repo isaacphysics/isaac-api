@@ -10,6 +10,7 @@ public class LightweightQuestionValidationResponse {
     private String questionId;
     private Boolean correct;
     private Date dateAttempted;
+    private Integer marks;
 
     /**
      * Default Constructor for mappers.
@@ -25,6 +26,26 @@ public class LightweightQuestionValidationResponse {
      *            -
      * @param correct
      *            -
+     * @param marks
+     *            -
+     * @param dateAttempted
+     *            -
+     */
+    public LightweightQuestionValidationResponse(final String questionId, final Boolean correct,
+                                                 final Integer marks, final Date dateAttempted) {
+        this.questionId = questionId;
+        this.correct = correct;
+        this.marks = marks;
+        this.dateAttempted = dateAttempted;
+    }
+
+    /**
+     * Constructor without specifying marks (instead derived from 'correct')
+     *
+     * @param questionId
+     *            -
+     * @param correct
+     *            -
      * @param dateAttempted
      *            -
      */
@@ -32,6 +53,7 @@ public class LightweightQuestionValidationResponse {
                                                  final Date dateAttempted) {
         this.questionId = questionId;
         this.correct = correct;
+        this.marks = (correct != null && correct) ? 1 : 0;
         this.dateAttempted = dateAttempted;
     }
 
@@ -74,6 +96,25 @@ public class LightweightQuestionValidationResponse {
     }
 
     /**
+     * Gets the marks.
+     *
+     * @return the marks
+     */
+    public Integer getMarks() {
+        return marks;
+    }
+
+    /**
+     * Sets the marks.
+     *
+     * @param marks
+     *            the marks to set
+     */
+    public void setMarks(final Integer marks) {
+        this.marks = marks;
+    }
+
+    /**
      * Gets the dateAttempted.
      *
      * @return the dateAttempted
@@ -95,6 +136,6 @@ public class LightweightQuestionValidationResponse {
     @Override
     public String toString() {
         return "QuestionValidationResponse [questionId=" + questionId + ", correct=" + correct +
-                ", dateAttempted=" + dateAttempted + "]";
+                ", marks=" + marks + ", dateAttempted=" + dateAttempted + "]";
     }
 }

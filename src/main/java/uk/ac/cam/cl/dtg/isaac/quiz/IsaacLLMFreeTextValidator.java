@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -123,11 +123,9 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         return contextAndInstructions + questionText + markScheme + additionalMarkingInstructions + maxMarks;
     }
 
-    private String reportMarksAsJsonString(final Map<String, Integer> markBreakdown, Integer marksAwarded) {
+    private String reportMarksAsJsonString(final Map<String, Integer> markBreakdown) {
         try {
-            Map<String, Integer> marks = new HashMap<>(markBreakdown);
-            marks.put(MARK_TOTAL_FIELD_NAME, marksAwarded);
-            return mapper.writeValueAsString(marks);
+            return mapper.writeValueAsString(markBreakdown);
         } catch (JsonProcessingException e) {
             log.error("Failed to generate JSON from example marks in content - should never happen", e);
             throw new IllegalArgumentException("Malformed question - failed to generate JSON from example marks");
@@ -148,16 +146,16 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         // Add N-shot examples
         for (LLMFreeTextMarkedExample example : question.getMarkedExamples()) {
             chatMessages.add(new ChatRequestUserMessage(example.getAnswer()));
-            chatMessages.add(new ChatRequestAssistantMessage(
-                    reportMarksAsJsonString(example.getMarks(), example.getMarksAwarded())));
+            chatMessages.add(new ChatRequestAssistantMessage(reportMarksAsJsonString(example.getMarks())));
         }
 
         // Add default examples that should receive zero marks to improve robustness to prompt injection
         Map<String, Integer> noAwardedMarks = question.getMarkScheme().stream()
-                .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toMap(field -> field, field -> 0));
+                .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toMap(
+                        field -> field, field -> 0, (a, b) -> a, LinkedHashMap::new));
         for (String zeroMarkAttempt : zeroMarkAttempts) {
             chatMessages.add(new ChatRequestUserMessage(zeroMarkAttempt));
-            chatMessages.add(new ChatRequestAssistantMessage(reportMarksAsJsonString(noAwardedMarks, 0)));
+            chatMessages.add(new ChatRequestAssistantMessage(reportMarksAsJsonString(noAwardedMarks)));
         }
 
         return chatMessages;
@@ -206,7 +204,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
         try {
             Map<String, Object> response =
-                    this.mapper.readValue(llmResponse, new TypeReference<HashMap<String, Object>>() {});
+                    this.mapper.readValue(llmResponse, new TypeReference<LinkedHashMap<String, Object>>() {});
 
             List<String> validFieldNames = question.getMarkScheme().stream()
                     .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toList());
@@ -264,7 +262,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
             return Math.min(awardedMarks.values().stream().mapToInt(Integer::intValue).sum(), question.getMaxMarks());
         }
         // Create a new context to hold both the awarded marks and the maximum marks for marking formula evaluation.
-        Map<String, Integer> evaluationContext = new HashMap<>(awardedMarks);
+        Map<String, Integer> evaluationContext = new LinkedHashMap<>(awardedMarks);
         evaluationContext.put(MAX_MARKS_FIELD_NAME, question.getMaxMarks());
         return evaluateMarkingExpression(question.getMarkingFormula(), evaluationContext);
     }
@@ -276,6 +274,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      * @param question the question being marked so that we can return the mark scheme.
      * @param answer the user's attempt at the question.
      * @param awardedMarks the marks awarded for each field in the mark scheme according to the LLM response.
+     * @param markTotal the calculated mark value based on which individual marks were awarded
      * @return a response to the user's attempt at the question.
      */
     private LLMFreeTextQuestionValidationResponse generateQuestionValidationResponse(
@@ -294,6 +293,9 @@ public class IsaacLLMFreeTextValidator implements IValidator {
 
         LLMFreeTextQuestionValidationResponse validationResponse = new LLMFreeTextQuestionValidationResponse(
                 question.getId(), answer, isConsideredCorrect, null, new Date());
+        // TODO: Remove marksAwarded field once database migration has occurred to remove it from question_attempts JSON
+        // (both fields are currently required for backwards compatibility)
+        validationResponse.setMarks(markTotal);
         validationResponse.setMarksAwarded(markTotal);
         validationResponse.setMarkBreakdown(markBreakdown);
         return validationResponse;
