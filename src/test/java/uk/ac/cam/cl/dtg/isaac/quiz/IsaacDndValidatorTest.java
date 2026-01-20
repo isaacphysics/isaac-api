@@ -213,8 +213,8 @@ public class IsaacDndValidatorTest {
     @Theory
     public final void testDropZonesCorrect(final DropZonesTestCase testCase) {
         var response = testValidate(testCase.question, testCase.answer);
-        assertEquals(response.isCorrect(), testCase.correct);
-        assertEquals(response.getDropZonesCorrect(), testCase.dropZonesCorrect);
+        assertEquals(testCase.correct, response.isCorrect());
+        assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
 
     @DataPoints

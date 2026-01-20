@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,23 +70,38 @@ public class IsaacDndValidator implements IValidator {
 
     private DndValidationResponse getMarkedResponse(final IsaacDndQuestion question, final DndChoice answer) {
         List<Choice> orderedChoices = getOrderedChoices(question.getChoices());
+        boolean detailedItemFeedback = question.getDetailedItemFeedback() != null && question.getDetailedItemFeedback();
+
         boolean responseCorrect = false;
         Content feedback = null;
+        Map<String, Boolean> dropZonesCorrect = null;
 
         for (Choice choice : orderedChoices) {
             boolean submissionMatches = true;
             DndChoice dndChoice = (DndChoice) choice;
             List<DndItem> expectedItems = dndChoice.getItems();
+            List<DndItem> submittedItems = answer.getItems();
 
-            if (answer.getItems().size() < expectedItems.size()) {
+            if (submittedItems.size() < expectedItems.size()) {
                 feedback = new Content(FEEDBACK_ANSWER_NOT_ENOUGH);
             }
 
             for (DndItem expectedItem : expectedItems) {
                 Optional<DndItem> submittedItem = ChoiceHelpers.getItemByDropZone(answer, expectedItem.getDropZoneId());
-                if (submittedItem.isEmpty() || !submittedItem.get().getId().equals(expectedItem.getId())) {
+                boolean itemMatch = submittedItem.isPresent() && submittedItem.get().getId().equals(expectedItem.getId());
+                if (!itemMatch) {
                     submissionMatches = false;
                 }
+            }
+
+            if (detailedItemFeedback && dndChoice.isCorrect()) {
+                Map<String, Boolean> itemMatches = new HashMap<>();
+                for (DndItem submittedItem : submittedItems) {
+                    Optional<DndItem> expectedItem = ChoiceHelpers.getItemByDropZone(dndChoice, submittedItem.getDropZoneId());
+                    boolean itemMatch = expectedItem.isPresent() && expectedItem.get().getId().equals(submittedItem.getId());
+                    itemMatches.put(submittedItem.getDropZoneId(), itemMatch);
+                }
+                dropZonesCorrect = itemMatches;
             }
 
             if (submissionMatches) {
@@ -97,18 +114,6 @@ public class IsaacDndValidator implements IValidator {
         if (feedbackIsNullOrEmpty(feedback)) {
             feedback = question.getDefaultFeedback();
         }
-
-
-        var sortedAnswers = QuestionHelpers.getChoices(question)
-            .sorted(Comparator
-                .comparingLong((DndChoice choice) -> ChoiceHelpers.matchStrength(choice, answer))
-                .thenComparing(DndChoice::isCorrect)
-                .reversed()
-            ).collect(Collectors.toList());
-        var closestCorrect = sortedAnswers.stream().filter(DndChoice::isCorrect).findFirst();
-
-        var dropZonesCorrect = QuestionHelpers.getDetailedItemFeedback(question)
-            ? closestCorrect.map(correct -> ChoiceHelpers.getDropZonesCorrect(correct, answer)).orElse(null) : null;
 
         return new DndValidationResponse(question.getId(), answer, responseCorrect, dropZonesCorrect, feedback, new Date());
     }
@@ -230,10 +235,6 @@ public class IsaacDndValidator implements IValidator {
             return question.getChoices().stream().map(c -> (DndChoice) c);
         }
 
-        public static boolean getDetailedItemFeedback(final IsaacDndQuestion question) {
-            return BooleanUtils.isTrue(question.getDetailedItemFeedback());
-        }
-
         /**
          * Collects the drop zone ids from any content within the question.
          */
@@ -265,28 +266,8 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private static class ChoiceHelpers {
-        public static boolean matches(final DndChoice lhs, final DndChoice rhs) {
-            return lhs.getItems().stream().allMatch(lhsItem -> dropZoneEql(rhs, lhsItem));
-        }
-
-        public static long matchStrength(final DndChoice lhs, final DndChoice rhs) {
-            return lhs.getItems().stream().filter(lhsItem -> dropZoneEql(rhs, lhsItem)).count();
-        }
-
-        public static Map<String, Boolean> getDropZonesCorrect(final DndChoice lhs, final DndChoice rhs) {
-            return lhs.getItems().stream()
-                .filter(lhsItem -> getItemByDropZone(rhs, lhsItem.getDropZoneId()).isPresent())
-                .collect(Collectors.toMap(DndItem::getDropZoneId, lhsItem -> dropZoneEql(rhs, lhsItem)));
-        }
-
         public static List<String> getDropZoneIds(final DndChoice choice) {
             return choice.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
-        }
-
-        private static boolean dropZoneEql(final DndChoice choice, final DndItem item) {
-            return getItemByDropZone(choice, item.getDropZoneId())
-                .map(choiceItem -> choiceItem.getId().equals(item.getId()))
-                .orElse(false);
         }
 
         private static Optional<DndItem> getItemByDropZone(final DndChoice choice, final String dropZoneId) {
