@@ -31,13 +31,13 @@ import static uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest.*;
 public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     @Test
     public void shows400ForMissingAnswer() throws Exception {
-        var response = subject().client().post("/questions/no_such_question/answer", null);
+        var response = testServer().client().post("/questions/no_such_question/answer", null);
         response.assertError("No answer received.", Response.Status.BAD_REQUEST);
     }
 
     @Test
     public void shows404ForMissingQuestion() throws Exception {
-        var response = subject().client().post("/questions/no_such_question/answer", "{}");
+        var response = testServer().client().post("/questions/no_such_question/answer", "{}");
         response.assertError("No question object found for given id: no_such_question", Response.Status.NOT_FOUND);
     }
 
@@ -45,7 +45,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     class StringMatchQuestion {
         @Test
         public void wrongAnswer() throws Exception {
-            var response = subject().client().post(
+            var response = testServer().client().post(
                 url("_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_"),
                 "{\"type\": \"stringChoice\", \"value\": \"13\"}"
             ).readEntityAsJson();
@@ -56,7 +56,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void rightAnswer() throws Exception {
-            var response = subject().client().post(
+            var response = testServer().client().post(
                 url("_regression_test_|acc_stringmatch_q|_regression_test_stringmatch_"),
                 "{\"type\": \"stringChoice\", \"value\": \"hello\"}"
             ).readEntityAsJson();
@@ -86,7 +86,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             );
             var answer = "{\"type\": \"dndChoice\"}";
 
-            var response = subject().client().post(url(question.getString("id")), answer).readEntityAsJson();
+            var response = testServer().client().post(url(question.getString("id")), answer).readEntityAsJson();
 
             assertFalse(response.getBoolean("correct"));
             assertEquals(
@@ -109,7 +109,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             final String answerStr, final String emsg, final String estate
         ) throws Exception {
             var dndQuestion = persist(createQuestion(correct(choose(item_3cm, "leg_1"))));
-            var response = subject().client().post(url(dndQuestion.getId()), answerStr);
+            var response = testServer().client().post(url(dndQuestion.getId()), answerStr);
             response.assertError(emsg, estate);
         }
 
@@ -126,7 +126,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var dndQuestion = persist(createQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             ));
-            var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
             assertEquals(emsg, response.getJSONObject("explanation").getString("value"));
         }
@@ -138,7 +138,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         }, delimiter = '|')
         public void emptyAnswer_IncorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = persist(createQuestion(correct(choose(item_3cm, "leg_1"))));
-            var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
             assertEquals(
                 readEntity(new JSONObject(answerStr), DndChoice.class),
@@ -159,7 +159,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
             persist(dndQuestion);
 
-            var response = subject().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertTrue(response.getBoolean("correct"));
 
             assertEquals(readChoice(new JSONObject(answerStr)), readChoice(response.getJSONObject("answer")));
@@ -172,7 +172,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             ));
             var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "hypothenuse"), choose(item_5cm, "leg_1"));
 
-            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertFalse(response.getBoolean("correct"));
             assertEquals(answer, readEntity(response.getJSONObject("answer"), DndChoice.class));
@@ -187,7 +187,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             )));
             var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
-            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertTrue(response.getBoolean("correct"));
             assertEquals(explanation, readEntity(response.getJSONObject("explanation"), Content.class));
@@ -202,7 +202,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             persist(dndQuestion);
             var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
-            var response = subject().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertTrue(response.getBoolean("correct"));
             assertEquals(
@@ -234,7 +234,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
 
-    private TestServer subject() throws Exception {
+    private TestServer testServer() throws Exception {
         Injector testInjector = createNiceMock(Injector.class);
         expect(testInjector.getInstance(IsaacStringMatchValidator.class)).andReturn(stringMatchValidator).anyTimes();
         expect(testInjector.getInstance(IsaacDndValidator.class)).andReturn(dndValidator).anyTimes();
