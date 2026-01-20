@@ -97,13 +97,13 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
         @ParameterizedTest
         @CsvSource(value = {
-            "{}|Unable to map response to a Choice|404",
+            "{}|Invalid JSON object submitted|400",
             "{\"type\": \"unknown\"}|This validator only works with DndChoices|400",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": \"6d3d\", \"dropZoneId\": \"leg_1\", \"a\": \"a\"}]}"
-                + "|Unable to map response to a Choice|404",
-            "{\"type\": \"dndChoice\", \"items\": \"some_string\"}|Unable to map response to a Choice|404",
+                + "|Invalid JSON object submitted|400",
+            "{\"type\": \"dndChoice\", \"items\": \"some_string\"}|Invalid JSON object submitted|400",
             "{\"type\": \"dndChoice\", \"items\": [{\"id\": [{}], \"dropZoneId\": \"leg_1\"}]}"
-                + "|Unable to map response to a Choice|404"
+                + "|Invalid JSON object submitted|400"
         }, delimiter = '|')
         public void badRequest_ErrorReturned(
             final String answerStr, final String emsg, final String estate
