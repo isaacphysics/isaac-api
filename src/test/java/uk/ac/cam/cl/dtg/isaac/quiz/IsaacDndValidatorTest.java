@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -163,6 +164,7 @@ public class IsaacDndValidatorTest {
         var response = testValidate(testCase.question, testCase.answer);
         assertEquals(response.isCorrect(), testCase.correct);
         if (testCase.feedback != null) {
+            assertNotNull(response.getExplanation());
             assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         } else {
             assertNull(response.getExplanation());

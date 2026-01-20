@@ -68,19 +68,36 @@ public class IsaacDndValidator implements IValidator {
 
     private DndValidationResponse getMarkedResponse(final IsaacDndQuestion question, final DndChoice answer) {
         List<Choice> orderedChoices = getOrderedChoices(question.getChoices());
-        boolean responseCorrect = true;
+        boolean responseCorrect = false;
+        Content feedback = null;
 
         for (Choice choice : orderedChoices) {
+            boolean submissionMatches = true;
             DndChoice dndChoice = (DndChoice) choice;
             List<DndItem> expectedItems = dndChoice.getItems();
+
+            if (answer.getItems().size() < expectedItems.size()) {
+                feedback = new Content(FEEDBACK_ANSWER_NOT_ENOUGH);
+            }
 
             for (DndItem expectedItem : expectedItems) {
                 Optional<DndItem> submittedItem = ChoiceHelpers.getItemByDropZone(answer, expectedItem.getDropZoneId());
                 if (submittedItem.isEmpty() || !submittedItem.get().getId().equals(expectedItem.getId())) {
-                    responseCorrect = false;
+                    submissionMatches = false;
                 }
             }
+
+            if (submissionMatches) {
+                responseCorrect = dndChoice.isCorrect();
+                feedback = (Content) dndChoice.getExplanation();
+                break;
+            }
         }
+
+        if (feedbackIsNullOrEmpty(feedback)) {
+            feedback = question.getDefaultFeedback();
+        }
+
 
         var sortedAnswers = QuestionHelpers.getChoices(question)
             .sorted(Comparator
@@ -88,17 +105,11 @@ public class IsaacDndValidator implements IValidator {
                 .thenComparing(DndChoice::isCorrect)
                 .reversed()
             ).collect(Collectors.toList());
-        var matchedAnswer = sortedAnswers.stream().filter(lhs -> ChoiceHelpers.matches(lhs, answer)).findFirst();
         var closestCorrect = sortedAnswers.stream().filter(DndChoice::isCorrect).findFirst();
 
         var dropZonesCorrect = QuestionHelpers.getDetailedItemFeedback(question)
             ? closestCorrect.map(correct -> ChoiceHelpers.getDropZonesCorrect(correct, answer)).orElse(null) : null;
-        boolean finalResponseCorrect = responseCorrect;
-        var feedback = (Content) matchedAnswer.map(Choice::getExplanation)
-            .or(() -> !finalResponseCorrect && answer.getItems().size() < closestCorrect.map(c -> c.getItems().size()).orElse(0)
-                ? Optional.of(new Content(FEEDBACK_ANSWER_NOT_ENOUGH)) : Optional.empty())
-            .or(() -> !finalResponseCorrect ? Optional.ofNullable(question.getDefaultFeedback()) : Optional.empty())
-            .orElse(null);
+
         return new DndValidationResponse(question.getId(), answer, responseCorrect, dropZonesCorrect, feedback, new Date());
     }
 
