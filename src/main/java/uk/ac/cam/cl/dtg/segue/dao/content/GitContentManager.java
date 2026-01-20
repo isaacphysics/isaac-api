@@ -94,7 +94,7 @@ public class GitContentManager {
 
     private final Cache<String, ResultsWrapper<Content>> contentDOcache;
     private final Cache<String, ResultsWrapper<ContentDTO>> contentDTOcache;
-    private final Cache<String, GetResponse> contentShaCache;
+    private final Cache<String, GetResponse<ObjectNode>> contentShaCache;
 
     private final String contentIndex;
 
