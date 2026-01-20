@@ -292,10 +292,10 @@ public class IsaacDndValidatorTest {
     static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
         .expectExplLog("The question is invalid, because it has an answer in an unrecognised format.");
     static Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
+        .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_NO_ANSWERS);
+    static Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> new QuestionValidationTestCase()
         .expectExplLog(Constants.FEEDBACK_NO_CORRECT_ANSWERS);
-    static Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> noAnswersTestCase.get()
-        .expectLogMessage(q -> format("Question does not have any correct answers. %s src: %s",
-                                      q.getId(), q.getCanonicalSourceFile()));
+
 
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
@@ -655,8 +655,10 @@ public class IsaacDndValidatorTest {
                                 + "isaac.dos.content.ParsonsChoice!", id);
                     case "The question is invalid, because it has an answer in an unrecognised format.":
                         return format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
-                    case Constants.FEEDBACK_NO_CORRECT_ANSWERS:
+                    case IsaacDndValidator.FEEDBACK_QUESTION_NO_ANSWERS:
                         return format("Question does not have any answers. %s src: %s", idFile);
+                    case Constants.FEEDBACK_NO_CORRECT_ANSWERS:
+                        return format("Question does not have any correct answers. %s src: %s", idFile);
                     case "The question is invalid, because it has an empty answer.":
                         return format("Expected list of DndItems, but none found in choice for question id (%s)!", id);
                     case IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS:

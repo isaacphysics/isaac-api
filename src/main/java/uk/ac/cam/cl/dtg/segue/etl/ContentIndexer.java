@@ -1157,11 +1157,15 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacDndQuestion) {
-            var validator = IsaacDndValidator.questionValidator(IsaacDndValidator::noLog);
-            validator.check((IsaacDndQuestion) content).ifPresent(err -> {
+            IsaacDndValidator.DndValidationResult res = IsaacDndValidator.validateQuestion((IsaacDndQuestion) content);
+            if (res != null) {
                 var template = "Drag-and-drop Question: %s has a problem. %s";
-                this.registerContentProblem(content, String.format(template, content.getId(), err), indexProblemCache);
-            });
+                this.registerContentProblem(
+                    content,
+                    String.format(template, content.getId(), res.problem),
+                    indexProblemCache
+                );
+            }
         }
 
         if (content instanceof IsaacCoordinateQuestion) {
