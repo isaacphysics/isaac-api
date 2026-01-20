@@ -642,7 +642,10 @@ public class GitContentManager {
                     Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
                     "tags"
             );
-            return new ObjectMapper().convertValue(response.source().get("tags"), new TypeReference<>(){});
+            if (null != response.source()) {
+                return new ObjectMapper().convertValue(response.source().get("tags"), new TypeReference<>(){});
+            }
+            return Sets.newHashSet();
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
             return Sets.newHashSet();
@@ -791,7 +794,10 @@ public class GitContentManager {
                         );
                 contentShaCache.put(contentIndex, shaResponse);
             }
-            return shaResponse.source().get("version").asText();
+            if (null != shaResponse.source()) {
+                return shaResponse.source().get("version").asText();
+            }
+            return "unknown";
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve current content SHA from search provider", e);
             return "unknown";
