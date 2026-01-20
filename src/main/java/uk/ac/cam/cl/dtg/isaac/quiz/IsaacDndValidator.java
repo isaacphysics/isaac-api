@@ -68,7 +68,7 @@ public class IsaacDndValidator implements IValidator {
         boolean detailedItemFeedback = question.getDetailedItemFeedback() != null && question.getDetailedItemFeedback();
 
         // These variables store the important features of the response we'll send.
-        boolean responseCorrect = false;
+        boolean isCorrect = false;
         Content feedback = null;
         Map<String, Boolean> dropZonesCorrect = null;
 
@@ -87,10 +87,11 @@ public class IsaacDndValidator implements IValidator {
             Map<String, Boolean> itemMatches = new HashMap<>();
             for (DndItem expectedItem : expectedItems) {
                 // fetch the corresponding user answer by drop zone id
-                Optional<DndItem> submittedItem = answer.getItems().stream()
+                DndItem submittedItem = answer.getItems().stream()
                     .filter(i -> i.getDropZoneId().equals(expectedItem.getDropZoneId()))
-                    .findFirst();
-                boolean itemMatch = submittedItem.isPresent() && submittedItem.get().getId().equals(expectedItem.getId());
+                    .findFirst()
+                    .orElse(null);
+                boolean itemMatch = submittedItem != null && submittedItem.getId().equals(expectedItem.getId());
                 itemMatches.put(expectedItem.getDropZoneId(), itemMatch);
                 if (!itemMatch) {
                     submissionMatches = false;
@@ -103,7 +104,7 @@ public class IsaacDndValidator implements IValidator {
             }
 
             if (submissionMatches) {
-                responseCorrect = dndChoice.isCorrect();
+                isCorrect = dndChoice.isCorrect();
                 feedback = (Content) dndChoice.getExplanation();
                 break;
             }
@@ -113,7 +114,7 @@ public class IsaacDndValidator implements IValidator {
             feedback = question.getDefaultFeedback();
         }
 
-        return new DndValidationResponse(question.getId(), answer, responseCorrect, dropZonesCorrect, feedback, new Date());
+        return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
     }
 
     private Optional<String> getProblemWithQuestionOrAnswer(final Question question, final Choice answer) {
@@ -211,7 +212,7 @@ public class IsaacDndValidator implements IValidator {
                        q.getId(), q.getCanonicalSourceFile())
             ))
             .add("an answer with duplicate drop zones.", (q, a) -> {
-                List<String> dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
+                var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
                 return logged.apply(dropZoneIds.size() != new HashSet<>(dropZoneIds).size(),
                     format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
                 );
