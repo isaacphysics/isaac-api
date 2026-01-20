@@ -15,6 +15,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Parameterised unit tests verifying mapping from subclasses of {@code Content} to their corresponding
+ * {@code ContentDTO} subclasses.
+ */
 @RunWith(Parameterized.class)
 public class ContentMapperTest {
     private final MainMapper mapper = MainMapper.INSTANCE;
@@ -22,6 +26,12 @@ public class ContentMapperTest {
     Class<? extends Content> sourceDOClass;
     Class<? extends ContentDTO> expectedDTOClass;
 
+    /**
+     * Builds parameterised test cases mapping each concrete {@code Content} subclass to its corresponding
+     * {@code ContentDTO} class.
+     *
+     * @return collection of {@code Content}/{@code ContentDTO} class pairings
+     */
     @SuppressWarnings("unchecked")
     @Parameterized.Parameters
     public static Collection<Object[]> testCasesDOtoDTO() {

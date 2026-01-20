@@ -15,6 +15,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Parameterised unit tests verifying mapping from subclasses of {@code QuestionValidationResponse} to their
+ * corresponding {@code QuestionValidationResponseDTO} subclasses.
+ */
 @RunWith(Parameterized.class)
 public class QuestionValidationMapperTest {
     private final MainMapper mapper = MainMapper.INSTANCE;
@@ -22,6 +26,12 @@ public class QuestionValidationMapperTest {
     Class<? extends QuestionValidationResponse> sourceDOClass;
     Class<? extends QuestionValidationResponseDTO> expectedDTOClass;
 
+    /**
+     * Builds parameterised test cases mapping each {@code QuestionValidationResponse} subclass to its
+     * corresponding {@code QuestionValidationResponseDTO} class.
+     *
+     * @return collection of {@code QuestionValidationResponse}/{@code QuestionValidationResponseDTO} class pairings
+     */
     @SuppressWarnings("unchecked")
     @Parameterized.Parameters
     public static Collection<Object[]> testCasesDOtoDTO() {
