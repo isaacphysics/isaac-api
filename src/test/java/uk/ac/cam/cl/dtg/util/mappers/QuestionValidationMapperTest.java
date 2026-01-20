@@ -1,41 +1,57 @@
 package uk.ac.cam.cl.dtg.util.mappers;
 
+import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.reflections.Reflections;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 
+import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
+@RunWith(Parameterized.class)
 public class QuestionValidationMapperTest {
     private final MainMapper mapper = MainMapper.INSTANCE;
 
+    Class<? extends QuestionValidationResponse> sourceDOClass;
+    Class<? extends QuestionValidationResponseDTO> expectedDTOClass;
+
     @SuppressWarnings("unchecked")
-    private static Stream<Arguments> testCasesDOtoDTO() {
+    @Parameterized.Parameters
+    public static Collection<Object[]> testCasesDOtoDTO() {
         Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.isaac.dos");
         Set<Class<? extends QuestionValidationResponse>> subclasses = reflections.getSubTypesOf(QuestionValidationResponse.class);
-        subclasses.add(QuestionValidationResponse.class);
 
         return subclasses.stream()
                 .map(subclass -> {
-                    if (subclass.isAnnotationPresent(DTOMapping.class)) {
-                        Class<? extends QuestionValidationResponseDTO> dtoClass = (Class<? extends QuestionValidationResponseDTO>) subclass.getAnnotation(DTOMapping.class).value();
-                        return dtoClass != null ? Arguments.of(subclass, dtoClass) : null;
+                    if (Modifier.isAbstract(subclass.getModifiers())) {
+                        return null;
                     }
-                    return null;
+                    DTOMapping mapping = subclass.getAnnotation(DTOMapping.class);
+                    if (mapping == null) {
+                        return null;
+                    }
+                    Class<? extends QuestionValidationResponseDTO> dtoClass = (Class<? extends QuestionValidationResponseDTO>) mapping.value();
+                    return new Object[]{subclass, dtoClass};
                 })
-                .filter(Objects::nonNull);
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-    @ParameterizedTest
-    @MethodSource("testCasesDOtoDTO")
-    void testDOtoDTOMapping(final Class<? extends QuestionValidationResponse> sourceDOClass, final Class<? extends QuestionValidationResponse> expectedDTOClass) {
+    public QuestionValidationMapperTest(final Class<? extends QuestionValidationResponse> sourceDOClass,
+                             final Class<? extends QuestionValidationResponseDTO> expectedDTOClass) {
+        this.sourceDOClass = sourceDOClass;
+        this.expectedDTOClass = expectedDTOClass;
+    }
+
+    @Test
+    public void testDOtoDTOMapping() {
         QuestionValidationResponse source;
         try {
             source = sourceDOClass.getConstructor().newInstance();
