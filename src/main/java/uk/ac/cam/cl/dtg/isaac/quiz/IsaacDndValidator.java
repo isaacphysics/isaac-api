@@ -89,8 +89,7 @@ public class IsaacDndValidator implements IValidator {
                 // fetch the corresponding user answer by drop zone id
                 DndItem submittedItem = answer.getItems().stream()
                     .filter(i -> i.getDropZoneId().equals(expectedItem.getDropZoneId()))
-                    .findFirst()
-                    .orElse(null);
+                    .findFirst().orElse(null);
                 boolean itemMatch = submittedItem != null && submittedItem.getId().equals(expectedItem.getId());
                 itemMatches.put(expectedItem.getDropZoneId(), itemMatch);
                 if (!itemMatch) {
@@ -149,11 +148,11 @@ public class IsaacDndValidator implements IValidator {
             ))
             // dropZones
             .add(FEEDBACK_QUESTION_NO_DZ, q -> logged.apply(
-                DropZones.get(q).isEmpty(),
+                DropZones.getFromQuestion(q).isEmpty(),
                 format("Question does not have any drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_DUP_DZ, q -> logged.apply(
-                DropZones.get(q).size() != new HashSet<>(DropZones.get(q)).size(),
+                DropZones.getFromQuestion(q).size() != new HashSet<>(DropZones.getFromQuestion(q)).size(),
                 format("Question contains duplicate drop zones. %s src %s", q.getId(), q.getCanonicalSourceFile())
             ))
             // answers
@@ -175,7 +174,7 @@ public class IsaacDndValidator implements IValidator {
                 format("Question does not have any correct answers. %s src: %s", q.getId(), q.getCanonicalSourceFile())
             ))
             .add(FEEDBACK_QUESTION_UNUSED_DZ, q -> q.getChoices().stream().anyMatch(c -> logged.apply(
-                c.isCorrect() && DropZones.get(q).size() != ((DndChoice) c).getItems().size(),
+                c.isCorrect() && DropZones.getFromQuestion(q).size() != ((DndChoice) c).getItems().size(),
                 format("Question contains correct answer that doesn't use all drop zones. %s src %s",
                     q.getId(), q.getCanonicalSourceFile())
             )));
@@ -203,11 +202,11 @@ public class IsaacDndValidator implements IValidator {
                 format("Question contains invalid item ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )))
             .add("an answer with unrecognised drop zones.", (q, a) -> a.getItems().stream().anyMatch(i -> logged.apply(
-                !DropZones.get(q).contains(i.getDropZoneId()),
+                !DropZones.getFromQuestion(q).contains(i.getDropZoneId()),
                 format("Question contains invalid drop zone ref. %s src %s", q.getId(), q.getCanonicalSourceFile())
             )))
             .add("an answer with more items than we have gaps.", (q, a) -> logged.apply(
-                a.getItems().size() > DropZones.get(q).size(),
+                a.getItems().size() > DropZones.getFromQuestion(q).size(),
                 format("Question has answer with more items than we have gaps. %s src %s",
                        q.getId(), q.getCanonicalSourceFile())
             ))
@@ -230,12 +229,14 @@ public class IsaacDndValidator implements IValidator {
         return result;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocType")
+    /**
+     * Helper class to collect methods related to drop zone parsing.
+     * */
     public static class DropZones {
         /**
-         * Collects the drop zone ids from any content within the question.
+         * Recursively collects the drop zone ids from any content within the question.
          */
-        public static List<String> get(final IsaacDndQuestion question) {
+        public static List<String> getFromQuestion(final IsaacDndQuestion question) {
             if (question.getChildren() == null) {
                 return List.of();
             }
