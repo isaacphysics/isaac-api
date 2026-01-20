@@ -13,7 +13,7 @@ public class GeogebraEmbedding extends Media {
         return materialId;
     }
 
-    public void setMaterialId(String materialId) {
+    public void setMaterialId(final String materialId) {
         this.materialId = materialId;
     }
 
@@ -21,7 +21,7 @@ public class GeogebraEmbedding extends Media {
         return appType;
     }
 
-    public void setAppType(String appType) {
+    public void setAppType(final String appType) {
         this.appType = appType;
     }
 
@@ -29,7 +29,7 @@ public class GeogebraEmbedding extends Media {
         return allowNewInputs;
     }
 
-    public void setAllowNewInputs(Boolean allowNewInputs) {
+    public void setAllowNewInputs(final Boolean allowNewInputs) {
         this.allowNewInputs = allowNewInputs;
     }
 }
