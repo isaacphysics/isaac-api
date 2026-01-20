@@ -306,18 +306,6 @@ public final class Constants {
     public static final String MICROSOFT_JWKS_URL = "MICROSOFT_JWKS_URL";
     public static final String MICROSOFT_REDIRECT_URL = "MICROSOFT_REDIRECT_URL";
 
-    // Facebook properties
-    public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
-    public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
-    public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
-    public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
-    public static final String FACEBOOK_USER_FIELDS = "FACEBOOK_USER_FIELDS";
-
-    // Twitter properties
-    public static final String TWITTER_SECRET = "TWITTER_SECRET";
-    public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
-    public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
-
     // Raspberry Pi properties
     public static final String RASPBERRYPI_CLIENT_ID = "RASPBERRYPI_CLIENT_ID";
     public static final String RASPBERRYPI_CLIENT_SECRET = "RASPBERRYPI_CLIENT_SECRET";

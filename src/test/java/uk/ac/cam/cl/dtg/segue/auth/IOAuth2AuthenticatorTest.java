@@ -15,18 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.junit.Assert.assertTrue;
+import com.google.api.client.http.GenericUrl;
+import org.junit.Test;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 
 import java.io.IOException;
 import java.net.URL;
 
-import org.junit.Test;
-
-import com.google.api.client.http.GenericUrl;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Test class for the facebook authenticator class.
+ * Test class for the OAuth authenticator class.
  * 
  */
 public abstract class IOAuth2AuthenticatorTest extends IOAuthAuthenticatorTest {
