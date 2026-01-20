@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.dos.content;
 
-@DTOMapping(DesmosEmbedding.class)
+import uk.ac.cam.cl.dtg.isaac.dto.content.DesmosEmbeddingDTO;
+
+@DTOMapping(DesmosEmbeddingDTO.class)
 @JsonContentType("desmosEmbedding")
 public class DesmosEmbedding extends Media {
     private String calculatorId;
