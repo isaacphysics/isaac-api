@@ -18,8 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
@@ -58,7 +57,6 @@ import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,6 +64,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -638,11 +637,15 @@ public class GitContentManager {
     public final Set<String> getTagsList() {
         try {
             GetResponse<ObjectNode> response = searchProvider.getById(
-                    contentIndex,
-                    Constants.CONTENT_INDEX_TYPE.METADATA.toString(),
-                    "tags"
-            );
-            return new ObjectMapper().convertValue(response.source().get("tags"), new TypeReference<>(){});
+                    contentIndex, Constants.CONTENT_INDEX_TYPE.METADATA.toString(), "tags");
+
+            if (null == response.source()) {
+                return Collections.emptySet();
+            }
+
+            return response.source().get("tags").valueStream()
+                    .map(JsonNode::asText)
+                    .collect(Collectors.toSet());
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve tags from search provider", e);
             return Sets.newHashSet();
@@ -656,22 +659,15 @@ public class GitContentManager {
             unitType = Constants.CONTENT_INDEX_TYPE.PUBLISHED_UNIT.toString();
         }
         try {
-            SearchResponse<ObjectNode> r = searchProvider.getAllFromIndex(
+            SearchResponse<ObjectNode> response = searchProvider.getAllFromIndex(
                     globalProperties.getProperty(CONTENT_INDEX), unitType);
 
-            List<Hit<ObjectNode>> hits = r.hits().hits();
-            long totalHits = null != r.hits().total()
-                    ? r.hits().total().value()
-                    : 0;
-            ArrayList<String> units = new ArrayList<>((int) totalHits);
-
-            for (Hit<ObjectNode> hit : hits) {
-                if (null != hit.source()) {
-                    units.add(hit.source().get("unit").asText());
-                }
-            }
-
-            return units;
+            return response.hits().hits().stream()
+                    .map(Hit::source)
+                    .filter(Objects::nonNull)
+                    .map(node -> node.get("unit"))
+                    .map(JsonNode::asText)
+                    .collect(Collectors.toSet());
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve all units from search provider", e);
             return Collections.emptyList();
@@ -695,7 +691,9 @@ public class GitContentManager {
                     partialContentWithErrors.setPublished(src.get("published").asBoolean());
                     partialContentWithErrors.setCanonicalSourceFile(src.get("canonicalSourceFile").asText());
 
-                    List<String> errors = new ObjectMapper().convertValue(src.get("errors"), new TypeReference<>(){});
+                    List<String> errors = src.get("errors").valueStream()
+                            .map(JsonNode::asText)
+                            .collect(Collectors.toList());
                     map.put(partialContentWithErrors, errors);
                 }
             }
