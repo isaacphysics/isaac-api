@@ -19,7 +19,6 @@ import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
@@ -405,8 +404,8 @@ public class ContentIndexerTest {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
-        var dndQuestion = IsaacDndValidatorTest.createQuestion(
-            IsaacDndValidatorTest.correct(IsaacDndValidatorTest.choose(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        var dndQuestion = IsaacDndValidatorTest.question(
+            IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
         );
         dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
         contents.add(dndQuestion);
@@ -431,8 +430,8 @@ public class ContentIndexerTest {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
-        var dndQuestion = IsaacDndValidatorTest.createQuestion(
-            IsaacDndValidatorTest.correct(IsaacDndValidatorTest.choose(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        var dndQuestion = IsaacDndValidatorTest.question(
+            IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
         );
         dndQuestion.setChildren(null);
         dndQuestion.setCanonicalSourceFile("");
