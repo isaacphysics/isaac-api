@@ -134,12 +134,12 @@ public class IsaacDndValidator implements IValidator {
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        var questionProblem = getProblemsWithQuestion((IsaacDndQuestion) question);
+        DndProblem questionProblem = getProblemsWithQuestion((IsaacDndQuestion) question);
         if (questionProblem != null) {
             DndLogger.log(questionProblem);
             return questionProblem;
         }
-        var answerProblem = getProblemsWithAnswer((IsaacDndQuestion) question, (DndChoice) answer);
+        DndProblem answerProblem = getProblemsWithAnswer((IsaacDndQuestion) question, (DndChoice) answer);
         if (answerProblem != null) {
             answerProblem.message = "You provided " + answerProblem.message;
             return answerProblem;
