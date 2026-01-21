@@ -232,8 +232,10 @@ public class IsaacDndValidatorTest {
     @DataPoints
     public static AnswerValidationTestCase[] answerValidationTestCases = {
         new AnswerValidationTestCase().setTitle("itemsNull")
+            .setAnswer(a -> a)
             .expectExplanation("You provided an empty answer."),
         new AnswerValidationTestCase().setTitle("itemsEmpty")
+            .setAnswer(new DndChoice())
             .expectExplanation("You provided an empty answer."),
         new AnswerValidationTestCase().setTitle("itemsNotEnough")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
@@ -614,6 +616,11 @@ public class IsaacDndValidatorTest {
 
         public T tapQuestion(final Consumer<IsaacDndQuestion> op) {
             this.questionOps.add(op);
+            return self();
+        }
+
+        public T setAnswer(final DndChoice answer) {
+            this.answer = answer;
             return self();
         }
 
