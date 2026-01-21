@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,10 +58,13 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        return getProblemWithQuestionOrAnswer(question, answer)
-            .map(problem ->
-                new DndValidationResponse(question.getId(), answer, false, null, new Content(problem), new Date()))
-            .orElseGet(() -> getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer));
+        DndProblem problem = getProblemWithQuestionOrAnswer(question, answer);
+        if (problem == null) {
+            return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
+        } else {
+            return new DndValidationResponse(
+                question.getId(), answer, false, null, new Content(problem.message), new Date());
+        }
     }
 
     private DndValidationResponse getMarkedResponse(final IsaacDndQuestion question, final DndChoice answer) {
@@ -118,7 +120,7 @@ public class IsaacDndValidator implements IValidator {
         return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
     }
 
-    private Optional<String> getProblemWithQuestionOrAnswer(final Question question, final Choice answer) {
+    private DndProblem getProblemWithQuestionOrAnswer(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
@@ -132,84 +134,85 @@ public class IsaacDndValidator implements IValidator {
                 "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
         }
 
-        var questionValidationResult = validateQuestion((IsaacDndQuestion) question);
-        if (questionValidationResult != null) {
-            DndLogger.log(questionValidationResult);
-            return Optional.of(questionValidationResult.problem);
+        var questionProblem = getProblemsWithQuestion((IsaacDndQuestion) question);
+        if (questionProblem != null) {
+            DndLogger.log(questionProblem);
+            return questionProblem;
         }
-        var answerValidationResult = validateAnswer((IsaacDndQuestion) question, (DndChoice) answer);
-        if (answerValidationResult != null) {
-            return Optional.of("You provided " + answerValidationResult.problem);
+        var answerProblem = getProblemsWithAnswer((IsaacDndQuestion) question, (DndChoice) answer);
+        if (answerProblem != null) {
+            answerProblem.message = "You provided " + answerProblem.message;
+            return answerProblem;
         }
-        return Optional.empty();
+        return null;
     }
 
-    public static DndValidationResult validateQuestion(final IsaacDndQuestion q) {
+    public static DndProblem getProblemsWithQuestion(final IsaacDndQuestion q) {
         // items
         if (q.getItems() == null || q.getItems().isEmpty()) {
-            return new DndValidationResult(FEEDBACK_QUESTION_MISSING_ITEMS, q);
+            return new DndProblem(FEEDBACK_QUESTION_MISSING_ITEMS, q);
         }
         // dropZones
         if (DropZones.getFromQuestion(q).isEmpty()) {
-            return new DndValidationResult(FEEDBACK_QUESTION_NO_DZ, q);
+            return new DndProblem(FEEDBACK_QUESTION_NO_DZ, q);
         }
         if (DropZones.getFromQuestion(q).size() != new HashSet<>(DropZones.getFromQuestion(q)).size()) {
-            return new DndValidationResult(FEEDBACK_QUESTION_DUP_DZ, q);
+            return new DndProblem(FEEDBACK_QUESTION_DUP_DZ, q);
         }
         // answers
         if (q.getChoices() == null || q.getChoices().isEmpty()) {
-            return new DndValidationResult(FEEDBACK_QUESTION_NO_ANSWERS, q);
+            return new DndProblem(FEEDBACK_QUESTION_NO_ANSWERS, q);
         }
 
         Optional<Choice> nonDndChoice = q.getChoices().stream()
             .filter(c -> !DndChoice.class.equals(c.getClass()))
             .findFirst();
         if (nonDndChoice.isPresent()) {
-            return new DndValidationResult(FEEDBACK_QUESTION_INVALID_ANS, q, nonDndChoice.get());
+            return new DndProblem(FEEDBACK_QUESTION_INVALID_ANS, q, nonDndChoice.get());
         }
 
         Optional<String> answerProblems = q.getChoices().stream()
-            .map(c -> validateAnswer(q, (DndChoice) c))
+            .map(c -> getProblemsWithAnswer(q, (DndChoice) c))
             .filter(Objects::nonNull)
-            .map(m -> "The question is invalid, because it has " + m.problem)
+            .map(m -> "The question is invalid, because it has " + m.message)
             .findFirst();
         if (answerProblems.isPresent()) {
-            return new DndValidationResult(answerProblems.get(), q);
+            return new DndProblem(answerProblems.get(), q);
         }
 
         if (q.getChoices().stream().noneMatch(Choice::isCorrect)) {
-            return new DndValidationResult(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
+            return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
         }
         if (q.getChoices().stream().anyMatch(c -> c.isCorrect()
                 && DropZones.getFromQuestion(q).size() != ((DndChoice) c).getItems().size())) {
-            return new DndValidationResult(FEEDBACK_QUESTION_UNUSED_DZ, q);
+            return new DndProblem(FEEDBACK_QUESTION_UNUSED_DZ, q);
         }
         return null;
     }
 
-    private static DndValidationResult validateAnswer(final IsaacDndQuestion q, final DndChoice a) {
+    private static DndProblem getProblemsWithAnswer(final IsaacDndQuestion q, final DndChoice a) {
         if (a.getItems() == null || a.getItems().isEmpty()) {
-            return new DndValidationResult("an empty answer.", q);
+            return new DndProblem("an empty answer.", q);
         }
         if (a.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
-            return new DndValidationResult("an invalid answer.", q);
+            return new DndProblem("an invalid answer.", q);
         }
         if (a.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
                 || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""))) {
-            return new DndValidationResult("an answer in an unrecognised format.", q);
+            return new DndProblem("an answer in an unrecognised format.", q);
         }
         if (a.getItems().stream().anyMatch(i -> !q.getItems().contains(i))) {
-            return new DndValidationResult("an answer with unrecognised items.", q);
+            return new DndProblem("an answer with unrecognised items.", q);
         }
         if (a.getItems().stream().anyMatch(i -> !DropZones.getFromQuestion(q).contains(i.getDropZoneId()))) {
-            return new DndValidationResult("an answer with unrecognised drop zones.", q);
+            return new DndProblem("an answer with unrecognised drop zones.", q);
         }
         if (a.getItems().size() > DropZones.getFromQuestion(q).size()) {
-            return new DndValidationResult("an answer with more items than we have gaps.", q);
+            return new DndProblem("an answer with more items than we have gaps.", q);
         }
         var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
-            return new DndValidationResult("an answer with duplicate drop zones.", q);
+            return new DndProblem("an answer with duplicate drop zones.", q);
         }
         return null;
     }
@@ -248,32 +251,32 @@ public class IsaacDndValidator implements IValidator {
         }
     }
 
-    public static class DndValidationResult {
-        public String problem;
+    public static class DndProblem {
+        public String message;
         public Question question;
         public Choice choice = null;
 
-        public DndValidationResult(final String problem, final Question question) {
-            this.problem = problem;
+        public DndProblem(final String message, final Question question) {
+            this.message = message;
             this.question = question;
         }
 
-        public DndValidationResult(final String problem, final Question question, final Choice choice) {
-            this.problem = problem;
+        public DndProblem(final String message, final Question question, final Choice choice) {
+            this.message = message;
             this.question = question;
             this.choice = choice;
         }
     }
 
     private static class DndLogger {
-        private static void log(final DndValidationResult result) {
+        private static void log(final DndProblem result) {
             log.error(messageFor(result));
         }
 
-        private static String messageFor(final DndValidationResult message) {
+        private static String messageFor(final DndProblem message) {
             var id = message.question.getId();
             var sourceFile = message.question.getCanonicalSourceFile();
-            switch (message.problem) {
+            switch (message.message) {
                 // questions
                 case FEEDBACK_QUESTION_MISSING_ITEMS: return String.format(
                     "Expected items in question (%s), but didn't find any!", id);
