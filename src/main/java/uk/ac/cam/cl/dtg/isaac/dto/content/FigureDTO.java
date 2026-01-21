@@ -15,7 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-import uk.ac.cam.cl.dtg.util.FigureRegion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.FigureRegion;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class FigureDTO extends ImageDTO {
         return figureRegions;
     }
 
-    public void setFigureRegions(List<FigureRegion> figureRegions) {
+    public void setFigureRegions(final List<FigureRegion> figureRegions) {
         this.figureRegions = figureRegions;
     }
 
@@ -39,7 +39,7 @@ public class FigureDTO extends ImageDTO {
         return condensedMaxWidth;
     }
 
-    public void setCondensedMaxWidth(String condensedMaxWidth) {
+    public void setCondensedMaxWidth(final String condensedMaxWidth) {
         this.condensedMaxWidth = condensedMaxWidth;
     }
 }
