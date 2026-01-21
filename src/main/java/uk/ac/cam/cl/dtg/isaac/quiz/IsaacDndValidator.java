@@ -58,7 +58,7 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        DndProblem problem = getProblemWithQuestionOrAnswer(question, answer);
+        DndProblem problem = getProblemsWithQuestionOrAnswer(question, answer);
         if (problem == null) {
             return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
         } else {
@@ -120,7 +120,7 @@ public class IsaacDndValidator implements IValidator {
         return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
     }
 
-    private DndProblem getProblemWithQuestionOrAnswer(final Question question, final Choice answer) {
+    private DndProblem getProblemsWithQuestionOrAnswer(final Question question, final Choice answer) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 

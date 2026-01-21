@@ -71,14 +71,17 @@ public class IsaacDndValidatorTest {
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .expectCorrect(true),
+
         new CorrectnessTestCase().setTitle("singleCorrectNotMatch_Incorrect")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_4cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_3cm, "hypothenuse")))
             .expectCorrect(false),
+
         new CorrectnessTestCase().setTitle("singleCorrectPartialMatch_Incorrect")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_3cm, "hypothenuse")))
             .expectCorrect(false),
+
         new CorrectnessTestCase().setTitle("sameAnswerCorrectAndIncorrect_Correct")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(incorrect(choose(item_3cm, "leg_1")), correct(choose(item_3cm, "leg_1")))
@@ -102,12 +105,14 @@ public class IsaacDndValidatorTest {
             ).setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false)
             .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
         new ExplanationTestCase().setTitle("exactMatchCorrect_shouldReturnMatching")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(ExplanationTestCase.testFeedback, choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectCorrect(true)
             .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
         new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_4cm, "leg_1")))
@@ -115,6 +120,7 @@ public class IsaacDndValidatorTest {
             .setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false)
             .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
         new ExplanationTestCase().setTitle("matchIncorrectSubset_shouldReturnMatching")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(
@@ -123,6 +129,7 @@ public class IsaacDndValidatorTest {
             ).setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2")))
             .expectCorrect(false)
             .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
         new ExplanationTestCase().setTitle("multiMatchIncorrectSubset_shouldReturnMatching")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(
@@ -132,6 +139,7 @@ public class IsaacDndValidatorTest {
             ).setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_6cm, "leg_2")))
             .expectCorrect(false)
             .expectExplanation("leg_1 can't be 5"),
+
         new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
@@ -139,6 +147,7 @@ public class IsaacDndValidatorTest {
             .setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false)
             .expectExplanation("default feedback for question"),
+
         new ExplanationTestCase().setTitle("partialMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(
@@ -148,6 +157,7 @@ public class IsaacDndValidatorTest {
             .setAnswer(answer(choose(item_5cm, "leg_1"), choose(item_12cm, "leg_2")))
             .expectCorrect(false)
             .expectExplanation("default feedback for question"),
+
         new ExplanationTestCase().setTitle("matchedCorrectWithDefaultFeedback_shouldReturnDefaultFeedback")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
@@ -155,12 +165,14 @@ public class IsaacDndValidatorTest {
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectExplanation("default feedback for question")
             .expectCorrect(true),
+
         new ExplanationTestCase().setTitle("matchedCorrectNoDefaultFeedback_shouldReturnNone")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectNoExplanation()
             .expectCorrect(true),
+
         new ExplanationTestCase().setTitle("noDefaultIncorrect_shouldReturnNone")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
@@ -197,21 +209,25 @@ public class IsaacDndValidatorTest {
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectCorrect(false),
+
         disabledItemFeedbackNoDropZones.get().setTitle("correctNotRequested_NotReturned")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectCorrect(true),
+
         enabledItemFeedback.get().setTitle("allCorrect_ShouldReturnAllCorrect")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .expectCorrect(true)
             .expectDropZonesCorrect(d -> d.setLeg1(true).setLeg2(true).setHypothenuse(true)),
+
         enabledItemFeedback.get().setTitle("someIncorrect_ShouldReturnWhetherCorrect")
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .setAnswer(answer(choose(item_6cm, "leg_1"), choose(item_5cm, "leg_2"), choose(item_5cm, "hypothenuse")))
             .expectCorrect(false)
             .expectDropZonesCorrect(d -> d.setLeg1(false).setLeg2(false).setHypothenuse(true)),
+
         enabledItemFeedback.get().setTitle("multipleCorrectAnswers_decidesCorrectnessBasedOnClosesMatch")
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
@@ -234,35 +250,42 @@ public class IsaacDndValidatorTest {
         new AnswerValidationTestCase().setTitle("itemsNull")
             .setAnswer(answer())
             .expectExplanation("You provided an empty answer."),
+
         new AnswerValidationTestCase().setTitle("itemsEmpty")
             .setAnswer(new DndChoice())
             .expectExplanation("You provided an empty answer."),
+
         new AnswerValidationTestCase().setTitle("itemsNotEnough")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")))
             .setAnswer(answer(choose(item_3cm, "leg_1")))
             .expectExplanation(IsaacDndValidator.FEEDBACK_ANSWER_NOT_ENOUGH)
             .expectDropZonesCorrect(f -> f.setLeg1(true)),
+
         new AnswerValidationTestCase().setTitle("itemsTooMany")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_1")))
             .expectExplanation("You provided an answer with more items than we have gaps."),
+
         new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item("bad_id", "some_value"), "leg_1")))
             .expectExplanation("You provided an answer with unrecognised items."),
+
         new AnswerValidationTestCase().setTitle("itemMissingId")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(new Item(null, null), "leg_1")))
             .expectExplanation("You provided an answer in an unrecognised format."),
+
         new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
             .setAnswer(answer(choose(item_3cm, null)))
             .expectExplanation("You provided an answer in an unrecognised format."),
+
         new AnswerValidationTestCase().setTitle("itemsNotEnough_providesSpecificExplanationFirst")
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")),
@@ -270,6 +293,7 @@ public class IsaacDndValidatorTest {
             ).setAnswer(answer(choose(item_4cm, "leg_1")))
             .expectExplanation("Leg 1 should be less than 4 cm")
             .expectDropZonesCorrect(f -> f.setLeg1(false)),
+
         new AnswerValidationTestCase().setTitle("unrecognized drop zone")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")))
@@ -300,62 +324,82 @@ public class IsaacDndValidatorTest {
     @DataPoints
     public static QuestionValidationTestCase[] questionValidationTestCases = {
         noAnswersTestCase.get().setTitle("answersEmpty").setQuestion(q -> q.setChoices(List.of())),
+
         noAnswersTestCase.get().setTitle("answersNull").setQuestion(q -> q.setChoices(null)),
+
         noCorrectAnswersTestCase.get().setTitle("answersAllIncorrect")
             .setQuestion(incorrect(choose(item_3cm, "leg_1"))),
+
         noCorrectAnswersTestCase.get().setTitle("answerNoExplicitCorrectness_Incorrect")
             .setQuestion(answer(choose(item_3cm, "leg_1"))),
+
         new QuestionValidationTestCase().setTitle("answerWrongType")
             .setQuestion(q -> q.setChoices(List.of(parsonsChoice())))
             .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS),
+
         new QuestionValidationTestCase().setTitle("answerItemsEmpty").setQuestion(correct())
             .expectExplLog("The question is invalid, because it has an empty answer."),
+
         new QuestionValidationTestCase().setTitle("answerItemsNull")
             .setQuestion(q -> q.setChoices(
                 Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList())))
             .expectExplLog("The question is invalid, because it has an empty answer."),
+
         new QuestionValidationTestCase().setTitle("answerItemNonDnd")
             .setQuestion(correct(new DndItemEx("id", "value", "dropZoneId")))
             .expectExplLog("The question is invalid, because it has an invalid answer."),
+
         itemUnrecognisedFormatCase.get().setTitle("answerItemMissingItemId")
             .setQuestion(correct(new DndItem(null, "value", "dropZoneId"))),
+
         itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyItemId")
             .setQuestion(correct(new DndItem("", "value", "dropZoneId"))),
+
         itemUnrecognisedFormatCase.get().setTitle("answerItemMissingDropZoneId")
             .setQuestion(correct(new DndItem("item_id", "value", null))),
+
         itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyDropZoneId")
             .setQuestion(correct(new DndItem("item_id", "value", ""))),
+
         new QuestionValidationTestCase().setTitle("itemsNull")
             .tapQuestion(q -> q.setItems(null))
             .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
+
         new QuestionValidationTestCase().setTitle("itemsEmpty")
             .tapQuestion(q -> q.setItems(List.of()))
             .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
+
         new QuestionValidationTestCase().setTitle("answerInvalidItemReference")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(new DndItem("invalid_id", "some_value", "leg_1")))
             .expectExplLog("The question is invalid, because it has an answer with unrecognised items."),
+
         new QuestionValidationTestCase().setTitle("answerTooManuItems")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_1")))
             .expectExplLog("The question is invalid, because it has an answer with more items than we have gaps."),
+
         new QuestionValidationTestCase().setTitle("answerInvalidDropZoneReference")
             .setChildren(List.of(new Content("[drop-zone:leg_1]")))
             .setQuestion(correct(choose(item_3cm, "leg_1")), incorrect(choose(item_3cm, "leg_2")))
             .expectExplLog("The question is invalid, because it has an answer with unrecognised drop zones."),
+
         new QuestionValidationTestCase().setTitle("answerDuplicateDropZones")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(correct(choose(item_3cm, "leg_1"), choose(item_3cm, "leg_1")))
             .expectExplLog("The question is invalid, because it has an answer with duplicate drop zones."),
+
         new QuestionValidationTestCase().setTitle("answerCorrectNotAllDropZones")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2")),
                 correct(choose(item_3cm, "leg_1"))
             ).expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ),
+
         new QuestionValidationTestCase().setTitle("noDropZones")
             .setChildren(null)
             .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_NO_DZ),
+
         new QuestionValidationTestCase().setTitle("dropZoneDuplication")
             .setChildren(List.of(new Content("[drop-zone:A1] [drop-zone:A1]")))
             .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
@@ -382,49 +426,68 @@ public class IsaacDndValidatorTest {
     @DataPoints
     public static GetDropZonesTestCase[] getDropZonesTestCases = {
         invalidDropZone.get().setChildren(List.of(new Content(""))),
+
         invalidDropZone.get().setChildren(List.of(new Content("no drop zone"))),
+
         invalidDropZone.get().setChildren(List.of(new Content("[drop-zone A1]"))),
+
         invalidDropZone.get().setChildren(List.of(new Content("[drop-zone: A1]"))),
+
         invalidDropZone.get().setChildren(List.of(new Content("[drop-zone:A1 | w-100]"))),
+
         invalidDropZone.get().setChildren(List.of(new Content("[drop-zone:A1|w-100 h-50]"))),
+
         invalidDropZone.get().setChildren(List.of(new Content("[drop-zone:A1|h-100w-50]"))),
+
         new GetDropZonesTestCase().setTitle("noContent_noDropZones").setChildren(null).expectDropZones(),
+
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleText_returnsDropZone")
             .setChildren(List.of(new Content("[drop-zone:A1]")))
             .expectDropZones("A1"),
+
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContent_returnsDropZone")
             .setChildren(List.of(new Content("[drop-zone:A1|w-100]")))
             .expectDropZones("A1"),
+
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentHeight_returnsDropZone")
             .setChildren(List.of(new Content("[drop-zone:A1|h-100]")))
             .expectDropZones("A1"),
+
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWidthHeight_returnsDropZone")
             .setChildren(List.of(new Content("[drop-zone:A1|w-100h-50]")))
             .expectDropZones("A1"),
+
         new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWithinLatex_returnsDropZone")
             .setChildren(List.of(new Content("$$1 + \\text{[drop-zone:A1]}$$")))
             .expectDropZones("A1"),
+
         new GetDropZonesTestCase().setTitle("multiDropZoneSingleContent_returnsDropZones")
             .setChildren(List.of(new Content("Some text [drop-zone:A1], other text [drop-zone:A2]")))
             .expectDropZones("A1", "A2"),
+
         new GetDropZonesTestCase().setTitle("multiDropZoneMultiContent_returnsDropZones")
             .setChildren(List.of(
                 new Content("[drop-zone:A1] [drop-zone:A2]"),
                 new Content("[drop-zone:A3] [drop-zone:A4]")
             )).expectDropZones("A1", "A2", "A3", "A4"),
+
         new GetDropZonesTestCase().setTitle("singleDropZoneNestedContent_returnsDropZones")
             .setChildren(new LinkedList<>(List.of(new Content(), new Content("[drop-zone:A2]"))))
             .tapQuestion(q -> ((Content) q.getChildren().get(0)).setChildren(List.of(new Content("[drop-zone:A1]"))))
             .expectDropZones("A1", "A2"),
+
         new GetDropZonesTestCase().setTitle("figureContentWithoutDropZones_returnsNoZones")
             .setChildren(List.of(new Figure()))
             .expectDropZones(),
+
         new GetDropZonesTestCase().setTitle("figureContent_returnsDropZones")
             .setChildren(List.of(createFigure("A1", "A2")))
             .expectDropZones("A1", "A2"),
+
         new GetDropZonesTestCase().setTitle("mixedButNoNesting_returnsDropZones")
             .setChildren(new LinkedList<>(List.of(createFigure("A1", "A2"), new Content("[drop-zone:A3]"))))
             .expectDropZones("A1", "A2", "A3"),
+
         new GetDropZonesTestCase().setTitle("mixedNested_returnsDropZones")
             .setChildren(new LinkedList<>(List.of(new Content(), new Content("[drop-zone:A2]"))))
             .tapQuestion(q -> {
@@ -619,11 +682,6 @@ public class IsaacDndValidatorTest {
 
         public T expectNoExplanation() {
             this.feedback = null;
-            return self();
-        }
-
-        public T expectLogMessage(final Function<IsaacDndQuestion, String> op) {
-            this.logMessageOp = op;
             return self();
         }
 
