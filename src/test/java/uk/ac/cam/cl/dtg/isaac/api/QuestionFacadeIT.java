@@ -170,11 +170,12 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             var dndQuestion = persist(createQuestion(
                 correct(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"))
             ));
-            var answer = new AnswerFactory().add(item_3cm, "leg_2").add(item_4cm, "hypothenuse").add(item_5cm, "leg_1");
-            var response = testServer().client().post(url(dndQuestion.getId()), answer.build()).readEntityAsJson();
+            var answer = answer(choose(item_3cm, "leg_2"), choose(item_4cm, "hypothenuse"), choose(item_5cm, "leg_1"));
+
+            var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertFalse(response.getBoolean("correct"));
-            assertEquals(answer.build(), readEntity(response.getJSONObject("answer"), DndChoice.class));
+            assertEquals(answer, readEntity(response.getJSONObject("answer"), DndChoice.class));
         }
 
         @Test
@@ -184,9 +185,9 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
                 explanation,
                 choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse")
             )));
-            var answer = new AnswerFactory().add(item_3cm, "leg_1").add(item_4cm, "leg_2").add(item_5cm, "hypothenuse");
+            var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
-            var response = testServer().client().post(url(dndQuestion.getId()), answer.build()).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertTrue(response.getBoolean("correct"));
             assertEquals(explanation, readEntity(response.getJSONObject("explanation"), Content.class));
@@ -199,9 +200,9 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             );
             dndQuestion.setDetailedItemFeedback(true);
             persist(dndQuestion);
-            var answer = new AnswerFactory().add(item_3cm, "leg_1").add(item_4cm, "leg_2").add(item_5cm, "hypothenuse");
+            var answer = answer(choose(item_3cm, "leg_1"), choose(item_4cm, "leg_2"), choose(item_5cm, "hypothenuse"));
 
-            var response = testServer().client().post(url(dndQuestion.getId()), answer.build()).readEntityAsJson();
+            var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
 
             assertTrue(response.getBoolean("correct"));
             assertEquals(
