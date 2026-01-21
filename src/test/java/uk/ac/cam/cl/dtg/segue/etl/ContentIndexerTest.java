@@ -426,7 +426,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_dndQuestionInCorrect_checkErrorIsCorrect() throws Exception {
+    public void recordContentTypeSpecificError_dndQuestionIncorrect_checkErrorIsCorrect() throws Exception {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
