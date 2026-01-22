@@ -22,12 +22,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -36,9 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -47,10 +42,6 @@ public class IsaacDndValidator implements IValidator {
     public static final String FEEDBACK_QUESTION_NO_ANSWERS = "This question does not have any answers.";
     public static final String FEEDBACK_QUESTION_INVALID_ANS = "This question contains at least one invalid answer.";
     public static final String FEEDBACK_QUESTION_MISSING_ITEMS = "This question is missing items.";
-    public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
-    public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
-    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
-                                                           + "all drop zones.";
     public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
                                                           + "an item for each gap.";
 
@@ -103,7 +94,7 @@ public class IsaacDndValidator implements IValidator {
 
             if (detailedItemFeedback && dndChoice.isCorrect()) {
                 dropZonesCorrect = submittedItems.stream().collect(
-                    Collectors.toMap(DndItem::getDropZoneId, i -> itemMatches.get(i.getDropZoneId())));
+                    Collectors.toMap(DndItem::getDropZoneId, i -> itemMatches.getOrDefault(i.getDropZoneId(), false)));
             }
 
             if (submissionMatches) {
@@ -147,18 +138,13 @@ public class IsaacDndValidator implements IValidator {
         return null;
     }
 
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndProblem getProblemsWithQuestion(final IsaacDndQuestion q) {
         // items
         if (q.getItems() == null || q.getItems().isEmpty()) {
             return new DndProblem(FEEDBACK_QUESTION_MISSING_ITEMS, q);
         }
-        // dropZones
-        if (DropZones.getFromQuestion(q).isEmpty()) {
-            return new DndProblem(FEEDBACK_QUESTION_NO_DZ, q);
-        }
-        if (DropZones.getFromQuestion(q).size() != new HashSet<>(DropZones.getFromQuestion(q)).size()) {
-            return new DndProblem(FEEDBACK_QUESTION_DUP_DZ, q);
-        }
+
         // answers
         if (q.getChoices() == null || q.getChoices().isEmpty()) {
             return new DndProblem(FEEDBACK_QUESTION_NO_ANSWERS, q);
@@ -171,6 +157,10 @@ public class IsaacDndValidator implements IValidator {
             return new DndProblem(FEEDBACK_QUESTION_INVALID_ANS, q, nonDndChoice.get());
         }
 
+        if (q.getChoices().stream().noneMatch(Choice::isCorrect)) {
+            return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
+        }
+
         Optional<String> answerProblems = q.getChoices().stream()
             .map(c -> getProblemsWithAnswer(q, (DndChoice) c))
             .filter(Objects::nonNull)
@@ -180,13 +170,6 @@ public class IsaacDndValidator implements IValidator {
             return new DndProblem(answerProblems.get(), q);
         }
 
-        if (q.getChoices().stream().noneMatch(Choice::isCorrect)) {
-            return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
-        }
-        if (q.getChoices().stream().anyMatch(c -> c.isCorrect()
-                && DropZones.getFromQuestion(q).size() != ((DndChoice) c).getItems().size())) {
-            return new DndProblem(FEEDBACK_QUESTION_UNUSED_DZ, q);
-        }
         return null;
     }
 
@@ -204,10 +187,8 @@ public class IsaacDndValidator implements IValidator {
         if (a.getItems().stream().anyMatch(i -> !q.getItems().contains(i))) {
             return new DndProblem("an answer with unrecognised items.", q);
         }
-        if (a.getItems().stream().anyMatch(i -> !DropZones.getFromQuestion(q).contains(i.getDropZoneId()))) {
-            return new DndProblem("an answer with unrecognised drop zones.", q);
-        }
-        if (a.getItems().size() > DropZones.getFromQuestion(q).size()) {
+        if (a.getItems().size() > q.getChoices().stream().filter(Choice::isCorrect).findFirst()
+                .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
             return new DndProblem("an answer with more items than we have gaps.", q);
         }
         var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
@@ -217,40 +198,7 @@ public class IsaacDndValidator implements IValidator {
         return null;
     }
 
-    /**
-     * Helper class to collect methods related to drop zone parsing.
-     * */
-    public static class DropZones {
-        /**
-         * Recursively collects the drop zone ids from any content within the question.
-         */
-        public static List<String> getFromQuestion(final IsaacDndQuestion question) {
-            if (question.getChildren() == null) {
-                return List.of();
-            }
-            return question.getChildren().stream()
-                .flatMap(DropZones::getFromContent)
-                .collect(Collectors.toList());
-        }
-
-        private static Stream<String> getFromContent(final ContentBase content) {
-            if (content instanceof Figure && ((Figure) content).getFigureRegions() != null) {
-                var figure = (Figure) content;
-                return figure.getFigureRegions().stream().map(FigureRegion::getId);
-            }
-            if (content instanceof Content && ((Content) content).getValue() != null) {
-                var textContent = (Content) content;
-                String expr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?]";
-                Pattern dndDropZoneRegex = Pattern.compile(expr);
-                return dndDropZoneRegex.matcher(textContent.getValue()).results().map(mr -> mr.group(1));
-            }
-            if (content instanceof Content && ((Content) content).getChildren() != null) {
-                return ((Content) content).getChildren().stream().flatMap(DropZones::getFromContent);
-            }
-            return Stream.of();
-        }
-    }
-
+    /** Utility class to represent the result of checking whether a question or answer was valid. */
     public static class DndProblem {
         public String message;
         public Question question;
@@ -261,6 +209,7 @@ public class IsaacDndValidator implements IValidator {
             this.question = question;
         }
 
+        @SuppressWarnings("checkstyle:MissingJavadocMethod")
         public DndProblem(final String message, final Question question, final Choice choice) {
             this.message = message;
             this.question = question;
@@ -280,18 +229,13 @@ public class IsaacDndValidator implements IValidator {
                 // questions
                 case FEEDBACK_QUESTION_MISSING_ITEMS: return String.format(
                     "Expected items in question (%s), but didn't find any!", id);
-                case FEEDBACK_QUESTION_NO_DZ: return String.format(
-                    "Question does not have any drop zones. %s src %s", id, sourceFile);
-                case FEEDBACK_QUESTION_DUP_DZ:
-                case "The question is invalid, because it has an answer with duplicate drop zones.": return String.format(
-                    "Question contains duplicate drop zones. %s src %s", id, sourceFile);
+                case "The question is invalid, because it has an answer with duplicate drop zones.":
+                    return String.format("Question contains duplicate drop zones. %s src %s", id, sourceFile);
                 case FEEDBACK_QUESTION_NO_ANSWERS: return String.format(
                     "Question does not have any answers. %s src: %s", id, sourceFile);
                 case Constants.FEEDBACK_NO_CORRECT_ANSWERS: return String.format(
                     "Question does not have any correct answers. %s src: %s", id, sourceFile
                 );
-                case FEEDBACK_QUESTION_UNUSED_DZ: return String.format(
-                    "Question contains correct answer that doesn't use all drop zones. %s src %s", id, sourceFile);
                 case FEEDBACK_QUESTION_INVALID_ANS: return String.format(
                     "Expected DndItem in question (%s), instead found %s!", id, message.choice.getClass());
                 // answers
@@ -299,14 +243,12 @@ public class IsaacDndValidator implements IValidator {
                     "Expected list of DndItems, but none found in choice for question id (%s)!", id);
                 case "The question is invalid, because it has an invalid answer.": return String.format(
                     "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an answer in an unrecognised format.": return String.format(
-                    "Found item with missing id or drop zone id in answer for question id (%s)!", id);
+                case "The question is invalid, because it has an answer in an unrecognised format.": return
+                    String.format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
                 case "The question is invalid, because it has an answer with unrecognised items.": return String.format(
                     "Question contains invalid item ref. %s src %s", id, sourceFile);
-                case "The question is invalid, because it has an answer with unrecognised drop zones.": return String.format(
-                    "Question contains invalid drop zone ref. %s src %s", id, sourceFile);
-                case "The question is invalid, because it has an answer with more items than we have gaps.": return String.format(
-                    "Question has answer with more items than we have gaps. %s src %s", id, sourceFile);
+                case "The question is invalid, because it has an answer with more items than we have gaps.": return
+                    String.format("Question has answer with more items than we have gaps. %s src %s", id, sourceFile);
                 default: return null;
             }
         }

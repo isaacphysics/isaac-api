@@ -31,14 +31,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ParsonsChoice;
-import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -178,7 +175,25 @@ public class IsaacDndValidatorTest {
             .setQuestion(correctChoice(item(item_3cm, "leg_1")))
             .setAnswer(choice(item(item_4cm, "leg_1")))
             .expectNoExplanation()
+            .expectCorrect(false),
+
+        // these highlight inconsistent behaviour when a question violates our requirements for drop zones
+        new ExplanationTestCase().setTitle("unrecognisedDropZone_shouldReturnNone")
+            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+            .setAnswer(choice(item(item_3cm, "leg_2")))
+            .expectNoExplanation()
+            .expectCorrect(false),
+
+        new ExplanationTestCase().setTitle("correctAnswerHasUnusedDropZones_notAcceptedCorrect")
+            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+            .setQuestion(
+                correctChoice(item(item_3cm, "leg_1")),
+                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"))
+            ).setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")))
             .expectCorrect(false)
+            .expectExplanation("The question is invalid, because it has an answer with more items than we have gaps.")
+            .expectNoDropZones()
     };
 
 
@@ -234,7 +249,22 @@ public class IsaacDndValidatorTest {
                 correctChoice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2"), item(item_13cm, "hypothenuse"))
             ).setAnswer(choice(item(item_5cm, "leg_1")))
             .expectCorrect(false)
-            .expectDropZonesCorrect(d -> d.setLeg1(true))
+            .expectDropZonesCorrect(d -> d.setLeg1(true)),
+
+        // these highlight inconsistent behaviour when a question violates our requirements for drop zones
+        enabledItemFeedback.get().setTitle("unrecognisedDropZone_treatsItAsAnyWrongAnswer")
+            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+            .setAnswer(choice(item(item_3cm, "leg_2")))
+            .expectCorrect(false)
+            .expectDropZonesCorrect(d -> d.setLeg2(false)),
+
+        enabledItemFeedback.get().setTitle("correctAnswerHasUnusedDropZones_acceptedCorrect")
+            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+            .setAnswer(choice(item(item_3cm, "leg_1")))
+            .expectCorrect(true)
+            .expectDropZonesCorrect(d -> d.setLeg1(true)),
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")
@@ -293,12 +323,6 @@ public class IsaacDndValidatorTest {
             ).setAnswer(choice(item(item_4cm, "leg_1")))
             .expectExplanation("Leg 1 should be less than 4 cm")
             .expectDropZonesCorrect(f -> f.setLeg1(false)),
-
-        new AnswerValidationTestCase().setTitle("unrecognized drop zone")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_2")))
-            .expectExplanation("You provided an answer with unrecognised drop zones.")
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")
@@ -374,35 +398,10 @@ public class IsaacDndValidatorTest {
             .setQuestion(correctChoice(new DndItem("invalid_id", "some_value", "leg_1")))
             .expectExplLog("The question is invalid, because it has an answer with unrecognised items."),
 
-        new QuestionValidationTestCase().setTitle("answerTooManuItems")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_1")))
-            .expectExplLog("The question is invalid, because it has an answer with more items than we have gaps."),
-
-        new QuestionValidationTestCase().setTitle("answerInvalidDropZoneReference")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")), incorrectChoice(item(item_3cm, "leg_2")))
-            .expectExplLog("The question is invalid, because it has an answer with unrecognised drop zones."),
-
         new QuestionValidationTestCase().setTitle("answerDuplicateDropZones")
             .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
             .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_3cm, "leg_1")))
-            .expectExplLog("The question is invalid, because it has an answer with duplicate drop zones."),
-
-        new QuestionValidationTestCase().setTitle("answerCorrectNotAllDropZones")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
-                correctChoice(item(item_3cm, "leg_1"))
-            ).expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ),
-
-        new QuestionValidationTestCase().setTitle("noDropZones")
-            .setChildren(null)
-            .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_NO_DZ),
-
-        new QuestionValidationTestCase().setTitle("dropZoneDuplication")
-            .setChildren(List.of(new Content("[drop-zone:A1] [drop-zone:A1]")))
-            .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ)
+            .expectExplLog("The question is invalid, because it has an answer with duplicate drop zones.")
     };
 
     @SuppressWarnings("checkstyle:MissingJavadocMethod")
@@ -420,90 +419,7 @@ public class IsaacDndValidatorTest {
         appender.assertMessage(testCase.loggedMessage);
     }
 
-    static Supplier<GetDropZonesTestCase> invalidDropZone = () -> new GetDropZonesTestCase()
-        .expectDropZones();
 
-    @DataPoints
-    public static GetDropZonesTestCase[] getDropZonesTestCases = {
-        invalidDropZone.get().setChildren(List.of(new Content(""))),
-
-        invalidDropZone.get().setChildren(List.of(new Content("no drop zone"))),
-
-        invalidDropZone.get().setChildren(List.of(new Content("[drop-zone A1]"))),
-
-        invalidDropZone.get().setChildren(List.of(new Content("[drop-zone: A1]"))),
-
-        invalidDropZone.get().setChildren(List.of(new Content("[drop-zone:A1 | w-100]"))),
-
-        invalidDropZone.get().setChildren(List.of(new Content("[drop-zone:A1|w-100 h-50]"))),
-
-        invalidDropZone.get().setChildren(List.of(new Content("[drop-zone:A1|h-100w-50]"))),
-
-        new GetDropZonesTestCase().setTitle("noContent_noDropZones").setChildren(null).expectDropZones(),
-
-        new GetDropZonesTestCase().setTitle("singleDropZoneSingleText_returnsDropZone")
-            .setChildren(List.of(new Content("[drop-zone:A1]")))
-            .expectDropZones("A1"),
-
-        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContent_returnsDropZone")
-            .setChildren(List.of(new Content("[drop-zone:A1|w-100]")))
-            .expectDropZones("A1"),
-
-        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentHeight_returnsDropZone")
-            .setChildren(List.of(new Content("[drop-zone:A1|h-100]")))
-            .expectDropZones("A1"),
-
-        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWidthHeight_returnsDropZone")
-            .setChildren(List.of(new Content("[drop-zone:A1|w-100h-50]")))
-            .expectDropZones("A1"),
-
-        new GetDropZonesTestCase().setTitle("singleDropZoneSingleContentWithinLatex_returnsDropZone")
-            .setChildren(List.of(new Content("$$1 + \\text{[drop-zone:A1]}$$")))
-            .expectDropZones("A1"),
-
-        new GetDropZonesTestCase().setTitle("multiDropZoneSingleContent_returnsDropZones")
-            .setChildren(List.of(new Content("Some text [drop-zone:A1], other text [drop-zone:A2]")))
-            .expectDropZones("A1", "A2"),
-
-        new GetDropZonesTestCase().setTitle("multiDropZoneMultiContent_returnsDropZones")
-            .setChildren(List.of(
-                new Content("[drop-zone:A1] [drop-zone:A2]"),
-                new Content("[drop-zone:A3] [drop-zone:A4]")
-            )).expectDropZones("A1", "A2", "A3", "A4"),
-
-        new GetDropZonesTestCase().setTitle("singleDropZoneNestedContent_returnsDropZones")
-            .setChildren(new LinkedList<>(List.of(new Content(), new Content("[drop-zone:A2]"))))
-            .tapQuestion(q -> ((Content) q.getChildren().get(0)).setChildren(List.of(new Content("[drop-zone:A1]"))))
-            .expectDropZones("A1", "A2"),
-
-        new GetDropZonesTestCase().setTitle("figureContentWithoutDropZones_returnsNoZones")
-            .setChildren(List.of(new Figure()))
-            .expectDropZones(),
-
-        new GetDropZonesTestCase().setTitle("figureContent_returnsDropZones")
-            .setChildren(List.of(createFigure("A1", "A2")))
-            .expectDropZones("A1", "A2"),
-
-        new GetDropZonesTestCase().setTitle("mixedButNoNesting_returnsDropZones")
-            .setChildren(new LinkedList<>(List.of(createFigure("A1", "A2"), new Content("[drop-zone:A3]"))))
-            .expectDropZones("A1", "A2", "A3"),
-
-        new GetDropZonesTestCase().setTitle("mixedNested_returnsDropZones")
-            .setChildren(new LinkedList<>(List.of(new Content(), new Content("[drop-zone:A2]"))))
-            .tapQuestion(q -> {
-                Content content = (Content) q.getChildren().get(0);
-                content.setChildren(List.of(
-                    new Content("[drop-zone:A1]"),
-                    createFigure("F1", "F2")
-                ));
-            }).expectDropZones("A1", "F1", "F2", "A2")
-    };
-
-    @Theory
-    public final void testGetDropZones(final GetDropZonesTestCase testCase) {
-        var dropZones = IsaacDndValidator.DropZones.getFromQuestion(testCase.question);
-        assertEquals(testCase.dropZones, dropZones);
-    }
 
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
         return new IsaacDndValidator().validateQuestionResponse(question, choice);
@@ -551,7 +467,8 @@ public class IsaacDndValidatorTest {
         return choice;
     }
 
-    private static DndChoice incorrectChoice(final ContentBase explanation, final DndItem... list) {
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    public static DndChoice incorrectChoice(final ContentBase explanation, final DndItem... list) {
         var choice = incorrectChoice(list);
         choice.setExplanation(explanation);
         return choice;
@@ -612,18 +529,7 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    private static Figure createFigure(final String... dropZones) {
-        var figure = new Figure();
-        figure.setFigureRegions(new ArrayList<>(List.of()));
-        List.of(dropZones).forEach(dropZoneId -> {
-            var region = new FigureRegion();
-            region.setId(dropZoneId);
-            figure.getFigureRegions().add(region);
-        });
-        return figure;
-    }
-
-    static class TestCase<T extends TestCase<T>> {
+    public static class TestCase<T extends TestCase<T>> {
         public static Content testFeedback = new Content("some test feedback");
 
         public String title;
@@ -693,7 +599,6 @@ public class IsaacDndValidatorTest {
                 Object[] idFile = { id, q.getCanonicalSourceFile()};
                 switch (feedback) {
                     case "The question is invalid, because it has an answer with duplicate drop zones.":
-                    case IsaacDndValidator.FEEDBACK_QUESTION_DUP_DZ:
                         return format("Question contains duplicate drop zones. %s src %s", idFile);
                     case "The question is invalid, because it has an answer with unrecognised drop zones.":
                         return format("Question contains invalid drop zone ref. %s src %s", idFile);
@@ -704,11 +609,6 @@ public class IsaacDndValidatorTest {
                             "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
                     case "The question is invalid, because it has an answer with more items than we have gaps.":
                         return format("Question has answer with more items than we have gaps. %s src %s", idFile);
-                    case IsaacDndValidator.FEEDBACK_QUESTION_UNUSED_DZ:
-                        return format(
-                            "Question contains correct answer that doesn't use all drop zones. %s src %s", idFile);
-                    case IsaacDndValidator.FEEDBACK_QUESTION_NO_DZ:
-                        return format("Question does not have any drop zones. %s src %s", idFile);
                     case IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS:
                         return format("Expected DndItem in question (%s), instead found class uk.ac.cam.cl.dtg."
                                 + "isaac.dos.content.ParsonsChoice!", id);
@@ -762,8 +662,6 @@ public class IsaacDndValidatorTest {
     public static class ExplanationTestCase extends TestCase<ExplanationTestCase> {}
 
     public static class DropZonesTestCase extends TestCase<DropZonesTestCase> {}
-
-    public static class GetDropZonesTestCase extends TestCase<GetDropZonesTestCase> {}
 
     public static class DndItemEx extends DndItem {
         public DndItemEx(final String id, final String value, final String dropZoneId) {
