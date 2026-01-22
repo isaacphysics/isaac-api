@@ -1,25 +1,24 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 public class MultiMatchInstruction extends AbstractInstruction {
-    private Long boost;
-    private String field;
-    private String[] value;
+    private final Long boost;
+    private final String term;
+    private final String[] fields;
 
-    public MultiMatchInstruction(final String field, final String[] value, final Long boost) {
-        this.field = field;
-        this.value = value;
+    public MultiMatchInstruction(final String term, final String[] fields, final Long boost) {
+        this.term = term;
+        this.fields = fields;
         this.boost = boost;
     }
-    public MultiMatchInstruction(final String field, final String[] value) {
-        this(field, value, 1L);
+
+    public String getTerm() {
+        return this.term;
     }
 
-    public String getField() {
-        return this.field;
+    public String[] getFields() {
+        return this.fields;
     }
-    public String[] getValue() {
-        return this.value;
-    }
+
     public Long getBoost() {
         return this.boost;
     }
