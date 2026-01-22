@@ -115,10 +115,6 @@ public class IsaacCoordinateValidator implements IValidator {
                 }
 
                 // ... look for a match to the submitted answer.
-                if (coordinateChoice.getItems().size() != submittedItems.size()) {
-                    // We know that we don't have a match if the number of items is different.
-                    continue;
-                }
 
                 // Ensure that all items in the choice are CoordinateItems.
                 boolean allCoordinateItems = coordinateChoice.getItems().stream().allMatch(i -> i instanceof CoordinateItem);
@@ -137,6 +133,31 @@ public class IsaacCoordinateValidator implements IValidator {
                     if (null == coordinateQuestion.getOrdered() || !coordinateQuestion.getOrdered()) {
                         choiceItems = orderCoordinates(choiceItems);
                         submittedItems = orderCoordinates(submittedItems);
+                    }
+
+                    // For correct choices, check if the submitted items are a proper subset of the choice
+                    if (coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
+                        List<CoordinateItem> finalChoiceItems = choiceItems;
+                        boolean allSubmittedItemsMatch = submittedItems.stream().allMatch(submittedItem ->
+                            finalChoiceItems.stream().anyMatch(choiceItem -> {
+                                for (int d = 0; d < coordinateQuestion.getNumberOfDimensions(); d++) {
+                                    if (!ValidationUtils.numericValuesMatch(choiceItem.getCoordinates().get(d),
+                                            submittedItem.getCoordinates().get(d), null, log)) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            })
+                        );
+                        if (allSubmittedItemsMatch) {
+                            feedback = new Content("These are some of the correct values, but can you find more?");
+                            break;
+                        }
+                    }
+
+                    // We've checked for a subset match, so we now cannot have a match if the number of items is different.
+                    if (choiceItems.size() != submittedItems.size()) {
+                        continue;
                     }
 
                     // For each coordinate in the list of coordinates:
