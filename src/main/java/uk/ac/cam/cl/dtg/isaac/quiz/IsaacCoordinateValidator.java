@@ -130,7 +130,7 @@ public class IsaacCoordinateValidator implements IValidator {
 
                 // Check that the items in the submitted answer match the items in the choice numerically
 
-                boolean allItemsMatch = true;
+                boolean allItemsMatch = false;
                 try {
                     // If the question is unordered, then we need to (paradoxically) order the items to compare them.
                     if (null == coordinateQuestion.getOrdered() || !coordinateQuestion.getOrdered()) {
@@ -138,48 +138,50 @@ public class IsaacCoordinateValidator implements IValidator {
                         submittedItems = orderCoordinates(submittedItems);
                     }
 
-                    // Don't skip strict validation if the sizes differ; there may be sig. fig. feedback
-                    int numItemsToCompare = Math.min(choiceItems.size(), submittedItems.size());
+                    // Only attempt strict validation if the number of submitted items matches the choice
+                    if (choiceItems.size() == submittedItems.size()) {
+                        allItemsMatch = true;
+                        // For each coordinate in the list of coordinates:
+                        //    (labelled loop to allow short circuiting)
+                        outerloop: for (int coordIndex = 0; coordIndex < submittedItems.size(); coordIndex++) {
+                            CoordinateItem choiceItem = choiceItems.get(coordIndex);
+                            CoordinateItem submittedItem = submittedItems.get(coordIndex);
+                            // Check that each dimension has the same coordinate value as the choice:
+                            for (int dimensionIndex = 0; dimensionIndex < coordinateQuestion.getNumberOfDimensions(); dimensionIndex++) {
+                                String choiceValue = choiceItem.getCoordinates().get(dimensionIndex);
+                                String submittedValue = submittedItem.getCoordinates().get(dimensionIndex);
 
-                    // For each coordinate in the list of coordinates:
-                    //    (labelled loop to allow short circuiting)
-                    outerloop: for (int coordIndex = 0; coordIndex < numItemsToCompare; coordIndex++) {
-                        CoordinateItem choiceItem = choiceItems.get(coordIndex);
-                        CoordinateItem submittedItem = submittedItems.get(coordIndex);
-                        // Check that each dimension has the same coordinate value as the choice:
-                        for (int dimensionIndex = 0; dimensionIndex < coordinateQuestion.getNumberOfDimensions(); dimensionIndex++) {
-                            String choiceValue = choiceItem.getCoordinates().get(dimensionIndex);
-                            String submittedValue = submittedItem.getCoordinates().get(dimensionIndex);
+                                boolean valuesMatch = false;
 
-                            boolean valuesMatch = false;
-
-                            if (submittedValue.isEmpty()) {
-                                feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
-                            } else if (shouldValidateWithSigFigs) {
-                                Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
-                                        coordinateQuestion.getSignificantFiguresMin(), coordinateQuestion.getSignificantFiguresMax(), log);
-
-                                boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMin(), log);
-                                boolean tooManySF = ValidationUtils.tooManySignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMax(), log);
-                                if (tooFewSF || tooManySF) {
-                                    feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
+                                if (submittedValue.isEmpty()) {
+                                    feedback = new Content(FEEDBACK_INCOMPLETE_ANSWER);
+                                } else if (shouldValidateWithSigFigs) {
+                                    Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
+                                            coordinateQuestion.getSignificantFiguresMin(), coordinateQuestion.getSignificantFiguresMax(), log);
+                                    boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMin(), log);
+                                    boolean tooManySF = ValidationUtils.tooManySignificantFigures(submittedValue, coordinateQuestion.getSignificantFiguresMax(), log);
+                                    if (tooFewSF || tooManySF) {
+                                        feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
+                                    } else {
+                                        valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                                    }
                                 } else {
-                                    valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log);
+                                    valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
                                 }
-                            } else {
-                                valuesMatch = ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
-                            }
 
-                            if (!valuesMatch) {
-                                allItemsMatch = false;
-                                // Exit early on mismatch:
-                                break outerloop;
+                                if (!valuesMatch) {
+                                    allItemsMatch = false;
+                                    // Exit early on mismatch:
+                                    break outerloop;
+                                }
                             }
                         }
                     }
 
-                    if (choiceItems.size() != submittedItems.size()) {
-                        allItemsMatch = false;
+                    if (allItemsMatch) {
+                        responseCorrect = coordinateChoice.isCorrect();
+                        feedback = (Content) coordinateChoice.getExplanation();
+                        break;
                     }
 
                     // If no strict match was found, check for a subset match in two ways:
@@ -191,8 +193,12 @@ public class IsaacCoordinateValidator implements IValidator {
                         boolean allSubmittedItemsMatch = submittedItems.stream().allMatch(submittedItem ->
                                 finalChoiceItems.stream().anyMatch(choiceItem -> {
                                     for (int d = 0; d < coordinateQuestion.getNumberOfDimensions(); d++) {
+                                        Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(
+                                                submittedItem.getCoordinates().get(d),
+                                                coordinateQuestion.getSignificantFiguresMin(),
+                                                coordinateQuestion.getSignificantFiguresMax(), log);
                                         if (!ValidationUtils.numericValuesMatch(choiceItem.getCoordinates().get(d),
-                                                submittedItem.getCoordinates().get(d), null, log)) {
+                                                submittedItem.getCoordinates().get(d), sigFigs, log)) {
                                             return false;
                                         }
                                     }
@@ -210,9 +216,23 @@ public class IsaacCoordinateValidator implements IValidator {
                     boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
                     if ((feedbackIsNullOrEmpty(feedback)) && !allItemsMatch && allowSubsetMatch
                             && (submittedItems.size() > choiceItems.size())) {
-                        Set<CoordinateItem> intersection = Sets.intersection(Sets.newHashSet(submittedItems), Sets.newHashSet(choiceItems));
-                        if (intersection.size() == choiceItems.size()) {
-                            // Every choice item is contained in the submitted items
+                        List<CoordinateItem> finalSubmittedItems = submittedItems;
+                        boolean allChoiceItemsMatch = choiceItems.stream().allMatch(choiceItem ->
+                                finalSubmittedItems.stream().anyMatch(submittedItem -> {
+                                    for (int d = 0; d < coordinateQuestion.getNumberOfDimensions(); d++) {
+                                        Integer sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(
+                                                submittedItem.getCoordinates().get(d),
+                                                coordinateQuestion.getSignificantFiguresMin(),
+                                                coordinateQuestion.getSignificantFiguresMax(), log);
+                                        if (!ValidationUtils.numericValuesMatch(submittedItem.getCoordinates().get(d),
+                                                choiceItem.getCoordinates().get(d), sigFigs, log)) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                })
+                        );
+                        if (allChoiceItemsMatch) {
                             responseCorrect = coordinateChoice.isCorrect();
                             feedback = (Content) coordinateChoice.getExplanation();
                         }
@@ -220,12 +240,6 @@ public class IsaacCoordinateValidator implements IValidator {
 
                 } catch (NumberFormatException e) {
                     feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
-                    break;
-                }
-
-                if (allItemsMatch) {
-                    responseCorrect = coordinateChoice.isCorrect();
-                    feedback = (Content) coordinateChoice.getExplanation();
                     break;
                 }
             }
