@@ -178,6 +178,10 @@ public class IsaacCoordinateValidator implements IValidator {
                         }
                     }
 
+                    if (choiceItems.size() != submittedItems.size()) {
+                        allItemsMatch = false;
+                    }
+
                     // If no strict match was found, check for a subset match in two ways:
 
                     // For correct choices, check if the submitted items are a proper subset of the choice
