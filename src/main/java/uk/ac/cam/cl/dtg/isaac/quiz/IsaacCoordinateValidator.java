@@ -138,29 +138,12 @@ public class IsaacCoordinateValidator implements IValidator {
                         submittedItems = orderCoordinates(submittedItems);
                     }
 
-                    // For correct choices, check if the submitted items are a proper subset of the choice
-                    if (coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
-                        List<CoordinateItem> finalChoiceItems = choiceItems;
-                        boolean allSubmittedItemsMatch = submittedItems.stream().allMatch(submittedItem ->
-                            finalChoiceItems.stream().anyMatch(choiceItem -> {
-                                for (int d = 0; d < coordinateQuestion.getNumberOfDimensions(); d++) {
-                                    if (!ValidationUtils.numericValuesMatch(choiceItem.getCoordinates().get(d),
-                                            submittedItem.getCoordinates().get(d), null, log)) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            })
-                        );
-                        if (allSubmittedItemsMatch) {
-                            feedback = new Content("These are some of the correct values, but can you find more?");
-                            break;
-                        }
-                    }
+                    // Don't skip strict validation if the sizes differ; there may be sig. fig. feedback
+                    int numItemsToCompare = Math.min(choiceItems.size(), submittedItems.size());
 
                     // For each coordinate in the list of coordinates:
                     //    (labelled loop to allow short circuiting)
-                    outerloop: for (int coordIndex = 0; coordIndex < choiceItems.size(); coordIndex++) {
+                    outerloop: for (int coordIndex = 0; coordIndex < numItemsToCompare; coordIndex++) {
                         CoordinateItem choiceItem = choiceItems.get(coordIndex);
                         CoordinateItem submittedItem = submittedItems.get(coordIndex);
                         // Check that each dimension has the same coordinate value as the choice:
@@ -195,11 +178,34 @@ public class IsaacCoordinateValidator implements IValidator {
                         }
                     }
 
-                    // Do not allow subset matching by default
-                    boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
+                    // If no strict match was found, check for a subset match in two ways:
 
-                    // If subset matching is allowed, check the intersection of submitted and choice items
-                    if (!allItemsMatch && allowSubsetMatch) {
+                    // For correct choices, check if the submitted items are a proper subset of the choice
+                    if ((feedbackIsNullOrEmpty(feedback)) && !allItemsMatch && coordinateChoice.isCorrect()
+                            && (choiceItems.size() > submittedItems.size())) {
+                        List<CoordinateItem> finalChoiceItems = choiceItems;
+                        boolean allSubmittedItemsMatch = submittedItems.stream().allMatch(submittedItem ->
+                                finalChoiceItems.stream().anyMatch(choiceItem -> {
+                                    for (int d = 0; d < coordinateQuestion.getNumberOfDimensions(); d++) {
+                                        if (!ValidationUtils.numericValuesMatch(choiceItem.getCoordinates().get(d),
+                                                submittedItem.getCoordinates().get(d), null, log)) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                })
+                        );
+                        if (allSubmittedItemsMatch) {
+                            feedback = new Content("These are some of the correct values, but can you find more?");
+                            break;
+                        }
+                    }
+
+                    // If subset matching is allowed for this choice, check if the choice is a proper subset of the
+                    // submitted items
+                    boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
+                    if ((feedbackIsNullOrEmpty(feedback)) && !allItemsMatch && allowSubsetMatch
+                            && (submittedItems.size() > choiceItems.size())) {
                         Set<CoordinateItem> intersection = Sets.intersection(Sets.newHashSet(submittedItems), Sets.newHashSet(choiceItems));
                         if (intersection.size() == choiceItems.size()) {
                             // Every choice item is contained in the submitted items
