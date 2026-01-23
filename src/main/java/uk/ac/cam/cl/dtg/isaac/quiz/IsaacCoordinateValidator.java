@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
@@ -13,6 +14,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -94,7 +96,8 @@ public class IsaacCoordinateValidator implements IValidator {
         // STEP 2: If they did, does their answer match a known answer?
 
         if (null == feedback) {
-            // Sort the choices so that we match incorrect choices last, giving precedence to correct ones.
+            // Sort the choices so that strict match choices are checked before subset match choices.
+            // Within these categories, match incorrect choices last, giving precedence to correct ones.
             List<Choice> orderedChoices = getOrderedChoices(coordinateQuestion.getChoices());
 
             // For all the choices on this question...
@@ -155,11 +158,6 @@ public class IsaacCoordinateValidator implements IValidator {
                         }
                     }
 
-                    // We've checked for a subset match, so we now cannot have a match if the number of items is different.
-                    if (choiceItems.size() != submittedItems.size()) {
-                        continue;
-                    }
-
                     // For each coordinate in the list of coordinates:
                     //    (labelled loop to allow short circuiting)
                     outerloop: for (int coordIndex = 0; coordIndex < choiceItems.size(); coordIndex++) {
@@ -196,6 +194,19 @@ public class IsaacCoordinateValidator implements IValidator {
                             }
                         }
                     }
+
+                    // Do not allow subset matching by default
+                    boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
+
+                    // If subset matching is allowed, check the intersection of submitted and choice items
+                    if (!allItemsMatch && allowSubsetMatch) {
+                        Set<CoordinateItem> intersection = Sets.intersection(Sets.newHashSet(submittedItems), Sets.newHashSet(choiceItems));
+                        if (intersection.size() == choiceItems.size()) {
+                            // Every choice item is contained in the submitted items
+                            feedback = (Content) coordinateChoice.getExplanation();
+                        }
+                    }
+
                 } catch (NumberFormatException e) {
                     feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
                     break;
@@ -242,5 +253,10 @@ public class IsaacCoordinateValidator implements IValidator {
             }
             return 0;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Choice> getOrderedChoices(final List<Choice> choices) {
+        return IsaacItemQuestionValidator.getOrderedChoicesWithSubsets(choices);
     }
 }
