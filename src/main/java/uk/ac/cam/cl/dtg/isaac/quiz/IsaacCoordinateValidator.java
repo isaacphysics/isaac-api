@@ -213,6 +213,7 @@ public class IsaacCoordinateValidator implements IValidator {
                         Set<CoordinateItem> intersection = Sets.intersection(Sets.newHashSet(submittedItems), Sets.newHashSet(choiceItems));
                         if (intersection.size() == choiceItems.size()) {
                             // Every choice item is contained in the submitted items
+                            responseCorrect = coordinateChoice.isCorrect();
                             feedback = (Content) coordinateChoice.getExplanation();
                         }
                     }
