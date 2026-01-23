@@ -42,6 +42,7 @@ public class IsaacCoordinateValidatorTest {
     private final CoordinateItem item1 = new CoordinateItem(List.of("1", "2"));
     private final CoordinateItem item2 = new CoordinateItem(List.of("2", "1"));
     private final CoordinateItem item3 = new CoordinateItem(List.of("1", "3"));
+    private final CoordinateItem item4 = new CoordinateItem(List.of("3", "1"));
     private final CoordinateItem item2Again = new CoordinateItem(List.of("2", "1"));  // Ensure no == comparisons.
 
     private final Content someIncorrectExplanation = new Content("Some incorrect explanation.");
@@ -66,6 +67,7 @@ public class IsaacCoordinateValidatorTest {
         // Correct and incorrect choices:
         someCorrectChoice.setItems(List.of(item1, item2));
         someCorrectChoice.setCorrect(true);
+        someCorrectChoice.setAllowSubsetMatch(true);
         someIncorrectChoice.setItems(ImmutableList.of(item3, item1));
         someIncorrectChoice.setCorrect(false);
         someIncorrectChoice.setExplanation(someIncorrectExplanation);
@@ -122,7 +124,7 @@ public class IsaacCoordinateValidatorTest {
     @Test
     public final void isaacCoordinateValidator_TestMismatchedNumberOfCoordinates_ExpectNoExplanation() {
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(item1, item2, item3));
+        c.setItems(List.of(item1, item3, item4));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
@@ -160,6 +162,27 @@ public class IsaacCoordinateValidatorTest {
 
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("did not provide the expected number of dimensions"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestSubsetOfCorrectChoice() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("some of the correct values"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestSupersetOfSubsetMatchChoice() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item2, item4));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertTrue(response.isCorrect());
     }
 
     // Test the internals of the item-ordering:
