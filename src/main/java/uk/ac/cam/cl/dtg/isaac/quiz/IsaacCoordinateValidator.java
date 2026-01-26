@@ -174,52 +174,54 @@ public class IsaacCoordinateValidator implements IValidator {
                         break;
                     }
 
-                    // If no strict match was found, check for a subset match in two ways:
+                    // For unordered questions, if no strict match was found, check for a subset match in two ways:
+                    if (null == coordinateQuestion.getOrdered() || !coordinateQuestion.getOrdered()) {
 
-                    // For correct choices, check if the submitted items are a proper subset of the choice
-                    if (coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
-                        boolean allSubmittedItemsInChoiceItems = true;
-                        for (CoordinateItem submittedItem : submittedItems) {
-                            boolean submittedItemInChoiceItem = false;
-                            for (CoordinateItem choiceItem : choiceItems) {
-                                if (coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
-                                    submittedItemInChoiceItem = true;
-                                    break;
-                                }
-                            }
-                            if (!submittedItemInChoiceItem) {
-                                allSubmittedItemsInChoiceItems = false;
-                                break;
-                            }
-                        }
-                        if (allSubmittedItemsInChoiceItems) {
-                            feedback = new Content("These are some of the correct values, but can you find more?");
-                            break;
-                        }
-                    }
-
-                    // If subset matching is allowed for this choice, check if the choice is a proper subset of the
-                    // submitted items
-                    boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
-                    if (allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
-                        boolean allChoiceItemsInSubmittedItems = true;
-                        for (CoordinateItem choiceItem : choiceItems) {
-                            boolean choiceItemInSubmittedItems = false;
+                        // For correct choices, check if the submitted items are a proper subset of the choice
+                        if (coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
+                            boolean allSubmittedItemsInChoiceItems = true;
                             for (CoordinateItem submittedItem : submittedItems) {
-                                if (coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
-                                    choiceItemInSubmittedItems = true;
+                                boolean submittedItemInChoiceItem = false;
+                                for (CoordinateItem choiceItem : choiceItems) {
+                                    if (coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
+                                        submittedItemInChoiceItem = true;
+                                        break;
+                                    }
+                                }
+                                if (!submittedItemInChoiceItem) {
+                                    allSubmittedItemsInChoiceItems = false;
                                     break;
                                 }
                             }
-                            if (!choiceItemInSubmittedItems) {
-                                allChoiceItemsInSubmittedItems = false;
+                            if (allSubmittedItemsInChoiceItems) {
+                                feedback = new Content("These are some of the correct values, but can you find more?");
                                 break;
                             }
                         }
-                        if (allChoiceItemsInSubmittedItems) {
-                            responseCorrect = coordinateChoice.isCorrect();
-                            feedback = (Content) coordinateChoice.getExplanation();
-                            break;
+
+                        // If subset matching is allowed for this choice, check if the choice is a proper subset of the
+                        // submitted items
+                        boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
+                        if (allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
+                            boolean allChoiceItemsInSubmittedItems = true;
+                            for (CoordinateItem choiceItem : choiceItems) {
+                                boolean choiceItemInSubmittedItems = false;
+                                for (CoordinateItem submittedItem : submittedItems) {
+                                    if (coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
+                                        choiceItemInSubmittedItems = true;
+                                        break;
+                                    }
+                                }
+                                if (!choiceItemInSubmittedItems) {
+                                    allChoiceItemsInSubmittedItems = false;
+                                    break;
+                                }
+                            }
+                            if (allChoiceItemsInSubmittedItems) {
+                                responseCorrect = coordinateChoice.isCorrect();
+                                feedback = (Content) coordinateChoice.getExplanation();
+                                break;
+                            }
                         }
                     }
 
