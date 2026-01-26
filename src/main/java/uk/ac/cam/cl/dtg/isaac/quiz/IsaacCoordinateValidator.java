@@ -246,9 +246,9 @@ public class IsaacCoordinateValidator implements IValidator {
 
         boolean shouldValidateWithSigFigs = null != question.getSignificantFiguresMin() && null != question.getSignificantFiguresMax();
 
-        for (int d = 0; d < question.getNumberOfDimensions(); d++) {
-            String submittedValue = submittedItem.getCoordinates().get(d);
-            String choiceValue = choiceItem.getCoordinates().get(d);
+        for (int dimension = 0; dimension < submittedItem.getCoordinates().size(); dimension++) {
+            String submittedValue = submittedItem.getCoordinates().get(dimension);
+            String choiceValue = choiceItem.getCoordinates().get(dimension);
 
             if (shouldValidateWithSigFigs) {
                 int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
