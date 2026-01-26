@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -27,9 +28,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Objects;
-
-import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CREATE_ANONYMOUS_USER;
-import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.DELETE_ANONYMOUS_USER;
 
 /**
  *  Store anonymous user data in Postgres.
@@ -62,7 +60,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save anonymous user.");
             }
-            CREATE_ANONYMOUS_USER.inc();
+            SegueMetrics.CREATE_ANONYMOUS_USER.inc();
             return user;
 
         } catch (final SQLException e) {
@@ -82,7 +80,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             if (executeUpdate == 0) {
                 throw new ResourceNotFoundException("Could not delete the requested anonymous user.");
             }
-            DELETE_ANONYMOUS_USER.inc();
+            SegueMetrics.DELETE_ANONYMOUS_USER.inc();
 
         } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to delete anonymous user", e);
