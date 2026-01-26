@@ -28,6 +28,9 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Objects;
 
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CREATE_ANONYMOUS_USER;
+import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.DELETE_ANONYMOUS_USER;
+
 /**
  * @author Stephen Cummins
  *
@@ -59,6 +62,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save anonymous user.");
             }
+            CREATE_ANONYMOUS_USER.inc();
             return user;
 
         } catch (SQLException e) {
@@ -78,6 +82,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             if (executeUpdate == 0) {
                 throw new ResourceNotFoundException("Could not delete the requested anonymous user.");
             }
+            DELETE_ANONYMOUS_USER.inc();
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to delete anonymous user", e);
