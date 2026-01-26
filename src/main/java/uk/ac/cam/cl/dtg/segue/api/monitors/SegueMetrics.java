@@ -64,6 +64,11 @@ public final class SegueMetrics {
     public static final Counter USER_REGISTRATION = Counter.build()
             .name("segue_user_registration_total").help("Successful user registrations since process start.").register();
 
+    public static final Counter CREATE_ANONYMOUS_USER = Counter.build()
+            .name("segue_anon_user_creation_total").help("New anonymous users since process start.").register();
+    public static final Counter DELETE_ANONYMOUS_USER = Counter.build()
+            .name("segue_anon_user_deletion_total").help("Anonymous users deleted/merged since process start.").register();
+
     public static final Gauge CURRENT_WEBSOCKET_USERS = Gauge.build()
             .name("segue_websocket_users").help("Currently number of websocket users/browsers.").register();
     // Anonymous user stats are calculated using metrics on the guava cache which holds a reference to each active user

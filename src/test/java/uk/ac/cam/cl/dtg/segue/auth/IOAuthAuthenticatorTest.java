@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
- * Test class for the facebook authenticator class.
+ * Test class for the OAuth authenticator class.
  */
 public abstract class IOAuthAuthenticatorTest {
     protected final String clientId = "someClientId";

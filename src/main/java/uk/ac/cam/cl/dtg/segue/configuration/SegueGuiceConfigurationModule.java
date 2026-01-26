@@ -85,12 +85,11 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv2SCryptv1;
@@ -390,14 +389,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
                     AuthenticationProvider.MICROSOFT));
         }
-
-        // Facebook
-        this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
-        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
 
         // Raspberry Pi
         try {

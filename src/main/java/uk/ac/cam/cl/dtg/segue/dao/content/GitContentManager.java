@@ -93,7 +93,7 @@ public class GitContentManager {
 
     private final Cache<String, ResultsWrapper<Content>> contentDOcache;
     private final Cache<String, ResultsWrapper<ContentDTO>> contentDTOcache;
-    private final Cache<String, GetResponse> contentShaCache;
+    private final Cache<String, GetResponse<ObjectNode>> contentShaCache;
 
     private final String contentIndex;
 
@@ -789,7 +789,10 @@ public class GitContentManager {
                         );
                 contentShaCache.put(contentIndex, shaResponse);
             }
-            return shaResponse.source().get("version").asText();
+            if (null != shaResponse.source()) {
+                return shaResponse.source().get("version").asText();
+            }
+            return "unknown";
         } catch (SegueSearchException e) {
             log.error("Failed to retrieve current content SHA from search provider", e);
             return "unknown";

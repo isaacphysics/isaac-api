@@ -39,7 +39,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
  * Validator that only provides functionality to validate symbolic chemistry questions.
  *
  */
-public class IsaacSymbolicChemistryValidator implements IValidator {
+public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicChemistryValidator.class);
 
     /**
@@ -116,8 +116,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         //         won't have feedback yet.
 
         if (null == chemistryQuestion.getChoices() || chemistryQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question does not have any answers. {} src: {}", question.getId(), question.getCanonicalSourceFile());
 
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
@@ -138,8 +137,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                 // ... that are of the ChemicalFormula type, ...
                 if (!(c instanceof ChemicalFormula)) {
-                    log.error("Isaac Symbolic Chemistry Validator for questionId: " + chemistryQuestion.getId()
-                            + " expected there to be a ChemicalFormula. Instead it found a Choice.");
+                    log.error("Validator for questionId: {} expected a ChemicalFormula. Instead it found a Choice.", chemistryQuestion.getId());
                     continue;
                 }
 
@@ -147,8 +145,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
-                    log.error("Expected python expression, but none found in choice for question id: "
-                            + chemistryQuestion.getId());
+                    log.error("Expected python expression, but none found in choice for question id: {}", chemistryQuestion.getId());
                     continue;
                 }
 
@@ -223,8 +220,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                             // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
                             // problem with the submitted answer.
-                            log.warn("Problem checking formula \"" + submittedFormula.getMhchemExpression()
-                                    + "\" with symbolic chemistry checker: " + response.get("error"));
+                            log.warn("Problem checking formula \"{}\" with symbolic chemistry checker: {}",
+                                    submittedFormula.getMhchemExpression(), response.get("error"));
                         }
 
                         closestMatch = formulaChoice;

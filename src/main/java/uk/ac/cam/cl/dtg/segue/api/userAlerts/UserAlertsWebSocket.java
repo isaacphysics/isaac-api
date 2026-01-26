@@ -189,7 +189,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                     addedUser = null == nullIfNewUser;
                     Set<UserAlertsWebSocket> unsafeUsersSockets = unsafeConnectedSockets.get(connectedUserId);
 
-                    addedSocket = unsafeUsersSockets.size() <= Integer.parseInt(
+                    addedSocket = unsafeUsersSockets.size() < Integer.parseInt(
                             this.properties.getProperty(Constants.MAX_CONCURRENT_WEB_SOCKETS_PER_USER));
                     if (addedSocket) {
                         unsafeUsersSockets.add(this);

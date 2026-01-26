@@ -257,7 +257,7 @@ public class IsaacLLMFreeTextValidatorTest {
                                       int marksAwarded,
                                       List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
             assertEquals(isCorrect, response.isCorrect());
-            assertEquals(marksAwarded, (long) response.getMarksAwarded());
+            assertEquals(marksAwarded, (long) response.getMarks());
             assertTrue(expectedMarks.containsAll(response.getMarkBreakdown()));
             assertTrue(response.getMarkBreakdown().containsAll(expectedMarks));
         }
