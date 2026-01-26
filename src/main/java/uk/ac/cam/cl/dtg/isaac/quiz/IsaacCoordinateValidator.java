@@ -177,7 +177,7 @@ public class IsaacCoordinateValidator implements IValidator {
                     // If no strict match was found, check for a subset match in two ways:
 
                     // For correct choices, check if the submitted items are a proper subset of the choice
-                    if ((feedbackIsNullOrEmpty(feedback)) && coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
+                    if (coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
                         boolean allSubmittedItemsInChoiceItems = true;
                         for (CoordinateItem submittedItem : submittedItems) {
                             boolean submittedItemInChoiceItem = false;
@@ -201,7 +201,7 @@ public class IsaacCoordinateValidator implements IValidator {
                     // If subset matching is allowed for this choice, check if the choice is a proper subset of the
                     // submitted items
                     boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
-                    if ((feedbackIsNullOrEmpty(feedback)) && allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
+                    if (allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
                         boolean allChoiceItemsInSubmittedItems = true;
                         for (CoordinateItem choiceItem : choiceItems) {
                             boolean choiceItemInSubmittedItems = false;
@@ -219,6 +219,7 @@ public class IsaacCoordinateValidator implements IValidator {
                         if (allChoiceItemsInSubmittedItems) {
                             responseCorrect = coordinateChoice.isCorrect();
                             feedback = (Content) coordinateChoice.getExplanation();
+                            break;
                         }
                     }
 
