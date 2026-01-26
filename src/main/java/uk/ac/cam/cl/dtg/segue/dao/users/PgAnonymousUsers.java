@@ -32,15 +32,15 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CREATE_ANONYMOUS_
 import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.DELETE_ANONYMOUS_USER;
 
 /**
- * @author Stephen Cummins
- *
+ *  Store anonymous user data in Postgres.
  */
 public class PgAnonymousUsers implements IAnonymousUserDataManager {
     private final PostgresSqlDb database;
 
     /**
      * PgAnonymousUsers.
-     * @param ds - the postgres datasource to use
+     *
+     * @param ds - the postgres datasource to use.
      */
     @Inject
     public PgAnonymousUsers(final PostgresSqlDb ds) {
@@ -49,8 +49,8 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
 
     @Override
     public AnonymousUser storeAnonymousUser(final AnonymousUser user) throws SegueDatabaseException {
-        String query = "INSERT INTO temporary_user_store (id, temporary_app_data, created, last_updated)" +
-                " VALUES (?,?::text::jsonb,?,?);";
+        String query = "INSERT INTO temporary_user_store (id, temporary_app_data, created, last_updated)"
+                + " VALUES (?,?::text::jsonb,?,?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
@@ -65,7 +65,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             CREATE_ANONYMOUS_USER.inc();
             return user;
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception on creating anonymous user ", e);
         }
     }
@@ -84,7 +84,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             }
             DELETE_ANONYMOUS_USER.inc();
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to delete anonymous user", e);
         }
     }
@@ -110,7 +110,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
 
                 return userToReturn;
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception while trying to get anonymous user", e);
         }
     }
@@ -124,17 +124,17 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
         ) {
             results.next();
             return results.getLong("TOTAL");
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception: Unable to count log events by type", e);
         }
     }
 
     /**
      * Mutates input object update date and persists update to db.
-     * @param user - to update
-     * @return user;
+     *
+     * @param user - to update.
      */
-    private AnonymousUser updateLastUpdatedDate(final AnonymousUser user) throws SegueDatabaseException {
+    private void updateLastUpdatedDate(final AnonymousUser user) throws SegueDatabaseException {
         Objects.requireNonNull(user);
 
         String query = "UPDATE temporary_user_store SET last_updated = ? WHERE id = ?";
@@ -147,9 +147,7 @@ public class PgAnonymousUsers implements IAnonymousUserDataManager {
             pst.execute();
 
             user.setLastUpdated(newUpdatedDate);
-
-            return user;
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
