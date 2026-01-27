@@ -38,6 +38,7 @@ public class IsaacCoordinateValidatorTest {
 
     private IsaacCoordinateValidator validator;
     private IsaacCoordinateQuestion someCoordinateQuestion;
+    private IsaacCoordinateQuestion someUnorderedCoordinateQuestion;
 
     private final CoordinateItem item1 = new CoordinateItem(List.of("1", "2"));
     private final CoordinateItem item2 = new CoordinateItem(List.of("2", "1"));
@@ -54,11 +55,14 @@ public class IsaacCoordinateValidatorTest {
     public final void setUp() {
         validator = new IsaacCoordinateValidator();
 
-        // Set up the question object:
+        // Set up the question objects:
         someCoordinateQuestion = new IsaacCoordinateQuestion();
         someCoordinateQuestion.setNumberOfDimensions(2);
         someCoordinateQuestion.setSignificantFiguresMin(1);
         someCoordinateQuestion.setOrdered(true);
+
+        someUnorderedCoordinateQuestion = new IsaacCoordinateQuestion();
+        someUnorderedCoordinateQuestion.setNumberOfDimensions(2);
 
         List<Choice> answerList = Lists.newArrayList();
         ItemChoice someIncorrectChoice = new CoordinateChoice();
@@ -72,10 +76,11 @@ public class IsaacCoordinateValidatorTest {
         someIncorrectChoice.setCorrect(false);
         someIncorrectChoice.setExplanation(someIncorrectExplanation);
 
-        // Add both choices to question, incorrect first:
+        // Add both choices to questions, incorrect first:
         answerList.add(someIncorrectChoice);
         answerList.add(someCorrectChoice);
         someCoordinateQuestion.setChoices(answerList);
+        someUnorderedCoordinateQuestion.setChoices(answerList);
     }
 
     @Test
@@ -169,7 +174,7 @@ public class IsaacCoordinateValidatorTest {
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1));
 
-        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("some of the correct values"));
@@ -180,7 +185,7 @@ public class IsaacCoordinateValidatorTest {
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item2, item4));
 
-        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
 
         assertTrue(response.isCorrect());
     }
