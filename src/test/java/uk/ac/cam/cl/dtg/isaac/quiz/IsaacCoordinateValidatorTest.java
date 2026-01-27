@@ -59,6 +59,7 @@ public class IsaacCoordinateValidatorTest {
         someCoordinateQuestion = new IsaacCoordinateQuestion();
         someCoordinateQuestion.setNumberOfDimensions(2);
         someCoordinateQuestion.setSignificantFiguresMin(1);
+        someCoordinateQuestion.setSignificantFiguresMax(1);
         someCoordinateQuestion.setOrdered(true);
 
         someUnorderedCoordinateQuestion = new IsaacCoordinateQuestion();
@@ -188,6 +189,18 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
 
         assertTrue(response.isCorrect());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestIncorrectSignificantFigures() {
+        CoordinateItem ci = new CoordinateItem(List.of("1.00", "2.00"));
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(ci));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("significant figures"));
     }
 
     // Test the internals of the item-ordering:
