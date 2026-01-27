@@ -54,6 +54,9 @@ public class GameboardItem {
     // Optional record of the question ID which supersedes this one.
     @Nullable
     private String supersededBy;
+    // Indicates whether this item is deprecated.
+    @Nullable
+    private Boolean deprecated;
     
     /**
      * Generic constructor.
@@ -100,6 +103,8 @@ public class GameboardItem {
         this.setPassMark(original.getPassMark());
         this.setState(original.getState());
         this.setTags(original.getTags());
+        this.setSupersededBy(original.getSupersededBy());
+        this.setDeprecated(original.getDeprecated());
     }
 
     /**
@@ -393,6 +398,24 @@ public class GameboardItem {
      */
     public void setSupersededBy(final String supersededBy) {
         this.supersededBy = supersededBy;
+    }
+
+    /**
+     * Gets whether the item is deprecated.
+     *
+     * @return whether deprecated
+     */
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    /**
+     * Sets whether the item is deprecated.
+     *
+     * @param deprecated whether deprecated
+     */
+    public void setDeprecated(final Boolean deprecated) {
+        this.deprecated = deprecated;
     }
 
     public String getContentType() {
