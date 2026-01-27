@@ -3,6 +3,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.apache.commons.lang3.SystemUtils;
 import org.eclipse.jgit.api.Git;
 import org.junit.jupiter.api.AfterAll;
@@ -155,6 +157,7 @@ public class AbstractIsaacIntegrationTest {
     protected static QuizQuestionManager quizQuestionManager;
     protected static PgUsers pgUsers;
     protected static ContentSubclassMapper contentMapper;
+    protected static Injector injector;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -199,6 +202,26 @@ public class AbstractIsaacIntegrationTest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
+        // does not match our production config, but able to inject classes with a no-arguments constructor
+        injector = Guice.createInjector();
+
+        // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
+        /*
+        // Create Mocked Injector
+        SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(properties);
+        Module productionModule = new SegueGuiceConfigurationModule();
+        Module testModule = Modules.override(productionModule).with(new AbstractModule() {
+            @Override protected void configure() {
+                // ... register mocks
+                bind(UserAccountManager.class).toInstance(userAccountManager);
+                bind(GameManager.class).toInstance(createNiceMock(GameManager.class));
+                bind(GroupChangedService.class).toInstance(createNiceMock(GroupChangedService.class));
+                bind(EventBookingManager.class).toInstance(eventBookingManager);
+            }
+        });
+        Injector injector = Guice.createInjector(testModule);
+         */
+
         // Initialise Postgres - we will create a new, clean instance for each test class.
         postgres = new PostgreSQLContainer<>("postgres:16")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
@@ -249,8 +272,7 @@ public class AbstractIsaacIntegrationTest {
         contentMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
         mainMapper = MainMapper.INSTANCE;
-        questionManager = new QuestionManager(contentMapper, mainMapper, pgQuestionAttempts);
-
+        questionManager = new QuestionManager(contentMapper, mainMapper, pgQuestionAttempts, injector);
 
         providersToRegister = new HashMap<>();
         providersToRegister.put(AuthenticationProvider.RASPBERRYPI, new RaspberryPiOidcAuthenticator(
@@ -332,23 +354,6 @@ public class AbstractIsaacIntegrationTest {
         replay(httpSession);
 
         contentSummarizerService = new ContentSummarizerService(mainMapper, new URIManager(properties));
-
-        // NOTE: The next part is commented out until we figure out a way of actually using Guice to do the heavy lifting for us..
-        /*
-        // Create Mocked Injector
-        SegueGuiceConfigurationModule.setGlobalPropertiesIfNotSet(properties);
-        Module productionModule = new SegueGuiceConfigurationModule();
-        Module testModule = Modules.override(productionModule).with(new AbstractModule() {
-            @Override protected void configure() {
-                // ... register mocks
-                bind(UserAccountManager.class).toInstance(userAccountManager);
-                bind(GameManager.class).toInstance(createNiceMock(GameManager.class));
-                bind(GroupChangedService.class).toInstance(createNiceMock(GroupChangedService.class));
-                bind(EventBookingManager.class).toInstance(eventBookingManager);
-            }
-        });
-        Injector injector = Guice.createInjector(testModule);
-         */
 
         integrationTestUsers = new ITUsers(pgUsers);
     }

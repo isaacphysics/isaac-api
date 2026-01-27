@@ -1501,10 +1501,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return injector;
     }
 
-    public static void setInjector(final Injector newInjector) {
-        injector = newInjector;
-    }
-
     @Provides
     @Singleton
     public static Clock getDefaultClock() {

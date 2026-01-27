@@ -57,7 +57,6 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
@@ -88,6 +87,7 @@ public class QuestionManager {
     private final ContentSubclassMapper contentSubclassMapper;
     private final MainMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
+    private final Injector injector;
     /**
      * Create a default Question manager object.
      * 
@@ -97,10 +97,11 @@ public class QuestionManager {
      */
     @Inject
     public QuestionManager(final ContentSubclassMapper contentSubclassMapper, final MainMapper mapper,
-                           final IQuestionAttemptManager questionPersistenceManager) {
+                           final IQuestionAttemptManager questionPersistenceManager, final Injector injector) {
         this.contentSubclassMapper = contentSubclassMapper;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
+        this.injector = injector;
     }
 
     /**
@@ -147,7 +148,7 @@ public class QuestionManager {
      * @return a Validator
      */
     @SuppressWarnings("unchecked")
-    private static IValidator locateValidator(final Class<? extends Question> questionType) {
+    private IValidator locateValidator(final Class<? extends Question> questionType) {
         // check we haven't gone too high up the superclass tree
         if (!Question.class.isAssignableFrom(questionType)) {
             return null;
@@ -158,9 +159,7 @@ public class QuestionManager {
 
             log.debug("Validator for question validation found. Using : "
                     + questionType.getAnnotation(ValidatesWith.class).value());
-            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
-
         } else if (questionType.equals(Question.class)) {
             // so if we get here then we haven't found a ValidatesWith class, so
             // we should just give up and return null.
@@ -190,7 +189,6 @@ public class QuestionManager {
 
             log.debug("Specifier for specifiation creation found. Using : "
                 + choiceClass.getAnnotation(SpecifiesWith.class).value());
-            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
 
         } else if (choiceClass.equals(ChoiceDTO.class)) {
@@ -341,7 +339,7 @@ public class QuestionManager {
             }
             ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.getDeclaredConstructor().newInstance();
             testQuestion.setChoices(testDefinition.getUserDefinedChoices());
-            IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
+            IValidator questionValidator = locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
                 throw new ValidatorUnavailableException("Could not find a validator for the question");
             }

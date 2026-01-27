@@ -236,12 +236,6 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
 
     private TestServer testServer() throws Exception {
-        Injector testInjector = createNiceMock(Injector.class);
-        expect(testInjector.getInstance(IsaacStringMatchValidator.class)).andReturn(stringMatchValidator).anyTimes();
-        expect(testInjector.getInstance(IsaacDndValidator.class)).andReturn(dndValidator).anyTimes();
-        replay(testInjector);
-        SegueGuiceConfigurationModule.setInjector(testInjector);
-
         return startServer(
             new QuestionFacade(properties, contentMapper, contentManager, userAccountManager,
                 userPreferenceManager, questionManager, logManager, misuseMonitor, null, userAssociationManager)
@@ -262,7 +256,4 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         DndChoice parsed = contentMapper.getSharedContentObjectMapper().readValue(value.toString(), DndChoice.class);
         return contentMapper.getSharedContentObjectMapper().writeValueAsString(parsed);
     }
-
-    private static final IsaacStringMatchValidator stringMatchValidator = new IsaacStringMatchValidator();
-    private static final IsaacDndValidator dndValidator = new IsaacDndValidator();
 }
