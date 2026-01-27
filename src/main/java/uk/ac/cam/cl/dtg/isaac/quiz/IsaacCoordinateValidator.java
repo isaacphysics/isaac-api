@@ -91,7 +91,7 @@ public class IsaacCoordinateValidator implements IValidator {
 
         // Check for correct number of significant figures if required
         boolean shouldValidateWithSigFigs = null != coordinateQuestion.getSignificantFiguresMin() && null != coordinateQuestion.getSignificantFiguresMax();
-        if (shouldValidateWithSigFigs) {
+        if (null == feedback && shouldValidateWithSigFigs) {
             for (CoordinateItem item : submittedItems) {
                 for (String value : item.getCoordinates()) {
                     boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(value, coordinateQuestion.getSignificantFiguresMin(), log);
