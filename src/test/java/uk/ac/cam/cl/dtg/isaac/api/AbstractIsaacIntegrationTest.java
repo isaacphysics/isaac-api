@@ -90,6 +90,7 @@ import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.servlet.http.HttpSession;
+import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -199,6 +200,8 @@ public class AbstractIsaacIntegrationTest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
+        Git.init().setDirectory(new File("/tmp/dummy_repo")).call();
+
         // Initialise Postgres - we will create a new, clean instance for each test class.
         postgres = new PostgreSQLContainer<>("postgres:16")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
