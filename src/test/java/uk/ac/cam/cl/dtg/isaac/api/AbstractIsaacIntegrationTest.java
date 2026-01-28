@@ -200,7 +200,7 @@ public class AbstractIsaacIntegrationTest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
-        Git.init().setDirectory(new File("/tmp/dummy_repo")).call();
+        Git.init().setDirectory(new File("tmp/dummy_repo")).call();
 
         // Initialise Postgres - we will create a new, clean instance for each test class.
         postgres = new PostgreSQLContainer<>("postgres:16")

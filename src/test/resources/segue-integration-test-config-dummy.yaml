@@ -44,7 +44,7 @@ POSTGRES_DB_URL: _
 POSTGRES_DB_USER: _
 POSTGRES_DB_PASSWORD: _
 # Git
-LOCAL_GIT_DB: "/tmp/dummy_repo"
+LOCAL_GIT_DB: "tmp/dummy_repo"
 REMOTE_GIT_SSH_KEY_PATH: _
 REMOTE_GIT_SSH_URL: _
 # Search
