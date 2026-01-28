@@ -57,6 +57,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
@@ -77,9 +78,9 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.VALIDATOR_LATENCY
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
  * Questions.
- * 
+ *
  * It is also responsible for orchestrating question attempt persistence.
- * 
+ *
  */
 public class QuestionManager {
     private static final Logger log = LoggerFactory.getLogger(QuestionManager.class);
@@ -87,26 +88,24 @@ public class QuestionManager {
     private final ContentSubclassMapper contentSubclassMapper;
     private final MainMapper mapper;
     private final IQuestionAttemptManager questionAttemptPersistenceManager;
-    private final Injector injector;
     /**
      * Create a default Question manager object.
-     * 
+     *
      * @param mapper
      *            - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs and DTOs.
      * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
     public QuestionManager(final ContentSubclassMapper contentSubclassMapper, final MainMapper mapper,
-                           final IQuestionAttemptManager questionPersistenceManager, final Injector injector) {
+                           final IQuestionAttemptManager questionPersistenceManager) {
         this.contentSubclassMapper = contentSubclassMapper;
         this.mapper = mapper;
         this.questionAttemptPersistenceManager = questionPersistenceManager;
-        this.injector = injector;
     }
 
     /**
      * Validate client answer to recorded answer.
-     * 
+     *
      * @param question
      *            The question to which the answer must be validated against.
      * @param submittedAnswer
@@ -142,13 +141,13 @@ public class QuestionManager {
 
     /**
      * Reflection to try and determine the associated validator for the question being answered.
-     * 
+     *
      * @param questionType
      *            - the type of question being answered.
      * @return a Validator
      */
     @SuppressWarnings("unchecked")
-    private IValidator locateValidator(final Class<? extends Question> questionType) {
+    private static IValidator locateValidator(final Class<? extends Question> questionType) {
         // check we haven't gone too high up the superclass tree
         if (!Question.class.isAssignableFrom(questionType)) {
             return null;
@@ -159,7 +158,9 @@ public class QuestionManager {
 
             log.debug("Validator for question validation found. Using : "
                     + questionType.getAnnotation(ValidatesWith.class).value());
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
+
         } else if (questionType.equals(Question.class)) {
             // so if we get here then we haven't found a ValidatesWith class, so
             // we should just give up and return null.
@@ -188,7 +189,8 @@ public class QuestionManager {
         if (choiceClass.isAnnotationPresent(SpecifiesWith.class)) {
 
             log.debug("Specifier for specifiation creation found. Using : "
-                + choiceClass.getAnnotation(SpecifiesWith.class).value());
+                    + choiceClass.getAnnotation(SpecifiesWith.class).value());
+            Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
 
         } else if (choiceClass.equals(ChoiceDTO.class)) {
@@ -204,11 +206,11 @@ public class QuestionManager {
 
     /**
      * This method will ensure any user question attempt information available is used to augment this question object.
-     * 
+     *
      * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
      *
      * Note: It will not do anything to related content
-     * 
+     *
      * @param page
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
      *            question DTOs.
@@ -219,7 +221,7 @@ public class QuestionManager {
      * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
      */
     public void augmentQuestionObjects(final SeguePageDTO page, final String userId,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+                                       final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         List<QuestionDTO> questionsToAugment = extractQuestionObjects(page);
 
@@ -230,7 +232,7 @@ public class QuestionManager {
 
     /**
      * Modify a question objects in a page such that it contains bestAttempt information if we can provide it.
-     * 
+     *
      * @param page
      *            - the page this object may be mutated as a result of this method. i.e BestAttempt field set on
      *            question DTOs.
@@ -240,8 +242,8 @@ public class QuestionManager {
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
      */
     private void augmentQuestionObjectWithAttemptInformation(final SeguePageDTO page,
-            final List<QuestionDTO> questionsToAugment,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+                                                             final List<QuestionDTO> questionsToAugment,
+                                                             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
 
         if (null == usersQuestionAttempts) {
             return;
@@ -282,7 +284,7 @@ public class QuestionManager {
 
     /**
      * Converts a QuestionValidationResponse into a QuestionValidationResponseDTO.
-     * 
+     *
      * @param questionValidationResponse
      *            - the thing to convert.
      * @return QuestionValidationResponseDTO
@@ -300,14 +302,14 @@ public class QuestionManager {
                     + " to a QuestionValidationResponse.");
         }
     }
-    
+
     /**
      * Record a question attempt for a given user.
      * @param user - user that made the attempt.
      * @param questionResponse - the outcome of the attempt to be persisted.
      */
     public void recordQuestionAttempt(final AbstractSegueUserDTO user,
-            final QuestionValidationResponseDTO questionResponse) throws SegueDatabaseException {
+                                      final QuestionValidationResponseDTO questionResponse) throws SegueDatabaseException {
         QuestionValidationResponse questionResponseDO = this.mapper.map(questionResponse);
 
         String questionPageId = extractPageIdFromQuestionId(questionResponse.getQuestionId());
@@ -315,19 +317,19 @@ public class QuestionManager {
             RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
 
             this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
-                questionPageId, questionResponse.getQuestionId(), questionResponseDO);
+                    questionPageId, questionResponse.getQuestionId(), questionResponseDO);
             log.debug("Question information recorded for user: " + registeredUser.getId());
 
         } else if (user instanceof AnonymousUserDTO) {
             AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
 
             this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
-                questionPageId, questionResponse.getQuestionId(), questionResponseDO);
+                    questionPageId, questionResponse.getQuestionId(), questionResponseDO);
         } else {
             log.error("Unexpected user type. Unable to record question response");
         }
     }
-    
+
     /** Test a question of a particular type against a series of test cases **/
     public List<TestCase> testQuestion(final String questionType, final TestQuestion testDefinition)
             throws BadRequestException, ValidatorUnavailableException {
@@ -339,7 +341,7 @@ public class QuestionManager {
             }
             ChoiceQuestion testQuestion = (ChoiceQuestion) questionClass.getDeclaredConstructor().newInstance();
             testQuestion.setChoices(testDefinition.getUserDefinedChoices());
-            IValidator questionValidator = locateValidator(testQuestion.getClass());
+            IValidator questionValidator = QuestionManager.locateValidator(testQuestion.getClass());
             if (null == questionValidator) {
                 throw new ValidatorUnavailableException("Could not find a validator for the question");
             }
@@ -360,10 +362,10 @@ public class QuestionManager {
             throw new BadRequestException(String.format(e.getMessage()));
         }
     }
-    
+
     /**
      * getQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
-     * 
+     *
      * @param user
      *            - with the session information included.
      * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
@@ -417,7 +419,7 @@ public class QuestionManager {
             final RegisteredUserDTO user, final String questionPageId) throws SegueDatabaseException {
         return questionAttemptPersistenceManager.getQuestionAttempts(user.getId(), questionPageId);
     }
-    
+
     /**
      * @param users who we are interested in.
      * @param questionPageIds we want to look up.
@@ -450,10 +452,10 @@ public class QuestionManager {
         return this.getMatchingLightweightQuestionAttempts(Collections.singletonList(user), questionPageIds)
                 .getOrDefault(user.getId(), Collections.emptyMap());
     }
-    
+
     /**
      * mergeAnonymousQuestionAttemptsIntoRegisteredUser.
-     * 
+     *
      * @param anonymousUser
      *            to look up question attempts
      * @param registeredUser
@@ -462,7 +464,7 @@ public class QuestionManager {
      *             - if something goes wrong.
      */
     public void mergeAnonymousQuestionAttemptsIntoRegisteredUser(final AnonymousUserDTO anonymousUser,
-            final RegisteredUserDTO registeredUser) throws SegueDatabaseException {
+                                                                 final RegisteredUserDTO registeredUser) throws SegueDatabaseException {
         this.questionAttemptPersistenceManager.mergeAnonymousQuestionInformationWithRegisteredUserRecord(
                 anonymousUser.getSessionId(), registeredUser.getId());
     }
@@ -512,7 +514,7 @@ public class QuestionManager {
      */
     public static List<QuestionDTO> extractQuestionObjects(ContentDTO content) {
         return QuestionManager.extractQuestionObjectsRecursively(content,
-            new ArrayList<>());
+                new ArrayList<>());
     }
 
     /**
@@ -528,7 +530,7 @@ public class QuestionManager {
      * @return The modified result array.
      */
     private static List<QuestionDTO> extractQuestionObjectsRecursively(final ContentDTO toExtract,
-            final List<QuestionDTO> result) {
+                                                                       final List<QuestionDTO> result) {
         if (toExtract instanceof QuestionDTO) {
             // we found a question so add it to the list.
             result.add((QuestionDTO) toExtract);
@@ -560,7 +562,7 @@ public class QuestionManager {
     /**
      * This is a helper method that will shuffle multiple choice questions and item questions
      * based on a user specified seed.
-     * 
+     *
      * @param seed
      *            - Randomness
      * @param questions
@@ -614,8 +616,8 @@ public class QuestionManager {
         if (null == specifier) {
             log.error("Unable to locate a valid specifier for this choice: " + answer);
             return Response.serverError()
-                .entity("Unable to detect question validator for " + "this object. Unable to verify answer")
-                .build();
+                    .entity("Unable to detect question validator for " + "this object. Unable to verify answer")
+                    .build();
         }
 
         Choice answerFromUser = mapper.map(answer);
@@ -624,7 +626,7 @@ public class QuestionManager {
             specification = specifier.createSpecification(answerFromUser);
         } catch (ValidatorUnavailableException e) {
             return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
-                + e.getMessage());
+                    + e.getMessage());
         }
 
         ResultsWrapper<String> results = new ResultsWrapper<>(Collections.singletonList(specification), 1L);
