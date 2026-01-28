@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.ItemValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.LLMFreeTextQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
@@ -87,6 +88,8 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
             return mapper.readValue(jsonString, ItemValidationResponse.class);
         } else if (questionResponseType.equals("llmFreeTextChoice")) {
             return mapper.readValue(jsonString, LLMFreeTextQuestionValidationResponse.class);
+        } else if (questionResponseType.equals("dndChoice")) {
+            return mapper.readValue(jsonString, DndValidationResponse.class);
         } else {
             return mapper.readValue(jsonString, QuestionValidationResponse.class);
         }

@@ -21,6 +21,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
@@ -36,6 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Formula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.InlineRegion;
@@ -45,6 +47,8 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
+import uk.ac.cam.cl.dtg.isaac.util.ContentValidatorUtils;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
@@ -88,6 +92,13 @@ public class ContentIndexer {
 
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
+
+    public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
+    public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
+    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
+            + "all drop zones.";
+    public static final String FEEDBACK_QUESTION_UNRECOGNISED_DZ = "This question contains an answer with unrecognised "
+            + "drop zones.";
 
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentSubclassMapper mapper) {
@@ -1147,6 +1158,33 @@ public class ContentIndexer {
                     }
                     numberItems = items;
                 }
+            }
+        }
+
+        if (content instanceof IsaacDndQuestion) {
+            IsaacDndQuestion q = (IsaacDndQuestion) content;
+            IsaacDndValidator.DndProblem res = IsaacDndValidator.getProblemsWithQuestion(q);
+            if (res == null) {
+                List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
+                if (dropZones.isEmpty()) {
+                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_NO_DZ, q);
+                } else if (dropZones.size() != new HashSet<>(dropZones).size()) {
+                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_DUP_DZ, q);
+                } else if (q.getChoices().stream().anyMatch(c ->
+                        c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
+                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNUSED_DZ, q);
+                } else if (q.getChoices().stream().anyMatch(c ->
+                        ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
+                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNRECOGNISED_DZ, q);
+                }
+            }
+            if (res != null) {
+                var template = "Drag-and-drop Question: %s has a problem. %s";
+                this.registerContentProblem(
+                    content,
+                    String.format(template, content.getId(), res.message),
+                    indexProblemCache
+                );
             }
         }
 

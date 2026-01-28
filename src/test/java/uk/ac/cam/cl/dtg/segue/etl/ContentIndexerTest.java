@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.etl;
  */
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
+import static uk.ac.cam.cl.dtg.segue.etl.ContentIndexer.FEEDBACK_QUESTION_UNUSED_DZ;
 
 import java.util.*;
 
@@ -31,6 +32,8 @@ import org.powermock.reflect.Whitebox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -396,6 +399,148 @@ public class ContentIndexerTest {
         for (Content key : indexProblemCache.keySet()) {
             assertTrue(indexProblemCache.get(key).isEmpty());
         }
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionCorrect_checkNoError() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.question(
+            IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+        }
+
+        // ASSERT
+        assertEquals(0, problemCache.size());
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionNoDropZones_checkErrorIsCorrect() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.question(
+            IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(null);
+        dndQuestion.setCanonicalSourceFile("");
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of(
+            String.format("Drag-and-drop Question: %s has a problem. This question doesn't have any drop zones.",
+                          dndQuestion.getId())));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionDuplicateDropZones_checkErrorIsCorrect() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.question(
+                IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_1]")));
+        dndQuestion.setCanonicalSourceFile("");
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of(
+                String.format("Drag-and-drop Question: %s has a problem. This question contains duplicate drop zones.",
+                        dndQuestion.getId())));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionUnusedDropZones_checkErrorIsCorrect() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.question(
+                IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")));
+        dndQuestion.setCanonicalSourceFile("");
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of(
+                String.format("Drag-and-drop Question: %s has a problem. %s",
+                        dndQuestion.getId(), FEEDBACK_QUESTION_UNUSED_DZ)));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_dndQuestionUnrecognisedDropZones_checkErrorIsCorrect() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.question(
+                IsaacDndValidatorTest.correctChoice(IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_2"))
+        );
+        dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
+        dndQuestion.setCanonicalSourceFile("");
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of(
+                String.format("Drag-and-drop Question: %s has a problem. This question contains an answer with "
+                        + "unrecognised drop zones.", dndQuestion.getId())));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_answerDuplicateDropZones_checkErrorIsCorrect() throws Exception {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var dndQuestion = IsaacDndValidatorTest.question(
+            IsaacDndValidatorTest.correctChoice(
+                IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"),
+                IsaacDndValidatorTest.item(IsaacDndValidatorTest.item_3cm, "leg_1"))
+        );
+        dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
+        dndQuestion.setCanonicalSourceFile("");
+        contents.add(dndQuestion);
+
+        // ACT
+        for (Content content : contents) {
+            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of(
+                String.format("Drag-and-drop Question: %s has a problem. The question is invalid, because it has an"
+                              + " answer with duplicate drop zones.", dndQuestion.getId())));
+        assertEquals(expected, List.copyOf(problemCache.values()));
     }
 
     private Content createContentHierarchy(final int numLevels,

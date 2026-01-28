@@ -1,0 +1,84 @@
+# Isaac Configuration: integration test (Unix-like)
+#
+# Used when initialising the Guice injector in `SegueGuiceConfigurationModule`. In integration testing, we don't use
+# Guice to create facades, managers or other dependencies. However, Guice is still needed because some
+# code still uses it to dynamically request dependencies (eg. QuestionManager#locateValidator). This config ensures
+# that Guice can provide at least trivial, no-arg dependencies. It's not intended to be actually used for anything.
+
+# To make sure none of this is actually used, I passed all empty values. An exception to this the `LOCAL_GIT_DB`
+# variable, which needs to point to a valid repo. Otherwise, it throws an exception and blocks the creation of the
+# injector. The GitDB instance pointing to the valid repo is never meant to be used, though.
+
+# Environment Configuration
+HOST_NAME: _
+PROXY_PATH: _
+MAILER_SMTP_SERVER: _
+MAIL_FROM_ADDRESS: _
+MAIL_RECEIVERS: _
+MAIL_NAME: _
+REPLY_TO_ADDRESS: _
+SERVER_ADMIN_ADDRESS: _
+EMAIL_SIGNATURE: _
+EVENT_ADMIN_EMAIL: _
+EVENT_ICAL_UID_DOMAIN: _
+EVENT_GROUP_RESERVATION_LIMIT: _
+SCHOOL_CSV_LIST_PATH: _
+# Content Configuration
+CONTENT_INDEX: _
+CONTENT_INDICES_LOCATION: _
+SHOW_ONLY_PUBLISHED_CONTENT: _
+HIDE_REGRESSION_TEST_CONTENT: _
+MAX_CONTENT_CACHE_TIME: _
+LOGGING_ENABLED: _
+RESTRICTED_SIGNUP_EMAIL_REGEX: _
+GAMEBOARD_QUESTION_LIMIT: _
+#
+# ETL
+ETL_HOSTNAME: _
+ETL_PORT: _
+# Mode can be PROD or DEV
+SEGUE_APP_ENVIRONMENT: _
+# Database Settings
+SEGUE_DB_NAME: _
+POSTGRES_DB_URL: _
+POSTGRES_DB_USER: _
+POSTGRES_DB_PASSWORD: _
+# Git
+LOCAL_GIT_DB: "tmp/dummy_repo"
+REMOTE_GIT_SSH_KEY_PATH: _
+REMOTE_GIT_SSH_URL: _
+# Search
+SEARCH_CLUSTER_NAME: _
+SEARCH_CLUSTER_ADDRESS: _
+SEARCH_CLUSTER_PORT: _
+SEARCH_CLUSTER_INFO_PORT: "0"
+SEARCH_RESULTS_HARD_LIMIT: _
+SEARCH_CLUSTER_USERNAME: _
+SEARCH_CLUSTER_PASSWORD: _
+# Equality Checker
+EQUALITY_CHECKER_HOST: _
+EQUALITY_CHECKER_PORT: _
+# Chemistry Checker
+CHEMISTRY_CHECKER_HOST: _
+CHEMISTRY_CHECKER_PORT: _
+# WebSockets
+MAX_CONCURRENT_WEB_SOCKETS_PER_USER: _
+# FastTrack
+FASTTRACK_GAMEBOARD_WHITELIST: _
+# Security
+HMAC_SALT: _
+SESSION_EXPIRY_SECONDS_DEFAULT: _
+SESSION_EXPIRY_SECONDS_REMEMBERED: _
+EMAIL_VERIFICATION_ENDPOINT_TOKEN: _
+# Federated Authentication
+# Google
+GOOGLE_CLIENT_SECRET_LOCATION: _
+GOOGLE_CALLBACK_URI: _
+GOOGLE_OAUTH_SCOPES: _
+# Prometheus Metrics Export
+API_METRICS_EXPORT_PORT: "0"
+# User Preferences
+BETA_FEATURE: _
+EXAM_BOARD: _
+BOOLEAN_NOTATION: _
+DISPLAY_SETTING: _
