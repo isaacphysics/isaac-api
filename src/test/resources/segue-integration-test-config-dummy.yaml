@@ -1,5 +1,14 @@
 # Isaac Configuration: integration test (Unix-like)
 #
+# Used when initialising the Guice injector in `SegueGuiceConfigurationModule`. In integration testing, we don't use
+# Guice to create facades, managers or other dependencies. However, Guice is still needed because some
+# code still uses it to dynamically request dependencies (eg. QuestionManager#locateValidator). This config ensures
+# that Guice can provide at least trivial, no-arg dependencies. It's not intended to be actually used for anything.
+
+# To make sure none of this is actually used, I passed all empty values. An exception to this the `LOCAL_GIT_DB`
+# variable, which needs to point to a valid repo. Otherwise, it throws an exception and blocks the creation of the
+# injector. The GitDB instance pointing to the valid repo is never meant to be used, though.
+
 # Environment Configuration
 HOST_NAME: _
 PROXY_PATH: _
