@@ -1,5 +1,12 @@
-package uk.ac.cam.cl.dtg.util;
+package uk.ac.cam.cl.dtg.isaac.dos.content;
 
+/**
+ * Class to store the data needed to represent a region in a figure.
+ *
+ * Like {@link ExternalReference} this class does not need a DTO mapping,
+ * since it does not extend nor involve {@link ContentBase} and the DTO
+ * class would otherwise be identical.
+ */
 public class FigureRegion {
     private String id;
     private String minWidth;
@@ -11,7 +18,7 @@ public class FigureRegion {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -19,7 +26,7 @@ public class FigureRegion {
         return minWidth;
     }
 
-    public void setMinWidth(String minWidth) {
+    public void setMinWidth(final String minWidth) {
         this.minWidth = minWidth;
     }
 
@@ -27,7 +34,7 @@ public class FigureRegion {
         return width;
     }
 
-    public void setWidth(Float width) {
+    public void setWidth(final Float width) {
         this.width = width;
     }
 
@@ -35,7 +42,7 @@ public class FigureRegion {
         return left;
     }
 
-    public void setLeft(Float left) {
+    public void setLeft(final Float left) {
         this.left = left;
     }
 
@@ -43,7 +50,7 @@ public class FigureRegion {
         return top;
     }
 
-    public void setTop(Float top) {
+    public void setTop(final Float top) {
         this.top = top;
     }
 }

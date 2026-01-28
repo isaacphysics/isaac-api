@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <segue.version>v3.21.6-SNAPSHOT</segue.version>
+        <segue.version>v3.21.7-SNAPSHOT</segue.version>
         <log4j.version>2.25.3</log4j.version>
         <resteasy.version>6.2.14.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
@@ -223,7 +223,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.27.6</version>
+            <version>3.27.7</version>
             <scope>test</scope>
         </dependency>
 
@@ -403,8 +403,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.elasticsearch.client</groupId>
-            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
             <version>7.17.29</version>
         </dependency>
 

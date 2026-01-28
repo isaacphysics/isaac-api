@@ -15,6 +15,38 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
+import co.elastic.clients.elasticsearch._types.query_dsl.ConstantScoreQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
+import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.RandomScoreFunction;
+import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.RegexpQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.elasticsearch.indices.IndexState;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.base.CaseFormat;
@@ -27,33 +59,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.lucene.search.function.CombineFunction;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -75,6 +81,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -89,7 +96,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
     private static final String ES_FIELD_CONNECTOR = ".";
 
-    protected final RestHighLevelClient client;
+    protected final ElasticsearchClient client;
 
     // to try and improve performance of searches with a -1 limit.
     private static final int LARGE_LIMIT = 100;
@@ -110,7 +117,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the client that the provider should be using.
      */
     @Inject
-    public ElasticSearchProvider(final RestHighLevelClient searchClient) {
+    public ElasticSearchProvider(final ElasticsearchClient searchClient) {
         this.client = searchClient;
         this.settingsCache = CacheBuilder.newBuilder().softValues().expireAfterWrite(10, TimeUnit.MINUTES).build();
     }
@@ -125,11 +132,14 @@ public class ElasticSearchProvider implements ISearchProvider {
                                               final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex,
                                               final int limit, final Map<String, Constants.SortOrder> sortInstructions,
                                               @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
-        // build up the query from the fieldsToMatch map
-        QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+        Query query = generateBoolMatchQuery(fieldsToMatch)._toQuery();
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            Query finalQuery = query;
+            query = BoolQuery.of(bq -> bq
+                .must(finalQuery)
+                .filter(generateFilterQuery(filterInstructions))
+            )._toQuery();
         }
 
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortInstructions);
@@ -141,20 +151,35 @@ public class ElasticSearchProvider implements ISearchProvider {
                                                               final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         // build up the query from the fieldsToMatch map
-        QueryBuilder query = QueryBuilders.constantScoreQuery(generateBoolMatchQuery(fieldsToMatch));
+        Query query = ConstantScoreQuery.of(cs -> cs
+            .filter(generateBoolMatchQuery(fieldsToMatch)._toQuery())
+        )._toQuery();
 
-        RandomScoreFunctionBuilder randomScoreFunctionBuilder;
+        RandomScoreFunction randomScoreFunction;
+
         if (null != randomSeed) {
-            randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
-            randomScoreFunctionBuilder.seed(randomSeed);
-            randomScoreFunctionBuilder.setField("_seq_no");
+            randomScoreFunction = RandomScoreFunction.of(r -> r
+                .seed(String.valueOf(randomSeed))
+                .field("_seq_no")
+            );
         } else {
-            randomScoreFunctionBuilder = ScoreFunctionBuilders.randomFunction();
+            randomScoreFunction = RandomScoreFunction.of(r -> r);
         }
-        query = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
+
+        Query constantScoreQuery = query;
+        query = FunctionScoreQuery.of(fsq -> fsq
+            .query(constantScoreQuery)
+            .functions(fn -> fn
+                .randomScore(randomScoreFunction)
+            )
+        )._toQuery();
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            Query functionScoreQuery = query;
+            query = BoolQuery.of(bq -> bq
+                .must(functionScoreQuery)
+                .filter(generateFilterQuery(filterInstructions))
+            )._toQuery();
         }
 
         log.debug("Randomised Query, to be sent to elasticsearch is : " + query);
@@ -175,16 +200,20 @@ public class ElasticSearchProvider implements ISearchProvider {
             throw new SegueSearchException("A required field is missing. Unable to execute search.");
         }
 
-        QueryBuilder query = this.processMatchInstructions(matchInstruction);
+        Query query = this.processMatchInstructions(matchInstruction);
 
         if (null == sortOrder && null != randomSeed) {
-            RandomScoreFunctionBuilder randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
-            randomScoreFunctionBuilder.seed(randomSeed);
-            randomScoreFunctionBuilder.setField("_seq_no");
-            FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, randomScoreFunctionBuilder);
-            // Don't use the base query's result ranking at all, only use this random weighting:
-            functionScoreQuery.boostMode(CombineFunction.REPLACE);
-            query = functionScoreQuery;
+            RandomScoreFunction.Builder randomScoreFunctionBuilder = new RandomScoreFunction.Builder();
+            randomScoreFunctionBuilder.seed(String.valueOf(randomSeed));
+            randomScoreFunctionBuilder.field("_seq_no");
+
+            Query matchInstructionsQuery = query;
+            query = FunctionScoreQuery.of(fsq -> fsq
+                    .query(matchInstructionsQuery)
+                    .functions(fn -> fn.randomScore(randomScoreFunctionBuilder.build()))
+                    // Don't use the base query's result ranking at all, only use this random weighting:
+                    .boostMode(FunctionBoostMode.Replace)
+            )._toQuery();
         }
 
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
@@ -202,14 +231,14 @@ public class ElasticSearchProvider implements ISearchProvider {
             return null;
         }
 
-        BoolQueryBuilder masterQuery;
+        BoolQuery.Builder masterQuery;
         if (null != fieldsThatMustMatch) {
-            masterQuery = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
+            masterQuery = new BoolQuery.Builder().must(this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch))._toQuery());
         } else {
-            masterQuery = QueryBuilders.boolQuery();
+            masterQuery = new BoolQuery.Builder();
         }
 
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        BoolQuery.Builder query = new BoolQuery.Builder();
         Set<String> boostFields = ImmutableSet.of("id", "title", "tags");
 
         List<String> searchTerms = Lists.newArrayList();
@@ -222,29 +251,42 @@ public class ElasticSearchProvider implements ISearchProvider {
             float boost = boostFields.contains(f) ? 2f : 1f;
 
             for (String searchTerm : searchTerms) {
-                QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchTerm)
-                        .fuzziness(Fuzziness.AUTO)
+                Query initialFuzzySearch = MatchQuery.of(m -> m
+                        .field(f)
+                        .query(searchTerm)
+                        .fuzziness("AUTO")
                         .prefixLength(0)
-                        .boost(boost);
+                        .boost(boost)
+                )._toQuery();
                 query.should(initialFuzzySearch);
-                QueryBuilder regexSearch =
-                        QueryBuilders.wildcardQuery(f, "*" + searchTerm + "*").boost(boost);
+
+                Query regexSearch = WildcardQuery.of(r -> r
+                        .field(f)
+                        .value("*" + searchTerm + "*")
+                        .boost(boost)
+                )._toQuery();
                 query.should(regexSearch);
             }
         }
 
         // this query is just a bit smarter than the regex search above.
-        QueryBuilder multiMatchPrefixQuery = QueryBuilders.multiMatchQuery(searchString, fields)
-                .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).prefixLength(2).boost(2.0f);
+        Query multiMatchPrefixQuery = MultiMatchQuery.of(mm -> mm
+                .query(searchString)
+                .fields(Arrays.asList(fields))
+                .type(TextQueryType.PhrasePrefix)
+                .prefixLength(2)
+                .boost(2.0f)
+        )._toQuery();
         query.should(multiMatchPrefixQuery);
 
-        masterQuery.must(query);
+        masterQuery.must(query.build()._toQuery());
 
         if (filterInstructions != null) {
             masterQuery.filter(generateFilterQuery(filterInstructions));
         }
 
-        return this.executeBasicQuery(indexBase, indexType, masterQuery, startIndex, limit);
+        Query finalQuery = masterQuery.build()._toQuery();
+        return this.executeBasicQuery(indexBase, indexType, finalQuery, startIndex, limit);
     }
 
     @Override
@@ -257,14 +299,16 @@ public class ElasticSearchProvider implements ISearchProvider {
             return null;
         }
 
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
-        if (searchTerm != null) {
-            query.must(QueryBuilders.termQuery(field, searchTerm));
-        }
-
-        if (filterInstructions != null) {
-            query.filter(generateFilterQuery(filterInstructions));
-        }
+        Query query = BoolQuery.of(bq -> {
+            if (searchTerm != null) {
+                Query termsQuery = TermsQuery.of(t -> t.field(field).terms(ts -> ts.value(List.of(FieldValue.of(searchTerm)))))._toQuery();
+                bq.must(termsQuery);
+            }
+            if (filterInstructions != null) {
+                bq.filter(generateFilterQuery(filterInstructions));
+            }
+            return bq;
+        })._toQuery();
 
         if (null == searchTerm && null == filterInstructions) {
             throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
@@ -286,19 +330,18 @@ public class ElasticSearchProvider implements ISearchProvider {
      *
      * @return Defaults to http client creation.
      */
-    public static RestHighLevelClient getClient(final String address, final int port, final String username,
+    public static ElasticsearchClient getClient(final String address, final int port, final String username,
                                                 final String password) throws UnknownHostException {
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
 
-        RestHighLevelClient client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(InetAddress.getByName(address), port, "http")
-                )
-                .setHttpClientConfigCallback(
-                        httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-                )
-        );
+        RestClient restClient = RestClient.builder(new HttpHost(InetAddress.getByName(address), port, "http"))
+                .setHttpClientConfigCallback(httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
+                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder.setSocketTimeout(60000))
+                .build();
+
+        ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+        ElasticsearchClient client = new ElasticsearchClient(transport);
 
         log.info("Elastic Search client created: " + address + ":" + port);
         return client;
@@ -310,7 +353,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         Objects.requireNonNull(indexType);
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
-            return client.indices().exists(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT);
+            return client.indices().exists(gr -> gr.index(typedIndex)).value();
         } catch (IOException e) {
             log.error(String.format("Failed to check existence of index %s", typedIndex), e);
             return false;
@@ -320,7 +363,10 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public Collection<String> getAllIndices() {
         try {
-            return List.of(client.indices().get(new GetIndexRequest("*"), RequestOptions.DEFAULT).getIndices());
+            return client.indices()
+                .get(g -> g.index("*"))
+                .result()
+                .keySet();
         } catch (IOException e) {
             log.error("Exception while retrieving all indices", e);
             return Collections.emptyList();
@@ -335,10 +381,17 @@ public class ElasticSearchProvider implements ISearchProvider {
             throws SegueSearchException {
         ResultsWrapper<String> resultList;
 
-        QueryBuilder query = QueryBuilders.matchQuery(fieldname, needle);
+        Query query = MatchQuery.of(m -> m
+                .field(fieldname)
+                .query(needle)
+        )._toQuery();
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            Query matchQuery = query;
+            query = BoolQuery.of(bq -> bq
+                    .must(matchQuery)
+                    .filter(generateFilterQuery(filterInstructions))
+            )._toQuery();
         }
 
         resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
@@ -352,10 +405,17 @@ public class ElasticSearchProvider implements ISearchProvider {
             throws SegueSearchException {
         ResultsWrapper<String> resultList;
 
-        QueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
+        Query query = WildcardQuery.of(w -> w
+                .field(fieldname)
+                .value(prefix + "*")
+        )._toQuery();
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            Query prefixQuery = query;
+            query = BoolQuery.of(bq -> bq
+                    .must(prefixQuery)
+                    .filter(generateFilterQuery(filterInstructions))
+            )._toQuery();
         }
 
         resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
@@ -370,10 +430,17 @@ public class ElasticSearchProvider implements ISearchProvider {
             throws SegueSearchException {
         ResultsWrapper<String> resultList;
 
-        QueryBuilder query = QueryBuilders.regexpQuery(fieldname, regex);
+        Query query = RegexpQuery.of(r -> r
+                .field(fieldname)
+                .value(regex)
+        )._toQuery();
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            Query regExpQuery = query;
+            query = BoolQuery.of(bq -> bq
+                    .must(regExpQuery)
+                    .filter(generateFilterQuery(filterInstructions))
+            )._toQuery();
         }
 
         resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
@@ -382,30 +449,31 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     /**
-     * Utility method to convert sort instructions form external classes into something Elastic search can use.
+     * Utility method to convert sort instructions from external classes into something Elastic search can use.
      *
-     * @param searchRequest
-     *            - the request to be augmented.
+     * @param requestBuilder
+     *            - the builder for the request to be augmented.
      * @param sortInstructions
      *            - the instructions to augment.
-     * @return the augmented search request with sort instructions included.
      */
-    private SearchSourceBuilder addSortInstructions(final SearchSourceBuilder searchRequest,
-                                                     final Map<String, Constants.SortOrder> sortInstructions) {
+    private void addSortInstructions(final SearchRequest.Builder requestBuilder,
+                                      final Map<String, Constants.SortOrder> sortInstructions) {
         // deal with sorting of results
         for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
             String sortField = entry.getKey();
             Constants.SortOrder sortOrder = entry.getValue();
 
-            if (sortOrder == Constants.SortOrder.ASC) {
-                searchRequest.sort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
+            // fully qualified to not conflict with Constants.SortOrder
+            co.elastic.clients.elasticsearch._types.SortOrder clientOrder =
+                    (sortOrder == Constants.SortOrder.ASC)
+                            ? co.elastic.clients.elasticsearch._types.SortOrder.Asc
+                            : co.elastic.clients.elasticsearch._types.SortOrder.Desc;
 
-            } else {
-                searchRequest.sort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
-            }
+            requestBuilder.sort(SortOptions.of(s -> s.field(f -> f
+                .field(sortField)
+                .order(clientOrder)
+                .missing("_last"))));
         }
-
-        return searchRequest;
     }
 
     /**
@@ -413,26 +481,26 @@ public class ElasticSearchProvider implements ISearchProvider {
      *
      * @param filterInstructions
      *            - in the form "fieldName --> instruction key --> instruction value"
-     * @return filterbuilder
+     * @return filter query
      */
-    public QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
-        BoolQueryBuilder filter = QueryBuilders.boolQuery();
+    public Query generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
+        BoolQuery.Builder filter = new BoolQuery.Builder();
         for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
             // date filter logic
             if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
                 DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
                         .getValue();
-                RangeQueryBuilder rangeFilter = QueryBuilders.rangeQuery(fieldToFilterInstruction.getKey());
                 // Note: assumption that dates are stored in long format.
-                if (dateRangeInstruction.getFromDate() != null) {
-                    rangeFilter.from(dateRangeInstruction.getFromDate().getTime());
-                }
-
-                if (dateRangeInstruction.getToDate() != null) {
-                    rangeFilter.to(dateRangeInstruction.getToDate().getTime());
-                }
-
-                filter.must(rangeFilter);
+                filter.must(RangeQuery.of(r -> {
+                    r.field(fieldToFilterInstruction.getKey());
+                    if (dateRangeInstruction.getFromDate() != null) {
+                        r.gte(JsonData.of(dateRangeInstruction.getFromDate().getTime()));
+                    }
+                    if (dateRangeInstruction.getToDate() != null) {
+                        r.lte(JsonData.of(dateRangeInstruction.getToDate().getTime()));
+                    }
+                    return r;
+                })._toQuery());
             }
 
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
@@ -443,12 +511,23 @@ public class ElasticSearchProvider implements ISearchProvider {
                         fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
                         Collections.singletonList(sfi.getMustMatchValue())));
 
-                filter.must(this.generateBoolMatchQuery(fieldsToMatch));
+                filter.must(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
             }
 
             if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
                 TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
-                filter.must(QueryBuilders.termsQuery(fieldToFilterInstruction.getKey(), sfi.getMatchValues()));
+                filter.must(
+                    TermsQuery.of(t -> t
+                        .field(fieldToFilterInstruction.getKey())
+                        .terms(ts -> ts
+                            .value(
+                                sfi.getMatchValues().stream()
+                                    .map(FieldValue::of)
+                                    .collect(Collectors.toList())
+                            )
+                        )
+                    )._toQuery()
+                );
             }
 
             if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
@@ -459,11 +538,11 @@ public class ElasticSearchProvider implements ISearchProvider {
                         fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
                         Collections.singletonList(sfi.getMustNotMatchValue())));
 
-                filter.mustNot(this.generateBoolMatchQuery(fieldsToMatch));
+                filter.mustNot(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
             }
         }
 
-        return filter;
+        return filter.build()._toQuery();
     }
 
     /**
@@ -472,26 +551,31 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @param fieldsToMatch
      *            - the fields that the bool query should match.
      * @return a bool query configured to match the fields to match.
-     * @deprecated as {@code AbstractMatchInstruction}-based instructions should be preferred over
+     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
      * {@code BooleanSearchClause}, which are instead processed by {@code processMatchInstructions()}.
      */
     @Deprecated
-    private BoolQueryBuilder generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
-        BoolQueryBuilder masterQuery = QueryBuilders.boolQuery();
-        Map<String, BoolQueryBuilder> nestedQueriesByPath = Maps.newHashMap();
+    private BoolQuery generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
+        BoolQuery.Builder masterQuery = new BoolQuery.Builder();
+        Map<String, BoolQuery.Builder> nestedQueriesByPath = Maps.newHashMap();
 
         for (GitContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
             // Each search clause is its own boolean query that gets added to the master query as a must match clause
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
+            BoolQuery.Builder query = new BoolQuery.Builder();
 
             // Add the clause to the query value by value
             for (String value : searchClause.getValues()) {
+                Query matchQuery = MatchQuery.of(m -> m
+                        .field(searchClause.getField())
+                        .query(value)
+                )._toQuery();
+
                 if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
-                    query.should(QueryBuilders.matchQuery(searchClause.getField(), value));
+                    query.should(matchQuery);
                 } else if (Constants.BooleanOperator.AND.equals(searchClause.getOperator())) {
-                    query.must(QueryBuilders.matchQuery(searchClause.getField(), value));
+                    query.must(matchQuery);
                 } else if (Constants.BooleanOperator.NOT.equals(searchClause.getOperator())) {
-                    query.mustNot(QueryBuilders.matchQuery(searchClause.getField(), value));
+                    query.mustNot(matchQuery);
                 } else {
                     log.warn("Null argument received in paginated match search... "
                             + "This is not usually expected. Ignoring it and continuing anyway.");
@@ -500,25 +584,30 @@ public class ElasticSearchProvider implements ISearchProvider {
 
             // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
             if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
-                query.minimumShouldMatch(1);
+                query.minimumShouldMatch("1");
             }
 
             if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.getField())) {
-                masterQuery.must(query);
+                masterQuery.must(query.build()._toQuery());
             } else {
                 // Nested fields need to use a nested query which specifies the path of the nested field.
                 String nestedPath = searchClause.getField().split("\\.")[0];
-                nestedQueriesByPath.putIfAbsent(nestedPath, QueryBuilders.boolQuery());
-                nestedQueriesByPath.get(nestedPath).must(query);
+                nestedQueriesByPath.putIfAbsent(nestedPath, new BoolQuery.Builder());
+                nestedQueriesByPath.get(nestedPath).must(query.build()._toQuery());
             }
         }
 
         // Nested queries are grouped so that queries on the same nested path are not queried independently.
-        for (Entry<String, BoolQueryBuilder> entry : nestedQueriesByPath.entrySet()) {
-            masterQuery.must(QueryBuilders.nestedQuery(entry.getKey(), entry.getValue(), ScoreMode.Total));
+        for (Entry<String, BoolQuery.Builder> entry : nestedQueriesByPath.entrySet()) {
+            Query nestedQuery = NestedQuery.of(nq -> nq
+                    .path(entry.getKey())
+                    .query(entry.getValue().build()._toQuery())
+                    .scoreMode(ChildScoreMode.Sum)
+            )._toQuery();
+            masterQuery.must(nestedQuery);
         }
 
-        return masterQuery;
+        return masterQuery.build();
     }
 
     /**
@@ -540,7 +629,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return list of the search results
      */
     private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
-                                                     final QueryBuilder query, final int startIndex, final int limit)
+                                                     final Query query, final int startIndex, final int limit)
             throws SegueSearchException {
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, null);
     }
@@ -564,7 +653,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return list of the search results
      */
     private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
-                                                     final QueryBuilder query, final int startIndex, final int limit,
+                                                     final Query query, final int startIndex, final int limit,
                                                      @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws SegueSearchException {
         int newLimit = limit;
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
@@ -574,14 +663,18 @@ public class ElasticSearchProvider implements ISearchProvider {
             newLimit = LARGE_LIMIT;
         }
 
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().query(query).size(newLimit).from(startIndex);
+        SearchRequest.Builder requestBuilder = new SearchRequest.Builder()
+                .index(typedIndex)
+                .query(query)
+                .size(newLimit)
+                .from(startIndex);
 
         if (sortInstructions != null) {
-            this.addSortInstructions(sourceBuilder, sortInstructions);
+            this.addSortInstructions(requestBuilder, sortInstructions);
         }
 
-        log.debug("Building Query: " + sourceBuilder);
-        ResultsWrapper<String> results = executeQuery(typedIndex, sourceBuilder);
+        log.debug("Building Query: " + requestBuilder);
+        ResultsWrapper<String> results = executeQuery(requestBuilder.build());
 
         // execute another query to get all results as this is an unlimited
         // query.
@@ -592,8 +685,14 @@ public class ElasticSearchProvider implements ISearchProvider {
                         this.getMaxResultSize(indexBase, indexType)));
             }
 
-            sourceBuilder = new SearchSourceBuilder().query(query).size(results.getTotalResults().intValue()).from(startIndex);
-            results = executeQuery(typedIndex, sourceBuilder);
+            SearchRequest secondRequest = new SearchRequest.Builder()
+                    .index(typedIndex)
+                    .query(query)
+                    .size(results.getTotalResults().intValue())
+                    .from(startIndex)
+                    .build();
+
+            results = executeQuery(secondRequest);
 
             log.debug("Unlimited Search - had to make a second round trip to elasticsearch.");
         }
@@ -603,27 +702,30 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     /**
      * A general method for getting the results of a search.
-     * @param typedIndex
-     *            - the index within which to search
-     * @param searchSourceBuilder
+     * @param searchRequest
      *            - the search request to send to the cluster.
      * @return List of the search results.
      */
-    private ResultsWrapper<String> executeQuery(final String typedIndex, final SearchSourceBuilder searchSourceBuilder)
-            throws SegueSearchException {
+    private ResultsWrapper<String> executeQuery(final SearchRequest searchRequest) throws SegueSearchException {
         try {
-            SearchResponse response = client.search(new SearchRequest(typedIndex).source(searchSourceBuilder), RequestOptions.DEFAULT);
+            SearchResponse<ObjectNode> response = client.search(searchRequest, ObjectNode.class);
 
-            List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
+            List<Hit<ObjectNode>> hits = response.hits().hits();
             List<String> resultList = new ArrayList<>();
 
-            log.debug("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
-            log.debug("Search Request: " + searchSourceBuilder);
-            for (SearchHit item : hitAsList) {
-                resultList.add(item.getSourceAsString());
+            long totalHits = null != response.hits().total()
+                    ? response.hits().total().value()
+                    : 0;
+
+            log.debug("TOTAL SEARCH HITS " + totalHits);
+            log.debug("Search Request: " + searchRequest);
+
+            for (Hit<ObjectNode> hit : hits) {
+                ObjectNode src = hit.source();
+                resultList.add(null != src ? src.toString() : "{}");
             }
 
-            return new ResultsWrapper<>(resultList, response.getHits().getTotalHits().value);
+            return new ResultsWrapper<>(resultList, totalHits);
         } catch (ElasticsearchException | IOException e) {
             throw new SegueSearchException("Error while trying to search", e);
         }
@@ -637,7 +739,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - the map that should be converted into a suitable map for querying.
      * @return Map where each field is using the OR boolean operator.
      *
-     * @deprecated as {@code AbstractMatchInstruction}-based instructions should be preferred over
+     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
      * {@code fieldsToMatch}-style instructions.
      */
     @Deprecated
@@ -658,93 +760,124 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 
     /**
-     * Based on the relatively abstract {@code matchInstruction}, generates a {@code QueryBuilder} which is usable by
+     * Based on the relatively abstract {@code matchInstruction}, generates a {@code Query} which is usable by
      * Elasticsearch.
      *
-     * @param matchInstruction An {@code AbstractMatchInstruction} representing a search query.
+     * @param matchInstruction An {@code AbstractInstruction} representing a search query.
      *
-     * @return a {@code QueryBuilder} reflecting the instructions in {@code matchInstruction}.
+     * @return a {@code Query} reflecting the instructions in {@code matchInstruction}.
      * @throws SegueSearchException
      */
-    private QueryBuilder processMatchInstructions(final AbstractInstruction matchInstruction)
+    private Query processMatchInstructions(final AbstractInstruction matchInstruction)
             throws SegueSearchException {
         if (matchInstruction instanceof BooleanInstruction) {
             BooleanInstruction booleanMatch = (BooleanInstruction) matchInstruction;
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for (AbstractInstruction should : booleanMatch.getShoulds()) {
-                query.should(processMatchInstructions(should));
-            }
-            for (AbstractInstruction must : booleanMatch.getMusts()) {
-                query.must(processMatchInstructions(must));
-            }
-            for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
-                query.mustNot(processMatchInstructions(mustNot));
-            }
-            if (booleanMatch.getBoost() != null) {
-                query.boost(booleanMatch.getBoost());
-            }
-            query.minimumShouldMatch(booleanMatch.getMinimumShouldMatch());
-            return query;
+            return BoolQuery.of(b -> {
+                try {
+                    for (AbstractInstruction should : booleanMatch.getShoulds()) {
+                        b.should(processMatchInstructions(should));
+                    }
+                    for (AbstractInstruction must : booleanMatch.getMusts()) {
+                        b.must(processMatchInstructions(must));
+                    }
+                    for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
+                        b.mustNot(processMatchInstructions(mustNot));
+                    }
+                } catch (SegueSearchException e) {
+                    throw new RuntimeException("Error processing boolean match instructions", e);
+                }
+                if (booleanMatch.getBoost() != null) {
+                    b.boost(booleanMatch.getBoost());
+                }
+                b.minimumShouldMatch(String.valueOf(booleanMatch.getMinimumShouldMatch()));
+
+                return b;
+            })._toQuery();
         } else if (matchInstruction instanceof MatchInstruction) {
             MatchInstruction shouldMatch = (MatchInstruction) matchInstruction;
-            MatchQueryBuilder matchQuery = QueryBuilders
-                    .matchQuery(shouldMatch.getField(), shouldMatch.getValue()).boost(shouldMatch.getBoost());
-            if (shouldMatch.getFuzzy()) {
-                matchQuery.fuzziness(Fuzziness.AUTO);
-            }
-            return matchQuery;
+            return MatchQuery.of(m -> {
+                m.field(shouldMatch.getField());
+                m.query(shouldMatch.getValue());
+                if (shouldMatch.getBoost() != null) {
+                    m.boost((float) shouldMatch.getBoost());
+                }
+                if (shouldMatch.getFuzzy()) {
+                    m.fuzziness("AUTO");
+                }
+                return m;
+            })._toQuery();
         } else if (matchInstruction instanceof RangeInstruction) {
             RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(rangeMatch.getField()).boost(rangeMatch.getBoost());
-            if (rangeMatch.getGreaterThan() != null) {
-                rangeQuery.gt(rangeMatch.getGreaterThan());
-            }
-            if (rangeMatch.getGreaterThanOrEqual() != null) {
-                rangeQuery.gte(rangeMatch.getGreaterThanOrEqual());
-            }
-            if (rangeMatch.getLessThan() != null) {
-                rangeQuery.lt(rangeMatch.getLessThan());
-            }
-            if (rangeMatch.getLessThanOrEqual() != null) {
-                rangeQuery.gt(rangeMatch.getLessThan());
-            }
-            return rangeQuery;
+            return RangeQuery.of(r -> {
+                r.field(rangeMatch.getField());
+                if (rangeMatch.getGreaterThan() != null) {
+                    r.gt(JsonData.of(rangeMatch.getGreaterThan()));
+                }
+                if (rangeMatch.getGreaterThanOrEqual() != null) {
+                    r.gte(JsonData.of(rangeMatch.getGreaterThanOrEqual()));
+                }
+                if (rangeMatch.getLessThan() != null) {
+                    r.lt(JsonData.of(rangeMatch.getLessThan()));
+                }
+                if (rangeMatch.getLessThanOrEqual() != null) {
+                    r.lte(JsonData.of(rangeMatch.getLessThanOrEqual()));
+                }
+                r.boost((float) rangeMatch.getBoost());
+                return r;
+            })._toQuery();
         } else if (matchInstruction instanceof NestedInstruction) {
             NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
-            return QueryBuilders.nestedQuery(nestedMatch.getPath(), processMatchInstructions(nestedMatch.getInstruction()), ScoreMode.Total);
+            return NestedQuery.of(nq -> {
+                try {
+                    return nq
+                        .path(nestedMatch.getPath())
+                        .query(processMatchInstructions(nestedMatch.getInstruction()))
+                        .scoreMode(ChildScoreMode.Sum);
+                } catch (final SegueSearchException e) {
+                    throw new RuntimeException(e);
+                }
+            })._toQuery();
         } else if (matchInstruction instanceof WildcardInstruction) {
             WildcardInstruction wildcardMatch = (WildcardInstruction) matchInstruction;
-            return QueryBuilders.wildcardQuery(wildcardMatch.getField(), wildcardMatch.getValue()).boost(wildcardMatch.getBoost());
+            return WildcardQuery.of(wq -> wq
+                .field(wildcardMatch.getField())
+                .value(wildcardMatch.getValue())
+                .boost(wildcardMatch.getBoost().floatValue()))
+                ._toQuery();
         } else if (matchInstruction instanceof MultiMatchInstruction) {
             MultiMatchInstruction multiMatchInstruction = (MultiMatchInstruction) matchInstruction;
-            return QueryBuilders.multiMatchQuery(multiMatchInstruction.getField(), multiMatchInstruction.getValue())
-                    .boost(multiMatchInstruction.getBoost()).type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)
-                    .prefixLength(2);
+            return MultiMatchQuery.of(mm -> mm
+                .fields(Arrays.asList(multiMatchInstruction.getFields()))
+                .query(multiMatchInstruction.getTerm())
+                .boost(multiMatchInstruction.getBoost().floatValue())
+                .type(TextQueryType.PhrasePrefix)
+                .prefixLength(2)
+            )._toQuery();
         } else if (matchInstruction instanceof ExistsInstruction) {
-            return QueryBuilders.existsQuery(((ExistsInstruction) matchInstruction).getField());
+            return ExistsQuery.of(eq -> eq
+                .field(((ExistsInstruction) matchInstruction).getField()))
+                ._toQuery();
         } else {
-                throw new SegueSearchException(
-                        "Processing match instruction which is not supported: " + matchInstruction.getClass());
+            throw new SegueSearchException(
+                "Processing match instruction which is not supported: " + matchInstruction.getClass());
         }
     }
 
     @Override
-    public GetResponse getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
+    public GetResponse<ObjectNode> getById(final String indexBase, final String indexType, final String id) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
-            return client.get(new GetRequest(typedIndex, id).fetchSourceContext(FetchSourceContext.FETCH_SOURCE),
-                    RequestOptions.DEFAULT);
+            return client.get(gr -> gr.index(typedIndex).id(id), ObjectNode.class);
         } catch (IOException e) {
             throw new SegueSearchException(String.format("Failed to get content with ID %s from index %s", id, typedIndex), e);
         }
     }
 
     @Override
-    public SearchResponse getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
+    public SearchResponse<ObjectNode> getAllFromIndex(final String indexBase, final String indexType) throws SegueSearchException {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().size(10000).fetchSource(true);
         try {
-            return client.search(new SearchRequest(typedIndex).source(sourceBuilder), RequestOptions.DEFAULT);
+            return client.search(sr -> sr.index(typedIndex).size(10000), ObjectNode.class);
         } catch (IOException e) {
             throw new SegueSearchException(String.format("Failed to retrieve all data from index %s", typedIndex), e);
         }
@@ -768,13 +901,18 @@ public class ElasticSearchProvider implements ISearchProvider {
             final String MAX_WINDOW_SIZE_KEY = typedIndex + "_" + "MAX_WINDOW_SIZE";
             String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
             if (null == max_window_size) {
-                Map<String, Settings> response = client.indices().get(new GetIndexRequest(typedIndex), RequestOptions.DEFAULT).getSettings();
-                for (Settings settings : response.values()) {
-                    if (null == settings) {
+                GetIndexResponse response = client.indices().get(g -> g.index(typedIndex));
+                Map<String, IndexState> indices = response.result();
+                for (IndexState indexState : indices.values()) {
+                    if (null == indexState || null == indexState.settings()) {
                         continue;
                     }
-                    this.settingsCache.put(MAX_WINDOW_SIZE_KEY, settings.get(typedIndex + ".max_result_window",
-                            Integer.toString(SEARCH_MAX_WINDOW_SIZE)));
+                    IndexSettings settings = indexState.settings();
+                    Integer maxResultWindow = settings.maxResultWindow();
+                    if (null == maxResultWindow) {
+                        maxResultWindow = SEARCH_MAX_WINDOW_SIZE;
+                    }
+                    this.settingsCache.put(MAX_WINDOW_SIZE_KEY, maxResultWindow.toString());
                 }
             }
             return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));

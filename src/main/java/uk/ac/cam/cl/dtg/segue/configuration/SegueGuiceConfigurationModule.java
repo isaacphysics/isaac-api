@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.configuration;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.core.credential.KeyCredential;
@@ -34,7 +35,6 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
 import org.apache.commons.lang3.SystemUtils;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,12 +85,11 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISegueHashingAlgorithm;
+import uk.ac.cam.cl.dtg.segue.auth.MicrosoftAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.RaspberryPiOidcAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv1SCryptv1;
 import uk.ac.cam.cl.dtg.segue.auth.SegueChainedPBKDFv2SCryptv1;
@@ -188,7 +187,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static PostgresSqlDb postgresDB;
     private static ContentSubclassMapper mapper = null;
     private static GitContentManager contentManager = null;
-    private static RestHighLevelClient elasticSearchClient = null;
+    private static ElasticsearchClient elasticSearchClient = null;
     private static UserAccountManager userManager = null;
     private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
@@ -391,14 +390,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     AuthenticationProvider.MICROSOFT));
         }
 
-        // Facebook
-        this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
-        this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
-        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
-
         // Raspberry Pi
         try {
             // Ensure all the required config properties are present.
@@ -510,7 +501,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static RestHighLevelClient getSearchConnectionInformation(
+    private static ElasticsearchClient getSearchConnectionInformation(
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
             @Named(Constants.SEARCH_CLUSTER_INFO_PORT) final int port,
             @Named(Constants.SEARCH_CLUSTER_USERNAME) final String username,

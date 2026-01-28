@@ -38,7 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
@@ -251,7 +251,7 @@ public class UserManagerTest {
     }
 
     /**
-     * Test that a valid OAuth provider (Facebook) provides a redirect response.
+     * Test that a valid OAuth provider provides a redirect response.
      * 
      * @throws IOException
      *             - test exception
@@ -304,7 +304,7 @@ public class UserManagerTest {
      */
     @Test
     public final void authenticateCallback_checkNewUserIsAuthenticated_createInternalUserAccount() throws Exception {
-        IOAuth2Authenticator dummyAuth = createMock(FacebookAuthenticator.class);
+        IOAuth2Authenticator dummyAuth = createMock(GoogleAuthenticator.class);
         UserAccountManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
         UserAuthenticationManager authManager = buildTestAuthenticationManager(AuthenticationProvider.TEST, dummyAuth);
         
