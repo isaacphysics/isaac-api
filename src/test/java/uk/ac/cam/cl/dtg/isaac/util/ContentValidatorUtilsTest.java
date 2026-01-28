@@ -6,8 +6,8 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
+import uk.ac.cam.cl.dtg.isaac.dos.content.FigureRegion;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
-import uk.ac.cam.cl.dtg.util.FigureRegion;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

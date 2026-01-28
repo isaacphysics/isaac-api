@@ -4,7 +4,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Figure;
-import uk.ac.cam.cl.dtg.util.FigureRegion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.FigureRegion;
 
 import java.util.List;
 import java.util.regex.Pattern;
