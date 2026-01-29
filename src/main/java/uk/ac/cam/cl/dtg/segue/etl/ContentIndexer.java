@@ -982,8 +982,8 @@ public class ContentIndexer {
                     Pattern pattern = Pattern.compile("(<svg[^>]*width\\s*=\\s*\"\\d+%\"[^>]*>|<svg(?![^>]*width)[^>]*>)\\n?");
 
                     if (pattern.matcher(fileContents).find()) {
-                        this.registerContentProblem(content, "Image (" + f.getSrc() + ") "
-                                + "is an svg of non-absolute width.",
+                        this.registerContentProblem(content, "Width is not set to an absolute (non-%) value in Image: "
+                                + f.getSrc(),
                                 indexProblemCache
                         );
                     }
