@@ -194,12 +194,12 @@ public class IsaacCoordinateValidatorTest {
     public final void isaacCoordinateValidator_TestIncorrectSignificantFigures() {
         CoordinateItem ci = new CoordinateItem(List.of("1.00", "2.00"));
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(ci));
+        c.setItems(List.of(ci, item2));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("significant figures"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
     }
 
     // Test the internals of the item-ordering:
