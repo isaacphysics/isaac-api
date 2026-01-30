@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
@@ -11,11 +12,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator.DEFAULT_VALIDATION_RESPONSE;
 
 public class IsaacCoordinateValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacCoordinateValidator.class);
@@ -89,24 +92,6 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = new Content("You did not provide the correct number of coordinates.");
         }
 
-        // Check for correct number of significant figures if required
-        boolean shouldValidateWithSigFigs = null != coordinateQuestion.getSignificantFiguresMin() && null != coordinateQuestion.getSignificantFiguresMax();
-        if (null == feedback && shouldValidateWithSigFigs) {
-            for (CoordinateItem item : submittedItems) {
-                for (String value : item.getCoordinates()) {
-                    boolean tooFewSF = ValidationUtils.tooFewSignificantFigures(value, coordinateQuestion.getSignificantFiguresMin(), log);
-                    boolean tooManySF = ValidationUtils.tooManySignificantFigures(value, coordinateQuestion.getSignificantFiguresMax(), log);
-                    if (tooFewSF || tooManySF) {
-                        feedback = new Content("Whether your answer is correct or not, at least one value has the wrong number of significant figures.");
-                        break;
-                    }
-                }
-                if (null != feedback) {
-                    break;
-                }
-            }
-        }
-
         // STEP 2: If they did, does their answer match a known answer?
 
         if (null == feedback) {
@@ -142,9 +127,14 @@ public class IsaacCoordinateValidator implements IValidator {
                 }
                 List<CoordinateItem> choiceItems = coordinateChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
 
+                // Get significant figures to validate with
+                Integer sigFigsMin = coordinateQuestion.getSignificantFiguresMin();
+                Integer sigFigsMax = coordinateQuestion.getSignificantFiguresMax();
+
                 // Check that the items in the submitted answer match the items in the choice numerically
 
                 boolean allItemsMatch = false;
+                boolean allItemsMatchWithoutSigFigs = false;
                 try {
                     // If the question is unordered, then we need to (paradoxically) order the items to compare them.
                     if (null == coordinateQuestion.getOrdered() || !coordinateQuestion.getOrdered()) {
@@ -155,15 +145,20 @@ public class IsaacCoordinateValidator implements IValidator {
                     // Only attempt strict validation if the number of submitted items matches the choice
                     if (choiceItems.size() == submittedItems.size()) {
                         allItemsMatch = true;
+                        allItemsMatchWithoutSigFigs = true;
                         // For each coordinate in the list of coordinates:
                         for (int coordIndex = 0; coordIndex < choiceItems.size(); coordIndex++) {
                             CoordinateItem choiceItem = choiceItems.get(coordIndex);
                             CoordinateItem submittedItem = submittedItems.get(coordIndex);
                             // Check that the submitted item matches the choice item
-                            if (!coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
+                            if (!coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax)) {
                                 allItemsMatch = false;
-                                // Exit early on mismatch:
-                                break;
+                                // Check if this is just a significant figures mismatch
+                                if (!coordinateItemsMatch(submittedItem, choiceItem, null, null)) {
+                                    allItemsMatchWithoutSigFigs = false;
+                                    // Exit early on mismatch:
+                                    break;
+                                }
                             }
                         }
                     }
@@ -171,6 +166,10 @@ public class IsaacCoordinateValidator implements IValidator {
                     if (allItemsMatch) {
                         responseCorrect = coordinateChoice.isCorrect();
                         feedback = (Content) coordinateChoice.getExplanation();
+                        break;
+                    } else if (allItemsMatchWithoutSigFigs) {
+                        feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+                        feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs")));
                         break;
                     }
 
@@ -183,7 +182,7 @@ public class IsaacCoordinateValidator implements IValidator {
                             for (CoordinateItem submittedItem : submittedItems) {
                                 boolean submittedItemInChoiceItem = false;
                                 for (CoordinateItem choiceItem : choiceItems) {
-                                    if (coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
+                                    if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax)) {
                                         submittedItemInChoiceItem = true;
                                         break;
                                     }
@@ -207,7 +206,7 @@ public class IsaacCoordinateValidator implements IValidator {
                             for (CoordinateItem choiceItem : choiceItems) {
                                 boolean choiceItemInSubmittedItems = false;
                                 for (CoordinateItem submittedItem : submittedItems) {
-                                    if (coordinateItemsMatch(submittedItem, choiceItem, coordinateQuestion)) {
+                                    if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax)) {
                                         choiceItemInSubmittedItems = true;
                                         break;
                                     }
@@ -241,28 +240,21 @@ public class IsaacCoordinateValidator implements IValidator {
     }
 
     private boolean coordinateItemsMatch(final CoordinateItem submittedItem, final CoordinateItem choiceItem,
-                                         final IsaacCoordinateQuestion question) {
+                                         final Integer sigFigsMin, final Integer sigFigsMax) {
 
         if (submittedItem.getCoordinates().size() != choiceItem.getCoordinates().size()) {
             return false;
         }
 
-        boolean shouldValidateWithSigFigs = null != question.getSignificantFiguresMin() && null != question.getSignificantFiguresMax();
-
         for (int dimension = 0; dimension < submittedItem.getCoordinates().size(); dimension++) {
             String submittedValue = submittedItem.getCoordinates().get(dimension);
             String choiceValue = choiceItem.getCoordinates().get(dimension);
 
-            if (shouldValidateWithSigFigs) {
-                int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue,
-                        question.getSignificantFiguresMin(), question.getSignificantFiguresMax(), log);
-                if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log)) {
-                    return false;
-                }
-            } else {
-                if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log)) {
-                    return false;
-                }
+            int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue, sigFigsMin, sigFigsMax, log);
+            if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log)
+                    || null != sigFigsMin && ValidationUtils.tooFewSignificantFigures(submittedValue, sigFigsMin, log)
+                        || null != sigFigsMax && ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
+                return false;
             }
         }
         return true;
