@@ -72,10 +72,10 @@ public class IsaacCoordinateValidatorTest {
         // Correct and incorrect choices:
         someCorrectChoice.setItems(List.of(item1, item2));
         someCorrectChoice.setCorrect(true);
-        someCorrectChoice.setAllowSubsetMatch(true);
         someIncorrectChoice.setItems(ImmutableList.of(item3, item1));
         someIncorrectChoice.setCorrect(false);
         someIncorrectChoice.setExplanation(someIncorrectExplanation);
+        someIncorrectChoice.setAllowSubsetMatch(true);
 
         // Add both choices to questions, incorrect first:
         answerList.add(someIncorrectChoice);
@@ -184,11 +184,10 @@ public class IsaacCoordinateValidatorTest {
     @Test
     public final void isaacCoordinateValidator_TestSupersetOfSubsetMatchChoice() {
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(item1, item2, item4));
-
+        c.setItems(List.of(item1, item3, item4));
         QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
-
-        assertTrue(response.isCorrect());
+        assertFalse(response.isCorrect());
+        assertEquals(someIncorrectExplanation, response.getExplanation());
     }
 
     @Test
