@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Abstract superclass for integration test. Use when testing in the context of a REST application. This lets you
@@ -140,12 +141,13 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
             return new TestResponse(response);
         }
 
-        public void loginAs(final RegisteredUser user) {
+        public TestClient loginAs(final RegisteredUser user) {
             var request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
             var body = new LocalAuthDTO();
             body.setEmail(user.getEmail());
             body.setPassword("test1234");
             this.currentUser = builder.apply(request).post(Entity.json(body), RegisteredUserDTO.class);
+            return this;
         }
     }
 
@@ -157,8 +159,13 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         void assertError(final String message, final Response.Status status) {
-            assertEquals(message, response.readEntity(Map.class).get("errorMessage"));
             assertEquals(status.getStatusCode(), response.getStatus());
+            assertTrue(this.readEntityAsJsonUnchecked().getString("errorMessage").contains(message));
+        }
+
+        void assertError(final String message, final String status) {
+            assertEquals(status, Integer.toString(response.getStatus()));
+            assertThat(this.readEntityAsJsonUnchecked().getString("errorMessage")).contains(message);
         }
 
         void assertNoUserLoggedIn() {
@@ -180,6 +187,16 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         <T> T readEntity(final Class<T> klass) {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
             return response.readEntity(klass);
+        }
+
+        JSONObject readEntityAsJson() {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            return this.readEntityAsJsonUnchecked();
+        }
+
+        private JSONObject readEntityAsJsonUnchecked() {
+            String body = response.readEntity(String.class);
+            return new JSONObject(body);
         }
     }
 

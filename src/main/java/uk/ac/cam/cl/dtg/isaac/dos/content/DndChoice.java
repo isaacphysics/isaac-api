@@ -17,16 +17,28 @@ package uk.ac.cam.cl.dtg.isaac.dos.content;
 
 import uk.ac.cam.cl.dtg.isaac.dto.content.DndChoiceDTO;
 
+import java.util.List;
+
 /**
  * Choice for Dnd Questions, containing a list of DndItems.
  *
  */
 @DTOMapping(DndChoiceDTO.class)
 @JsonContentType("dndChoice")
-public class DndChoice extends ItemChoice {
+public class DndChoice extends Choice {
+    private List<DndItem> items;
+
     /**
      * Default constructor required for mapping.
      */
     public DndChoice() {
+    }
+
+    public List<DndItem> getItems() {
+        return items;
+    }
+
+    public void setItems(final List<DndItem> items) {
+        this.items = items;
     }
 }

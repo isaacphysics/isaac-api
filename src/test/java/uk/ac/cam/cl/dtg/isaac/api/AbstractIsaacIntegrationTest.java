@@ -47,9 +47,11 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.GroupManagerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
@@ -81,12 +83,14 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.etl.ElasticSearchIndexer;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.servlet.http.HttpSession;
+import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -119,7 +123,7 @@ public class AbstractIsaacIntegrationTest {
     protected static AbstractConfigLoader properties;
     protected static Map<String, String> globalTokens;
     protected static PostgresSqlDb postgresSqlDb;
-    protected static ElasticSearchProvider elasticSearchProvider;
+    protected static ElasticSearchIndexer elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MainMapper mainMapper;
     protected static ContentSummarizerService contentSummarizerService;
@@ -151,6 +155,7 @@ public class AbstractIsaacIntegrationTest {
     protected static IQuizQuestionAttemptPersistenceManager quizQuestionAttemptPersistenceManager;
     protected static QuizQuestionManager quizQuestionManager;
     protected static PgUsers pgUsers;
+    protected static ContentSubclassMapper contentMapper;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -181,7 +186,7 @@ public class AbstractIsaacIntegrationTest {
         elasticsearch.start();
 
         try {
-            elasticSearchProvider = new ElasticSearchProvider(ElasticSearchProvider.getClient(
+            elasticSearchProvider = new ElasticSearchIndexer(ElasticSearchProvider.getClient(
                     "localhost",
                     elasticsearch.getMappedPort(9200),
                     "elastic",
@@ -195,6 +200,8 @@ public class AbstractIsaacIntegrationTest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
+        Git.init().setDirectory(new File("tmp/dummy_repo")).call();
+
         // Initialise Postgres - we will create a new, clean instance for each test class.
         postgres = new PostgreSQLContainer<>("postgres:16")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
@@ -242,11 +249,11 @@ public class AbstractIsaacIntegrationTest {
         pgAnonymousUsers = new PgAnonymousUsers(postgresSqlDb);
         passwordDataManager = new PgPasswordDataManager(postgresSqlDb);
 
-        ContentSubclassMapper contentMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg"));
+        contentMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg"));
         PgQuestionAttempts pgQuestionAttempts = new PgQuestionAttempts(postgresSqlDb, contentMapper);
+        mainMapper = MainMapper.INSTANCE;
         questionManager = new QuestionManager(contentMapper, mainMapper, pgQuestionAttempts);
 
-        mainMapper = MainMapper.INSTANCE;
 
         providersToRegister = new HashMap<>();
         providersToRegister.put(AuthenticationProvider.RASPBERRYPI, new RaspberryPiOidcAuthenticator(
@@ -317,6 +324,8 @@ public class AbstractIsaacIntegrationTest {
         misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(), new EmailVerificationMisuseHandler());
         misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(), new TeacherPasswordResetMisuseHandler());
         misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.getSimpleName(), new TokenOwnerLookupMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.getSimpleName(), new AnonQuestionAttemptMisuseHandler());
+        misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.getSimpleName(), new IPQuestionAttemptMisuseHandler(emailManager, properties));
         // todo: more handlers as required by different endpoints
 
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
