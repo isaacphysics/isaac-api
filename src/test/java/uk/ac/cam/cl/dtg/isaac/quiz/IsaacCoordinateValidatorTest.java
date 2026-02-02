@@ -178,7 +178,7 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getValue().contains("some of the correct values"));
+        assertTrue(response.getExplanation().getValue().contains("but can you find more?"));
     }
 
     @Test

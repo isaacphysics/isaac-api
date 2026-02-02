@@ -193,7 +193,8 @@ public class IsaacCoordinateValidator implements IValidator {
                                 }
                             }
                             if (allSubmittedItemsInChoiceItems) {
-                                feedback = new Content("These are some of the correct values, but can you find more?");
+                                feedback = new Content((submittedItems.size() == 1 ? "This is" : "These are")
+                                        + " correct, but can you find more?");
                                 break;
                             }
                         }
