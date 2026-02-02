@@ -71,6 +71,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Maps.immutableEntry;
@@ -986,6 +987,17 @@ public class ContentIndexer {
                     int sizeInKiloBytes = fileData.size() / 1024;
                     this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
                             f.getSrc(), sizeInKiloBytes), indexProblemCache);
+                } else if (f.getSrc().endsWith(".svg")) {
+                    // Check file contents for svg with either no defined width or a %-based width
+                    String fileContents = fileData.toString();
+                    Pattern pattern = Pattern.compile("(<svg[^>]*width\\s*=\\s*\"\\d+%\"[^>]*>|<svg(?![^>]*width)[^>]*>)\\n?");
+
+                    if (pattern.matcher(fileContents).find()) {
+                        this.registerContentProblem(content, "Width is not set to an absolute (non-%) value in Image: "
+                                + f.getSrc(),
+                                indexProblemCache
+                        );
+                    }
                 }
             }
 
