@@ -77,6 +77,7 @@ public class IsaacClozeValidatorTest {
         someIncorrectChoice.setExplanation(new Content(incorrectExplanation));
         someSubsetChoice.setItems(ImmutableList.of(NULL_PLACEHOLDER, item3));
         someSubsetChoice.setAllowSubsetMatch(true);
+        someSubsetChoice.setCorrect(false);
         someSubsetChoice.setExplanation(new Content(subsetMatchExplanation));
 
         // Add both choices to question, incorrect first:
@@ -146,7 +147,7 @@ public class IsaacClozeValidatorTest {
 
     /*
     Test that known incorrect answers can be matched.
-*/
+    */
     @Test
     public final void isaacClozeValidator_KnownIncorrectDetailedFeedback_IncorrectResponseShouldBeReturned() {
         // Set up the question object:
@@ -195,6 +196,41 @@ public class IsaacClozeValidatorTest {
 
         // Test response:
         QuestionValidationResponse response = validator.validateQuestionResponse(someClozeQuestion, c);
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("does not contain an item for each gap"));
+    }
+
+
+    /*
+    * Test that when the user submits an answer with missing items, we show the generic
+    * feedback about missing items, even though we have more specific feedback about
+    * some of the submitted answers being wrong.
+    *
+    * I think it'd be better to show specific feedback. This test is here to prove that
+    * this is not how the current implementation works.
+    */
+    @Test
+    public final void isaacClozeValidator_NotEnoughItemsMatchingIncorrectResponse_NotEnoughResponseShouldBeReturned_() {
+        // Set up the question object:
+        IsaacClozeQuestion clozeQuestion = new IsaacClozeQuestion();
+        clozeQuestion.setItems(ImmutableList.of(item1, item2));
+
+        ItemChoice someCorrectAnswer = new ItemChoice();
+        someCorrectAnswer.setItems(ImmutableList.of(item1, item3));
+        someCorrectAnswer.setCorrect(true);
+        ItemChoice someIncorrectAnswer = new ItemChoice();
+
+        someIncorrectAnswer.setItems(ImmutableList.of(item1, NULL_PLACEHOLDER));
+        someIncorrectAnswer.setCorrect(false);
+        someIncorrectAnswer.setExplanation(new Content("This is a very bad choice."));
+        clozeQuestion.setChoices(ImmutableList.of(someCorrectAnswer, someIncorrectAnswer));
+
+        // Set up user answer:
+        ItemChoice c = new ItemChoice();
+        c.setItems(ImmutableList.of(item1));
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(clozeQuestion, c);
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("does not contain an item for each gap"));
     }
