@@ -38,10 +38,12 @@ public class IsaacCoordinateValidatorTest {
 
     private IsaacCoordinateValidator validator;
     private IsaacCoordinateQuestion someCoordinateQuestion;
+    private IsaacCoordinateQuestion someUnorderedCoordinateQuestion;
 
     private final CoordinateItem item1 = new CoordinateItem(List.of("1", "2"));
     private final CoordinateItem item2 = new CoordinateItem(List.of("2", "1"));
     private final CoordinateItem item3 = new CoordinateItem(List.of("1", "3"));
+    private final CoordinateItem item4 = new CoordinateItem(List.of("3", "1"));
     private final CoordinateItem item2Again = new CoordinateItem(List.of("2", "1"));  // Ensure no == comparisons.
 
     private final Content someIncorrectExplanation = new Content("Some incorrect explanation.");
@@ -53,11 +55,15 @@ public class IsaacCoordinateValidatorTest {
     public final void setUp() {
         validator = new IsaacCoordinateValidator();
 
-        // Set up the question object:
+        // Set up the question objects:
         someCoordinateQuestion = new IsaacCoordinateQuestion();
         someCoordinateQuestion.setNumberOfDimensions(2);
         someCoordinateQuestion.setSignificantFiguresMin(1);
+        someCoordinateQuestion.setSignificantFiguresMax(1);
         someCoordinateQuestion.setOrdered(true);
+
+        someUnorderedCoordinateQuestion = new IsaacCoordinateQuestion();
+        someUnorderedCoordinateQuestion.setNumberOfDimensions(2);
 
         List<Choice> answerList = Lists.newArrayList();
         ItemChoice someIncorrectChoice = new CoordinateChoice();
@@ -69,11 +75,13 @@ public class IsaacCoordinateValidatorTest {
         someIncorrectChoice.setItems(ImmutableList.of(item3, item1));
         someIncorrectChoice.setCorrect(false);
         someIncorrectChoice.setExplanation(someIncorrectExplanation);
+        someIncorrectChoice.setAllowSubsetMatch(true);
 
-        // Add both choices to question, incorrect first:
+        // Add both choices to questions, incorrect first:
         answerList.add(someIncorrectChoice);
         answerList.add(someCorrectChoice);
         someCoordinateQuestion.setChoices(answerList);
+        someUnorderedCoordinateQuestion.setChoices(answerList);
     }
 
     @Test
@@ -122,7 +130,7 @@ public class IsaacCoordinateValidatorTest {
     @Test
     public final void isaacCoordinateValidator_TestMismatchedNumberOfCoordinates_ExpectNoExplanation() {
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(item1, item2, item3));
+        c.setItems(List.of(item1, item3, item4));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
@@ -160,6 +168,38 @@ public class IsaacCoordinateValidatorTest {
 
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("did not provide the expected number of dimensions"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestSubsetOfCorrectChoice() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("but can you find more?"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestSupersetOfSubsetMatchChoice() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item3, item4));
+        QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
+        assertFalse(response.isCorrect());
+        assertEquals(someIncorrectExplanation, response.getExplanation());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestIncorrectSignificantFigures() {
+        CoordinateItem ci = new CoordinateItem(List.of("1.00", "2.00"));
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(ci, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
     }
 
     // Test the internals of the item-ordering:
