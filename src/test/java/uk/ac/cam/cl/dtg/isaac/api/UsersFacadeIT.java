@@ -860,7 +860,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
                 createMock(Request.class), resetPasswordRequest, ALICE_STUDENT_ID);
 
         String resetLink = (String) capturedEmailValues.getValue().get("resetURL");
-        String[] splitResetLink = resetLink.split("/");
+        String[] splitResetLink = resetLink.split("token=");
         String token = splitResetLink[splitResetLink.length-1];
 
         Response validatePasswordResponse = usersFacadeForTest.validatePasswordResetRequest(token);

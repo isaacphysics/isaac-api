@@ -399,7 +399,7 @@ public class EmailManagerTest {
                 mockContentManager, logManager, generateGlobalTokenMap());
         try {
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
-                    "https://dev.isaacphysics.org/resetpassword/resetToken");
+                    "https://dev.isaacphysics.org/resetpassword?token=resetToken");
 
             manager.sendTemplatedEmailToUser(userDTO,
                     manager.getEmailTemplateDTO("email-template-password-reset"),
@@ -415,7 +415,7 @@ public class EmailManagerTest {
 
         final String expectedMessage = "Hello, tester.\n\nA request has been "
                 + "made to reset the password for the account: </a href='mailto:test@test.com'>test@test.com<a>"
-                + ".\n\nTo reset your password <a href='https://dev.isaacphysics.org/resetpassword/resetToken'>"
+                + ".\n\nTo reset your password <a href='https://dev.isaacphysics.org/resetpassword?token=resetToken'>"
                 + "Click Here</a>\n\nRegards,\n\nIsaac Physics Project";
 
         // Wait for the emailQueue to spin up and send our message

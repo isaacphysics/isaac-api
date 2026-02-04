@@ -698,7 +698,7 @@ public class UserAuthenticationManager {
             log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
 
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
-                    String.format("https://%s/resetpassword/%s",
+                    String.format("https://%s/resetpassword?token=%s",
                             properties.getProperty(HOST_NAME), token));
 
             if (this.database.hasALinkedAccount(userDO) && !userHadPasswordRegistered) {
