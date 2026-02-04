@@ -13,7 +13,6 @@ import java.util.List;
 @DTOMapping(LLMFreeTextQuestionValidationResponseDTO.class)
 public class LLMFreeTextQuestionValidationResponse extends QuestionValidationResponse {
     private List<LLMFreeTextMarkSchemeEntry> markBreakdown;
-    private Integer marksAwarded;
 
     public LLMFreeTextQuestionValidationResponse() {
     }
@@ -30,7 +29,4 @@ public class LLMFreeTextQuestionValidationResponse extends QuestionValidationRes
     public void setMarkBreakdown(List<LLMFreeTextMarkSchemeEntry> markBreakdown) {
         this.markBreakdown = markBreakdown;
     }
-
-    public Integer getMarksAwarded() { return marksAwarded; }
-    public void setMarksAwarded(Integer marksAwarded) { this.marksAwarded = marksAwarded; }
 }
