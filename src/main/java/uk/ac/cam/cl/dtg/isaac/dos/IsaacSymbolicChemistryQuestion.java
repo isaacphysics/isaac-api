@@ -33,6 +33,7 @@ public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
     private boolean isNuclear;
     private boolean allowPermutations;
     private boolean allowScalingCoefficients;
+    private boolean showInequalitySeed;
 
     /**
      * @return whether the question is a nuclear question or not
@@ -68,7 +69,21 @@ public class IsaacSymbolicChemistryQuestion extends IsaacSymbolicQuestion {
     /**
      * @param allowScalingCoefficients set whether the question allows coefficients to be multiplied e.g. 10 H2 + 5 O2 -> 10 H2O
      */
-    public void setAllowScalingCoefficients(boolean allowScalingCoefficients) {
+    public void setAllowScalingCoefficients(final boolean allowScalingCoefficients) {
         this.allowScalingCoefficients = allowScalingCoefficients;
+    }
+
+    /**
+     * @return whether the question shows the inequality seed
+     */
+    public boolean getShowInequalitySeed() {
+        return showInequalitySeed;
+    }
+
+    /**
+     * @param showInequalitySeed set whether the question shows the inequality seed
+     */
+    public void setShowInequalitySeed(final boolean showInequalitySeed) {
+        this.showInequalitySeed = showInequalitySeed;
     }
 }

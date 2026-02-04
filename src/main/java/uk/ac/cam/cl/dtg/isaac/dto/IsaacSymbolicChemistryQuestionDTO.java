@@ -27,6 +27,7 @@ public class IsaacSymbolicChemistryQuestionDTO extends IsaacSymbolicQuestionDTO 
     private boolean isNuclear;
     private boolean allowPermutations;
     private boolean allowScalingCoefficients;
+    private boolean showInequalitySeed;
 
     /**
      * @return whether the question is a nuclear question or not
@@ -64,5 +65,19 @@ public class IsaacSymbolicChemistryQuestionDTO extends IsaacSymbolicQuestionDTO 
      */
     public void setAllowScalingCoefficients(boolean allowScalingCoefficients) {
         this.allowScalingCoefficients = allowScalingCoefficients;
+    }
+
+    /**
+     * @return whether the question shows the inequality seed
+     */
+    public boolean getShowInequalitySeed() {
+        return showInequalitySeed;
+    }
+
+    /**
+     * @param showInequalitySeed set whether the question shows the inequality seed
+     */
+    public void setShowInequalitySeed(final boolean showInequalitySeed) {
+        this.showInequalitySeed = showInequalitySeed;
     }
 }
