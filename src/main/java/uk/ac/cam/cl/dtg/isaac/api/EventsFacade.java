@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsCancelledException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
@@ -59,11 +60,16 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
+import uk.ac.cam.cl.dtg.segue.search.SearchInField;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
@@ -111,11 +117,12 @@ public class EventsFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
 
     private final GroupManager groupManager;
-
+    private final ContentSubclassMapper contentSubclassMapper;
     private final GitContentManager contentManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
     private final SchoolListReader schoolListReader;
+    private final ISearchProvider searchProvider;
 
     private final MainMapper mapper;
 
@@ -134,17 +141,19 @@ public class EventsFacade extends AbstractIsaacFacade {
                         final EventBookingManager bookingManager,
                         final UserAccountManager userManager, final GitContentManager contentManager,
                         final UserAssociationManager userAssociationManager,
-                        final GroupManager groupManager,
+                        final GroupManager groupManager, final ContentSubclassMapper contentSubclassMapper,
                         final UserAccountManager userAccountManager, final SchoolListReader schoolListReader,
-                        final MainMapper mapper) {
+                        final ISearchProvider searchProvider, final MainMapper mapper) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
+        this.contentSubclassMapper = contentSubclassMapper;
         this.userAccountManager = userAccountManager;
         this.schoolListReader = schoolListReader;
+        this.searchProvider = searchProvider;
         this.mapper = mapper;
     }
 
@@ -176,24 +185,23 @@ public class EventsFacade extends AbstractIsaacFacade {
                                     @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
                                     @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
                                     @QueryParam("show_stage_only") final String showStageOnly) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
+        ISearchProvider searchProvider = this.searchProvider;
+        ContentSubclassMapper contentSubclassMapper = this.contentSubclassMapper;
 
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
+        IsaacSearchInstructionBuilder searchInstructionBuilder =
+                new IsaacSearchInstructionBuilder(searchProvider, true, true, true)
+                        .includeContentTypes(Collections.singleton(EVENT_TYPE))
+                        .includePastEvents(null == showActiveOnly || !showActiveOnly);
 
         if (tags != null) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+            searchInstructionBuilder.searchFor(new SearchInField(Constants.TAGS_FIELDNAME,
+                    Arrays.stream(tags.split(",")).collect(Collectors.toSet())));
         }
 
         if (showStageOnly != null) {
-            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(showStageOnly.split(",")));
+            searchInstructionBuilder.searchFor(new SearchInField(Constants.STAGE_FIELDNAME,
+                    Arrays.stream(showStageOnly.split(",")).collect(Collectors.toSet())));
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -204,12 +212,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
 
-        fieldsToMatch.put(TYPE_FIELDNAME, List.of(EVENT_TYPE));
-
         Map<String, AbstractFilterInstruction> filterInstructions = null;
         if (null != showActiveOnly && showActiveOnly) {
             filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
+            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null); // FIXME RangeInstruction
             filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
             sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
         }
@@ -221,7 +227,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
+            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date()); // FIXME RangeInstruction
             filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
             sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
@@ -237,7 +243,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     /* Safe to ignore; will just leave currentUser null. */
                 }
                 if (null != currentUser) {
-                    findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+                    findByFieldNames = getEventsBookedByUser(request, List.of(tags.split(",")), currentUser);
                 } else {
                     SegueErrorResponse.getNotLoggedInResponse();
                 }
@@ -254,9 +260,21 @@ public class EventsFacade extends AbstractIsaacFacade {
                     SegueErrorResponse.getNotLoggedInResponse();
                 }
             } else {
-                findByFieldNames = this.contentManager.findByFieldNames(
-                        ContentService.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex, newLimit,
-                        sortInstructions, filterInstructions);
+                BooleanInstruction instruction = searchInstructionBuilder.build();
+                ResultsWrapper<String> searchHits =
+                    searchProvider.nestedMatchSearch(
+                            Constants.CONTENT_INDEX, // FIXME globalProperties.getProperty(Constants.CONTENT_INDEX);
+                            "content",
+                            startIndex,
+                            limit,
+                            instruction,
+                            null,
+                            sortInstructions
+                    );
+
+                List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
+                List<ContentDTO> dtoResults = contentSubclassMapper.getDTOByDOList(searchResults);
+                findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
 
                 // augment (maybe slow for large numbers of bookings)
                 for (ContentDTO c : findByFieldNames.getResults()) {
