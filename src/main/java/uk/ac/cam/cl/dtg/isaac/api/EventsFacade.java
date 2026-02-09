@@ -112,19 +112,24 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class EventsFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(EventsFacade.class);
 
+    private static final String CONTENT_TYPE = "content";
+
+    private final String contentIndex;
+    private final boolean showOnlyPublishedContent;
+    private final boolean hideRegressionTestContent;
+
     private final EventBookingManager bookingManager;
-
     private final UserAccountManager userManager;
-
     private final GroupManager groupManager;
-    private final ContentSubclassMapper contentSubclassMapper;
+
+    private final ISearchProvider searchProvider;
     private final GitContentManager contentManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
     private final SchoolListReader schoolListReader;
-    private final ISearchProvider searchProvider;
 
     private final MainMapper mapper;
+    private final ContentSubclassMapper contentSubclassMapper;
 
     /**
      * EventsFacade.
@@ -138,23 +143,36 @@ public class EventsFacade extends AbstractIsaacFacade {
      */
     @Inject
     public EventsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
-                        final EventBookingManager bookingManager,
-                        final UserAccountManager userManager, final GitContentManager contentManager,
-                        final UserAssociationManager userAssociationManager,
-                        final GroupManager groupManager, final ContentSubclassMapper contentSubclassMapper,
+                        final EventBookingManager bookingManager, final UserAccountManager userManager,
+                        final ISearchProvider searchProvider, final GitContentManager contentManager,
+                        final UserAssociationManager userAssociationManager, final GroupManager groupManager,
                         final UserAccountManager userAccountManager, final SchoolListReader schoolListReader,
-                        final ISearchProvider searchProvider, final MainMapper mapper) {
+                        final MainMapper mapper, final ContentSubclassMapper contentSubclassMapper) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
+        this.searchProvider = searchProvider;
         this.contentManager = contentManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
-        this.contentSubclassMapper = contentSubclassMapper;
         this.userAccountManager = userAccountManager;
         this.schoolListReader = schoolListReader;
-        this.searchProvider = searchProvider;
         this.mapper = mapper;
+        this.contentSubclassMapper = contentSubclassMapper;
+
+        this.contentIndex = properties.getProperty(Constants.CONTENT_INDEX);
+
+        this.showOnlyPublishedContent = Boolean.parseBoolean(
+                properties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
+        if (this.showOnlyPublishedContent) {
+            log.info("API Configured to only allow published content to be returned.");
+        }
+
+        this.hideRegressionTestContent = Boolean.parseBoolean(
+                properties.getProperty(Constants.HIDE_REGRESSION_TEST_CONTENT));
+        if (this.hideRegressionTestContent) {
+            log.info("API Configured to hide content tagged with 'regression_test'.");
+        }
     }
 
     /**
@@ -186,11 +204,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                                     @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
                                     @QueryParam("show_stage_only") final String showStageOnly) {
 
-        ISearchProvider searchProvider = this.searchProvider;
-        ContentSubclassMapper contentSubclassMapper = this.contentSubclassMapper;
-
-        IsaacSearchInstructionBuilder searchInstructionBuilder =
-                new IsaacSearchInstructionBuilder(searchProvider, true, true, true)
+        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
+                this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
                         .includeContentTypes(Collections.singleton(EVENT_TYPE))
                         .includePastEvents(null == showActiveOnly || !showActiveOnly);
 
@@ -215,7 +230,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         Map<String, AbstractFilterInstruction> filterInstructions = null;
         if (null != showActiveOnly && showActiveOnly) {
             filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null); // FIXME RangeInstruction
+            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
             filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
             sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
         }
@@ -227,7 +242,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date()); // FIXME RangeInstruction
+            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
             filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
             sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
@@ -239,11 +254,12 @@ public class EventsFacade extends AbstractIsaacFacade {
                 RegisteredUserDTO currentUser = null;
                 try {
                     currentUser = this.userManager.getCurrentRegisteredUser(request);
-                } catch (NoUserLoggedInException e) {
+                } catch (final NoUserLoggedInException e) {
                     /* Safe to ignore; will just leave currentUser null. */
                 }
                 if (null != currentUser) {
-                    findByFieldNames = getEventsBookedByUser(request, List.of(tags.split(",")), currentUser);
+                    List<String> tagList = null != tags ? List.of(tags.split(",")) : null;
+                    findByFieldNames = getEventsBookedByUser(request, tagList, currentUser);
                 } else {
                     SegueErrorResponse.getNotLoggedInResponse();
                 }
@@ -251,7 +267,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 RegisteredUserDTO currentUser = null;
                 try {
                     currentUser = this.userManager.getCurrentRegisteredUser(request);
-                } catch (NoUserLoggedInException e) {
+                } catch (final NoUserLoggedInException e) {
                     /* Safe to ignore; will just leave currentUser null. */
                 }
                 if (null != currentUser) {
@@ -261,19 +277,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                 }
             } else {
                 BooleanInstruction instruction = searchInstructionBuilder.build();
-                ResultsWrapper<String> searchHits =
-                    searchProvider.nestedMatchSearch(
-                            Constants.CONTENT_INDEX, // FIXME globalProperties.getProperty(Constants.CONTENT_INDEX);
-                            "content",
-                            startIndex,
-                            limit,
-                            instruction,
-                            null,
-                            sortInstructions
-                    );
+                ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
+                        startIndex, limit, instruction, null, sortInstructions);
 
-                List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-                List<ContentDTO> dtoResults = contentSubclassMapper.getDTOByDOList(searchResults);
+                List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
+                List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
                 findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
 
                 // augment (maybe slow for large numbers of bookings)
@@ -283,11 +291,11 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             return Response.ok(findByFieldNames).build();
-        } catch (ContentManagerException e) {
+        } catch (final ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error accessing your bookings.")
                     .toResponse();
         }
