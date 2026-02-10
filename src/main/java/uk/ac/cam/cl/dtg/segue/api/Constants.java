@@ -502,7 +502,7 @@ public final class Constants {
      *  Enum to represent filter values for event management.
      */
     public enum EventFilterOption {
-        FUTURE, RECENT, PAST
+        FUTURE, RECENT, PAST, ALL
     }
 
     public static final String ID_SEPARATOR = "|";

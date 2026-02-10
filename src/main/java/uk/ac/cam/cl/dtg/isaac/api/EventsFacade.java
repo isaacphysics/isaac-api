@@ -204,8 +204,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
                 this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
-                        .includeContentTypes(Collections.singleton(EVENT_TYPE))
-                        .includePastEvents(null == showActiveOnly || !showActiveOnly);
+                        .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
             searchInstructionBuilder.searchFor(new SearchInField(Constants.TAGS_FIELDNAME,
@@ -226,7 +225,11 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
 
         if (null != showActiveOnly && showActiveOnly) {
+            // Should default to future events only, but set this explicitly anyway
+            searchInstructionBuilder.setEventFilterOption(EventFilterOption.FUTURE);
             sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
+        } else {
+            searchInstructionBuilder.setEventFilterOption(EventFilterOption.ALL);
         }
 
         try {

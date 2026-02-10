@@ -386,7 +386,7 @@ public class GitContentManager {
 
                 // Event specific queries
                 .searchFor(new SearchInField(Constants.ADDRESS_PSEUDO_FIELDNAME, searchTerms))
-                .includePastEvents(false);
+                .setEventFilterOption(EventFilterOption.FUTURE);
 
         // If no search terms were provided, sort by ascending alphabetical order of title.
         Map<String, Constants.SortOrder> sortOrder = null;

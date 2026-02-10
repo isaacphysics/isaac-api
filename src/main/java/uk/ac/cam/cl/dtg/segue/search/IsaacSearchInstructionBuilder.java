@@ -43,7 +43,7 @@ public class IsaacSearchInstructionBuilder {
     private final boolean excludeRegressionTestContent;
     private final boolean excludeNofilterContent;
     private boolean excludeSupersededContent;
-    private boolean includePastEvents;
+    private Constants.EventFilterOption eventFilterOption;
 
     private Set<String> includedContentTypes;
     private Set<String> priorityIncludedContentTypes;
@@ -119,7 +119,7 @@ public class IsaacSearchInstructionBuilder {
         this.excludeRegressionTestContent = excludeRegressionTestContent;
 
         this.excludeNofilterContent = excludeNofilterContent;
-        this.includePastEvents = false;
+        this.eventFilterOption = Constants.EventFilterOption.FUTURE;
         this.excludeSupersededContent = false;
     }
 
@@ -201,14 +201,14 @@ public class IsaacSearchInstructionBuilder {
     }
 
     /**
-     * Sets whether to return events where the date field contains a date in the past. Defaults to false, and has no
-     * effect if the event content type is excluded.
+     * Sets a filter for events in a given date range (future/recent/past/all). Defaults to future, and has no effect if
+     * the event content type is excluded.
      *
-     * @param includePastEvents Whether to include past events.
+     * @param eventFilterOption The date option to filter events by.
      * @return This {@link IsaacSearchInstructionBuilder}, to allow chained operations.
      */
-    public IsaacSearchInstructionBuilder includePastEvents(final boolean includePastEvents) {
-        this.includePastEvents = includePastEvents;
+    public IsaacSearchInstructionBuilder setEventFilterOption(final Constants.EventFilterOption eventFilterOption) {
+        this.eventFilterOption = eventFilterOption;
         return this;
     }
 
@@ -248,12 +248,22 @@ public class IsaacSearchInstructionBuilder {
                 contentInstruction.must(new MatchInstruction(Constants.TAGS_FIELDNAME, SEARCHABLE_TAG));
             }
 
-            // Optionally add instruction to match only events that have not yet taken place
-            if (contentType.equals(EVENT_TYPE) && !includePastEvents) {
+            // Optionally add instructions to match only events in a particular date range
+            if (contentType.equals(EVENT_TYPE)) {
                 LocalDate today = LocalDate.now();
                 long now = today.atStartOfDay(ZoneId.systemDefault()).toEpochSecond()
                         * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
-                contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
+                // Default to showing only future events
+                if (null == this.eventFilterOption || this.eventFilterOption == Constants.EventFilterOption.FUTURE) {
+                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
+                } else if (this.eventFilterOption == Constants.EventFilterOption.RECENT) {
+                    long oneMonthAgo = now - Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
+                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(oneMonthAgo));
+                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).lessThanOrEqual(now));
+                } else if (this.eventFilterOption == Constants.EventFilterOption.PAST) {
+                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).lessThanOrEqual(now));
+                }
+                // else eventFilterOption == ALL, so don't filter
             }
 
             // Apply instructions to search for specific terms in specific fields
@@ -276,7 +286,7 @@ public class IsaacSearchInstructionBuilder {
         this.searchesInFields = new ArrayList<>();
         this.includedContentTypes = Sets.newHashSet();
         this.priorityIncludedContentTypes = Sets.newHashSet();
-        this.includePastEvents = false;
+        this.eventFilterOption = Constants.EventFilterOption.FUTURE;
 
         return masterInstruction;
     }
