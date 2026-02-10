@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -64,9 +63,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
-import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.SearchInField;
@@ -201,8 +198,19 @@ public class EventsFacade extends AbstractIsaacFacade {
                                     @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
                                     @QueryParam("show_stage_only") final String showStageOnly) {
 
+        boolean showNoFilterContent = false;
+        try {
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+            if (null != currentUser) {
+                // Show nofilter events for staff
+                showNoFilterContent = isUserStaff(userManager, currentUser);
+            }
+        } catch (final NoUserLoggedInException e) {
+            /* Safe to ignore; will just treat as non-staff and hide nofilter content. */
+        }
+
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
-                this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
+                this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
                         .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
@@ -1392,8 +1400,19 @@ public class EventsFacade extends AbstractIsaacFacade {
                                             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                             @QueryParam("filter") final String filter) {
 
+        boolean showNoFilterContent = false;
+        try {
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+            if (null != currentUser) {
+                // Show nofilter events for staff
+                showNoFilterContent = isUserStaff(userManager, currentUser);
+            }
+        } catch (final NoUserLoggedInException e) {
+            /* Safe to ignore; will just treat as non-staff and hide nofilter content. */
+        }
+
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
-                this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
+                this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -1501,8 +1520,19 @@ public class EventsFacade extends AbstractIsaacFacade {
                                           @QueryParam("show_active_only") final Boolean showActiveOnly,
                                           @QueryParam("show_stage_only") final String showStageOnly) {
 
+        boolean showNoFilterContent = false;
+        try {
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+            if (null != currentUser) {
+                // Show nofilter events for staff
+                showNoFilterContent = isUserStaff(userManager, currentUser);
+            }
+        } catch (final NoUserLoggedInException e) {
+            /* Safe to ignore; will just treat as non-staff and hide nofilter content. */
+        }
+
         IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
-                this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
+                this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
