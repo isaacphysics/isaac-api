@@ -257,7 +257,8 @@ public class IsaacSearchInstructionBuilder {
                 if (null == this.eventFilterOption || this.eventFilterOption == Constants.EventFilterOption.FUTURE) {
                     contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).greaterThanOrEqual(now));
                 } else if (this.eventFilterOption == Constants.EventFilterOption.RECENT) {
-                    long oneMonthAgo = now - Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
+                    long oneMonthAgo = today.minusMonths(1).atStartOfDay(ZoneId.systemDefault()).toEpochSecond()
+                            * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
                     contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).greaterThanOrEqual(oneMonthAgo));
                     contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).lessThanOrEqual(now));
                 } else if (this.eventFilterOption == Constants.EventFilterOption.PAST) {
