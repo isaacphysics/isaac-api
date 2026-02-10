@@ -1392,22 +1392,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                                             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                             @QueryParam("filter") final String filter) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
+        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
+                this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
+                .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
 
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
@@ -1415,31 +1406,21 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            Map<String, AbstractFilterInstruction> filterInstructions = null;
             if (filter != null) {
                 EventFilterOption filterOption = EventFilterOption.valueOf(filter);
-                filterInstructions = Maps.newHashMap();
+                searchInstructionBuilder.setEventFilterOption(filterOption);
                 if (filterOption.equals(EventFilterOption.FUTURE)) {
-                    DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-                    filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
                     sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
-                } else if (filterOption.equals(EventFilterOption.RECENT)) {
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.add(Calendar.MONTH, -1);
-                    DateRangeFilterInstruction eventsOverPreviousMonth =
-                            new DateRangeFilterInstruction(calendar.getTime(), new Date());
-                    filterInstructions.put(ENDDATE_FIELDNAME, eventsOverPreviousMonth);
-                } else if (filterOption.equals(EventFilterOption.PAST)) {
-                    DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-                    filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
                 }
             }
 
-            ResultsWrapper<ContentDTO> findByFieldNames = null;
+            BooleanInstruction instruction = searchInstructionBuilder.build();
+            ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
+                    startIndex, limit, instruction, null, sortInstructions);
 
-            findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+            List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
+            List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
+            ResultsWrapper<ContentDTO> findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
 
@@ -1484,17 +1465,17 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             return Response.ok(new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults())).build();
-        } catch (ContentManagerException e) {
+        } catch (final ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
-        } catch (NoUserLoggedInException e) {
+        } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the database content you requested.")
                     .toResponse();
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid request format.").toResponse();
         }
