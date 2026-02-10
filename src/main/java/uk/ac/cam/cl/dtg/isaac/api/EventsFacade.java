@@ -184,7 +184,6 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @param limit            - the maximums number of results to return
      * @param sortOrder        - flag to indicate preferred sort order.
      * @param showActiveOnly   - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showInactiveOnly - true will impose filtering on the results. False will not. Defaults to false.
      * @param showStageOnly    - if present, only events with an audience matching this string will be shown
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
@@ -199,7 +198,6 @@ public class EventsFacade extends AbstractIsaacFacade {
                                     @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                     @QueryParam("sort_by") final String sortOrder,
                                     @QueryParam("show_active_only") final Boolean showActiveOnly,
-                                    @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
                                     @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
                                     @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
                                     @QueryParam("show_stage_only") final String showStageOnly) {
@@ -229,15 +227,6 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         if (null != showActiveOnly && showActiveOnly) {
             sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
-        }
-
-        if (null != showInactiveOnly && showInactiveOnly) {
-            if (null != showActiveOnly && showActiveOnly) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "You cannot request both show active and inactive only.").toResponse();
-            }
-
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
         }
 
         try {

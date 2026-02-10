@@ -41,7 +41,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    // GET /events -> EventFacade::getEvents(request, tags, startIndex, limit, sortOrder, showActiveOnly, showInactiveOnly, showMyBookingsOnly, showReservationsOnly, showStageOnly)
+    // GET /events -> EventFacade::getEvents(request, tags, startIndex, limit, sortOrder, showActiveOnly, showMyBookingsOnly, showReservationsOnly, showStageOnly)
     public void getEventsTest() {
         // Create an anonymous request (this is a mocked object)
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{});
