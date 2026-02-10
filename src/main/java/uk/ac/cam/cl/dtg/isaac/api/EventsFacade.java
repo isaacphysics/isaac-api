@@ -91,7 +91,6 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -100,8 +99,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -1501,45 +1500,40 @@ public class EventsFacade extends AbstractIsaacFacade {
                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                           @QueryParam("show_active_only") final Boolean showActiveOnly,
                                           @QueryParam("show_stage_only") final String showStageOnly) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
+        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
+                this.showOnlyPublishedContent, this.hideRegressionTestContent, true)
+                .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+            searchInstructionBuilder.searchFor(new SearchInField(Constants.TAGS_FIELDNAME,
+                    Arrays.stream(tags.split(",")).collect(Collectors.toSet())));
         }
 
         if (showStageOnly != null) {
-            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(showStageOnly.split(",")));
+            searchInstructionBuilder.searchFor(new SearchInField(Constants.STAGE_FIELDNAME,
+                    Arrays.stream(showStageOnly.split(",")).collect(Collectors.toSet())));
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
-
-        Map<String, AbstractFilterInstruction> filterInstructions = null;
         if (null == showActiveOnly || showActiveOnly) {
-            filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
+            // Should default to future events only, but set this explicitly anyway
+            searchInstructionBuilder.setEventFilterOption(EventFilterOption.FUTURE);
             sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
+        } else {
+            searchInstructionBuilder.setEventFilterOption(EventFilterOption.ALL);
         }
 
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = null;
+            BooleanInstruction instruction = searchInstructionBuilder.build();
+            ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
+                    startIndex, limit, instruction, null, sortInstructions);
 
-            findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+            List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
+            List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
+            ResultsWrapper<ContentDTO> findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
 
