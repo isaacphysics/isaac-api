@@ -48,7 +48,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         replay(request);
 
         // Execute the method (endpoint) to be tested
-        Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null, null);
+        Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null);
         // Check that the request succeeded
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         // Fetch the entity object. This can be anything, so we declare it first as Object
