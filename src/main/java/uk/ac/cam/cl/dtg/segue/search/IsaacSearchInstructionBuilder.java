@@ -255,13 +255,13 @@ public class IsaacSearchInstructionBuilder {
                         * Constants.EVENT_DATE_EPOCH_MULTIPLIER;
                 // Default to showing only future events
                 if (null == this.eventFilterOption || this.eventFilterOption == Constants.EventFilterOption.FUTURE) {
-                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(now));
+                    contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).greaterThanOrEqual(now));
                 } else if (this.eventFilterOption == Constants.EventFilterOption.RECENT) {
                     long oneMonthAgo = now - Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
-                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).greaterThanOrEqual(oneMonthAgo));
-                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).lessThanOrEqual(now));
+                    contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).greaterThanOrEqual(oneMonthAgo));
+                    contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).lessThanOrEqual(now));
                 } else if (this.eventFilterOption == Constants.EventFilterOption.PAST) {
-                    contentInstruction.must(new RangeInstruction<Long>(Constants.DATE_FIELDNAME).lessThanOrEqual(now));
+                    contentInstruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).lessThanOrEqual(now));
                 }
                 // else eventFilterOption == ALL, so don't filter
             }
