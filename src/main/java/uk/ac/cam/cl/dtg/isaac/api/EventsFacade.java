@@ -48,7 +48,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -156,16 +155,16 @@ public class EventsFacade extends AbstractIsaacFacade {
         this.mapper = mapper;
         this.contentSubclassMapper = contentSubclassMapper;
 
-        this.contentIndex = properties.getProperty(Constants.CONTENT_INDEX);
+        this.contentIndex = properties.getProperty(CONTENT_INDEX);
 
         this.showOnlyPublishedContent = Boolean.parseBoolean(
-                properties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
+                properties.getProperty(SHOW_ONLY_PUBLISHED_CONTENT));
         if (this.showOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
 
         this.hideRegressionTestContent = Boolean.parseBoolean(
-                properties.getProperty(Constants.HIDE_REGRESSION_TEST_CONTENT));
+                properties.getProperty(HIDE_REGRESSION_TEST_CONTENT));
         if (this.hideRegressionTestContent) {
             log.info("API Configured to hide content tagged with 'regression_test'.");
         }
@@ -214,18 +213,18 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
-            searchInstructionBuilder.searchFor(new SearchInField(Constants.TAGS_FIELDNAME,
+            searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME,
                     Arrays.stream(tags.split(",")).collect(Collectors.toSet())));
         }
 
         if (showStageOnly != null) {
-            searchInstructionBuilder.searchFor(new SearchInField(Constants.STAGE_FIELDNAME,
+            searchInstructionBuilder.searchFor(new SearchInField(STAGE_FIELDNAME,
                     Arrays.stream(showStageOnly.split(",")).collect(Collectors.toSet())));
         }
 
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        final Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         if (sortOrder != null && sortOrder.equals("title")) {
-            sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+            sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     SortOrder.ASC);
         } else {
             sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
@@ -272,7 +271,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                 ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
                         startIndex, limit, instruction, null, sortInstructions);
 
-                List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
+                List<Content> searchResults = this.contentSubclassMapper
+                        .mapFromStringListToContentList(searchHits.getResults());
                 List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
                 findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
 
@@ -1415,7 +1415,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        final Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
         try {
@@ -1536,16 +1536,16 @@ public class EventsFacade extends AbstractIsaacFacade {
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
-            searchInstructionBuilder.searchFor(new SearchInField(Constants.TAGS_FIELDNAME,
+            searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME,
                     Arrays.stream(tags.split(",")).collect(Collectors.toSet())));
         }
 
         if (showStageOnly != null) {
-            searchInstructionBuilder.searchFor(new SearchInField(Constants.STAGE_FIELDNAME,
+            searchInstructionBuilder.searchFor(new SearchInField(STAGE_FIELDNAME,
                     Arrays.stream(showStageOnly.split(",")).collect(Collectors.toSet())));
         }
 
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        final Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
 
         if (null == showActiveOnly || showActiveOnly) {
