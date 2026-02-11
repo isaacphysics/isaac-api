@@ -189,7 +189,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 boolean includeHiddenContent = false;
                 try {
                     includeHiddenContent = isUserStaff(userManager, request);
-                } catch (NoUserLoggedInException e) {
+                } catch (final NoUserLoggedInException e) {
                     // Safe to ignore; leave includeHiddenContent as false
                 }
                 results = this.eventsManager.getEvents(tags, startIndex, limit, sortOrder, showActiveOnly, showStageOnly,
