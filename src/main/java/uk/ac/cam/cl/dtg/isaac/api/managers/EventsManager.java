@@ -119,10 +119,7 @@ public class EventsManager {
                                                 final String showStageOnly)
             throws ContentManagerException, SegueDatabaseException {
 
-        boolean showNoFilterContent = false;
-
-        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
-                this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+        IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
@@ -177,10 +174,8 @@ public class EventsManager {
     public ResultsWrapper<Map<String, Object>> getEventOverviews(final Integer startIndex, final Integer limit,
                                                                  final String filter, final RegisteredUserDTO currentUser)
             throws ContentManagerException, SegueDatabaseException {
-        boolean showNoFilterContent = false;
 
-        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
-                this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+        IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -261,10 +256,8 @@ public class EventsManager {
                                                                final String showStageOnly,
                                                                final RegisteredUserDTO currentUser)
             throws ContentManagerException {
-        boolean showNoFilterContent = false;
 
-        IsaacSearchInstructionBuilder searchInstructionBuilder = new IsaacSearchInstructionBuilder(this.searchProvider,
-                this.showOnlyPublishedContent, this.hideRegressionTestContent, !showNoFilterContent)
+        IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {

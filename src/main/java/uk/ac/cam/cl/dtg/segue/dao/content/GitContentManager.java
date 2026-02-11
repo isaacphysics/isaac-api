@@ -800,6 +800,16 @@ public class GitContentManager {
     }
 
     /**
+     * Get a search instruction builder initialised with the base configuration for this content manager.
+     *
+     * @return a base search instruction builder.
+     */
+    public IsaacSearchInstructionBuilder getBaseSearchInstructionBuilder() {
+        return new IsaacSearchInstructionBuilder(
+                searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, true);
+    }
+
+    /**
      * Returns the basic filter configuration.
      *
      * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
