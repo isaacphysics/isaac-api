@@ -323,7 +323,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
