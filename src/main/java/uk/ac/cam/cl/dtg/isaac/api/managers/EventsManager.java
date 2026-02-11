@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HIDE_REGRESSION_TEST_CONTENT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SHOW_ONLY_PUBLISHED_CONTENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.STAGE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
@@ -52,8 +50,6 @@ public class EventsManager {
     private static final String CONTENT_TYPE = "content";
 
     private final String contentIndex;
-    private final boolean showOnlyPublishedContent;
-    private final boolean hideRegressionTestContent;
 
     private final ISearchProvider searchProvider;
     private final EventBookingManager bookingManager;
@@ -83,18 +79,6 @@ public class EventsManager {
         this.contentSubclassMapper = contentSubclassMapper;
 
         this.contentIndex = properties.getProperty(CONTENT_INDEX);
-
-        this.showOnlyPublishedContent = Boolean.parseBoolean(
-                properties.getProperty(SHOW_ONLY_PUBLISHED_CONTENT));
-        if (this.showOnlyPublishedContent) {
-            log.info("API Configured to only allow published content to be returned.");
-        }
-
-        this.hideRegressionTestContent = Boolean.parseBoolean(
-                properties.getProperty(HIDE_REGRESSION_TEST_CONTENT));
-        if (this.hideRegressionTestContent) {
-            log.info("API Configured to hide content tagged with 'regression_test'.");
-        }
     }
 
     /**
