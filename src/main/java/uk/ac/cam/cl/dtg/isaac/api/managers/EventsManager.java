@@ -252,14 +252,12 @@ public class EventsManager {
      * @param startIndex     - the initial index for the first result.
      * @param limit          - the maximum number of results to return.
      * @param showActiveOnly - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showStageOnly  - if present, only events with an audience matching this string will be shown
-     * @param currentUser    - the currently logged-in user, or null if no user is logged in.
+     * @param showStageOnly  - if present, only events with an audience matching this string will be shown.
      * @return a ResultsWrapper containing a list of event map summaries.
      */
     public ResultsWrapper<Map<String, Object>> getEventMapData(final String tags, final Integer startIndex,
                                                                final Integer limit, final Boolean showActiveOnly,
-                                                               final String showStageOnly,
-                                                               final RegisteredUserDTO currentUser)
+                                                               final String showStageOnly)
             throws ContentManagerException {
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()

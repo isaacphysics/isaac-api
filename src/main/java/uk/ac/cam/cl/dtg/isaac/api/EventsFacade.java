@@ -1309,14 +1309,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                                           @QueryParam("show_active_only") final Boolean showActiveOnly,
                                           @QueryParam("show_stage_only") final String showStageOnly) {
         try {
-            RegisteredUserDTO currentUser = null;
-            try {
-                currentUser = this.userManager.getCurrentRegisteredUser(request);
-            } catch (final NoUserLoggedInException e) {
-                // Safe to ignore; we can still return results without user information.
-            }
             return Response.ok(this.eventsManager.getEventMapData(tags, startIndex, limit, showActiveOnly,
-                    showStageOnly, currentUser)).build();
+                showStageOnly)).build();
         } catch (final ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
