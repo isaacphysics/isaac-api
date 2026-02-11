@@ -306,7 +306,7 @@ public class AbstractIsaacIntegrationTest {
         userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
-        eventsManager = new EventsManager(properties, elasticSearchProvider,  userAccountManager, eventBookingManager, contentManager, mainMapper, contentMapper);
+        eventsManager = new EventsManager(properties, elasticSearchProvider, eventBookingManager, contentManager, mainMapper, contentMapper);
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 

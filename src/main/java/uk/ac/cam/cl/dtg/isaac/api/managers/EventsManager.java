@@ -11,13 +11,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -38,7 +35,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade.isUserStaff;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HIDE_REGRESSION_TEST_CONTENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SHOW_ONLY_PUBLISHED_CONTENT;
@@ -71,7 +67,6 @@ public class EventsManager {
      *
      * @param properties            - global properties map
      * @param searchProvider        - search provider
-     * @param userManager           - user account manager
      * @param bookingManager        - event booking manager
      * @param contentManager        - git content manager
      * @param mapper                - mapper for mapping between DOs and DTOs
@@ -79,9 +74,8 @@ public class EventsManager {
      */
     @Inject
     public EventsManager(final AbstractConfigLoader properties, final ISearchProvider searchProvider,
-                         final UserAccountManager userManager, final EventBookingManager bookingManager,
-                         final GitContentManager contentManager, final MainMapper mapper,
-                         final ContentSubclassMapper contentSubclassMapper) {
+                         final EventBookingManager bookingManager, final GitContentManager contentManager,
+                         final MainMapper mapper, final ContentSubclassMapper contentSubclassMapper) {
         this.searchProvider = searchProvider;
         this.bookingManager = bookingManager;
         this.contentManager = contentManager;
