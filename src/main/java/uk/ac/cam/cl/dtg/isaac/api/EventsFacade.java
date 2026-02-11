@@ -186,7 +186,14 @@ public class EventsFacade extends AbstractIsaacFacade {
                     SegueErrorResponse.getNotLoggedInResponse();
                 }
             } else {
-                results = this.eventsManager.getEvents(tags, startIndex, limit, sortOrder, showActiveOnly, showStageOnly);
+                boolean includeHiddenContent = false;
+                try {
+                    includeHiddenContent = isUserStaff(userManager, request);
+                } catch (NoUserLoggedInException e) {
+                    // Safe to ignore; leave includeHiddenContent as false
+                }
+                results = this.eventsManager.getEvents(tags, startIndex, limit, sortOrder, showActiveOnly, showStageOnly,
+                        includeHiddenContent);
             }
 
             if (null != currentUser) {

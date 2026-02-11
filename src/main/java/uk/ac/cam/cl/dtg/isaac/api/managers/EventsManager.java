@@ -112,11 +112,12 @@ public class EventsManager {
      * @param sortOrder            - flag to indicate preferred sort order.
      * @param showActiveOnly       - true will impose filtering on the results. False will not. Defaults to false.
      * @param showStageOnly        - if present, only events with an audience matching this string will be shown.
+     * @param includeHiddenContent - if true, include hidden (nofilter) events.
      * @return a ResultsWrapper containing a list of filtered events as ContentDTOs.
      */
     public ResultsWrapper<ContentDTO> getEvents(final String tags, final Integer startIndex, final Integer limit,
                                                 final String sortOrder, final Boolean showActiveOnly,
-                                                final String showStageOnly)
+                                                final String showStageOnly, final Boolean includeHiddenContent)
             throws ContentManagerException, SegueDatabaseException {
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
@@ -130,6 +131,10 @@ public class EventsManager {
         if (showStageOnly != null) {
             searchInstructionBuilder.searchFor(new SearchInField(STAGE_FIELDNAME,
                     Arrays.stream(showStageOnly.split(",")).collect(Collectors.toSet())));
+        }
+
+        if (null != includeHiddenContent && includeHiddenContent) {
+            searchInstructionBuilder.includeHiddenContent(true);
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();

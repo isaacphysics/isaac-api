@@ -41,7 +41,7 @@ public class IsaacSearchInstructionBuilder {
 
     private final boolean includeOnlyPublishedContent;
     private final boolean excludeRegressionTestContent;
-    private final boolean excludeNofilterContent;
+    private boolean excludeNofilterContent;
     private boolean excludeSupersededContent;
     private Constants.EventFilterOption eventFilterOption;
 
@@ -214,6 +214,17 @@ public class IsaacSearchInstructionBuilder {
 
     public IsaacSearchInstructionBuilder excludeSupersededContent(final boolean excludeSupersededContent) {
         this.excludeSupersededContent = excludeSupersededContent;
+        return this;
+    }
+
+    /**
+     * Sets whether to include content tagged with "nofilter" in the results. Defaults to excluding such content.
+     *
+     * @param includeHiddenContent Whether to include nofilter content in the results.
+     * @return This IsaacSearchInstructionBuilder, to allow chained operations.
+     */
+    public IsaacSearchInstructionBuilder includeHiddenContent(final boolean includeHiddenContent) {
+        this.excludeNofilterContent = !includeHiddenContent;
         return this;
     }
 
