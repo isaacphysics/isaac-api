@@ -215,7 +215,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
     private IsaacDndQuestion persist(final IsaacDndQuestion question) throws Exception {
         elasticSearchProvider.bulkIndexWithIDs(
-            "6c2ba42c5c83d8f31b3b385b3a9f9400a12807c9",
+            "118d0b17a035f9bd6b9ff2cede554d60a70fbad9",
             "content",
             List.of(immutableEntry(
                 question.getId(), contentMapper.getSharedContentObjectMapper().writeValueAsString(question))
@@ -227,7 +227,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     private JSONObject persistJSON(final JSONObject questionJSON) throws Exception {
         questionJSON.put("id", "i1");
         elasticSearchProvider.bulkIndexWithIDs(
-            "6c2ba42c5c83d8f31b3b385b3a9f9400a12807c9",
+            "118d0b17a035f9bd6b9ff2cede554d60a70fbad9",
             "content",
             List.of(immutableEntry("i1", questionJSON.toString()))
         );
