@@ -675,7 +675,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 String schoolId = resultRegisteredUser.getSchoolId();
                 Map<String, String> resultAdditionalInformation = booking.getAdditionalInformation();
                 BookingStatus resultBookingStatus = booking.getBookingStatus();
-                if (Role.ADMIN.equals(currentUser.getRole())) {
+                if (isUserAnAdminOrEventManager(userManager, currentUser)) {
                     resultRow.add(resultUser.getId().toString());
                     resultRow.add(resultRegisteredUser.getEmail());
                 }
@@ -712,7 +712,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             rows.add(totalsRow.toArray(new String[0]));
             String fieldTitles = "Family name,Given name,Role,School,Booking status,Booking date,Last updated date,Year group,Job title,"
                 + "Stages,Exam boards,Level of teaching experience,Medical/dietary requirements,Accessibility requirements,Emergency name,Emergency number";
-            if (Role.ADMIN.equals(currentUser.getRole())) {
+            if (isUserAnAdminOrEventManager(userManager, currentUser)) {
                 fieldTitles = "User ID,Email," + fieldTitles;
             }
             rows.add(fieldTitles.split(","));
