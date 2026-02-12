@@ -225,8 +225,9 @@ public class EventsManager {
     }
 
     /**
-     * Logic for the /events/map_data endpoint to provide a list of events with summary information.
+     * Logic for the /events/map_data endpoint to provide a list of events suitable for mapping.
      *
+     * @param tags           - a comma separated list of tags to include in the search.
      * @param startIndex     - the initial index for the first result.
      * @param limit          - the maximum number of results to return.
      * @param showActiveOnly - true will impose filtering on the results. False will not. Defaults to false.
