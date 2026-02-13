@@ -35,20 +35,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.STAGE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TITLE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * EventsManager.
  */
 public class EventsManager {
     private static final Logger log = LoggerFactory.getLogger(EventsManager.class);
-
-    private static final String CONTENT_TYPE = "content";
-
     private final String contentIndex;
 
     private final ISearchProvider searchProvider;
@@ -134,7 +127,8 @@ public class EventsManager {
         ResultsWrapper<ContentDTO> findByFieldNames = null;
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
+        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
+                CONTENT_INDEX_TYPE.CONTENT.toString(),
                 startIndex, limit, instruction, null, sortInstructions);
 
         List<Content> searchResults = this.contentSubclassMapper
@@ -173,7 +167,8 @@ public class EventsManager {
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
+        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
+                CONTENT_INDEX_TYPE.CONTENT.toString(),
                 startIndex, limit, instruction, null, sortInstructions);
 
         List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
@@ -264,7 +259,8 @@ public class EventsManager {
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex, CONTENT_TYPE,
+        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
+                CONTENT_INDEX_TYPE.CONTENT.toString(),
                 startIndex, limit, instruction, null, sortInstructions);
 
         List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());

@@ -81,8 +81,6 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.CACHE_METRICS_COL
 public class GitContentManager {
     private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
 
-    private static final String CONTENT_TYPE = "content";
-
     private final GitDb database;
     private final ContentMapper mapper;
     private final ContentSubclassMapper contentSubclassMapper;
@@ -255,7 +253,8 @@ public class GitContentManager {
 
                 ResultsWrapper<String> rawResults = searchProvider.termSearch(
                         contentIndex,
-                        CONTENT_TYPE, id,
+                        CONTENT_INDEX_TYPE.CONTENT.toString(),
+                        id,
                         Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
                         getBaseFilters());
                 List<Content> searchResults = contentSubclassMapper
@@ -312,7 +311,7 @@ public class GitContentManager {
 
                 ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
                         contentIndex,
-                        CONTENT_TYPE,
+                        CONTENT_INDEX_TYPE.CONTENT.toString(),
                         null,
                         null,
                         startIndex,
@@ -400,7 +399,7 @@ public class GitContentManager {
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 contentIndex,
-                CONTENT_TYPE,
+                CONTENT_INDEX_TYPE.CONTENT.toString(),
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
@@ -518,7 +517,7 @@ public class GitContentManager {
 
         ResultsWrapper<String> searchHits = searchProvider.nestedMatchSearch(
                 contentIndex,
-                CONTENT_TYPE,
+                CONTENT_INDEX_TYPE.CONTENT.toString(),
                 startIndex,
                 limit,
                 searchInstructionBuilder.build(),
@@ -569,8 +568,9 @@ public class GitContentManager {
             newFilterInstructions.putAll(this.getBaseFilters());
         }
 
-        ResultsWrapper<String> searchHits = searchProvider.matchSearch(contentIndex, CONTENT_TYPE, fieldsToMatch,
-                startIndex, limit, newSortInstructions, newFilterInstructions);
+        ResultsWrapper<String> searchHits = searchProvider.matchSearch(contentIndex,
+                CONTENT_INDEX_TYPE.CONTENT.toString(), fieldsToMatch, startIndex, limit,
+                newSortInstructions, newFilterInstructions);
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -600,7 +600,8 @@ public class GitContentManager {
 
         ResultsWrapper<String> searchHits;
         searchHits = searchProvider.randomisedMatchSearch(
-                contentIndex, CONTENT_TYPE, fieldsToMatch, startIndex, limit, randomSeed, this.getBaseFilters());
+                contentIndex, CONTENT_INDEX_TYPE.CONTENT.toString(), fieldsToMatch, startIndex, limit,
+                randomSeed, this.getBaseFilters());
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
