@@ -530,12 +530,14 @@ public class GitContentManager {
         return new ResultsWrapper<>(contentSubclassMapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNames(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit
     ) throws ContentManagerException {
         return this.findByFieldNames(fieldsToMatch, startIndex, limit, null);
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNames(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
@@ -543,6 +545,7 @@ public class GitContentManager {
         return this.findByFieldNames(fieldsToMatch, startIndex, limit, sortInstructions, null);
     }
 
+    @Deprecated
     public final ResultsWrapper<ContentDTO> findByFieldNames(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
             @Nullable final Map<String, Constants.SortOrder> sortInstructions,

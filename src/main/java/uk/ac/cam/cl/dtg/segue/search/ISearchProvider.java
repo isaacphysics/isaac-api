@@ -69,6 +69,7 @@ public interface ISearchProvider {
      *            - the map of how to sort each field of interest.
      * @return Results
      */
+    @Deprecated
     ResultsWrapper<String> matchSearch(
             final String indexBase, final String indexType,
             final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
@@ -160,6 +161,7 @@ public interface ISearchProvider {
      *            - post search filter instructions e.g. remove content of a certain type.
      * @return results in a random order for a given match search.
      */
+    @Deprecated
     ResultsWrapper<String> randomisedMatchSearch(
             String indexBase, String indexType, List<GitContentManager.BooleanSearchClause> fieldsToMatch,
             int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions
