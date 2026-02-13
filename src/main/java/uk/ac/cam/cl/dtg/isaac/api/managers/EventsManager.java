@@ -7,7 +7,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -18,13 +17,10 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
-import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.SearchInField;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.util.Arrays;
@@ -42,36 +38,25 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class EventsManager {
     private static final Logger log = LoggerFactory.getLogger(EventsManager.class);
-    private final String contentIndex;
 
-    private final ISearchProvider searchProvider;
     private final EventBookingManager bookingManager;
     private final GitContentManager contentManager;
 
     private final MainMapper mapper;
-    private final ContentSubclassMapper contentSubclassMapper;
 
     /**
      * EventsManager.
      *
-     * @param properties            - global properties map
-     * @param searchProvider        - search provider
      * @param bookingManager        - event booking manager
      * @param contentManager        - git content manager
      * @param mapper                - mapper for mapping between DOs and DTOs
-     * @param contentSubclassMapper - content subclass mapper
      */
     @Inject
-    public EventsManager(final AbstractConfigLoader properties, final ISearchProvider searchProvider,
-                         final EventBookingManager bookingManager, final GitContentManager contentManager,
-                         final MainMapper mapper, final ContentSubclassMapper contentSubclassMapper) {
-        this.searchProvider = searchProvider;
+    public EventsManager(final EventBookingManager bookingManager, final GitContentManager contentManager,
+                         final MainMapper mapper) {
         this.bookingManager = bookingManager;
         this.contentManager = contentManager;
         this.mapper = mapper;
-        this.contentSubclassMapper = contentSubclassMapper;
-
-        this.contentIndex = properties.getProperty(CONTENT_INDEX);
     }
 
     /**
@@ -124,19 +109,8 @@ public class EventsManager {
             searchInstructionBuilder.setEventFilterOption(Constants.EventFilterOption.ALL);
         }
 
-        ResultsWrapper<ContentDTO> findByFieldNames = null;
-
         BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
-                CONTENT_INDEX_TYPE.CONTENT.toString(),
-                startIndex, limit, instruction, null, sortInstructions);
-
-        List<Content> searchResults = this.contentSubclassMapper
-                .mapFromStringListToContentList(searchHits.getResults());
-        List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
-        findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
-
-        return findByFieldNames;
+        return this.contentManager.nestedMatchSearch(instruction, startIndex, limit, null, sortInstructions);
     }
 
     /**
@@ -167,13 +141,8 @@ public class EventsManager {
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
-                CONTENT_INDEX_TYPE.CONTENT.toString(),
-                startIndex, limit, instruction, null, sortInstructions);
-
-        List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-        List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
-        ResultsWrapper<ContentDTO> findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
+        ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.nestedMatchSearch(instruction, startIndex,
+                limit, null, sortInstructions);
 
         List<Map<String, Object>> resultList = Lists.newArrayList();
 
@@ -259,13 +228,8 @@ public class EventsManager {
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
-                CONTENT_INDEX_TYPE.CONTENT.toString(),
-                startIndex, limit, instruction, null, sortInstructions);
-
-        List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-        List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
-        ResultsWrapper<ContentDTO> findByFieldNames = new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
+        ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.nestedMatchSearch(instruction, startIndex,
+                limit, null, sortInstructions);
 
         List<Map<String, Object>> resultList = Lists.newArrayList();
 

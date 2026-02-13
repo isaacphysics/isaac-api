@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
@@ -811,6 +812,28 @@ public class GitContentManager {
     public IsaacSearchInstructionBuilder getBaseSearchInstructionBuilder() {
         return new IsaacSearchInstructionBuilder(
                 searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, true);
+    }
+
+    /**
+     * Search for content that matches a given instruction and map the hits to DTOs.
+     *
+     * @param instruction      - the {@link BooleanInstruction} to search with.
+     * @param startIndex       - the initial index for the first result.
+     * @param limit            - the maximum number of results to return.
+     * @param randomSeed       - the random seed to use for the search.
+     * @param sortInstructions - map of sorting functions to use in ElasticSearch query.
+     * @return a ResultsWrapper containing the matching content as DTOs and the total number of results.
+     * @throws ContentManagerException
+     */
+    public ResultsWrapper<ContentDTO> nestedMatchSearch(final BooleanInstruction instruction, final Integer startIndex,
+                                                        final Integer limit, final Long randomSeed,
+                                                        final Map<String, Constants. SortOrder> sortInstructions)
+            throws ContentManagerException {
+        ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
+                CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, instruction, randomSeed, sortInstructions);
+        List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
+        List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
+        return new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
     }
 
     /**
