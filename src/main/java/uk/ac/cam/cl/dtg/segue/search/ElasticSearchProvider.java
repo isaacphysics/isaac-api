@@ -42,7 +42,6 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import co.elastic.clients.elasticsearch.indices.IndexState;
-import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
@@ -343,7 +342,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
         ElasticsearchClient client = new ElasticsearchClient(transport);
 
-        log.info("Elastic Search client created: " + address + ":" + port);
+        log.info("Elastic Search client created: {}:{}", address, port);
         return client;
     }
 
@@ -354,8 +353,8 @@ public class ElasticSearchProvider implements ISearchProvider {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
             return client.indices().exists(gr -> gr.index(typedIndex)).value();
-        } catch (IOException e) {
-            log.error(String.format("Failed to check existence of index %s", typedIndex), e);
+        } catch (final IOException e) {
+            log.error("Failed to check existence of index {}", typedIndex, e);
             return false;
         }
     }
@@ -367,7 +366,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .get(g -> g.index("*"))
                 .result()
                 .keySet();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             log.error("Exception while retrieving all indices", e);
             return Collections.emptyList();
         }
@@ -401,7 +400,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> findByPrefix(final String indexBase, final String indexType, final String fieldname,
-                                               final String prefix, final int startIndex, final int limit, final Map<String, AbstractFilterInstruction> filterInstructions)
+                                               final String prefix, final int startIndex, final int limit,
+                                               final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
         ResultsWrapper<String> resultList;
 
@@ -491,16 +491,18 @@ public class ElasticSearchProvider implements ISearchProvider {
                 DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
                         .getValue();
                 // Note: assumption that dates are stored in long format.
-                filter.must(RangeQuery.of(r -> {
-                    r.field(fieldToFilterInstruction.getKey());
-                    if (dateRangeInstruction.getFromDate() != null) {
-                        r.gte(JsonData.of(dateRangeInstruction.getFromDate().getTime()));
-                    }
-                    if (dateRangeInstruction.getToDate() != null) {
-                        r.lte(JsonData.of(dateRangeInstruction.getToDate().getTime()));
-                    }
-                    return r;
-                })._toQuery());
+                filter.must(RangeQuery.of(r ->
+                    r.date(d -> {
+                        d.field(fieldToFilterInstruction.getKey());
+                        if (dateRangeInstruction.getFromDate() != null) {
+                            d.gte(String.valueOf(dateRangeInstruction.getFromDate().getTime()));
+                        }
+                        if (dateRangeInstruction.getToDate() != null) {
+                            d.lte(String.valueOf(dateRangeInstruction.getToDate().getTime()));
+                        }
+                        return d;
+                    })
+                )._toQuery());
             }
 
             if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
@@ -680,8 +682,8 @@ public class ElasticSearchProvider implements ISearchProvider {
         // query.
         if (isUnlimitedSearch && (results.getResults().size() < results.getTotalResults())) {
             if (results.getTotalResults() > this.getMaxResultSize(indexBase, indexType)) {
-                throw new SegueSearchException(String.format("The search you have requested " +
-                        "exceeds the maximum number of results that can be returned at once (%s).",
+                throw new SegueSearchException(String.format("The search you have requested "
+                                + "exceeds the maximum number of results that can be returned at once (%s).",
                         this.getMaxResultSize(indexBase, indexType)));
             }
 
@@ -716,9 +718,6 @@ public class ElasticSearchProvider implements ISearchProvider {
             long totalHits = null != response.hits().total()
                     ? response.hits().total().value()
                     : 0;
-
-            log.debug("TOTAL SEARCH HITS " + totalHits);
-            log.debug("Search Request: " + searchRequest);
 
             for (Hit<ObjectNode> hit : hits) {
                 ObjectNode src = hit.source();
@@ -783,7 +782,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                     for (AbstractInstruction mustNot : booleanMatch.getMustNots()) {
                         b.mustNot(processMatchInstructions(mustNot));
                     }
-                } catch (SegueSearchException e) {
+                } catch (final SegueSearchException e) {
                     throw new RuntimeException("Error processing boolean match instructions", e);
                 }
                 if (booleanMatch.getBoost() != null) {
@@ -808,23 +807,25 @@ public class ElasticSearchProvider implements ISearchProvider {
             })._toQuery();
         } else if (matchInstruction instanceof RangeInstruction) {
             RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
-            return RangeQuery.of(r -> {
-                r.field(rangeMatch.getField());
-                if (rangeMatch.getGreaterThan() != null) {
-                    r.gt(JsonData.of(rangeMatch.getGreaterThan()));
-                }
-                if (rangeMatch.getGreaterThanOrEqual() != null) {
-                    r.gte(JsonData.of(rangeMatch.getGreaterThanOrEqual()));
-                }
-                if (rangeMatch.getLessThan() != null) {
-                    r.lt(JsonData.of(rangeMatch.getLessThan()));
-                }
-                if (rangeMatch.getLessThanOrEqual() != null) {
-                    r.lte(JsonData.of(rangeMatch.getLessThanOrEqual()));
-                }
-                r.boost((float) rangeMatch.getBoost());
-                return r;
-            })._toQuery();
+            return RangeQuery.of(r ->
+                r.date(d -> {
+                    d.field(rangeMatch.getField());
+                    if (rangeMatch.getGreaterThan() != null) {
+                        d.gt(String.valueOf(rangeMatch.getGreaterThan()));
+                    }
+                    if (rangeMatch.getGreaterThanOrEqual() != null) {
+                        d.gte(String.valueOf(rangeMatch.getGreaterThanOrEqual()));
+                    }
+                    if (rangeMatch.getLessThan() != null) {
+                        d.lt(String.valueOf(rangeMatch.getLessThan()));
+                    }
+                    if (rangeMatch.getLessThanOrEqual() != null) {
+                        d.lte(String.valueOf(rangeMatch.getLessThanOrEqual()));
+                    }
+                    d.boost((float) rangeMatch.getBoost());
+                    return d;
+                })
+            )._toQuery();
         } else if (matchInstruction instanceof NestedInstruction) {
             NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
             return NestedQuery.of(nq -> {
@@ -868,7 +869,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
             return client.get(gr -> gr.index(typedIndex).id(id), ObjectNode.class);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new SegueSearchException(String.format("Failed to get content with ID %s from index %s", id, typedIndex), e);
         }
     }
@@ -878,7 +879,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         try {
             return client.search(sr -> sr.index(typedIndex).size(10000), ObjectNode.class);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new SegueSearchException(String.format("Failed to retrieve all data from index %s", typedIndex), e);
         }
     }
@@ -916,9 +917,9 @@ public class ElasticSearchProvider implements ISearchProvider {
                 }
             }
             return Integer.parseInt(this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY));
-        } catch (IOException e) {
-            log.error(String.format("Failed to retrieve max window size settings for index %s - defaulting to %d",
-                    typedIndex, DEFAULT_MAX_WINDOW_SIZE), e);
+        } catch (final IOException e) {
+            log.error("Failed to retrieve max window size settings for index {} - defaulting to {}",
+                    typedIndex, DEFAULT_MAX_WINDOW_SIZE, e);
             return DEFAULT_MAX_WINDOW_SIZE;
         }
     }
