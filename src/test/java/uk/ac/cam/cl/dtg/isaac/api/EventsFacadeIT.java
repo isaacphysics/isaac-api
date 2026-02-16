@@ -35,19 +35,19 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() {
         // Get an instance of the facade to test
-        eventsFacade = new EventsFacade(properties, logManager, eventBookingManager, userAccountManager, contentManager,
+        eventsFacade = new EventsFacade(properties, logManager, eventsManager, eventBookingManager, userAccountManager,
                 userAssociationManager, groupManager, userAccountManager, schoolListReader, mainMapper);
     }
 
     @Test
-    // GET /events -> EventFacade::getEvents(request, tags, startIndex, limit, sortOrder, showActiveOnly, showInactiveOnly, showMyBookingsOnly, showReservationsOnly, showStageOnly)
+    // GET /events -> EventFacade::getEvents(request, tags, startIndex, limit, sortOrder, showActiveOnly, showMyBookingsOnly, showReservationsOnly, showStageOnly)
     public void getEventsTest() {
         // Create an anonymous request (this is a mocked object)
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{});
         replay(request);
 
         // Execute the method (endpoint) to be tested
-        Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null, null);
+        Response response = eventsFacade.getEvents(request, null, 0, 10, null, null, null, null, null);
         // Check that the request succeeded
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         // Fetch the entity object. This can be anything, so we declare it first as Object

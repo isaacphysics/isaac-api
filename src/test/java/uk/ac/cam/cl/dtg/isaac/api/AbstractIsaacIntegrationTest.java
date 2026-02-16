@@ -16,6 +16,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventsManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -137,6 +138,7 @@ public class AbstractIsaacIntegrationTest {
     protected static GameManager gameManager;
     protected static GroupManager groupManager;
     protected static EventBookingManager eventBookingManager;
+    protected static EventsManager eventsManager;
     protected static ILogManager logManager;
     protected static GitContentManager contentManager;
     protected static UserAssociationManager userAssociationManager;
@@ -304,6 +306,7 @@ public class AbstractIsaacIntegrationTest {
         userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
+        eventsManager = new EventsManager(eventBookingManager, contentManager, mainMapper);
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 

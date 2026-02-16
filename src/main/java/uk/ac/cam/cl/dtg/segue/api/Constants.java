@@ -460,7 +460,6 @@ public final class Constants {
     public static final String CATEGORIES_FIELDNAME = "categories";
     public static final String LEVEL_FIELDNAME = "level";
     public static final String SUMMARY_FIELDNAME = "summary";
-    public static final String DATE_FIELDNAME = "date";
     public static final String ADDRESS_PSEUDO_FIELDNAME = "address";
     public static final String[] ADDRESS_PATH_FIELDNAME = {"location", "address"};
     public static final String[] ADDRESS_FIELDNAMES = {"addressLine1", "addressLine2", "town", "county", "postalCode"};
@@ -503,7 +502,7 @@ public final class Constants {
      *  Enum to represent filter values for event management.
      */
     public enum EventFilterOption {
-        FUTURE, RECENT, PAST
+        FUTURE, RECENT, PAST, ALL
     }
 
     public static final String ID_SEPARATOR = "|";
