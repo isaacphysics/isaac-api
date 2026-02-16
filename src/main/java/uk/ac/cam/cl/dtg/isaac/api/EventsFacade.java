@@ -87,7 +87,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse.getNotLoggedInResponse;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -177,13 +176,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                     List<String> tagList = null != tags ? List.of(tags.split(",")) : null;
                     results = this.eventsManager.getEventsBookedByUser(tagList, currentUser);
                 } else {
-                    SegueErrorResponse.getNotLoggedInResponse();
+                    return SegueErrorResponse.getNotLoggedInResponse();
                 }
             } else if (null != showReservationsOnly && showReservationsOnly) {
                 if (null != currentUser) {
                     results = this.eventsManager.getEventsReservedByUser(currentUser);
                 } else {
-                    SegueErrorResponse.getNotLoggedInResponse();
+                    return SegueErrorResponse.getNotLoggedInResponse();
                 }
             } else {
                 boolean includeHiddenContent = false;
