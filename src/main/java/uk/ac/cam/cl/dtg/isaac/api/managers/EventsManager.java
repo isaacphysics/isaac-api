@@ -97,8 +97,6 @@ public class EventsManager {
         if (sortOrder != null && sortOrder.equals("title")) {
             sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     Constants.SortOrder.ASC);
-        } else {
-            sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         }
 
         if (null != showActiveOnly && showActiveOnly) {
@@ -107,6 +105,10 @@ public class EventsManager {
             sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.ASC);
         } else {
             searchInstructionBuilder.setEventFilterOption(Constants.EventFilterOption.ALL);
+        }
+
+        if (sortInstructions.isEmpty()) {
+            sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
@@ -130,7 +132,6 @@ public class EventsManager {
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
 
         if (filter != null) {
             Constants.EventFilterOption filterOption = Constants.EventFilterOption.valueOf(filter);
@@ -138,6 +139,10 @@ public class EventsManager {
             if (filterOption.equals(Constants.EventFilterOption.FUTURE)) {
                 sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.ASC);
             }
+        }
+
+        if (sortInstructions.isEmpty()) {
+            sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
@@ -217,7 +222,6 @@ public class EventsManager {
         }
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
 
         if (null == showActiveOnly || showActiveOnly) {
             // Should default to future events only, but set this explicitly anyway
@@ -225,6 +229,10 @@ public class EventsManager {
             sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.ASC);
         } else {
             searchInstructionBuilder.setEventFilterOption(Constants.EventFilterOption.ALL);
+        }
+
+        if (sortInstructions.isEmpty()) {
+            sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         }
 
         BooleanInstruction instruction = searchInstructionBuilder.build();
