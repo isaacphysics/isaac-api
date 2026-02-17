@@ -56,6 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
     private final SegueJobService segueJobService;
+    private final HttpClient httpClient;
 
     /**
      * @param properties
@@ -68,6 +69,7 @@ public class InfoFacade extends AbstractSegueFacade {
                       final ILogManager logManager) {
         super(properties, logManager);
         this.segueJobService = segueJobService;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     /**
@@ -200,8 +202,6 @@ public class InfoFacade extends AbstractSegueFacade {
 
         HttpResponse<String> httpResponse = null;
         try {
-            HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
-
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .GET().build();
@@ -209,7 +209,7 @@ public class InfoFacade extends AbstractSegueFacade {
             httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
         } catch (IOException | InterruptedException e) {
-            log.warn(String.format("Error when pinging for status: %s", e));
+            log.warn("Error when pinging for status: {}", e.toString());
         }
 
         // FIXME: should we inspect the response body?

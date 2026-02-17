@@ -133,6 +133,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final IExternalAccountManager externalAccountManager;
     private final IMisuseMonitor misuseMonitor;
     private final SegueJobService segueJobService;
+    private final HttpClient httpClient;
 
     /**
      * Create an instance of the administrators facade.
@@ -175,6 +176,7 @@ public class AdminFacade extends AbstractSegueFacade {
         this.externalAccountManager = externalAccountManager;
         this.misuseMonitor = misuseMonitor;
         this.segueJobService = segueJobService;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     /**
@@ -1215,7 +1217,6 @@ public class AdminFacade extends AbstractSegueFacade {
 
                 String oldLiveVersion = contentManager.getCurrentContentSHA();
 
-                HttpClient httpClient = HttpClient.newHttpClient();
                 URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/set_version_alias/%s/%s",
                         getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
                         this.contentIndex, version));
@@ -1293,7 +1294,6 @@ public class AdminFacade extends AbstractSegueFacade {
             if (payload.getRef().equals("refs/heads/master")) {
                 String newVersion = payload.getAfter();
 
-                HttpClient httpClient = HttpClient.newHttpClient();
                 URI url = URI.create(String.format("http://%s:%s/isaac-api/api/etl/new_version_alert/%s",
                         getProperties().getProperty("ETL_HOSTNAME"), getProperties().getProperty("ETL_PORT"),
                         newVersion));
