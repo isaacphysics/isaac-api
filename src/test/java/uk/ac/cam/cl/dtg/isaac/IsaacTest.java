@@ -56,13 +56,13 @@ import java.util.Map;
 
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.partialMockBuilder;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replay;
-import static org.powermock.api.easymock.PowerMock.reset;
-import static org.powermock.api.easymock.PowerMock.verify;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.reset;
+import static org.easymock.EasyMock.verify;
 
 public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);

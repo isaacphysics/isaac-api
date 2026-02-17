@@ -15,11 +15,11 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.List;
 
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replayAll;
 
 public class QuizManagerTest extends AbstractManagerTest {
 
@@ -39,7 +39,7 @@ public class QuizManagerTest extends AbstractManagerTest {
         brokenQuiz = new IsaacQuizDTO();
         brokenQuiz.setChildren(ImmutableList.of(quizSection1, new ContentDTO(), quizSection2));
 
-        replayAll();
+        replay(properties, contentService, contentManager, contentSummarizerService);
     }
 
     @Test
