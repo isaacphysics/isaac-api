@@ -1,31 +1,22 @@
-package uk.ac.cam.cl.dtg.isaac.api.managers;
+package uk.ac.cam.cl.dtg.util;
 
-import org.junit.Before;
 import org.junit.Test;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.powermock.reflect.Whitebox;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
-import static org.easymock.EasyMock.createMock;
-import static org.junit.Assert.*;
-
-public class GroupManagerTest extends AbstractManagerTest {
-
-    private GroupManager groupManager;
-
-    @Before
-    public final void setUp() {
-        this.groupManager = createMock(GroupManager.class);
-    }
+public class NameOrdererTest {
+    Date somePastDate = new Date(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000);
 
     @Test
     public void orderUsersByName_ordersBySurnamePrimarily() throws Exception {
@@ -46,10 +37,11 @@ public class GroupManagerTest extends AbstractManagerTest {
         ).peek(user -> user.setId((long) ("" + user.getGivenName() + user.getFamilyName()).hashCode())).collect(Collectors.toList());
 
         List<RegisteredUserDTO> shuffledUsers = new ArrayList<>(users);
-        Collections.shuffle(shuffledUsers);
 
+        Collections.shuffle(shuffledUsers);
         assertNotEquals(users, shuffledUsers);
-        Whitebox.invokeMethod(groupManager, "orderUsersByName", shuffledUsers);
+
+        NameOrderer.orderUsersByName(shuffledUsers);
         assertEquals(users, shuffledUsers);
     }
 }
