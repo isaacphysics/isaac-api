@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
@@ -104,8 +105,6 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * IMPORTANT: Rather than directly subclass this, use either IsaacIntegrationTestWithREST or IsaacIntegrationTest
@@ -124,6 +123,7 @@ public class AbstractIsaacIntegrationTest {
     protected static AbstractConfigLoader properties;
     protected static Map<String, String> globalTokens;
     protected static PostgresSqlDb postgresSqlDb;
+    protected static ElasticsearchClient elasticSearchClient;
     protected static ElasticSearchIndexer elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MainMapper mainMapper;
@@ -188,13 +188,13 @@ public class AbstractIsaacIntegrationTest {
         elasticsearch.start();
 
         try {
-            elasticSearchProvider = new ElasticSearchIndexer(ElasticSearchProvider.getClient(
+            elasticSearchClient = ElasticSearchProvider.getClient(
                     "localhost",
                     elasticsearch.getMappedPort(9200),
                     "elastic",
                     "elastic"
-            )
             );
+            elasticSearchProvider = new ElasticSearchIndexer(elasticSearchClient);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }

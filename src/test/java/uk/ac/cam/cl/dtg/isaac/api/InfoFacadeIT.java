@@ -23,7 +23,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() throws RuntimeException, IOException {
         SegueJobService segueJobService = createNiceMock(SegueJobService.class); // new SegueJobService(new ArrayList<>(), postgresSqlDb);
-        infoFacade = new InfoFacade(properties, segueJobService, logManager);
+        infoFacade = new InfoFacade(properties, segueJobService, elasticSearchClient, logManager);
     }
 
     @Test
@@ -59,6 +59,10 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
         // /info/etl/ping
         Response response = infoFacade.pingETLServer();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        @SuppressWarnings("unchecked")
+        ImmutableMap<String, Boolean> status = (ImmutableMap<String, Boolean>) response.getEntity();
+        // ETL does not run during IT Tests, expect failure:
+        assertEquals(false, status.get("success"));
     }
 
     @Test
@@ -66,6 +70,10 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
         // /info/elasticsearch/ping
         Response response = infoFacade.pingElasticSearch();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        @SuppressWarnings("unchecked")
+        ImmutableMap<String, Boolean> status = (ImmutableMap<String, Boolean>) response.getEntity();
+        // ElasticSearch does run during IT Tests, expect success:
+        assertEquals(true, status.get("success"));
     }
 
     // NOTE: The other methods are probably less useful to test unless we also bring up the checkers
