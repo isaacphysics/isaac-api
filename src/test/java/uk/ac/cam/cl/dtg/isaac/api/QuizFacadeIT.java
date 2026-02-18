@@ -20,10 +20,8 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
@@ -36,8 +34,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -116,7 +112,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) createQuizResponse.getEntity();
-        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action.", responseBody.getErrorMessage());
     }
 
     @Test
@@ -263,7 +259,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
-        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action.", responseBody.getErrorMessage());
     }
 
     @ParameterizedTest
