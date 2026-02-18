@@ -187,7 +187,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             } else {
                 boolean includeHiddenContent = false;
                 try {
-                    includeHiddenContent = isUserStaff(userManager, request);
+                    includeHiddenContent = isUserStaff(userManager, currentUser);
                 } catch (final NoUserLoggedInException e) {
                     // Safe to ignore; leave includeHiddenContent as false
                 }
