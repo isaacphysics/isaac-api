@@ -21,7 +21,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -36,6 +35,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.easymock.EasyMock.createMock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -47,6 +47,8 @@ import static org.junit.Assert.assertTrue;
  */
 @PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacNumericValidatorTest {
+
+    private Logger log;
     private IsaacNumericValidator validator;
     private IsaacNumericQuestion numericQuestionNoUnits;
     private IsaacNumericQuestion numericQuestionWithUnits;
@@ -64,6 +66,7 @@ public class IsaacNumericValidatorTest {
      */
     @Before
     public final void setUp() {
+        log = createMock(Logger.class);
         validator = new IsaacNumericValidator();
 
         // Set up a question object which does not require units:
@@ -683,14 +686,14 @@ public class IsaacNumericValidatorTest {
         List<String> numbersToTest = Arrays.asList("42", "4.2e1", "4.2E1", "4.2x10^1", "4.2*10**1", "4.2×10^(1)", "4.2 \\times 10^{1}");
 
         for (String numberToTest : numbersToTest) {
-            boolean result = ValidationUtils.numericValuesMatch(numberToMatch, numberToTest, 2, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+            boolean result = ValidationUtils.numericValuesMatch(numberToMatch, numberToTest, 2, log);
             assertTrue(result);
         }
 
         String powerOfTenToMatch = "10000";
         List<String> powersOfTenToTest = Arrays.asList("10000", "1x10^4", "1e4", "1E4", "1 x 10**4", "10^4", "10**(4)", "10^{4}", "100x10^2");
         for (String powerOfTenToTest : powersOfTenToTest) {
-            boolean result = ValidationUtils.numericValuesMatch(powerOfTenToMatch, powerOfTenToTest, 1, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+            boolean result = ValidationUtils.numericValuesMatch(powerOfTenToMatch, powerOfTenToTest, 1, log);
             assertTrue(result);
         }
     }
@@ -987,7 +990,7 @@ public class IsaacNumericValidatorTest {
     //  ---------- Helper methods to test internal functionality of the validator class ----------
 
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
-        double result = ValidationUtils.roundStringValueToSigFigs(inputValue, sigFigToRoundTo, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+        double result = ValidationUtils.roundStringValueToSigFigs(inputValue, sigFigToRoundTo, log);
 
         assertEquals("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
                 + "sf: expected '" + expectedResult + "', got '" + result + "'", result, expectedResult, 0.0);
@@ -995,7 +998,7 @@ public class IsaacNumericValidatorTest {
 
     private void testSigFigExtractionWorks(String inputValue, int minAllowedSigFigs, int maxAllowedSigFigs,
                                            int expectedResult) throws Exception {
-        int result = ValidationUtils.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+        int result = ValidationUtils.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs, log);
 
         assertTrue("sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
                 + ", max allowed: " + maxAllowedSigFigs + ") got " + result, result <= maxAllowedSigFigs && result >= minAllowedSigFigs);
@@ -1016,15 +1019,15 @@ public class IsaacNumericValidatorTest {
         for (String number : numbersToTest) {
 
             for (Integer sigFig : sigFigsToPass) {
-                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, log);
                 assertFalse("Unexpected too few sig fig for " + number + " @ " + sigFig + "sf", tooFew);
-                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, log);
                 assertFalse("Unexpected too many sig fig for " + number + " @ " + sigFig + "sf", tooMany);
             }
 
             for (Integer sigFig : sigFigsToFail) {
-                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
-                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, log);
+                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, log);
                 boolean incorrectSigFig = tooMany || tooFew;
                 assertTrue("Expected incorrect sig fig for " + number + " @ " + sigFig + "sf", incorrectSigFig);
             }
