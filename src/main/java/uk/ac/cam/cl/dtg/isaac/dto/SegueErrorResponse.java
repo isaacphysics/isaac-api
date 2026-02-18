@@ -205,15 +205,23 @@ public class SegueErrorResponse implements Serializable {
      * @return a default response for when the user does not have the correct access rights to access a resource.
      */
     public static Response getIncorrectRoleResponse() {
-        return new SegueErrorResponse(Status.FORBIDDEN, "You do not have the permissions to complete this action")
+        return new SegueErrorResponse(Status.FORBIDDEN, "You do not have the permissions to complete this action.")
                 .toResponse();
+    }
+
+    /**
+     * @param message the error text to include in the response.
+     * @return a FORBIDDEN response with custom error text.
+     */
+    public static Response getForbiddenResponse(final String message) {
+        return new SegueErrorResponse(Status.FORBIDDEN, message).toResponse();
     }
 
     /**
      * @return a default response for when an endpoint will exist in the future but has not yet been implemented.
      */
     public static Response getNotImplementedResponse() {
-        return new SegueErrorResponse(Status.NOT_IMPLEMENTED, "This endpoint has not yet been implemented")
+        return new SegueErrorResponse(Status.NOT_IMPLEMENTED, "This endpoint has not yet been implemented.")
                 .toResponse();
     }
     

@@ -496,7 +496,7 @@ public class IsaacController extends AbstractIsaacFacade {
             user = userManager.getCurrentRegisteredUser(request);
             userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
             if (null == userOfInterestFull) {
-                throw new NoUserException("No user found with this ID.");
+                return SegueErrorResponse.getForbiddenResponse("You do not have permission to view this data.");
             }
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
@@ -527,8 +527,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 return Response.ok(userProgressInformation)
                         .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
-                        .toResponse();
+                return SegueErrorResponse.getForbiddenResponse("You do not have permission to view this data.");
             }
         } catch (NoUserLoggedInException e1) {
             return SegueErrorResponse.getNotLoggedInResponse();

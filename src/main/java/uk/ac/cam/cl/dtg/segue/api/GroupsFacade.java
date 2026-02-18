@@ -287,7 +287,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             }
 
             if (!isUserAnAdmin(userManager, request)) {
-                SegueErrorResponse.getIncorrectRoleResponse();
+                return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
