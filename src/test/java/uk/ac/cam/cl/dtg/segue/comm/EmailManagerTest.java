@@ -30,11 +30,6 @@ import org.easymock.IAnswer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.api.easymock.PowerMock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +56,6 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
  * Test class for the EmailManager class.
  * 
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class EmailManagerTest {
     private final String CONTENT_VERSION = "liveVersion";
 
@@ -137,7 +129,7 @@ public class EmailManagerTest {
 
 
         // Create content manager
-        mockContentManager = PowerMock.createMock(GitContentManager.class);
+        mockContentManager = EasyMock.createMock(GitContentManager.class);
 
         // Create log manager
         logManager = EasyMock.createMock(ILogManager.class);
@@ -492,7 +484,7 @@ public class EmailManagerTest {
         EmailTemplateDTO template = createDummyEmailTemplate("this is a template with no tags");
 
         // Create content manager
-        GitContentManager mockContentManager = PowerMock.createMock(GitContentManager.class);
+        GitContentManager mockContentManager = EasyMock.createMock(GitContentManager.class);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         try {
@@ -508,7 +500,7 @@ public class EmailManagerTest {
 
             EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
 
-            PowerMock.replay(mockContentManager);
+            EasyMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();

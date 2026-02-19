@@ -198,7 +198,7 @@ public class GitContentManager {
      * @return the content DTO object.
      * @throws ContentManagerException on failure to return the object or null.
      */
-    public final ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
+    public ContentDTO getContentById(final String id, final boolean failQuietly) throws ContentManagerException {
         return this.contentSubclassMapper.getDTOByDO(this.getContentDOById(id, failQuietly));
     }
 
@@ -243,7 +243,7 @@ public class GitContentManager {
      * @return the content DTO object.
      * @throws ContentManagerException on failure to return the object or null.
      */
-    public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
+    public Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
         if (null == id || id.isEmpty()) {
             return null;
         }
