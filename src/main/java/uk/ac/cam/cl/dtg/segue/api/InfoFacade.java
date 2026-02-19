@@ -187,11 +187,7 @@ public class InfoFacade extends AbstractSegueFacade {
             log.warn("Error whilst checking ElasticSearch status! {}", e.toString());
         }
 
-        if (healthy) {
-            return Response.ok(ImmutableMap.of("success", true)).build();
-        } else {
-            return Response.ok(ImmutableMap.of("success", false)).build();
-        }
+        return Response.ok(ImmutableMap.of("success", healthy)).build();
     }
 
     /**
