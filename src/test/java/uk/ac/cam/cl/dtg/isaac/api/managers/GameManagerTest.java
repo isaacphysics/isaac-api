@@ -20,11 +20,7 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -47,10 +43,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.powermock.api.easymock.PowerMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class GameManagerTest {
 
     private GitContentManager dummyContentManager;

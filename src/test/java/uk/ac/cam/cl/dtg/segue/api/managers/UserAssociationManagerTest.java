@@ -19,7 +19,6 @@ import com.google.api.client.util.Sets;
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
@@ -46,7 +45,6 @@ import static org.junit.Assert.fail;
 /**
  * Test class for the user Association class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class UserAssociationManagerTest {
     private IAssociationDataManager dummyAssociationDataManager;
     private GroupManager dummyGroupDataManager;

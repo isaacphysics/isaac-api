@@ -16,10 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
@@ -52,9 +48,6 @@ import static org.powermock.api.easymock.PowerMock.createNiceMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
     private AbstractConfigLoader properties;

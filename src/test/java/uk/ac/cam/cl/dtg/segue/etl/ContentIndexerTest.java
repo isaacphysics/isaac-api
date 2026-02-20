@@ -26,13 +26,11 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
@@ -46,7 +44,6 @@ import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
  * Test class for the GitContentManager class.
  *
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class ContentIndexerTest {
     private GitDb database;
     private ElasticSearchIndexer searchProvider;

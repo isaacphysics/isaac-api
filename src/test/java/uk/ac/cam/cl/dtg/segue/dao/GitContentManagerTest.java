@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -37,7 +36,6 @@ import static org.junit.Assert.fail;
  * Test class for the GitContentManager class.
  * 
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;

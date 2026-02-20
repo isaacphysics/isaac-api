@@ -20,7 +20,6 @@ import com.google.api.client.util.Sets;
 import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -47,7 +46,6 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class GroupManagerTest {
 
 	private AbstractConfigLoader dummyPropertiesLoader;

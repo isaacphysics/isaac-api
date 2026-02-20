@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
@@ -81,7 +80,6 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class UserManagerTest {
     private QuestionManager dummyQuestionDatabase;
     private IUserDataManager dummyDatabase;

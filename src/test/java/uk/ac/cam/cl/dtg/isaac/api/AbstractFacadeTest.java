@@ -18,10 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.api.client.util.Maps;
 import com.google.common.base.Joiner;
 import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -83,9 +79,6 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  *
  * @deprecated in favour of IsaacIntegrationTest
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "jakarta.ws.*", "jakarta.management.*", "jakarta.script.*" })
 @Deprecated
 abstract public class AbstractFacadeTest extends IsaacTest {
     protected Request request;

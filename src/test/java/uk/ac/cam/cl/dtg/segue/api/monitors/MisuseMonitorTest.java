@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -34,7 +33,6 @@ import static org.junit.Assert.fail;
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
     private AbstractConfigLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;

@@ -2,11 +2,7 @@ package uk.ac.cam.cl.dtg.util;
 
 import org.easymock.EasyMock;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
@@ -16,9 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static junit.framework.TestCase.assertEquals;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({YamlLoader.class,  FileInputStream.class, Yaml.class})
-@PowerMockIgnore({"javax.xml.datatype.*", "javax.management.*", "javax.crypto.*", "javax.net.ssl.*", "javax.net.*"})
 public class YamlLoaderTest {
     @Test
     public void yamlLoader_usingSingleResourceConfigFile_loadsSuccessfully() throws IOException {

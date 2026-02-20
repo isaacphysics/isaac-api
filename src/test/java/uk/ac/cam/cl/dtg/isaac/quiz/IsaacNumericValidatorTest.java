@@ -20,7 +20,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -45,7 +44,6 @@ import static org.junit.Assert.assertTrue;
  * Test class for the user manager class.
  *
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacNumericValidatorTest {
 
     private Logger log;
