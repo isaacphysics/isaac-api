@@ -43,14 +43,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
+import static org.easymock.EasyMock.partialMockBuilder;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createPartialMock;
-import static org.powermock.api.easymock.PowerMock.replay;
-import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 /**
  * A test base for testing Facades, specifically targeted around testing facades as different users.
@@ -98,7 +98,10 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         request = createNiceMock(Request.class);  // We don't particularly care about what gets called on this.
         replay(request);
 
-        userManager = createPartialMock(UserAccountManager.class, "getCurrentUser", "getCurrentRegisteredUser", "convertToUserSummaryObject", "getUserDTOById");
+        userManager = partialMockBuilder(UserAccountManager.class)
+                .addMockedMethods("getCurrentUser", "getCurrentRegisteredUser", "convertToUserSummaryObject")
+                .addMockedMethod("getUserDTOById", Long.class) // This is overloaded so we have to specify the signature
+                .createMock();
 
         registerDefaultsFor(userManager, m -> {
             expect(m.convertToUserSummaryObject(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
@@ -437,7 +440,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         private void verifyEndpoint(String when, Endpoint endpoint) {
             try {
                 runSteps(endpoint);
-                verifyAll();
+                verify(userManager, httpServletRequest, request);
             } catch (AssertionError e) {
                 String message = when + ", test failed, expected:\r\n";
                 message += steps.stream().map(s -> "  " + s.toString() + "\r\n").collect(Collectors.joining());
