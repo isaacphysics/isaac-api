@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -91,6 +92,11 @@ public class GroupManagerTest {
 		RegisteredUserDTO someGroupOwner = new RegisteredUserDTO();
 		someGroupOwner.setId(5339L);
 		someGroupOwner.setEmail("test@test.com");
+
+		UserSummaryWithEmailAddressDTO someGroupOwnerSummary = new UserSummaryWithEmailAddressDTO();
+		someGroupOwnerSummary.setId(5339L);
+		someGroupOwnerSummary.setEmail("test@test.com");
+
 		Set<Long> someSetOfManagers = Sets.newHashSet();
 		Capture<UserGroup> capturedGroup = Capture.newInstance();
 
@@ -108,7 +114,14 @@ public class GroupManagerTest {
 					.andReturn(resultFromDB);
 			expect(this.groupDataManager.getAdditionalManagerSetByGroupId(anyObject()))
 					.andReturn(someSetOfManagers).atLeastOnce();
-			expect(this.userManager.findUsers(someSetOfManagers)).andReturn(someListOfUsers);
+            try {
+                expect(this.userManager.getUserDTOById(null)).andReturn(someGroupOwner).atLeastOnce();
+            } catch (NoUserException e) {
+                throw new RuntimeException(e);
+            }
+            expect(this.userManager.convertToDetailedUserSummaryObject(someGroupOwner, UserSummaryWithEmailAddressDTO.class))
+					.andReturn(someGroupOwnerSummary).atLeastOnce();
+            expect(this.userManager.findUsers(someSetOfManagers)).andReturn(someListOfUsers);
 			expect(this.userManager.convertToDetailedUserSummaryObjectList(someListOfUsers, UserSummaryWithEmailAddressDTO.class)).andReturn(someListOfUsersDTOs);
 			expect(this.dummyMapper.map(resultFromDB)).andReturn(mappedGroup).atLeastOnce();
 
