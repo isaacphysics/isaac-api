@@ -592,7 +592,7 @@ public class GitContentManager {
     }
 
     @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+    public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
             final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
             final Integer limit, @Nullable final Long randomSeed
     ) throws ContentManagerException {
