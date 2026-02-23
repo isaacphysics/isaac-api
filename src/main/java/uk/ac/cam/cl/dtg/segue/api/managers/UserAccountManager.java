@@ -780,7 +780,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
      * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
      */
-    public final RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
+    public RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
             throws NoUserLoggedInException {
         Objects.requireNonNull(request);
 
