@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -195,7 +194,7 @@ public class UserManagerTest {
         returnUser.setId(validUserId);
         returnUser.setSessionToken(0);
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId.toString(), validDateString, returnUser.getSessionToken());
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(validUserId.toString(), validDateString, returnUser.getSessionToken());
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
        
         dummyDatabase.updateUserLastSeen(returnUser);
@@ -330,6 +329,8 @@ public class UserManagerTest {
         au.setSessionId(someSegueAnonymousUserId);
         expect(this.dummyUserCache.storeAnonymousUser(au)).andReturn(au).atLeastOnce();
         expect(this.dummyUserCache.getById(au.getSessionId())).andReturn(au).atLeastOnce();
+        this.dummyUserCache.deleteAnonymousUser(au);
+        expectLastCall().once();
 
         AnonymousUserDTO someAnonymousUserDTO = new AnonymousUserDTO();
         someAnonymousUserDTO.setSessionId(someSegueAnonymousUserId);
@@ -404,7 +405,7 @@ public class UserManagerTest {
 
         expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, someSegueUserId.toString(),
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(someSegueUserId.toString(),
                 validDateString, mappedUser.getSessionToken());
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
@@ -542,14 +543,14 @@ public class UserManagerTest {
         calendar.add(Calendar.SECOND, 500);
         String validDateString = sdf.format(calendar.getTime());
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId, validDateString, mappedUser.getSessionToken());
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(validUserId, validDateString, mappedUser.getSessionToken());
 
         replay(dummySession);
         replay(request);
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", sessionInformation, mappedUser);
+        boolean valid = authManager.isValidUsersSession(sessionInformation, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -578,8 +579,8 @@ public class UserManagerTest {
                 new Date(), Gender.MALE, null, new Date(), null, null, null, null, false);
         mappedUser.setSessionToken(0);
 
-        Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
-                validDateString, mappedUser.getSessionToken());
+        Map<String, String> validSessionInformation = getSessionInformationAsAMap(validUserId, validDateString,
+                mappedUser.getSessionToken());
 
         Map<String, String> tamperedSessionInformation = ImmutableMap.of(
                 Constants.SESSION_USER_ID, validUserId,
@@ -593,7 +594,7 @@ public class UserManagerTest {
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", tamperedSessionInformation, mappedUser);
+        boolean valid = authManager.isValidUsersSession(tamperedSessionInformation, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -622,15 +623,15 @@ public class UserManagerTest {
         calendar.add(Calendar.SECOND, -60); // Expired 60 seconds ago
         String expiredDateString = sdf.format(calendar.getTime());
 
-        Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
-                expiredDateString, mappedUser.getSessionToken());
+        Map<String, String> validSessionInformation = getSessionInformationAsAMap(validUserId, expiredDateString,
+                mappedUser.getSessionToken());
 
         replay(dummySession);
         replay(request);
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", validSessionInformation, mappedUser);
+        boolean valid = authManager.isValidUsersSession(validSessionInformation, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -660,7 +661,7 @@ public class UserManagerTest {
         calendar.add(Calendar.SECOND, 500);
         String validDateString = sdf.format(calendar.getTime());
 
-        Map<String, String> sessionInformationWithTokenMismatch = getSessionInformationAsAMap(authManager, validUserId,
+        Map<String, String> sessionInformationWithTokenMismatch = getSessionInformationAsAMap(validUserId,
                 validDateString, incorrectSessionToken);
 
         replay(dummySession);
@@ -668,7 +669,7 @@ public class UserManagerTest {
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", sessionInformationWithTokenMismatch, mappedUser);
+        boolean valid = authManager.isValidUsersSession(sessionInformationWithTokenMismatch, mappedUser);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -800,9 +801,8 @@ public class UserManagerTest {
         return new UserAuthenticationManager(dummyDatabase, dummyDeletionTokenManager, dummyPropertiesLoader, providerMap, dummyQueue);
     }
 
-    private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateExpires, Integer sessionToken)
-            throws Exception {
-        String validHMAC = Whitebox.<String> invokeMethod(userAuthManager, "calculateSessionHMAC", dummyHMACSalt, userId,
+    private Map<String, String> getSessionInformationAsAMap(String userId, String dateExpires, Integer sessionToken) {
+        String validHMAC = UserAuthenticationManager.calculateSessionHMAC(dummyHMACSalt, userId,
                 dateExpires, sessionToken.toString(), null);
         return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_EXPIRES, dateExpires, Constants.HMAC,
                 validHMAC, Constants.SESSION_TOKEN, sessionToken.toString());
