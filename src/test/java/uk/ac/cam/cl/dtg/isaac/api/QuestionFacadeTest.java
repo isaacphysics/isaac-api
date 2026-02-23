@@ -38,14 +38,14 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createNiceMock;
-import static org.powermock.api.easymock.PowerMock.replayAll;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class QuestionFacadeTest extends AbstractFacadeTest {
@@ -75,7 +75,8 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
-        replayAll();
+        replay(requestForCaching, contentManager, contentSubclassMapper, questionManager, userStreaksManager,
+                userAssociationManager);
     }
 
     @Test
