@@ -26,7 +26,6 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -157,9 +156,8 @@ public class ContentIndexerTest {
         ContentIndexer contentIndexer = new ContentIndexer(database, searchProvider, contentSubclassMapper);
 
         // Method under test
-		Whitebox.invokeMethod(contentIndexer,
-				"buildElasticSearchIndex",
-                INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap, someContentProblemsMap);
+        contentIndexer.buildElasticSearchIndex(INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap,
+                someContentProblemsMap);
 
 		verify(searchProvider, contentMapper, objectMapper);
 	}
@@ -179,8 +177,7 @@ public class ContentIndexerTest {
         Set<Content> elements = new HashSet<>();
         Content rootNode = createContentHierarchy(numChildLevels, elements);
 
-        Set<Content> contents = Whitebox.invokeMethod(
-                defaultContentIndexer, "flattenContentObjects", rootNode);
+        Set<Content> contents = ContentIndexer.flattenContentObjects(rootNode);
 
         assertEquals(numNodes, contents.size());
 
@@ -211,13 +208,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(
-                    defaultContentIndexer,
-                    "recordContentTypeSpecificError",
-                    "",
-                    content,
-                    indexProblemCache
-            );
+            defaultContentIndexer.recordContentTypeSpecificError("", content, indexProblemCache);
         }
 
         // ASSERT
@@ -243,13 +234,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(
-                    defaultContentIndexer,
-                    "recordContentTypeSpecificError",
-                    "",
-                    content,
-                    indexProblemCache
-            );
+            defaultContentIndexer.recordContentTypeSpecificError("", content, indexProblemCache);
         }
 
         // ASSERT
@@ -278,13 +263,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(
-                    defaultContentIndexer,
-                    "recordContentTypeSpecificError",
-                    "",
-                    content,
-                    indexProblemCache
-            );
+            defaultContentIndexer.recordContentTypeSpecificError("", content, indexProblemCache);
         }
 
         // ASSERT
@@ -311,13 +290,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(
-                    defaultContentIndexer,
-                    "recordContentTypeSpecificError",
-                    "",
-                    content,
-                    indexProblemCache
-            );
+            defaultContentIndexer.recordContentTypeSpecificError("", content, indexProblemCache);
         }
 
         // ASSERT
@@ -345,13 +318,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(
-                    defaultContentIndexer,
-                    "recordContentTypeSpecificError",
-                    "",
-                    content,
-                    indexProblemCache
-            );
+            defaultContentIndexer.recordContentTypeSpecificError("", content, indexProblemCache);
         }
 
         // ASSERT
@@ -383,13 +350,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(
-                    defaultContentIndexer,
-                    "recordContentTypeSpecificError",
-                    "",
-                    content,
-                    indexProblemCache
-            );
+            defaultContentIndexer.recordContentTypeSpecificError("", content, indexProblemCache);
         }
 
         // ASSERT
@@ -411,7 +372,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
         }
 
         // ASSERT
@@ -432,7 +393,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
         }
 
         // ASSERT
@@ -456,7 +417,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
         }
 
         // ASSERT
@@ -480,7 +441,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
         }
 
         // ASSERT
@@ -504,7 +465,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
         }
 
         // ASSERT
@@ -530,7 +491,7 @@ public class ContentIndexerTest {
 
         // ACT
         for (Content content : contents) {
-            Whitebox.invokeMethod(defaultContentIndexer, "recordContentTypeSpecificError", "", content, problemCache);
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
         }
 
         // ASSERT

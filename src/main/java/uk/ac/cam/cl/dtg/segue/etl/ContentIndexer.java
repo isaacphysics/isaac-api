@@ -562,7 +562,7 @@ public class ContentIndexer {
      *            content object to flatten
      * @return Set of content objects comprised of all children and the parent.
      */
-    private Set<Content> flattenContentObjects(final Content content) {
+    public static Set<Content> flattenContentObjects(final Content content) {
         Set<Content> setOfContentObjects = new HashSet<>();
         if (!content.getChildren().isEmpty()) {
 
@@ -682,7 +682,7 @@ public class ContentIndexer {
      * @param gitCache
      *            a map that represents indexed content for a given sha.
      */
-    private synchronized void buildElasticSearchIndex(final String sha,
+    public synchronized void buildElasticSearchIndex(final String sha,
                                                       final Map<String, Content> gitCache,
                                                       final Set<String> tagsList,
                                                       final Map<String, String> allUnits,
@@ -931,7 +931,7 @@ public class ContentIndexer {
      * @param sha       version to validate integrity of.
      * @param content   a single item of content
      */
-    private void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
+    public void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
         // ensure content does not have children and a value
         if (content.getValue() != null && !content.getChildren().isEmpty()) {
             String id = content.getId();
