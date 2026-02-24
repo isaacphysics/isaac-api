@@ -130,6 +130,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", false);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
 
+        replay(properties, userPreferenceManager);
         setUpQuestionFacade();
 
         // Act & Assert
@@ -157,6 +158,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         misuseMonitor = createMock(IMisuseMonitor.class);
         expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(0);
 
+        replay(properties, userPreferenceManager, misuseMonitor);
         setUpQuestionFacade();
 
         // Act & Assert
@@ -181,7 +183,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
-
+        replay(properties, misuseMonitor, userPreferenceManager);
         setUpQuestionFacade();
 
         // Act
