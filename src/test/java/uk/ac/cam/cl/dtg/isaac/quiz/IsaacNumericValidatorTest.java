@@ -16,10 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -38,6 +36,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -54,9 +53,6 @@ public class IsaacNumericValidatorTest {
     private String correctDecimalExponentAnswer = "4.8e22";
     private String correctIntegerAnswer = "42";
     private String correctUnits = "m\\,s^{-1}";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     /**
      * Initial configuration of tests.
@@ -623,11 +619,11 @@ public class IsaacNumericValidatorTest {
         IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
         invalidQuestionType.setId("invalidQuestionType");
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("only works with Isaac Numeric Questions");
-
         // This should throw an exception:
-        validator.validateQuestionResponse(invalidQuestionType, new Quantity());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(invalidQuestionType, new Quantity());
+        });
+        assertTrue(exception.getMessage().contains("only works with Isaac Numeric Questions"));
     }
 
     /*
@@ -638,11 +634,11 @@ public class IsaacNumericValidatorTest {
         IsaacNumericQuestion numericQuestion = new IsaacNumericQuestion();
         numericQuestion.setId("invalidQuestionType");
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Expected Quantity for IsaacNumericQuestion");
-
         // This should throw an exception:
-        validator.validateQuestionResponse(numericQuestion, new Choice());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(numericQuestion, new Choice());
+        });
+        assertTrue(exception.getMessage().contains("Expected Quantity for IsaacNumericQuestion"));
     }
 
     /*

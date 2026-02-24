@@ -17,10 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -35,6 +33,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -45,9 +44,6 @@ public class IsaacParsonsValidatorTest {
     private IsaacParsonsValidator validator;
     private IsaacParsonsQuestion someParsonsQuestion;
     private String incorrectExplanation = "EXPLANATION";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     /**
      * Initial configuration of tests.
@@ -194,11 +190,10 @@ public class IsaacParsonsValidatorTest {
         Item submittedItem2 = new Item("id002", null);
         c.setItems(ImmutableList.of(submittedItem1, submittedItem2));
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Expected ParsonsChoice to contain ParsonsItems");
-
-        // This should throw an exception:
-        validator.validateQuestionResponse(someParsonsQuestion, c);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(someParsonsQuestion, c);
+        });
+        assertTrue(exception.getMessage().contains("Expected ParsonsChoice to contain ParsonsItems"));
     }
 
     /*
@@ -404,11 +399,11 @@ public class IsaacParsonsValidatorTest {
         IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
         invalidQuestionType.setId("invalidQuestionType");
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("only works with IsaacParsonsQuestions");
-
         // This should throw an exception:
-        validator.validateQuestionResponse(invalidQuestionType, new ParsonsChoice());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(invalidQuestionType, new ParsonsChoice());
+        });
+        assertTrue(exception.getMessage().contains("only works with IsaacParsonsQuestions"));
     }
 
     /*
@@ -419,10 +414,10 @@ public class IsaacParsonsValidatorTest {
         IsaacParsonsQuestion parsonsQuestion = new IsaacParsonsQuestion();
         parsonsQuestion.setId("invalidQuestionType");
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Expected ParsonsChoice for IsaacParsonsQuestion");
-
         // This should throw an exception:
-        validator.validateQuestionResponse(parsonsQuestion, new Choice());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(parsonsQuestion, new Choice());
+        });
+        assertTrue(exception.getMessage().contains("Expected ParsonsChoice for IsaacParsonsQuestion"));
     }
 }
