@@ -22,8 +22,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the OAuth authenticator class.

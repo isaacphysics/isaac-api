@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the user manager class.

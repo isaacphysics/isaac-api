@@ -35,8 +35,8 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.resetToNice;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 public class QuizAssignmentManagerTest extends AbstractManagerTest {

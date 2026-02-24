@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import java.io.IOException;
 import java.net.URL;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for the OAuth authenticator class.

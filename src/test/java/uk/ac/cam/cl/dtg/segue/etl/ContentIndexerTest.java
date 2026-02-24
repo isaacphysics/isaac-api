@@ -16,7 +16,8 @@ package uk.ac.cam.cl.dtg.segue.etl;
  * limitations under the License.
  */
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.etl.ContentIndexer.FEEDBACK_QUESTION_UNUSED_DZ;
 
 import java.util.*;

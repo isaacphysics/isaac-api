@@ -15,7 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 
