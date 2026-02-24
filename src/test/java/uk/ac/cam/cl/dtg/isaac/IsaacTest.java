@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
@@ -130,7 +130,7 @@ public class IsaacTest {
 
     protected Map<Object, MockConfigurer> defaultsMap = new HashMap<>();
 
-    @Before
+    @BeforeEach
     public final void initializeIsaacTest() throws SegueDatabaseException, ContentManagerException {
         initializeIsaacObjects();
         initializeMocks();

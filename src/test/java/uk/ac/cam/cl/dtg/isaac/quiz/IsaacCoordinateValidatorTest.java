@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -51,7 +51,7 @@ public class IsaacCoordinateValidatorTest {
     /**
      * Initial configuration of tests.
      */
-    @Before
+    @BeforeEach
     public final void setUp() {
         validator = new IsaacCoordinateValidator();
 

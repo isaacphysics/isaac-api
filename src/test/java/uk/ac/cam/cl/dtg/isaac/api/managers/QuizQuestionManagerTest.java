@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
@@ -75,7 +75,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
     private Map<QuestionDTO, QuestionValidationResponse> answerMap;
     private QuizAttemptManager quizAttemptManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         quizQuestionAttemptPersistenceManager = createMock(IQuizQuestionAttemptPersistenceManager.class);
         questionManager = createMock(QuestionManager.class);
@@ -95,7 +95,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
         replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, quizAttemptManager);
     }
 
-    @Before
+    @BeforeEach
     public void initializeAdditionalObjects() {
         correctAnswer = new Choice();
         correctAnswerDTO = new ChoiceDTO();

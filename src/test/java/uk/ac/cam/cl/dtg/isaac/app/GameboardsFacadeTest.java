@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.app;
 
 import org.easymock.EasyMock;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
@@ -61,7 +61,7 @@ public class GameboardsFacadeTest {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@Before
+	@BeforeEach
 	public final void setUp() throws Exception {
 		this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);

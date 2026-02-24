@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -50,7 +50,7 @@ public class GameManagerTest {
     private QuestionManager dummyQuestionManager;
     private AbstractConfigLoader dummyConfigLoader;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.dummyContentManager = EasyMock.createMock(GitContentManager.class);
         this.dummyGameboardPersistenceManager = EasyMock.createMock(GameboardPersistenceManager.class);

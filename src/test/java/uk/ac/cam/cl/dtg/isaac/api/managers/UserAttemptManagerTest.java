@@ -2,8 +2,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -38,7 +38,7 @@ public class UserAttemptManagerTest {
 
     private final LightweightQuestionValidationResponse someOtherCorrectAttempt = new LightweightQuestionValidationResponse("some-other-part-id", true, null);
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         fakeQuestionSummary = new ContentSummaryDTO();
         fakeQuestionSummary.setId(QUESTION_ID);

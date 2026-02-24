@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import org.easymock.EasyMock;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -43,7 +43,7 @@ public class MisuseMonitorTest {
      * @throws Exception
      *             - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         this.dummyCommunicator = createMock(EmailManager.class);
         this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);

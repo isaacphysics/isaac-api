@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.reflections.Reflections;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -14,7 +14,7 @@ public class ContentSubclassMapperTest {
 
     private ContentSubclassMapper contentSubclassMapper;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.contentSubclassMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg.isaac"));
     }

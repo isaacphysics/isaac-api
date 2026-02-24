@@ -16,9 +16,9 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.ExpectedException;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacStringMatchQuestion;
@@ -50,7 +50,7 @@ public class IsaacStringMatchValidatorTest {
      * Initial configuration of tests.
      *
      */
-    @Before
+    @BeforeEach
     public final void setUp() {
         validator = new IsaacStringMatchValidator();
 

@@ -19,8 +19,8 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.mailgun.model.message.MessageResponse;
 import org.easymock.EasyMock;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
@@ -47,7 +47,7 @@ public class MailGunEmailManagerTest {
      * @throws Exception
      *             - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         // Create dummy email preferences
         userPreferenceManager = EasyMock.createMock(PgUserPreferenceManager.class);

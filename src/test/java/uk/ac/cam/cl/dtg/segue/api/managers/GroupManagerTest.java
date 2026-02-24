@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import org.easymock.Capture;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -65,7 +65,7 @@ public class GroupManagerTest {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@Before
+	@BeforeEach
 	public final void setUp() throws Exception {
 		this.dummyMapper = createMock(MainMapper.class);
 		this.dummyCommunicator = createMock(ICommunicator.class);

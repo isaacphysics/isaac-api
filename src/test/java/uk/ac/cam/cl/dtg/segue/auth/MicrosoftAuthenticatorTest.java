@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import org.junit.Before;
 import org.junit.experimental.runners.Enclosed;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.Test;
@@ -87,7 +87,7 @@ public class MicrosoftAuthenticatorTest {
     // 1) getAuthorizationUrl, 2) extractAuthCode, 3) getAntiForgeryStateToken, 4) getUserInfo,
     // 5) getAuthenticationProvider, 6) exchangeCode
     public static class TestShared extends IOAuth2AuthenticatorTest {
-        @Before
+        @BeforeEach
         public final void setUp() throws Exception {
             this.oauth2Authenticator = Helpers.subject(Helpers.getStore());
             this.authenticator = this.oauth2Authenticator;

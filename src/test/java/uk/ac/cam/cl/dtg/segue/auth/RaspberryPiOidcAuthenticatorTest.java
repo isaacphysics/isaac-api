@@ -16,13 +16,12 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -31,7 +30,7 @@ public class RaspberryPiOidcAuthenticatorTest {
 
     RaspberryPiOidcAuthenticator authenticator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         // Set up an authenticator with local OIDC IdP metadata
         URL res = getClass().getClassLoader().getResource("test-rpf-idp-metadata.json");

@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -39,7 +39,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
 
     private IQuizAttemptPersistenceManager quizAttemptPersistenceManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         quizAttemptPersistenceManager = createMock(IQuizAttemptPersistenceManager.class);
 

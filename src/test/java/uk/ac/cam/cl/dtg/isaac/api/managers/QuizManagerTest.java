@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -27,7 +27,7 @@ public class QuizManagerTest extends AbstractManagerTest {
     private AbstractConfigLoader properties;
     private IsaacQuizDTO brokenQuiz;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         properties = createMock(AbstractConfigLoader.class);
 

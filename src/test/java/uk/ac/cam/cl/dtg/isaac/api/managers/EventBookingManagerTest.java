@@ -4,8 +4,8 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -65,7 +65,7 @@ public class EventBookingManagerTest {
     /**
      * Initial configuration of tests.
      */
-    @Before
+    @BeforeEach
     public final void setUp() {
         this.dummyEmailManager = createMock(EmailManager.class);
         this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);

@@ -26,11 +26,11 @@ import java.util.Map;
 import junit.framework.Assert;
 
 import org.easymock.EasyMock;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.api.client.util.Maps;
 
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
@@ -51,7 +51,7 @@ public class PostCodeLocationResolverTest {
     private PostCodeIOLocationResolver resolver;
     private PostgresSqlDb mockDatabase;
 
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         mockDatabase = EasyMock.createMock(PostgresSqlDb.class);
         locationHistory = new PgLocationHistory(mockDatabase);

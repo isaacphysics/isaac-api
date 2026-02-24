@@ -15,8 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
@@ -48,7 +48,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     private QuizAssignmentDTO newAssignment;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ContentManagerException, SegueDatabaseException {
         AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
         emailService = createMock(EmailService.class);
@@ -61,7 +61,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
         replay(properties, emailService, quizAssignmentPersistenceManager);
     }
 
-    @Before
+    @BeforeEach
     public void initializeAdditionalObjects() {
         newAssignment = new QuizAssignmentDTO(
             null, studentQuiz.getId(),

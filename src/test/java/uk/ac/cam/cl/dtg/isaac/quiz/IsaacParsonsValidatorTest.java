@@ -17,9 +17,9 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.ExpectedException;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacParsonsQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -52,7 +52,7 @@ public class IsaacParsonsValidatorTest {
     /**
      * Initial configuration of tests.
      */
-    @Before
+    @BeforeEach
     public final void setUp() {
         validator = new IsaacParsonsValidator();
 

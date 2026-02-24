@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -66,7 +67,7 @@ public class SegueLocalAuthenticatorTest {
      *
      * @throws Exception - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         this.userDataManager = createMock(IUserDataManager.class);
         this.passwordDataManager = createMock(IPasswordDataManager.class);

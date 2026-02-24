@@ -28,8 +28,8 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +80,7 @@ public class EmailManagerTest {
      * @throws Exception
      *             - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
 
         // Create dummy user

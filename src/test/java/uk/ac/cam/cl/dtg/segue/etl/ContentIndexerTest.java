@@ -24,11 +24,11 @@ import java.util.*;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -59,7 +59,7 @@ public class ContentIndexerTest {
      * @throws Exception
      *             - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         this.database = createMock(GitDb.class);
         this.searchProvider = createMock(ElasticSearchIndexer.class);

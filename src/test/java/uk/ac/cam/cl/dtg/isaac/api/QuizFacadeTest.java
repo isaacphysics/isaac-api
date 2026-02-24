@@ -18,8 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.easymock.IAnswer;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -89,7 +89,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     private UserAssociationManager associationManager;
     private List<QuizAttemptDTO> studentOwnAttempts;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ContentManagerException {
         studentOwnAttempts = ImmutableList.of(ownAttempt, ownCompletedAttempt, attemptOnNullFeedbackModeQuiz);
 

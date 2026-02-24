@@ -15,8 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -52,7 +52,7 @@ public class GitContentManagerTest {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@Before
+	@BeforeEach
 	public final void setUp() throws Exception {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);

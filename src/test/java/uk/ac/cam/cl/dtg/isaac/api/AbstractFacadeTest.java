@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Joiner;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -91,7 +91,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     private Map<RegisteredUserDTO, UserSummaryDTO> userSummaries = Maps.newHashMap();
 
 
-    @Before
+    @BeforeEach
     public void abstractFacadeTestSetup() {
         httpServletRequest = createMock(HttpServletRequest.class);
         replay(httpServletRequest);

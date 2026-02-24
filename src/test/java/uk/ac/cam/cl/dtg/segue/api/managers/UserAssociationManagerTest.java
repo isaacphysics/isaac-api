@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Sets;
 import org.easymock.Capture;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
@@ -55,7 +55,7 @@ public class UserAssociationManagerTest {
      *
      * @throws Exception - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         dummyAssociationDataManager = createMock(IAssociationDataManager.class);
         dummyGroupDataManager = createMock(GroupManager.class);

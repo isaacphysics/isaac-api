@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 
@@ -31,7 +31,7 @@ public class PgEventBookingsTest {
     private PreparedStatement dummyPreparedStatement;
     private ResultSet dummyResultSet;
 
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         this.dummyPostgresSqlDb = createMock(PostgresSqlDb.class);
         this.dummyObjectMapper = createMock(ObjectMapper.class);
