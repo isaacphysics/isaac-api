@@ -198,7 +198,7 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
         List<IsaacQuestionPageDTO> incompleteQuestionPages = Lists.newArrayList();
-        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList =  Lists.newArrayList();
+        Queue<ContentSummaryDTO> mostRecentlyAttemptedQuestionsQueue = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
         LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
@@ -293,7 +293,7 @@ public class StatisticsManager implements IStatisticsManager {
             ContentSummaryDTO contentSummaryDTO = contentSummarizerService.extractContentSummary(questionPageDTO);
             contentSummaryDTO.setState(UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect));
 
-            mostRecentlyAttemptedQuestionsList.add(contentSummaryDTO);
+            mostRecentlyAttemptedQuestionsQueue.add(contentSummaryDTO);
 
             // Tag Stats - Loop through the Question's tags:
             for (String tag : questionPageDTO.getTags()) {
@@ -371,7 +371,7 @@ public class StatisticsManager implements IStatisticsManager {
 
         // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
-
+        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = new ArrayList<>(mostRecentlyAttemptedQuestionsQueue);
         Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
         List<ContentSummaryDTO> questionsNotCompleteList = incompleteQuestionPages.stream()
             .sorted(Comparator.comparing(SeguePageDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
