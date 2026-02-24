@@ -36,6 +36,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.resetToNice;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
@@ -100,22 +101,24 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
         quizAssignmentManager.createAssignment(newAssignment);
     }
 
-    @Test(expected = DueBeforeNowException.class)
-    public void createAssignmentFailsInThePast() throws SegueDatabaseException, ContentManagerException {
-        newAssignment.setDueDate(somePastDate);
-
-        quizAssignmentManager.createAssignment(newAssignment);
+    @Test
+    void createAssignmentFailsInThePast() {
+        assertThrows(DueBeforeNowException.class, () -> {
+            newAssignment.setDueDate(somePastDate);
+            quizAssignmentManager.createAssignment(newAssignment);
+        });
     }
 
-    @Test(expected = DuplicateAssignmentException.class)
-    public void createDuplicateAssignmentFails() throws SegueDatabaseException, ContentManagerException {
+    @Test
+    public void createDuplicateAssignmentFails() {
+        assertThrows(DuplicateAssignmentException.class, () -> {
+            withMock(quizAssignmentPersistenceManager, m -> {
+                expect(m.getAssignmentsByQuizIdAndGroup(
+                        studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
+            });
 
-        withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
+            quizAssignmentManager.createAssignment(newAssignment);
         });
-
-        quizAssignmentManager.createAssignment(newAssignment);
     }
 
     @Test

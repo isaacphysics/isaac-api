@@ -32,6 +32,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class QuizAttemptManagerTest extends AbstractManagerTest {
     private static final Long TEST_ID = 0xC0000000000L;
@@ -56,11 +57,12 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
         assertEquals(studentAttempt, attempt);
     }
 
-    @Test(expected = AttemptCompletedException.class)
+    @Test
     public void fetchOrCreateWithExistingCompletedAttemptFails() throws AttemptCompletedException, SegueDatabaseException {
-        withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(completedAttempt));
-
-        quizAttemptManager.fetchOrCreate(studentAssignment, student);
+        assertThrows(AttemptCompletedException.class, () -> {
+            withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(completedAttempt));
+            quizAttemptManager.fetchOrCreate(studentAssignment, student);
+        });
     }
 
     @Test

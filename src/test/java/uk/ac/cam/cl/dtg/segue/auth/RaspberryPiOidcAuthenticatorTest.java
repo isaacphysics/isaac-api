@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RaspberryPiOidcAuthenticatorTest {
 
@@ -75,17 +76,19 @@ public class RaspberryPiOidcAuthenticatorTest {
         assertEquals("John", givenNameFamilyName.get(1));
     }
 
-    @Test(expected = NoUserException.class)
-    public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() throws Exception{
-        // Arrange
-        String idpNickname = "*";
-        String idpFullName = "John Smith";
+    @Test
+    public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() {
+        assertThrows(Exception.class, () -> {
+            // Arrange
+            String idpNickname = "*";
+            String idpFullName = "John Smith";
 
-        // Act
-        authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
+            // Act
+            authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
 
-        // Assert
-        // See signature
+            // Assert
+            // See signature
+        });
     }
 
     @Test

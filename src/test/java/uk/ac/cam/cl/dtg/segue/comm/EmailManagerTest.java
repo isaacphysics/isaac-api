@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.comm;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Date;
@@ -433,47 +434,49 @@ public class EmailManagerTest {
      * 
      * @throws CommunicationException
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public final void sendRegistrationConfirmation_checkForInvalidTemplateTags_throwIllegalArgumentException() {
-        EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenName}} {{surname}}.\n"
-                + "Thanks for registering!\nYour Isaac email address is: "
-                + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
+        assertThrows(IllegalArgumentException.class, () -> {
+            EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenName}} {{surname}}.\n"
+                    + "Thanks for registering!\nYour Isaac email address is: "
+                    + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
 
-        ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
-        // Create content manager
-        try {
-            EasyMock.expect(
-                    mockContentManager.getContentById("email-template-registration-confirmation"))
-                    .andReturn(template).once();
+            ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
+            // Create content manager
+            try {
+                EasyMock.expect(
+                                mockContentManager.getContentById("email-template-registration-confirmation"))
+                        .andReturn(template).once();
 
-            EasyMock.expect(mockContentManager.getContentById("email-template-html"))
-                    .andReturn(htmlTemplate).once();
+                EasyMock.expect(mockContentManager.getContentById("email-template-html"))
+                        .andReturn(htmlTemplate).once();
 
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
+                EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
 
-            EasyMock.replay(mockContentManager);
+                EasyMock.replay(mockContentManager);
 
-        } catch (ContentManagerException e) {
-            e.printStackTrace();
-            fail();
-        }
+            } catch (ContentManagerException e) {
+                e.printStackTrace();
+                fail();
+            }
 
-        EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager, generateGlobalTokenMap());
-        try {
-            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
+            EmailManager manager = new EmailManager(emailCommunicator, userPreferenceManager, mockPropertiesLoader,
+                    mockContentManager, logManager, generateGlobalTokenMap());
+            try {
+                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
 
-            manager.sendTemplatedEmailToUser(userDTO,
-                    template,
-                    emailTokens, EmailType.SYSTEM);
+                manager.sendTemplatedEmailToUser(userDTO,
+                        template,
+                        emailTokens, EmailType.SYSTEM);
 
-        } catch (ContentManagerException e) {
-            e.printStackTrace();
-            fail();
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            fail();
-        }
+            } catch (ContentManagerException e) {
+                e.printStackTrace();
+                fail();
+            } catch (SegueDatabaseException e) {
+                e.printStackTrace();
+                fail();
+            }
+        });
     }
 
     /**
