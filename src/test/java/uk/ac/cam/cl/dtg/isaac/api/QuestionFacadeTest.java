@@ -42,9 +42,8 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -190,7 +189,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
 
         // Assert
-        assertThat(outUser, instanceOf(RegisteredUserDTO.class));
+        assertInstanceOf(RegisteredUserDTO.class, outUser);
         assertEquals(adminUser.getId(), outUser.getId());
     }
 }
