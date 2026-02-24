@@ -87,7 +87,7 @@ public class PgEventBookingsTest {
         PgEventBookings pgEventBookings = this.buildPgEventBookings();
         Map<BookingStatus, Map<Role, Long>> actualStatusCounts =
                 pgEventBookings.getEventBookingStatusCounts("someEventId", true);
-        assertEquals("Every row should be represented in the result", expectedStatusCounts, actualStatusCounts);
+        assertEquals(expectedStatusCounts, actualStatusCounts, "Every row should be represented in the result");
         verify(mockedObjects);
     }
 }

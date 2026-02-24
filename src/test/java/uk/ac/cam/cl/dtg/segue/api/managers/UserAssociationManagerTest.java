@@ -386,8 +386,8 @@ public class UserAssociationManagerTest {
                     // These characters are allowed to be blank!
                     continue;
                 }
-                assertFalse("Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!",
-                        (occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
+                assertFalse((occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta),
+                        "Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!");
             }
         }
     }

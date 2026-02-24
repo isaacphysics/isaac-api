@@ -267,7 +267,8 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     ///////////////////////////////////////////////////////////////////////////
 
     private void assertErrorResponse(Status expectedStatus, Response actual) {
-        assertEquals("Expected status " + expectedStatus.name() + ", got " + actual.getStatusInfo().toEnum().name() + " with details " + extractErrorInfo(actual), expectedStatus.getStatusCode(), actual.getStatus());
+        assertEquals(expectedStatus.getStatusCode(), actual.getStatus(),
+                "Expected status " + expectedStatus.name() + ", got " + actual.getStatusInfo().toEnum().name() + " with details " + extractErrorInfo(actual));
     }
 
     private String extractErrorInfo(Response response) {

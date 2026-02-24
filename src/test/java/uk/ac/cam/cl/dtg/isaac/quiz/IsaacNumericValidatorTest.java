@@ -397,14 +397,14 @@ public class IsaacNumericValidatorTest {
         Quantity q_5sf = new Quantity("1.6875");
         // Test response:
         QuestionValidationResponse response_5sf = validator.validateQuestionResponse(someNumericQuestion, q_5sf);
-        assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf.isCorrect());
+        assertFalse(response_5sf.isCorrect(), "expected 1.6875 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_5sf.getExplanation().getTags().contains("sig_figs"));
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("2");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
-        assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
+        assertFalse(response_1sf.isCorrect(), "expected 2 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
     }
 
@@ -430,7 +430,7 @@ public class IsaacNumericValidatorTest {
         Quantity q_5sf_corr = new Quantity("1.6875");
         // Test response is sig fig message:
         QuestionValidationResponse response_5sf_corr = validator.validateQuestionResponse(someNumericQuestion, q_5sf_corr);
-        assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf_corr.isCorrect());
+        assertFalse(response_5sf_corr.isCorrect(), "expected 1.6875 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs"));
         assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs_too_many"));
 
@@ -438,14 +438,14 @@ public class IsaacNumericValidatorTest {
         Quantity q_5sf_wrong = new Quantity("2.7986");
         // Test response does not mention sig figs:
         QuestionValidationResponse response_5sf_wrong = validator.validateQuestionResponse(someNumericQuestion, q_5sf_wrong);
-        assertFalse("expected 2.7986 not to match 1.6875", response_5sf_wrong.isCorrect());
-        assertFalse("expected 2.7986 without sig fig message", response_5sf_wrong.getExplanation().getTags().contains("sig_figs"));
+        assertFalse(response_5sf_wrong.isCorrect(), "expected 2.7986 not to match 1.6875");
+        assertFalse(response_5sf_wrong.getExplanation().getTags().contains("sig_figs"), "expected 2.7986 without sig fig message");
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("5");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
-        assertFalse("expected 5 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
+        assertFalse(response_1sf.isCorrect(), "expected 5 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
         assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs_too_few"));
     }
@@ -986,18 +986,20 @@ public class IsaacNumericValidatorTest {
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
         double result = ValidationUtils.roundStringValueToSigFigs(inputValue, sigFigToRoundTo, log);
 
-        assertEquals("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
-                + "sf: expected '" + expectedResult + "', got '" + result + "'", result, expectedResult, 0.0);
+        assertEquals(result, expectedResult, 0.0, "sigfig rounding failed for value '" + inputValue + "' to "
+                + sigFigToRoundTo + "sf: expected '" + expectedResult + "', got '" + result + "'");
     }
 
     private void testSigFigExtractionWorks(String inputValue, int minAllowedSigFigs, int maxAllowedSigFigs,
                                            int expectedResult) throws Exception {
         int result = ValidationUtils.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs, log);
 
-        assertTrue("sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
-                + ", max allowed: " + maxAllowedSigFigs + ") got " + result, result <= maxAllowedSigFigs && result >= minAllowedSigFigs);
-        assertEquals("sigfig extraction failed for value " + inputValue + ", expected: " + expectedResult
-                + " got " + result, result, expectedResult);
+        assertTrue(result <= maxAllowedSigFigs && result >= minAllowedSigFigs,
+                "sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
+                + ", max allowed: " + maxAllowedSigFigs + ") got " + result);
+
+        assertEquals(result, expectedResult, "sigfig extraction failed for value " + inputValue + ", expected: "
+                + expectedResult + " got " + result);
     }
 
 
@@ -1014,16 +1016,16 @@ public class IsaacNumericValidatorTest {
 
             for (Integer sigFig : sigFigsToPass) {
                 boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, log);
-                assertFalse("Unexpected too few sig fig for " + number + " @ " + sigFig + "sf", tooFew);
+                assertFalse(tooFew, "Unexpected too few sig fig for " + number + " @ " + sigFig + "sf");
                 boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, log);
-                assertFalse("Unexpected too many sig fig for " + number + " @ " + sigFig + "sf", tooMany);
+                assertFalse(tooMany, "Unexpected too many sig fig for " + number + " @ " + sigFig + "sf");
             }
 
             for (Integer sigFig : sigFigsToFail) {
                 boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, log);
                 boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, log);
                 boolean incorrectSigFig = tooMany || tooFew;
-                assertTrue("Expected incorrect sig fig for " + number + " @ " + sigFig + "sf", incorrectSigFig);
+                assertTrue(incorrectSigFig, "Expected incorrect sig fig for " + number + " @ " + sigFig + "sf");
             }
         }
     }
