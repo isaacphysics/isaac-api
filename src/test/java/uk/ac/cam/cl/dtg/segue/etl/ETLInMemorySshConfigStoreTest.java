@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore.InMemoryHostConfig;
 
 import java.util.Arrays;

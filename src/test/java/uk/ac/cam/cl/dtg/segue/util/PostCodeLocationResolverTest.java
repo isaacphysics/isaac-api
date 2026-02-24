@@ -26,11 +26,12 @@ import java.util.Map;
 import junit.framework.Assert;
 
 import org.easymock.EasyMock;
-import org.junit.Test;
 
 import com.google.api.client.util.Maps;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;

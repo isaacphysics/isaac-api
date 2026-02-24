@@ -20,9 +20,9 @@ import com.google.common.cache.CacheBuilder;
 
 import org.junit.experimental.runners.Enclosed;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
-import org.junit.Test;
 
 import org.junit.runners.Parameterized;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;

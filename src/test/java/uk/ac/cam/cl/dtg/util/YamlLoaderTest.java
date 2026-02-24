@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.util;
 
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;

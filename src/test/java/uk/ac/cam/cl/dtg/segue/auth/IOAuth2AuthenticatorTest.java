@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
 import com.google.api.client.http.GenericUrl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 
 import java.io.IOException;

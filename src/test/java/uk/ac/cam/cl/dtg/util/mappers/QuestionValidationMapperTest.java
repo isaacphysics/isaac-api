@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.util.mappers;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.reflections.Reflections;
@@ -9,7 +9,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 
-import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;

@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class GitDbTest {
 
