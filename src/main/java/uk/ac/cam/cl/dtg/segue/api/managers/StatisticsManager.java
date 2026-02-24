@@ -22,6 +22,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
@@ -197,7 +198,6 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
         List<IsaacQuestionPageDTO> incompleteQuestionPages = Lists.newArrayList();
-        Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
         List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList =  Lists.newArrayList();
 
         LocalDate now = LocalDate.now();
@@ -291,19 +291,9 @@ public class StatisticsManager implements IStatisticsManager {
                 questionIsCorrect = questionIsCorrect && questionPartIsCorrect;
             }
             ContentSummaryDTO contentSummaryDTO = contentSummarizerService.extractContentSummary(questionPageDTO);
-            
-
-            mostRecentlyAttemptedQuestionPages.add(questionPageDTO);  // Assumes questionAttemptsByUser is sorted!
-
+            contentSummaryDTO.setState(UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect));
 
             mostRecentlyAttemptedQuestionsList.add(contentSummaryDTO);
-
-            List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
-                .stream().map(page -> {
-                    ContentSummaryDTO dto = contentSummarizerService.extractContentSummary(page);
-                    // dto.setState(page.getState());  // derive from source
-                    return dto;
-                }).collect(Collectors.toList());
 
             // Tag Stats - Loop through the Question's tags:
             for (String tag : questionPageDTO.getTags()) {
@@ -382,13 +372,6 @@ public class StatisticsManager implements IStatisticsManager {
         // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
 
-        // Create the recent and unanswered question lists:
-        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
-                .stream().map(page -> {
-                    ContentSummaryDTO dto = contentSummarizerService.extractContentSummary(page);
-                    // dto.setState(page.getState());  // derive from source
-                    return dto;
-                }).collect(Collectors.toList());
         Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
         List<ContentSummaryDTO> questionsNotCompleteList = incompleteQuestionPages.stream()
             .sorted(Comparator.comparing(SeguePageDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
