@@ -6,12 +6,13 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.json.JSONObject;
-import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.function.Executable;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.LocalAuthDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
+import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -35,21 +36,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * interacting with the server. As the server runs in-process, mocking and debugging still work.
  */
 public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
-    private final HashSet<ThrowingRunnable> cleanups = new HashSet<>();
+    private final Set<Executable> cleanups = new HashSet<>();
 
     @SuppressWarnings({"checkstyle:EmptyCatchBlock", "checkstyle:MissingJavadocMethod"})
     @AfterEach
     public void doCleanup() {
-        for (var cleanup : cleanups) {
+        for (Executable cleanup : cleanups) {
             try {
-                cleanup.run();
+                cleanup.execute();
             } catch (final Throwable ignored) {
 
             }
         }
     }
 
-    public void registerCleanup(final ThrowingRunnable cleanup) {
+    public void registerCleanup(final Executable cleanup) {
         this.cleanups.add(cleanup);
     }
 
@@ -61,10 +62,10 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         private String sessionId;
         private final Server server;
         private final ServletContextHandler ctx;
-        private final Consumer<ThrowingRunnable> registerCleanup;
+        private final Consumer<Executable> registerCleanup;
 
         private TestServer(
-            final Server server, final ServletContextHandler ctx, final Consumer<ThrowingRunnable> registerCleanup
+            final Server server, final ServletContextHandler ctx, final Consumer<Executable> registerCleanup
         ) {
             this.server = server;
             this.ctx = ctx;
@@ -72,16 +73,16 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         public static TestServer start(
-            final Set<Object> facades, final Consumer<ThrowingRunnable> registerCleanup
+            final Set<Object> facades, final Consumer<Executable> registerCleanup
         ) throws Exception {
             TestApp.facades = facades;
 
-            var server = new Server(0);
-            var ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
+            Server server = new Server(0);
+            ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
             ctx.setContextPath("/");
             server.setHandler(ctx);
 
-            var servlet = new ServletHolder(new HttpServletDispatcher());
+            ServletHolder servlet = new ServletHolder(new HttpServletDispatcher());
             servlet.setInitParameter("jakarta.ws.rs.Application", TestApp.class.getName());
             ctx.addServlet(servlet, "/*");
 
@@ -91,14 +92,14 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         public TestServer setSessionAttributes(final Map<String, String> attributes) {
-            var session = ctx.getSessionHandler().newHttpSession(new Request(null, null));
+            HttpSession session = ctx.getSessionHandler().newHttpSession(new Request(null, null));
             attributes.keySet().forEach(k -> session.setAttribute(k, attributes.get(k)));
             sessionId = session.getId();
             return this;
         }
 
         public TestClient client() {
-            var baseUrl = "http://localhost:" + server.getURI().getPort();
+            String baseUrl = "http://localhost:" + server.getURI().getPort();
             RequestBuilder builder = (null == this.sessionId) ? r -> r : r -> r.cookie("JSESSIONID", sessionId);
             return new TestClient(baseUrl, registerCleanup, builder);
         }
@@ -115,12 +116,12 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
 
     static class TestClient {
         String baseUrl;
-        Consumer<ThrowingRunnable> registerCleanup;
+        Consumer<Executable> registerCleanup;
         RequestBuilder builder;
         RegisteredUserDTO currentUser;
         Client client;
 
-        TestClient(final String baseUrl, final Consumer<ThrowingRunnable> registerCleanup, final RequestBuilder builder) {
+        TestClient(final String baseUrl, final Consumer<Executable> registerCleanup, final RequestBuilder builder) {
             this.baseUrl = baseUrl;
             this.registerCleanup = registerCleanup;
             this.builder = builder;
@@ -128,22 +129,22 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         public TestResponse get(final String url) {
-            var request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
-            var response = builder.apply(request).get();
+            Invocation.Builder request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
+            Response response = builder.apply(request).get();
             registerCleanup.accept(response::close);
             return new TestResponse(response);
         }
 
         public TestResponse post(final String url, final Object body) {
-            var request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
-            var response = builder.apply(request).post(Entity.json(body));
+            Invocation.Builder request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
+            Response response = builder.apply(request).post(Entity.json(body));
             registerCleanup.accept(response::close);
             return new TestResponse(response);
         }
 
         public TestClient loginAs(final RegisteredUser user) {
-            var request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
-            var body = new LocalAuthDTO();
+            Invocation.Builder request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
+            LocalAuthDTO body = new LocalAuthDTO();
             body.setEmail(user.getEmail());
             body.setPassword("test1234");
             this.currentUser = builder.apply(request).post(Entity.json(body), RegisteredUserDTO.class);
@@ -173,9 +174,9 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         void assertUserLoggedIn(final Number userId) {
-            var base64Cookie = this.response.getCookies().get("SEGUE_AUTH_COOKIE").getValue();
-            var cookieBytes = java.util.Base64.getDecoder().decode(base64Cookie);
-            var cookie = new JSONObject(new String(cookieBytes));
+            String base64Cookie = this.response.getCookies().get("SEGUE_AUTH_COOKIE").getValue();
+            byte[] cookieBytes = java.util.Base64.getDecoder().decode(base64Cookie);
+            JSONObject cookie = new JSONObject(new String(cookieBytes));
             assertEquals(userId, cookie.getLong("id"));
         }
 
