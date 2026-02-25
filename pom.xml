@@ -23,7 +23,6 @@
          typo from the maintainers - hopefully we can remove this next update. -->
         <jackson-annotations.version>2.20</jackson-annotations.version>
         <powermock.version>2.0.9</powermock.version>
-        <junit-4.version>4.13.2</junit-4.version>
         <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -201,12 +200,6 @@
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>${swagger-core.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit-4.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -567,16 +560,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
-                <dependencies>
-                    <dependency>
-                        <!-- This forces surefire (i.e. all unit tests) to use JUnit 4, as PowerMock is used in unit
-                        tests and is not compatible with JUnit 5.
-                        See https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit.html#manually-specifying-a-provider -->
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-junit47</artifactId>
-                        <version>3.5.4</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
                     <forkCount>3</forkCount>
                     <reuseForks>true</reuseForks>
