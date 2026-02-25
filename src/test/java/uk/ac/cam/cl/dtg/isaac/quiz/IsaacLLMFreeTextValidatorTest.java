@@ -92,7 +92,7 @@ public class IsaacLLMFreeTextValidatorTest {
 
         @ParameterizedTest(name = "{index}: {0}")
         @MethodSource("data")
-        void test(final IsaacLLMFreeTextQuestion question, final String breakdown,
+        void test(final String description, final IsaacLLMFreeTextQuestion question, final String breakdown,
                   final boolean expectedResult, final int expectedMarkTotal) throws Exception {
             LLMFreeTextQuestionValidationResponse resp = validate(question, answer(), client(breakdown));
             expectMark(resp, expectedResult, expectedMarkTotal, toMarkScheme(breakdown));
