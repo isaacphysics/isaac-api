@@ -77,6 +77,7 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
 
     @BeforeEach
     public void setUp() {
+        initializeAdditionalObjects();
         quizQuestionAttemptPersistenceManager = createMock(IQuizQuestionAttemptPersistenceManager.class);
         questionManager = createMock(QuestionManager.class);
         MainMapper contentMapper = createMock(MainMapper.class);
@@ -95,7 +96,6 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
         replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, quizAttemptManager);
     }
 
-    @BeforeEach
     public void initializeAdditionalObjects() {
         correctAnswer = new Choice();
         correctAnswerDTO = new ChoiceDTO();
