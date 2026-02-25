@@ -251,7 +251,11 @@ public class IsaacCoordinateValidator implements IValidator {
             String submittedValue = submittedItem.getCoordinates().get(dimension);
             String choiceValue = choiceItem.getCoordinates().get(dimension);
 
-            int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue, sigFigsMin, sigFigsMax, log);
+            Integer sigFigs = null;
+            if (null != sigFigsMin || null != sigFigsMax) {
+                sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue, sigFigsMin, sigFigsMax, log);
+            }
+
             if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log)
                     || null != sigFigsMin && ValidationUtils.tooFewSignificantFigures(submittedValue, sigFigsMin, log)
                         || null != sigFigsMax && ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
