@@ -78,7 +78,7 @@ public class RaspberryPiOidcAuthenticatorTest {
 
     @Test
     public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() {
-        assertThrows(Exception.class, () -> {
+        assertThrows(NoUserException.class, () -> {
             // Arrange
             String idpNickname = "*";
             String idpFullName = "John Smith";
