@@ -190,6 +190,7 @@ public class IsaacParsonsValidatorTest {
         Item submittedItem2 = new Item("id002", null);
         c.setItems(ImmutableList.of(submittedItem1, submittedItem2));
 
+        // This should throw an exception:
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             validator.validateQuestionResponse(someParsonsQuestion, c);
         });
