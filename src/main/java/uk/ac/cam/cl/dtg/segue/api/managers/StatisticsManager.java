@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -48,14 +49,13 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -198,9 +198,7 @@ public class StatisticsManager implements IStatisticsManager {
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
         List<ContentSummaryDTO> incompleteQuestionPages = Lists.newArrayList();
-        List<ContentSummaryDTO> incompleteDeprecatedQuestionPages = Lists.newArrayList();
-        Queue<ContentDTO> mostRecentlyAttemptedQuestionsQueue = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
-        Queue<CompletionState> mostRecentlyAttemptedQuestionsState = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
+        Queue<ContentSummaryDTO> mostRecentlyAttemptedQuestionsQueue = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
         LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
@@ -296,9 +294,10 @@ public class StatisticsManager implements IStatisticsManager {
                 questionIsCorrect = questionIsCorrect && questionPartIsCorrect;
             }
 
-            mostRecentlyAttemptedQuestionsQueue.add(questionPageDTO);
-            CompletionState completionState = UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect);
-            mostRecentlyAttemptedQuestionsState.add(completionState);
+            // Convert QuestionPageDTO to ContentSummaryDTO and calculate completion state
+            ContentSummaryDTO contentSummaryDTO = contentSummarizerService.extractContentSummary(questionPageDTO);
+            contentSummaryDTO.setState(UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect));
+            mostRecentlyAttemptedQuestionsQueue.add(contentSummaryDTO);
 
             // Tag Stats - Loop through the Question's tags:
             for (String tag : questionPageDTO.getTags()) {
@@ -370,38 +369,17 @@ public class StatisticsManager implements IStatisticsManager {
                     correctQuestionsThisAcademicYear++;
                 }
             } else {
-                if (incompleteQuestionPages.size() < PROGRESS_MAX_RECENT_QUESTIONS) {
-                    ContentSummaryDTO dto = contentSummarizerService.extractContentSummary(questionPageDTO);
-                    dto.setState(completionState);
-                    if ((questionPageDTO.getDeprecated() == null || !questionPageDTO.getDeprecated())) {
-                        incompleteQuestionPages.add(dto);
-                    } else if (incompleteDeprecatedQuestionPages.size()
-                            < (PROGRESS_MAX_RECENT_QUESTIONS - incompleteQuestionPages.size())) {
-                        incompleteDeprecatedQuestionPages.add(dto);
-                    }
-                }
+                incompleteQuestionPages.add(contentSummaryDTO);
             }
         }
 
-        // Iterate over parallel question and state queues to create ContentSummaryDTOs with state set
-        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = new ArrayList<>();
-        Iterator<ContentDTO> questionIterator = mostRecentlyAttemptedQuestionsQueue.iterator();
-        Iterator<CompletionState> stateIterator = mostRecentlyAttemptedQuestionsState.iterator();
-        while (questionIterator.hasNext() && stateIterator.hasNext()) {
-            ContentSummaryDTO dto = contentSummarizerService.extractContentSummary(questionIterator.next());
-            dto.setState(stateIterator.next());
-            mostRecentlyAttemptedQuestionsList.add(dto);
-        }
-        Collections.reverse(mostRecentlyAttemptedQuestionsList); // We want most-recent first order and streams cannot reverse.
-
-        // List up to PROGRESS_MAX_RECENT_QUESTIONS non-deprecated question pages, or if that fails deprecated ones too
-        List<ContentSummaryDTO> questionsNotCompleteList = Stream.concat(
-            incompleteQuestionPages.stream(),
-            incompleteDeprecatedQuestionPages.stream().limit(PROGRESS_MAX_RECENT_QUESTIONS - incompleteQuestionPages.size())
-        ).collect(Collectors.toList());
-
         // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
+        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = new ArrayList<>(mostRecentlyAttemptedQuestionsQueue);
+        Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
+        List<ContentSummaryDTO> questionsNotCompleteList = incompleteQuestionPages.stream()
+            .sorted(Comparator.comparing(ContentSummaryDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
+            .limit(PROGRESS_MAX_RECENT_QUESTIONS).collect(Collectors.toList());
 
         questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
         questionInfo.put("totalQuestionsCorrect", correctQuestions);
