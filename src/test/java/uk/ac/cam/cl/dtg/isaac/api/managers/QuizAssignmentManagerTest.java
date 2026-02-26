@@ -102,7 +102,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     }
 
     @Test
-    void createAssignmentFailsInThePast() {
+    public void createAssignmentFailsInThePast() {
         assertThrows(DueBeforeNowException.class, () -> {
             newAssignment.setDueDate(somePastDate);
             quizAssignmentManager.createAssignment(newAssignment);
