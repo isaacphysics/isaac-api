@@ -400,10 +400,9 @@ public class QuestionFacade extends AbstractSegueFacade {
             if (pageContent instanceof IsaacQuiz) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "This question is part of a quiz").toResponse();
             }
-        } catch (ContentManagerException e) {
-            // This doesn't make sense, so we'll log and continue.
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Question without page found", e);
-            log.error(error.getErrorMessage(), e);
+        } catch (final ContentManagerException e) {
+            // This doesn't make sense, but we'll log and continue.
+            log.error("Error loading parent page for question ({})! ", questionPageId, e);
         }
 
         try {

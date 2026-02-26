@@ -526,22 +526,24 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             emailManager.sendCustomEmail(sender, contentId, new ArrayList<>(allSelectedUsers), emailType);
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
             log.error(error.getErrorMessage());
             return error.toResponse();
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "An unknown type of user was supplied.");
             log.debug(error.getErrorMessage());
-        } catch (ContentManagerException e) {
+            return error.toResponse();
+        } catch (final ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error retrieving content.");
             log.debug(error.getErrorMessage());
-        } catch (NoUserLoggedInException e2) {
+            return error.toResponse();
+        } catch (final NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueResourceMisuseException e) {
+        } catch (final SegueResourceMisuseException e) {
             return SegueErrorResponse.getRateThrottledResponse("You have exceeded the number of emails"
                     + " you are allowed to send per day.");
         }
@@ -628,22 +630,24 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             emailManager.sendCustomContentEmail(sender, emailTemplate, new ArrayList<>(allSelectedUsers), emailType);
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
             log.error(error.getErrorMessage());
             return error.toResponse();
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "An unknown type of user was supplied.");
             log.debug(error.getErrorMessage());
-        } catch (ContentManagerException e) {
+            return error.toResponse();
+        } catch (final ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error retrieving content.");
             log.debug(error.getErrorMessage());
-        } catch (NoUserLoggedInException e2) {
+            return error.toResponse();
+        } catch (final NoUserLoggedInException e2) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueResourceMisuseException e) {
+        } catch (final SegueResourceMisuseException e) {
             return SegueErrorResponse
                     .getRateThrottledResponse("You have exceeded the number of emails"
                             + " you are allowed to send per day.");

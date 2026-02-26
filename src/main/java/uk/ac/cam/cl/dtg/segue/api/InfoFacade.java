@@ -16,6 +16,9 @@
 
 package uk.ac.cam.cl.dtg.segue.api;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.HealthStatus;
+import co.elastic.clients.elasticsearch.cluster.HealthResponse;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +45,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -56,6 +60,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
     private final SegueJobService segueJobService;
+    private final ElasticsearchClient searchClient;
+    private final HttpClient httpClient;
 
     /**
      * @param properties
@@ -65,9 +71,12 @@ public class InfoFacade extends AbstractSegueFacade {
      */
     @Inject
     public InfoFacade(final AbstractConfigLoader properties, final SegueJobService segueJobService,
+                      final ElasticsearchClient searchClient,
                       final ILogManager logManager) {
         super(properties, logManager);
         this.segueJobService = segueJobService;
+        this.searchClient = searchClient;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     /**
@@ -169,8 +178,16 @@ public class InfoFacade extends AbstractSegueFacade {
     @Operation(summary = "Check whether elasticsearch is running.")
     public Response pingElasticSearch() {
 
-        return pingUrlForStatus("http://" + getProperties().getProperty("SEARCH_CLUSTER_ADDRESS") + ":"
-                    + getProperties().getProperty("SEARCH_CLUSTER_INFO_PORT") + "/_cat/health");
+        boolean healthy = false;
+        try {
+            HealthResponse response = searchClient.cluster().health();
+            // Green: all okay with replicas.  Yellow: either indexing, no replica, or local dev.
+            healthy = Set.of(HealthStatus.Green, HealthStatus.Yellow).contains(response.status());
+        } catch (final IOException e) {
+            log.warn("Error whilst checking ElasticSearch status! {}", e.toString());
+        }
+
+        return Response.ok(ImmutableMap.of("success", healthy)).build();
     }
 
     /**
@@ -200,8 +217,6 @@ public class InfoFacade extends AbstractSegueFacade {
 
         HttpResponse<String> httpResponse = null;
         try {
-            HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
-
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .GET().build();
@@ -209,7 +224,7 @@ public class InfoFacade extends AbstractSegueFacade {
             httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
         } catch (IOException | InterruptedException e) {
-            log.warn(String.format("Error when pinging for status: %s", e));
+            log.warn("Error when pinging for status: {}", e.toString());
         }
 
         // FIXME: should we inspect the response body?

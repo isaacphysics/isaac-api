@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.api.client.util.Maps;
@@ -16,6 +17,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventsManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -103,8 +105,6 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.EMAIL_SIGNATURE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * IMPORTANT: Rather than directly subclass this, use either IsaacIntegrationTestWithREST or IsaacIntegrationTest
@@ -123,6 +123,7 @@ public class AbstractIsaacIntegrationTest {
     protected static AbstractConfigLoader properties;
     protected static Map<String, String> globalTokens;
     protected static PostgresSqlDb postgresSqlDb;
+    protected static ElasticsearchClient elasticSearchClient;
     protected static ElasticSearchIndexer elasticSearchProvider;
     protected static SchoolListReader schoolListReader;
     protected static MainMapper mainMapper;
@@ -137,6 +138,7 @@ public class AbstractIsaacIntegrationTest {
     protected static GameManager gameManager;
     protected static GroupManager groupManager;
     protected static EventBookingManager eventBookingManager;
+    protected static EventsManager eventsManager;
     protected static ILogManager logManager;
     protected static GitContentManager contentManager;
     protected static UserAssociationManager userAssociationManager;
@@ -186,13 +188,13 @@ public class AbstractIsaacIntegrationTest {
         elasticsearch.start();
 
         try {
-            elasticSearchProvider = new ElasticSearchIndexer(ElasticSearchProvider.getClient(
+            elasticSearchClient = ElasticSearchProvider.getClient(
                     "localhost",
                     elasticsearch.getMappedPort(9200),
                     "elastic",
                     "elastic"
-            )
             );
+            elasticSearchProvider = new ElasticSearchIndexer(elasticSearchClient);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
@@ -304,6 +306,7 @@ public class AbstractIsaacIntegrationTest {
         userAssociationManager = new UserAssociationManager(pgAssociationDataManager, userAccountManager, groupManager);
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
+        eventsManager = new EventsManager(eventBookingManager, contentManager, mainMapper);
         assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 

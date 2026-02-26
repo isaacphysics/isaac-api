@@ -53,6 +53,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private final int POSTCODEIO_MAX_REQUESTS = 100;
     
     private final LocationHistory locationHistory;
+    private final HttpClient httpClient;
 
     /**
      * PostCode resolver that uses queries postcodes from the local database and external postcodes.io database.
@@ -63,6 +64,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     @Inject
     public PostCodeIOLocationResolver(final LocationHistory locationHistory) {
         this.locationHistory = locationHistory;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     /*
@@ -222,7 +224,6 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
         HashMap<String, Object> outCodeResponse = new HashMap<>();
 
         try {
-            java.net.http.HttpClient httpClient = HttpClient.newHttpClient();
             HttpRequest httpRequest;
             java.net.http.HttpResponse<String> httpResponse;
             ObjectMapper objectMapper = new ObjectMapper();

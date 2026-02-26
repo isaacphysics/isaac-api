@@ -16,9 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.opencsv.CSVWriter;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.EventGroupReservationLimitException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsCancelledException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsNotFullException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventsManager;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
@@ -47,11 +46,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.DetailedEventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -59,11 +56,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
@@ -85,7 +79,6 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -94,8 +87,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -106,13 +97,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class EventsFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(EventsFacade.class);
 
+    private final EventsManager eventsManager;
     private final EventBookingManager bookingManager;
-
     private final UserAccountManager userManager;
-
     private final GroupManager groupManager;
 
-    private final GitContentManager contentManager;
     private final UserAssociationManager userAssociationManager;
     private final UserAccountManager userAccountManager;
     private final SchoolListReader schoolListReader;
@@ -126,26 +115,23 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @param logManager     - for managing logs.
      * @param bookingManager - Instance of Booking Manager
      * @param userManager
-     * @param contentManager - for retrieving event content.
      * @param mapper
      */
     @Inject
     public EventsFacade(final AbstractConfigLoader properties, final ILogManager logManager,
-                        final EventBookingManager bookingManager,
-                        final UserAccountManager userManager, final GitContentManager contentManager,
-                        final UserAssociationManager userAssociationManager,
-                        final GroupManager groupManager,
-                        final UserAccountManager userAccountManager, final SchoolListReader schoolListReader,
-                        final MainMapper mapper) {
+                        final EventsManager eventsManager, final EventBookingManager bookingManager,
+                        final UserAccountManager userManager, final UserAssociationManager userAssociationManager,
+                        final GroupManager groupManager, final UserAccountManager userAccountManager,
+                        final SchoolListReader schoolListReader, final MainMapper mapper) {
         super(properties, logManager);
         this.bookingManager = bookingManager;
         this.userManager = userManager;
-        this.contentManager = contentManager;
         this.userAssociationManager = userAssociationManager;
         this.groupManager = groupManager;
         this.userAccountManager = userAccountManager;
         this.schoolListReader = schoolListReader;
         this.mapper = mapper;
+        this.eventsManager = eventsManager;
     }
 
     /**
@@ -157,7 +143,6 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @param limit            - the maximums number of results to return
      * @param sortOrder        - flag to indicate preferred sort order.
      * @param showActiveOnly   - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showInactiveOnly - true will impose filtering on the results. False will not. Defaults to false.
      * @param showStageOnly    - if present, only events with an audience matching this string will be shown
      * @return a Response containing a list of events objects or containing a SegueErrorResponse.
      */
@@ -172,170 +157,60 @@ public class EventsFacade extends AbstractIsaacFacade {
                                     @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                     @QueryParam("sort_by") final String sortOrder,
                                     @QueryParam("show_active_only") final Boolean showActiveOnly,
-                                    @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
                                     @QueryParam("show_booked_only") final Boolean showMyBookingsOnly,
                                     @QueryParam("show_reservations_only") final Boolean showReservationsOnly,
                                     @QueryParam("show_stage_only") final String showStageOnly) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
-
-        if (tags != null) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-        }
-
-        if (showStageOnly != null) {
-            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(showStageOnly.split(",")));
-        }
-
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        if (sortOrder != null && sortOrder.equals("title")) {
-            sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    SortOrder.ASC);
-        } else {
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-        }
-
-        fieldsToMatch.put(TYPE_FIELDNAME, List.of(EVENT_TYPE));
-
-        Map<String, AbstractFilterInstruction> filterInstructions = null;
-        if (null != showActiveOnly && showActiveOnly) {
-            filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
-        }
-
-        if (null != showInactiveOnly && showInactiveOnly) {
-            if (null != showActiveOnly && showActiveOnly) {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "You cannot request both show active and inactive only.").toResponse();
-            }
-
-            filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-        }
 
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = null;
+            RegisteredUserDTO currentUser = null;
+            try {
+                currentUser = this.userManager.getCurrentRegisteredUser(request);
+            } catch (final NoUserLoggedInException e) {
+                // Safe to ignore at this point; only a problem if showMyBookings/ReservationsOnly set
+            }
+
+            ResultsWrapper<ContentDTO> results = null;
 
             if (null != showMyBookingsOnly && showMyBookingsOnly) {
-                RegisteredUserDTO currentUser = null;
-                try {
-                    currentUser = this.userManager.getCurrentRegisteredUser(request);
-                } catch (NoUserLoggedInException e) {
-                    /* Safe to ignore; will just leave currentUser null. */
-                }
                 if (null != currentUser) {
-                    findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+                    List<String> tagList = null != tags ? List.of(tags.split(",")) : null;
+                    results = this.eventsManager.getEventsBookedByUser(tagList, currentUser);
                 } else {
-                    SegueErrorResponse.getNotLoggedInResponse();
+                    return SegueErrorResponse.getNotLoggedInResponse();
                 }
             } else if (null != showReservationsOnly && showReservationsOnly) {
-                RegisteredUserDTO currentUser = null;
-                try {
-                    currentUser = this.userManager.getCurrentRegisteredUser(request);
-                } catch (NoUserLoggedInException e) {
-                    /* Safe to ignore; will just leave currentUser null. */
-                }
                 if (null != currentUser) {
-                    findByFieldNames = getEventsReservedByUser(request, currentUser);
+                    results = this.eventsManager.getEventsReservedByUser(currentUser);
                 } else {
-                    SegueErrorResponse.getNotLoggedInResponse();
+                    return SegueErrorResponse.getNotLoggedInResponse();
                 }
             } else {
-                findByFieldNames = this.contentManager.findByFieldNames(
-                        ContentService.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex, newLimit,
-                        sortInstructions, filterInstructions);
+                boolean includeHiddenContent = false;
+                try {
+                    includeHiddenContent = isUserStaff(userManager, currentUser);
+                } catch (final NoUserLoggedInException e) {
+                    // Safe to ignore; leave includeHiddenContent as false
+                }
+                results = this.eventsManager.getEvents(tags, startIndex, limit, sortOrder, showActiveOnly, showStageOnly,
+                        includeHiddenContent);
+            }
 
+            if (null != currentUser) {
                 // augment (maybe slow for large numbers of bookings)
-                for (ContentDTO c : findByFieldNames.getResults()) {
-                    this.augmentEventWithBookingInformation(request, c);
+                for (ContentDTO c : results.getResults()) {
+                    this.eventsManager.augmentEventWithBookingInformation(currentUser, c);
                 }
             }
 
-            return Response.ok(findByFieldNames).build();
-        } catch (ContentManagerException e) {
+            return Response.ok(results).build();
+        } catch (final ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error accessing your bookings.")
                     .toResponse();
         }
-    }
-
-    /**
-     * Get Events Booked by user.
-     *
-     * @param request     - the http request so we can resolve booking information
-     * @param tags        - the tags we want to filter on
-     * @param currentUser - the currently logged on user.
-     * @return a list of event pages that the user has been booked
-     * @throws SegueDatabaseException
-     * @throws ContentManagerException
-     */
-    private ResultsWrapper<ContentDTO> getEventsBookedByUser(final HttpServletRequest request, final List<String> tags,
-                                                             final RegisteredUserDTO currentUser)
-            throws SegueDatabaseException, ContentManagerException {
-        List<ContentDTO> filteredResults = Lists.newArrayList();
-
-        Map<String, BookingStatus> userBookingMap = this.bookingManager.getAllEventStatesForUser(currentUser.getId());
-
-        for (String eventId : userBookingMap.keySet()) {
-            if (BookingStatus.CANCELLED.equals(userBookingMap.get(eventId))) {
-                continue;
-            }
-
-            final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, eventId);
-
-            if (tags != null) {
-                Set<String> tagsList = Sets.newHashSet(tags);
-                tagsList.retainAll(eventDTOById.getTags()); // get intersection
-                if (tagsList.size() == 0) {
-                    // if the intersection is empty then we can continue
-                    continue;
-                }
-            }
-
-            filteredResults.add(eventDTOById);
-        }
-        return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
-    }
-
-    /**
-     * Get Events Reserved by user.
-     *
-     * @param request     - the http request so we can resolve booking information
-     * @param currentUser - the currently logged on user.
-     * @return a list of event pages that the user has been booked
-     * @throws SegueDatabaseException
-     * @throws ContentManagerException
-     */
-    private ResultsWrapper<ContentDTO> getEventsReservedByUser(final HttpServletRequest request,
-                                                               final RegisteredUserDTO currentUser)
-            throws SegueDatabaseException, ContentManagerException {
-        List<ContentDTO> filteredResults = Lists.newArrayList();
-
-        List<EventBookingDTO> userReservationList = this.mapper.mapToListOfEventBookingDTO(bookingManager.getAllEventReservationsForUser(currentUser.getId()));
-
-        for (EventBookingDTO booking : userReservationList) {
-
-            final IsaacEventPageDTO eventDTOById = this.getAugmentedEventDTOById(request, booking.getEventId());
-
-            filteredResults.add(eventDTOById);
-        }
-        return new ResultsWrapper<>(filteredResults, (long) filteredResults.size());
     }
 
     /**
@@ -352,7 +227,13 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEvent(@Context final HttpServletRequest request,
                                    @PathParam("event_id") final String eventId) {
         try {
-            IsaacEventPageDTO page = getAugmentedEventDTOById(request, eventId);
+            RegisteredUserDTO currentUser = null;
+            try {
+                currentUser = this.userManager.getCurrentRegisteredUser(request);
+            } catch (final NoUserLoggedInException e) {
+                // Safe to ignore; we can still return results without user information.
+            }
+            IsaacEventPageDTO page = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
             return Response.ok(page)
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (ResourceNotFoundException e) {
@@ -448,7 +329,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -503,7 +384,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                                         @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            IsaacEventPageDTO event = getRawEventDTOById(eventId);
+            IsaacEventPageDTO event = this.eventsManager.getRawEventDTOById(eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -544,7 +425,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner or manager of this group.").toResponse();
             }
 
-            IsaacEventPageDTO eventPageDTO = getRawEventDTOById(eventId);
+            IsaacEventPageDTO eventPageDTO = this.eventsManager.getRawEventDTOById(eventId);
             if (null == eventPageDTO) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "No event found with this ID.").toResponse();
             }
@@ -631,7 +512,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                        @PathParam("event_id") final String eventId) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            IsaacEventPageDTO event = this.getRawEventDTOById(eventId);
+            IsaacEventPageDTO event = this.eventsManager.getRawEventDTOById(eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -765,7 +646,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -826,7 +707,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         RegisteredUserDTO reservingUser;
         IsaacEventPageDTO event;
         try {
-            event = this.getRawEventDTOById(eventId);
+            event = this.eventsManager.getRawEventDTOById(eventId);
         } catch (SegueDatabaseException | ContentManagerException e) {
             event = null;
         }
@@ -913,7 +794,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                              @PathParam("event_id") final String eventId,
                                              final List<Long> userIds) {
         try {
-            IsaacEventPageDTO event = getRawEventDTOById(eventId);
+            IsaacEventPageDTO event = this.eventsManager.getRawEventDTOById(eventId);
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
 
             if (event.getDate() != null && new Date().after(event.getDate())) {
@@ -987,7 +868,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                              final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(user, eventId);
 
             if (EventStatus.CLOSED.equals(event.getEventStatus())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
@@ -1074,7 +955,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(user, eventId);
 
             EventBookingDTO eventBookingDTO = bookingManager.requestWaitingListBooking(event, user, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
@@ -1144,7 +1025,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                                         @PathParam("event_id") final String eventId,
                                         @PathParam("user_id") final Long userId) {
         try {
-            IsaacEventPageDTO event = getRawEventDTOById(eventId);
+            IsaacEventPageDTO event = this.eventsManager.getRawEventDTOById(eventId);
 
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOwningBooking;
@@ -1216,9 +1097,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                                            @PathParam("event_id") final String eventId,
                                            @PathParam("user_id") final Long userId) {
         try {
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
             RegisteredUserDTO bookedUser = this.userManager.getUserDTOById(userId);
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -1277,7 +1158,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
             RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
 
             bookingManager.deleteBooking(event, user);
@@ -1321,7 +1202,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
             RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
-            IsaacEventPageDTO event = this.getAugmentedEventDTOById(request, eventId);
+            IsaacEventPageDTO event = this.eventsManager.getAugmentedEventDTOById(currentUser, eventId);
 
             if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
@@ -1381,109 +1262,26 @@ public class EventsFacade extends AbstractIsaacFacade {
                                             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
                                             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                             @QueryParam("filter") final String filter) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
-
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
 
         try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+
             if (!Arrays.asList(Role.EVENT_LEADER, Role.EVENT_MANAGER, Role.ADMIN).contains(currentUser.getRole())) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            Map<String, AbstractFilterInstruction> filterInstructions = null;
-            if (filter != null) {
-                EventFilterOption filterOption = EventFilterOption.valueOf(filter);
-                filterInstructions = Maps.newHashMap();
-                if (filterOption.equals(EventFilterOption.FUTURE)) {
-                    DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-                    filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
-                    sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
-                } else if (filterOption.equals(EventFilterOption.RECENT)) {
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.add(Calendar.MONTH, -1);
-                    DateRangeFilterInstruction eventsOverPreviousMonth =
-                            new DateRangeFilterInstruction(calendar.getTime(), new Date());
-                    filterInstructions.put(ENDDATE_FIELDNAME, eventsOverPreviousMonth);
-                } else if (filterOption.equals(EventFilterOption.PAST)) {
-                    DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-                    filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
-                }
-            }
-
-            ResultsWrapper<ContentDTO> findByFieldNames = null;
-
-            findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
-
-            List<Map<String, Object>> resultList = Lists.newArrayList();
-
-            for (ContentDTO c : findByFieldNames.getResults()) {
-                if (!(c instanceof IsaacEventPageDTO)) {
-                    continue;
-                }
-                IsaacEventPageDTO event = (IsaacEventPageDTO) c;
-
-                if (!bookingManager.isUserAbleToManageEvent(currentUser, event)) {
-                    continue;
-                }
-
-                ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
-                eventOverviewBuilder.put("id", event.getId());
-                eventOverviewBuilder.put("title", event.getTitle());
-                eventOverviewBuilder.put("subtitle", event.getSubtitle());
-                eventOverviewBuilder.put("date", event.getDate());
-                eventOverviewBuilder.put("bookingDeadline",
-                        event.getBookingDeadline() == null ? event.getDate() : event.getBookingDeadline());
-                eventOverviewBuilder.put("eventStatus", event.getEventStatus());
-
-                if (null != event.getLocation()) {
-                    eventOverviewBuilder.put("location", event.getLocation());
-                }
-
-                Map<BookingStatus, Long> bookingCounts =  this.bookingManager.getBookingStatusCountsByEventId(event.getId());
-                eventOverviewBuilder.put("numberOfConfirmedBookings",
-                        bookingCounts.getOrDefault(BookingStatus.CONFIRMED, 0L));
-                eventOverviewBuilder.put("numberOfWaitingListBookings",
-                        bookingCounts.getOrDefault(BookingStatus.WAITING_LIST, 0L));
-                eventOverviewBuilder.put("numberAttended",
-                        bookingCounts.getOrDefault(BookingStatus.ATTENDED, 0L));
-                eventOverviewBuilder.put("numberAbsent",
-                        bookingCounts.getOrDefault(BookingStatus.ABSENT, 0L));
-
-                if (null != event.getNumberOfPlaces()) {
-                    eventOverviewBuilder.put("numberOfPlaces", event.getNumberOfPlaces());
-                }
-
-                resultList.add(eventOverviewBuilder.build());
-            }
-
-            return Response.ok(new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults())).build();
-        } catch (ContentManagerException e) {
+            return Response.ok(this.eventsManager.getEventOverviews(startIndex, limit, filter, currentUser)).build();
+        } catch (final ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
-        } catch (NoUserLoggedInException e) {
+        } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the database content you requested.")
                     .toResponse();
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid request format.").toResponse();
         }
@@ -1509,160 +1307,13 @@ public class EventsFacade extends AbstractIsaacFacade {
                                           @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
                                           @QueryParam("show_active_only") final Boolean showActiveOnly,
                                           @QueryParam("show_stage_only") final String showStageOnly) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-
-        Integer newLimit = null;
-        Integer newStartIndex = null;
-        if (limit != null) {
-            newLimit = limit;
-        }
-
-        if (startIndex != null) {
-            newStartIndex = startIndex;
-        }
-
-        if (tags != null) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-        }
-
-        if (showStageOnly != null) {
-            fieldsToMatch.put(STAGE_FIELDNAME, Arrays.asList(showStageOnly.split(",")));
-        }
-
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
-
-        Map<String, AbstractFilterInstruction> filterInstructions = null;
-        if (null == showActiveOnly || showActiveOnly) {
-            filterInstructions = Maps.newHashMap();
-            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(ENDDATE_FIELDNAME, anyEventsFromNow);
-            sortInstructions.put(DATE_FIELDNAME, SortOrder.ASC);
-        }
-
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = null;
-
-            findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    newStartIndex, newLimit, sortInstructions, filterInstructions);
-
-            List<Map<String, Object>> resultList = Lists.newArrayList();
-
-            for (ContentDTO c : findByFieldNames.getResults()) {
-                if (!(c instanceof IsaacEventPageDTO)) {
-                    continue;
-                }
-
-                IsaacEventPageDTO e = (IsaacEventPageDTO) c;
-                if (null == e.getLocation() || (null == e.getLocation().getLatitude() && null == e.getLocation().getLongitude())) {
-                    // Ignore events without locations.
-                    continue;
-                }
-                if (e.getLocation().getLatitude().equals(0.0) && e.getLocation().getLongitude().equals(0.0)) {
-                    // Ignore events with locations that haven't been set properly.
-                    log.info("Event with 0.0 lat/long:  " + e.getId());
-                    continue;
-                }
-
-                ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
-                eventOverviewBuilder.put("id", e.getId());
-                eventOverviewBuilder.put("title", e.getTitle());
-                eventOverviewBuilder.put("date", e.getDate());
-                eventOverviewBuilder.put("subtitle", e.getSubtitle());
-                if (e.getEventStatus() != null) {
-                    eventOverviewBuilder.put("status", e.getEventStatus());
-                }
-                // The schema required needs lat and long at top-level, so add address at top-level too.
-                eventOverviewBuilder.put("address", e.getLocation().getAddress());
-                eventOverviewBuilder.put("latitude", e.getLocation().getLatitude());
-                eventOverviewBuilder.put("longitude", e.getLocation().getLongitude());
-
-                if (null != e.getBookingDeadline()) {
-                    eventOverviewBuilder.put("deadline", e.getBookingDeadline());
-                }
-
-                resultList.add(eventOverviewBuilder.build());
-            }
-
-            return Response.ok(new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults())).build();
-        } catch (ContentManagerException e) {
+            return Response.ok(this.eventsManager.getEventMapData(tags, startIndex, limit, showActiveOnly,
+                showStageOnly)).build();
+        } catch (final ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
-        }
-    }
-
-    /**
-     * A helper method for retrieving an event object without augmented information
-     *
-     * @param eventId the id of the event of interest
-     * @return the fully populated event dto with user context information.
-     * @throws ContentManagerException - if there is a problem finding the event information
-     * @throws SegueDatabaseException  if there is a database error.
-     */
-    private IsaacEventPageDTO getRawEventDTOById(final String eventId)
-            throws ContentManagerException, SegueDatabaseException {
-
-        ContentDTO possibleEvent = this.contentManager.getContentById(eventId);
-
-        if (null == possibleEvent) {
-            throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));
-        }
-
-        if (possibleEvent instanceof IsaacEventPageDTO) {
-            // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
-            // the original object else we will poison the contentManager's cache!
-            // TODO: might it be better to get the DO from the cache and map it to DTO here to reduce overhead?
-            IsaacEventPageDTO eventPageDTO = (IsaacEventPageDTO) possibleEvent;
-            return mapper.copy(eventPageDTO);
-        }
-        return null;
-    }
-
-    /**
-     * A helper method for retrieving an event and the number of places available and if the user is booked or not.
-     *
-     * @param request so we can determine if the user is logged in
-     * @param eventId the id of the event of interest
-     * @return the fully populated event dto with user context information.
-     * @throws ContentManagerException - if there is a problem finding the event information
-     * @throws SegueDatabaseException  if there is a database error.
-     */
-    private IsaacEventPageDTO getAugmentedEventDTOById(final HttpServletRequest request, final String eventId)
-            throws ContentManagerException, SegueDatabaseException {
-        IsaacEventPageDTO event = getRawEventDTOById(eventId);
-        return augmentEventWithBookingInformation(request, event);
-    }
-
-    /**
-     * Augment a single event with booking information before we send it out.
-     *
-     * @param request       - for user look up
-     * @param possibleEvent - a ContentDTO that should hopefully be an IsaacEventPageDTO.
-     * @return an augmented IsaacEventPageDTO.
-     * @throws SegueDatabaseException
-     */
-    private IsaacEventPageDTO augmentEventWithBookingInformation(final HttpServletRequest request,
-                                                                 final ContentDTO possibleEvent)
-            throws SegueDatabaseException {
-        if (possibleEvent instanceof IsaacEventPageDTO) {
-            IsaacEventPageDTO page = (IsaacEventPageDTO) possibleEvent;
-
-            try {
-                RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-                page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), user.getId()));
-            } catch (NoUserLoggedInException e) {
-                // no action as we don't require the user to be logged in.
-                page.setUserBookingStatus(null);
-            }
-
-            page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
-            return page;
-        } else {
-            throw new ClassCastException("The object provided was not an event.");
         }
     }
 }

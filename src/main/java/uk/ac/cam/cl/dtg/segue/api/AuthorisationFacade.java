@@ -146,7 +146,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO user;
             if (userId.equals(requestingUser.getId())) {
                 user = requestingUser;
-            } else if (isUserStaff(userManager, requestingUser)) {
+            } else if (isUserAnAdminOrEventManager(userManager, requestingUser)) {
                 user = userManager.getUserDTOById(userId);
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")
@@ -362,7 +362,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO user;
             if (userId.equals(requestingUser.getId())) {
                 user = requestingUser;
-            } else if (isUserStaff(userManager, requestingUser)) {
+            } else if (isUserAnAdminOrEventManager(userManager, requestingUser)) {
                 user = userManager.getUserDTOById(userId);
             } else {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access the associations of another user.")

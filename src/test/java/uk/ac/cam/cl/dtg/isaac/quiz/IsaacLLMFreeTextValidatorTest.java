@@ -266,15 +266,15 @@ public class IsaacLLMFreeTextValidatorTest {
          * @param response      - response from the validator, the object we examine by performing assertions.
          * @param isCorrect     - whether the response should be marked as correct or incorrect. Use provided constants
          *                        CORRECT, INCORRECT.
-         * @param marksAwarded  - how many marks should be awarded in total for the question. This is calculated from
+         * @param marks         - how many marks should be awarded in total for the question. This is calculated from
          *                        the breakdown specified during the act part. Use provided constants NO_MARKS,
          *                        ONE_MARK, TWO_MARKS.
          * @param expectedMarks - double check that the breakdown is returned in the expected format
          */
         public static void expectMark(LLMFreeTextQuestionValidationResponse response, boolean isCorrect,
-                                      int marksAwarded, List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
+                                      int marks, List<LLMFreeTextMarkSchemeEntry> expectedMarks) {
             assertEquals(isCorrect, response.isCorrect());
-            assertEquals(marksAwarded, (long) response.getMarks());
+            assertEquals(marks, (long) response.getMarks());
             assertTrue(expectedMarks.containsAll(response.getMarkBreakdown()));
             assertTrue(response.getMarkBreakdown().containsAll(expectedMarks));
         }

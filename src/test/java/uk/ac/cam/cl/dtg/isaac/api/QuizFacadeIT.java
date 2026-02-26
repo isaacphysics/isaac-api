@@ -34,7 +34,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -113,7 +112,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) createQuizResponse.getEntity();
-        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action.", responseBody.getErrorMessage());
     }
 
     @Test
@@ -260,7 +259,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) previewQuizResponse.getEntity();
-        assertEquals("You do not have the permissions to complete this action", responseBody.getErrorMessage());
+        assertEquals("You do not have the permissions to complete this action.", responseBody.getErrorMessage());
     }
 
     @ParameterizedTest
