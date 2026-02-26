@@ -22,7 +22,6 @@
         <!-- todo: 'jackson-annotations' would normally have the same version string as 'jackson'. This looks like a
          typo from the maintainers - hopefully we can remove this next update. -->
         <jackson-annotations.version>2.20</jackson-annotations.version>
-        <powermock.version>2.0.9</powermock.version>
         <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
