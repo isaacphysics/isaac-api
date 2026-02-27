@@ -219,23 +219,36 @@ public class IsaacCoordinateValidator implements IValidator {
                         boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
                         if (null == feedback && allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
                             boolean allChoiceItemsInSubmittedItems = true;
+                            boolean allItemsInSubmittedWithoutSigFigs = true;
                             for (CoordinateItem choiceItem : choiceItems) {
                                 boolean choiceItemInSubmittedItems = false;
+                                boolean itemInSubmittedWithoutSigFigs = false;
                                 for (CoordinateItem submittedItem : submittedItems) {
                                     if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, false)) {
                                         choiceItemInSubmittedItems = true;
                                         break;
+                                    } else if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, true)) {
+                                        itemInSubmittedWithoutSigFigs = true;
                                     }
                                 }
                                 if (!choiceItemInSubmittedItems) {
                                     allChoiceItemsInSubmittedItems = false;
+                                    // Check if this is just a significant figures mismatch
+                                    if (!itemInSubmittedWithoutSigFigs) {
+                                        allItemsInSubmittedWithoutSigFigs = false;
+                                    }
                                     break;
                                 }
                             }
                             if (allChoiceItemsInSubmittedItems) {
                                 responseCorrect = coordinateChoice.isCorrect();
                                 feedback = (Content) coordinateChoice.getExplanation();
+                                feedback.setTags(new HashSet<>()); // Clear tags in case we previously set sig figs tags
                                 break;
+                            } else if (allItemsInSubmittedWithoutSigFigs) {
+                                feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+                                feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                                // Don't break; we could find a better match
                             }
                         }
                     }
