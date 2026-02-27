@@ -216,7 +216,7 @@ public class IsaacCoordinateValidator implements IValidator {
                         // If subset matching is allowed for this choice, check if the choice is a proper subset of the
                         // submitted items
                         boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
-                        if (null == feedback && allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
+                        if (allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
                             boolean allChoiceItemsInSubmittedItems = true;
                             boolean allItemsInSubmittedWithoutSigFigs = true;
                             for (CoordinateItem choiceItem : choiceItems) {
