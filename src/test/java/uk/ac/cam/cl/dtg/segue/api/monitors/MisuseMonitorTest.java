@@ -16,9 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -28,13 +27,12 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the user manager class.
  * 
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class MisuseMonitorTest {
     private AbstractConfigLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;
@@ -45,7 +43,7 @@ public class MisuseMonitorTest {
      * @throws Exception
      *             - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         this.dummyCommunicator = createMock(EmailManager.class);
         this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);

@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
@@ -46,14 +46,14 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replay;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QuizQuestionManagerTest extends AbstractManagerTest {
 
@@ -75,8 +75,9 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
     private Map<QuestionDTO, QuestionValidationResponse> answerMap;
     private QuizAttemptManager quizAttemptManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
+        initializeAdditionalObjects();
         quizQuestionAttemptPersistenceManager = createMock(IQuizQuestionAttemptPersistenceManager.class);
         questionManager = createMock(QuestionManager.class);
         MainMapper contentMapper = createMock(MainMapper.class);
@@ -95,7 +96,6 @@ public class QuizQuestionManagerTest extends AbstractManagerTest {
         replay(quizQuestionAttemptPersistenceManager, questionManager, contentMapper, quizAttemptManager);
     }
 
-    @Before
     public void initializeAdditionalObjects() {
         correctAnswer = new Choice();
         correctAnswerDTO = new ChoiceDTO();

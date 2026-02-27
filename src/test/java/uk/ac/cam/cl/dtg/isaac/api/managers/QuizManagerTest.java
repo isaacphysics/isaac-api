@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
@@ -15,11 +15,11 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.List;
 
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replayAll;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class QuizManagerTest extends AbstractManagerTest {
 
@@ -27,7 +27,7 @@ public class QuizManagerTest extends AbstractManagerTest {
     private AbstractConfigLoader properties;
     private IsaacQuizDTO brokenQuiz;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         properties = createMock(AbstractConfigLoader.class);
 
@@ -39,7 +39,7 @@ public class QuizManagerTest extends AbstractManagerTest {
         brokenQuiz = new IsaacQuizDTO();
         brokenQuiz.setChildren(ImmutableList.of(quizSection1, new ContentDTO(), quizSection2));
 
-        replayAll();
+        replay(properties, contentService, contentManager, contentSummarizerService);
     }
 
     @Test

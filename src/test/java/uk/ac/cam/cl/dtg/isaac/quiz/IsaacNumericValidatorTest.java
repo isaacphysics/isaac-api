@@ -16,12 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -36,17 +32,20 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.easymock.EasyMock.createMock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for the user manager class.
  *
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacNumericValidatorTest {
+
+    private Logger log;
     private IsaacNumericValidator validator;
     private IsaacNumericQuestion numericQuestionNoUnits;
     private IsaacNumericQuestion numericQuestionWithUnits;
@@ -55,15 +54,13 @@ public class IsaacNumericValidatorTest {
     private String correctIntegerAnswer = "42";
     private String correctUnits = "m\\,s^{-1}";
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     /**
      * Initial configuration of tests.
      *
      */
-    @Before
+    @BeforeEach
     public final void setUp() {
+        log = createMock(Logger.class);
         validator = new IsaacNumericValidator();
 
         // Set up a question object which does not require units:
@@ -400,14 +397,14 @@ public class IsaacNumericValidatorTest {
         Quantity q_5sf = new Quantity("1.6875");
         // Test response:
         QuestionValidationResponse response_5sf = validator.validateQuestionResponse(someNumericQuestion, q_5sf);
-        assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf.isCorrect());
+        assertFalse(response_5sf.isCorrect(), "expected 1.6875 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_5sf.getExplanation().getTags().contains("sig_figs"));
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("2");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
-        assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
+        assertFalse(response_1sf.isCorrect(), "expected 2 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
     }
 
@@ -433,7 +430,7 @@ public class IsaacNumericValidatorTest {
         Quantity q_5sf_corr = new Quantity("1.6875");
         // Test response is sig fig message:
         QuestionValidationResponse response_5sf_corr = validator.validateQuestionResponse(someNumericQuestion, q_5sf_corr);
-        assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf_corr.isCorrect());
+        assertFalse(response_5sf_corr.isCorrect(), "expected 1.6875 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs"));
         assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs_too_many"));
 
@@ -441,14 +438,14 @@ public class IsaacNumericValidatorTest {
         Quantity q_5sf_wrong = new Quantity("2.7986");
         // Test response does not mention sig figs:
         QuestionValidationResponse response_5sf_wrong = validator.validateQuestionResponse(someNumericQuestion, q_5sf_wrong);
-        assertFalse("expected 2.7986 not to match 1.6875", response_5sf_wrong.isCorrect());
-        assertFalse("expected 2.7986 without sig fig message", response_5sf_wrong.getExplanation().getTags().contains("sig_figs"));
+        assertFalse(response_5sf_wrong.isCorrect(), "expected 2.7986 not to match 1.6875");
+        assertFalse(response_5sf_wrong.getExplanation().getTags().contains("sig_figs"), "expected 2.7986 without sig fig message");
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("5");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
-        assertFalse("expected 5 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
+        assertFalse(response_1sf.isCorrect(), "expected 5 not to match 1.6875 to 2 or 3 sf");
         assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
         assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs_too_few"));
     }
@@ -622,11 +619,11 @@ public class IsaacNumericValidatorTest {
         IsaacQuickQuestion invalidQuestionType = new IsaacQuickQuestion();
         invalidQuestionType.setId("invalidQuestionType");
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("only works with Isaac Numeric Questions");
-
         // This should throw an exception:
-        validator.validateQuestionResponse(invalidQuestionType, new Quantity());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(invalidQuestionType, new Quantity());
+        });
+        assertTrue(exception.getMessage().contains("only works with Isaac Numeric Questions"));
     }
 
     /*
@@ -637,11 +634,11 @@ public class IsaacNumericValidatorTest {
         IsaacNumericQuestion numericQuestion = new IsaacNumericQuestion();
         numericQuestion.setId("invalidQuestionType");
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Expected Quantity for IsaacNumericQuestion");
-
         // This should throw an exception:
-        validator.validateQuestionResponse(numericQuestion, new Choice());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(numericQuestion, new Choice());
+        });
+        assertTrue(exception.getMessage().contains("Expected Quantity for IsaacNumericQuestion"));
     }
 
     /*
@@ -683,14 +680,14 @@ public class IsaacNumericValidatorTest {
         List<String> numbersToTest = Arrays.asList("42", "4.2e1", "4.2E1", "4.2x10^1", "4.2*10**1", "4.2×10^(1)", "4.2 \\times 10^{1}");
 
         for (String numberToTest : numbersToTest) {
-            boolean result = ValidationUtils.numericValuesMatch(numberToMatch, numberToTest, 2, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+            boolean result = ValidationUtils.numericValuesMatch(numberToMatch, numberToTest, 2, log);
             assertTrue(result);
         }
 
         String powerOfTenToMatch = "10000";
         List<String> powersOfTenToTest = Arrays.asList("10000", "1x10^4", "1e4", "1E4", "1 x 10**4", "10^4", "10**(4)", "10^{4}", "100x10^2");
         for (String powerOfTenToTest : powersOfTenToTest) {
-            boolean result = ValidationUtils.numericValuesMatch(powerOfTenToMatch, powerOfTenToTest, 1, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+            boolean result = ValidationUtils.numericValuesMatch(powerOfTenToMatch, powerOfTenToTest, 1, log);
             assertTrue(result);
         }
     }
@@ -987,20 +984,22 @@ public class IsaacNumericValidatorTest {
     //  ---------- Helper methods to test internal functionality of the validator class ----------
 
     private void testSigFigRoundingWorks(String inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
-        double result = ValidationUtils.roundStringValueToSigFigs(inputValue, sigFigToRoundTo, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+        double result = ValidationUtils.roundStringValueToSigFigs(inputValue, sigFigToRoundTo, log);
 
-        assertEquals("sigfig rounding failed for value '" + inputValue + "' to " + sigFigToRoundTo
-                + "sf: expected '" + expectedResult + "', got '" + result + "'", result, expectedResult, 0.0);
+        assertEquals(result, expectedResult, 0.0, "sigfig rounding failed for value '" + inputValue + "' to "
+                + sigFigToRoundTo + "sf: expected '" + expectedResult + "', got '" + result + "'");
     }
 
     private void testSigFigExtractionWorks(String inputValue, int minAllowedSigFigs, int maxAllowedSigFigs,
                                            int expectedResult) throws Exception {
-        int result = ValidationUtils.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+        int result = ValidationUtils.numberOfSignificantFiguresToValidateWith(inputValue, minAllowedSigFigs, maxAllowedSigFigs, log);
 
-        assertTrue("sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
-                + ", max allowed: " + maxAllowedSigFigs + ") got " + result, result <= maxAllowedSigFigs && result >= minAllowedSigFigs);
-        assertEquals("sigfig extraction failed for value " + inputValue + ", expected: " + expectedResult
-                + " got " + result, result, expectedResult);
+        assertTrue(result <= maxAllowedSigFigs && result >= minAllowedSigFigs,
+                "sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
+                + ", max allowed: " + maxAllowedSigFigs + ") got " + result);
+
+        assertEquals(result, expectedResult, "sigfig extraction failed for value " + inputValue + ", expected: "
+                + expectedResult + " got " + result);
     }
 
 
@@ -1016,17 +1015,17 @@ public class IsaacNumericValidatorTest {
         for (String number : numbersToTest) {
 
             for (Integer sigFig : sigFigsToPass) {
-                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
-                assertFalse("Unexpected too few sig fig for " + number + " @ " + sigFig + "sf", tooFew);
-                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
-                assertFalse("Unexpected too many sig fig for " + number + " @ " + sigFig + "sf", tooMany);
+                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, log);
+                assertFalse(tooFew, "Unexpected too few sig fig for " + number + " @ " + sigFig + "sf");
+                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, log);
+                assertFalse(tooMany, "Unexpected too many sig fig for " + number + " @ " + sigFig + "sf");
             }
 
             for (Integer sigFig : sigFigsToFail) {
-                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
-                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, (Logger) Whitebox.getField(validator.getClass(), "log").get(validator));
+                boolean tooFew = ValidationUtils.tooFewSignificantFigures(number, sigFig, log);
+                boolean tooMany = ValidationUtils.tooManySignificantFigures(number, sigFig, log);
                 boolean incorrectSigFig = tooMany || tooFew;
-                assertTrue("Expected incorrect sig fig for " + number + " @ " + sigFig + "sf", incorrectSigFig);
+                assertTrue(incorrectSigFig, "Expected incorrect sig fig for " + number + " @ " + sigFig + "sf");
             }
         }
     }

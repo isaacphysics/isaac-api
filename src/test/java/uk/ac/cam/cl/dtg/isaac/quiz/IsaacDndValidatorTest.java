@@ -18,10 +18,9 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.TestAppender;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
@@ -47,13 +46,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@RunWith(Theories.class)
-@SuppressWarnings("checkstyle:MissingJavadocType")
+
 public class IsaacDndValidatorTest {
     public static final Item item_3cm = item("6d3d", "3 cm");
     public static final Item item_4cm = item("6d3e", "4 cm");
@@ -62,146 +60,285 @@ public class IsaacDndValidatorTest {
     public static final Item item_12cm = item("6d3h", "12 cm");
     public static final Item item_13cm = item("6d3i", "13 cm");
 
-    @DataPoints
-    public static CorrectnessTestCase[] correctnessTestCases = {
-        new CorrectnessTestCase().setTitle("singleCorrectMatch_Correct")
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .expectCorrect(true),
 
-        new CorrectnessTestCase().setTitle("singleCorrectNotMatch_Incorrect")
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .setAnswer(choice(item(item_4cm, "leg_1"), item(item_5cm, "leg_2"), item(item_3cm, "hypothenuse")))
-            .expectCorrect(false),
+    private static Stream<Arguments> correctnessTestCases() {
+        return Stream.of(
+                new CorrectnessTestCase().setTitle("singleCorrectMatch_Correct")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .expectCorrect(true),
 
-        new CorrectnessTestCase().setTitle("singleCorrectPartialMatch_Incorrect")
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .setAnswer(choice(item(item_5cm, "leg_1"), item(item_4cm, "leg_2"), item(item_3cm, "hypothenuse")))
-            .expectCorrect(false),
+                new CorrectnessTestCase().setTitle("singleCorrectNotMatch_Incorrect")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .setAnswer(choice(item(item_4cm, "leg_1"), item(item_5cm, "leg_2"), item(item_3cm, "hypothenuse")))
+                        .expectCorrect(false),
 
-        new CorrectnessTestCase().setTitle("sameAnswerCorrectAndIncorrect_Correct")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(incorrectChoice(item(item_3cm, "leg_1")), correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectCorrect(true)
-    };
+                new CorrectnessTestCase().setTitle("singleCorrectPartialMatch_Incorrect")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .setAnswer(choice(item(item_5cm, "leg_1"), item(item_4cm, "leg_2"), item(item_3cm, "hypothenuse")))
+                        .expectCorrect(false),
 
-    @Theory
+                new CorrectnessTestCase().setTitle("sameAnswerCorrectAndIncorrect_Correct")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(incorrectChoice(item(item_3cm, "leg_1")), correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_1")))
+                        .expectCorrect(true)
+        ).map(Arguments::of);
+    }
+
+    private static Stream<Arguments> explanationTestCases() {
+        return Stream.of(
+                new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnMatching")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")),
+                                incorrectChoice(ExplanationTestCase.testFeedback, item(item_4cm, "leg_1")))
+                        .setAnswer(choice(item(item_4cm, "leg_1")))
+                        .expectCorrect(false).expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
+                new ExplanationTestCase().setTitle("exactMatchCorrect_shouldReturnMatching")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(ExplanationTestCase.testFeedback, item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_1")))
+                        .expectCorrect(true).expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
+                new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")),
+                                incorrectChoice(item(item_4cm, "leg_1")))
+                        .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
+                        .setAnswer(choice(item(item_4cm, "leg_1")))
+                        .expectCorrect(false).expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
+                new ExplanationTestCase().setTitle("matchIncorrectSubset_shouldReturnMatching")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
+                                incorrectChoice(ExplanationTestCase.testFeedback, item(item_5cm, "leg_1")))
+                        .setAnswer(choice(item(item_5cm, "leg_1"), item(item_6cm, "leg_2")))
+                        .expectCorrect(false).expectExplanation(ExplanationTestCase.testFeedback.getValue()),
+
+                new ExplanationTestCase().setTitle("multiMatchIncorrectSubset_shouldReturnMatching")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
+                                incorrectChoice(new Content("leg_1 can't be 5"), item(item_5cm, "leg_1")),
+                                incorrectChoice(new Content("leg_2 can't be 6"), item(item_6cm, "leg_2")))
+                        .setAnswer(choice(item(item_5cm, "leg_1"), item(item_6cm, "leg_2")))
+                        .expectCorrect(false).expectExplanation("leg_1 can't be 5"),
+
+                new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .tapQuestion(q -> q.setDefaultFeedback(new Content("default feedback for question")))
+                        .setAnswer(choice(item(item_4cm, "leg_1")))
+                        .expectCorrect(false).expectExplanation("default feedback for question"),
+
+                new ExplanationTestCase().setTitle("partialMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
+                                incorrectChoice(new Content("feedback for choice"), item(item_5cm, "leg_1"), item(item_6cm, "leg_2")))
+                        .tapQuestion(q -> q.setDefaultFeedback(new Content("default feedback for question")))
+                        .setAnswer(choice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2")))
+                        .expectCorrect(false).expectExplanation("default feedback for question"),
+
+                new ExplanationTestCase().setTitle("matchedCorrectWithDefaultFeedback_shouldReturnDefaultFeedback")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .tapQuestion(q -> q.setDefaultFeedback(new Content("default feedback for question")))
+                        .setAnswer(choice(item(item_3cm, "leg_1")))
+                        .expectExplanation("default feedback for question").expectCorrect(true),
+
+                new ExplanationTestCase().setTitle("matchedCorrectNoDefaultFeedback_shouldReturnNone")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_1")))
+                        .expectNoExplanation().expectCorrect(true),
+
+                new ExplanationTestCase().setTitle("noDefaultIncorrect_shouldReturnNone")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_4cm, "leg_1")))
+                        .expectNoExplanation().expectCorrect(false),
+
+                // these highlight inconsistent behaviour when a question violates our requirements for drop zones
+                new ExplanationTestCase().setTitle("unrecognisedDropZone_shouldReturnNone")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_2")))
+                        .expectNoExplanation().expectCorrect(false),
+
+                new ExplanationTestCase().setTitle("correctAnswerHasUnusedDropZones_notAcceptedCorrect")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")),
+                                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")))
+                        .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")))
+                        .expectCorrect(false)
+                        .expectExplanation("The question is invalid, because it has an answer with more items than we have gaps.")
+                        .expectNoDropZones()
+        ).map(Arguments::of);
+    }
+
+    private static Stream<Arguments> dropZonesCorrectTestCases() {
+        Supplier<DropZonesTestCase> disabledItemFeedbackNoDropZones = () -> new DropZonesTestCase()
+                .tapQuestion(q -> q.setDetailedItemFeedback(false)).expectNoDropZones();
+        Supplier<DropZonesTestCase> enabledItemFeedback = () -> new DropZonesTestCase()
+                .tapQuestion(q -> q.setDetailedItemFeedback(true));
+
+        return Stream.of(
+                disabledItemFeedbackNoDropZones.get().setTitle("incorrectNotRequested_NotReturned")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_4cm, "leg_1"))).expectCorrect(false),
+
+                disabledItemFeedbackNoDropZones.get().setTitle("correctNotRequested_NotReturned")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_1"))).expectCorrect(true),
+
+                enabledItemFeedback.get().setTitle("allCorrect_ShouldReturnAllCorrect")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .expectCorrect(true).expectDropZonesCorrect(d -> d.setLeg1(true).setLeg2(true).setHypothenuse(true)),
+
+                enabledItemFeedback.get().setTitle("someIncorrect_ShouldReturnWhetherCorrect")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .setAnswer(choice(item(item_6cm, "leg_1"), item(item_5cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .expectCorrect(false).expectDropZonesCorrect(d -> d.setLeg1(false).setLeg2(false).setHypothenuse(true)),
+
+                enabledItemFeedback.get().setTitle("multipleCorrectAnswers_decidesCorrectnessBasedOnClosestMatch")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")),
+                                correctChoice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2"), item(item_13cm, "hypothenuse")))
+                        .setAnswer(choice(item(item_5cm, "leg_1")))
+                        .expectCorrect(false).expectDropZonesCorrect(d -> d.setLeg1(true)),
+
+                // these highlight inconsistent behaviour when a question violates our requirements for drop zones
+                enabledItemFeedback.get().setTitle("unrecognisedDropZone_treatsItAsAnyWrongAnswer")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_2")))
+                        .expectCorrect(false).expectDropZonesCorrect(d -> d.setLeg2(false)),
+
+                enabledItemFeedback.get().setTitle("correctAnswerHasUnusedDropZones_acceptedCorrect")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_1")))
+                        .expectCorrect(true).expectDropZonesCorrect(d -> d.setLeg1(true))
+        ).map(Arguments::of);
+    }
+
+    private static Stream<Arguments> answerValidationTestCases() {
+        return Stream.of(
+                new AnswerValidationTestCase().setTitle("itemsNull")
+                        .setAnswer(choice())
+                        .expectExplanation("You provided an empty answer."),
+
+                new AnswerValidationTestCase().setTitle("itemsEmpty")
+                        .setAnswer(new DndChoice())
+                        .expectExplanation("You provided an empty answer."),
+
+                new AnswerValidationTestCase().setTitle("itemsNotEnough")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")))
+                        .setAnswer(choice(item(item_3cm, "leg_1")))
+                        .expectExplanation(IsaacDndValidator.FEEDBACK_ANSWER_NOT_ENOUGH)
+                        .expectDropZonesCorrect(f -> f.setLeg1(true)),
+
+                new AnswerValidationTestCase().setTitle("itemsTooMany")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_1")))
+                        .expectExplanation("You provided an answer with more items than we have gaps."),
+
+                new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(new Item("bad_id", "some_value"), "leg_1")))
+                        .expectExplanation("You provided an answer with unrecognised items."),
+
+                new AnswerValidationTestCase().setTitle("itemMissingId")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(new Item(null, null), "leg_1")))
+                        .expectExplanation("You provided an answer in an unrecognised format."),
+
+                new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1")))
+                        .setAnswer(choice(item(item_3cm, null)))
+                        .expectExplanation("You provided an answer in an unrecognised format."),
+
+                new AnswerValidationTestCase().setTitle("itemsNotEnough_providesSpecificExplanationFirst")
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")),
+                                incorrectChoice(new Content("Leg 1 should be less than 4 cm"), item(item_4cm, "leg_1")))
+                        .setAnswer(choice(item(item_4cm, "leg_1"))).expectExplanation("Leg 1 should be less than 4 cm")
+                        .expectDropZonesCorrect(f -> f.setLeg1(false))
+        ).map(Arguments::of);
+    }
+
+    private static Stream<Arguments> questionValidationTestCases() {
+        Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
+                .expectExplLog("The question is invalid, because it has an answer in an unrecognised format.");
+        Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
+                .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_NO_ANSWERS);
+        Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> new QuestionValidationTestCase()
+                .expectExplLog(Constants.FEEDBACK_NO_CORRECT_ANSWERS);
+
+        return Stream.of(
+                noAnswersTestCase.get().setTitle("answersEmpty")
+                        .setQuestion(q -> q.setChoices(List.of())),
+                noAnswersTestCase.get().setTitle("answersNull")
+                        .setQuestion(q -> q.setChoices(null)),
+                noCorrectAnswersTestCase.get().setTitle("answersAllIncorrect")
+                        .setQuestion(incorrectChoice(item(item_3cm, "leg_1"))),
+                noCorrectAnswersTestCase.get().setTitle("answerNoExplicitCorrectness_Incorrect")
+                        .setQuestion(choice(item(item_3cm, "leg_1"))),
+                new QuestionValidationTestCase().setTitle("answerWrongType")
+                        .setQuestion(q -> q.setChoices(List.of(parsonsChoice())))
+                        .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS),
+                new QuestionValidationTestCase().setTitle("answerItemsEmpty")
+                        .setQuestion(correctChoice())
+                        .expectExplLog("The question is invalid, because it has an empty answer."),
+                new QuestionValidationTestCase().setTitle("answerItemsNull")
+                        .setQuestion(q -> q.setChoices(Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList())))
+                        .expectExplLog("The question is invalid, because it has an empty answer."),
+                new QuestionValidationTestCase().setTitle("answerItemNonDnd")
+                        .setQuestion(correctChoice(new DndItemEx("id", "value", "dropZoneId")))
+                        .expectExplLog("The question is invalid, because it has an invalid answer."),
+                itemUnrecognisedFormatCase.get().setTitle("answerItemMissingItemId")
+                        .setQuestion(correctChoice(new DndItem(null, "value", "dropZoneId"))),
+                itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyItemId")
+                        .setQuestion(correctChoice(new DndItem("", "value", "dropZoneId"))),
+                itemUnrecognisedFormatCase.get().setTitle("answerItemMissingDropZoneId")
+                        .setQuestion(correctChoice(new DndItem("item_id", "value", null))),
+                itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyDropZoneId")
+                        .setQuestion(correctChoice(new DndItem("item_id", "value", ""))),
+                new QuestionValidationTestCase().setTitle("itemsNull")
+                        .tapQuestion(q -> q.setItems(null))
+                        .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
+                new QuestionValidationTestCase().setTitle("itemsEmpty")
+                        .tapQuestion(q -> q.setItems(List.of()))
+                        .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
+                new QuestionValidationTestCase().setTitle("answerInvalidItemReference")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1]")))
+                        .setQuestion(correctChoice(new DndItem("invalid_id", "some_value", "leg_1")))
+                        .expectExplLog("The question is invalid, because it has an answer with unrecognised items."),
+                new QuestionValidationTestCase().setTitle("answerDuplicateDropZones")
+                        .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
+                        .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_3cm, "leg_1")))
+                        .expectExplLog("The question is invalid, because it has an answer with duplicate drop zones.")
+        ).map(Arguments::of);
+    }
+
+    @ParameterizedTest
+    @MethodSource("correctnessTestCases")
     public final void testCorrectness(final CorrectnessTestCase testCase) {
-        var response = testValidate(testCase.question, testCase.answer);
+        DndValidationResponse response = testValidate(testCase.question, testCase.answer);
         assertEquals(testCase.correct, response.isCorrect());
     }
 
-    @DataPoints
-    public static ExplanationTestCase[] explanationTestCases = {
-        new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnMatching")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(
-               correctChoice(item(item_3cm, "leg_1")),
-               incorrectChoice(ExplanationTestCase.testFeedback, item(item_4cm, "leg_1"))
-            ).setAnswer(choice(item(item_4cm, "leg_1")))
-            .expectCorrect(false)
-            .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
-
-        new ExplanationTestCase().setTitle("exactMatchCorrect_shouldReturnMatching")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(ExplanationTestCase.testFeedback, item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectCorrect(true)
-            .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
-
-        new ExplanationTestCase().setTitle("exactMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")), incorrectChoice(item(item_4cm, "leg_1")))
-            .tapQuestion(q -> q.setDefaultFeedback(ExplanationTestCase.testFeedback))
-            .setAnswer(choice(item(item_4cm, "leg_1")))
-            .expectCorrect(false)
-            .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
-
-        new ExplanationTestCase().setTitle("matchIncorrectSubset_shouldReturnMatching")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
-                incorrectChoice(ExplanationTestCase.testFeedback, item(item_5cm, "leg_1"))
-            ).setAnswer(choice(item(item_5cm, "leg_1"), item(item_6cm, "leg_2")))
-            .expectCorrect(false)
-            .expectExplanation(ExplanationTestCase.testFeedback.getValue()),
-
-        new ExplanationTestCase().setTitle("multiMatchIncorrectSubset_shouldReturnMatching")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
-                incorrectChoice(new Content("leg_1 can't be 5"), item(item_5cm, "leg_1")),
-                incorrectChoice(new Content("leg_2 can't be 6"), item(item_6cm, "leg_2"))
-            ).setAnswer(choice(item(item_5cm, "leg_1"), item(item_6cm, "leg_2")))
-            .expectCorrect(false)
-            .expectExplanation("leg_1 can't be 5"),
-
-        new ExplanationTestCase().setTitle("unMatchedIncorrect_shouldReturnDefaultFeedbackForQuestion")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .tapQuestion(q -> q.setDefaultFeedback(new Content("default feedback for question")))
-            .setAnswer(choice(item(item_4cm, "leg_1")))
-            .expectCorrect(false)
-            .expectExplanation("default feedback for question"),
-
-        new ExplanationTestCase().setTitle("partialMatchIncorrect_shouldReturnDefaultFeedbackForQuestion")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")),
-                incorrectChoice(new Content("feedback for choice"), item(item_5cm, "leg_1"), item(item_6cm, "leg_2"))
-            ).tapQuestion(q -> q.setDefaultFeedback(new Content("default feedback for question")))
-            .setAnswer(choice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2")))
-            .expectCorrect(false)
-            .expectExplanation("default feedback for question"),
-
-        new ExplanationTestCase().setTitle("matchedCorrectWithDefaultFeedback_shouldReturnDefaultFeedback")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .tapQuestion(q -> q.setDefaultFeedback(new Content("default feedback for question")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectExplanation("default feedback for question")
-            .expectCorrect(true),
-
-        new ExplanationTestCase().setTitle("matchedCorrectNoDefaultFeedback_shouldReturnNone")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectNoExplanation()
-            .expectCorrect(true),
-
-        new ExplanationTestCase().setTitle("noDefaultIncorrect_shouldReturnNone")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_4cm, "leg_1")))
-            .expectNoExplanation()
-            .expectCorrect(false),
-
-        // these highlight inconsistent behaviour when a question violates our requirements for drop zones
-        new ExplanationTestCase().setTitle("unrecognisedDropZone_shouldReturnNone")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_2")))
-            .expectNoExplanation()
-            .expectCorrect(false),
-
-        new ExplanationTestCase().setTitle("correctAnswerHasUnusedDropZones_notAcceptedCorrect")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1")),
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"))
-            ).setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")))
-            .expectCorrect(false)
-            .expectExplanation("The question is invalid, because it has an answer with more items than we have gaps.")
-            .expectNoDropZones()
-    };
-
-
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
-    @Theory
+    @ParameterizedTest
+    @MethodSource("explanationTestCases")
     public final void testExplanation(final ExplanationTestCase testCase) {
-        var response = testValidate(testCase.question, testCase.answer);
-        assertEquals(response.isCorrect(), testCase.correct);
+        DndValidationResponse response = testValidate(testCase.question, testCase.answer);
+        assertEquals(testCase.correct, response.isCorrect());
         if (testCase.feedback != null) {
             assertNotNull(response.getExplanation());
             assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
@@ -210,215 +347,40 @@ public class IsaacDndValidatorTest {
         }
     }
 
-    static Supplier<DropZonesTestCase> disabledItemFeedbackNoDropZones = () -> new DropZonesTestCase()
-        .tapQuestion(q -> q.setDetailedItemFeedback(false))
-        .expectNoDropZones();
-
-    static Supplier<DropZonesTestCase> enabledItemFeedback = () -> new DropZonesTestCase()
-        .tapQuestion(q -> q.setDetailedItemFeedback(true));
-
-    @DataPoints
-    public static DropZonesTestCase[] dropZonesCorrectTestCases = {
-        disabledItemFeedbackNoDropZones.get().setTitle("incorrectNotRequestsed_NotReturned")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_4cm, "leg_1")))
-            .expectCorrect(false),
-
-        disabledItemFeedbackNoDropZones.get().setTitle("correctNotRequested_NotReturned")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectCorrect(true),
-
-        enabledItemFeedback.get().setTitle("allCorrect_ShouldReturnAllCorrect")
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .expectCorrect(true)
-            .expectDropZonesCorrect(d -> d.setLeg1(true).setLeg2(true).setHypothenuse(true)),
-
-        enabledItemFeedback.get().setTitle("someIncorrect_ShouldReturnWhetherCorrect")
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .setAnswer(choice(item(item_6cm, "leg_1"), item(item_5cm, "leg_2"), item(item_5cm, "hypothenuse")))
-            .expectCorrect(false)
-            .expectDropZonesCorrect(d -> d.setLeg1(false).setLeg2(false).setHypothenuse(true)),
-
-        enabledItemFeedback.get().setTitle("multipleCorrectAnswers_decidesCorrectnessBasedOnClosesMatch")
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")),
-                correctChoice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2"), item(item_13cm, "hypothenuse"))
-            ).setAnswer(choice(item(item_5cm, "leg_1")))
-            .expectCorrect(false)
-            .expectDropZonesCorrect(d -> d.setLeg1(true)),
-
-        // these highlight inconsistent behaviour when a question violates our requirements for drop zones
-        enabledItemFeedback.get().setTitle("unrecognisedDropZone_treatsItAsAnyWrongAnswer")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_2")))
-            .expectCorrect(false)
-            .expectDropZonesCorrect(d -> d.setLeg2(false)),
-
-        enabledItemFeedback.get().setTitle("correctAnswerHasUnusedDropZones_acceptedCorrect")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectCorrect(true)
-            .expectDropZonesCorrect(d -> d.setLeg1(true)),
-    };
-
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
-    @Theory
+    @ParameterizedTest
+    @MethodSource("dropZonesCorrectTestCases")
     public final void testDropZonesCorrect(final DropZonesTestCase testCase) {
-        var response = testValidate(testCase.question, testCase.answer);
+        DndValidationResponse response = testValidate(testCase.question, testCase.answer);
         assertEquals(testCase.correct, response.isCorrect());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
 
-    @DataPoints
-    public static AnswerValidationTestCase[] answerValidationTestCases = {
-        new AnswerValidationTestCase().setTitle("itemsNull")
-            .setAnswer(choice())
-            .expectExplanation("You provided an empty answer."),
-
-        new AnswerValidationTestCase().setTitle("itemsEmpty")
-            .setAnswer(new DndChoice())
-            .expectExplanation("You provided an empty answer."),
-
-        new AnswerValidationTestCase().setTitle("itemsNotEnough")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2")))
-            .setAnswer(choice(item(item_3cm, "leg_1")))
-            .expectExplanation(IsaacDndValidator.FEEDBACK_ANSWER_NOT_ENOUGH)
-            .expectDropZonesCorrect(f -> f.setLeg1(true)),
-
-        new AnswerValidationTestCase().setTitle("itemsTooMany")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_1")))
-            .expectExplanation("You provided an answer with more items than we have gaps."),
-
-        new AnswerValidationTestCase().setTitle("itemNotOnQuestion")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(new Item("bad_id", "some_value"), "leg_1")))
-            .expectExplanation("You provided an answer with unrecognised items."),
-
-        new AnswerValidationTestCase().setTitle("itemMissingId")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(new Item(null, null), "leg_1")))
-            .expectExplanation("You provided an answer in an unrecognised format."),
-
-        new AnswerValidationTestCase().setTitle("itemMissingDropZoneId")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1")))
-            .setAnswer(choice(item(item_3cm, null)))
-            .expectExplanation("You provided an answer in an unrecognised format."),
-
-        new AnswerValidationTestCase().setTitle("itemsNotEnough_providesSpecificExplanationFirst")
-            .setQuestion(
-                correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")),
-                incorrectChoice(new Content("Leg 1 should be less than 4 cm"), item(item_4cm, "leg_1"))
-            ).setAnswer(choice(item(item_4cm, "leg_1")))
-            .expectExplanation("Leg 1 should be less than 4 cm")
-            .expectDropZonesCorrect(f -> f.setLeg1(false)),
-    };
-
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
-    @Theory
+    @ParameterizedTest
+    @MethodSource("answerValidationTestCases")
     public final void testAnswerValidation(final AnswerValidationTestCase testCase) {
         testCase.question.setDetailedItemFeedback(true);
 
-        var response = testValidate(testCase.question, testCase.answer);
+        DndValidationResponse response = testValidate(testCase.question, testCase.answer);
 
         assertFalse(response.isCorrect());
         assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
     }
 
-    static Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
-        .expectExplLog("The question is invalid, because it has an answer in an unrecognised format.");
-    static Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
-        .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_NO_ANSWERS);
-    static Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> new QuestionValidationTestCase()
-        .expectExplLog(Constants.FEEDBACK_NO_CORRECT_ANSWERS);
-
-
-    @DataPoints
-    public static QuestionValidationTestCase[] questionValidationTestCases = {
-        noAnswersTestCase.get().setTitle("answersEmpty").setQuestion(q -> q.setChoices(List.of())),
-
-        noAnswersTestCase.get().setTitle("answersNull").setQuestion(q -> q.setChoices(null)),
-
-        noCorrectAnswersTestCase.get().setTitle("answersAllIncorrect")
-            .setQuestion(incorrectChoice(item(item_3cm, "leg_1"))),
-
-        noCorrectAnswersTestCase.get().setTitle("answerNoExplicitCorrectness_Incorrect")
-            .setQuestion(choice(item(item_3cm, "leg_1"))),
-
-        new QuestionValidationTestCase().setTitle("answerWrongType")
-            .setQuestion(q -> q.setChoices(List.of(parsonsChoice())))
-            .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_INVALID_ANS),
-
-        new QuestionValidationTestCase().setTitle("answerItemsEmpty").setQuestion(correctChoice())
-            .expectExplLog("The question is invalid, because it has an empty answer."),
-
-        new QuestionValidationTestCase().setTitle("answerItemsNull")
-            .setQuestion(q -> q.setChoices(
-                Stream.of(new DndChoice()).peek(c -> c.setCorrect(true)).collect(Collectors.toList())))
-            .expectExplLog("The question is invalid, because it has an empty answer."),
-
-        new QuestionValidationTestCase().setTitle("answerItemNonDnd")
-            .setQuestion(correctChoice(new DndItemEx("id", "value", "dropZoneId")))
-            .expectExplLog("The question is invalid, because it has an invalid answer."),
-
-        itemUnrecognisedFormatCase.get().setTitle("answerItemMissingItemId")
-            .setQuestion(correctChoice(new DndItem(null, "value", "dropZoneId"))),
-
-        itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyItemId")
-            .setQuestion(correctChoice(new DndItem("", "value", "dropZoneId"))),
-
-        itemUnrecognisedFormatCase.get().setTitle("answerItemMissingDropZoneId")
-            .setQuestion(correctChoice(new DndItem("item_id", "value", null))),
-
-        itemUnrecognisedFormatCase.get().setTitle("answerItemEmptyDropZoneId")
-            .setQuestion(correctChoice(new DndItem("item_id", "value", ""))),
-
-        new QuestionValidationTestCase().setTitle("itemsNull")
-            .tapQuestion(q -> q.setItems(null))
-            .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
-
-        new QuestionValidationTestCase().setTitle("itemsEmpty")
-            .tapQuestion(q -> q.setItems(List.of()))
-            .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_MISSING_ITEMS),
-
-        new QuestionValidationTestCase().setTitle("answerInvalidItemReference")
-            .setChildren(List.of(new Content("[drop-zone:leg_1]")))
-            .setQuestion(correctChoice(new DndItem("invalid_id", "some_value", "leg_1")))
-            .expectExplLog("The question is invalid, because it has an answer with unrecognised items."),
-
-        new QuestionValidationTestCase().setTitle("answerDuplicateDropZones")
-            .setChildren(List.of(new Content("[drop-zone:leg_1] [drop-zone:leg_2]")))
-            .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_3cm, "leg_1")))
-            .expectExplLog("The question is invalid, because it has an answer with duplicate drop zones.")
-    };
-
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
-    @Theory
+    @ParameterizedTest
+    @MethodSource("questionValidationTestCases")
     public final void testQuestionValidation(final QuestionValidationTestCase testCase) {
         testCase.question.setDetailedItemFeedback(true);
 
-        var response = testValidate(testCase.question, testCase.answer);
+        DndValidationResponse response = testValidate(testCase.question, testCase.answer);
         assertFalse(response.isCorrect());
         assertEquals(testCase.feedback.getValue(), response.getExplanation().getValue());
         assertEquals(testCase.dropZonesCorrect, response.getDropZonesCorrect());
 
-        var appender = testValidateWithLogs(testCase.question, testCase.answer);
+        TestAppender appender = testValidateWithLogs(testCase.question, testCase.answer);
         appender.assertLevel(Level.ERROR);
         appender.assertMessage(testCase.loggedMessage);
     }
-
 
 
     private static DndValidationResponse testValidate(final IsaacDndQuestion question, final Choice choice) {
@@ -426,7 +388,7 @@ public class IsaacDndValidatorTest {
     }
 
     private static TestAppender testValidateWithLogs(final IsaacDndQuestion question, final Choice choice) {
-        var appender = new TestAppender();
+        TestAppender appender = new TestAppender();
         Logger logger = (Logger) LogManager.getLogger(IsaacDndValidator.class);
         logger.addAppender(appender);
         logger.setLevel(Level.WARN);
@@ -435,56 +397,50 @@ public class IsaacDndValidatorTest {
             testValidate(question, choice);
             return appender;
         } finally {
-            logger.removeAppender(new TestAppender());
+            logger.removeAppender(appender);
         }
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice choice(final DndItem... list) {
-        var c = new DndChoice();
+        DndChoice c = new DndChoice();
         c.setItems(List.of(list));
         c.setType("dndChoice");
         return c;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice correctChoice(final DndItem... list) {
-        var choice = choice(list);
+        DndChoice choice = choice(list);
         choice.setCorrect(true);
         return choice;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice correctChoice(final ContentBase explanation, final DndItem... list) {
-        var choice = correctChoice(list);
+        DndChoice choice = correctChoice(list);
         choice.setExplanation(explanation);
         return choice;
     }
 
     private static DndChoice incorrectChoice(final DndItem... list) {
-        var choice = choice(list);
+        DndChoice choice = choice(list);
         choice.setCorrect(false);
         return choice;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndChoice incorrectChoice(final ContentBase explanation, final DndItem... list) {
-        var choice = incorrectChoice(list);
+        DndChoice choice = incorrectChoice(list);
         choice.setExplanation(explanation);
         return choice;
     }
 
     private static ParsonsChoice parsonsChoice() {
-        var parsonsChoice = new ParsonsChoice();
+        ParsonsChoice parsonsChoice = new ParsonsChoice();
         parsonsChoice.setCorrect(true);
         parsonsChoice.setItems(List.of(new Item("", "")));
         return parsonsChoice;
     }
 
-
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static DndItem item(final Item item, final String dropZoneId) {
-        var value = new DndItem(item.getId(), item.getValue(), dropZoneId);
+        DndItem value = new DndItem(item.getId(), item.getValue(), dropZoneId);
         value.setType("dndItem");
         return value;
     }
@@ -495,9 +451,8 @@ public class IsaacDndValidatorTest {
         return item;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public static IsaacDndQuestion question(final DndChoice... answers) {
-        var question = new IsaacDndQuestion();
+        IsaacDndQuestion question = new IsaacDndQuestion();
         question.setId(UUID.randomUUID().toString());
         question.setItems(List.of(item_3cm, item_4cm, item_5cm, item_6cm, item_12cm, item_13cm));
         question.setChoices(List.of(answers));
@@ -554,44 +509,44 @@ public class IsaacDndValidatorTest {
             this.question = question(choices);
             return self();
         }
-
+        
         public T setQuestion(final Consumer<IsaacDndQuestion> op) {
-            var question = question();
+            IsaacDndQuestion question = question();
             op.accept(question);
             this.question = question;
             return self();
         }
-
+        
         public T setChildren(final List<ContentBase> content) {
             this.questionOps.add(q -> q.setChildren(content));
             return self();
         }
-
+        
         public T tapQuestion(final Consumer<IsaacDndQuestion> op) {
             this.questionOps.add(op);
             return self();
         }
-
+        
         public T setAnswer(final DndChoice answer) {
             this.answer = answer;
             return self();
         }
-
+        
         public T expectCorrect(final boolean correct) {
             this.correct = correct;
             return self();
         }
-
+        
         public T expectExplanation(final String feedback) {
             this.feedback = new Content(feedback);
             return self();
         }
-
+        
         public T expectNoExplanation() {
             this.feedback = null;
             return self();
         }
-
+        
         public T expectExplLog(final String feedback) {
             this.feedback = new Content(feedback);
             this.logMessageOp = q -> {
@@ -663,7 +618,7 @@ public class IsaacDndValidatorTest {
 
     public static class DropZonesTestCase extends TestCase<DropZonesTestCase> {}
 
-    public static class DndItemEx extends DndItem {
+    private static class DndItemEx extends DndItem {
         public DndItemEx(final String id, final String value, final String dropZoneId) {
             super(id, value, dropZoneId);
         }

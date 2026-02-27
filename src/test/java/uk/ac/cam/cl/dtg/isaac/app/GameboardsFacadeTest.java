@@ -16,9 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.app;
 
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
@@ -41,7 +40,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for the user manager class.
@@ -62,7 +61,7 @@ public class GameboardsFacadeTest {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@Before
+	@BeforeEach
 	public final void setUp() throws Exception {
 		this.dummyPropertiesLoader = createMock(AbstractConfigLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
@@ -81,7 +80,6 @@ public class GameboardsFacadeTest {
 	 * @throws ContentManagerException
 	 */
 	@Test
-	@PowerMockIgnore({ "jakarta.ws.*" })
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws SegueDatabaseException, ContentManagerException {
 		GameboardsFacade gameboardFacade = new GameboardsFacade(

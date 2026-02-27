@@ -17,9 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import com.google.api.client.util.Sets;
 import org.easymock.Capture;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
@@ -38,15 +37,14 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the user Association class.
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class UserAssociationManagerTest {
     private IAssociationDataManager dummyAssociationDataManager;
     private GroupManager dummyGroupDataManager;
@@ -57,7 +55,7 @@ public class UserAssociationManagerTest {
      *
      * @throws Exception - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         dummyAssociationDataManager = createMock(IAssociationDataManager.class);
         dummyGroupDataManager = createMock(GroupManager.class);
@@ -388,8 +386,8 @@ public class UserAssociationManagerTest {
                     // These characters are allowed to be blank!
                     continue;
                 }
-                assertFalse("Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!",
-                        (occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
+                assertFalse((occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta),
+                        "Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!");
             }
         }
     }

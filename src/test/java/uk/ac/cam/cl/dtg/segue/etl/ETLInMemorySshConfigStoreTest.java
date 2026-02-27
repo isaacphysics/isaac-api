@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.etl.ETLInMemorySshConfigStore.InMemoryHostConfig;
 
 import java.util.Arrays;
@@ -10,8 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ETLInMemorySshConfigStoreTest {
 

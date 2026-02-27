@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
@@ -56,13 +56,13 @@ import java.util.Map;
 
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.partialMockBuilder;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replay;
-import static org.powermock.api.easymock.PowerMock.reset;
-import static org.powermock.api.easymock.PowerMock.verify;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.reset;
+import static org.easymock.EasyMock.verify;
 
 public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
@@ -130,7 +130,7 @@ public class IsaacTest {
 
     protected Map<Object, MockConfigurer> defaultsMap = new HashMap<>();
 
-    @Before
+    @BeforeEach
     public final void initializeIsaacTest() throws SegueDatabaseException, ContentManagerException {
         initializeIsaacObjects();
         initializeMocks();
