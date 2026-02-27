@@ -205,12 +205,11 @@ public class IsaacCoordinateValidator implements IValidator {
                             if (allSubmittedItemsInChoiceItems) {
                                 feedback = new Content((submittedItems.size() == 1 ? "This is" : "These are")
                                         + " correct, but can you find more?");
-                                feedback.setTags(new HashSet<>()); // Clear tags in case we previously set sig figs tags
                                 break;
                             } else if (allItemsInChoiceWithoutSigFigs) {
                                 feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
                                 feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
-                                // Don't break; we could find a better match
+                                break;
                             }
                         }
 
@@ -243,12 +242,11 @@ public class IsaacCoordinateValidator implements IValidator {
                             if (allChoiceItemsInSubmittedItems) {
                                 responseCorrect = coordinateChoice.isCorrect();
                                 feedback = (Content) coordinateChoice.getExplanation();
-                                feedback.setTags(new HashSet<>()); // Clear tags in case we previously set sig figs tags
                                 break;
                             } else if (allItemsInSubmittedWithoutSigFigs) {
                                 feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
                                 feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
-                                // Don't break; we could find a better match
+                                break;
                             }
                         }
                     }
