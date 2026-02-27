@@ -203,18 +203,19 @@ public class IsaacCoordinateValidator implements IValidator {
                             if (allSubmittedItemsInChoiceItems) {
                                 feedback = new Content((submittedItems.size() == 1 ? "This is" : "These are")
                                         + " correct, but can you find more?");
+                                feedback.setTags(new HashSet<>()); // Clear tags in case we previously set sig figs tags
                                 break;
                             } else if (allItemsInChoiceWithoutSigFigs) {
                                 feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
                                 feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
-                                break;
+                                // Don't break; we could find a better match
                             }
                         }
 
                         // If subset matching is allowed for this choice, check if the choice is a proper subset of the
                         // submitted items
                         boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
-                        if (allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
+                        if (null == feedback && allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
                             boolean allChoiceItemsInSubmittedItems = true;
                             for (CoordinateItem choiceItem : choiceItems) {
                                 boolean choiceItemInSubmittedItems = false;
