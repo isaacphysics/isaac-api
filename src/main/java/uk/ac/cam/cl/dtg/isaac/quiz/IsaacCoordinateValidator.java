@@ -258,18 +258,15 @@ public class IsaacCoordinateValidator implements IValidator {
             }
         }
 
-        // STEP 3: If incorrect and we still have no feedback to give, use the question's default feedback if any to use:
-        if (!responseCorrect && feedbackIsNullOrEmpty(feedback)) {
-            if (null != coordinateQuestion.getDefaultFeedback()) {
-                feedback = coordinateQuestion.getDefaultFeedback();
-            } else {
-                // If there was no default feedback, check for too few significant figures
-                if (submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
+        // STEP 3: If we still have no feedback to give, use the question's default feedback if any to use:
+        if (feedbackIsNullOrEmpty(feedback) && null != coordinateQuestion.getDefaultFeedback()) {
+            feedback = coordinateQuestion.getDefaultFeedback();
+        }
+        // If there was no default feedback, check for too few significant figures
+        if (feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
                         .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
-                    feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-                    feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
-                }
-            }
+            feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+            feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
         }
 
         return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
