@@ -1,9 +1,3 @@
-ALTER TABLE question_attempts
-    ADD marks integer;
-
-ALTER TABLE quiz_question_attempts
-    ADD marks integer;
-
 CREATE OR REPLACE FUNCTION update_marks_for_period(qa question_attempts)
     RETURNS int AS $$
 BEGIN
