@@ -232,9 +232,7 @@ public class IsaacCoordinateValidatorTest {
     public final void isaacCoordinateValidator_TestSupersetOfSubsetMatchChoiceTooManySigFigs() {
         someCoordinateQuestion.setOrdered(false);
         CoordinateChoice c = new CoordinateChoice();
-        CoordinateItem item3ExtraSigFig = new CoordinateItem(List.of("1.00", "3.00"));
-        CoordinateItem item4ExtraSigFig = new CoordinateItem(List.of("3.00", "1.00"));
-        c.setItems(List.of(item1ExtraSigFig, item3ExtraSigFig, item4ExtraSigFig));
+        c.setItems(List.of(item1ExtraSigFig, item3, item4));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
