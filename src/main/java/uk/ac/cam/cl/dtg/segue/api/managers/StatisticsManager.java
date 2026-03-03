@@ -22,6 +22,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.Difficulty;
@@ -196,8 +197,8 @@ public class StatisticsManager implements IStatisticsManager {
         Map<Stage, Map<Difficulty, Integer>> questionsCorrectByStageAndDifficultyStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
-        List<IsaacQuestionPageDTO> incompleteQuestionPages = Lists.newArrayList();
-        Queue<ContentDTO> mostRecentlyAttemptedQuestionPages = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
+        List<ContentSummaryDTO> incompleteQuestionPages = Lists.newArrayList();
+        Queue<ContentSummaryDTO> mostRecentlyAttemptedQuestionsQueue = new CircularFifoQueue<>(PROGRESS_MAX_RECENT_QUESTIONS);
 
         LocalDate now = LocalDate.now();
         LocalDate endOfAugustThisYear = LocalDate.of(now.getYear(), Month.AUGUST, 31);
@@ -218,14 +219,17 @@ public class StatisticsManager implements IStatisticsManager {
             }
             IsaacQuestionPageDTO questionPageDTO = (IsaacQuestionPageDTO) contentDTO;
 
-            mostRecentlyAttemptedQuestionPages.add(questionPageDTO);  // Assumes questionAttemptsByUser is sorted!
             attemptedQuestions++;
             boolean questionIsCorrect = true;  // Are all Parts of the Question correct?
             LocalDate mostRecentCorrectQuestionPart = null;
             LocalDate mostRecentAttemptAtQuestion = null;
+            int questionPartsCorrect = 0;
+            int questionPartsIncorrect = 0;
+            int questionPartsTotal = 0;
             // Loop through each Part of the Question:
             for (QuestionDTO questionPart : GameManager.getAllMarkableQuestionPartsDFSOrder(questionPageDTO)) {
 
+                questionPartsTotal++;
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
@@ -251,6 +255,7 @@ public class StatisticsManager implements IStatisticsManager {
                             questionPartIsCorrect = true;
                             break; // early so that later attempts are ignored
                         }
+
                     }
 
                     // Type Stats - Count the attempt at the Question Part:
@@ -278,12 +283,21 @@ public class StatisticsManager implements IStatisticsManager {
                         } else {
                             questionsCorrectByTypeStats.put(questionPartType, 1);
                         }
+
+                        questionPartsCorrect++;
+                    } else {
+                        questionPartsIncorrect++;
                     }
                 }
 
                 // Correctness of whole Question: is the Question correct so far, and is this Question Part also correct?
                 questionIsCorrect = questionIsCorrect && questionPartIsCorrect;
             }
+
+            // Convert QuestionPageDTO to ContentSummaryDTO and calculate completion state
+            ContentSummaryDTO contentSummaryDTO = contentSummarizerService.extractContentSummary(questionPageDTO);
+            contentSummaryDTO.setState(UserAttemptManager.getCompletionState(questionPartsTotal, questionPartsCorrect, questionPartsIncorrect));
+            mostRecentlyAttemptedQuestionsQueue.add(contentSummaryDTO);
 
             // Tag Stats - Loop through the Question's tags:
             for (String tag : questionPageDTO.getTags()) {
@@ -355,21 +369,17 @@ public class StatisticsManager implements IStatisticsManager {
                     correctQuestionsThisAcademicYear++;
                 }
             } else {
-                incompleteQuestionPages.add(questionPageDTO);
+                incompleteQuestionPages.add(contentSummaryDTO);
             }
         }
 
         // Collate all the information into the JSON response as a Map:
         Map<String, Object> questionInfo = Maps.newHashMap();
-
-        // Create the recent and unanswered question lists:
-        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = mostRecentlyAttemptedQuestionPages
-                .stream().map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
+        List<ContentSummaryDTO> mostRecentlyAttemptedQuestionsList = new ArrayList<>(mostRecentlyAttemptedQuestionsQueue);
         Collections.reverse(mostRecentlyAttemptedQuestionsList);  // We want most-recent first order and streams cannot reverse.
         List<ContentSummaryDTO> questionsNotCompleteList = incompleteQuestionPages.stream()
-            .sorted(Comparator.comparing(SeguePageDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
-            .limit(PROGRESS_MAX_RECENT_QUESTIONS)
-            .map(contentSummarizerService::extractContentSummary).collect(Collectors.toList());
+            .sorted(Comparator.comparing(ContentSummaryDTO::getDeprecated, Comparator.nullsFirst(Comparator.naturalOrder())))
+            .limit(PROGRESS_MAX_RECENT_QUESTIONS).collect(Collectors.toList());
 
         questionInfo.put("totalQuestionsAttempted", attemptedQuestions);
         questionInfo.put("totalQuestionsCorrect", correctQuestions);
