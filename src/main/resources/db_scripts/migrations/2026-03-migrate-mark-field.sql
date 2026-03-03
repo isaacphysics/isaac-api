@@ -20,6 +20,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Date ranges taken from 2024-04-question_attempts_migrate_page_id_live.sql and extrapolated to 2026
+-- See that script for the previous results of running on the phy live database
+
 UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2014-01-01' AND timestamp <= '2015-01-02';
 UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2015-01-01' AND timestamp <= '2016-01-02';
 UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2016-01-01' AND timestamp <= '2016-06-02';
@@ -52,7 +55,21 @@ UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) 
 UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2023-11-01' AND timestamp <= '2024-01-02';
 UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-01-01' AND timestamp <= '2024-02-02';
 UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-02-01' AND timestamp <= '2024-03-02';
-UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-03-01' AND timestamp <= '2026-01-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-03-01' AND timestamp <= '2024-06-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-06-01' AND timestamp <= '2024-09-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-09-01' AND timestamp <= '2024-10-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-10-01' AND timestamp <= '2024-11-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2024-11-01' AND timestamp <= '2025-01-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-01-01' AND timestamp <= '2025-02-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-02-01' AND timestamp <= '2025-03-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-03-01' AND timestamp <= '2025-06-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-06-01' AND timestamp <= '2025-09-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-09-01' AND timestamp <= '2025-10-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-10-01' AND timestamp <= '2025-11-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2025-11-01' AND timestamp <= '2026-01-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2026-01-01' AND timestamp <= '2026-02-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2026-02-01' AND timestamp <= '2026-03-02';
+UPDATE question_attempts SET marks = update_marks_for_period(question_attempts) WHERE timestamp > '2026-03-01';
 
 
 UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2014-01-01' AND timestamp <= '2015-01-02';
@@ -88,6 +105,21 @@ UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_ques
 UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-01-01' AND timestamp <= '2024-02-02';
 UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-02-01' AND timestamp <= '2024-03-02';
 UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-03-01' AND timestamp <= '2026-01-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-03-01' AND timestamp <= '2024-06-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-06-01' AND timestamp <= '2024-09-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-09-01' AND timestamp <= '2024-10-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-10-01' AND timestamp <= '2024-11-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2024-11-01' AND timestamp <= '2025-01-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-01-01' AND timestamp <= '2025-02-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-02-01' AND timestamp <= '2025-03-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-03-01' AND timestamp <= '2025-06-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-06-01' AND timestamp <= '2025-09-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-09-01' AND timestamp <= '2025-10-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-10-01' AND timestamp <= '2025-11-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2025-11-01' AND timestamp <= '2026-01-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2026-01-01' AND timestamp <= '2026-02-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2026-02-01' AND timestamp <= '2026-03-02';
+UPDATE quiz_question_attempts SET marks = quiz_update_marks_for_period(quiz_question_attempts) WHERE timestamp > '2026-03-01';
 
 DROP FUNCTION update_marks_for_period;
 DROP FUNCTION quiz_update_marks_for_period;
