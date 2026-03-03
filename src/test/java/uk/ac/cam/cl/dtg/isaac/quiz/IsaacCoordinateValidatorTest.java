@@ -44,7 +44,9 @@ public class IsaacCoordinateValidatorTest {
     private final CoordinateItem item3 = new CoordinateItem(List.of("1.0", "3.0"));
     private final CoordinateItem item4 = new CoordinateItem(List.of("3.0", "1.0"));
     private final CoordinateItem item2Again = new CoordinateItem(List.of("2.0", "1.0"));  // Ensure no == comparisons.
+
     private final CoordinateItem item1ExtraSigFig = new CoordinateItem(List.of("1.00", "2.00"));
+    private final CoordinateItem item1TooFewSigFigs = new CoordinateItem(List.of("1", "2"));
 
     private final Content someIncorrectExplanation = new Content("Some incorrect explanation.");
 
@@ -180,9 +182,8 @@ public class IsaacCoordinateValidatorTest {
 
     @Test
     public final void isaacCoordinateValidator_TestTooFewSignificantFigures() {
-        CoordinateItem ci = new CoordinateItem(List.of("1", "2"));
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(ci, item2));
+        c.setItems(List.of(item1TooFewSigFigs, item2));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
@@ -244,9 +245,8 @@ public class IsaacCoordinateValidatorTest {
     @Test
     public final void isaacCoordinateValidator_TestDefaultFeedback() {
         // If default feedback is set, prefer it over "too few sig figs"
-        CoordinateItem ci = new CoordinateItem(List.of("1", "2"));
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(ci, item2));
+        c.setItems(List.of(item1TooFewSigFigs, item2));
 
         Content defaultExplanation = new Content("Default feedback.");
         someCoordinateQuestion.setDefaultFeedback(defaultExplanation);
