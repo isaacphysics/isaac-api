@@ -1,3 +1,4 @@
+-- Ada Computer Science + Isaac Science (Staging) Migration Functions
 CREATE OR REPLACE FUNCTION update_marks_for_period(qa question_attempts)
     RETURNS int AS $$
 BEGIN
@@ -19,6 +20,21 @@ BEGIN
         END;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Isaac Science (Live) Migration Functions
+/* CREATE OR REPLACE FUNCTION update_marks_for_period(qa question_attempts)
+    RETURNS int AS $$
+BEGIN
+    RETURN qa.correct::int;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION quiz_update_marks_for_period(qa quiz_question_attempts)
+    RETURNS int AS $$
+BEGIN
+    RETURN qa.correct::int;
+END;
+$$ LANGUAGE plpgsql; */
 
 -- Date ranges taken from 2024-04-question_attempts_migrate_page_id_live.sql and extrapolated to 2026
 -- See that script for the previous results of running on the phy live database
