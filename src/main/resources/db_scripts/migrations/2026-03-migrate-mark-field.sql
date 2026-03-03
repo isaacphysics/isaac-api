@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION update_marks_for_period(qa question_attempts)
 BEGIN
     RETURN CASE
                WHEN (qa.question_attempt -> 'answer' ->> 'type') = 'llmFreeTextChoice'
-                   THEN (qa.question_attempt ->> 'marksAwarded')::int
+                   THEN (qa.question_attempt ->> 'marks')::int
                ELSE qa.correct::int
         END;
 END;
@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION quiz_update_marks_for_period(qa quiz_question_attempt
 BEGIN
     RETURN CASE
                WHEN (qa.question_attempt -> 'answer' ->> 'type') = 'llmFreeTextChoice'
-                   THEN (qa.question_attempt ->> 'marksAwarded')::int
+                   THEN (qa.question_attempt ->> 'marks')::int
                ELSE qa.correct::int
         END;
 END;
