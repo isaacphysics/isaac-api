@@ -23,7 +23,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
-import org.eclipse.jetty.websocket.api.UpgradeRequest;
+import org.eclipse.jetty.ee9.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AccountDeletionToken;
@@ -86,7 +86,6 @@ import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import static org.eclipse.jetty.http.HttpCookie.SAME_SITE_STRICT_COMMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -565,8 +564,7 @@ public class UserAuthenticationManager {
             logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
             logoutCookie.setHttpOnly(true);
             logoutCookie.setSecure(true);
-            // TODO - set sameSite without the setComment hack when setAttribute is available.
-            logoutCookie.setComment(SAME_SITE_STRICT_COMMENT);
+            logoutCookie.setAttribute("SameSite", "Strict");
 
             response.addCookie(logoutCookie);
         } catch (IllegalStateException e) {
@@ -1034,8 +1032,7 @@ public class UserAuthenticationManager {
             authCookie.setPath("/");
             authCookie.setHttpOnly(true);
             authCookie.setSecure(true);
-            // TODO - set sameSite without the setComment hack when setAttribute is available.
-            authCookie.setComment(SAME_SITE_STRICT_COMMENT);
+            authCookie.setAttribute("SameSite", "Strict");
 
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 

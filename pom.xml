@@ -26,7 +26,7 @@
         <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty-version>11.0.26</jetty-version>
+        <jetty-version>12.1.6</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>2.0.3</testcontainers.version>
@@ -84,8 +84,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlets</artifactId>
+            <groupId>org.eclipse.jetty.ee9</groupId>
+            <artifactId>jetty-ee9-servlets</artifactId>
             <version>${jetty-version}</version>
         </dependency>
 
@@ -436,13 +436,13 @@
 
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-jetty-api</artifactId>
+            <artifactId>jetty-websocket-jetty-api</artifactId>
             <version>${jetty-version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-jetty-server</artifactId>
+            <groupId>org.eclipse.jetty.ee9.websocket</groupId>
+            <artifactId>jetty-ee9-websocket-jetty-server</artifactId>
             <version>${jetty-version}</version>
         </dependency>
 
@@ -616,8 +616,8 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
+                <groupId>org.eclipse.jetty.ee9</groupId>
+                <artifactId>jetty-ee9-maven-plugin</artifactId>
                 <version>${jetty-version}</version>
                 <configuration>
                     <webApp>
@@ -767,8 +767,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-maven-plugin</artifactId>
+                        <groupId>org.eclipse.jetty.ee9</groupId>
+                        <artifactId>jetty-ee9-maven-plugin</artifactId>
                         <version>${jetty-version}</version>
                         <configuration>
                             <webApp>
