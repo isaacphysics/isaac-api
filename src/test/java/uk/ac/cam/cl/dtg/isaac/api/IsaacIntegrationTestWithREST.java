@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.eclipse.jetty.ee9.nested.SessionHandler;
-import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee9.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.session.ManagedSession;
 import org.eclipse.jetty.session.SessionCache;

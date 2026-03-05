@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.auth.microsoft;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee9.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.json.JSONArray;
 import org.json.JSONObject;

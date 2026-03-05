@@ -23,7 +23,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
-import org.eclipse.jetty.ee9.websocket.api.UpgradeRequest;
+import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AccountDeletionToken;
@@ -1037,7 +1037,7 @@ public class UserAuthenticationManager {
             log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
 
             response.addCookie(authCookie);
-            
+
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
         }
