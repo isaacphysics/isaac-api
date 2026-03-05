@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
@@ -8,8 +8,8 @@ import uk.ac.cam.cl.dtg.util.NameFormatter;
 
 import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class NameFormatterTest {
 

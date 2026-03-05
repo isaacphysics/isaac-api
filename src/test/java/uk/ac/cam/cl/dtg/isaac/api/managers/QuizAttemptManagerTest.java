@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -28,10 +28,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replay;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class QuizAttemptManagerTest extends AbstractManagerTest {
     private static final Long TEST_ID = 0xC0000000000L;
@@ -39,7 +40,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
 
     private IQuizAttemptPersistenceManager quizAttemptPersistenceManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         quizAttemptPersistenceManager = createMock(IQuizAttemptPersistenceManager.class);
 
@@ -56,11 +57,12 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
         assertEquals(studentAttempt, attempt);
     }
 
-    @Test(expected = AttemptCompletedException.class)
+    @Test
     public void fetchOrCreateWithExistingCompletedAttemptFails() throws AttemptCompletedException, SegueDatabaseException {
-        withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(completedAttempt));
-
-        quizAttemptManager.fetchOrCreate(studentAssignment, student);
+        assertThrows(AttemptCompletedException.class, () -> {
+            withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(completedAttempt));
+            quizAttemptManager.fetchOrCreate(studentAssignment, student);
+        });
     }
 
     @Test

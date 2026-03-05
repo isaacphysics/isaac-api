@@ -15,8 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
@@ -30,13 +30,14 @@ import java.util.Date;
 import java.util.List;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.resetToNice;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 public class QuizAssignmentManagerTest extends AbstractManagerTest {
@@ -48,7 +49,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     private QuizAssignmentDTO newAssignment;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ContentManagerException, SegueDatabaseException {
         AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
         emailService = createMock(EmailService.class);
@@ -61,7 +62,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
         replay(properties, emailService, quizAssignmentPersistenceManager);
     }
 
-    @Before
+    @BeforeEach
     public void initializeAdditionalObjects() {
         newAssignment = new QuizAssignmentDTO(
             null, studentQuiz.getId(),
@@ -100,22 +101,24 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
         quizAssignmentManager.createAssignment(newAssignment);
     }
 
-    @Test(expected = DueBeforeNowException.class)
-    public void createAssignmentFailsInThePast() throws SegueDatabaseException, ContentManagerException {
-        newAssignment.setDueDate(somePastDate);
-
-        quizAssignmentManager.createAssignment(newAssignment);
+    @Test
+    public void createAssignmentFailsInThePast() {
+        assertThrows(DueBeforeNowException.class, () -> {
+            newAssignment.setDueDate(somePastDate);
+            quizAssignmentManager.createAssignment(newAssignment);
+        });
     }
 
-    @Test(expected = DuplicateAssignmentException.class)
-    public void createDuplicateAssignmentFails() throws SegueDatabaseException, ContentManagerException {
+    @Test
+    public void createDuplicateAssignmentFails() {
+        assertThrows(DuplicateAssignmentException.class, () -> {
+            withMock(quizAssignmentPersistenceManager, m -> {
+                expect(m.getAssignmentsByQuizIdAndGroup(
+                        studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
+            });
 
-        withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
+            quizAssignmentManager.createAssignment(newAssignment);
         });
-
-        quizAssignmentManager.createAssignment(newAssignment);
     }
 
     @Test

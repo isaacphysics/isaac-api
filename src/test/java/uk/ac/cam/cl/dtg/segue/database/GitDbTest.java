@@ -15,24 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 
 import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
-import org.junit.Test;
-
-import org.powermock.api.easymock.PowerMock;
+import org.junit.jupiter.api.Test;
 
 public class GitDbTest {
 
 	@Test
 	public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
 		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called.
-
-		PowerMock.replay(Git.class);
 
 		try {
 			new GitDb("", null, null);

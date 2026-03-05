@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
@@ -38,7 +38,7 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the SegueLocalAuthenticator class.
@@ -66,7 +66,7 @@ public class SegueLocalAuthenticatorTest {
      *
      * @throws Exception - test exception
      */
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         this.userDataManager = createMock(IUserDataManager.class);
         this.passwordDataManager = createMock(IPasswordDataManager.class);

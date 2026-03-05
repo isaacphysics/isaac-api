@@ -18,12 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.easymock.IAnswer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DueBeforeNowException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -68,20 +64,17 @@ import java.util.Objects;
 
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createNiceMock;
-import static org.powermock.api.easymock.PowerMock.expectLastCall;
-import static org.powermock.api.easymock.PowerMock.replay;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class QuizFacadeTest extends AbstractFacadeTest {
 
     private QuizFacade quizFacade;
@@ -96,7 +89,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
     private UserAssociationManager associationManager;
     private List<QuizAttemptDTO> studentOwnAttempts;
 
-    @Before
+    @BeforeEach
     public void setUp() throws ContentManagerException {
         studentOwnAttempts = ImmutableList.of(ownAttempt, ownCompletedAttempt, attemptOnNullFeedbackModeQuiz);
 
@@ -176,7 +169,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
-        replay(requestForCaching, properties, logManager, contentManager, contentSummarizerService, quizManager, quizAssignmentManager,
+        replay(requestForCaching, properties, logManager, contentManager, contentSummarizerService, quizAssignmentManager,
             assignmentService, quizAttemptManager, quizQuestionManager, associationManager);
     }
 
