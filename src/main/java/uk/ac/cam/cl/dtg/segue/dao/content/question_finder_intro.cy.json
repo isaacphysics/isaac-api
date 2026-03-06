@@ -1,0 +1,15 @@
+{
+  "type": "isaacPageFragment",
+  "encoding": "markdown",
+  "title": "Cyflwyniad i'r Chwiliwr Cwestiynau",
+  "children": [
+    {
+      "type": "content",
+      "encoding": "markdown",
+      "value": "Defnyddiwch ein chwiliwr cwestiynau i archwilio mwy na 1000 o gwestiynau ymarfer sy’n hunan-farcio. Mae’r cwestiynau wedi’u hysgrifennu gan arbenigwyr ac yn cael eu diweddaru’n aml; gallwch eu hidlo yn ôl pwnc, cymhwyster, a lefel anhawster. Defnyddiwch nhw i adolygu pynciau allweddol, cael adborth ar unwaith, a rhoi cynnig arall arni os dymunwch.\n\nOs hoffech gadw eich cynnydd, [mewngofnodwch](/login) neu [cofrestrwch](/register) am gyfrif am ddim."
+    }
+  ],
+  "author": "skyepurchase",
+  "id": "question_finder_intro",
+  "published": true
+}

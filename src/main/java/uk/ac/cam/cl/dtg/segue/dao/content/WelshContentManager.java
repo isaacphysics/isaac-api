@@ -22,12 +22,12 @@ public class WelshContentManager {
     }
 
     public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
-        if (null == id || id.isEmpty() || !id.equals("core_specification_ada")) {
+        if (null == id || id.isEmpty() || (!id.equals("core_specification_ada") && !id.equals("question_finder_intro"))) {
             return null;
         }
 
         try {
-            String content = new String(Files.readAllBytes(Paths.get("src/main/java/uk/ac/cam/cl/dtg/segue/dao/content/core_specification.cy.json")));
+            String content = new String(Files.readAllBytes(Paths.get(String.format("src/main/java/uk/ac/cam/cl/dtg/segue/dao/content/%s.cy.json", id))));
             List<Content> searchResults = contentSubclassMapper
                     .mapFromStringListToContentList(List.of(content));
 
@@ -37,3 +37,4 @@ public class WelshContentManager {
         }
     }
 }
+
