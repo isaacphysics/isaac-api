@@ -1,0 +1,218 @@
+{
+  "type": "isaacPageFragment",
+  "encoding": "markdown",
+  "title": "Cwricwlwm craidd Ada CS",
+  "children": [
+    {
+      "type": "content",
+      "encoding": "markdown",
+      "value": "Mae'r dudalen hon yn amlinellu set o amcanion dysgu ar gyfer myfyrwyr sy'n meistroli **cysconceptau craidd** mewn gwyddoniaeth gyfrifiadurol, sy'n cael eu hastudio fel arfer gan fyfyrwyr 14–16 oed.\n\nMae ein deunyddiau dysgu wedi'u hadeiladu o amgylch Cwricwlwm Ada CS, sy'n strwythuro dysgu i gefnogi dilyniant myfyrwyr orau. Yn ogystal, mae'r holl gynnwys wedi'i fapio i'r prif fyrddau arholi yng Nghymru, Lloegr a'r Alban. Os ydych chi'n astudio ar gyfer cymhwyster ffurfiol, dylech osod eich dewisiadau gwylio yn unol â hynny.\n\nGallwch ffurfweddu eich dewisiadau gwylio gan ddefnyddio'r opsiwn addasu yn eich [gosodiadau cyfrif](https://adacomputerscience.org/account#customise). Dewiswch **Ada CS Core** os ydych chi'n fyfyriwr 14-16 oed nad ydych chi'n astudio ar gyfer cymhwyster wedi'i fapio. "
+    },
+    {
+      "type": "content",
+      "encoding": "markdown",
+      "value": "## AI a dysgu peirianyddol"
+    },
+    {
+      "type": "content",
+      "layout": "accordion",
+      "encoding": "markdown",
+      "children": [
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Deallusrwydd artiffisial](/topics/artificial_intelligence)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n  <tr>\n    <td>Diffinio'r term deallusrwydd artiffisial a darparu enghreifftiau o'i ddefnydd mewn senarios bywyd go iawn. </td>\n  </tr>\n  <tr>\n    <td> Trafod effeithiau cymdeithasol posibl defnyddio deallusrwydd artiffisial mewn amrywiol senarios. </td>\n  </tr>\n  <tr> \n    <td> Trafod sut mae datblygiad cyflym deallusrwydd artiffisial wedi cyflwyno, a sut y bydd yn cyflwyno, risgiau diogelwch newydd. </td>\n  </tr>\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Deallusrwydd Artiffisial",
+          "id": "ai"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Dysgu Peirianyddol](/topics/machine_learning)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n  <tr>\n    <td>Nodi diben modelau dysgu peirianyddol. </td>\n  </tr>\n    <tr>\n    <td>Arddemonstrowch y defnydd o fodelau dysgu peirianyddol mewn senarios bywyd go iawn.</td>\n    </tr>\n    <tr>\n    <td>Trafod y materion moesegol sy'n gysylltiedig â dysgu peirianyddol a deallusrwydd artiffisial. </td>\n    </tr>\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Dysgu peirianyddol",
+          "id": "ml"
+        }
+      ]
+    },
+    {
+      "type": "content",
+      "encoding": "markdown",
+      "value": "## Algorithmau a strwythurau data"
+    },
+    {
+      "type": "content",
+      "layout": "accordion",
+      "encoding": "markdown",
+      "children": [
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Strwythurau data](/topics/data_structures)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n    <tr>\n    <td><b>Hanfodion strwythur data<b></td>\n  </tr>  \n  <tr>\n    <td>Egluro cysyniad strwythur data.</td>\n  </tr>\n      <tr>\n    <td>Egluro'r gwahaniaeth rhwng strwythurau data mwtadwy ac immwtadwy.</td>\n  </tr>\n    <tr>\n    <td>Gwahaniaethu rhwng strwythurau data sefydlog a deinamig.</td>\n  </tr>\n    <tr>\n    <td><b>Araeau</b></td>\n  </tr>\n  <tr> \n    <td>Egluro bod arae yn strwythur data llinol sy'n meddiannu rhanbarth cyffiniol o'r prif gof </td>\n  </tr>\n  <tr> \n    <td>Defnyddio termau technegol sy'n gysylltiedig ag araeau (indecs, ffin isaf, ffin uchaf) </td>\n  </tr>\n   <tr> \n    <td>Gweithredu araeau un dimensiwn a dau ddimensiwn wrth ddylunio datrysiadau i broblemau syml. </td>\n  </tr>\n    <tr>\n      <td> <b> Cofnodion </b> </td>\n   </tr> \n   <tr>\n     <td>Egluro bod strwythur cofnod yn gasgliad cysylltiedig o eitemau data o wahanol fathau o ddata. </td>\n   </tr>\n   <tr>\n     <td>Defnyddio cofnodion (neu gyfatebol) wrth ddylunio datrysiadau i broblemau syml.  </td>\n   </tr>\n     <tr>\n      <td> <b> Geiriaduron </b> </td>\n   </tr> \n   <tr> \n     <td>Egluro bod geiriadur yn gasgliad o barau gwerth allweddol. </td>\n   </tr>\n   <tr>\n     <td>Defnyddio geiriadur (neu gyfatebol) wrth ddylunio datrysiadau i broblemau syml.  </td>\n   </tr>   \n</tbody>\n</table>"
+            }
+          ],
+          "title": "Strwythurau data",
+          "id": "datastruct"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Algorithmau Chwilio](/topics/searching)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n  <tbody>\n  <tr>\n    <td><b>Chwiliad Llinol <b></td>\n  </tr>\n  <tr>\n    <td>Egluro sut mae'r algorithm chwiliad llinol yn gweithio.</td>\n  </tr>\n  <tr>\n    <td>Disgrifio unrhyw ragamodau ar gyfer yr algorithm chwiliad llinol </td>\n  </tr>\n  <td><b>Chwiliad Binaraidd <b></td>\n  </tr>\n  <tr>\n    <td>Egluro sut mae'r algorithm chwiliad binaraidd yn gweithio.</td>\n  </tr>\n  <tr>\n    <td>Disgrifio unrhyw ragamodau ar gyfer yr algorithm chwiliad binaraidd</td>\n  </tr>\n  <tr>\n    <td>Cymharu a chyferbynnu effeithlonrwydd algorithmau chwiliad llinol a binaraidd</td>\n  </tr>\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Algorithmau chwilio",
+          "id": "search"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Algorithmau Trefnu](/topics/sorting)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n   <tr>\n    <td><b>Trefnu Swigod <b></td>\n  </tr>\n  <tr>\n    <td>Egluro sut mae'r algorithm trefnu swigod yn gweithio</td>\n  </tr>\n  <tr>\n    <td>Disgrifio unrhyw ragamodau ar gyfer yr algorithm trefnu swigod</td>\n  </tr>\n     <tr>\n    <td><b>Trefnu Mewnosod <b></td>\n  </tr>\n  <tr>\n    <td>Egluro sut mae'r algorithm trefnu mewnosod yn gweithio</td>\n  </tr>\n  <tr>\n    <td>Disgrifio unrhyw ragamodau ar gyfer yr algorithm trefnu mewnosod</td>\n  </tr>\n  <tr>\n    <td><b>Trefnu Uno <b></td>\n  </tr>\n  <tr>\n    <td>Egluro sut mae'r algorithm trefnu uno yn gweithio</td>\n  </tr>\n  <tr>\n    <td>Disgrifio unrhyw ragamodau ar gyfer yr algorithm trefnu uno</td>\n  </tr>\n  <tr>\n    <td><b>Cymharu algorithmau trefnu<b></td>\n  </tr>\n  <tr>\n    <td>Cymharu a chyferbynnu effeithlonrwydd ystod o algorithmau trefnu.</td>\n  </tr>\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Algorithmau trefnu",
+          "id": "sort"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Cymhlethdod](/topics/complexity)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n    <tr>\n    <td><b>Cymharu Algorithmau <b></td>\n  </tr>\n  \n  <tr>\n    <td>Deall bod rhai algorithmau yn fwy effeithlon o ran amser nag algorithmau eraill </td>\n  </tr>\n\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Cymhlethdod",
+          "id": "complex"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Meddwl Cyfrifiadurol](/topics/computational_thinking)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n  <tr>\n    <td><b>Tynnu (Abstraction) <b></td>\n  </tr>\n  \n  <tr>\n    <td>Egluro'r term a'r angen am dynnu (abstraction). </td>\n  </tr>\n    <tr>\n    <td> Egluro'r gwahaniaethau rhwng tyniad (abstraction) a realiti. </td>\n  </tr>\n    <tr>\n    <td><b>Dadelfennu (Decomposition) <b></td>\n  </tr>\n  <tr>\n    <td>Egluro'r term dadelfennu. </td>\n  </tr>\n  <tr>\n    <td>Gallu defnyddio dadelfennu i dorri problemau i lawr.</td>\n  </tr>\n  <tr>\n    <td><b>Adnabod patrymau <b></td>\n  </tr>\n  <tr>\n    <td>Egluro'r term adnabod patrymau. </td>\n  </tr>\n  <tr>\n    <td>Gallu adnabod patrymau mewn problemau.</td>\n  </tr>\n  <tr>\n    <td><b>Meddwl rhesymegol <b></td>\n  </tr>\n  <tr>\n    <td>Egluro'r term meddwl rhesymegol. </td>\n  </tr>\n        <tr>\n    <td>Gallu datrys problemau rhesymeg syml.</td>\n  </tr>\n  <tr>\n    <td><b>Awtomeiddio <b></td>\n  </tr>\n  <tr>\n    <td> Egluro bod awtomeiddio yn cynnwys: \n            <li>Creu algorithmau </li>\n            <li>Gweithredu'r algorithmau mewn cod rhaglen </li>\n            <li>Gweithredu'r modelau mewn strwythurau data</li>\n            <li>Gweithredu'r cod</li>\n     </td>\n  </tr>\n\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Meddwl cyfrifiadurol",
+          "id": "compthink"
+        }
+      ]
+    },
+    {
+      "type": "content",
+      "encoding": "markdown",
+      "value": "## Systemau cyfrifiadurol"
+    },
+    {
+      "type": "content",
+      "layout": "accordion",
+      "encoding": "markdown",
+      "children": [
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Pensaernïaeth Systemau](/topics/architecture)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n   <tr>\n    <td><b>Pensaernïaeth peiriannau<b></td>\n  </tr>\n  <tr>\n    <td>Disgrifio pensaernïaeth Von Neumann </td>\n  </tr>\n\n  <tr>\n    <td><b>Cydrannau Mewnol system gyfrifiadurol<b></td>\n  </tr>\n  <tr>\n    <td>Disgrifio rôl y cydrannau canlynol a sut maent yn berthnasol i'w gilydd:\n          <li>Prosesydd </li> \n          <li>Prif gof</li> \n          <li>Rheolwyr I/O</li>\n    </td>\n    <tr> \n    <td>Egluro'r angen am gyfathrebu rhwng cydrannau.</td>\n    </tr>\n    <tr>\n    <td>Disgrifio cysyniad bws a sut y cânt eu defnyddio: \n          <li>Bws cyfeiriad </li> \n          <li>Bws data </li>\n          <li>Bws rheoli </li>\n    </td>\n    </tr>\n    <tr>  \n      <td><b>Strwythur a swyddogaeth y prosesydd<b></td>\n    </tr>\n    <tr>\n      <td>Disgrifio rôl a gweithrediad prosesydd a'i brif gydrannau: \n            <li>Uned rhesymeg rhifyddol </li> \n            <li>Uned Reoli</li> \n            <li>Cloc</li>\n            <li>Cofrestrau</li>\n      </td>\n    </tr>\n     <tr>  \n      <td colspan=\"2\"><b>Perfformiad y prosesydd<b></td>\n    </tr>\n    <tr>\n      <td>Egluro effaith y canlynol ar berfformiad y prosesydd:\n            <li>Cyflymder y Cloc </li> \n            <li>Nifer y creiddiau</li> \n            <li>Maint y storfa (cache)</li>        \n      </td>\n    </tr>\n    <tr>\n      <td><b>Rôl a gweithrediad y prif gof <b></td>\n    </tr>\n  <tr>\n    <td>Disgrifio'r cysyniad o gof y gellir ei gyfeirio (y gall y prosesydd ei gyrchu'n uniongyrchol) </td>\n  </tr>\n   <tr>\n      <td><b>Cylch Fetch Execute <b></td>\n    </tr>\n  <tr>\n    <td>Disgrifio'r cysyniad rhaglen wedi'i storio lle mae cyfarwyddiadau cod peiriant sydd wedi'u storio yn y prif gof yn cael eu cyrchu a'u gweithredu'n gyfresol gan brosesydd sy'n cyflawni gweithrediadau rhifyddol a rhesymegol.  </td>\n  </tr>\n   <tr>\n    <td> Disgrifio'r cylch Fetch-Execute:\n            <li>fetch: cyrchir y cyfarwyddyd nesaf i'r CPU o'r prif gof </li>\n            <li>decode: dadgodir y cyfarwyddyd </li>\n            <li> execute: gweithredir y cyfarwyddyd. Gall hyn gynnwys darllen/ysgrifennu o/i'r prif gof </li>\n    </td>\n  </tr>\n   <tr>\n    <td><b> Mathau o broseswyr<b></td>\n  </tr>\n  <tr>\n    <td>Egluro y gall CPU gael mwy nag un craidd prosesu</td>\n  </tr>\n     <tr>\n    <td><b> Systemau wedi'u hymredeg (embedded systems)<b></td>\n  </tr>\n  <tr>\n    <td>Disgrifio nodweddion systemau wedi'u hymredeg ac egluro eu diben</td>\n  </tr>\n  <tr>\n    <td> Nodi enghreifftiau o systemau wedi'u hymredeg</td>\n  </tr>\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Pensaernïaeth systemau",
+          "id": "sysarch"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Rhesymeg Boole](/topics/boolean_logic)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n  <tr> \n    <td><b>Pyrth rhesymeg<b></td>\n  </tr>\n  <tr>\n    <td>Disgrifio swyddogaethau pyrth: NOT, AND, OR, NAND, NOR ac XOR </td>\n  </tr>\n <tr>\n    <td>Gwybod a gallu defnyddio symbolau pyrth rhesymeg safonol ANSI/ IEEE 91-1984 ar gyfer y pyrth rhesymeg hyn. </td>\n  </tr>\n  <tr>\n    <td>Adeiladu'r tabl gwirionedd ar gyfer pob un o'r pyrth rhesymeg hyn </td>\n  </tr>\n    <tr> \n    <td><b>Cylchedau rhesymeg<b></td>\n  </tr>\n  <tr>\n    <td>Creu cylched rhesymeg gan ddefnyddio pyrth NOT, AND, OR ac XOR o:\n          <li> Datganiad problem syml </li>\n          <li> Mynegiad Boole syml\n          <li> Tabl gwirionedd syml</li> \n   </td>\n  </tr>\n  <tr>\n    <td>Adeiladu tablau gwirionedd ar gyfer cylchedau rhesymeg syml gyda hyd at dri mewnbwn. </td>\n  </tr>\n  <tr> \n    <td><b>Mynegiadau Boole <b></td>\n  </tr>\n  <tr>\n    <td>Adeiladu mynegiad Boole o:\n              <li> datganiad problem syml </li>\n              <li> cylched rhesymeg syml </li>\n              <li> tabl gwirionedd syml </li>\n     </td>\n  </tr>\n <tr>\n    <td>Adeiladu tabl gwirionedd o fynegiad Boole syml  </td>\n  </tr>\n    <td><b>Symleiddio mynegiadau Boole <b></td>\n  </tr>\n  <tr>\n    <td>Symleiddio mynegiad Boole gan ddefnyddio tabl gwirionedd</td>\n  </tr> \n</tbody>\n</table>"
+            }
+          ],
+          "title": "Rhesymeg Boole",
+          "id": "boolean"
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "Gellir dod o hyd i gynnwys i gefnogi'r maes dysgu hwn yn y pynciau canlynol: \n\n- [Cof a Storio](/topics/memory_and_storage)"
+            },
+            {
+              "type": "content",
+              "encoding": "markdown",
+              "value": "<table>\n<tbody>\n  <tr>\n    <td> <b> Hanfodion cof </b></td> \n  </tr>\n  <tr>\n    <td>Egluro'r angen am wahanol fathau o gof o fewn cyfrifiadur: RAM, ROM, Cache, Cofrestr</td>\n  </tr>\n   <tr>\n    <td>Adnabod at beth y defnyddir y gwahanol fathau o gof a pham y mae eu hangen</td>\n  </tr>\n  <tr>\n    <td>Disgrifio'r gwahaniaethau rhwng y prif gof a storfa eilaidd</td>\n  </tr>\n  <tr>\n    <td>Disgrifio diben a gwahaniaethau rhwng RAM a ROM</td>\n  </tr>\n   <tr>\n    <td>Egluro pam mae angen storfa eilaidd</td>\n  </tr>\n   <tr>\n    <td>Yr angen am storfa gynradd</td>\n  </tr>\n  <tr>\n    <td> <b> Unedau storio </b> </td> \n  </tr>\n  <tr>\n    <td>Yr unedau storio data:\n                <li>Bit</li>\n                <li>Nibble (4 bit)</li>\n                <li>Beit (8 bit)</li>\n                <li>Cilobeit (1,000 beit neu 1 KB)</li>\n                <li>Megabeit (1,000 KB)</li>\n                <li>Gigabeit (1,000 MB)</li>\n                <li>Terabeit (1,000 GB)</li>\n                <li>Petabeit (1,000 TB) </li>\n    </td>\n  </tr>\n  <tr>\n    <td>Cynhwysedd data a chyfrifo gofynion cynhwysedd data</td>\n  </tr>\n  <tr>\n    <td> <b>Storfa gynradd (prif gof) </b></td> \n  </tr>\n  <tr>\n    <td>Disgrifio rôl Cof rhithwir</td>\n  </tr>\n   <tr>\n    <td>Disgrifio diben cof storfa (cache)</td>\n  </tr>\n  <tr>\n    <td> <b>Storfa eilaidd  </b> </td> \n  </tr>\n  <tr>\n    <td>Nodi prif nodweddion, dibenion, addasrwydd gwahanol fathau o storfa eilaidd (cyflwr solet, optegol a magnetig); cof fflach</td>\n  </tr>\n   <tr>\n    <td>Trafod manteision ac anfanteision storfa cyflwr solet, optegol a magnetig</td>\n  </tr>\n  <tr>\n    <td>Nodi dyfeisiau storio a chyfryngau addas ar gyfer cymhwysiad penodol</td>\n  </tr>\n  <tr>\n    <td>Manteision ac anfanteision gwahanol ddyfeisiau storio a chyfryngau storio sy'n ymwneud â'r nodweddion hyn:\n                  <li> Cynhwysedd </li>\n                  <li>Cyflymder </li>\n                  <li>Cludadwyedd</li>\n                  <li>Gwydnwch</li>\n                  <li>Dibynadwyedd</li>\n                  <li>Cost</li>\n    </td>\n  </tr>\n  <tr>\n    <td> <b> Storio cwmwl<b> </td>\n  </tr>\n  <tr> \n    <td>Egluro'r term storio cwmwl</td>\n  </tr>\n</tbody>\n</table>"
+            }
+          ],
+          "title": "Cof a storio",
+          "id": "memory"
+        }
+      ]
+    }
+  ]
+}

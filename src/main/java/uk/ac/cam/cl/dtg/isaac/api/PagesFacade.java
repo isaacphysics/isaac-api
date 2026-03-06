@@ -58,6 +58,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.WelshContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
@@ -109,6 +110,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final GitContentManager contentManager;
     private final UserAttemptManager userAttemptManager;
     private final GameManager gameManager;
+    private final WelshContentManager welshContentManager;
 
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
@@ -137,7 +139,9 @@ public class PagesFacade extends AbstractIsaacFacade {
                        final ILogManager logManager, final MainMapper mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager,
                        final QuestionManager questionManager, final GameManager gameManager,
-                       final UserAttemptManager userAttemptManager) {
+                       final UserAttemptManager userAttemptManager,
+                       final WelshContentManager welshContentManager
+    ) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -147,6 +151,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.questionManager = questionManager;
         this.gameManager = gameManager;
         this.userAttemptManager = userAttemptManager;
+        this.welshContentManager = welshContentManager;
     }
 
     /**
@@ -844,11 +849,15 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Operation(summary = "Get a content page fragment by ID.")
     public final Response getPageFragment(@Context final Request request,
                                           @Context final HttpServletRequest httpServletRequest,
-                                          @PathParam("fragment_id") final String fragmentId) {
-
+                                          @PathParam("fragment_id") final String fragmentId,
+                                          @QueryParam("lang")  String lang)
+    {
+        if (!lang.equals("cy")) {
+            lang = "en";
+        }
         // Calculate the ETag on current live version of the content
         EntityTag etag = new EntityTag(String.valueOf(
-            this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode()
+            this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode() + lang
         ));
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -856,6 +865,12 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
         try {
             ContentDTO contentDTO = contentManager.getContentById(fragmentId, true);
+            if (lang.equals("cy")) {
+                var welshResponse = welshContentManager.getContentById(fragmentId, false);
+                if (null != welshResponse) {
+                    contentDTO = welshResponse;
+                }
+            }
             if (contentDTO instanceof IsaacPageFragmentDTO) {
                 // Unlikely we want to augment with related content here!
 
