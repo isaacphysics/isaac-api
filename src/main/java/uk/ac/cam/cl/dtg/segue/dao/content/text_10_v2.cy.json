@@ -1,0 +1,212 @@
+{
+  "type": "isaacQuestionPage",
+  "encoding": "markdown",
+  "title": "ASCII ac Unicode 1",
+  "children": [
+    {
+      "value": "Mae ASCII ac Unicode yn ddau gynllun codio nodau. \n\nO’r datganiadau isod sy’n ymwneud ag un ai ASCII neu Unicode, dewiswch y **tri** datganiad sy’n gywir. ",
+      "encoding": "markdown",
+      "type": "isaacItemQuestion",
+      "choices": [
+        {
+          "type": "itemChoice",
+          "items": [
+            {
+              "type": "item",
+              "id": "26d8"
+            },
+            {
+              "type": "item",
+              "id": "cfde"
+            },
+            {
+              "type": "item",
+              "id": "e632"
+            }
+          ],
+          "correct": true,
+          "explanation": {
+            "type": "content",
+            "children": [
+              {
+                "type": "content",
+                "encoding": "markdown",
+                "value": "Cafodd Unicode ei ddatblygu fel system godio well nag ASCII; fodd bynnag, mae'r 128 cod cyntaf yr un fath er mwyn caniatáu \"cydnawsedd am yn ôl\". "
+              }
+            ],
+            "encoding": "markdown"
+          }
+        },
+        {
+          "type": "itemChoice",
+          "items": [
+            {
+              "type": "item",
+              "id": "253c"
+            }
+          ],
+          "correct": false,
+          "explanation": {
+            "type": "content",
+            "children": [
+              {
+                "type": "content",
+                "value": "Gellir defnyddio fersiwn 32-bit o Unicode i gynrychioli hyd at 2<sup>32</sup> o nodau!",
+                "encoding": "markdown"
+              }
+            ],
+            "encoding": "markdown"
+          },
+          "allowSubsetMatch": true
+        },
+        {
+          "type": "itemChoice",
+          "items": [
+            {
+              "type": "item",
+              "id": "3242"
+            }
+          ],
+          "correct": false,
+          "explanation": {
+            "type": "content",
+            "children": [
+              {
+                "type": "content",
+                "value": "Mae'r datganiad hwn yn berthnasol i Unicode.",
+                "encoding": "markdown"
+              }
+            ],
+            "encoding": "markdown"
+          },
+          "allowSubsetMatch": true
+        }
+      ],
+      "answer": {
+        "type": "content",
+        "value": "_Rhowch yr ateb yma_",
+        "encoding": "markdown"
+      },
+      "id": "text_10_v2|c1be32b2-a9b1-4c7a-b769-e626fe35b6b8",
+      "items": [
+        {
+          "type": "item",
+          "value": "Mae set nodau Unicode fel arfer yn defnyddio 16 bit fesul nod.",
+          "id": "26d8"
+        },
+        {
+          "type": "item",
+          "value": "Gellir defnyddio Unicode i gynrychioli hyd at 256 o nodau gwahanol.",
+          "id": "253c"
+        },
+        {
+          "type": "item",
+          "value": "Mae ASCII yn gallu cynrychioli nodau o ieithoedd heblaw Saesneg.",
+          "id": "3242"
+        },
+        {
+          "type": "item",
+          "value": "Mae ASCII Estynedig yn defnyddio 8 bit i gynrychioli pob nod.",
+          "id": "cfde"
+        },
+        {
+          "type": "item",
+          "id": "e632",
+          "value": "Defnyddir y 128 cod cyntaf yn ASCII ac Unicode i gynrychioli'r un nodau. "
+        }
+      ],
+      "hints": [
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "value": "### Termau allweddol\n\n[glossary:glossary-page-a|ascii]\n\n\n[glossary:glossary-page-u|unicode]\n\n### Gwybodaeth a ragdybir\n* [Deall sut mae setiau nodau ASCII ac Unicode yn cynrychioli testun](/concepts/text_ascii_unicode)",
+              "encoding": "markdown"
+            }
+          ]
+        },
+        {
+          "type": "content",
+          "children": [
+            {
+              "type": "content",
+              "value": "### Nod a gwybodaeth a roddwyd\n\nDewiswch **dri** datganiad cywir o’r pum datganiad a roddir.\n\n### Meddyliwch am hyn\n\nMae'n bwysig bod cyfrifiaduron yn gallu cyfieithu codau nodau deuaidd yn gywir pan fydd data'n cael ei gyfleu rhwng gwahanol systemau. \n\n+ Roedd ASCII Safonol yn set o godau nodau 7-bit a ddefnyddiwyd pan oedd yna ychydig o rwydweithiau cyfrifiadurol a chyn dyfodiad y Rhyngrwyd. \n+ Roedd ASCII Estynedig yn defnyddio 8-bit ond nid oedd y codau ychwanegol wedi'u safoni.\n+ Unicode yw'r cynllun codio a ddefnyddir amlaf gan systemau cyfrifiadurol modern.",
+              "encoding": "markdown"
+            }
+          ]
+        }
+      ],
+      "defaultFeedback": {
+        "type": "content",
+        "value": "Gwiriwch eich bod wedi dewis tri datganiad cywir. ",
+        "encoding": "markdown"
+      }
+    }
+  ],
+  "author": "dianedowling",
+  "id": "text_10_v2",
+  "tags": [
+    "computer_science",
+    "computer_systems",
+    "text_representation"
+  ],
+  "relatedContent": [
+    "text_ascii_unicode"
+  ],
+  "audience": [
+    {
+      "stage": [
+        "gcse"
+      ],
+      "examBoard": [
+        "aqa",
+        "edexcel",
+        "eduqas",
+        "ocr",
+        "wjec"
+      ],
+      "difficulty": [
+        "challenge_1"
+      ]
+    },
+    {
+      "stage": [
+        "a_level"
+      ],
+      "examBoard": [
+        "aqa",
+        "cie",
+        "eduqas",
+        "ocr",
+        "wjec"
+      ],
+      "difficulty": [
+        "challenge_1"
+      ]
+    },
+    {
+      "stage": [
+        "scotland_higher"
+      ],
+      "examBoard": [
+        "sqa"
+      ],
+      "difficulty": [
+        "challenge_1"
+      ]
+    },
+    {
+      "stage": [
+        "core"
+      ],
+      "examBoard": [
+        "ada"
+      ],
+      "difficulty": [
+        "challenge_1"
+      ]
+    }
+  ],
+  "published": true
+}

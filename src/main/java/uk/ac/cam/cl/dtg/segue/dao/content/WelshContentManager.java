@@ -22,7 +22,7 @@ public class WelshContentManager {
     }
 
     public final Content getContentDOById(final String id, final boolean failQuietly) throws ContentManagerException {
-        if (null == id || id.isEmpty() || (!id.equals("core_specification_ada") && !id.equals("question_finder_intro"))) {
+        if (null == id || id.isEmpty() || (!id.equals("core_specification_ada") && !id.equals("question_finder_intro") && !id.equals("text_10_v2"))) {
             return null;
         }
 

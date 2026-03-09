@@ -568,17 +568,26 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Operation(summary = "Get a question page object by ID.")
     public final Response getQuestion(@Context final Request request,
                                       @Context final HttpServletRequest httpServletRequest,
-                                      @PathParam("question_page_id") final String questionId) {
+                                      @PathParam("question_page_id") final String questionId,
+                                      @QueryParam("lang") String lang) {
 
         if (null == questionId || questionId.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid question id.").toResponse();
         }
 
         try {
+            if (lang == null || !lang.equals("cy")) {
+                lang = "en";
+            }
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
             ContentDTO contentDTO = contentManager.getContentById(questionId, true);
-
+            if (lang.equals("cy")) {
+                var welshResponse = welshContentManager.getContentById(questionId, false);
+                if (null != welshResponse) {
+                    contentDTO = welshResponse;
+                }
+            }
             if (contentDTO instanceof IsaacQuestionPageDTO) {
                 SeguePageDTO content = (SeguePageDTO) contentDTO;
 
@@ -850,7 +859,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     public final Response getPageFragment(@Context final Request request,
                                           @Context final HttpServletRequest httpServletRequest,
                                           @PathParam("fragment_id") final String fragmentId,
-                                          @QueryParam("lang")  String lang)
+                                          @QueryParam("lang") String lang)
     {
         if (!lang.equals("cy")) {
             lang = "en";
