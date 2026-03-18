@@ -46,11 +46,11 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
+import uk.ac.cam.cl.dtg.util.NameOrderer;
 import uk.ac.cam.cl.dtg.util.mappers.UserMapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -181,7 +181,7 @@ public class GroupManager {
 
         List<RegisteredUserDTO> users = userManager.findUsers(groupMemberIds);
         // Sort the users by name
-        this.orderUsersByName(users);
+        NameOrderer.orderUsersByName(users);
         return users;
     }
 
@@ -208,24 +208,6 @@ public class GroupManager {
      */
     public GroupMembershipStatus getGroupMembershipStatus(Long userId, Long groupId) throws SegueDatabaseException {
         return this.getUserMembershipMapForGroup(groupId).get(userId).getStatus();
-    }
-
-    /**
-     * Helper method to consistently sort users by given name then family name in a case-insensitive order.
-     * @param users
-     *            - list of users.
-     */
-    private void orderUsersByName(final List<RegisteredUserDTO> users) {
-        // Remove apostrophes so that string containing them are ordered in the same way as in Excel.
-        // I.e. we want that "O'Aaa" < "Obbb" < "O'Ccc"
-        Comparator<String> excelStringOrder = Comparator.nullsLast((String a, String b) ->
-                String.CASE_INSENSITIVE_ORDER.compare(a.replaceAll("'", ""), b.replaceAll("'", "")));
-
-        // If names differ only by an apostrophe (i.e. "O'A" and "Oa"), break ties using name including any apostrophes:
-        users.sort(Comparator
-                .comparing(RegisteredUserDTO::getFamilyName, excelStringOrder)
-                .thenComparing(RegisteredUserDTO::getGivenName, excelStringOrder)
-                .thenComparing(RegisteredUserDTO::getFamilyName));
     }
 
     /**

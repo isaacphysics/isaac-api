@@ -17,11 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Joiner;
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
 import uk.ac.cam.cl.dtg.isaac.IsaacTest;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -47,14 +43,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
-import static org.junit.Assert.assertEquals;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createPartialMock;
-import static org.powermock.api.easymock.PowerMock.replay;
-import static org.powermock.api.easymock.PowerMock.verifyAll;
+import static org.easymock.EasyMock.partialMockBuilder;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * A test base for testing Facades, specifically targeted around testing facades as different users.
@@ -83,9 +79,6 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
  *
  * @deprecated in favour of IsaacIntegrationTest
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UserAccountManager.class})
-@PowerMockIgnore({ "jakarta.ws.*", "jakarta.management.*", "jakarta.script.*" })
 @Deprecated
 abstract public class AbstractFacadeTest extends IsaacTest {
     protected Request request;
@@ -98,14 +91,17 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     private Map<RegisteredUserDTO, UserSummaryDTO> userSummaries = Maps.newHashMap();
 
 
-    @Before
+    @BeforeEach
     public void abstractFacadeTestSetup() {
         httpServletRequest = createMock(HttpServletRequest.class);
         replay(httpServletRequest);
         request = createNiceMock(Request.class);  // We don't particularly care about what gets called on this.
         replay(request);
 
-        userManager = createPartialMock(UserAccountManager.class, "getCurrentUser", "getCurrentRegisteredUser", "convertToUserSummaryObject", "getUserDTOById");
+        userManager = partialMockBuilder(UserAccountManager.class)
+                .addMockedMethods("getCurrentUser", "getCurrentRegisteredUser", "convertToUserSummaryObject")
+                .addMockedMethod("getUserDTOById", Long.class) // This is overloaded so we have to specify the signature
+                .createMock();
 
         registerDefaultsFor(userManager, m -> {
             expect(m.convertToUserSummaryObject(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
@@ -271,7 +267,8 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     ///////////////////////////////////////////////////////////////////////////
 
     private void assertErrorResponse(Status expectedStatus, Response actual) {
-        assertEquals("Expected status " + expectedStatus.name() + ", got " + actual.getStatusInfo().toEnum().name() + " with details " + extractErrorInfo(actual), expectedStatus.getStatusCode(), actual.getStatus());
+        assertEquals(expectedStatus.getStatusCode(), actual.getStatus(),
+                "Expected status " + expectedStatus.name() + ", got " + actual.getStatusInfo().toEnum().name() + " with details " + extractErrorInfo(actual));
     }
 
     private String extractErrorInfo(Response response) {
@@ -444,7 +441,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         private void verifyEndpoint(String when, Endpoint endpoint) {
             try {
                 runSteps(endpoint);
-                verifyAll();
+                verify(userManager, httpServletRequest, request);
             } catch (AssertionError e) {
                 String message = when + ", test failed, expected:\r\n";
                 message += steps.stream().map(s -> "  " + s.toString() + "\r\n").collect(Collectors.joining());

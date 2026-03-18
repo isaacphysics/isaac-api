@@ -1058,7 +1058,7 @@ public class UserAuthenticationManager {
      *            - the real user we are to validate this cookie against.
      * @return true if it is still valid, false if not.
      */
-    private boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
+    public boolean isValidUsersSession(final Map<String, String> sessionInformation, final RegisteredUser userFromDatabase) {
         Objects.requireNonNull(sessionInformation);
         Objects.requireNonNull(userFromDatabase);
 
@@ -1120,7 +1120,7 @@ public class UserAuthenticationManager {
      *            - Boolean data to encode in the cookie - true if a partial login
      * @return HMAC signature.
      */
-    private String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken,
+    public static String calculateSessionHMAC(final String key, final String userId, final String currentDate, final String sessionToken,
                                         @Nullable final Set<String> caveatFlags) {
         StringBuilder sb = new StringBuilder();
         sb.append(userId);

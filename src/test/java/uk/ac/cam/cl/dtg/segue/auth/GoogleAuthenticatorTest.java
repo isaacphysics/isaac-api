@@ -15,10 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import org.junit.Before;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
+import org.junit.jupiter.api.BeforeEach;
 
 
 public class GoogleAuthenticatorTest extends IOAuth2AuthenticatorTest {
@@ -28,7 +28,7 @@ public class GoogleAuthenticatorTest extends IOAuth2AuthenticatorTest {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@Before
+	@BeforeEach
 	public final void setUp() throws Exception {
 		GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
 		Details details = new Details();

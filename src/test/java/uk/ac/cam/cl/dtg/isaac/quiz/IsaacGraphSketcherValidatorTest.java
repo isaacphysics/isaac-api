@@ -16,9 +16,8 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import com.google.api.client.util.Lists;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -26,14 +25,13 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.GraphChoice;
 
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for the Graph Sketcher Validator class.
  *
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class IsaacGraphSketcherValidatorTest {
     private IsaacGraphSketcherValidator validator;
 
@@ -41,7 +39,7 @@ public class IsaacGraphSketcherValidatorTest {
      * Initial configuration of tests.
      *
      */
-    @Before
+    @BeforeEach
     public final void setUp() {
         validator = new IsaacGraphSketcherValidator();
     }
