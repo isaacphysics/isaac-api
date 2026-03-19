@@ -719,7 +719,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 // Create an assignment -> gameboard mapping to avoid repeatedly querying the DB later on. All the efficiency!
                 assignmentGameboards.put(assignment, gameboard);
             }
-            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).collect(Collectors.toList());
+            List<GameboardItem> gameboardItems = gameboards.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).toList();
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             try {

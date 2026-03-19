@@ -75,7 +75,7 @@ public class EventNotificationEmailManager {
                             .filter(DetailedEventBookingDTO -> bookingStatuses == null || bookingStatuses.contains(DetailedEventBookingDTO.getBookingStatus()))
                             .map(DetailedEventBookingDTO::getUserBooked)
                             .map(UserSummaryDTO::getId)
-                            .distinct().collect(Collectors.toList());
+                            .distinct().toList();
         for (Long id : ids) {
             try {
                 RegisteredUserDTO user = userAccountManager.getUserDTOById(id);

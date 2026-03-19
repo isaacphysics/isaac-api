@@ -207,7 +207,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
                     this.mapper.readValue(llmResponse, new TypeReference<LinkedHashMap<String, Object>>() {});
 
             List<String> validFieldNames = question.getMarkScheme().stream()
-                    .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toList());
+                    .map(LLMFreeTextMarkSchemeEntry::getJsonField).toList();
 
             return validFieldNames.stream().collect(Collectors.toMap(
                     field -> field,

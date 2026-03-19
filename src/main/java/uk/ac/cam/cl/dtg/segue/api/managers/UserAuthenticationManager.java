@@ -1125,7 +1125,7 @@ public class UserAuthenticationManager {
         sb.append("|").append(sessionToken);
 
         if (null != caveatFlags) {
-            List<String> sortedCaveatFlags = caveatFlags.stream().sorted().collect(Collectors.toList());
+            List<String> sortedCaveatFlags = caveatFlags.stream().sorted().toList();
             for (String c : sortedCaveatFlags) {
                 sb.append("|").append(c);
             }

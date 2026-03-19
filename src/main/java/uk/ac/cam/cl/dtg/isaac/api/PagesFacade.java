@@ -1178,7 +1178,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     .getRelatedContent()
                     .stream()
                     .map(ContentSummaryDTO::getId)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         List<ContentBaseDTO> children = content.getChildren();

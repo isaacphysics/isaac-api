@@ -1282,9 +1282,9 @@ public class QuizFacade extends AbstractIsaacFacade {
             headerBuilder.append(",,\"Completed\",\"Correct\",\"Incorrect\",\"Not Attempted\",");
             List<String> questionTitles = new ArrayList<>();
             List<String> questionIds = new ArrayList<>();
-            for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+            for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).toList()) {
                 if (section instanceof IsaacQuizSectionDTO quizSection) {
-                    List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
+                    List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).toList();
                     for (int i = 0; i < quizQuestions.size(); ++i) {
                         questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
                         questionIds.add(quizQuestions.get(i).getId());
@@ -1521,9 +1521,9 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     private List<String> getQuizQuestionTitles(IsaacQuizDTO quiz) {
         List<String> questionTitles = new ArrayList<>();
-        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).toList()) {
             if (section instanceof IsaacQuizSectionDTO quizSection) {
-                List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
+                List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).toList();
                 for (int i = 0; i < quizQuestions.size(); ++i) {
                     questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
                 }
@@ -1534,12 +1534,12 @@ public class QuizFacade extends AbstractIsaacFacade {
 
     private List<String> getQuizQuestionIds(IsaacQuizDTO quiz) {
         List<String> questionIds = new ArrayList<>();
-        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
+        for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).toList()) {
             if (section instanceof IsaacQuizSectionDTO quizSection) {
                 List<String> ids = quizSection.getChildren().stream()
                         .filter(c -> c instanceof IsaacQuestionBaseDTO)
                         .map(ContentBaseDTO::getId)
-                        .collect(Collectors.toList());
+                        .toList();
                 questionIds.addAll(ids);
             }
         }

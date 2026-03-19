@@ -1892,7 +1892,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the list of user dtos.
      */
     private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
-        List<RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).toList();
         if (userDOs.isEmpty()) {
             return new ArrayList<>();
         }

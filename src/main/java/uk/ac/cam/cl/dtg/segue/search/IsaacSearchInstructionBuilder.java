@@ -331,7 +331,7 @@ public class IsaacSearchInstructionBuilder {
 
             // Special fields
             if (Arrays.stream(Constants.ADDRESS_PATH_FIELDNAME)
-                    .collect(Collectors.toList())
+                    .toList()
                     .contains(searchInField.getField())) {
                 // Address fields
                 // Non-event content types ignore this
