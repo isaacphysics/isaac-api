@@ -11,7 +11,7 @@ RUN mvn dependency:go-offline
 COPY . /isaac-api
 RUN mvn package -Dmaven.test.skip=true -Dsegue.version=$BUILD_VERSION -P $BUILD_TARGET
 
-FROM jetty:11.0.26-jdk21-eclipse-temurin
+FROM jetty:12.1.7-jdk21-eclipse-temurin
 USER root
 COPY --from=builder /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
 RUN chmod 755 /var/lib/jetty/webapps/*
