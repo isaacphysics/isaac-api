@@ -255,15 +255,25 @@ public class EmailManagerTest {
             fail();
         }
 
-        final String expectedMessagePlainText = "Hi, tester."
-                + "\nThanks for registering!\nYour Isaac email address is: "
-                + "</a href='mailto:test@test.com'>test@test.com<a>.\naddress</a>\nIsaac Physics Project";
+        final String expectedMessagePlainText = """
+                Hi, tester.\
+                
+                Thanks for registering!
+                Your Isaac email address is: \
+                </a href='mailto:test@test.com'>test@test.com<a>.
+                address</a>
+                Isaac Physics Project""";
 
-        final String expectedMessageHTML = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Isaac "
-                + "Physics project</title></head><body>"
-                + "Hi, tester.\nThanks for registering!\nYour Isaac email address is: "
-                + "</a href='mailto:test@test.com'>test@test.com<a>.\n" + "address</a>\nIsaac "
-                + "Physics Project</body></html>";
+        final String expectedMessageHTML = """
+                <!DOCTYPE html><html><head><meta charset='utf-8'><title>Isaac \
+                Physics project</title></head><body>\
+                Hi, tester.
+                Thanks for registering!
+                Your Isaac email address is: \
+                </a href='mailto:test@test.com'>test@test.com<a>.
+                address</a>
+                Isaac \
+                Physics Project</body></html>""";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -291,9 +301,16 @@ public class EmailManagerTest {
     @Test
     public final void sendFederatedPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
 
-        EmailTemplateDTO template = createDummyEmailTemplate("Hello, {{givenName}}.\n\nYou requested a "
-                + "password reset. However you use {{providerString}} to log in to our site. You need"
-                + " to go to your authentication {{providerWord}} to reset your password.\n\nRegards,\n\n{{sig}}");
+        EmailTemplateDTO template = createDummyEmailTemplate("""
+                Hello, {{givenName}}.
+                
+                You requested a \
+                password reset. However you use {{providerString}} to log in to our site. You need\
+                 to go to your authentication {{providerWord}} to reset your password.
+                
+                Regards,
+                
+                {{sig}}""");
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         try {
@@ -333,9 +350,16 @@ public class EmailManagerTest {
             fail();
         }
 
-        final String expectedMessage = "Hello, tester.\n\nYou requested a password reset. "
-                + "However you use testString to log in to our site. You need to go to your "
-                + "authentication testWord to reset your password.\n\nRegards,\n\nIsaac Physics Project";
+        final String expectedMessage = """
+                Hello, tester.
+                
+                You requested a password reset. \
+                However you use testString to log in to our site. You need to go to your \
+                authentication testWord to reset your password.
+                
+                Regards,
+                
+                Isaac Physics Project""";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -363,9 +387,18 @@ public class EmailManagerTest {
     @Test
     public final void sendPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
 
-        EmailTemplateDTO template = createDummyEmailTemplate("Hello, {{givenName}}.\n\nA request has been "
-                + "made to reset the password for the account: </a href='mailto:{{email}}'>{{email}}<a>"
-                + ".\n\nTo reset your password <a href='{{resetURL}}'>Click Here</a>\n\nRegards,\n\n{{sig}}");
+        EmailTemplateDTO template = createDummyEmailTemplate("""
+                Hello, {{givenName}}.
+                
+                A request has been \
+                made to reset the password for the account: </a href='mailto:{{email}}'>{{email}}<a>\
+                .
+                
+                To reset your password <a href='{{resetURL}}'>Click Here</a>
+                
+                Regards,
+                
+                {{sig}}""");
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
 
@@ -406,10 +439,19 @@ public class EmailManagerTest {
             fail();
         }
 
-        final String expectedMessage = "Hello, tester.\n\nA request has been "
-                + "made to reset the password for the account: </a href='mailto:test@test.com'>test@test.com<a>"
-                + ".\n\nTo reset your password <a href='https://dev.isaacphysics.org/resetpassword?token=resetToken'>"
-                + "Click Here</a>\n\nRegards,\n\nIsaac Physics Project";
+        final String expectedMessage = """
+                Hello, tester.
+                
+                A request has been \
+                made to reset the password for the account: </a href='mailto:test@test.com'>test@test.com<a>\
+                .
+                
+                To reset your password <a href='https://dev.isaacphysics.org/resetpassword?token=resetToken'>\
+                Click Here</a>
+                
+                Regards,
+                
+                Isaac Physics Project""";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -437,9 +479,13 @@ public class EmailManagerTest {
     @Test
     public final void sendRegistrationConfirmation_checkForInvalidTemplateTags_throwIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenName}} {{surname}}.\n"
-                    + "Thanks for registering!\nYour Isaac email address is: "
-                    + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
+            EmailTemplateDTO template = createDummyEmailTemplate("""
+                    Hi, {{givenName}} {{surname}}.
+                    Thanks for registering!
+                    Your Isaac email address is: \
+                    </a href='mailto:{{email}}'>{{email}}<a>.
+                    address</a>
+                    {{sig}}""");
 
             ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
             // Create content manager
