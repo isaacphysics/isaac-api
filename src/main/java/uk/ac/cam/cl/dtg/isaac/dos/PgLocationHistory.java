@@ -242,14 +242,14 @@ public class PgLocationHistory implements LocationHistory {
             for (PostCode postCode : foundPostCodes) {
 
                 // Ignore post codes with invalid lat/lon
-                if (postCode.getLat() == null || postCode.getLon() == null) {
+                if (postCode.lat() == null || postCode.lon() == null) {
                     continue;
                 }
 
                 try (PreparedStatement pst = conn.prepareStatement(query)) {
-                    pst.setString(1, postCode.getPostCode());
-                    pst.setDouble(2, postCode.getLat());
-                    pst.setDouble(3, postCode.getLon());
+                    pst.setString(1, postCode.postCode());
+                    pst.setDouble(2, postCode.lat());
+                    pst.setDouble(3, postCode.lon());
 
                     if (pst.executeUpdate() == 0) {
                         throw new SegueDatabaseException("Unable to save location event.");

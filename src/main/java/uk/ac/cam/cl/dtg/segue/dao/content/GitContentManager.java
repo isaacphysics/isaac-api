@@ -876,29 +876,6 @@ public class GitContentManager {
      * @deprecated in favour of {@code BooleanInstruction}, as an attempt to unify approaches to searching.
      */
     @Deprecated
-    public static class BooleanSearchClause {
-        private final String field;
-        private final Constants.BooleanOperator operator;
-        private final List<String> values;
-
-        public BooleanSearchClause(final String field,
-                                   final Constants.BooleanOperator operator,
-                                   final List<String> values) {
-            this.field = field;
-            this.operator = operator;
-            this.values = values;
-        }
-
-        public String getField() {
-            return this.field;
-        }
-
-        public Constants.BooleanOperator getOperator() {
-            return this.operator;
-        }
-
-        public List<String> getValues() {
-            return this.values;
-        }
+    public record BooleanSearchClause(String field, BooleanOperator operator, List<String> values) {
     }
 }

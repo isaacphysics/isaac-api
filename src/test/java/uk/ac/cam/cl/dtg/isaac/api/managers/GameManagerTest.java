@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -92,10 +91,10 @@ public class GameManagerTest {
         // check that one of the filters sent to GitContentManager was the deprecated question exclusion filter
         List<BooleanSearchClause> filters = capturedFilters.getValues().get(0);
         BooleanSearchClause deprecatedFilter = filters.stream()
-                .filter(f -> Objects.equals(f.getField(), "deprecated")).toList().get(0);
+                .filter(f -> Objects.equals(f.field(), "deprecated")).toList().get(0);
 
         assertNotNull(deprecatedFilter);
-        assertEquals(deprecatedFilter.getOperator(), Constants.BooleanOperator.NOT);
-        assertEquals(deprecatedFilter.getValues(), Collections.singletonList("true"));
+        assertEquals(deprecatedFilter.operator(), Constants.BooleanOperator.NOT);
+        assertEquals(deprecatedFilter.values(), Collections.singletonList("true"));
     }
 }

@@ -561,17 +561,17 @@ public class ElasticSearchProvider implements ISearchProvider {
             BoolQuery.Builder query = new BoolQuery.Builder();
 
             // Add the clause to the query value by value
-            for (String value : searchClause.getValues()) {
+            for (String value : searchClause.values()) {
                 Query matchQuery = MatchQuery.of(m -> m
-                        .field(searchClause.getField())
+                        .field(searchClause.field())
                         .query(value)
                 )._toQuery();
 
-                if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
+                if (Constants.BooleanOperator.OR.equals(searchClause.operator())) {
                     query.should(matchQuery);
-                } else if (Constants.BooleanOperator.AND.equals(searchClause.getOperator())) {
+                } else if (Constants.BooleanOperator.AND.equals(searchClause.operator())) {
                     query.must(matchQuery);
-                } else if (Constants.BooleanOperator.NOT.equals(searchClause.getOperator())) {
+                } else if (Constants.BooleanOperator.NOT.equals(searchClause.operator())) {
                     query.mustNot(matchQuery);
                 } else {
                     log.warn("Null argument received in paginated match search... "
@@ -580,15 +580,15 @@ public class ElasticSearchProvider implements ISearchProvider {
             }
 
             // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
-            if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
+            if (Constants.BooleanOperator.OR.equals(searchClause.operator())) {
                 query.minimumShouldMatch("1");
             }
 
-            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.getField())) {
+            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.field())) {
                 masterQuery.must(query.build()._toQuery());
             } else {
                 // Nested fields need to use a nested query which specifies the path of the nested field.
-                String nestedPath = searchClause.getField().split("\\.")[0];
+                String nestedPath = searchClause.field().split("\\.")[0];
                 nestedQueriesByPath.putIfAbsent(nestedPath, new BoolQuery.Builder());
                 nestedQueriesByPath.get(nestedPath).must(query.build()._toQuery());
             }

@@ -21,11 +21,7 @@ package uk.ac.cam.cl.dtg.util.locations;
  * @author Alistair Stead
  *
  */
-public class PostCode {
-
-    private final String postCode;
-    private final Double lat;
-    private final Double lon;
+public record PostCode(String postCode, Double lat, Double lon) {
 
     /**
      * A class to hold the structure of a postcode.
@@ -33,7 +29,7 @@ public class PostCode {
      * @param postCode
      *            - the string version of the postcode
      * @param lat
-     *            - the lattitude
+     *            - the latitude
      * @param lon
      *            - the longitude
      */
@@ -48,26 +44,4 @@ public class PostCode {
         this.lat = lat;
         this.lon = lon;
     }
-
-    /**
-     * @return the postCode
-     */
-    public String getPostCode() {
-        return postCode;
-    }
-
-    /**
-     * @return the lat
-     */
-    public Double getLat() {
-        return lat;
-    }
-
-    /**
-     * @return the lon
-     */
-    public Double getLon() {
-        return lon;
-    }
-
 }
