@@ -476,8 +476,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             valueToStore = o.toString();
         } else if (o instanceof Enum) {
             valueToStore = ((Enum<?>) o).name();
-        } else if (o instanceof ExternalReference) {
-            ExternalReference er = (ExternalReference) o;
+        } else if (o instanceof ExternalReference er) {
             valueToStore = String.format("<a href='%s'>%s</a>", er.getUrl(), er.getTitle());
         } else if (o instanceof Collection) {
             List<String> sl = Lists.newArrayList();

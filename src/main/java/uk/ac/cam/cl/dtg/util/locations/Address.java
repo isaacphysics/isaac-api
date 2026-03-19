@@ -222,10 +222,9 @@ public class Address {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof Address)) {
+        if (!(obj instanceof Address other)) {
             return false;
         }
-        Address other = (Address) obj;
         if (addressLine1 == null) {
             if (other.addressLine1 != null) {
                 return false;

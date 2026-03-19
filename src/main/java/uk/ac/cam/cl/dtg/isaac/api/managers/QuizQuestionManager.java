@@ -97,10 +97,10 @@ public class QuizQuestionManager {
 
     public QuestionValidationResponseDTO validateAnswer(Question question, ChoiceDTO answerFromClientDTO) throws ErrorResponseWrapper {
         Response response = questionManager.validateAnswer(question, answerFromClientDTO);
-        if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-            return (QuestionValidationResponseDTO) response.getEntity();
-        } else if (response.getEntity() instanceof SegueErrorResponse) {
-            throw new ErrorResponseWrapper((SegueErrorResponse) response.getEntity());
+        if (response.getEntity() instanceof QuestionValidationResponseDTO validationResponse) {
+            return validationResponse;
+        } else if (response.getEntity() instanceof SegueErrorResponse errorResponse) {
+            throw new ErrorResponseWrapper(errorResponse);
         } else {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, response.getEntity().toString()));
         }

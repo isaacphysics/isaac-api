@@ -108,10 +108,9 @@ public class Location {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof Location)) {
+        if (!(obj instanceof Location other)) {
             return false;
         }
-        Location other = (Location) obj;
         if (address == null) {
             if (other.address != null) {
                 return false;

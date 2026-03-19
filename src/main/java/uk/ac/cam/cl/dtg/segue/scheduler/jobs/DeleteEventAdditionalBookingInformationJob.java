@@ -74,8 +74,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch),
                     startIndex, limit, sortInstructions, filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
-                if (contentResult instanceof IsaacEventPageDTO) {
-                    IsaacEventPageDTO page = (IsaacEventPageDTO) contentResult;
+                if (contentResult instanceof IsaacEventPageDTO page) {
                     // Event end date (if present) > 30 days ago, else event date > 30 days ago
                     boolean endDate30DaysAgo = page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant());
                     boolean noEndDateAndStartDate30DaysAgo = page.getEndDate() == null && page.getDate().toInstant().isBefore(thirtyDaysAgo.toInstant());

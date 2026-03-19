@@ -79,21 +79,18 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacSymbolicChemistryQuestion)) {
+        if (!(question instanceof IsaacSymbolicChemistryQuestion chemistryQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Symbolic Chemistry Questions... "
                             + "(%s is not symbolic chemistry)",
                     question.getId()));
         }
         
-        if (!(answer instanceof ChemicalFormula)) {
+        if (!(answer instanceof ChemicalFormula submittedFormula)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ChemicalFormula for IsaacSymbolicQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
-
-        IsaacSymbolicChemistryQuestion chemistryQuestion = (IsaacSymbolicChemistryQuestion) question;
-        ChemicalFormula submittedFormula = (ChemicalFormula) answer;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
@@ -136,12 +133,10 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
             for (Choice c : chemistryQuestion.getChoices()) {
 
                 // ... that are of the ChemicalFormula type, ...
-                if (!(c instanceof ChemicalFormula)) {
+                if (!(c instanceof ChemicalFormula formulaChoice)) {
                     log.error("Validator for questionId: {} expected a ChemicalFormula. Instead it found a Choice.", chemistryQuestion.getId());
                     continue;
                 }
-
-                ChemicalFormula formulaChoice = (ChemicalFormula) c;
 
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
@@ -178,12 +173,10 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
             for (Choice c : orderedChoices) {
 
                 // ... that are of the ChemicalFormula type, ...
-                if (!(c instanceof ChemicalFormula)) {
+                if (!(c instanceof ChemicalFormula formulaChoice)) {
                     // Don't need to log this - it will have been logged above.
                     continue;
                 }
-
-                ChemicalFormula formulaChoice = (ChemicalFormula) c;
 
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {

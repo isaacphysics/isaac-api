@@ -1945,8 +1945,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         } else {
             // reuse existing one
-            if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String) {
-                String userId = (String) request.getSession().getAttribute(ANONYMOUS_USER);
+            if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String userId) {
                 user = this.temporaryUserCache.getById(userId);
 
                 if (null == user) {

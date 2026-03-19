@@ -46,12 +46,12 @@ public class IsaacItemQuestionValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacItemQuestion)) {
+        if (!(question instanceof IsaacItemQuestion itemQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacItemQuestions (%s is not ItemQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ItemChoice)) {
+        if (!(answer instanceof ItemChoice submittedChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ItemChoice for IsaacItemQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -59,9 +59,6 @@ public class IsaacItemQuestionValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
-
-        IsaacItemQuestion itemQuestion = (IsaacItemQuestion) question;
-        ItemChoice submittedChoice = (ItemChoice) answer;
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -108,14 +105,12 @@ public class IsaacItemQuestionValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are ItemChoices, ...
-                if (!(c instanceof ItemChoice)) {
+                if (!(c instanceof ItemChoice itemChoice)) {
                     log.error(String.format(
                             "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
                             itemQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
-
-                ItemChoice itemChoice = (ItemChoice) c;
 
                 // ... and that have items ...
                 if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {

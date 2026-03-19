@@ -74,10 +74,9 @@ public class QuizAttemptDO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof QuizAttemptDO)) {
+        if (!(obj instanceof QuizAttemptDO other)) {
             return false;
         }
-        QuizAttemptDO other = (QuizAttemptDO) obj;
         if (id == null) {
             return other.id == null;
         } else {

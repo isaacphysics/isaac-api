@@ -175,10 +175,9 @@ public class UserGroup {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof UserGroup)) {
+        if (!(obj instanceof UserGroup other)) {
             return false;
         }
-        UserGroup other = (UserGroup) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;

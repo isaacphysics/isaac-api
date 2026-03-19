@@ -200,10 +200,10 @@ public class QuizFacade extends AbstractIsaacFacade {
             boolean showNofilterQuizzes = false;
 
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
-            if (currentUser instanceof RegisteredUserDTO) {
-                userRoleString = ((RegisteredUserDTO) currentUser).getRole().name();
+            if (currentUser instanceof RegisteredUserDTO registeredUser) {
+                userRoleString = registeredUser.getRole().name();
                 try {
-                    showNofilterQuizzes = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+                    showNofilterQuizzes = isUserStaff(userManager, registeredUser);
                 } catch (final NoUserLoggedInException e) {
                     // Not possible inside this if block!
                 }
@@ -875,10 +875,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            Question question;
-            if (contentBasedOnId instanceof Question) {
-                question = (Question) contentBasedOnId;
-            } else {
+            if (!(contentBasedOnId instanceof Question question)) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
                         "No question object found for given id: " + questionId);
                 log.warn(error.getErrorMessage());
@@ -1286,8 +1283,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             List<String> questionTitles = new ArrayList<>();
             List<String> questionIds = new ArrayList<>();
             for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
-                if (section instanceof IsaacQuizSectionDTO) {
-                    IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+                if (section instanceof IsaacQuizSectionDTO quizSection) {
                     List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                     for (int i = 0; i < quizQuestions.size(); ++i) {
                         questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
@@ -1526,8 +1522,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private List<String> getQuizQuestionTitles(IsaacQuizDTO quiz) {
         List<String> questionTitles = new ArrayList<>();
         for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
-            if (section instanceof IsaacQuizSectionDTO) {
-                IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+            if (section instanceof IsaacQuizSectionDTO quizSection) {
                 List<ContentBaseDTO> quizQuestions = quizSection.getChildren().stream().filter(c -> c instanceof IsaacQuestionBaseDTO).collect(Collectors.toList());
                 for (int i = 0; i < quizQuestions.size(); ++i) {
                     questionTitles.add(String.format("\"%s - %s - Q%d\"", quiz.getTitle(), quizSection.getTitle(), i + 1));
@@ -1540,8 +1535,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private List<String> getQuizQuestionIds(IsaacQuizDTO quiz) {
         List<String> questionIds = new ArrayList<>();
         for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).collect(Collectors.toList())) {
-            if (section instanceof IsaacQuizSectionDTO) {
-                IsaacQuizSectionDTO quizSection = (IsaacQuizSectionDTO) section;
+            if (section instanceof IsaacQuizSectionDTO quizSection) {
                 List<String> ids = quizSection.getChildren().stream()
                         .filter(c -> c instanceof IsaacQuestionBaseDTO)
                         .map(ContentBaseDTO::getId)

@@ -180,10 +180,9 @@ public class School {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof School)) {
+        if (!(obj instanceof School other)) {
             return false;
         }
-        School other = (School) obj;
         if (urn == null) {
             if (other.urn != null) {
                 return false;

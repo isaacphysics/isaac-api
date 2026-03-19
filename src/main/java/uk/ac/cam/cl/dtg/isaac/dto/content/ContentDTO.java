@@ -223,10 +223,9 @@ public class ContentDTO extends ContentBaseDTO {
 
     @Override
     public boolean equals(final Object o) {
-        if (!(o instanceof ContentDTO))
+        if (!(o instanceof ContentDTO c))
             return false;
 
-        ContentDTO c = (ContentDTO) o;
         boolean result = true;
 
         if (this.id != null) {

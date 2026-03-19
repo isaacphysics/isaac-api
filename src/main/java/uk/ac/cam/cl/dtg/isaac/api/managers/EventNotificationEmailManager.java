@@ -115,8 +115,7 @@ public class EventNotificationEmailManager {
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
                     filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
-                if (contentResult instanceof IsaacEventPageDTO) {
-                    IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                if (contentResult instanceof IsaacEventPageDTO event) {
                     // Skip sending emails for cancelled events
                     if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
                         continue;
@@ -158,8 +157,7 @@ public class EventNotificationEmailManager {
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
                     filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
-                if (contentResult instanceof IsaacEventPageDTO) {
-                    IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                if (contentResult instanceof IsaacEventPageDTO event) {
                     // Skip sending emails for cancelled events
                     if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
                         continue;

@@ -44,21 +44,17 @@ public class IsaacRegexMatchValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacRegexMatchQuestion)) {
+        if (!(question instanceof IsaacRegexMatchQuestion regexMatchQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Regex Match Questions... (%s is not regex string match)",
                     question.getId()));
         }
 
-        if (!(answer instanceof StringChoice)) {
+        if (!(answer instanceof StringChoice userAnswer)) {
             throw new IllegalArgumentException(String.format(
                     "Expected StringChoice for IsaacRegexMatchQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
-
-        StringChoice userAnswer = (StringChoice) answer;
-
-        IsaacRegexMatchQuestion regexMatchQuestion = (IsaacRegexMatchQuestion) question;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
@@ -88,12 +84,11 @@ public class IsaacRegexMatchValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the RegexPattern type, ...
-                if (!(c instanceof RegexPattern)) {
+                if (!(c instanceof RegexPattern regexPattern)) {
                     log.error("Isaac RegexMatch Validator for questionId: " + regexMatchQuestion.getId()
                             + " expected there to be a RegexPattern. Instead it found a Choice.");
                     continue;
                 }
-                RegexPattern regexPattern = (RegexPattern) c;
 
                 if (null == regexPattern.getValue() || regexPattern.getValue().isEmpty()) {
                     log.error("Expected a regex pattern to match on, but none found in choice for question id: "

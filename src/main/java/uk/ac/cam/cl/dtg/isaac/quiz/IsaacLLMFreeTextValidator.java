@@ -230,8 +230,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
             return ((LLMMarkingConstant) expression).getValue();
         } else if (expression instanceof LLMMarkingVariable) {
             return marks.getOrDefault(((LLMMarkingVariable) expression).getName(), 0);
-        } else if (expression instanceof LLMMarkingFunction) {
-            LLMMarkingFunction function = (LLMMarkingFunction) expression;
+        } else if (expression instanceof LLMMarkingFunction function) {
             List<LLMMarkingExpression> args = function.getArguments();
             switch (function.getName()) {
                 case SUM:

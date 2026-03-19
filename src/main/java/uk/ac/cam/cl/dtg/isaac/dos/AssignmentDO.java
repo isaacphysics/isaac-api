@@ -185,10 +185,9 @@ public class AssignmentDO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof AssignmentDO)) {
+        if (!(obj instanceof AssignmentDO other)) {
             return false;
         }
-        AssignmentDO other = (AssignmentDO) obj;
         if (id == null) {
             return other.id == null;
         } else return id.equals(other.id);

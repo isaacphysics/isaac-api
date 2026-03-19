@@ -44,21 +44,17 @@ public class IsaacStringMatchValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacStringMatchQuestion)) {
+        if (!(question instanceof IsaacStringMatchQuestion stringMatchQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac String Match Questions... (%s is not string match)",
                     question.getId()));
         }
 
-        if (!(answer instanceof StringChoice)) {
+        if (!(answer instanceof StringChoice userAnswer)) {
             throw new IllegalArgumentException(String.format(
                     "Expected StringChoice for IsaacStringMatchQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
-
-        StringChoice userAnswer = (StringChoice) answer;
-
-        IsaacStringMatchQuestion stringMatchQuestion = (IsaacStringMatchQuestion) question;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
@@ -88,12 +84,11 @@ public class IsaacStringMatchValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the StringChoice type, ...
-                if (!(c instanceof StringChoice)) {
+                if (!(c instanceof StringChoice stringChoice)) {
                     log.error("Isaac StringMatch Validator for questionId: " + stringMatchQuestion.getId()
                             + " expected there to be a StringChoice. Instead it found a Choice.");
                     continue;
                 }
-                StringChoice stringChoice = (StringChoice) c;
 
                 if (null == stringChoice.getValue() || stringChoice.getValue().isEmpty()) {
                     log.error("Expected a string to match, but none found in choice for question id: "

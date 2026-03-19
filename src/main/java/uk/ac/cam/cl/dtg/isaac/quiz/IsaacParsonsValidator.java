@@ -46,12 +46,12 @@ public class IsaacParsonsValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacParsonsQuestion)) {
+        if (!(question instanceof IsaacParsonsQuestion parsonsQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacParsonsQuestions (%s is not ParsonsQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ParsonsChoice)) {
+        if (!(answer instanceof ParsonsChoice submittedChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ParsonsChoice for IsaacParsonsQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -59,9 +59,6 @@ public class IsaacParsonsValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
-
-        IsaacParsonsQuestion parsonsQuestion = (IsaacParsonsQuestion) question;
-        ParsonsChoice submittedChoice = (ParsonsChoice) answer;
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -103,14 +100,12 @@ public class IsaacParsonsValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the Formula type, ...
-                if (!(c instanceof ParsonsChoice)) {
+                if (!(c instanceof ParsonsChoice parsonsChoice)) {
                     log.error(String.format(
                             "Validator for question (%s) expected there to be an ParsonsChoice. Instead it found a %s.",
                             parsonsQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
-
-                ParsonsChoice parsonsChoice = (ParsonsChoice) c;
 
                 // ... and that have a python expression ...
                 if (null == parsonsChoice.getItems() || parsonsChoice.getItems().isEmpty()) {
@@ -132,21 +127,19 @@ public class IsaacParsonsValidator implements IValidator {
 
                 // Run through the submitted items:
                 for (Item item : submittedChoice.getItems()) {
-                    if (!(item instanceof ParsonsItem)) {
+                    if (!(item instanceof ParsonsItem parsonsItem)) {
                         throw new IllegalArgumentException("Expected ParsonsChoice to contain ParsonsItems!");
                     }
-                    ParsonsItem parsonsItem = (ParsonsItem) item;
                     submittedItemIds.add(parsonsItem.getId());
                     submittedItemIndentations.add(parsonsItem.getIndentation());
                 }
                 // Run through the items in the question:
                 for (Item item : parsonsChoice.getItems()) {
-                    if (!(item instanceof ParsonsItem)) {
+                    if (!(item instanceof ParsonsItem parsonsItem)) {
                         log.error("ParsonsChoice contained non-ParsonsItem. Skipping!");
                         itemTypeMismatch = true;
                         break;
                     }
-                    ParsonsItem parsonsItem = (ParsonsItem) item;
                     choiceItemIds.add(parsonsItem.getId());
                     choiceItemIndentations.add(parsonsItem.getIndentation());
                 }

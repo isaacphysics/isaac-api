@@ -321,10 +321,9 @@ public class UserGroupDTO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof UserGroupDTO)) {
+        if (!(obj instanceof UserGroupDTO other)) {
             return false;
         }
-        UserGroupDTO other = (UserGroupDTO) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;

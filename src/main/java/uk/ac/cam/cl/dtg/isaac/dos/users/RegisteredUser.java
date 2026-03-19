@@ -487,10 +487,9 @@ public class RegisteredUser extends AbstractSegueUser {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof RegisteredUser)) {
+        if (!(obj instanceof RegisteredUser other)) {
             return false;
         }
-        RegisteredUser other = (RegisteredUser) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;

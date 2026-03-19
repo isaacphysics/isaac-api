@@ -249,8 +249,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             AbstractSegueUserDTO user = userManager.getCurrentUser(servletRequest);
 
             ContentDTO contentDTO = contentManager.getContentById(conceptId, true);
-            if (contentDTO instanceof IsaacConceptPageDTO) {
-                SeguePageDTO content = (SeguePageDTO) contentDTO;
+            if (contentDTO instanceof IsaacConceptPageDTO content) {
 
                 // Load attempts at related questions:
                 Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
@@ -461,9 +460,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         boolean showSupersededContent = false;
         boolean isRandomQuestion = Objects.equals(QUESTION_SEARCH_RANDOM_QUESTION, querySource);
         try {
-            if (!isRandomQuestion && user instanceof RegisteredUserDTO) {
-                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
-                showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
+            if (!isRandomQuestion && user instanceof RegisteredUserDTO registeredUser) {
+                showNoFilterContent = isUserStaff(userManager, registeredUser);
+                showSupersededContent = isUserTeacherOrAbove(userManager, registeredUser);
             }
         } catch (NoUserLoggedInException e) {
             // This cannot happen!
@@ -574,16 +573,15 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             ContentDTO contentDTO = contentManager.getContentById(questionId, true);
 
-            if (contentDTO instanceof IsaacQuestionPageDTO) {
-                SeguePageDTO content = (SeguePageDTO) contentDTO;
+            if (contentDTO instanceof IsaacQuestionPageDTO content) {
 
                 String userIdForRandomisation;
                 Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
                 Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
                 // We have to cope with both anonymous and registered users:
-                if (user instanceof AnonymousUserDTO) {
+                if (user instanceof AnonymousUserDTO anonymousUser) {
                     // For anonymous users, we just load all their question attempts.
-                    userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
+                    userIdForRandomisation = anonymousUser.getSessionId();
 
                     Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
                             questionManager.getQuestionAttemptsByUser(user);
@@ -686,13 +684,11 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacTopicSummaryPage
-                    && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
+            if (!(contentDOById instanceof IsaacTopicSummaryPage topicSummaryDO
+                    && contentDTOById instanceof IsaacTopicSummaryPageDTO topicSummaryDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate topic summary page with id: %s", summaryPageId));
             }
-            IsaacTopicSummaryPage topicSummaryDO = (IsaacTopicSummaryPage) contentDOById;
-            IsaacTopicSummaryPageDTO topicSummaryDTO = (IsaacTopicSummaryPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
@@ -919,8 +915,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             ContentDTO contentDTO = contentManager.getContentById(bookId, true);
-            if (contentDTO instanceof IsaacBookIndexPageDTO) {
-                IsaacBookIndexPageDTO indexPageDTO = (IsaacBookIndexPageDTO) contentDTO;
+            if (contentDTO instanceof IsaacBookIndexPageDTO indexPageDTO) {
 
                 // Unlikely we want to augment with related content here!
                 contentManager.populateSidebar(indexPageDTO);
@@ -983,13 +978,11 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(bookPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacBookDetailPage
-                    && contentDTOById instanceof IsaacBookDetailPageDTO)) {
+            if (!(contentDOById instanceof IsaacBookDetailPage bookPageDO
+                    && contentDTOById instanceof IsaacBookDetailPageDTO bookPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate book detail page with id: %s", bookPageId));
             }
-            IsaacBookDetailPage bookPageDO = (IsaacBookDetailPage) contentDOById;
-            IsaacBookDetailPageDTO bookPageDTO = (IsaacBookDetailPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
@@ -1069,13 +1062,11 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(revisionPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacRevisionDetailPage
-                    && contentDTOById instanceof IsaacRevisionDetailPageDTO)) {
+            if (!(contentDOById instanceof IsaacRevisionDetailPage revisionPage
+                    && contentDTOById instanceof IsaacRevisionDetailPageDTO revisionPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate revision detail page with id: %s", revisionPageId));
             }
-            IsaacRevisionDetailPage revisionPage = (IsaacRevisionDetailPage) contentDOById;
-            IsaacRevisionDetailPageDTO revisionPageDTO = (IsaacRevisionDetailPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
@@ -1193,8 +1184,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         List<ContentBaseDTO> children = content.getChildren();
         if (children != null) {
             for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
+                if (child instanceof ContentDTO childContent) {
                     relatedContent.addAll(getRelatedContentIds(childContent));
                 }
             }

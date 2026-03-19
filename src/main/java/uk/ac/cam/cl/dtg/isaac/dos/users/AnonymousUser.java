@@ -134,10 +134,9 @@ public class AnonymousUser extends AbstractSegueUser {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof AnonymousUser)) {
+        if (!(obj instanceof AnonymousUser other)) {
             return false;
         }
-        AnonymousUser other = (AnonymousUser) obj;
         if (dateCreated == null) {
             if (other.dateCreated != null) {
                 return false;

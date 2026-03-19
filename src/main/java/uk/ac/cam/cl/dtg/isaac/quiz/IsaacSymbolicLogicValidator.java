@@ -61,20 +61,17 @@ public class IsaacSymbolicLogicValidator extends AbstractExternalValidator imple
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacSymbolicLogicQuestion)) {
+        if (!(question instanceof IsaacSymbolicLogicQuestion symbolicLogicQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Symbolic Questions... (%s is not symbolic)",
                     question.getId()));
         }
         
-        if (!(answer instanceof LogicFormula)) {
+        if (!(answer instanceof LogicFormula submittedLogicFormula)) {
             throw new IllegalArgumentException(String.format(
                     "Expected LogicFormula for IsaacSymbolicLogicQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
-
-        IsaacSymbolicLogicQuestion symbolicLogicQuestion = (IsaacSymbolicLogicQuestion) question;
-        LogicFormula submittedLogicFormula = (LogicFormula) answer;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
@@ -108,12 +105,10 @@ public class IsaacSymbolicLogicValidator extends AbstractExternalValidator imple
             for (Choice c : symbolicLogicQuestion.getChoices()) {
 
                 // ... that are of the LogicFormula type, ...
-                if (!(c instanceof LogicFormula)) {
+                if (!(c instanceof LogicFormula logicFormulaChoice)) {
                     log.error("Validator for questionId: {} expected a LogicFormula. Instead it found a Choice.", symbolicLogicQuestion.getId());
                     continue;
                 }
-
-                LogicFormula logicFormulaChoice = (LogicFormula) c;
 
                 // ... and that have a python expression ...
                 if (null == logicFormulaChoice.getPythonExpression() || logicFormulaChoice.getPythonExpression().isEmpty()) {
@@ -147,12 +142,10 @@ public class IsaacSymbolicLogicValidator extends AbstractExternalValidator imple
             for (Choice c : orderedChoices) {
 
                 // ... that are of the LogicFormula type, ...
-                if (!(c instanceof LogicFormula)) {
+                if (!(c instanceof LogicFormula logicFormulaChoice)) {
                     // Don't need to log this - it will have been logged above.
                     continue;
                 }
-
-                LogicFormula logicFormulaChoice = (LogicFormula) c;
 
                 // ... and that have a python expression ...
                 if (null == logicFormulaChoice.getPythonExpression() || logicFormulaChoice.getPythonExpression().isEmpty()) {

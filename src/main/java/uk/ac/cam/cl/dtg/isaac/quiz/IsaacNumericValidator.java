@@ -50,19 +50,16 @@ public class IsaacNumericValidator implements IValidator {
     public final QuestionValidationResponse validateQuestionResponse(
             final Question question, final Choice answer) {
 
-        if (!(question instanceof IsaacNumericQuestion)) {
+        if (!(question instanceof IsaacNumericQuestion isaacNumericQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Numeric Questions... (%s is not numeric)", question.getId()));
         }
 
-        if (!(answer instanceof Quantity)) {
+        if (!(answer instanceof Quantity answerFromUser)) {
             throw new IllegalArgumentException(String.format(
                     "Expected Quantity for IsaacNumericQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
-
-        IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
-        Quantity answerFromUser = (Quantity) answer;
 
         // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
         int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
@@ -208,8 +205,7 @@ public class IsaacNumericValidator implements IValidator {
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
         for (Choice c : orderedChoices) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
+            if (c instanceof Quantity quantityFromQuestion) {
 
                 if (quantityFromQuestion.getUnits() == null) {
                     log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
@@ -283,8 +279,7 @@ public class IsaacNumericValidator implements IValidator {
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
         for (Choice c : orderedChoices) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
+            if (c instanceof Quantity quantityFromQuestion) {
 
                 // Do we have a match? Since only comparing values, either an exact match or not a match at all.
                 if (ValidationUtils.numericValuesMatch(

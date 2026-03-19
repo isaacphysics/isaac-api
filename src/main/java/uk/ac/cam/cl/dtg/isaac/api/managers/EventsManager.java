@@ -152,10 +152,9 @@ public class EventsManager {
         List<Map<String, Object>> resultList = Lists.newArrayList();
 
         for (ContentDTO c : findByFieldNames.getResults()) {
-            if (!(c instanceof IsaacEventPageDTO)) {
+            if (!(c instanceof IsaacEventPageDTO event)) {
                 continue;
             }
-            IsaacEventPageDTO event = (IsaacEventPageDTO) c;
 
             if (null == currentUser || !bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 continue;
@@ -242,11 +241,10 @@ public class EventsManager {
         List<Map<String, Object>> resultList = Lists.newArrayList();
 
         for (ContentDTO c : findByFieldNames.getResults()) {
-            if (!(c instanceof IsaacEventPageDTO)) {
+            if (!(c instanceof IsaacEventPageDTO e)) {
                 continue;
             }
 
-            IsaacEventPageDTO e = (IsaacEventPageDTO) c;
             if (null == e.getLocation() || (null == e.getLocation().getLatitude() && null == e.getLocation().getLongitude())) {
                 // Ignore events without locations.
                 continue;
@@ -364,8 +362,7 @@ public class EventsManager {
     public IsaacEventPageDTO augmentEventWithBookingInformation(final RegisteredUserDTO currentUser,
                                                                  final ContentDTO possibleEvent)
             throws SegueDatabaseException {
-        if (possibleEvent instanceof IsaacEventPageDTO) {
-            IsaacEventPageDTO page = (IsaacEventPageDTO) possibleEvent;
+        if (possibleEvent instanceof IsaacEventPageDTO page) {
 
             if (null != currentUser) {
                 page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), currentUser.getId()));
@@ -397,11 +394,10 @@ public class EventsManager {
             throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));
         }
 
-        if (possibleEvent instanceof IsaacEventPageDTO) {
+        if (possibleEvent instanceof IsaacEventPageDTO eventPageDTO) {
             // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
             // the original object else we will poison the contentManager's cache!
             // TODO: might it be better to get the DO from the cache and map it to DTO here to reduce overhead?
-            IsaacEventPageDTO eventPageDTO = (IsaacEventPageDTO) possibleEvent;
             return mapper.copy(eventPageDTO);
         }
         return null;

@@ -272,8 +272,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
     }
 
     private String extractErrorInfo(Response response) {
-        if (response.getEntity() instanceof SegueErrorResponse) {
-            SegueErrorResponse error = (SegueErrorResponse) response.getEntity();
+        if (response.getEntity() instanceof SegueErrorResponse error) {
             return error.getErrorMessage();
         }
         return response.getEntity().toString();
@@ -281,8 +280,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
 
     private void assertErrorResponse(Response expected, Response actual) {
         assertErrorResponse(expected.getStatusInfo().toEnum(), actual);
-        if (expected.getEntity() instanceof SegueErrorResponse) {
-            SegueErrorResponse expectedError = (SegueErrorResponse) expected.getEntity();
+        if (expected.getEntity() instanceof SegueErrorResponse expectedError) {
             assertEquals(expectedError.getErrorMessage(), ((SegueErrorResponse) actual.getEntity()).getErrorMessage());
         }
     }
