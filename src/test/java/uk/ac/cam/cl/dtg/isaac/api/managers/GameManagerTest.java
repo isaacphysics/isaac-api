@@ -89,9 +89,9 @@ public class GameManagerTest {
 
         // Assert
         // check that one of the filters sent to GitContentManager was the deprecated question exclusion filter
-        List<BooleanSearchClause> filters = capturedFilters.getValues().get(0);
+        List<BooleanSearchClause> filters = capturedFilters.getValues().getFirst();
         BooleanSearchClause deprecatedFilter = filters.stream()
-                .filter(f -> Objects.equals(f.field(), "deprecated")).toList().get(0);
+                .filter(f -> Objects.equals(f.field(), "deprecated")).toList().getFirst();
 
         assertNotNull(deprecatedFilter);
         assertEquals(deprecatedFilter.operator(), Constants.BooleanOperator.NOT);

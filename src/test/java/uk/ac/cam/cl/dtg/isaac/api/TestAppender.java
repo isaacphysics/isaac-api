@@ -26,11 +26,11 @@ public class TestAppender extends AbstractAppender {
 
     public void assertLevel(final Level level) {
         assertEquals(1, this.events.size());
-        assertEquals(level, this.events.get(0).getLevel());
+        assertEquals(level, this.events.getFirst().getLevel());
     }
 
     public void assertMessage(final String message) {
         assertEquals(1, this.events.size());
-        assertEquals(message, this.events.get(0).getMessage().getFormattedMessage());
+        assertEquals(message, this.events.getFirst().getMessage().getFormattedMessage());
     }
 }

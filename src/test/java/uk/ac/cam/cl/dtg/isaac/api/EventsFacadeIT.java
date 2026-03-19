@@ -301,7 +301,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // event leader can see student details
-        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).get(0);
+        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).getFirst();
         assertEquals(BookingStatus.WAITING_LIST, booking.getBookingStatus());
         assertEquals("Student", booking.getUserBooked().getFamilyName());
         assertEquals("Test Student", booking.getUserBooked().getGivenName());
@@ -339,7 +339,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // event leader can see student details
-        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).get(0);
+        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).getFirst();
         assertEquals(BookingStatus.WAITING_LIST, booking.getBookingStatus());
         assertEquals("Student", booking.getUserBooked().getFamilyName());
         assertEquals("Test Student", booking.getUserBooked().getGivenName());

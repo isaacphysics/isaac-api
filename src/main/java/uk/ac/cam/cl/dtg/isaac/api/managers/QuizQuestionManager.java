@@ -271,7 +271,7 @@ public class QuizQuestionManager {
 
             if (questionAttempts != null && questionAttempts.size() > 0) {
                 // The latest answer is the only answer we consider.
-                lastResponse = questionAttempts.get(questionAttempts.size() - 1);
+                lastResponse = questionAttempts.getLast();
             }
 
             results.put(question, lastResponse);

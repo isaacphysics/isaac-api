@@ -151,7 +151,7 @@ abstract public class AbstractFacadeTest extends IsaacTest {
         Set<RegisteredUserDTO> users = new HashSet<>(everyone);
         for (Testcase testcase : testcases) {
             try {
-                if (testcase.users != null && testcase.users.size() == 1 && testcase.users.get(0) == specialEveryoneElse) {
+                if (testcase.users != null && testcase.users.size() == 1 && testcase.users.getFirst() == specialEveryoneElse) {
                     testcase = new Testcase(new ArrayList<>(users), testcase.steps.toArray(new Step[]{}));
                 } else {
                     if (testcase.users != null) {

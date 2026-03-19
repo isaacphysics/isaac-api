@@ -113,7 +113,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             targetPostCodeList.add(targetPostCode);
             List<PostCode> results = submitPostCodeRequest(targetPostCodeList);
             if (results.size() == 1) {
-                targetPostCodeObject = results.get(0);
+                targetPostCodeObject = results.getFirst();
             } else {
                 throw new LocationServerException(
                         "Location service failed to return valid lat/lon for target postcode");

@@ -214,7 +214,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
                             + listOfResults);
                 }
 
-                return listOfResults.get(0);
+                return listOfResults.getFirst();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Error while trying to find token", e);
@@ -245,7 +245,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
                             + listOfResults);
                 }
 
-                return listOfResults.get(0);
+                return listOfResults.getFirst();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Error while trying to find token by group", e);

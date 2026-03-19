@@ -629,7 +629,7 @@ public class GameboardPersistenceManager {
      * @return gameboard DTO
      */
     private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO, final boolean populateGameboardItems) {
-        return convertToGameboardDTOs(Collections.singletonList(gameboardDO), populateGameboardItems).get(0);
+        return convertToGameboardDTOs(Collections.singletonList(gameboardDO), populateGameboardItems).getFirst();
     }
 
     /**
@@ -698,7 +698,7 @@ public class GameboardPersistenceManager {
                             + listOfResults);
                 }
 
-                return this.convertToGameboardDTO(listOfResults.get(0), fullyPopulate);
+                return this.convertToGameboardDTO(listOfResults.getFirst(), fullyPopulate);
             }
         } catch (SQLException | IOException e) {
             throw new SegueDatabaseException("Unable to find assignment by id", e);

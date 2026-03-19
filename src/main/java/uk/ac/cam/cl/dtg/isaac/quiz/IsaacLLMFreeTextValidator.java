@@ -200,7 +200,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
                     .collect(Collectors.joining("\n|| Choice separator ||\n")));
             return zeroMarkResult;
         }
-        String llmResponse = chatCompletions.getChoices().get(0).getMessage().getContent();
+        String llmResponse = chatCompletions.getChoices().getFirst().getMessage().getContent();
 
         try {
             Map<String, Object> response =

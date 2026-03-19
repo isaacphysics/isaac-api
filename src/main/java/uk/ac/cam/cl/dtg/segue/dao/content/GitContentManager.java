@@ -271,7 +271,7 @@ public class GitContentManager {
                 return null;
             }
 
-            return result.getResults().get(0);
+            return result.getResults().getFirst();
 
         } catch (final ExecutionException e) {
             throw new ContentManagerException(e.getCause().getMessage());

@@ -187,7 +187,7 @@ public class PgUserNotifications implements IUserNotifications {
                 }
 
                 // don't need to check other cases as the keys being looked up are composite in the database definition.
-                return listOfResults.get(0);
+                return listOfResults.getFirst();
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

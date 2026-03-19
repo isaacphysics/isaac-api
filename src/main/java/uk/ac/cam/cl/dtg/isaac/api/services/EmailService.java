@@ -91,7 +91,7 @@ public class EmailService {
     public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, String> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
         try {
             // This isn't nice, but it avoids augmenting the group unnecessarily!
-            UserGroupDTO userGroupDTO = groupManager.getGroupsByIds(Collections.singletonList(assignment.getGroupId()), false).get(0);
+            UserGroupDTO userGroupDTO = groupManager.getGroupsByIds(Collections.singletonList(assignment.getGroupId()), false).getFirst();
 
             String dueDate = "";
             if (assignment.getDueDate() != null) {

@@ -65,7 +65,7 @@ public class ContentValidatorUtilsTest {
 
                 new GetDropZonesTestCase().setTitle("singleDropZoneNestedContent_returnsDropZones")
                         .setChildren(new LinkedList<>(List.of(new Content(), new Content("[drop-zone:A2]"))))
-                        .tapQuestion(q -> ((Content) q.getChildren().get(0)).setChildren(List.of(new Content("[drop-zone:A1]"))))
+                        .tapQuestion(q -> ((Content) q.getChildren().getFirst()).setChildren(List.of(new Content("[drop-zone:A1]"))))
                         .expectDropZones("A1", "A2"),
 
                 new GetDropZonesTestCase().setTitle("figureContentWithoutDropZones_returnsNoZones")
@@ -83,7 +83,7 @@ public class ContentValidatorUtilsTest {
                 new GetDropZonesTestCase().setTitle("mixedNested_returnsDropZones")
                         .setChildren(new LinkedList<>(List.of(new Content(), new Content("[drop-zone:A2]"))))
                         .tapQuestion(q -> {
-                            Content content = (Content) q.getChildren().get(0);
+                            Content content = (Content) q.getChildren().getFirst();
                             content.setChildren(List.of(
                                     new Content("[drop-zone:A1]"),
                                     createFigure("F1", "F2")

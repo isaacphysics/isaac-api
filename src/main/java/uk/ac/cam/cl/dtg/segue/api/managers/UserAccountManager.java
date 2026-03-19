@@ -1882,7 +1882,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
-        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).get(0);
+        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).getFirst();
     }
 
     /**

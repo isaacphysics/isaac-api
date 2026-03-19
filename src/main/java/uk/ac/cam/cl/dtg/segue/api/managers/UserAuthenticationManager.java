@@ -837,7 +837,7 @@ public class UserAuthenticationManager {
 
         String providersString;
         if (providerNames.size() == 1) {
-            providersString = providerNames.get(0);
+            providersString = providerNames.getFirst();
         } else {
             StringBuilder providersBuilder = new StringBuilder();
             for (int i = 0; i < providerNames.size(); i++) {

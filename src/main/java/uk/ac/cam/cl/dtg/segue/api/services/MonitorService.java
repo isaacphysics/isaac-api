@@ -19,7 +19,7 @@ public class MonitorService {
             return NO_MATCHING_ENDPOINT;
         }
 
-        String mostSpecificMatchingUri = "/" + matchingUris.get(0);
+        String mostSpecificMatchingUri = "/" + matchingUris.getFirst();
         // Replace any path param values with its curly-braced, path param identifier
         for (Map.Entry<String, List<String>> pathParams : uri.getPathParameters().entrySet()) {
             for (String paramValue : pathParams.getValue()) {
