@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- API CONFIG -->
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:web="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" version="3.0">
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" version="3.0">
 
     <filter>
         <filter-name>cross-origin</filter-name>
@@ -64,7 +64,10 @@
 
     <session-config>
         <cookie-config>
-            <comment>__SAME_SITE_STRICT__</comment>
+            <attribute>
+                <attribute-name>SameSite</attribute-name>
+                <attribute-value>Strict</attribute-value>
+            </attribute>
             <http-only>true</http-only>
             <secure>true</secure>
         </cookie-config>
