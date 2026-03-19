@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.util.mappers;
 
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.SubclassMapping;
 import org.mapstruct.factory.Mappers;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
@@ -31,6 +32,11 @@ public interface QuestionValidationMapper {
     @SubclassMapping(source = LLMFreeTextQuestionValidationResponse.class, target = LLMFreeTextQuestionValidationResponseDTO.class)
     @SubclassMapping(source = QuantityValidationResponse.class, target = QuantityValidationResponseDTO.class)
     QuestionValidationResponseDTO map(QuestionValidationResponse source);
+
+    @Mapping(target = "correctSymbolic", ignore = true)
+    @Mapping(target = "correctNumeric", ignore = true)
+    @Mapping(target = "correctExact", ignore = true)
+    FormulaValidationResponseDTO map(FormulaValidationResponse source);
 
     @InheritInverseConfiguration
     QuestionValidationResponse map(QuestionValidationResponseDTO source);
