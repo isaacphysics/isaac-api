@@ -124,6 +124,10 @@ public interface ContentMapper {
     @SubclassMapping(source = CoordinateItemDTO.class, target = CoordinateItem.class)
     Item map(ItemDTO source);
 
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "prioritisedSearchableContent", ignore = true)
+    DndItem map(DndItemDTO source);
+
     @Mapping(target = "sidebar", ignore = true)
     @SubclassMapping(source = IsaacFastTrackQuestionPage.class, target = IsaacFastTrackQuestionPageDTO.class)
     @SubclassMapping(source = IsaacQuestionPage.class, target = IsaacQuestionPageDTO.class)
