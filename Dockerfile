@@ -24,3 +24,5 @@ COPY src/main/resources/log4j2-jetty-only.xml $JETTY_BASE/resources/log4j2.xml
 # prepare things so that jetty runs in the docker entrypoint
 USER jetty
 WORKDIR $JETTY_BASE
+
+RUN java -jar "$JETTY_HOME/start.jar" --add-modules=ee10-webapp,ee10-deploy,ee10-jsp,ee10-jstl,ee10-websocket-jetty,ee10-websocket-jakarta
