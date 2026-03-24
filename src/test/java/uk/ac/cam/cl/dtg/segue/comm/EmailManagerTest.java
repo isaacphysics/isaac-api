@@ -213,9 +213,14 @@ public class EmailManagerTest {
     public final void sendTemplatedEmailToUser_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
         EasyMock.replay(userManager);
 
-        EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenName}}."
-                + "\nThanks for registering!\nYour Isaac email address is: "
-                + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
+        EmailTemplateDTO template = createDummyEmailTemplate("""
+                Hi, {{givenName}}.\
+                
+                Thanks for registering!
+                Your Isaac email address is: \
+                </a href='mailto:{{email}}'>{{email}}<a>.
+                address</a>
+                {{sig}}""");
 
         ContentDTO htmlTemplate = createDummyContentTemplate("<!DOCTYPE html><html><head><meta charset='utf-8'>"
                 + "<title>Isaac Physics project</title></head><body>" + "{{content}}" + "</body></html>");
