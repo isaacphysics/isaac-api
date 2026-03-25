@@ -402,7 +402,7 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("totalQuestionsAttemptedThisAcademicYear", attemptedQuestionsThisAcademicYear);
         questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionPartsThisAcademicYear);
         questionInfo.put("totalQuestionPartsAttemptedThisAcademicYear", attemptedQuestionPartsThisAcademicYear);
-        questionInfo.put("totalQuestionCorrectThisRevisionPeriod", correctQuestionsThisRevisionPeriod);
+        questionInfo.put("totalQuestionsCorrectThisRevisionPeriod", correctQuestionsThisRevisionPeriod);
         questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
