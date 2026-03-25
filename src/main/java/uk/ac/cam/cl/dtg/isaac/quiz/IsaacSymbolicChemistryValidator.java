@@ -358,19 +358,14 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
             } else if (closestResponse != null && (!receivedType.contains("statement") && allEquation
                     || !receivedType.contains("expr") && allExpression || !receivedType.contains("term") && allTerm)) {
 
-                if (isNuclear) {
-                    // Input is not an equation. Equations are necessary for nuclear questions
-                    feedback = new Content("We are expecting an answer in the form of an equation!");
-                } else {
-                    Map<String, String> map = new HashMap<>();
-                    map.put("statement", "an equation");
-                    map.put("expr", "an expression");
-                    map.put("term", "a term");
+                Map<String, String> map = new HashMap<>();
+                map.put("statement", "an equation");
+                map.put("expr", "an expression");
+                map.put("term", "a term");
 
-                    // Term/Expression/Equation mismatch in all correct answers.
-                    feedback = new Content("Your answer is " + map.get(closestResponse.get("receivedType"))
-                            + " but we expected " + map.get(closestResponse.get("expectedType")) + "!");
-                }
+                // Term/Expression/Equation mismatch in all correct answers.
+                feedback = new Content("Your answer is " + map.get(closestResponse.get("receivedType"))
+                        + " but we expected " + map.get(closestResponse.get("expectedType")) + "!");
 
             } else if (isEquation && balancedKnownFlag && !isBalanced) {
 
