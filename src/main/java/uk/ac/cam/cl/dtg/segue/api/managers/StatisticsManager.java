@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.Period;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -191,6 +192,7 @@ public class StatisticsManager implements IStatisticsManager {
         int attemptedQuestionsThisAcademicYear = 0;
         int correctQuestionPartsThisAcademicYear = 0;
         int attemptedQuestionPartsThisAcademicYear = 0;
+        int correctQuestionsThisRevisionPeriod = 0;
         Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
         Map<Stage, Map<Difficulty, Integer>> questionAttemptsByStageAndDifficultyStats = Maps.newHashMap();
@@ -205,6 +207,11 @@ public class StatisticsManager implements IStatisticsManager {
         LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() - 1, Month.AUGUST, 31);
         LocalDate lastDayOfPreviousAcademicYear =
                 now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
+        LocalDate startOfAprilThisYear = LocalDate.of(now.getYear(), Month.APRIL, 1);
+        LocalDate startOfAprilLastYear = LocalDate.of(now.getYear() - 1, Month.APRIL, 1);
+        LocalDate startOfMostRecentRevisionPeriod =
+                now.isAfter(startOfAprilThisYear) ? startOfAprilThisYear : startOfAprilLastYear;
+        LocalDate endOfMostRecentRevisionPeriod = startOfMostRecentRevisionPeriod.plus(Period.ofMonths(2));
 
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsByUser = questionManager.getLightweightQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
@@ -368,6 +375,12 @@ public class StatisticsManager implements IStatisticsManager {
                 if (mostRecentCorrectQuestionPart != null && mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
                     correctQuestionsThisAcademicYear++;
                 }
+                if (mostRecentCorrectQuestionPart != null
+                        && mostRecentCorrectQuestionPart.isAfter(startOfMostRecentRevisionPeriod)
+                        && mostRecentCorrectQuestionPart.isBefore(endOfMostRecentRevisionPeriod)
+                ) {
+                    correctQuestionsThisRevisionPeriod++;
+                }
             } else {
                 incompleteQuestionPages.add(contentSummaryDTO);
             }
@@ -389,6 +402,7 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("totalQuestionsAttemptedThisAcademicYear", attemptedQuestionsThisAcademicYear);
         questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionPartsThisAcademicYear);
         questionInfo.put("totalQuestionPartsAttemptedThisAcademicYear", attemptedQuestionPartsThisAcademicYear);
+        questionInfo.put("totalQuestionPartsCorrectThisRevisionPeriod", correctQuestionsThisRevisionPeriod);
         questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
