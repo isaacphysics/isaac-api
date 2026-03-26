@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -45,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.Period;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -191,6 +191,7 @@ public class StatisticsManager implements IStatisticsManager {
         int attemptedQuestionsThisAcademicYear = 0;
         int correctQuestionPartsThisAcademicYear = 0;
         int attemptedQuestionPartsThisAcademicYear = 0;
+        int correctQuestionsThisRevisionPeriod = 0;
         Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
         Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
         Map<Stage, Map<Difficulty, Integer>> questionAttemptsByStageAndDifficultyStats = Maps.newHashMap();
@@ -205,6 +206,11 @@ public class StatisticsManager implements IStatisticsManager {
         LocalDate endOfAugustLastYear = LocalDate.of(now.getYear() - 1, Month.AUGUST, 31);
         LocalDate lastDayOfPreviousAcademicYear =
                 now.isAfter(endOfAugustThisYear) ? endOfAugustThisYear : endOfAugustLastYear;
+        LocalDate startOfAprilThisYear = LocalDate.of(now.getYear(), Month.APRIL, 1);
+        LocalDate startOfAprilLastYear = LocalDate.of(now.getYear() - 1, Month.APRIL, 1);
+        LocalDate startOfMostRecentRevisionPeriod =
+                now.isAfter(startOfAprilThisYear) ? startOfAprilThisYear : startOfAprilLastYear;
+        LocalDate endOfMostRecentRevisionPeriod = startOfMostRecentRevisionPeriod.plus(Period.ofMonths(2));
 
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsByUser = questionManager.getLightweightQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
@@ -231,6 +237,7 @@ public class StatisticsManager implements IStatisticsManager {
 
                 questionPartsTotal++;
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
+                boolean questionPartIsCorrectThisAcademicYear = false;
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
                     attemptedQuestionParts++;
@@ -245,15 +252,22 @@ public class StatisticsManager implements IStatisticsManager {
                             mostRecentAttemptAtThisQuestionPart = dateAttempted;
                         }
                         if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
-                            correctQuestionParts++;
-                            if (dateAttempted.isAfter(lastDayOfPreviousAcademicYear)) {
-                                correctQuestionPartsThisAcademicYear++;
-                                if (mostRecentCorrectQuestionPart == null || dateAttempted.isAfter(mostRecentCorrectQuestionPart)) {
-                                    mostRecentCorrectQuestionPart = dateAttempted;
-                                }
+                            // Since you can get a question correct multiple times, only count first time it is correct:
+                            if (!questionPartIsCorrect) {
+                                correctQuestionParts++;
                             }
                             questionPartIsCorrect = true;
-                            break; // early so that later attempts are ignored
+                            // Same logic, but this time for the academic year:
+                            if (dateAttempted.isAfter(lastDayOfPreviousAcademicYear)) {
+                                if (!questionPartIsCorrectThisAcademicYear) {
+                                    correctQuestionPartsThisAcademicYear++;
+                                }
+                                questionPartIsCorrectThisAcademicYear = true;
+                            }
+                            // Store the most recent correct part attempt date at this page:
+                            if (mostRecentCorrectQuestionPart == null || dateAttempted.isAfter(mostRecentCorrectQuestionPart)) {
+                                mostRecentCorrectQuestionPart = dateAttempted;
+                            }
                         }
 
                     }
@@ -368,6 +382,12 @@ public class StatisticsManager implements IStatisticsManager {
                 if (mostRecentCorrectQuestionPart != null && mostRecentCorrectQuestionPart.isAfter(lastDayOfPreviousAcademicYear)) {
                     correctQuestionsThisAcademicYear++;
                 }
+                if (mostRecentCorrectQuestionPart != null
+                        && (mostRecentCorrectQuestionPart.isAfter(startOfMostRecentRevisionPeriod) || mostRecentCorrectQuestionPart.isEqual(startOfMostRecentRevisionPeriod))
+                        && (mostRecentCorrectQuestionPart.isBefore(endOfMostRecentRevisionPeriod) || mostRecentCorrectQuestionPart.isEqual(endOfMostRecentRevisionPeriod))
+                ) {
+                    correctQuestionsThisRevisionPeriod++;
+                }
             } else {
                 incompleteQuestionPages.add(contentSummaryDTO);
             }
@@ -389,6 +409,7 @@ public class StatisticsManager implements IStatisticsManager {
         questionInfo.put("totalQuestionsAttemptedThisAcademicYear", attemptedQuestionsThisAcademicYear);
         questionInfo.put("totalQuestionPartsCorrectThisAcademicYear", correctQuestionPartsThisAcademicYear);
         questionInfo.put("totalQuestionPartsAttemptedThisAcademicYear", attemptedQuestionPartsThisAcademicYear);
+        questionInfo.put("totalQuestionsCorrectThisRevisionPeriod", correctQuestionsThisRevisionPeriod);
         questionInfo.put("attemptsByTag", questionAttemptsByTagStats);
         questionInfo.put("correctByTag", questionsCorrectByTagStats);
         questionInfo.put("attemptsByStageAndDifficulty", questionAttemptsByStageAndDifficultyStats);
