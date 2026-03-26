@@ -383,8 +383,8 @@ public class StatisticsManager implements IStatisticsManager {
                     correctQuestionsThisAcademicYear++;
                 }
                 if (mostRecentCorrectQuestionPart != null
-                        && mostRecentCorrectQuestionPart.isAfter(startOfMostRecentRevisionPeriod)
-                        && mostRecentCorrectQuestionPart.isBefore(endOfMostRecentRevisionPeriod)
+                        && (mostRecentCorrectQuestionPart.isAfter(startOfMostRecentRevisionPeriod) || mostRecentCorrectQuestionPart.isEqual(startOfMostRecentRevisionPeriod))
+                        && (mostRecentCorrectQuestionPart.isBefore(endOfMostRecentRevisionPeriod) || mostRecentCorrectQuestionPart.isEqual(endOfMostRecentRevisionPeriod))
                 ) {
                     correctQuestionsThisRevisionPeriod++;
                 }
