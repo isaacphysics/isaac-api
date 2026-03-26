@@ -193,6 +193,52 @@ public class IsaacCoordinateValidatorTest {
     }
 
     @Test
+    public final void isaacCoordinateValidator_TestDefaultSigFigsMax() {
+        // If max sig figs is not set, it should default to 2
+        someCoordinateQuestion.setSignificantFiguresMax(null);
+
+        // 3 sig figs should be too many
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1ExtraSigFig, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+
+        // 2 sig figs should be correct
+        c.setItems(List.of(item1, item2));
+
+        response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertTrue(response.isCorrect());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestDefaultSigFigsMin() {
+        // If min sig figs is not set, it should default to 2
+        someCoordinateQuestion.setSignificantFiguresMin(null);
+
+        // 1 sig fig should be too few
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1TooFewSigFigs, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_few"));
+
+        // 2 sig figs should be correct
+        c.setItems(List.of(item1, item2));
+
+        response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertTrue(response.isCorrect());
+    }
+
+    @Test
     public final void isaacCoordinateValidator_TestSubsetOfCorrectChoice() {
         someCoordinateQuestion.setOrdered(false);
         CoordinateChoice c = new CoordinateChoice();
