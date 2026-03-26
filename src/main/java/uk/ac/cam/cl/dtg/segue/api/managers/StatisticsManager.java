@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -238,6 +237,7 @@ public class StatisticsManager implements IStatisticsManager {
 
                 questionPartsTotal++;
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
+                boolean questionPartIsCorrectThisAcademicYear = false;
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
                     attemptedQuestionParts++;
@@ -252,15 +252,22 @@ public class StatisticsManager implements IStatisticsManager {
                             mostRecentAttemptAtThisQuestionPart = dateAttempted;
                         }
                         if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
-                            correctQuestionParts++;
-                            if (dateAttempted.isAfter(lastDayOfPreviousAcademicYear)) {
-                                correctQuestionPartsThisAcademicYear++;
-                                if (mostRecentCorrectQuestionPart == null || dateAttempted.isAfter(mostRecentCorrectQuestionPart)) {
-                                    mostRecentCorrectQuestionPart = dateAttempted;
-                                }
+                            // Since you can get a question correct multiple times, only count first time it is correct:
+                            if (!questionPartIsCorrect) {
+                                correctQuestionParts++;
                             }
                             questionPartIsCorrect = true;
-                            break; // early so that later attempts are ignored
+                            // Same logic, but this time for the academic year:
+                            if (dateAttempted.isAfter(lastDayOfPreviousAcademicYear)) {
+                                if (!questionPartIsCorrectThisAcademicYear) {
+                                    correctQuestionPartsThisAcademicYear++;
+                                }
+                                questionPartIsCorrectThisAcademicYear = true;
+                            }
+                            // Store the most recent correct part attempt date at this page:
+                            if (mostRecentCorrectQuestionPart == null || dateAttempted.isAfter(mostRecentCorrectQuestionPart)) {
+                                mostRecentCorrectQuestionPart = dateAttempted;
+                            }
                         }
 
                     }
