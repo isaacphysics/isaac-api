@@ -66,9 +66,23 @@ public class YamlLoader extends AbstractConfigLoader {
         return this.loadedConfig.keySet();
     }
 
+    /**
+     * Factory method that can be overridden for testing
+     */
+    protected Yaml createYaml() {
+        return new Yaml();
+    }
+
+    /**
+     * Factory method that can be overridden for testing
+     */
+    protected FileInputStream createFileInputStream(String path) throws IOException {
+        return new FileInputStream(path);
+    }
+
     @Override
     protected synchronized void loadConfig() throws IOException {
-        Yaml yaml = new Yaml();
+        Yaml yaml = createYaml();
 
         String[] configPaths = this.configPath.split(",");
 
@@ -77,7 +91,7 @@ public class YamlLoader extends AbstractConfigLoader {
 
             // check to see if this a resource or a file somewhere else
             if (getClass().getClassLoader().getResourceAsStream(path) == null) {
-                try (FileInputStream ioStream = new FileInputStream(path)) {
+                try (FileInputStream ioStream = createFileInputStream(path)) {
                     // then we have to look further afield
                     subConfig = yaml.load(ioStream);
                 }

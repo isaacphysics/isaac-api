@@ -15,11 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
@@ -42,19 +38,15 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createNiceMock;
-import static org.powermock.api.easymock.PowerMock.replayAll;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
     private AbstractConfigLoader properties;
@@ -82,7 +74,8 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         expect(contentManager.getContentDOById(studentQuizDO.getId())).andStubReturn(studentQuizDO);
         expect(contentManager.getContentDOById(questionPageQuestionDO.getId())).andStubReturn(questionPageQuestionDO);
 
-        replayAll();
+        replay(requestForCaching, contentManager, contentSubclassMapper, questionManager, userStreaksManager,
+                userAssociationManager);
     }
 
     @Test
@@ -136,6 +129,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", false);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
 
+        replay(properties, userPreferenceManager);
         setUpQuestionFacade();
 
         // Act & Assert
@@ -163,6 +157,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         misuseMonitor = createMock(IMisuseMonitor.class);
         expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(0);
 
+        replay(properties, userPreferenceManager, misuseMonitor);
         setUpQuestionFacade();
 
         // Act & Assert
@@ -187,14 +182,14 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
-
+        replay(properties, misuseMonitor, userPreferenceManager);
         setUpQuestionFacade();
 
         // Act
         RegisteredUserDTO outUser = questionFacade.assertUserCanAnswerLLMQuestions(adminUser);
 
         // Assert
-        assertThat(outUser, instanceOf(RegisteredUserDTO.class));
+        assertInstanceOf(RegisteredUserDTO.class, outUser);
         assertEquals(adminUser.getId(), outUser.getId());
     }
 }

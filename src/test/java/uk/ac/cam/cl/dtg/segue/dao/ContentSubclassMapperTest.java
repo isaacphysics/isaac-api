@@ -1,20 +1,20 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CodeSnippet;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ContentSubclassMapperTest {
 
     private ContentSubclassMapper contentSubclassMapper;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.contentSubclassMapper = new ContentSubclassMapper(new Reflections("uk.ac.cam.cl.dtg.isaac"));
     }

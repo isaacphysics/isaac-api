@@ -18,13 +18,8 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -42,15 +37,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.powermock.api.easymock.PowerMock.replay;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitContentManager.class)
-@PowerMockIgnore("javax.management.*")
 public class GameManagerTest {
 
     private GitContentManager dummyContentManager;
@@ -59,13 +50,13 @@ public class GameManagerTest {
     private QuestionManager dummyQuestionManager;
     private AbstractConfigLoader dummyConfigLoader;
 
-    @Before
+    @BeforeEach
     public void setUp() {
-        this.dummyContentManager = PowerMock.createMock(GitContentManager.class);
-        this.dummyGameboardPersistenceManager = PowerMock.createMock(GameboardPersistenceManager.class);
-        this.dummyMapper = PowerMock.createMock(MainMapper.class);
-        this.dummyQuestionManager = PowerMock.createMock(QuestionManager.class);
-        this.dummyConfigLoader = PowerMock.createMock(YamlLoader.class);
+        this.dummyContentManager = EasyMock.createMock(GitContentManager.class);
+        this.dummyGameboardPersistenceManager = EasyMock.createMock(GameboardPersistenceManager.class);
+        this.dummyMapper = EasyMock.createMock(MainMapper.class);
+        this.dummyQuestionManager = EasyMock.createMock(QuestionManager.class);
+        this.dummyConfigLoader = EasyMock.createMock(YamlLoader.class);
 
         EasyMock.expect(dummyConfigLoader.getProperty(GAMEBOARD_QUESTION_LIMIT)).andStubReturn("30");
         replay(dummyConfigLoader);

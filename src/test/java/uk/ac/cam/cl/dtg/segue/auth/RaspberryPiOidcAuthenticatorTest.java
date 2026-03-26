@@ -16,22 +16,22 @@
 
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RaspberryPiOidcAuthenticatorTest {
 
     RaspberryPiOidcAuthenticator authenticator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         // Set up an authenticator with local OIDC IdP metadata
         URL res = getClass().getClassLoader().getResource("test-rpf-idp-metadata.json");
@@ -76,17 +76,19 @@ public class RaspberryPiOidcAuthenticatorTest {
         assertEquals("John", givenNameFamilyName.get(1));
     }
 
-    @Test(expected = NoUserException.class)
-    public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() throws Exception{
-        // Arrange
-        String idpNickname = "*";
-        String idpFullName = "John Smith";
+    @Test
+    public void getGivenNameFamilyName_invalidNicknameProvided_throwsException() {
+        assertThrows(NoUserException.class, () -> {
+            // Arrange
+            String idpNickname = "*";
+            String idpFullName = "John Smith";
 
-        // Act
-        authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
+            // Act
+            authenticator.getGivenNameFamilyName(idpNickname, idpFullName);
 
-        // Assert
-        // See signature
+            // Assert
+            // See signature
+        });
     }
 
     @Test

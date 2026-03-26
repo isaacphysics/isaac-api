@@ -15,9 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -30,14 +29,13 @@ import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 import java.util.*;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the GitContentManager class.
  * 
  */
-@PowerMockIgnore({"jakarta.ws.*"})
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
@@ -54,7 +52,7 @@ public class GitContentManagerTest {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@Before
+	@BeforeEach
 	public final void setUp() throws Exception {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);

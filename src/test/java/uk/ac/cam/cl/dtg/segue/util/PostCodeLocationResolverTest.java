@@ -23,13 +23,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.Assert;
-
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.google.api.client.util.Maps;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -38,6 +37,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test suite to check that the use of the 3rd party service postcodes.io
@@ -51,7 +54,7 @@ public class PostCodeLocationResolverTest {
     private PostCodeIOLocationResolver resolver;
     private PostgresSqlDb mockDatabase;
 
-    @Before
+    @BeforeEach
     public final void setUp() throws Exception {
         mockDatabase = EasyMock.createMock(PostgresSqlDb.class);
         locationHistory = new PgLocationHistory(mockDatabase);
@@ -99,11 +102,11 @@ public class PostCodeLocationResolverTest {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT",
                     PostCodeRadius.TWENTY_FIVE_MILES);
             System.out.println(ids.toString());
-            Assert.assertTrue(ids.contains(5l));
+            assertTrue(ids.contains(5l));
         } catch (LocationServerException e) {
-            Assert.fail();
+            fail();
         } catch (SegueDatabaseException e) {
-            Assert.fail();
+            fail();
         }
     }
 
@@ -126,9 +129,9 @@ public class PostCodeLocationResolverTest {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN",
                     PostCodeRadius.FIFTY_MILES);
             System.out.println(ids.toString());
-            Assert.assertTrue(ids.size() == 1);
+            assertEquals(1, ids.size());
         } catch (LocationServerException | SegueDatabaseException e) {
-            Assert.fail();
+            fail();
         }
     }
 
@@ -150,10 +153,10 @@ public class PostCodeLocationResolverTest {
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT",
                     PostCodeRadius.TWENTY_FIVE_MILES);
-            Assert.assertTrue(ids.isEmpty());
+            assertTrue(ids.isEmpty());
             System.out.println(ids.toString());
         } catch (LocationServerException | SegueDatabaseException e) {
-            Assert.fail();
+            fail();
         }
     }
 
@@ -164,10 +167,10 @@ public class PostCodeLocationResolverTest {
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT",
                     PostCodeRadius.TWENTY_FIVE_MILES);
-            Assert.assertTrue(ids.isEmpty());
+            assertTrue(ids.isEmpty());
             System.out.println(ids.toString());
         } catch (LocationServerException | SegueDatabaseException e) {
-            Assert.fail();
+            fail();
         }
     }
 
@@ -188,7 +191,7 @@ public class PostCodeLocationResolverTest {
         try {
             resolver.filterPostcodesWithinProximityOfPostcode(map, "46346364",
                     PostCodeRadius.TWENTY_FIVE_MILES);
-            Assert.fail();
+            fail();
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
         }
@@ -199,7 +202,7 @@ public class PostCodeLocationResolverTest {
 
         try {
             resolver.filterPostcodesWithinProximityOfPostcode(null, "", null);
-            Assert.fail();
+            fail();
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
         }
@@ -222,10 +225,10 @@ public class PostCodeLocationResolverTest {
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN",
                     PostCodeRadius.TWENTY_FIVE_MILES);
-            Assert.assertTrue(ids.contains(2l));
+            assertTrue(ids.contains(2l));
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
-            Assert.fail();
+            fail();
         }
     }
 

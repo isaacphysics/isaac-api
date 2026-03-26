@@ -76,6 +76,7 @@ public interface AssignmentMapper {
     @Mapping(target = "passMark", ignore = true)
     @Mapping(target = "state", ignore = true)
     @Mapping(target = "boardId", ignore = true)
+    @Mapping(target = "deprecated", ignore = true)
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "audience", ignore = true)
     @Mapping(source = "context", target = "creationContext")
