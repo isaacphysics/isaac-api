@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNullElse;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator.DEFAULT_VALIDATION_RESPONSE;
 
@@ -92,6 +93,10 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = new Content("You did not provide the correct number of coordinates.");
         }
 
+        // Get significant figures to validate with
+        int sigFigsMin = requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int sigFigsMax = requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+
         // STEP 2: If they did, does their answer match a known answer?
 
         if (null == feedback) {
@@ -126,10 +131,6 @@ public class IsaacCoordinateValidator implements IValidator {
                     continue;
                 }
                 List<CoordinateItem> choiceItems = coordinateChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
-
-                // Get significant figures to validate with
-                Integer sigFigsMin = coordinateQuestion.getSignificantFiguresMin();
-                Integer sigFigsMax = coordinateQuestion.getSignificantFiguresMax();
 
                 // Check that the items in the submitted answer match the items in the choice numerically
 
