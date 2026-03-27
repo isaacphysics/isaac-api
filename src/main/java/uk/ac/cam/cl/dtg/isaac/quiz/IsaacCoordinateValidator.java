@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNullElse;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator.DEFAULT_VALIDATION_RESPONSE;
 
@@ -92,6 +93,10 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = new Content("You did not provide the correct number of coordinates.");
         }
 
+        // Get significant figures to validate with
+        int sigFigsMin = requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int sigFigsMax = requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+
         // STEP 2: If they did, does their answer match a known answer?
 
         if (null == feedback) {
@@ -127,10 +132,6 @@ public class IsaacCoordinateValidator implements IValidator {
                 }
                 List<CoordinateItem> choiceItems = coordinateChoice.getItems().stream().map(i -> (CoordinateItem) i).collect(Collectors.toList());
 
-                // Get significant figures to validate with
-                Integer sigFigsMin = coordinateQuestion.getSignificantFiguresMin();
-                Integer sigFigsMax = coordinateQuestion.getSignificantFiguresMax();
-
                 // Check that the items in the submitted answer match the items in the choice numerically
 
                 boolean allItemsMatch = false;
@@ -151,10 +152,10 @@ public class IsaacCoordinateValidator implements IValidator {
                             CoordinateItem choiceItem = choiceItems.get(coordIndex);
                             CoordinateItem submittedItem = submittedItems.get(coordIndex);
                             // Check that the submitted item matches the choice item
-                            if (!coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax)) {
+                            if (!coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, false)) {
                                 allItemsMatch = false;
-                                // Check if this is just a significant figures mismatch
-                                if (!coordinateItemsMatch(submittedItem, choiceItem, null, null)) {
+                                // On mismatch, check if the items would match without excess significant figures
+                                if (!coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, true)) {
                                     allItemsMatchWithoutSigFigs = false;
                                     // Exit early on mismatch:
                                     break;
@@ -168,8 +169,9 @@ public class IsaacCoordinateValidator implements IValidator {
                         feedback = (Content) coordinateChoice.getExplanation();
                         break;
                     } else if (allItemsMatchWithoutSigFigs) {
+                        // Too many sig figs, or too few sig figs but the choice has trailing zeros; otherwise correct
                         feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-                        feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs")));
+                        feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
                         break;
                     }
 
@@ -179,22 +181,39 @@ public class IsaacCoordinateValidator implements IValidator {
                         // For correct choices, check if the submitted items are a proper subset of the choice
                         if (coordinateChoice.isCorrect() && (choiceItems.size() > submittedItems.size())) {
                             boolean allSubmittedItemsInChoiceItems = true;
+                            boolean allItemsInChoiceWithoutSigFigs = true;
                             for (CoordinateItem submittedItem : submittedItems) {
                                 boolean submittedItemInChoiceItem = false;
+                                boolean itemInChoiceWithoutSigFigs = false;
                                 for (CoordinateItem choiceItem : choiceItems) {
-                                    if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax)) {
+                                    if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, false)) {
                                         submittedItemInChoiceItem = true;
                                         break;
+                                    } else if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, true)) {
+                                        // On mismatch, check if the items would match without excess significant figures
+                                        itemInChoiceWithoutSigFigs = true;
                                     }
                                 }
                                 if (!submittedItemInChoiceItem) {
                                     allSubmittedItemsInChoiceItems = false;
+                                    // Check if this is just a significant figures mismatch
+                                    if (!itemInChoiceWithoutSigFigs) {
+                                        allItemsInChoiceWithoutSigFigs = false;
+                                        break;
+                                    }
                                     break;
                                 }
                             }
                             if (allSubmittedItemsInChoiceItems) {
+                                // The submission is a subset of the choice
                                 feedback = new Content((submittedItems.size() == 1 ? "This is" : "These are")
                                         + " correct, but can you find more?");
+                                break;
+                            } else if (allItemsInChoiceWithoutSigFigs) {
+                                // At least one value has too many sig figs, or too few sig figs but the choice has
+                                // trailing zeros; otherwise the submission is a subset of the choice
+                                feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+                                feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
                                 break;
                             }
                         }
@@ -204,22 +223,38 @@ public class IsaacCoordinateValidator implements IValidator {
                         boolean allowSubsetMatch = (null != coordinateChoice.isAllowSubsetMatch() && coordinateChoice.isAllowSubsetMatch());
                         if (allowSubsetMatch && (submittedItems.size() > choiceItems.size())) {
                             boolean allChoiceItemsInSubmittedItems = true;
+                            boolean allItemsInSubmittedWithoutSigFigs = true;
                             for (CoordinateItem choiceItem : choiceItems) {
                                 boolean choiceItemInSubmittedItems = false;
+                                boolean itemInSubmittedWithoutSigFigs = false;
                                 for (CoordinateItem submittedItem : submittedItems) {
-                                    if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax)) {
+                                    if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, false)) {
                                         choiceItemInSubmittedItems = true;
                                         break;
+                                    } else if (coordinateItemsMatch(submittedItem, choiceItem, sigFigsMin, sigFigsMax, true)) {
+                                        // On mismatch, check if the items would match without excess significant figures
+                                        itemInSubmittedWithoutSigFigs = true;
                                     }
                                 }
                                 if (!choiceItemInSubmittedItems) {
                                     allChoiceItemsInSubmittedItems = false;
+                                    // Check if this is just a significant figures mismatch
+                                    if (!itemInSubmittedWithoutSigFigs) {
+                                        allItemsInSubmittedWithoutSigFigs = false;
+                                    }
                                     break;
                                 }
                             }
                             if (allChoiceItemsInSubmittedItems) {
+                                // The submission is a superset of the choice
                                 responseCorrect = coordinateChoice.isCorrect();
                                 feedback = (Content) coordinateChoice.getExplanation();
+                                break;
+                            } else if (allItemsInSubmittedWithoutSigFigs) {
+                                // At least one value has too many sig figs, or too few sig figs but the choice has
+                                // trailing zeros; otherwise the submission is a superset of the choice
+                                feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+                                feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
                                 break;
                             }
                         }
@@ -237,11 +272,18 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = coordinateQuestion.getDefaultFeedback();
         }
 
+        // If there was no default feedback, check for too few significant figures
+        if (feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
+                .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
+            feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+            feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
+        }
+
         return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
     }
 
     private boolean coordinateItemsMatch(final CoordinateItem submittedItem, final CoordinateItem choiceItem,
-                                         final Integer sigFigsMin, final Integer sigFigsMax) {
+                                         final int sigFigsMin, final int sigFigsMax, final boolean allowTooManySigFigs) {
 
         if (submittedItem.getCoordinates().size() != choiceItem.getCoordinates().size()) {
             return false;
@@ -251,10 +293,18 @@ public class IsaacCoordinateValidator implements IValidator {
             String submittedValue = submittedItem.getCoordinates().get(dimension);
             String choiceValue = choiceItem.getCoordinates().get(dimension);
 
+            if (allowTooManySigFigs) {
+                // Check if the submission has more significant figures than the allowed maximum
+                if (ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
+                    // Check if the submission would match the choice if we ignore the excess significant figures
+                    return ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigsMax, log);
+                }
+            }
+
             int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue, sigFigsMin, sigFigsMax, log);
             if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigs, log)
-                    || null != sigFigsMin && ValidationUtils.tooFewSignificantFigures(submittedValue, sigFigsMin, log)
-                        || null != sigFigsMax && ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
+                    || ValidationUtils.tooFewSignificantFigures(submittedValue, sigFigsMin, log)
+                        || ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
                 return false;
             }
         }
