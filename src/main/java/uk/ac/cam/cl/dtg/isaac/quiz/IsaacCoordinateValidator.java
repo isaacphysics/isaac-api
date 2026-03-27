@@ -238,6 +238,13 @@ public class IsaacCoordinateValidator implements IValidator {
             feedback = coordinateQuestion.getDefaultFeedback();
         }
 
+        // If there was no default feedback, check for too few significant figures
+        if (feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
+                .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
+            feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
+            feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
+        }
+
         return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());
     }
 
