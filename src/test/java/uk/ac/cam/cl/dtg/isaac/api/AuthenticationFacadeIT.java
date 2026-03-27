@@ -10,6 +10,7 @@ import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeyPair;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.KeySetServlet;
 import uk.ac.cam.cl.dtg.segue.auth.microsoft.Token;
 
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import java.util.Comparator;
 import java.util.List;
@@ -22,11 +23,26 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.CHARLIE_STUDENT_EMAIL;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.CHARLIE_STUDENT_PASSWORD;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_PROVIDER_USER_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_STUDENT_ID;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
+
+    @Test
+    public void loginCookie_isSameSiteStrict() throws Exception {
+        TestClient client = subject().client();
+        TestResponse response = client.post("/auth/segue/authenticate", Map.of(
+                "_randomPadding", "",
+                "email", CHARLIE_STUDENT_EMAIL,
+                "password", CHARLIE_STUDENT_PASSWORD,
+                "rememberMe", false
+        ));
+        NewCookie authCookie = response.response.getCookies().get("SEGUE_AUTH_COOKIE");
+        assertEquals(NewCookie.SameSite.STRICT, authCookie.getSameSite());
+    }
+
     @Nested
     class MicrosoftAuthenticationCallback {
         @Nested
