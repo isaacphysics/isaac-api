@@ -169,8 +169,9 @@ public class IsaacCoordinateValidator implements IValidator {
                         feedback = (Content) coordinateChoice.getExplanation();
                         break;
                     } else if (allItemsMatchWithoutSigFigs) {
+                        // Too many sig figs, or too few sig figs but the choice has trailing zeros; otherwise correct
                         feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-                        feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs")));
+                        feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
                         break;
                     }
 
