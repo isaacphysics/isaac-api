@@ -283,8 +283,7 @@ public class IsaacCoordinateValidator implements IValidator {
     }
 
     private boolean coordinateItemsMatch(final CoordinateItem submittedItem, final CoordinateItem choiceItem,
-                                         final int sigFigsMin, final int sigFigsMax,
-                                         final boolean allowTooManySigFigs) {
+                                         final int sigFigsMin, final int sigFigsMax, final boolean allowTooManySigFigs) {
 
         if (submittedItem.getCoordinates().size() != choiceItem.getCoordinates().size()) {
             return false;
