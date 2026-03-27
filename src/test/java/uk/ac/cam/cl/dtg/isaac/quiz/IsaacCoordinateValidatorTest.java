@@ -38,13 +38,15 @@ public class IsaacCoordinateValidatorTest {
 
     private IsaacCoordinateValidator validator;
     private IsaacCoordinateQuestion someCoordinateQuestion;
-    private IsaacCoordinateQuestion someUnorderedCoordinateQuestion;
 
-    private final CoordinateItem item1 = new CoordinateItem(List.of("1", "2"));
-    private final CoordinateItem item2 = new CoordinateItem(List.of("2", "1"));
-    private final CoordinateItem item3 = new CoordinateItem(List.of("1", "3"));
-    private final CoordinateItem item4 = new CoordinateItem(List.of("3", "1"));
-    private final CoordinateItem item2Again = new CoordinateItem(List.of("2", "1"));  // Ensure no == comparisons.
+    private final CoordinateItem item1 = new CoordinateItem(List.of("1.0", "2.0"));
+    private final CoordinateItem item2 = new CoordinateItem(List.of("2.0", "1.0"));
+    private final CoordinateItem item3 = new CoordinateItem(List.of("1.0", "3.0"));
+    private final CoordinateItem item4 = new CoordinateItem(List.of("3.0", "1.0"));
+    private final CoordinateItem item2Again = new CoordinateItem(List.of("2.0", "1.0"));  // Ensure no == comparisons.
+
+    private final CoordinateItem item1ExtraSigFig = new CoordinateItem(List.of("1.00", "2.00"));
+    private final CoordinateItem item1TooFewSigFigs = new CoordinateItem(List.of("1", "2"));
 
     private final Content someIncorrectExplanation = new Content("Some incorrect explanation.");
 
@@ -58,12 +60,9 @@ public class IsaacCoordinateValidatorTest {
         // Set up the question objects:
         someCoordinateQuestion = new IsaacCoordinateQuestion();
         someCoordinateQuestion.setNumberOfDimensions(2);
-        someCoordinateQuestion.setSignificantFiguresMin(1);
-        someCoordinateQuestion.setSignificantFiguresMax(1);
+        someCoordinateQuestion.setSignificantFiguresMin(2);
+        someCoordinateQuestion.setSignificantFiguresMax(2);
         someCoordinateQuestion.setOrdered(true);
-
-        someUnorderedCoordinateQuestion = new IsaacCoordinateQuestion();
-        someUnorderedCoordinateQuestion.setNumberOfDimensions(2);
 
         List<Choice> answerList = Lists.newArrayList();
         ItemChoice someIncorrectChoice = new CoordinateChoice();
@@ -77,11 +76,10 @@ public class IsaacCoordinateValidatorTest {
         someIncorrectChoice.setExplanation(someIncorrectExplanation);
         someIncorrectChoice.setAllowSubsetMatch(true);
 
-        // Add both choices to questions, incorrect first:
+        // Add both choices to question, incorrect first:
         answerList.add(someIncorrectChoice);
         answerList.add(someCorrectChoice);
         someCoordinateQuestion.setChoices(answerList);
-        someUnorderedCoordinateQuestion.setChoices(answerList);
     }
 
     @Test
@@ -171,11 +169,78 @@ public class IsaacCoordinateValidatorTest {
     }
 
     @Test
+    public final void isaacCoordinateValidator_TestTooManySignificantFigures() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1ExtraSigFig, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestTooFewSignificantFigures() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1TooFewSigFigs, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_few"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestDefaultSigFigsMax() {
+        // If max sig figs is not set, it should default to 2
+        someCoordinateQuestion.setSignificantFiguresMax(null);
+
+        // 3 sig figs should be too many
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1ExtraSigFig, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+
+        // 2 sig figs should be correct
+        c.setItems(List.of(item1, item2));
+        response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+        assertTrue(response.isCorrect());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestDefaultSigFigsMin() {
+        // If min sig figs is not set, it should default to 2
+        someCoordinateQuestion.setSignificantFiguresMin(null);
+
+        // 1 sig fig should be too few
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1TooFewSigFigs, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_few"));
+
+        // 2 sig figs should be correct
+        c.setItems(List.of(item1, item2));
+        response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+        assertTrue(response.isCorrect());
+    }
+
+    @Test
     public final void isaacCoordinateValidator_TestSubsetOfCorrectChoice() {
+        someCoordinateQuestion.setOrdered(false);
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1));
 
-        QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("but can you find more?"));
@@ -183,23 +248,55 @@ public class IsaacCoordinateValidatorTest {
 
     @Test
     public final void isaacCoordinateValidator_TestSupersetOfSubsetMatchChoice() {
+        someCoordinateQuestion.setOrdered(false);
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item3, item4));
-        QuestionValidationResponse response = validator.validateQuestionResponse(someUnorderedCoordinateQuestion, c);
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
         assertFalse(response.isCorrect());
         assertEquals(someIncorrectExplanation, response.getExplanation());
     }
 
     @Test
-    public final void isaacCoordinateValidator_TestIncorrectSignificantFigures() {
-        CoordinateItem ci = new CoordinateItem(List.of("1.00", "2.00"));
+    public final void isaacCoordinateValidator_TestSubsetOfCorrectChoiceTooManySigFigs() {
+        someCoordinateQuestion.setOrdered(false);
         CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(ci, item2));
+        c.setItems(List.of(item1ExtraSigFig));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestSupersetOfSubsetMatchChoiceTooManySigFigs() {
+        someCoordinateQuestion.setOrdered(false);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1ExtraSigFig, item3, item4));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestDefaultFeedback() {
+        // If default feedback is set, prefer it over "too few sig figs"
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1TooFewSigFigs, item2));
+
+        Content defaultExplanation = new Content("Default feedback.");
+        someCoordinateQuestion.setDefaultFeedback(defaultExplanation);
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals(defaultExplanation, response.getExplanation());
     }
 
     // Test the internals of the item-ordering:
