@@ -63,20 +63,17 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacSymbolicQuestion)) {
+        if (!(question instanceof IsaacSymbolicQuestion symbolicQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Symbolic Questions... (%s is not symbolic)",
                     question.getId()));
         }
         
-        if (!(answer instanceof Formula)) {
+        if (!(answer instanceof Formula submittedFormula)) {
             throw new IllegalArgumentException(String.format(
                     "Expected Formula for IsaacSymbolicQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
-
-        IsaacSymbolicQuestion symbolicQuestion = (IsaacSymbolicQuestion) question;
-        Formula submittedFormula = (Formula) answer;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
@@ -110,12 +107,10 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
             for (Choice c : symbolicQuestion.getChoices()) {
 
                 // ... that are of the Formula type, ...
-                if (!(c instanceof Formula)) {
+                if (!(c instanceof Formula formulaChoice)) {
                     log.error("Validator for questionId: {} expected there to be a Formula. Instead it found a Choice.", symbolicQuestion.getId());
                     continue;
                 }
-
-                Formula formulaChoice = (Formula) c;
 
                 // ... and that have a python expression ...
                 if (null == formulaChoice.getPythonExpression() || formulaChoice.getPythonExpression().isEmpty()) {
@@ -149,12 +144,10 @@ public class IsaacSymbolicValidator extends AbstractExternalValidator implements
             for (Choice c : orderedChoices) {
 
                 // ... that are of the Formula type, ...
-                if (!(c instanceof Formula)) {
+                if (!(c instanceof Formula formulaChoice)) {
                     // Don't need to log this - it will have been logged above.
                     continue;
                 }
-
-                Formula formulaChoice = (Formula) c;
 
                 // ... and that have a python expression ...
                 if (null == formulaChoice.getPythonExpression() || formulaChoice.getPythonExpression().isEmpty()) {

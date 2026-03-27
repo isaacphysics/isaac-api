@@ -187,8 +187,7 @@ public class UserAuthenticationManager {
         // if we are an OAuthProvider redirect to the provider
         // authorisation URL.
         URI redirectLink;
-        if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-            IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
+        if (federatedAuthenticator instanceof IOAuth2Authenticator oauth2Provider) {
             String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
 
             // Store antiForgeryToken in the users session.
@@ -200,8 +199,7 @@ public class UserAuthenticationManager {
             } else {
                 redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
             }
-        } else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
-            IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
+        } else if (federatedAuthenticator instanceof IOAuth1Authenticator oauth1Provider) {
             OAuth1Token token = oauth1Provider.getRequestToken();
 
             // Store token and secret in the users session.
@@ -317,9 +315,8 @@ public class UserAuthenticationManager {
         Objects.requireNonNull(plainTextPassword);
         IAuthenticator authenticator = mapToProvider(provider);
         
-        if (authenticator instanceof IPasswordAuthenticator) {
-            IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
-            
+        if (authenticator instanceof IPasswordAuthenticator passwordAuthenticator) {
+
             return passwordAuthenticator.authenticate(email, plainTextPassword);
         } else {
             throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
@@ -840,7 +837,7 @@ public class UserAuthenticationManager {
 
         String providersString;
         if (providerNames.size() == 1) {
-            providersString = providerNames.get(0);
+            providersString = providerNames.getFirst();
         } else {
             StringBuilder providersBuilder = new StringBuilder();
             for (int i = 0; i < providerNames.size(); i++) {
@@ -1128,7 +1125,7 @@ public class UserAuthenticationManager {
         sb.append("|").append(sessionToken);
 
         if (null != caveatFlags) {
-            List<String> sortedCaveatFlags = caveatFlags.stream().sorted().collect(Collectors.toList());
+            List<String> sortedCaveatFlags = caveatFlags.stream().sorted().toList();
             for (String c : sortedCaveatFlags) {
                 sb.append("|").append(c);
             }

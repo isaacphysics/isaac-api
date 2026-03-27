@@ -244,7 +244,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         Response teacher_Response = eventsFacade.getEventBookingForGivenGroup(teacher_Request, "_regular_test_event", "1");
         assertEquals(Response.Status.OK.getStatusCode(), teacher_Response.getStatus());
         List<?> teacherEntity = (List<?>) teacher_Response.getEntity();
-        List<Long> bookedUserIds = teacherEntity.stream().map(booking -> ((EventBookingDTO)booking).getUserBooked().getId()).collect(Collectors.toList());
+        List<Long> bookedUserIds = teacherEntity.stream().map(booking -> ((EventBookingDTO)booking).getUserBooked().getId()).toList();
         assertTrue(bookedUserIds.containsAll(Arrays.asList(7L, 8L)));
         assertFalse(bookedUserIds.contains(9L)); // User 9 is booked but is not in Teacher's group.
 
@@ -301,7 +301,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // event leader can see student details
-        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).get(0);
+        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).getFirst();
         assertEquals(BookingStatus.WAITING_LIST, booking.getBookingStatus());
         assertEquals("Student", booking.getUserBooked().getFamilyName());
         assertEquals("Test Student", booking.getUserBooked().getGivenName());
@@ -339,7 +339,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // event leader can see student details
-        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).get(0);
+        DetailedEventBookingDTO booking = ((ArrayList<DetailedEventBookingDTO>) getBookingsResponse.getEntity()).getFirst();
         assertEquals(BookingStatus.WAITING_LIST, booking.getBookingStatus());
         assertEquals("Student", booking.getUserBooked().getFamilyName());
         assertEquals("Test Student", booking.getUserBooked().getGivenName());

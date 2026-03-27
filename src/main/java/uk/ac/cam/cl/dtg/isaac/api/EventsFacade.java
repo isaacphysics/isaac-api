@@ -435,7 +435,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             List<Long> groupMemberIds = groupManager.getUsersInGroup(group)
                     .stream().map(RegisteredUserDTO::getId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Filter eventBookings based on whether the booked user is a member of the given group
             List<DetailedEventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)

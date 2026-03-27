@@ -45,7 +45,7 @@ public class AssignmentService {
         Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
 
         // Iterating over the owner IDs allows us to cache "no user found" errors without querying database each time:
-        List<Long> ownerUserIds = assignments.stream().map(IAssignmentLike::getOwnerUserId).distinct().collect(Collectors.toList());
+        List<Long> ownerUserIds = assignments.stream().map(IAssignmentLike::getOwnerUserId).distinct().toList();
         for (Long ownerUserId: ownerUserIds) {
             try {
                 RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);

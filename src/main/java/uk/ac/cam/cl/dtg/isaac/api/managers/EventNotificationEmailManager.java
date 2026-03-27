@@ -75,7 +75,7 @@ public class EventNotificationEmailManager {
                             .filter(DetailedEventBookingDTO -> bookingStatuses == null || bookingStatuses.contains(DetailedEventBookingDTO.getBookingStatus()))
                             .map(DetailedEventBookingDTO::getUserBooked)
                             .map(UserSummaryDTO::getId)
-                            .distinct().collect(Collectors.toList());
+                            .distinct().toList();
         for (Long id : ids) {
             try {
                 RegisteredUserDTO user = userAccountManager.getUserDTOById(id);
@@ -157,8 +157,7 @@ public class EventNotificationEmailManager {
                     ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
                     filterInstructions);
             for (ContentDTO contentResult : findByFieldNames.getResults()) {
-                if (contentResult instanceof IsaacEventPageDTO) {
-                    IsaacEventPageDTO event = (IsaacEventPageDTO) contentResult;
+                if (contentResult instanceof IsaacEventPageDTO event) {
                     // Skip sending emails for cancelled events
                     if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
                         continue;

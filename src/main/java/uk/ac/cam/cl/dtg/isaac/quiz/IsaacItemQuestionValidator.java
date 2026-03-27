@@ -108,14 +108,12 @@ public class IsaacItemQuestionValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are ItemChoices, ...
-                if (!(c instanceof ItemChoice)) {
+                if (!(c instanceof ItemChoice itemChoice)) {
                     log.error(String.format(
                             "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
                             itemQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
-
-                ItemChoice itemChoice = (ItemChoice) c;
 
                 // ... and that have items ...
                 if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {

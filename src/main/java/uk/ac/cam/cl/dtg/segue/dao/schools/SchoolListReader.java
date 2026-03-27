@@ -149,7 +149,7 @@ public class SchoolListReader {
                     + schoolURN + " results: " + matchingSchoolList);
         }
 
-        return mapper.readValue(matchingSchoolList.get(0), School.class);
+        return mapper.readValue(matchingSchoolList.getFirst(), School.class);
     }
 
 

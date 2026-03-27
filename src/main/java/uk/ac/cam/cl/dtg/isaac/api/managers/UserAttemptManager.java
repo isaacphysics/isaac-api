@@ -50,8 +50,7 @@ public class UserAttemptManager {
         List<ContentBaseDTO> children = content.getChildren();
         if (children != null) {
             for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
+                if (child instanceof ContentDTO childContent) {
                     augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
                 }
             }
@@ -138,9 +137,8 @@ public class UserAttemptManager {
 
         Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttempts;
 
-        if (user instanceof RegisteredUserDTO) {
+        if (user instanceof RegisteredUserDTO registeredUser) {
             // Load only relevant attempts:
-            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
             List<String> questionPageIds = summarizedResults.stream().map(ContentSummaryDTO::getId).collect(Collectors.toList());
             questionAttempts = questionManager.getMatchingLightweightQuestionAttempts(Collections.singletonList(registeredUser), questionPageIds)
                     .getOrDefault(registeredUser.getId(), Collections.emptyMap());

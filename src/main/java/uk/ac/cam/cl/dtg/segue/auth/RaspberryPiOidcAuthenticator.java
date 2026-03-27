@@ -297,7 +297,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             familyName = nickname;
         } else {
             // Otherwise, use the last token of the full name as the family name.
-            familyName = tokenisedFullName.get(tokenisedFullName.size() - 1);
+            familyName = tokenisedFullName.getLast();
         }
 
         // Finally, check that the name meets validation.

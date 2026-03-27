@@ -88,12 +88,11 @@ public class IsaacRegexMatchValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the RegexPattern type, ...
-                if (!(c instanceof RegexPattern)) {
+                if (!(c instanceof RegexPattern regexPattern)) {
                     log.error("Isaac RegexMatch Validator for questionId: " + regexMatchQuestion.getId()
                             + " expected there to be a RegexPattern. Instead it found a Choice.");
                     continue;
                 }
-                RegexPattern regexPattern = (RegexPattern) c;
 
                 if (null == regexPattern.getValue() || regexPattern.getValue().isEmpty()) {
                     log.error("Expected a regex pattern to match on, but none found in choice for question id: "

@@ -347,7 +347,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check exam board was updated
-        assertEquals(ExamBoard.aqa, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getExamBoard());
+        assertEquals(ExamBoard.aqa, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().getFirst().getExamBoard());
 
         // check nothing else was modified unexpectedly
         assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
@@ -355,7 +355,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(targetUser.getFamilyName(), ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
         assertEquals(targetUser.getGender(), ((RegisteredUserDTO) createResponse.getEntity()).getGender());
         assertEquals(targetUser.getGivenName(), ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
-        assertEquals(Stage.all, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getStage());
+        assertEquals(Stage.all, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().getFirst().getStage());
         assertEquals(targetUser.getRole(), ((RegisteredUserDTO) createResponse.getEntity()).getRole());
         assertEquals(targetUser.getSchoolId(), ((RegisteredUserDTO) createResponse.getEntity()).getSchoolId());
     }

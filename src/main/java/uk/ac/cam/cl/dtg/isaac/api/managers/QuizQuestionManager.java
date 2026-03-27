@@ -97,10 +97,10 @@ public class QuizQuestionManager {
 
     public QuestionValidationResponseDTO validateAnswer(Question question, ChoiceDTO answerFromClientDTO) throws ErrorResponseWrapper {
         Response response = questionManager.validateAnswer(question, answerFromClientDTO);
-        if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-            return (QuestionValidationResponseDTO) response.getEntity();
-        } else if (response.getEntity() instanceof SegueErrorResponse) {
-            throw new ErrorResponseWrapper((SegueErrorResponse) response.getEntity());
+        if (response.getEntity() instanceof QuestionValidationResponseDTO validationResponse) {
+            return validationResponse;
+        } else if (response.getEntity() instanceof SegueErrorResponse errorResponse) {
+            throw new ErrorResponseWrapper(errorResponse);
         } else {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, response.getEntity().toString()));
         }
@@ -271,7 +271,7 @@ public class QuizQuestionManager {
 
             if (questionAttempts != null && questionAttempts.size() > 0) {
                 // The latest answer is the only answer we consider.
-                lastResponse = questionAttempts.get(questionAttempts.size() - 1);
+                lastResponse = questionAttempts.getLast();
             }
 
             results.put(question, lastResponse);

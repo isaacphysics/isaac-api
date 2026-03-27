@@ -221,7 +221,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         if (assignments.size() == 0) {
             return null;
         } else if (assignments.size() == 1) {
-            return assignments.get(0);
+            return assignments.getFirst();
         }
 
         throw new SegueDatabaseException(String.format(

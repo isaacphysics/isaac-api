@@ -216,7 +216,7 @@ public class AuthorisationFacadeIT extends IsaacIntegrationTest {
         groupManagerIDs.add(group.getOwnerSummary().getId());
         groupManagerIDs.addAll(group.getAdditionalManagers().stream()
                 .map(UserSummaryDTO::getId)
-                .collect(Collectors.toList()));
+                .toList());
 
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, TEST_STUDENT_EMAIL, TEST_STUDENT_PASSWORD);

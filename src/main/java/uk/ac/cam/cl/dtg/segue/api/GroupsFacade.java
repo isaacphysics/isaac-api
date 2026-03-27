@@ -838,8 +838,8 @@ public class GroupsFacade extends AbstractSegueFacade {
             if (assignments.size() == 0) {
                 return Response.ok(new ArrayList<>()).build();
             }
-            List<AssignmentDTO> withDueDate = assignments.stream().filter(a -> a.getDueDate() != null).sorted(Comparator.comparing(AssignmentDTO::getDueDate)).collect(Collectors.toList());
-            List<AssignmentDTO> withoutDueDate = assignments.stream().filter(a -> a.getDueDate() == null).sorted(Comparator.comparing(AssignmentDTO::getCreationDate)).collect(Collectors.toList());
+            List<AssignmentDTO> withDueDate = assignments.stream().filter(a -> a.getDueDate() != null).sorted(Comparator.comparing(AssignmentDTO::getDueDate)).toList();
+            List<AssignmentDTO> withoutDueDate = assignments.stream().filter(a -> a.getDueDate() == null).sorted(Comparator.comparing(AssignmentDTO::getCreationDate)).toList();
             List<AssignmentDTO> sortedAssignments = Stream.concat(withDueDate.stream(), withoutDueDate.stream()).collect(Collectors.toList());
 
             List<RegisteredUserDTO> groupMembers = groupManager.getUsersInGroup(group).stream()

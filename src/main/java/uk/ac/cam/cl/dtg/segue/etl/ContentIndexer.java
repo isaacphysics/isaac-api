@@ -413,21 +413,18 @@ public class ContentIndexer {
 
         if (!content.getChildren().isEmpty()) {
             for (ContentBase cb : content.getChildren()) {
-                if (cb instanceof Content) {
-                    Content c = (Content) cb;
+                if (cb instanceof Content c) {
                     this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
         }
 
-        if (content instanceof Choice) {
-            Choice choice = (Choice) content;
+        if (content instanceof Choice choice) {
             this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile, newParentId, parentPublished);
         }
 
         // hack to get cards to count as children:
-        if (content instanceof IsaacCardDeck) {
-            IsaacCardDeck cardDeck = (IsaacCardDeck) content;
+        if (content instanceof IsaacCardDeck cardDeck) {
             if (cardDeck.getCards() != null) {
                 for (IsaacCard card : cardDeck.getCards()) {
                     this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
@@ -435,8 +432,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof InlineRegion) {
-            InlineRegion inlineRegion = (InlineRegion) content;
+        if (content instanceof InlineRegion inlineRegion) {
             if (inlineRegion.getInlineQuestions() != null) {
                 for (IsaacQuestionBase question : inlineRegion.getInlineQuestions()) {
                     this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
@@ -450,8 +446,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof Question) {
-            Question question = (Question) content;
+        if (content instanceof Question question) {
 
             if (question.getHints() != null) {
                 for (ContentBase cb : question.getHints()) {
@@ -470,8 +465,7 @@ public class ContentIndexer {
                 this.augmentChildContent(defaultFeedback, canonicalSourceFile, newParentId, parentPublished);
             }
 
-            if (content instanceof ChoiceQuestion) {
-                ChoiceQuestion choiceQuestion = (ChoiceQuestion) content;
+            if (content instanceof ChoiceQuestion choiceQuestion) {
                 if (choiceQuestion.getChoices() != null) {
                     for (Content c : choiceQuestion.getChoices()) {
                         this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
@@ -496,8 +490,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof Media) {
-            Media media = (Media) content;
+        if (content instanceof Media media) {
             media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
 
             // for tracking purposes we want to generate an id for all image content objects.
@@ -532,8 +525,7 @@ public class ContentIndexer {
             // Repeat the process for each child
             if (!content.getChildren().isEmpty()) {
                 for (ContentBase childContentBase : content.getChildren()) {
-                    if (childContentBase instanceof Content) {
-                        Content child = (Content) childContentBase;
+                    if (childContentBase instanceof Content child) {
                         this.collateSearchableContent(child, prioritisedContentCollector, contentCollector);
                     }
                 }
@@ -649,8 +641,7 @@ public class ContentIndexer {
         HashMap<String, String> newUnits = Maps.newHashMap();
 
         for (Choice c : q.getChoices()) {
-            if (c instanceof Quantity) {
-                Quantity quantity = (Quantity) c;
+            if (c instanceof Quantity quantity) {
 
                 if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
                     String units = quantity.getUnits();
@@ -969,8 +960,7 @@ public class ContentIndexer {
                     + " table, use class='expandable' in the table tag instead.", indexProblemCache);
         }
 
-        if (content instanceof Media) {
-            Media f = (Media) content;
+        if (content instanceof Media f) {
 
             if (f.getSrc() != null && !f.getSrc().startsWith("http") && !f.getSrc().startsWith("/assets/")) {
                 ByteArrayOutputStream fileData = null;
@@ -1016,9 +1006,8 @@ public class ContentIndexer {
                     + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
         }
 
-        if (content instanceof ChoiceQuestion
+        if (content instanceof ChoiceQuestion question
                 && !(content.getType().equals("isaacQuestion"))) {
-            ChoiceQuestion question = (ChoiceQuestion) content;
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
@@ -1039,16 +1028,14 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof EmailTemplate) {
-            EmailTemplate e = (EmailTemplate) content;
+        if (content instanceof EmailTemplate e) {
             if (e.getPlainTextContent() == null) {
                 this.registerContentProblem(content,
                         "Email template should always have plain text content field", indexProblemCache);
             }
         }
 
-        if (content instanceof IsaacEventPage) {
-            IsaacEventPage e = (IsaacEventPage) content;
+        if (content instanceof IsaacEventPage e) {
             if (e.getEndDate() == null) {
                 this.registerContentProblem(content, "Event has no end date", indexProblemCache);
             } else if (e.getEndDate().before(e.getDate())) {
@@ -1056,12 +1043,10 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacNumericQuestion) {
-            IsaacNumericQuestion q = (IsaacNumericQuestion) content;
+        if (content instanceof IsaacNumericQuestion q) {
             // Find quantities with values that cannot be parsed as numbers.
             for (Choice choice : q.getChoices()) {
-                if (choice instanceof Quantity) {
-                    Quantity quantity = (Quantity) choice;
+                if (choice instanceof Quantity quantity) {
 
                     // Check valid number by parsing in the same way ValidationUtils does:
                     try {
@@ -1121,8 +1106,7 @@ public class ContentIndexer {
                     }
                 }
                 for (Choice choice : q.getChoices()) {
-                    if (choice instanceof Formula) {
-                        Formula f = (Formula) choice;
+                    if (choice instanceof Formula f) {
                         if (f.getPythonExpression().contains("\\")) {
                             this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
                                     + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
@@ -1138,8 +1122,7 @@ public class ContentIndexer {
             } else if (content.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
                 IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) content;
                 for (Choice choice : q.getChoices()) {
-                    if (choice instanceof ChemicalFormula) {
-                        ChemicalFormula f = (ChemicalFormula) choice;
+                    if (choice instanceof ChemicalFormula f) {
                         if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
                             this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
                                     + " with empty mhchemExpression!", indexProblemCache);
@@ -1152,12 +1135,10 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacClozeQuestion) {
-            IsaacClozeQuestion q = (IsaacClozeQuestion) content;
+        if (content instanceof IsaacClozeQuestion q) {
             Integer numberItems = null;
             for (Choice choice : q.getChoices()) {
-                if (choice instanceof ItemChoice) {
-                    ItemChoice c = (ItemChoice) choice;
+                if (choice instanceof ItemChoice c) {
                     if (null == c.getItems() || c.getItems().isEmpty()) {
                         this.registerContentProblem(content, "Cloze Question: " + q.getId() + " has choice with missing items!", indexProblemCache);
                         continue;
@@ -1173,8 +1154,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacDndQuestion) {
-            IsaacDndQuestion q = (IsaacDndQuestion) content;
+        if (content instanceof IsaacDndQuestion q) {
             IsaacDndValidator.DndProblem res = IsaacDndValidator.getProblemsWithQuestion(q);
             if (res == null) {
                 List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
@@ -1200,8 +1180,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacCoordinateQuestion) {
-            IsaacCoordinateQuestion q = (IsaacCoordinateQuestion) content;
+        if (content instanceof IsaacCoordinateQuestion q) {
 
             if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
                 // Both bounds need to be present, or both not present
@@ -1220,11 +1199,9 @@ public class ContentIndexer {
             }
 
             for (Choice choice : q.getChoices()) {
-                if (choice instanceof CoordinateChoice) {
-                    CoordinateChoice coordChoice = (CoordinateChoice) choice;
+                if (choice instanceof CoordinateChoice coordChoice) {
                     for (Item item : coordChoice.getItems()) {
-                        if (item instanceof CoordinateItem) {
-                            CoordinateItem coordItem = (CoordinateItem) item;
+                        if (item instanceof CoordinateItem coordItem) {
                             for (String coord : coordItem.getCoordinates()) {
                                 // Check valid number by parsing in the same way ValidationUtils does:
                                 try {

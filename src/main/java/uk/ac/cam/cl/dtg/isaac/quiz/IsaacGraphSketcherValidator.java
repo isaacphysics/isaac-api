@@ -43,7 +43,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacGraphSketcherQuestion)) {
+        if (!(question instanceof IsaacGraphSketcherQuestion graphSketcherQuestion)) {
             throw new IllegalArgumentException(String.format(
                 "This validator only works with Isaac Graph Sketcher Questions... (%s is not string match)",
                 question.getId()));
@@ -54,8 +54,6 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
                 "Expected GraphChoice for IsaacGraphSketcherQuestion: %s. Received (%s) ", question.getId(),
                 answer.getClass()));
         }
-
-        IsaacGraphSketcherQuestion graphSketcherQuestion = (IsaacGraphSketcherQuestion) question;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
@@ -96,12 +94,11 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the GraphChoice type, ...
-                if (!(c instanceof GraphChoice)) {
+                if (!(c instanceof GraphChoice graphChoice)) {
                     log.error("Isaac GraphSketcher Validator for questionId: " + graphSketcherQuestion.getId()
                         + " expected there to be a GraphChoice . Instead it found a Choice.");
                     continue;
                 }
-                GraphChoice graphChoice = (GraphChoice) c;
 
                 if (null == graphChoice.getGraphSpec() || graphChoice.getGraphSpec().isEmpty()) {
                     log.error("Expected a spec to match, but none found in choice for question id: "
@@ -146,7 +143,6 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
             log.error("Isaac GraphSketcher specifier expected there to be a GraphChoice . Instead it found a Choice.");
             throw new ValidatorUnavailableException("Incorrect choice type");
         }
-        GraphChoice graphChoice = (GraphChoice) answer;
 
         GraphAnswer graphAnswer = null;
 

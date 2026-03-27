@@ -76,7 +76,7 @@ public class FastTrackManger {
 
         String upperConceptTitle = "";
         if (resultsList.getTotalResults() == 1) {
-            upperConceptTitle = resultsList.getResults().get(0).getTitle();
+            upperConceptTitle = resultsList.getResults().getFirst().getTitle();
         }
         return upperConceptTitle;
     }
