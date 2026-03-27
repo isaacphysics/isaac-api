@@ -40,10 +40,11 @@ public class LLMFreeTextMarkSchemeEntry {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof LLMFreeTextMarkSchemeEntry other)) {
+        if (!(obj instanceof LLMFreeTextMarkSchemeEntry)) {
             return false;
         }
 
+        LLMFreeTextMarkSchemeEntry other = (LLMFreeTextMarkSchemeEntry) obj;
         boolean result = true;
         if (this.jsonField != null) {
             result = result && this.jsonField.equals(other.getJsonField());

@@ -49,12 +49,12 @@ public class IsaacClozeValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacClozeQuestion clozeQuestion)) {
+        if (!(question instanceof IsaacClozeQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacClozeQuestions (%s is not ClozeQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ItemChoice submittedChoice)) {
+        if (!(answer instanceof ItemChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ItemChoice for IsaacClozeQuestions: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -64,6 +64,8 @@ public class IsaacClozeValidator implements IValidator {
         boolean responseCorrect = false;                // Whether we're right or wrong
         List<Boolean> itemsCorrect = null;              // Individual item feedback.
 
+        IsaacClozeQuestion clozeQuestion = (IsaacClozeQuestion) question;
+        ItemChoice submittedChoice = (ItemChoice) answer;
         boolean detailedItemFeedback = clozeQuestion.getDetailedItemFeedback() != null && clozeQuestion.getDetailedItemFeedback();
 
 

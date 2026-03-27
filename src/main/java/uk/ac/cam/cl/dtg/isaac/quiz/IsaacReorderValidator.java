@@ -47,12 +47,12 @@ public class IsaacReorderValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacReorderQuestion reorderQuestion)) {
+        if (!(question instanceof IsaacReorderQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacReorderQuestions (%s is not ReorderQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ItemChoice submittedChoice)) {
+        if (!(answer instanceof ItemChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ItemChoice for IsaacReorderQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -60,6 +60,9 @@ public class IsaacReorderValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
+
+        IsaacReorderQuestion reorderQuestion = (IsaacReorderQuestion) question;
+        ItemChoice submittedChoice = (ItemChoice) answer;
 
         List<String> submittedItemIds = Collections.emptyList();
 

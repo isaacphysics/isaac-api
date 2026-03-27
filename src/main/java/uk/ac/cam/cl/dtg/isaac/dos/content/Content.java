@@ -235,9 +235,10 @@ public class Content extends ContentBase {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Content c))
+        if (!(o instanceof Content))
             return false;
 
+        Content c = (Content) o;
         boolean result = true;
 
         if (this.id != null) {

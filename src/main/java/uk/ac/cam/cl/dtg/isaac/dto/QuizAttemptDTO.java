@@ -81,9 +81,10 @@ public class QuizAttemptDTO implements IHasQuizSummary {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof QuizAttemptDTO other)) {
+        if (!(obj instanceof QuizAttemptDTO)) {
             return false;
         }
+        QuizAttemptDTO other = (QuizAttemptDTO) obj;
         if (id == null) {
             return other.id == null;
         } else {

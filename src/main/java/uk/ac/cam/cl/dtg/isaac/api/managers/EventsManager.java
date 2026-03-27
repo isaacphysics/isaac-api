@@ -152,9 +152,10 @@ public class EventsManager {
         List<Map<String, Object>> resultList = Lists.newArrayList();
 
         for (ContentDTO c : findByFieldNames.getResults()) {
-            if (!(c instanceof IsaacEventPageDTO event)) {
+            if (!(c instanceof IsaacEventPageDTO)) {
                 continue;
             }
+            IsaacEventPageDTO event = (IsaacEventPageDTO) c;
 
             if (null == currentUser || !bookingManager.isUserAbleToManageEvent(currentUser, event)) {
                 continue;
@@ -241,10 +242,11 @@ public class EventsManager {
         List<Map<String, Object>> resultList = Lists.newArrayList();
 
         for (ContentDTO c : findByFieldNames.getResults()) {
-            if (!(c instanceof IsaacEventPageDTO e)) {
+            if (!(c instanceof IsaacEventPageDTO)) {
                 continue;
             }
 
+            IsaacEventPageDTO e = (IsaacEventPageDTO) c;
             if (null == e.getLocation() || (null == e.getLocation().getLatitude() && null == e.getLocation().getLongitude())) {
                 // Ignore events without locations.
                 continue;

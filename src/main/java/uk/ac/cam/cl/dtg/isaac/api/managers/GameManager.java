@@ -869,10 +869,11 @@ public class GameManager {
     private static List<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
         List<QuestionDTO> results = Lists.newArrayList();
         for (ContentDTO possibleQuestion : contentToFilter) {
-            if (!(possibleQuestion instanceof QuestionDTO question) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
+            if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
                 // we are not interested if this is not a question or if it is a quick question.
                 continue;
             }
+            QuestionDTO question = (QuestionDTO) possibleQuestion;
             results.add(question);
         }
 

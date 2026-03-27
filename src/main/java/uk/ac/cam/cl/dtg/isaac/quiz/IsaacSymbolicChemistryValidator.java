@@ -79,18 +79,21 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacSymbolicChemistryQuestion chemistryQuestion)) {
+        if (!(question instanceof IsaacSymbolicChemistryQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Symbolic Chemistry Questions... "
                             + "(%s is not symbolic chemistry)",
                     question.getId()));
         }
         
-        if (!(answer instanceof ChemicalFormula submittedFormula)) {
+        if (!(answer instanceof ChemicalFormula)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ChemicalFormula for IsaacSymbolicQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
+
+        IsaacSymbolicChemistryQuestion chemistryQuestion = (IsaacSymbolicChemistryQuestion) question;
+        ChemicalFormula submittedFormula = (ChemicalFormula) answer;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user

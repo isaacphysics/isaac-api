@@ -684,11 +684,12 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacTopicSummaryPage topicSummaryDO
-                    && contentDTOById instanceof IsaacTopicSummaryPageDTO topicSummaryDTO)) {
+            if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate topic summary page with id: %s", summaryPageId));
             }
+            IsaacTopicSummaryPage topicSummaryDO = (IsaacTopicSummaryPage) contentDOById;
+            IsaacTopicSummaryPageDTO topicSummaryDTO = (IsaacTopicSummaryPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
@@ -978,11 +979,13 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(bookPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacBookDetailPage bookPageDO
-                    && contentDTOById instanceof IsaacBookDetailPageDTO bookPageDTO)) {
+            if (!(contentDOById instanceof IsaacBookDetailPage
+                    && contentDTOById instanceof IsaacBookDetailPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate book detail page with id: %s", bookPageId));
             }
+            IsaacBookDetailPage bookPageDO = (IsaacBookDetailPage) contentDOById;
+            IsaacBookDetailPageDTO bookPageDTO = (IsaacBookDetailPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 
@@ -1062,11 +1065,13 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(revisionPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacRevisionDetailPage revisionPage
-                    && contentDTOById instanceof IsaacRevisionDetailPageDTO revisionPageDTO)) {
+            if (!(contentDOById instanceof IsaacRevisionDetailPage
+                    && contentDTOById instanceof IsaacRevisionDetailPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate revision detail page with id: %s", revisionPageId));
             }
+            IsaacRevisionDetailPage revisionPage = (IsaacRevisionDetailPage) contentDOById;
+            IsaacRevisionDetailPageDTO revisionPageDTO = (IsaacRevisionDetailPageDTO) contentDTOById;
 
             AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 

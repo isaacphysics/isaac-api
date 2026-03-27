@@ -61,17 +61,20 @@ public class IsaacSymbolicLogicValidator extends AbstractExternalValidator imple
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacSymbolicLogicQuestion symbolicLogicQuestion)) {
+        if (!(question instanceof IsaacSymbolicLogicQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Symbolic Questions... (%s is not symbolic)",
                     question.getId()));
         }
         
-        if (!(answer instanceof LogicFormula submittedLogicFormula)) {
+        if (!(answer instanceof LogicFormula)) {
             throw new IllegalArgumentException(String.format(
                     "Expected LogicFormula for IsaacSymbolicLogicQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
+
+        IsaacSymbolicLogicQuestion symbolicLogicQuestion = (IsaacSymbolicLogicQuestion) question;
+        LogicFormula submittedLogicFormula = (LogicFormula) answer;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user

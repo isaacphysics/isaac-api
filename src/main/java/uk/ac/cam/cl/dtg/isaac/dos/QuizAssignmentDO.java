@@ -162,9 +162,10 @@ public class QuizAssignmentDO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof QuizAssignmentDO other)) {
+        if (!(obj instanceof QuizAssignmentDO)) {
             return false;
         }
+        QuizAssignmentDO other = (QuizAssignmentDO) obj;
         if (id == null) {
             return other.id == null;
         } else {

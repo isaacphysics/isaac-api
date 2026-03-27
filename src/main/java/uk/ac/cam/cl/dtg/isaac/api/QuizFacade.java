@@ -875,7 +875,10 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            if (!(contentBasedOnId instanceof Question question)) {
+            Question question;
+            if (contentBasedOnId instanceof Question) {
+                question = (Question) contentBasedOnId;
+            } else {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
                         "No question object found for given id: " + questionId);
                 log.warn(error.getErrorMessage());

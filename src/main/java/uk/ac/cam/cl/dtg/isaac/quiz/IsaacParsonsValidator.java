@@ -46,12 +46,12 @@ public class IsaacParsonsValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacParsonsQuestion parsonsQuestion)) {
+        if (!(question instanceof IsaacParsonsQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacParsonsQuestions (%s is not ParsonsQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ParsonsChoice submittedChoice)) {
+        if (!(answer instanceof ParsonsChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ParsonsChoice for IsaacParsonsQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -59,6 +59,9 @@ public class IsaacParsonsValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
+
+        IsaacParsonsQuestion parsonsQuestion = (IsaacParsonsQuestion) question;
+        ParsonsChoice submittedChoice = (ParsonsChoice) answer;
 
         // STEP 0: Is it even possible to answer this question?
 

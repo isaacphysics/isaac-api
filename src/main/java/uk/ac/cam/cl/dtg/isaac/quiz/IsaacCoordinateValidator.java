@@ -28,12 +28,12 @@ public class IsaacCoordinateValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacCoordinateQuestion coordinateQuestion)) {
+        if (!(question instanceof IsaacCoordinateQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacCoordinateQuestion (%s is not IsaacCoordinateQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof CoordinateChoice submittedChoice)) {
+        if (!(answer instanceof CoordinateChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected CoordinateChoice for IsaacCoordinateQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -41,6 +41,9 @@ public class IsaacCoordinateValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
+
+        IsaacCoordinateQuestion coordinateQuestion = (IsaacCoordinateQuestion) question;
+        CoordinateChoice submittedChoice = (CoordinateChoice) answer;
 
         // STEP 0: Is it even possible to answer this question?
 
@@ -100,10 +103,12 @@ public class IsaacCoordinateValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the CoordinateChoice type, ...
-                if (!(c instanceof CoordinateChoice coordinateChoice)) {
+                if (!(c instanceof CoordinateChoice)) {
                     log.error("Expected CoordinateChoice for question ({}). Instead found {}.", coordinateQuestion.getId(), c.getClass());
                     continue;
                 }
+
+                CoordinateChoice coordinateChoice = (CoordinateChoice) c;
 
                 // ... and that contain items ...
                 if (null == coordinateChoice.getItems() || coordinateChoice.getItems().isEmpty()) {

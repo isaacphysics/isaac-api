@@ -80,9 +80,10 @@ public class CoordinateItem extends Item {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CoordinateItem that)) {
+        if (!(o instanceof CoordinateItem)) {
             return false;
         }
+        CoordinateItem that = (CoordinateItem) o;
         // We only care about equality of the coordinates, and only for unit testing.
         return Objects.equals(coordinates, that.coordinates);
     }

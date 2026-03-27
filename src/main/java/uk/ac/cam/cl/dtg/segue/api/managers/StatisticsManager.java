@@ -212,11 +212,12 @@ public class StatisticsManager implements IStatisticsManager {
         // Loop through each Question attempted:
         for (Entry<String, Map<String, List<LightweightQuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
             ContentDTO contentDTO = questionMap.get(question.getKey());
-            if (!(contentDTO instanceof IsaacQuestionPageDTO questionPageDTO)) {
+            if (!(contentDTO instanceof IsaacQuestionPageDTO)) {
                 log.warn("Excluding unknown question ({}) from user progress statistics for user ({})!", question.getKey(), userOfInterest.getId());
                 // This content is missing, or it is not a question page; either way, exclude it.
                 continue;
             }
+            IsaacQuestionPageDTO questionPageDTO = (IsaacQuestionPageDTO) contentDTO;
 
             attemptedQuestions++;
             boolean questionIsCorrect = true;  // Are all Parts of the Question correct?

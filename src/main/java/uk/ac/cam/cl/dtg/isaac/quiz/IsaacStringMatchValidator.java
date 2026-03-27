@@ -44,17 +44,21 @@ public class IsaacStringMatchValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacStringMatchQuestion stringMatchQuestion)) {
+        if (!(question instanceof IsaacStringMatchQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac String Match Questions... (%s is not string match)",
                     question.getId()));
         }
 
-        if (!(answer instanceof StringChoice userAnswer)) {
+        if (!(answer instanceof StringChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected StringChoice for IsaacStringMatchQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
+
+        StringChoice userAnswer = (StringChoice) answer;
+
+        IsaacStringMatchQuestion stringMatchQuestion = (IsaacStringMatchQuestion) question;
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user

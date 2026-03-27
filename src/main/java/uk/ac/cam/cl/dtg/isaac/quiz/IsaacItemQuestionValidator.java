@@ -46,12 +46,12 @@ public class IsaacItemQuestionValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        if (!(question instanceof IsaacItemQuestion itemQuestion)) {
+        if (!(question instanceof IsaacItemQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with IsaacItemQuestions (%s is not ItemQuestion)", question.getId()));
         }
 
-        if (!(answer instanceof ItemChoice submittedChoice)) {
+        if (!(answer instanceof ItemChoice)) {
             throw new IllegalArgumentException(String.format(
                     "Expected ItemChoice for IsaacItemQuestion: %s. Received (%s) ", question.getId(), answer.getClass()));
         }
@@ -59,6 +59,9 @@ public class IsaacItemQuestionValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
         boolean responseCorrect = false;                // Whether we're right or wrong
+
+        IsaacItemQuestion itemQuestion = (IsaacItemQuestion) question;
+        ItemChoice submittedChoice = (ItemChoice) answer;
 
         // STEP 0: Is it even possible to answer this question?
 

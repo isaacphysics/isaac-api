@@ -84,9 +84,11 @@ public class AssignmentStatusDTO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof AssignmentStatusDTO other)) {
+        if (!(obj instanceof AssignmentStatusDTO)) {
             return false;
         }
+
+        AssignmentStatusDTO other = (AssignmentStatusDTO) obj;
 
         if (null == groupId) {
             if (null != other.groupId) {

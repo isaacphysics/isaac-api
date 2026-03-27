@@ -50,16 +50,19 @@ public class IsaacNumericValidator implements IValidator {
     public final QuestionValidationResponse validateQuestionResponse(
             final Question question, final Choice answer) {
 
-        if (!(question instanceof IsaacNumericQuestion isaacNumericQuestion)) {
+        if (!(question instanceof IsaacNumericQuestion)) {
             throw new IllegalArgumentException(String.format(
                     "This validator only works with Isaac Numeric Questions... (%s is not numeric)", question.getId()));
         }
 
-        if (!(answer instanceof Quantity answerFromUser)) {
+        if (!(answer instanceof Quantity)) {
             throw new IllegalArgumentException(String.format(
                     "Expected Quantity for IsaacNumericQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
+
+        IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
+        Quantity answerFromUser = (Quantity) answer;
 
         // Extract significant figure bounds, defaulting to NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES either are missing
         int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
