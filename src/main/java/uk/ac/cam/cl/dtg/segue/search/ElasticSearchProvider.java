@@ -364,7 +364,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         try {
             return client.indices()
                 .get(g -> g.index("*"))
-                .result()
+                .indices()
                 .keySet();
         } catch (final IOException e) {
             log.error("Exception while retrieving all indices", e);
@@ -903,7 +903,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
             if (null == max_window_size) {
                 GetIndexResponse response = client.indices().get(g -> g.index(typedIndex));
-                Map<String, IndexState> indices = response.result();
+                Map<String, IndexState> indices = response.indices();
                 for (IndexState indexState : indices.values()) {
                     if (null == indexState || null == indexState.settings()) {
                         continue;
