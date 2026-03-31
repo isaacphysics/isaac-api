@@ -88,11 +88,12 @@ public class IsaacStringMatchValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the StringChoice type, ...
-                if (!(c instanceof StringChoice stringChoice)) {
+                if (!(c instanceof StringChoice)) {
                     log.error("Isaac StringMatch Validator for questionId: " + stringMatchQuestion.getId()
                             + " expected there to be a StringChoice. Instead it found a Choice.");
                     continue;
                 }
+                StringChoice stringChoice = (StringChoice) c;
 
                 if (null == stringChoice.getValue() || stringChoice.getValue().isEmpty()) {
                     log.error("Expected a string to match, but none found in choice for question id: "

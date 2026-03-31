@@ -103,12 +103,14 @@ public class IsaacParsonsValidator implements IValidator {
             for (Choice c : orderedChoices) {
 
                 // ... that are of the Formula type, ...
-                if (!(c instanceof ParsonsChoice parsonsChoice)) {
+                if (!(c instanceof ParsonsChoice)) {
                     log.error(String.format(
                             "Validator for question (%s) expected there to be an ParsonsChoice. Instead it found a %s.",
                             parsonsQuestion.getId(), c.getClass().toString()));
                     continue;
                 }
+
+                ParsonsChoice parsonsChoice = (ParsonsChoice) c;
 
                 // ... and that have a python expression ...
                 if (null == parsonsChoice.getItems() || parsonsChoice.getItems().isEmpty()) {
@@ -130,19 +132,21 @@ public class IsaacParsonsValidator implements IValidator {
 
                 // Run through the submitted items:
                 for (Item item : submittedChoice.getItems()) {
-                    if (!(item instanceof ParsonsItem parsonsItem)) {
+                    if (!(item instanceof ParsonsItem)) {
                         throw new IllegalArgumentException("Expected ParsonsChoice to contain ParsonsItems!");
                     }
+                    ParsonsItem parsonsItem = (ParsonsItem) item;
                     submittedItemIds.add(parsonsItem.getId());
                     submittedItemIndentations.add(parsonsItem.getIndentation());
                 }
                 // Run through the items in the question:
                 for (Item item : parsonsChoice.getItems()) {
-                    if (!(item instanceof ParsonsItem parsonsItem)) {
+                    if (!(item instanceof ParsonsItem)) {
                         log.error("ParsonsChoice contained non-ParsonsItem. Skipping!");
                         itemTypeMismatch = true;
                         break;
                     }
+                    ParsonsItem parsonsItem = (ParsonsItem) item;
                     choiceItemIds.add(parsonsItem.getId());
                     choiceItemIndentations.add(parsonsItem.getIndentation());
                 }

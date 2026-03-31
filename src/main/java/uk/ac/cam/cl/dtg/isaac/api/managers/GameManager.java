@@ -886,10 +886,11 @@ public class GameManager {
     private static List<Question> filterDOQuestionParts(final Collection<Content> contentToFilter) {
         List<Question> results = Lists.newArrayList();
         for (Content possibleQuestion : contentToFilter) {
-            if (!(possibleQuestion instanceof Question question) || possibleQuestion instanceof IsaacQuickQuestion) {
+            if (!(possibleQuestion instanceof Question) || possibleQuestion instanceof IsaacQuickQuestion) {
                 // we are not interested if this is not a question or if it is a quick question.
                 continue;
             }
+            Question question = (Question) possibleQuestion;
             results.add(question);
         }
 

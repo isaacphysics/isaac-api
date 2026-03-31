@@ -136,10 +136,12 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
             for (Choice c : chemistryQuestion.getChoices()) {
 
                 // ... that are of the ChemicalFormula type, ...
-                if (!(c instanceof ChemicalFormula formulaChoice)) {
+                if (!(c instanceof ChemicalFormula)) {
                     log.error("Validator for questionId: {} expected a ChemicalFormula. Instead it found a Choice.", chemistryQuestion.getId());
                     continue;
                 }
+
+                ChemicalFormula formulaChoice = (ChemicalFormula) c;
 
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
@@ -176,10 +178,12 @@ public class IsaacSymbolicChemistryValidator extends AbstractExternalValidator i
             for (Choice c : orderedChoices) {
 
                 // ... that are of the ChemicalFormula type, ...
-                if (!(c instanceof ChemicalFormula formulaChoice)) {
+                if (!(c instanceof ChemicalFormula)) {
                     // Don't need to log this - it will have been logged above.
                     continue;
                 }
+
+                ChemicalFormula formulaChoice = (ChemicalFormula) c;
 
                 // ... and that have a mhchem expression ...
                 if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
