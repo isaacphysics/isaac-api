@@ -181,7 +181,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == forbiddenEmailRegex || forbiddenEmailRegex.isEmpty()) {
             this.restrictedSignupEmailRegex = null;
         } else {
-            this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex);
+            this.restrictedSignupEmailRegex = Pattern.compile(forbiddenEmailRegex, Pattern.CASE_INSENSITIVE);
         }
     }
 
