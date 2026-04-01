@@ -209,7 +209,7 @@ public class StatisticsManager implements IStatisticsManager {
         LocalDate startOfAprilThisYear = LocalDate.of(now.getYear(), Month.APRIL, 1);
         LocalDate startOfAprilLastYear = LocalDate.of(now.getYear() - 1, Month.APRIL, 1);
         LocalDate startOfMostRecentRevisionPeriod =
-                (now.isAfter(startOfAprilThisYear) || now.isEqual(startOfAprilLastYear)) ? startOfAprilThisYear : startOfAprilLastYear;
+                (now.isAfter(startOfAprilThisYear) || now.isEqual(startOfAprilThisYear)) ? startOfAprilThisYear : startOfAprilLastYear;
         LocalDate endOfMostRecentRevisionPeriod = startOfMostRecentRevisionPeriod.plus(Period.ofMonths(2));
 
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsByUser = questionManager.getLightweightQuestionAttemptsByUser(userOfInterest);
