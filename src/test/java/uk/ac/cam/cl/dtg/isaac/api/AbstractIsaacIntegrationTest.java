@@ -175,7 +175,7 @@ public class AbstractIsaacIntegrationTest {
     static {
         // Statically initialise Elasticsearch once - this instance is shared across test classes.
         elasticsearch = new ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:9.3.2"))
-                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.tar.gz"), "/usr/share/elasticsearch/isaac-test-es-data.tar.gz")
+                .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-data.zip"), "/isaac-test-es-data.zip")
                 .withCopyFileToContainer(MountableFile.forClasspathResource("isaac-test-es-docker-entrypoint.sh", 0100775), "/usr/local/bin/docker-entrypoint.sh")
                 .withExposedPorts(9200, 9300)
                 .withEnv("cluster.name", "isaac")
