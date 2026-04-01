@@ -224,6 +224,14 @@ public class SegueErrorResponse implements Serializable {
         return new SegueErrorResponse(Status.NOT_IMPLEMENTED, "This endpoint has not yet been implemented.")
                 .toResponse();
     }
+
+    /**
+     * @return a response for when an endpoint has been permanently removed.
+     */
+    public static Response getGoneResponse() {
+        return new SegueErrorResponse(Status.GONE, "This endpoint has been removed.")
+                .toResponse();
+    }
     
     /**
      * @param message - inform the user how long they will be throttled for.
