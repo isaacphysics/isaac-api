@@ -191,7 +191,7 @@ public class IsaacDndValidator implements IValidator {
                 .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
             return new DndProblem("an answer with more items than we have gaps.", q);
         }
-        var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).collect(Collectors.toList());
+        var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).toList();
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
             return new DndProblem("an answer with duplicate drop zones.", q);
         }

@@ -313,15 +313,13 @@ public class QuestionManager {
         QuestionValidationResponse questionResponseDO = this.mapper.map(questionResponse);
 
         String questionPageId = extractPageIdFromQuestionId(questionResponse.getQuestionId());
-        if (user instanceof RegisteredUserDTO) {
-            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+        if (user instanceof RegisteredUserDTO registeredUser) {
 
             this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
                 questionPageId, questionResponse.getQuestionId(), questionResponseDO);
             log.debug("Question information recorded for user: " + registeredUser.getId());
 
-        } else if (user instanceof AnonymousUserDTO) {
-            AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
+        } else if (user instanceof AnonymousUserDTO anonymousUserDTO) {
 
             this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
                 questionPageId, questionResponse.getQuestionId(), questionResponseDO);
@@ -376,8 +374,7 @@ public class QuestionManager {
             final AbstractSegueUserDTO user) throws SegueDatabaseException {
         Objects.requireNonNull(user);
 
-        if (user instanceof RegisteredUserDTO) {
-            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+        if (user instanceof RegisteredUserDTO registeredUser) {
 
             return this.questionAttemptPersistenceManager.getQuestionAttempts(registeredUser.getId());
         } else {
@@ -531,24 +528,22 @@ public class QuestionManager {
      */
     private static List<QuestionDTO> extractQuestionObjectsRecursively(final ContentDTO toExtract,
             final List<QuestionDTO> result) {
-        if (toExtract instanceof QuestionDTO) {
+        if (toExtract instanceof QuestionDTO questionDTO) {
             // we found a question so add it to the list.
-            result.add((QuestionDTO) toExtract);
+            result.add(questionDTO);
         }
 
-        if (toExtract instanceof InlineRegionDTO) {
+        if (toExtract instanceof InlineRegionDTO inlineRegionDTO) {
             // extract inline questions
-            InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) toExtract;
             result.addAll(inlineRegionDTO.getInlineQuestions());
         }
 
         if (toExtract.getChildren() != null) {
             // Go through each child in the content object.
             for (ContentBaseDTO child : toExtract.getChildren()) {
-                if (child instanceof ContentDTO) {
+                if (child instanceof ContentDTO childContent) {
                     // if it is not a question but it can have children then
                     // continue recursing.
-                    ContentDTO childContent = (ContentDTO) child;
                     if (childContent.getChildren() != null) {
                         QuestionManager.extractQuestionObjectsRecursively(childContent, result);
                     }
@@ -575,11 +570,10 @@ public class QuestionManager {
 
         // shuffle all choices based on the seed provided, augmented by individual question ID.
         for (QuestionDTO question : questions) {
-            if (question instanceof ChoiceQuestionDTO) {
-                ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+            if (question instanceof ChoiceQuestionDTO choiceQuestion) {
                 String qSeed = seed + choiceQuestion.getId();
 
-                Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
+                Boolean randomiseChoices = choiceQuestion.getRandomiseChoices();
                 if (randomiseChoices == null || randomiseChoices) {  // Default to randomised if not set.
                     if (choiceQuestion.getChoices() != null) {
                         Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
@@ -589,8 +583,7 @@ public class QuestionManager {
                 // FIXME: this is an Isaac specific thing in a segue class!
                 // Perhaps ItemQuestions could live in Segue, but then what relation should they have to
                 // the IsaacQuestionBase class?
-                if (question instanceof IsaacItemQuestionDTO) {
-                    IsaacItemQuestionDTO itemQuestion = (IsaacItemQuestionDTO) question;
+                if (question instanceof IsaacItemQuestionDTO itemQuestion) {
                     Boolean randomiseItems = itemQuestion.getRandomiseItems();
                     if (randomiseItems == null || randomiseItems) {  // Default to randomised if not set.
                         if (itemQuestion.getItems() != null) {

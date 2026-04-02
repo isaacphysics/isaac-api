@@ -83,7 +83,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // check the quiz was assigned successfully
         List<?> responseBody = (List<?>) createQuizResponse.getEntity();
-        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
         assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
     }
 

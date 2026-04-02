@@ -113,7 +113,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             targetPostCodeList.add(targetPostCode);
             List<PostCode> results = submitPostCodeRequest(targetPostCodeList);
             if (results.size() == 1) {
-                targetPostCodeObject = results.get(0);
+                targetPostCodeObject = results.getFirst();
             } else {
                 throw new LocationServerException(
                         "Location service failed to return valid lat/lon for target postcode");
@@ -129,18 +129,18 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
         
         for (PostCode postCode : knownPostCodes) {
             
-            if (null == postCode.getLat() || null == postCode.getLon()) {
+            if (null == postCode.lat() || null == postCode.lon()) {
                 continue;
             }
             
-            double distInMiles = getLatLonDistanceInMiles(targetPostCodeObject.getLat(),
-                    targetPostCodeObject.getLon(), postCode.getLat(),
-                    postCode.getLon());
+            double distInMiles = getLatLonDistanceInMiles(targetPostCodeObject.lat(),
+                    targetPostCodeObject.lon(), postCode.lat(),
+                    postCode.lon());
             
             if (distInMiles <= postCodeRadius.getDistance()
-                    && cleanPostCodeIDMap.containsKey(postCode.getPostCode())) {
+                    && cleanPostCodeIDMap.containsKey(postCode.postCode())) {
                 // Add this to a list, with user ids
-                resultingUserIds.addAll(cleanPostCodeIDMap.get(postCode.getPostCode()));
+                resultingUserIds.addAll(cleanPostCodeIDMap.get(postCode.postCode()));
             }
             
         }

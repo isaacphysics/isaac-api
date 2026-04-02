@@ -93,7 +93,7 @@ public class IsaacClozeValidator implements IValidator {
                 feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
             } else {
                 allowedItemIds = Stream.concat(Stream.of(NULL_CLOZE_ITEM_ID), clozeQuestion.getItems().stream().map(Item::getId)).collect(Collectors.toSet());
-                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
+                submittedItemIds = submittedChoice.getItems().stream().map(Item::getId).toList();
                 if (!allowedItemIds.containsAll(submittedItemIds)) {
                     feedback = new Content(FEEDBACK_UNRECOGNISED_ITEMS);
                 } else if (submittedItemIds.stream().allMatch(NULL_CLOZE_ITEM_ID::equals)) {
@@ -129,7 +129,7 @@ public class IsaacClozeValidator implements IValidator {
                     log.error(String.format("Expected list of Items, but something else found in choice for question id (%s)!", clozeQuestion.getId()));
                     continue;
                 }
-                List<String> trustedChoiceItemIds = itemChoice.getItems().stream().map(Item::getId).collect(Collectors.toList());
+                List<String> trustedChoiceItemIds = itemChoice.getItems().stream().map(Item::getId).toList();
 
                 // ... look for a match to the submitted answer.
                 if (trustedChoiceItemIds.size() != submittedItemIds.size()) {

@@ -487,9 +487,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         BoolQuery.Builder filter = new BoolQuery.Builder();
         for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
             // date filter logic
-            if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
-                DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
-                        .getValue();
+            if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction dateRangeInstruction) {
                 // Note: assumption that dates are stored in long format.
                 filter.must(RangeQuery.of(r ->
                     r.date(d -> {
@@ -505,8 +503,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 )._toQuery());
             }
 
-            if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
-                SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
+            if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction sfi) {
 
                 List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
                 fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
@@ -516,8 +513,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 filter.must(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
             }
 
-            if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
-                TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
+            if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction sfi) {
                 filter.must(
                     TermsQuery.of(t -> t
                         .field(fieldToFilterInstruction.getKey())
@@ -532,8 +528,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 );
             }
 
-            if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction) {
-                SimpleExclusionInstruction sfi = (SimpleExclusionInstruction) fieldToFilterInstruction.getValue();
+            if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction sfi) {
 
                 List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
                 fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
@@ -566,17 +561,17 @@ public class ElasticSearchProvider implements ISearchProvider {
             BoolQuery.Builder query = new BoolQuery.Builder();
 
             // Add the clause to the query value by value
-            for (String value : searchClause.getValues()) {
+            for (String value : searchClause.values()) {
                 Query matchQuery = MatchQuery.of(m -> m
-                        .field(searchClause.getField())
+                        .field(searchClause.field())
                         .query(value)
                 )._toQuery();
 
-                if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
+                if (Constants.BooleanOperator.OR.equals(searchClause.operator())) {
                     query.should(matchQuery);
-                } else if (Constants.BooleanOperator.AND.equals(searchClause.getOperator())) {
+                } else if (Constants.BooleanOperator.AND.equals(searchClause.operator())) {
                     query.must(matchQuery);
-                } else if (Constants.BooleanOperator.NOT.equals(searchClause.getOperator())) {
+                } else if (Constants.BooleanOperator.NOT.equals(searchClause.operator())) {
                     query.mustNot(matchQuery);
                 } else {
                     log.warn("Null argument received in paginated match search... "
@@ -585,15 +580,15 @@ public class ElasticSearchProvider implements ISearchProvider {
             }
 
             // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
-            if (Constants.BooleanOperator.OR.equals(searchClause.getOperator())) {
+            if (Constants.BooleanOperator.OR.equals(searchClause.operator())) {
                 query.minimumShouldMatch("1");
             }
 
-            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.getField())) {
+            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.field())) {
                 masterQuery.must(query.build()._toQuery());
             } else {
                 // Nested fields need to use a nested query which specifies the path of the nested field.
-                String nestedPath = searchClause.getField().split("\\.")[0];
+                String nestedPath = searchClause.field().split("\\.")[0];
                 nestedQueriesByPath.putIfAbsent(nestedPath, new BoolQuery.Builder());
                 nestedQueriesByPath.get(nestedPath).must(query.build()._toQuery());
             }
@@ -769,8 +764,7 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     private Query processMatchInstructions(final AbstractInstruction matchInstruction)
             throws SegueSearchException {
-        if (matchInstruction instanceof BooleanInstruction) {
-            BooleanInstruction booleanMatch = (BooleanInstruction) matchInstruction;
+        if (matchInstruction instanceof BooleanInstruction booleanMatch) {
             return BoolQuery.of(b -> {
                 try {
                     for (AbstractInstruction should : booleanMatch.getShoulds()) {
@@ -792,8 +786,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
                 return b;
             })._toQuery();
-        } else if (matchInstruction instanceof MatchInstruction) {
-            MatchInstruction shouldMatch = (MatchInstruction) matchInstruction;
+        } else if (matchInstruction instanceof MatchInstruction shouldMatch) {
             return MatchQuery.of(m -> {
                 m.field(shouldMatch.getField());
                 m.query(shouldMatch.getValue());
@@ -805,8 +798,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 }
                 return m;
             })._toQuery();
-        } else if (matchInstruction instanceof RangeInstruction) {
-            RangeInstruction<?> rangeMatch = (RangeInstruction<?>) matchInstruction;
+        } else if (matchInstruction instanceof RangeInstruction<?> rangeMatch) {
             return RangeQuery.of(r ->
                 r.date(d -> {
                     d.field(rangeMatch.getField());
@@ -826,8 +818,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                     return d;
                 })
             )._toQuery();
-        } else if (matchInstruction instanceof NestedInstruction) {
-            NestedInstruction nestedMatch = (NestedInstruction) matchInstruction;
+        } else if (matchInstruction instanceof NestedInstruction nestedMatch) {
             return NestedQuery.of(nq -> {
                 try {
                     return nq
@@ -838,15 +829,13 @@ public class ElasticSearchProvider implements ISearchProvider {
                     throw new RuntimeException(e);
                 }
             })._toQuery();
-        } else if (matchInstruction instanceof WildcardInstruction) {
-            WildcardInstruction wildcardMatch = (WildcardInstruction) matchInstruction;
+        } else if (matchInstruction instanceof WildcardInstruction wildcardMatch) {
             return WildcardQuery.of(wq -> wq
                 .field(wildcardMatch.getField())
                 .value(wildcardMatch.getValue())
                 .boost(wildcardMatch.getBoost().floatValue()))
                 ._toQuery();
-        } else if (matchInstruction instanceof MultiMatchInstruction) {
-            MultiMatchInstruction multiMatchInstruction = (MultiMatchInstruction) matchInstruction;
+        } else if (matchInstruction instanceof MultiMatchInstruction multiMatchInstruction) {
             return MultiMatchQuery.of(mm -> mm
                 .fields(Arrays.asList(multiMatchInstruction.getFields()))
                 .query(multiMatchInstruction.getTerm())

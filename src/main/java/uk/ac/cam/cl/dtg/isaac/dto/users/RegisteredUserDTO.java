@@ -439,10 +439,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof RegisteredUserDTO)) {
+        if (!(obj instanceof RegisteredUserDTO other)) {
             return false;
         }
-        RegisteredUserDTO other = (RegisteredUserDTO) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;
@@ -467,10 +466,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof RegisteredUserDTO)) {
+        if (!(obj instanceof RegisteredUserDTO other)) {
             return false;
         }
-        RegisteredUserDTO other = (RegisteredUserDTO) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;

@@ -199,9 +199,7 @@ public class ContentSubclassMapper {
      */
     private void populateSidebarWithIDs(final Content content, final ContentDTO result) {
         // No need for recursion, since we don't support SeguePages that aren't top-level.
-        if (content instanceof SeguePage && result instanceof SeguePageDTO) {
-            SeguePage seguePage = (SeguePage) content;
-            SeguePageDTO seguePageDTO = (SeguePageDTO) result;
+        if (content instanceof SeguePage seguePage && result instanceof SeguePageDTO seguePageDTO) {
             if (null != seguePage.getSidebar() && !seguePage.getSidebar().isEmpty()) {
                 SidebarDTO placeholder = new SidebarDTO();
                 placeholder.setId(seguePage.getSidebar());

@@ -71,8 +71,7 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
         List<String> unitsToReturn = Lists.newArrayList();
 
         for (ChoiceDTO c : this.choices) {
-            if (c instanceof QuantityDTO) {
-                QuantityDTO quantity = (QuantityDTO) c;
+            if (c instanceof QuantityDTO quantity) {
                 if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
                     unitsToReturn.add(quantity.getUnits());
                 }

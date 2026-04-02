@@ -1882,7 +1882,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             return null;
         }
-        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).get(0);
+        return this.convertUserDOListToUserDTOList(Collections.singletonList(user)).getFirst();
     }
 
     /**
@@ -1892,7 +1892,7 @@ public class UserAccountManager implements IUserAccountManager {
      * @return the list of user dtos.
      */
     private List<RegisteredUserDTO> convertUserDOListToUserDTOList(final List<RegisteredUser> users) {
-        List<RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<RegisteredUser> userDOs = users.parallelStream().filter(Objects::nonNull).toList();
         if (userDOs.isEmpty()) {
             return new ArrayList<>();
         }
@@ -1945,8 +1945,7 @@ public class UserAccountManager implements IUserAccountManager {
 
         } else {
             // reuse existing one
-            if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String) {
-                String userId = (String) request.getSession().getAttribute(ANONYMOUS_USER);
+            if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String userId) {
                 user = this.temporaryUserCache.getById(userId);
 
                 if (null == user) {

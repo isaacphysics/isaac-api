@@ -208,8 +208,7 @@ public class IsaacNumericValidator implements IValidator {
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
         for (Choice c : orderedChoices) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
+            if (c instanceof Quantity quantityFromQuestion) {
 
                 if (quantityFromQuestion.getUnits() == null) {
                     log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
@@ -283,8 +282,7 @@ public class IsaacNumericValidator implements IValidator {
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
         for (Choice c : orderedChoices) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
+            if (c instanceof Quantity quantityFromQuestion) {
 
                 // Do we have a match? Since only comparing values, either an exact match or not a match at all.
                 if (ValidationUtils.numericValuesMatch(

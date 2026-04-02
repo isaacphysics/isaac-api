@@ -59,7 +59,7 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
             if (null == value || value.size() == 0) {
                 return  null;
             }
-            return value.get(0);
+            return value.getFirst();
         }
 
         @Override
@@ -71,8 +71,8 @@ public class ETLInMemorySshConfigStore implements SshConfigStore {
         public Map<String, String> getOptions() {
             return config.entrySet()
                     .stream()
-                    .filter(e -> null != e.getValue() && e.getValue().size() == 1 && null != e.getValue().get(0))
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
+                    .filter(e -> null != e.getValue() && e.getValue().size() == 1 && null != e.getValue().getFirst())
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
         }
 
         @Override

@@ -176,8 +176,8 @@ public class IsaacController extends AbstractIsaacFacade {
         try {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
             boolean showNoFilterContent = false;
-            if (currentUser instanceof RegisteredUserDTO) {
-                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+            if (currentUser instanceof RegisteredUserDTO registeredUser) {
+                showNoFilterContent = isUserStaff(userManager, registeredUser);
             }
             List<String> documentTypes = !types.isEmpty()
                     ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);

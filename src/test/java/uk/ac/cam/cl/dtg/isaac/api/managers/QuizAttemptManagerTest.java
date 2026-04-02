@@ -131,8 +131,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
         EasyMock.reportMatcher(new IArgumentMatcher() {
             @Override
             public boolean matches(Object argument) {
-                if (argument instanceof QuizAttemptDTO) {
-                    QuizAttemptDTO attempt = (QuizAttemptDTO) argument;
+                if (argument instanceof QuizAttemptDTO attempt) {
                     return attempt.getUserId().equals(userId)
                         && Objects.equals(attempt.getQuizAssignmentId(), assignmentId)
                         && attempt.getQuizId().equals(quizId)

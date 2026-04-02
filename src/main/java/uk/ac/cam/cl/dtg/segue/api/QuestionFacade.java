@@ -126,8 +126,7 @@ public class QuestionFacade extends AbstractSegueFacade {
                     "LLM marked questions are currently unavailable. Please try again later!");
         } else if (user instanceof AnonymousUserDTO) {
             throw new NoUserLoggedInException();
-        } else if (user instanceof RegisteredUserDTO) {
-            RegisteredUserDTO registeredUser = ((RegisteredUserDTO) user);
+        } else if (user instanceof RegisteredUserDTO registeredUser) {
 
             // Check for consent
             UserPreference llmProviderConsent = userPreferenceManager.getUserPreference(

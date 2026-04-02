@@ -304,7 +304,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             return Collections.emptyMap();
         }
 
-        List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());
+        List<String> uniquePageIds = allQuestionPageIds.stream().distinct().toList();
         if (uniquePageIds.size() > MAX_PAGE_IDS_TO_MATCH) {
             log.debug(String.format("Attempting to match too many (%s) question page IDs; returning all attempts for these users instead!", uniquePageIds.size()));
             return this.getLightweightQuestionAttemptsByUsers(userIds);

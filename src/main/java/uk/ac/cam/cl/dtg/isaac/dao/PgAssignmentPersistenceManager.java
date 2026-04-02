@@ -146,7 +146,7 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
                     return null;
                 }
 
-                return this.convertToAssignmentDTO(listOfResults.get(0));
+                return this.convertToAssignmentDTO(listOfResults.getFirst());
             }
 
         } catch (SQLException e) {

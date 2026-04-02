@@ -284,10 +284,9 @@ public class GameFilter {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof GameFilter)) {
+        if (!(obj instanceof GameFilter other)) {
             return false;
         }
-        GameFilter other = (GameFilter) obj;
         if (concepts == null) {
             if (other.concepts != null) {
                 return false;

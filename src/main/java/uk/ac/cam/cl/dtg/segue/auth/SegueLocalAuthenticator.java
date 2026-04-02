@@ -280,10 +280,9 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             throws NoSuchAlgorithmException, SegueDatabaseException, InvalidKeySpecException, NoCredentialsAvailableException {
 
         ISegueHashingAlgorithm algorithm = possibleAlgorithms.get(chainedHashingAlgorithmName);
-        if (!(algorithm instanceof ChainedHashAlgorithm)) {
+        if (!(algorithm instanceof ChainedHashAlgorithm chainedHashAlgorithm)) {
             throw new NoSuchAlgorithmException(String.format("Algorithm '%s' requested but no such chained algorithm found!", chainedHashingAlgorithmName));
         }
-        ChainedHashAlgorithm chainedHashAlgorithm = (ChainedHashAlgorithm) algorithm;
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userId);
         if (!hasPasswordRegistered(luc)) {

@@ -458,10 +458,9 @@ public class GameboardItem {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof GameboardItem)) {
+        if (!(obj instanceof GameboardItem other)) {
             return false;
         }
-        GameboardItem other = (GameboardItem) obj;
         if (id == null) {
             return other.id == null;
         } else {

@@ -663,8 +663,7 @@ public class IsaacNumericValidatorTest {
 
         // Check that units are ignored for validation:
         assertTrue(response.isCorrect());
-        if (response instanceof QuantityValidationResponse) {
-            QuantityValidationResponse qResponse = (QuantityValidationResponse) response;
+        if (response instanceof QuantityValidationResponse qResponse) {
             assertNull(qResponse.getCorrectUnits());
         }
     }

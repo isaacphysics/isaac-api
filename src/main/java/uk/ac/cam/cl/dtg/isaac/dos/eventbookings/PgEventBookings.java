@@ -452,9 +452,10 @@ public class PgEventBookings implements EventBookings {
     public Map<BookingStatus, Map<Role, Long>> getEventBookingStatusCounts(final String eventId, final boolean includeDeletedUsersInCounts) throws SegueDatabaseException {
         // Note this method joins at the db table mainly to allow inclusion of deleted users in the counts.
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT event_bookings.status, users.role, COUNT(event_bookings.id) FROM event_bookings \n" +
-                "INNER JOIN users ON event_bookings.user_id = users.id\n" +
-                "WHERE event_bookings.event_id=?"
+        sb.append("""
+                SELECT event_bookings.status, users.role, COUNT(event_bookings.id) FROM event_bookings
+                INNER JOIN users ON event_bookings.user_id = users.id
+                WHERE event_bookings.event_id=?"""
         );
 
         if (!includeDeletedUsersInCounts) {

@@ -200,14 +200,14 @@ public class IsaacLLMFreeTextValidator implements IValidator {
                     .collect(Collectors.joining("\n|| Choice separator ||\n")));
             return zeroMarkResult;
         }
-        String llmResponse = chatCompletions.getChoices().get(0).getMessage().getContent();
+        String llmResponse = chatCompletions.getChoices().getFirst().getMessage().getContent();
 
         try {
             Map<String, Object> response =
                     this.mapper.readValue(llmResponse, new TypeReference<LinkedHashMap<String, Object>>() {});
 
             List<String> validFieldNames = question.getMarkScheme().stream()
-                    .map(LLMFreeTextMarkSchemeEntry::getJsonField).collect(Collectors.toList());
+                    .map(LLMFreeTextMarkSchemeEntry::getJsonField).toList();
 
             return validFieldNames.stream().collect(Collectors.toMap(
                     field -> field,
@@ -230,8 +230,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
             return ((LLMMarkingConstant) expression).getValue();
         } else if (expression instanceof LLMMarkingVariable) {
             return marks.getOrDefault(((LLMMarkingVariable) expression).getName(), 0);
-        } else if (expression instanceof LLMMarkingFunction) {
-            LLMMarkingFunction function = (LLMMarkingFunction) expression;
+        } else if (expression instanceof LLMMarkingFunction function) {
             List<LLMMarkingExpression> args = function.getArguments();
             switch (function.getName()) {
                 case SUM:

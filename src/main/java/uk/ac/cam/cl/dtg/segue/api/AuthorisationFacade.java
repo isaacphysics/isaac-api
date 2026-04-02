@@ -225,7 +225,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
             List<Long> userIdsWithAccess = associationManager.getAssociations(user).stream()
-                    .map(UserAssociation::getUserIdReceivingPermission).collect(Collectors.toList());
+                    .map(UserAssociation::getUserIdReceivingPermission).toList();
 
             associationManager.revokeAllAssociationsByOwnerUser(user);
 
@@ -302,7 +302,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
             List<Long> userIdsWithAccess = associationManager.getAssociationsForOthers(user).stream()
-                    .map(UserAssociation::getUserIdGrantingPermission).collect(Collectors.toList());
+                    .map(UserAssociation::getUserIdGrantingPermission).toList();
 
             associationManager.revokeAllAssociationsByRecipientUser(user);
 
