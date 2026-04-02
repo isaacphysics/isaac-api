@@ -54,10 +54,9 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import org.apache.hc.client5.http.auth.AuthScope;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,11 +330,11 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     public static ElasticsearchClient getClient(final String address, final int port, final String username,
                                                 final String password) throws UnknownHostException {
-        final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(new AuthScope(null, -1), new UsernamePasswordCredentials(username, password.toCharArray()));
+
+        String credentials = java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         Rest5Client restClient = Rest5Client.builder(new HttpHost("http", InetAddress.getByName(address), port))
-                .setHttpClientConfigCallback(httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
+                .setDefaultHeaders(new Header[]{new BasicHeader("Authorization", "Basic " + credentials)})
                 .setConnectionConfigCallback(connectConfig -> connectConfig.setSocketTimeout(Timeout.ofSeconds(360)))
                 .build();
 
