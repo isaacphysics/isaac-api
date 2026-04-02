@@ -46,6 +46,10 @@ public class IsaacCoordinateValidator implements IValidator {
         IsaacCoordinateQuestion coordinateQuestion = (IsaacCoordinateQuestion) question;
         CoordinateChoice submittedChoice = (CoordinateChoice) answer;
 
+        // Get significant figures to validate with
+        int sigFigsMin = requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+        int sigFigsMax = requireNonNullElse(coordinateQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
+
         // STEP 0: Is it even possible to answer this question?
 
         if (null == coordinateQuestion.getChoices() || coordinateQuestion.getChoices().isEmpty()) {
@@ -56,6 +60,14 @@ public class IsaacCoordinateValidator implements IValidator {
         if (null == coordinateQuestion.getNumberOfDimensions() || coordinateQuestion.getNumberOfDimensions() < 1) {
             log.error("Question ({}) does not have dimensions set. src: {}", question.getId(), question.getCanonicalSourceFile());
             feedback = new Content("This question cannot be answered correctly.");
+        }
+
+        // Only worry about broken significant figure rules if we are going to use them (i.e. if "exact match" is false)
+        if (null == coordinateQuestion.getDisregardSignificantFigures() || !coordinateQuestion.getDisregardSignificantFigures()) {
+            if (sigFigsMin < 1 || sigFigsMax < 1 || sigFigsMax < sigFigsMin) {
+                log.error("Question has broken significant figure rules! " + question.getId() + " src: " + question.getCanonicalSourceFile());
+                feedback = new Content("This question cannot be answered correctly.");
+            }
         }
 
         // STEP 1: Did they provide a valid answer?
@@ -269,7 +281,6 @@ public class IsaacCoordinateValidator implements IValidator {
         }
 
         // If incorrect & no other feedback, check for too few significant figures
-        int sigFigsMin = requireNonNullElse(coordinateQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
         if (!responseCorrect && feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
                 .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
             feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
