@@ -26,7 +26,7 @@
         <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty-version>12.1.7</jetty-version>
+        <jetty-version>12.1.8</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>2.0.3</testcontainers.version>
