@@ -326,18 +326,18 @@ public class ContentIndexer {
                                 // content is the same therefore it is just
                                 // reuse of a content object so that is
                                 // fine.
-                                log.debug("Resource (" + content.getId() + ") already seen in cache. Skipping "
-                                        + treeWalk.getPathString());
+                                log.debug("Resource ({}) already seen in cache. Skipping {}",
+                                        content.getId(), treeWalk.getPathString());
                                 continue;
                             }
 
                             // Otherwise, duplicate IDs with different content,
                             // therefore log an error
-                            log.debug("Resource with duplicate ID (" + content.getId()
-                                    + ") detected in cache. Skipping " + treeWalk.getPathString());
+                            log.debug("Resource with duplicate ID ({}) detected in cache. Skipping {}",
+                                    flattenedContent.getId(), treeWalk.getPathString());
                             this.registerContentProblem(flattenedContent, String.format(
                                     "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
-                                    content.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
+                                            flattenedContent.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
                                 indexProblemCache);
                         }
                     }
