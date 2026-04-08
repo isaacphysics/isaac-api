@@ -81,6 +81,7 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>6.1.0</version>
+            <scope>provided</scope>  <!-- Be careful the version above is compatible with the one Jetty provides -->
         </dependency>
 
         <dependency>
@@ -737,6 +738,13 @@
                 <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <!-- Maven forces this to scope 'compile' since it is used by multiple transitive deps,
+                     but it really is 'provided' when we run Jetty locally or in Docker! -->
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
