@@ -18,8 +18,7 @@ RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
 
 # initialise logging for jetty (including approving third-party licensed code) and add jetty log4j config and ee10 modules:
-RUN java -jar "$JETTY_HOME/start.jar" --add-modules=logging-log4j2,ee10-webapp,ee10-deploy,ee10-jsp,ee10-websocket-jetty \
-    --approve-all-licenses
+RUN java -jar "$JETTY_HOME/start.jar" --add-modules=logging-log4j2,ee10-webapp,ee10-deploy,ee10-websocket-jetty --approve-all-licenses
 COPY src/main/resources/log4j2-jetty-only.xml $JETTY_BASE/resources/log4j2.xml
 
 # prepare things so that jetty runs in the docker entrypoint
