@@ -810,7 +810,7 @@ public class UserManagerTest {
 
     private Cookie[] getCookieArray(Map<String, String> sessionInformation) throws JsonProcessingException {
         ObjectMapper om = new ObjectMapper();
-        Cookie[] cookieWithSessionInfo = { new Cookie(Constants.SEGUE_AUTH_COOKIE,
+        Cookie[] cookieWithSessionInfo = { new Cookie(Constants.SECURE_SEGUE_AUTH_COOKIE,
                 Base64.encodeBase64String(om.writeValueAsString(sessionInformation).getBytes())) };
         return cookieWithSessionInfo;
     }

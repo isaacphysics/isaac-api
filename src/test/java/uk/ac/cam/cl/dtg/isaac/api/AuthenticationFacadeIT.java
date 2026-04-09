@@ -22,10 +22,8 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.CHARLIE_STUDENT_EMAIL;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.CHARLIE_STUDENT_PASSWORD;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_PROVIDER_USER_ID;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ERIKA_STUDENT_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
@@ -39,7 +37,7 @@ public class AuthenticationFacadeIT extends IsaacIntegrationTestWithREST {
                 "password", CHARLIE_STUDENT_PASSWORD,
                 "rememberMe", false
         ));
-        NewCookie authCookie = response.response.getCookies().get("SEGUE_AUTH_COOKIE");
+        NewCookie authCookie = response.response.getCookies().get(SECURE_SEGUE_AUTH_COOKIE);
         assertEquals(NewCookie.SameSite.STRICT, authCookie.getSameSite());
     }
 
