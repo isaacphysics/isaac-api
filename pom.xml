@@ -22,7 +22,7 @@
         <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
-        <jetty-version>11.0.26</jetty-version>
+        <jetty-version>12.1.8</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
         <testcontainers.version>2.0.3</testcontainers.version>
@@ -77,11 +77,12 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>6.1.0</version>
+            <scope>provided</scope>  <!-- Be careful the version above is compatible with the one Jetty provides -->
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlets</artifactId>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-servlets</artifactId>
             <version>${jetty-version}</version>
         </dependency>
 
@@ -432,14 +433,16 @@
 
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-jetty-api</artifactId>
+            <artifactId>jetty-websocket-jetty-api</artifactId>
             <version>${jetty-version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-jetty-server</artifactId>
+            <groupId>org.eclipse.jetty.ee10.websocket</groupId>
+            <artifactId>jetty-ee10-websocket-jetty-server</artifactId>
             <version>${jetty-version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -612,8 +615,8 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-maven-plugin</artifactId>
                 <version>${jetty-version}</version>
                 <configuration>
                     <webApp>
@@ -732,6 +735,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <!-- Maven forces this to scope 'compile' since it is used by multiple transitive deps,
+                     but it really is 'provided' when we run Jetty locally or in Docker! -->
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <scope>provided</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -763,8 +773,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-maven-plugin</artifactId>
+                        <groupId>org.eclipse.jetty.ee10</groupId>
+                        <artifactId>jetty-ee10-maven-plugin</artifactId>
                         <version>${jetty-version}</version>
                         <configuration>
                             <webApp>

@@ -11,14 +11,14 @@ RUN mvn dependency:go-offline
 COPY . /isaac-api
 RUN mvn package -Dmaven.test.skip=true -Dsegue.version=$BUILD_VERSION -P $BUILD_TARGET
 
-FROM jetty:11.0.26-jdk21-eclipse-temurin
+FROM jetty:12.1.8-jdk21-eclipse-temurin
 USER root
 COPY --from=builder /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
 RUN chmod 755 /var/lib/jetty/webapps/*
 RUN chown jetty /var/lib/jetty/webapps/*
 
-# initialise logging for jetty (including approving third-party licensed code) and add jetty log4j config:
-RUN java -jar "$JETTY_HOME/start.jar" --add-modules=logging-log4j2 --approve-all-licenses
+# initialise logging for jetty (including approving third-party licensed code) and add jetty log4j config and ee10 modules:
+RUN java -jar "$JETTY_HOME/start.jar" --add-modules=logging-log4j2,ee10-webapp,ee10-deploy,ee10-websocket-jetty --approve-all-licenses
 COPY src/main/resources/log4j2-jetty-only.xml $JETTY_BASE/resources/log4j2.xml
 
 # prepare things so that jetty runs in the docker entrypoint

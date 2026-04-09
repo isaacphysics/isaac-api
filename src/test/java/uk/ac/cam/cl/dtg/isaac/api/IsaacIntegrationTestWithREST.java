@@ -1,9 +1,12 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.session.ManagedSession;
+import org.eclipse.jetty.session.SessionCache;
+import org.eclipse.jetty.session.SessionData;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
@@ -12,7 +15,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.LocalAuthDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -23,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -92,9 +95,22 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         public TestServer setSessionAttributes(final Map<String, String> attributes) {
-            HttpSession session = ctx.getSessionHandler().newHttpSession(new Request(null, null));
-            attributes.keySet().forEach(k -> session.setAttribute(k, attributes.get(k)));
-            sessionId = session.getId();
+            SessionHandler handler = ctx.getSessionHandler();
+            SessionCache cache = handler.getSessionCache();
+            String id = handler.getSessionIdManager().newSessionId(null, null, 0);
+
+            long now = System.currentTimeMillis();
+            SessionData data = new SessionData(id, ctx.getContextPath(), null, now, now, now,
+                    TimeUnit.MINUTES.toMillis(30));
+
+            ManagedSession session = cache.newSession(data);
+            try {
+                cache.add(id, session);
+            } catch (final Exception e) {
+                throw new RuntimeException("Failed to seed session into Jetty cache", e);
+            }
+            attributes.forEach(session::setAttribute);
+            this.sessionId = id;
             return this;
         }
 
