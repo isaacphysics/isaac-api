@@ -560,6 +560,11 @@ public class UserAuthenticationManager {
             request.getSession().invalidate();
             Cookie logoutCookie = generateSegueAuthCookie("", 0);
             response.addCookie(logoutCookie);
+            // FIXME old-cookies: remove once old cookies deprecated:
+            Cookie oldLogoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
+            oldLogoutCookie.setMaxAge(0);
+            oldLogoutCookie.setPath("/");
+            response.addCookie(oldLogoutCookie);
         } catch (final IllegalStateException e) {
             log.info("The session has already been invalidated. Unable to logout again...", e);
         }
@@ -1212,7 +1217,7 @@ public class UserAuthenticationManager {
         }
 
         for (Cookie c : request.getCookies()) {
-            // FIXME: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
+            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
                 if (null != segueAuthCookie) {
                     log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
@@ -1252,7 +1257,7 @@ public class UserAuthenticationManager {
         }
 
         for (HttpCookie c : request.getCookies()) {
-            // FIXME: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
+            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
                 if (null != segueAuthCookie) {
                     log.warn(DUPLICATE_COOKIES, "websocket");
