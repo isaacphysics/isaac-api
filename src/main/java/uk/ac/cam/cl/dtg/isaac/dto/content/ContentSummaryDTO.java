@@ -20,6 +20,7 @@ import com.google.api.client.util.Lists;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.CompletionState;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,6 +38,7 @@ public class ContentSummaryDTO {
     private List<String> tags;
     private String url;
     private CompletionState state;
+    private Date bookmarked;
     private List<String> questionPartIds;
     private String supersededBy;
     private Boolean deprecated;
@@ -220,6 +222,25 @@ public class ContentSummaryDTO {
      */
     public void setState(final CompletionState state) {
         this.state = state;
+    }
+
+    /**
+     * Gets the timestamp this content was bookmarked by the user.
+     *
+     * @return the timestamp this content was bookmarked, or null if not bookmarked
+     */
+    public Date getBookmarked() {
+        return bookmarked;
+    }
+
+    /**
+     * Sets the timestamp this content was bookmarked by the user.
+     *
+     * @param bookmarked
+     *                  the current timestamp for bookmarking operations, or null for unbookmarking operations
+     */
+    public void setBookmarked(final Date bookmarked) {
+        this.bookmarked = bookmarked;
     }
 
     /**

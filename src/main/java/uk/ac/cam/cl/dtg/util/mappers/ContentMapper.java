@@ -257,6 +257,7 @@ public interface ContentMapper {
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     DetailedQuizSummaryDTO mapToDetailedQuizSummaryDTO(IsaacQuizDTO source);
@@ -265,6 +266,7 @@ public interface ContentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     @Mapping(target = "deprecated", ignore = true)
@@ -273,6 +275,7 @@ public interface ContentMapper {
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     ContentSummaryDTO mapSeguePageDTOtoContentSummaryDTO(SeguePageDTO source);
@@ -312,6 +315,7 @@ public interface ContentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "hiddenFromRoles", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
@@ -321,6 +325,7 @@ public interface ContentMapper {
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     @Named("mapQuizDTOtoQuizSummaryDTO")
@@ -330,6 +335,7 @@ public interface ContentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "rubric", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "hiddenFromRoles", ignore = true)
@@ -354,6 +360,7 @@ public interface ContentMapper {
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "subtitle", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "level", ignore = true)
     @Mapping(target = "difficulty", ignore = true)

@@ -55,10 +55,12 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
+import uk.ac.cam.cl.dtg.isaac.dos.PgBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
@@ -439,6 +441,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
         bind(IUserStreaksManager.class).to(PgUserStreakManager.class);
+
+        bind(IBookmarks.class).to(PgBookmarks.class);
 
         bind(IStatisticsManager.class).to(StatisticsManager.class);
 
