@@ -46,7 +46,7 @@ public class PgBookmarks implements IBookmarks {
     @Override
     public List<ContentSummaryDTO> getBookmarksForUser(final RegisteredUserDTO user, final String contentType) {
 
-        String query = "SELECT content_id FROM user_bookmarks WHERE user_id = ?";
+        String query = "SELECT content_id, timestamp FROM user_bookmarks WHERE user_id = ?";
 
         boolean filterByContentType = false;
         if (null != contentType) {
@@ -75,6 +75,10 @@ public class PgBookmarks implements IBookmarks {
                     String contentId = results.getString("content_id");
                     ContentDTO content = this.contentManager.getContentById(contentId);
                     ContentSummaryDTO contentSummary = this.mapper.mapContentDTOtoContentSummaryDTO(content);
+
+                    Date timestamp = results.getDate("timestamp");
+                    contentSummary.setBookmarked(timestamp);
+
                     bookmarks.add(contentSummary);
                 }
             } catch (final ContentManagerException e) {

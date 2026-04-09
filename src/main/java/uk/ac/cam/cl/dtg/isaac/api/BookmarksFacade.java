@@ -29,12 +29,12 @@ import jakarta.ws.rs.core.Response;
 @Tag(name = "BookmarksFacade", description = "/bookmarks")
 public class BookmarksFacade {
     private final UserAccountManager userManager;
-    private final IBookmarks bookmarksManager;
+    private final IBookmarks bookmarksDbManager;
 
     @Inject
-    public BookmarksFacade(final UserAccountManager userManager, final IBookmarks bookmarksManager) {
+    public BookmarksFacade(final UserAccountManager userManager, final IBookmarks bookmarksDbManager) {
         this.userManager = userManager;
-        this.bookmarksManager = bookmarksManager;
+        this.bookmarksDbManager = bookmarksDbManager;
     }
 
     /**
@@ -59,7 +59,7 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        return Response.ok(bookmarksManager.getBookmarksForUser(user, contentType)).build();
+        return Response.ok(bookmarksDbManager.getBookmarksForUser(user, contentType)).build();
     }
 
     /**
@@ -82,11 +82,11 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        if (bookmarksManager.getBookmarksForUser(user).size() >= 100) {
+        if (bookmarksDbManager.getBookmarksForUser(user).size() >= 100) {
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.")
                     .toResponse();
         } else {
-            bookmarksManager.addBookmarkForUser(user, contentId);
+            bookmarksDbManager.addBookmarkForUser(user, contentId);
         }
         return Response.noContent().build();
     }
@@ -111,7 +111,7 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        bookmarksManager.removeBookmarkForUser(user, contentId);
+        bookmarksDbManager.removeBookmarkForUser(user, contentId);
         return Response.noContent().build();
     }
 }

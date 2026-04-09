@@ -16,6 +16,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventsManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
@@ -40,6 +41,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -148,6 +150,7 @@ public class AbstractIsaacIntegrationTest {
     protected static PgPasswordDataManager passwordDataManager;
     protected static UserAttemptManager userAttemptManager;
     protected static FastTrackManger fastTrackManger;
+    protected static BookmarksManager bookmarksManager;
 
     // Manager dependencies
     protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -158,6 +161,7 @@ public class AbstractIsaacIntegrationTest {
     protected static QuizQuestionManager quizQuestionManager;
     protected static PgUsers pgUsers;
     protected static ContentSubclassMapper contentMapper;
+    protected static IBookmarks bookmarksDbManager;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -320,6 +324,7 @@ public class AbstractIsaacIntegrationTest {
         quizQuestionManager = new QuizQuestionManager(questionManager, mainMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
         userAttemptManager = new UserAttemptManager(questionManager);
         fastTrackManger = new FastTrackManger(properties, contentManager, gameManager);
+        bookmarksManager = new BookmarksManager(bookmarksDbManager);
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
