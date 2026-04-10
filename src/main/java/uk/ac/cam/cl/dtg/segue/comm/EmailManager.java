@@ -155,7 +155,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param tokenToValueMapping - a Map of tokens to values that will be replaced in the email template.
      * @param emailType - the type of email that this is so that it is filtered appropriately based on user email prefs.
      * @param attachments
-     * 			  - list of attachment objects
+     *               - list of attachment objects
      * @throws ContentManagerException if we can't parse the content
      * @throws SegueDatabaseException if we cannot contact the database for logging.
      */
@@ -220,17 +220,17 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     
     /**
      * @param sendingUser
-     * 				- the user object for the user sending the email
+     *                 - the user object for the user sending the email
      * @param contentObjectId
-     * 				- the id of the email template being used
+     *                 - the id of the email template being used
      * @param allSelectedUsers
-     * 				- the users to send email to
+     *                 - the users to send email to
      * @param emailType
-     * 				- the type of email to send (affects who receives it)
+     *                 - the type of email to send (affects who receives it)
      * @throws SegueDatabaseException
-     * 				- a segue database exception
+     *                 - a segue database exception
      * @throws ContentManagerException
-     * 				- a content management exception
+     *                 - a content management exception
      */
     public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
             final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
@@ -278,15 +278,15 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     /**
      * @param sendingUser
-     * 				- the user object for the user sending the email
+     *                 - the user object for the user sending the email
      * @param emailTemplate
      *              - the subject of the email
      * @param emailType
-     * 				- the type of email to send (affects who receives it)
+     *                 - the type of email to send (affects who receives it)
      * @throws SegueDatabaseException
-     * 				- a segue database exception
+     *                 - a segue database exception
      * @throws ContentManagerException
-     * 				- a content management exception
+     *                 - a content management exception
      */
     public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate,
                                        final List<RegisteredUserDTO> allSelectedUsers,
@@ -338,9 +338,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * e.g. SYSTEM emails cannot be filtered
      * 
      * @param userDTO
-     * 		- the userDTO used for logging. Must not be null. 
+     *         - the userDTO used for logging. Must not be null. 
      * @param email
-     * 		- the email we want to send. Must be non-null and have an associated non-null user id
+     *         - the email we want to send. Must be non-null and have an associated non-null user id
      * @return boolean - true if the email was added to the queue false if it was filtered for some reason
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
@@ -392,7 +392,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * not be used to send email to users
      * 
      * @param email
-     * 		- the email we want to send
+     *         - the email we want to send
      */
     public void addSystemEmailToQueue(final EmailCommunicationMessage email) {
         addToQueue(email);
@@ -567,17 +567,17 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage.
      *
      * @param userId
-     * 		- (nullable) the id of the user the email should be sent to
+     *         - (nullable) the id of the user the email should be sent to
      * @param userEmail
-     * 		- the email of the user
+     *         - the email of the user
      * @param emailType
      *      - the type of e-mail being created
      * @return
-     * 		- a multi-part EmailCommunicationMessage
+     *         - a multi-part EmailCommunicationMessage
      * @throws ContentManagerException
-     * 		- if there has been an error accessing content
+     *         - if there has been an error accessing content
      * @throws ResourceNotFoundException
-     * 		- if the resource has not been found
+     *         - if the resource has not been found
      *
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
@@ -591,20 +591,20 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage. 
      * 
      * @param userId
-     * 		- (nullable) the id of the user the email should be sent to
+     *         - (nullable) the id of the user the email should be sent to
      * @param userEmail
-     * 		- the email of the user 
+     *         - the email of the user 
      * @param emailType
      *      - the type of e-mail being created
      * @param attachments
-     * 			  - list of attachment objects
+     *               - list of attachment objects
      * @return
-     * 		- a multi-part EmailCommunicationMessage
+     *         - a multi-part EmailCommunicationMessage
      * @throws ContentManagerException
-     * 		- if there has been an error accessing content
+     *         - if there has been an error accessing content
      * @throws ResourceNotFoundException 
-     * 		- if the resource has not been found
-     * 	
+     *         - if the resource has not been found
+     *     
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
                                          EmailTemplateDTO emailContent, Properties contentProperties,
