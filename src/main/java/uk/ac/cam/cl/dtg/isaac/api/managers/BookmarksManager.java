@@ -90,4 +90,19 @@ public class BookmarksManager {
         }
         return contentSummaries;
     }
+
+    public String getBookmarkContentType(final String contentId) {
+        try {
+            ContentDTO content = this.contentManager.getContentById(contentId);
+            String contentType = content.getType();
+            if ((null == contentType) || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+                log.warn("Failed to bookmark content with invalid content type: {}", contentType);
+                throw new IllegalArgumentException("Invalid content type for bookmark: " + contentType);
+            }
+            return contentType;
+        } catch (final ContentManagerException e) {
+            log.warn("Error retrieving content for bookmark with content id {}: {}", contentId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }

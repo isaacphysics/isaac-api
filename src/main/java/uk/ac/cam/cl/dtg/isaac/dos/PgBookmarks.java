@@ -3,11 +3,8 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
@@ -25,7 +22,6 @@ public class PgBookmarks implements IBookmarks {
     private static final Logger log = LoggerFactory.getLogger(PgBookmarks.class);
 
     private final PostgresSqlDb database;
-    private final GitContentManager contentManager;
 
     /**
      * PgBookmarks.
@@ -33,9 +29,8 @@ public class PgBookmarks implements IBookmarks {
      * @param database client for postgres.
      */
     @Inject
-    public PgBookmarks(final PostgresSqlDb database, final GitContentManager contentManager) {
+    public PgBookmarks(final PostgresSqlDb database) {
         this.database = database;
-        this.contentManager = contentManager;
     }
 
     @Override
@@ -83,21 +78,8 @@ public class PgBookmarks implements IBookmarks {
     }
 
     @Override
-    public void addBookmarkForUser(final RegisteredUserDTO user, final String contentId) {
+    public void addBookmarkForUser(final RegisteredUserDTO user, final String contentId, final String contentType) {
         Timestamp created = new Timestamp(System.currentTimeMillis());
-
-        String contentType = "";
-        try {
-            ContentDTO content = this.contentManager.getContentById(contentId);
-            contentType = content.getType();
-        } catch (final ContentManagerException e) {
-            throw new RuntimeException(e);
-        }
-
-        if ((null == contentType) || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
-            log.warn("Failed to bookmark content with invalid content type: {}", contentType);
-            throw new IllegalArgumentException("Invalid content type for bookmark: " + contentType);
-        }
 
         String query = "INSERT INTO user_bookmarks (user_id, content_id, content_type, created) VALUES (?, ?, ?, ?)";
         try (Connection conn = database.getDatabaseConnection();

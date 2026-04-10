@@ -93,7 +93,8 @@ public class BookmarksFacade {
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.")
                     .toResponse();
         } else {
-            bookmarksDbManager.addBookmarkForUser(user, contentId);
+            String contentType = bookmarksManager.getBookmarkContentType(contentId);
+            bookmarksDbManager.addBookmarkForUser(user, contentId, contentType);
         }
         return Response.noContent().build();
     }
