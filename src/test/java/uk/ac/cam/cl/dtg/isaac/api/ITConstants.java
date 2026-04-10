@@ -24,6 +24,7 @@ public final class ITConstants {
     // Users
     public static final String TEST_ADMIN_EMAIL = "test-admin@test.com";
     public static final String TEST_ADMIN_PASSWORD = "test1234";
+    public static final String TEST_ADMIN_MFA_SECRET = "OQXZE3PEGIGKAAP6";
     public static final long TEST_ADMIN_ID = 2L;
 
     public static final String TEST_EDITOR_EMAIL = "test-editor@test.com";
@@ -36,10 +37,12 @@ public final class ITConstants {
 
     public static final String TEST_EVENTMANAGER_EMAIL = "test-event@test.com";
     public static final String TEST_EVENTMANAGER_PASSWORD = "test1234";
+    public static final String  TEST_EVENTMANAGER_MFA_SECRET = TEST_ADMIN_MFA_SECRET;
     public static final long TEST_EVENTMANAGER_ID = 3L;
 
     public static final String GARY_EVENTMANAGER_EMAIL = "gary-event@test.com";
     public static final String GARY_EVENTMANAGER_PASSWORD = "test1234";
+    public static final String GARY_EVENTMANAGER_MFA_SECRET = TEST_ADMIN_MFA_SECRET;
     public static final long GARY_EVENTMANAGER_ID = 14L;
 
     public static final String TEST_EVENTLEADER_EMAIL = "test-event-leader@test.com";
