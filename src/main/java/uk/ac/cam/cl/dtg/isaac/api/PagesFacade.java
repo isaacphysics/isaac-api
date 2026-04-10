@@ -515,7 +515,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 }
 
                 if (user instanceof RegisteredUserDTO registeredUser) {
-                    summarizedResults = bookmarksManager.augmentContentSummaryListWithBookmarkInformation(registeredUser, summarizedResults);
+                    summarizedResults = bookmarksManager.augmentContentSummaryListWithBookmarkInformation(registeredUser.getId(), summarizedResults);
                 }
 
                 if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {

@@ -8,11 +8,11 @@ import java.util.List;
  * Interface for managing and persisting user bookmarks.
  */
 public interface IBookmarks {
-    List<BookmarkDO> getBookmarksForUser(RegisteredUserDTO user);
+    List<BookmarkDO> getBookmarksForUser(Long userId);
 
-    List<BookmarkDO> getBookmarksForUser(RegisteredUserDTO user, String contentType);
+    List<BookmarkDO> getBookmarksForUser(Long userId, String contentType);
 
-    void addBookmarkForUser(RegisteredUserDTO user, String contentId, String contentType);
+    void addBookmarkForUser(Long userId, String contentId, String contentType);
 
-    void removeBookmarkForUser(RegisteredUserDTO user, String contentId);
+    void removeBookmarkForUser(Long userId, String contentId);
 }

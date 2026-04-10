@@ -34,12 +34,12 @@ public class PgBookmarks implements IBookmarks {
     }
 
     @Override
-    public List<BookmarkDO> getBookmarksForUser(final RegisteredUserDTO user) {
-        return this.getBookmarksForUser(user, null);
+    public List<BookmarkDO> getBookmarksForUser(final Long userId) {
+        return this.getBookmarksForUser(userId, null);
     }
 
     @Override
-    public List<BookmarkDO> getBookmarksForUser(final RegisteredUserDTO user, final String contentType) {
+    public List<BookmarkDO> getBookmarksForUser(final Long userId, final String contentType) {
 
         String query = "SELECT content_id, created FROM user_bookmarks WHERE user_id = ?";
 
@@ -59,7 +59,7 @@ public class PgBookmarks implements IBookmarks {
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setLong(1, user.getId());
+            pst.setLong(1, userId);
 
             if (filterByContentType) {
                 pst.setString(2, contentType);
@@ -78,14 +78,14 @@ public class PgBookmarks implements IBookmarks {
     }
 
     @Override
-    public void addBookmarkForUser(final RegisteredUserDTO user, final String contentId, final String contentType) {
+    public void addBookmarkForUser(final Long userId, final String contentId, final String contentType) {
         Timestamp created = new Timestamp(System.currentTimeMillis());
 
         String query = "INSERT INTO user_bookmarks (user_id, content_id, content_type, created) VALUES (?, ?, ?, ?)";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setLong(1, user.getId());
+            pst.setLong(1, userId);
             pst.setString(2, contentId);
             pst.setString(3, contentType);
             pst.setTimestamp(4, created);
@@ -99,12 +99,12 @@ public class PgBookmarks implements IBookmarks {
     }
 
     @Override
-    public void removeBookmarkForUser(final RegisteredUserDTO user, final String contentId) {
+    public void removeBookmarkForUser(final Long userId, final String contentId) {
         String query = "DELETE FROM user_bookmarks WHERE user_id = ? AND content_id = ?";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setLong(1, user.getId());
+            pst.setLong(1, userId);
             pst.setString(2, contentId);
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to remove bookmark.");

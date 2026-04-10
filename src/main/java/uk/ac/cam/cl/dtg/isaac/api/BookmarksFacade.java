@@ -65,7 +65,7 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        List<BookmarkDO> bookmarks = bookmarksDbManager.getBookmarksForUser(user, contentType);
+        List<BookmarkDO> bookmarks = bookmarksDbManager.getBookmarksForUser(user.getId(), contentType);
         return Response.ok(bookmarksManager.mapBookmarkListToContentSummaryList(bookmarks)).build();
     }
 
@@ -89,12 +89,12 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        if (bookmarksDbManager.getBookmarksForUser(user).size() >= 100) {
+        if (bookmarksDbManager.getBookmarksForUser(user.getId()).size() >= 100) {
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.")
                     .toResponse();
         } else {
             String contentType = bookmarksManager.getBookmarkContentType(contentId);
-            bookmarksDbManager.addBookmarkForUser(user, contentId, contentType);
+            bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
         }
         return Response.noContent().build();
     }
@@ -119,7 +119,7 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        bookmarksDbManager.removeBookmarkForUser(user, contentId);
+        bookmarksDbManager.removeBookmarkForUser(user.getId(), contentId);
         return Response.noContent().build();
     }
 }

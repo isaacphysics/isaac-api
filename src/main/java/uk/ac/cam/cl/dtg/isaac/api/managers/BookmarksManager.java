@@ -43,14 +43,14 @@ public class BookmarksManager {
     /**
      * Augment a list of content summaries with bookmark information for a given user.
      *
-     * @param user the user to augment the content summary list for.
+     * @param userId the id of the user to augment the content summary list for.
      * @param contentSummaries the content summary list to augment.
      * @return the augmented content summary list.
      */
-    public List<ContentSummaryDTO> augmentContentSummaryListWithBookmarkInformation(final RegisteredUserDTO user,
+    public List<ContentSummaryDTO> augmentContentSummaryListWithBookmarkInformation(final Long userId,
                                                                     final List<ContentSummaryDTO> contentSummaries) {
 
-        List<BookmarkDO> bookmarks = this.bookmarksDbManager.getBookmarksForUser(user);
+        List<BookmarkDO> bookmarks = this.bookmarksDbManager.getBookmarksForUser(userId);
 
         for (ContentSummaryDTO contentSummary : contentSummaries) {
             for (BookmarkDO bookmark : bookmarks) {
