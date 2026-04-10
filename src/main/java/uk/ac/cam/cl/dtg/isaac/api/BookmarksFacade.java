@@ -3,6 +3,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
+import uk.ac.cam.cl.dtg.isaac.dos.BookmarkDO;
 import uk.ac.cam.cl.dtg.isaac.dos.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -19,6 +21,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * Bookmarks Facade
@@ -29,11 +32,14 @@ import jakarta.ws.rs.core.Response;
 @Tag(name = "BookmarksFacade", description = "/bookmarks")
 public class BookmarksFacade {
     private final UserAccountManager userManager;
+    private final BookmarksManager bookmarksManager;
     private final IBookmarks bookmarksDbManager;
 
     @Inject
-    public BookmarksFacade(final UserAccountManager userManager, final IBookmarks bookmarksDbManager) {
+    public BookmarksFacade(final UserAccountManager userManager, final BookmarksManager bookmarksManager,
+                           final IBookmarks bookmarksDbManager) {
         this.userManager = userManager;
+        this.bookmarksManager = bookmarksManager;
         this.bookmarksDbManager = bookmarksDbManager;
     }
 
@@ -59,7 +65,8 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        return Response.ok(bookmarksDbManager.getBookmarksForUser(user, contentType)).build();
+        List<BookmarkDO> bookmarks = bookmarksDbManager.getBookmarksForUser(user, contentType);
+        return Response.ok(bookmarksManager.mapBookmarkListToContentSummaryList(bookmarks)).build();
     }
 
     /**

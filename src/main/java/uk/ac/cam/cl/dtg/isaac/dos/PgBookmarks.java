@@ -4,13 +4,11 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,12 +18,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Postgres implementation for managing and persisting bookmarks data.
+ */
 public class PgBookmarks implements IBookmarks {
     private static final Logger log = LoggerFactory.getLogger(PgBookmarks.class);
 
     private final PostgresSqlDb database;
     private final GitContentManager contentManager;
-    private final MainMapper mapper = MainMapper.INSTANCE;
 
     /**
      * PgBookmarks.
@@ -39,14 +39,14 @@ public class PgBookmarks implements IBookmarks {
     }
 
     @Override
-    public List<ContentSummaryDTO> getBookmarksForUser(final RegisteredUserDTO user) {
+    public List<BookmarkDO> getBookmarksForUser(final RegisteredUserDTO user) {
         return this.getBookmarksForUser(user, null);
     }
 
     @Override
-    public List<ContentSummaryDTO> getBookmarksForUser(final RegisteredUserDTO user, final String contentType) {
+    public List<BookmarkDO> getBookmarksForUser(final RegisteredUserDTO user, final String contentType) {
 
-        String query = "SELECT content_id, timestamp FROM user_bookmarks WHERE user_id = ?";
+        String query = "SELECT content_id, created FROM user_bookmarks WHERE user_id = ?";
 
         boolean filterByContentType = false;
         if (null != contentType) {
@@ -59,7 +59,7 @@ public class PgBookmarks implements IBookmarks {
             }
         }
 
-        List<ContentSummaryDTO> bookmarks = new ArrayList<>();
+        List<BookmarkDO> bookmarks = new ArrayList<>();
 
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
@@ -70,19 +70,11 @@ public class PgBookmarks implements IBookmarks {
                 pst.setString(2, contentType);
             }
 
-            try (ResultSet results = pst.executeQuery()) {
-                while (results.next()) {
-                    String contentId = results.getString("content_id");
-                    ContentDTO content = this.contentManager.getContentById(contentId);
-                    ContentSummaryDTO contentSummary = this.mapper.mapContentDTOtoContentSummaryDTO(content);
-
-                    Timestamp timestamp = results.getTimestamp("timestamp");
-                    contentSummary.setBookmarked(timestamp);
-
-                    bookmarks.add(contentSummary);
-                }
-            } catch (final ContentManagerException e) {
-                throw new RuntimeException(e);
+            ResultSet results = pst.executeQuery();
+            while (results.next()) {
+                String contentId = results.getString("content_id");
+                Timestamp created = results.getTimestamp("created");
+                bookmarks.add(new BookmarkDO(contentId, created));
             }
         } catch (final SQLException e) {
             e.printStackTrace();
@@ -92,7 +84,7 @@ public class PgBookmarks implements IBookmarks {
 
     @Override
     public void addBookmarkForUser(final RegisteredUserDTO user, final String contentId) {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        Timestamp created = new Timestamp(System.currentTimeMillis());
 
         String contentType = "";
         try {
@@ -107,14 +99,14 @@ public class PgBookmarks implements IBookmarks {
             throw new IllegalArgumentException("Invalid content type for bookmark: " + contentType);
         }
 
-        String query = "INSERT INTO user_bookmarks (user_id, content_id, content_type, timestamp) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO user_bookmarks (user_id, content_id, content_type, created) VALUES (?, ?, ?, ?)";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setLong(1, user.getId());
             pst.setString(2, contentId);
             pst.setString(3, contentType);
-            pst.setTimestamp(4, timestamp);
+            pst.setTimestamp(4, created);
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save bookmark.");
             }
