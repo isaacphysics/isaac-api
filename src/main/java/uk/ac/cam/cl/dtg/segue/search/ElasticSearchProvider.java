@@ -44,7 +44,8 @@ import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import co.elastic.clients.elasticsearch.indices.IndexState;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
-import co.elastic.clients.transport.rest_client.RestClientTransport;
+import co.elastic.clients.transport.rest5_client.Rest5ClientTransport;
+import co.elastic.clients.transport.rest5_client.low_level.Rest5Client;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -53,12 +54,10 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.client.RestClient;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -331,15 +330,15 @@ public class ElasticSearchProvider implements ISearchProvider {
      */
     public static ElasticsearchClient getClient(final String address, final int port, final String username,
                                                 final String password) throws UnknownHostException {
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
 
-        RestClient restClient = RestClient.builder(new HttpHost(InetAddress.getByName(address), port, "http"))
-                .setHttpClientConfigCallback(httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
-                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder.setSocketTimeout(360000))
+        String credentials = java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
+        Rest5Client restClient = Rest5Client.builder(new HttpHost("http", InetAddress.getByName(address), port))
+                .setDefaultHeaders(new Header[]{new BasicHeader("Authorization", "Basic " + credentials)})
+                .setConnectionConfigCallback(connectConfig -> connectConfig.setSocketTimeout(Timeout.ofSeconds(360)))
                 .build();
 
-        ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+        ElasticsearchTransport transport = new Rest5ClientTransport(restClient, new JacksonJsonpMapper());
         ElasticsearchClient client = new ElasticsearchClient(transport);
 
         log.info("Elastic Search client created: {}:{}", address, port);
@@ -364,7 +363,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         try {
             return client.indices()
                 .get(g -> g.index("*"))
-                .result()
+                .indices()
                 .keySet();
         } catch (final IOException e) {
             log.error("Exception while retrieving all indices", e);
@@ -892,7 +891,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             String max_window_size = this.settingsCache.getIfPresent(MAX_WINDOW_SIZE_KEY);
             if (null == max_window_size) {
                 GetIndexResponse response = client.indices().get(g -> g.index(typedIndex));
-                Map<String, IndexState> indices = response.result();
+                Map<String, IndexState> indices = response.indices();
                 for (IndexState indexState : indices.values()) {
                     if (null == indexState || null == indexState.settings()) {
                         continue;
