@@ -56,7 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 public class MailGunEmailManager {
 
     private final Map<String, String> globalStringTokens;
-    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
+    private static final Logger log = LoggerFactory.getLogger(MailGunEmailManager.class);
 
     private MailgunMessagesApi mailgunMessagesApi;
     private final AbstractUserPreferenceManager userPreferenceManager;

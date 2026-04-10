@@ -7,7 +7,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 public class LLMFreeTextQuestionAttemptMisuseHandler implements IMisuseHandler {
-    private static final Logger log = LoggerFactory.getLogger(QuestionAttemptMisuseHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(LLMFreeTextQuestionAttemptMisuseHandler.class);
 
     private static final Integer SOFT_THRESHOLD = 20;
     private static final Integer HARD_THRESHOLD = 30;
