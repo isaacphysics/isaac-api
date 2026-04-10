@@ -237,7 +237,7 @@ public class ContentSummaryDTO {
      * Sets the timestamp this content was bookmarked by the user.
      *
      * @param bookmarked
-     *                  the current timestamp for bookmarking operations, or null for unbookmarking operations
+     *                  the timestamp this content was bookmarked
      */
     public void setBookmarked(final Date bookmarked) {
         this.bookmarked = bookmarked;

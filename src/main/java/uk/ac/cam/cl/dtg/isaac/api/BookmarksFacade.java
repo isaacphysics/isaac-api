@@ -51,7 +51,7 @@ public class BookmarksFacade {
     @Path("bookmarks")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get bookmarks for the current user.")
-    public final Response getCurrentBookmarks(@Context final HttpServletRequest request,
+    public final Response getCurrentUserBookmarks(@Context final HttpServletRequest request,
                                                   @QueryParam("content_type") final String contentType) {
         RegisteredUserDTO user;
         try {
