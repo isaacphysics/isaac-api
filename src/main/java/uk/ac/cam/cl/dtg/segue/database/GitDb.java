@@ -181,7 +181,7 @@ public class GitDb {
         }
 
         revWalk.dispose();
-        log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + fullFilePath + " found: " + path);
+        log.debug("Retrieved Commit Id: '{}'. Searching for: '{}' found: '{}'.", commitId.getName(), fullFilePath, path);
         ObjectLoader loader = repository.open(objectId);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -212,7 +212,7 @@ public class GitDb {
 
         ObjectId commitId = gitHandle.getRepository().resolve(sha);
         if (null == commitId) {
-            log.error("Failed to buildGitIndex - Unable to locate resource with sha: " + sha);
+            log.error("Failed to buildGitIndex - Unable to locate resource with sha: {}", sha);
         } else {
             RevWalk revWalk = new RevWalk(gitHandle.getRepository());
             RevCommit commit = revWalk.parseCommit(commitId);
@@ -275,7 +275,7 @@ public class GitDb {
             e.printStackTrace();
         }
 
-        log.debug("Commit " + sha + " does not exist");
+        log.debug("Commit '{}' does not exist", sha);
         return false;
     }
 
@@ -301,17 +301,14 @@ public class GitDb {
             }
 
         } catch (NoHeadException e) {
-            log.error("Git returned a no head exception. Unable to list all commits.");
-            e.printStackTrace();
+            log.error("Git returned a no head exception. Unable to list all commits.", e);
         } catch (GitAPIException e) {
-            log.error("Git returned an API exception. Unable to list all commits.");
-            e.printStackTrace();
+            log.error("Git returned an API exception. Unable to list all commits.", e);
         } catch (IOException e) {
-            log.error("Git returned an IO exception. Unable to list all commits.");
-            e.printStackTrace();
+            log.error("Git returned an IO exception. Unable to list all commits.", e);
         }
 
-        log.warn("Commit " + sha + " does not exist");
+        log.warn("Commit '{}' does not exist", sha);
         throw new NotFoundException("Commit " + sha + " does not exist");
     }
 
@@ -357,7 +354,7 @@ public class GitDb {
                     log.error("Failed to fetch. The git repository may be corrupted. "
                             + "Hopefully, this will not be a problem.");
                 } else {
-                    log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+                    log.info("Fetched latest from git. Latest version is: '{}'", this.getHeadSha());
                 }
             }
         } catch (TransportException e) {

@@ -30,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -61,7 +60,6 @@ import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,7 +73,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -186,7 +183,7 @@ public class GameManager {
             String uuid = UUID.randomUUID().toString();
 
             // filter game board ready questions to make up a decent gameboard.
-            log.debug("Created gameboard " + uuid);
+            log.debug("Created gameboard: '{}'.", uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
                     null, null, new Date(), gameFilter,
@@ -812,9 +809,8 @@ public class GameManager {
             try {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
             } catch (ResourceNotFoundException e) {
-                log.info(String.format(
-                        "The gameboard '%s' references an unavailable question '%s' - treating it as if it never existed for marking!",
-                        gameboardDTO.getId(), gameItem.getId()));
+                log.info("The gameboard '{}' references an unavailable question '{}' - treating it as if it never existed for marking!",
+                        gameboardDTO.getId(), gameItem.getId());
                 continue;
             }
 
@@ -853,7 +849,7 @@ public class GameManager {
                     try {
                         this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
                     } catch (ContentManagerException | ResourceNotFoundException e) {
-                        log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
+                        log.error("Unable to augment '{}' with user attempt information", questionItem.getId());
                     }
                     return questionItem;
                 }).collect(Collectors.toList());

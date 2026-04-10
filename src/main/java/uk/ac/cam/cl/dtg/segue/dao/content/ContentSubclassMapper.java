@@ -131,7 +131,7 @@ public class ContentSubclassMapper {
         if (jt != null) {
             jsonTypes.put(jt.value(), cls);
         } else {
-            log.error("The jsonType annotation type provided cannot be null. For the class " + cls);
+            log.error("The jsonType annotation type provided cannot be null for class ({})!", cls);
         }
     }
 
@@ -149,8 +149,8 @@ public class ContentSubclassMapper {
         if (dtoMapping != null && ContentDTO.class.isAssignableFrom(dtoMapping.value())) {
             this.mapOfDOsToDTOs.put(cls, (Class<? extends ContentDTO>) dtoMapping.value());
         } else {
-            log.error("The DTO mapping provided is null or the annotation is not present" + " for the class " + cls
-                    + ". This class cannot be auto mapped from DO to DTO.");
+            log.error("The DTO mapping provided is null or annotation is not present for class '{}'."
+                    + " This class cannot be auto mapped from DO to DTO.", cls);
         }
     }
 

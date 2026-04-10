@@ -15,18 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.util;
 
+import com.google.inject.Inject;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Set;
-
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 
 /**
  * A simple helper class for loading properties files and retrieving values from them.
@@ -70,7 +69,7 @@ public class PropertiesLoader extends AbstractConfigLoader {
         String value = loadedProperties.getProperty(key);
 
         if (null == value) {
-            log.warn("Failed to resolve requested property with key: " + key + ", " + this.configPath);
+            log.warn("Failed to resolve requested property with key '{}' in '{}'", key, this.configPath);
         }
 
         return value;
@@ -109,6 +108,6 @@ public class PropertiesLoader extends AbstractConfigLoader {
             loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.configPath));
         }
         lastRefreshed = new Date();
-        log.debug("Properties file read successfully " + configPath);
+        log.debug("Properties file read successfully from '{}'", configPath);
     }
 }

@@ -43,12 +43,11 @@ public class AuditMonitor implements ContainerResponseFilter {
     public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) {
         // As of 16/02/2021 the CSV will be in the following machine-readable format (without the spaces):
         // date_and_time, ip_address, jsessionid, segue_user_id, session_token, is_valid_hmac, http_method, canonical_path, request_path, response_code
-        log.trace(String.format("%s,%s,%s,%s,%d",
+        log.trace("{},{},{},{},{}",
                 userAuthenticationManager.getUserIdentifierCsv(httpServletRequest),
-                containerRequestContext.getMethod(), // http_method
-                monitorService.getPathWithoutPathParamValues(request.getUri()), // canonical_path
-                request.getUri().getPath(), // request_path
-                containerResponseContext.getStatus() // response_code
-        ));
+                containerRequestContext.getMethod(),
+                monitorService.getPathWithoutPathParamValues(request.getUri()),
+                request.getUri().getPath(),
+                containerResponseContext.getStatus());
     }
 }

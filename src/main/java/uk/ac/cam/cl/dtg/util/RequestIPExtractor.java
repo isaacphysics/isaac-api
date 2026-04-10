@@ -46,7 +46,7 @@ public final class RequestIPExtractor {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip != null && ip.contains(",")) {
             // If X-Forwarded-For contains multiple comma-separated IP addresses, we want only the last one.
-            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
+            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '{}'", ip);
             ip = ip.substring(ip.lastIndexOf(',') + 1).trim();
         }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {

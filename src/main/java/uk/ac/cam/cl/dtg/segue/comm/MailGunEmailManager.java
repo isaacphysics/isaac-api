@@ -159,7 +159,7 @@ public class MailGunEmailManager {
         List<String> usersToSendTo = Lists.newArrayList(recipientVariables.keySet());
         if (usersToSendTo.isEmpty()) {
             if (!userDTOs.isEmpty()) {
-                log.warn(String.format("No eligible recipients from batch of %s %s emails.", userDTOs.size(), emailType.name()));
+                log.warn("No eligible recipients from batch of {} {} emails.", userDTOs.size(), emailType.name());
             }
             return CompletableFuture.completedFuture(Optional.empty());
         }

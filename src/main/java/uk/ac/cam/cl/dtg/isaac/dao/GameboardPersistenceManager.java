@@ -576,8 +576,8 @@ public class GameboardPersistenceManager {
             } finally {
                 contents.free();
             }
-            
-            log.debug("Saving gameboard... Gameboard ID: " + gameboardToSave.getId());
+
+            log.debug("Saving gameboard with ID: '{}'.", gameboardToSave.getId());
             
             return gameboardToSave;
         } catch (SQLException e) {

@@ -271,8 +271,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_MASS_EMAIL, eventDetails);
-        log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
-                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
+        log.info("User ({}) added {} emails to the queue. {} were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers);
     }
 
 
@@ -325,8 +325,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_CUSTOM_MASS_EMAIL, eventDetails);
-        log.info(String.format("User (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
-                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
+        log.info("User ({}) added {} emails to the queue. {} were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers);
     }
     
     
@@ -365,7 +365,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
-            log.info(String.format("Added %s email to the queue with subject: %s", email.getEmailType().toString().toLowerCase(), email.getSubject()));
+            log.info("Added {} email to the queue with subject: '{}'.", email.getEmailType().toString().toLowerCase(), email.getSubject());
             logManager.logInternalEvent(userDTO, SegueServerLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
             return true;
@@ -396,7 +396,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void addSystemEmailToQueue(final EmailCommunicationMessage email) {
         addToQueue(email);
-        log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
+        log.info("Added system email to the queue with subject: '{}'.", email.getSubject());
     }
 
     /**
@@ -520,7 +520,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 String tag = template.substring(m.start() + offset, m.end() + offset);
 
                 if (tag.length() <= MINIMUM_TAG_LENGTH) {
-                    log.info("Skipped email template tag with no contents: " + tag);
+                    log.info("Skipped email template tag with no contents: '{}'.", tag);
                     break;
                 }
 
@@ -556,7 +556,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         if (unknownTags.size() != 0) {
-            log.error("Email template contains tags that were not resolved! - " + unknownTags);
+            log.error("Email template contains tags that were not resolved! - {}", unknownTags);
             throw new IllegalArgumentException("Email template contains tag that was not provided! - " + unknownTags);
         }
 

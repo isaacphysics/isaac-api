@@ -15,16 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
-import com.google.inject.Inject;
 
 /**
  * Handler to detect users storing large amounts of data in our log database.
@@ -71,7 +69,7 @@ public class LogEventMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
+        log.warn("Soft threshold limit: {}", message);
     }
 
     @Override
@@ -82,6 +80,6 @@ public class LogEventMisuseHandler implements IMisuseHandler {
                 subject, message, message, EmailType.ADMIN);
 
         emailManager.addSystemEmailToQueue(e);
-        log.warn("Hard threshold limit: " + message);
+        log.warn("Hard threshold limit: {}", message);
     }
 }

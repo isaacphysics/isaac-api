@@ -47,8 +47,7 @@ public class ChoiceQuestionValidator implements IValidator {
         if (question instanceof ChoiceQuestion choiceQuestion) {
 
             if (null == choiceQuestion.getChoices() || choiceQuestion.getChoices().isEmpty()) {
-                log.warn("Question does not have any answers. " + question.getId() + " src: "
-                        + question.getCanonicalSourceFile());
+                log.warn("Question ({}) does not have any answers! File: '{}'", question.getId(), question.getCanonicalSourceFile());
                 return new QuestionValidationResponse(question.getId(), answer, false, null, new Date());
             }
 

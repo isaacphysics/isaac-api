@@ -151,7 +151,7 @@ public class UserAlertsWebSocket implements IAlertListener {
                 session.close(StatusCode.POLICY_VIOLATION, "Invalid message!",  Callback.NOOP);
             }
         } catch (IOException e) {
-            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.warn("WebSocket connection failed! {}: {}", e.getClass().getSimpleName(), e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onText IOException",  Callback.NOOP);
         } finally {
             if (latencyTimer != null) {
@@ -204,18 +204,17 @@ public class UserAlertsWebSocket implements IAlertListener {
 
                 // Report on state change
                 if (addedUser) {
-                    log.debug("User " + connectedUserId + " started a new websocket session.");
+                    log.debug("User ({}) started a new websocket session.", connectedUserId);
                     SegueMetrics.CURRENT_WEBSOCKET_USERS.inc();
                 }
 
                 // A websocket must be created for this object to be instantiated - we close it early if they have too many
                 SegueMetrics.CURRENT_OPEN_WEBSOCKETS.inc();
                 if (addedSocket) {
-                    log.debug("User " + connectedUserId + " opened new websocket. Total open: " + numberOfUserSockets);
+                    log.debug("User ({}) opened new websocket. Total open: {}", connectedUserId, numberOfUserSockets);
                     SegueMetrics.WEBSOCKETS_OPENED_SUCCESSFULLY.inc();
                 } else {
-                    log.debug("User " + connectedUserId
-                            + " attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.");
+                    log.debug("User ({}) attempted to open too many simultaneous WebSockets; sending TRY_AGAIN_LATER.", connectedUserId);
                     session.close(StatusCode.NORMAL, "TRY_AGAIN_LATER",  Callback.NOOP);
                     return;
                 }
@@ -235,13 +234,13 @@ public class UserAlertsWebSocket implements IAlertListener {
             }
 
         } catch (IOException e) {
-            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.warn("WebSocket connection failed! {}: {}", e.getClass().getSimpleName(), e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onConnect IOException",  Callback.NOOP);
         } catch (NoUserException e) {
-            log.debug("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.debug("WebSocket connection failed! {}: {}", e.getClass().getSimpleName(), e.getMessage());
             session.close(StatusCode.POLICY_VIOLATION, e.getClass().getSimpleName(),  Callback.NOOP);
         } catch (SegueDatabaseException e) {
-            log.warn("WebSocket connection failed! " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.warn("WebSocket connection failed! {}: {}", e.getClass().getSimpleName(), e.getMessage());
             session.close(StatusCode.SERVER_ERROR, "onConnect Database Error",  Callback.NOOP);
         }
     }
@@ -283,10 +282,10 @@ public class UserAlertsWebSocket implements IAlertListener {
         SegueMetrics.WEBSOCKETS_CLOSED.inc();
 
         if (removeUser) {
-            log.debug("User " + connectedUserId + " closed all of its open websockets");
+            log.debug("User ({}) closed all their open websockets", connectedUserId);
             SegueMetrics.CURRENT_WEBSOCKET_USERS.dec();
         } else {
-            log.debug("User " + connectedUserId + " closed a websocket. Total still open: " + numberOfUserSockets);
+            log.debug("User ({}) closed a websocket. Total still open: {}", connectedUserId, numberOfUserSockets);
         }
     }
 
@@ -305,7 +304,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     public void onError(final Session session, final Throwable error) {
         long connectedUserId = connectedUser.getId();
         if (!(error instanceof WebSocketTimeoutException || error instanceof ClosedChannelException)) {
-            log.warn(String.format("Error in WebSocket for user (%s): %s", connectedUserId, error));
+            log.warn("Error in WebSocket for user ({}): {}", connectedUserId, error);
         }
     }
 

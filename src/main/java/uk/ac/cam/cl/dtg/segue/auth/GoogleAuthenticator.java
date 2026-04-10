@@ -215,7 +215,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
             return internalReferenceToken;
         } catch (IOException e) {
-            log.error("An error occurred during code exchange: " + e);
+            log.error("An error occurred during code exchange!", e);
             throw new CodeExchangeException();
         }
     }
@@ -238,9 +238,9 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
         try {
             userInfo = userInfoService.userinfo().get().execute();
-            log.debug("Retrieved User info from google: " + userInfo.toPrettyString());
+            log.debug("Retrieved User info from google: {}", userInfo.toPrettyString());
         } catch (IOException e) {
-            log.error("An IO error occurred while trying to retrieve user information: " + e);
+            log.error("IO error occurred while trying to retrieve user information!", e);
         }
         if (userInfo != null && userInfo.getId() != null) {
             EmailVerificationStatus emailStatus = userInfo.isVerifiedEmail() ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
@@ -248,7 +248,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
             if (null == email) {
                 email = userInfo.getId() + "-google";
                 emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
-                log.warn("No email address provided by Google! Using (" + email + ") instead");
+                log.warn("No email address provided by Google! Using ({}) instead", email);
             }
 
             return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),

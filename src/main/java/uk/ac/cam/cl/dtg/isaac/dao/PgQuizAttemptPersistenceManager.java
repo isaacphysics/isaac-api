@@ -119,7 +119,7 @@ public class PgQuizAttemptPersistenceManager implements IQuizAttemptPersistenceM
                     throw new SQLException("Creating attempt failed, no ID obtained.");
                 }
 
-                log.debug("Saving Quiz Attempt... Quiz Attempt ID: " + attempt.getId() + " Db id : " + attemptId);
+                log.debug("Saving Quiz Attempt ID ({}) with database ID ({})", attempt.getId(), attemptId);
                 return attemptId;
             }
 

@@ -158,11 +158,9 @@ public class QuizManager {
                     quiz = this.contentSummarizerService.extractContentSummary(this.findQuiz(quizId), QuizSummaryDTO.class);
                 } catch (ContentManagerException e) {
                     if (item instanceof QuizAttemptDTO attempt) {
-                        log.warn("Attempt (" + attempt.getId() +  ") exists with test ID ("
-                            + item.getQuizId() + ") that does not exist!");
+                        log.warn("Attempt ({}) exists with test ID ({}) that does not exist!", attempt.getId(), item.getQuizId());
                     } else if (item instanceof QuizAssignmentDTO assignment) {
-                        log.warn("Assignment (" + assignment.getId() +  ") exists with test ID ("
-                            + item.getQuizId() + ") that does not exist!");
+                        log.warn("Assignment ({}) exists with test ID ({}) that does not exist!", assignment.getId(), item.getQuizId());
                     }
                 }
                 quizCache.put(quizId, quiz);
@@ -193,7 +191,7 @@ public class QuizManager {
                 if (c instanceof IsaacQuizSectionDTO quizSection) {
                     return Stream.of(quizSection);
                 } else {
-                    log.warn("Test id " + quiz.getId() + " contains top-level non-section with id " + c.getId());
+                    log.warn("Test ({}) contains top-level non-section with ID ({})!", quiz.getId(), c.getId());
                     return Stream.empty();
                 }
             }).collect(Collectors.toList());
