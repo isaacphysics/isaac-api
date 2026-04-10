@@ -13,10 +13,10 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,7 +76,7 @@ public class PgBookmarks implements IBookmarks {
                     ContentDTO content = this.contentManager.getContentById(contentId);
                     ContentSummaryDTO contentSummary = this.mapper.mapContentDTOtoContentSummaryDTO(content);
 
-                    Date timestamp = results.getDate("timestamp");
+                    Timestamp timestamp = results.getTimestamp("timestamp");
                     contentSummary.setBookmarked(timestamp);
 
                     bookmarks.add(contentSummary);
@@ -92,7 +92,7 @@ public class PgBookmarks implements IBookmarks {
 
     @Override
     public void addBookmarkForUser(final RegisteredUserDTO user, final String contentId) {
-        Date timestamp = new Date(System.currentTimeMillis());
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
         String contentType = "";
         try {
@@ -114,7 +114,7 @@ public class PgBookmarks implements IBookmarks {
             pst.setLong(1, user.getId());
             pst.setString(2, contentId);
             pst.setString(3, contentType);
-            pst.setDate(4, timestamp);
+            pst.setTimestamp(4, timestamp);
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save bookmark.");
             }
