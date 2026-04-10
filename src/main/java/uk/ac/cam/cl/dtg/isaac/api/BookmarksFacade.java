@@ -3,13 +3,18 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.BookmarkDO;
 import uk.ac.cam.cl.dtg.isaac.dos.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
@@ -21,6 +26,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 
 /**
@@ -31,14 +37,18 @@ import java.util.List;
 @Path("/")
 @Tag(name = "BookmarksFacade", description = "/bookmarks")
 public class BookmarksFacade {
+    private static final Logger log = LoggerFactory.getLogger(BookmarksFacade.class);
+
     private final UserAccountManager userManager;
+    private final GitContentManager contentManager;
     private final BookmarksManager bookmarksManager;
     private final IBookmarks bookmarksDbManager;
 
     @Inject
-    public BookmarksFacade(final UserAccountManager userManager, final BookmarksManager bookmarksManager,
-                           final IBookmarks bookmarksDbManager) {
+    public BookmarksFacade(final UserAccountManager userManager, final GitContentManager contentManager,
+                           final BookmarksManager bookmarksManager, final IBookmarks bookmarksDbManager) {
         this.userManager = userManager;
+        this.contentManager = contentManager;
         this.bookmarksManager = bookmarksManager;
         this.bookmarksDbManager = bookmarksDbManager;
     }
@@ -90,11 +100,24 @@ public class BookmarksFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
         if (bookmarksDbManager.getBookmarksForUser(user.getId()).size() >= 100) {
-            return new SegueErrorResponse(Response.Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.")
-                    .toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.").toResponse();
         } else {
-            String contentType = bookmarksManager.getBookmarkContentType(contentId);
-            bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
+            try {
+                ContentDTO content = this.contentManager.getContentById(contentId);
+                String contentType = content.getType();
+                if ((null == contentType) || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                            "Invalid content type for bookmark: " + contentType);
+                    log.error(error.getErrorMessage());
+                    return error.toResponse();
+                }
+                bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
+            } catch (final ContentManagerException | NullPointerException e) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                        "Failed to create bookmark, could not find content: " + contentId, e);
+                log.error(error.getErrorMessage(), e);
+                return error.toResponse();
+            }
         }
         return Response.noContent().build();
     }
