@@ -32,6 +32,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Abstract superclass for integration test. Use when testing in the context of a REST application. This lets you
@@ -186,11 +187,11 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         void assertNoUserLoggedIn() {
-            assertThat(this.response.getCookies()).doesNotContainKey("SEGUE_AUTH_COOKIE");
+            assertThat(this.response.getCookies()).doesNotContainKey(SECURE_SEGUE_AUTH_COOKIE);
         }
 
         void assertUserLoggedIn(final Number userId) {
-            String base64Cookie = this.response.getCookies().get("SEGUE_AUTH_COOKIE").getValue();
+            String base64Cookie = this.response.getCookies().get(SECURE_SEGUE_AUTH_COOKIE).getValue();
             byte[] cookieBytes = java.util.Base64.getDecoder().decode(base64Cookie);
             JSONObject cookie = new JSONObject(new String(cookieBytes));
             assertEquals(userId, cookie.getLong("id"));

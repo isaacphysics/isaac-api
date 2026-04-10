@@ -96,6 +96,8 @@ public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
+    private static final String DUPLICATE_COOKIES = "Duplicate auth cookies found in request from ({}). Ignoring old cookie!";
+
     private final AbstractConfigLoader properties;
     private final IUserDataManager database;
     private final IDeletionTokenPersistenceManager deletionTokenPersistenceManager;
@@ -556,16 +558,15 @@ public class UserAuthenticationManager {
         Objects.requireNonNull(request);
         try {
             request.getSession().invalidate();
-            Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
-            logoutCookie.setPath("/");
-            logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
-            logoutCookie.setHttpOnly(true);
-            logoutCookie.setSecure(true);
-            logoutCookie.setAttribute("SameSite", "Strict");
-
+            Cookie logoutCookie = generateSegueAuthCookie("", 0);
             response.addCookie(logoutCookie);
-        } catch (IllegalStateException e) {
-            log.info("The session has already been invalidated. " + "Unable to logout again...", e);
+            // FIXME old-cookies: remove once old cookies deprecated:
+            Cookie oldLogoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
+            oldLogoutCookie.setMaxAge(0);
+            oldLogoutCookie.setPath("/");
+            response.addCookie(oldLogoutCookie);
+        } catch (final IllegalStateException e) {
+            log.info("The session has already been invalidated. Unable to logout again...", e);
         }
     }
     
@@ -1022,20 +1023,14 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
+            String cookieValue = Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes());
 
-            Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
-                    Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes()));
-            authCookie.setMaxAge(sessionExpiryTimeInSeconds);
-            authCookie.setPath("/");
-            authCookie.setHttpOnly(true);
-            authCookie.setSecure(true);
-            authCookie.setAttribute("SameSite", "Strict");
-
-            log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
-
+            Cookie authCookie = generateSegueAuthCookie(cookieValue, sessionExpiryTimeInSeconds);
             response.addCookie(authCookie);
 
-        } catch (JsonProcessingException e1) {
+            log.debug("Creating SEGUE_AUTH_COOKIE for user ({}) with value ({})", userId, authCookie.getValue());
+
+        } catch (final JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
         }
     }
@@ -1132,6 +1127,24 @@ public class UserAuthenticationManager {
     }
 
     /**
+     * Create a new SEGUE_AUTH_COOKIE with standard security settings.
+     *
+     * @param cookieValue - string content of the cookie.
+     * @param maxAge - cookie lifetime.
+     * @return the new Cookie object.
+     */
+    private Cookie generateSegueAuthCookie(final String cookieValue, final int maxAge) {
+        Cookie authCookie = new Cookie(SECURE_SEGUE_AUTH_COOKIE, cookieValue);
+        authCookie.setMaxAge(maxAge);
+        authCookie.setPath("/");
+        authCookie.setHttpOnly(true);
+        authCookie.setSecure(true);
+        authCookie.setAttribute("SameSite", "Strict");
+
+        return authCookie;
+    }
+
+    /**
      * This method is used to check whether a Segue Session's reported HMAC matches our recalculation. Assuming we've
      * kept our HMAC_SALT secret and non-guessable, that will mean the session information has not been tampered with.
      *
@@ -1204,13 +1217,23 @@ public class UserAuthenticationManager {
         }
 
         for (Cookie c : request.getCookies()) {
+            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
+                } else {
+                    segueAuthCookie = c;
+                }
+            } else if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
+                }
                 segueAuthCookie = c;
             }
         }
 
         if (null == segueAuthCookie) {
-            throw new InvalidSessionException("There are no cookies set.");
+            throw new InvalidSessionException("There are no session cookies set.");
         }
 
         @SuppressWarnings("unchecked")
@@ -1234,13 +1257,23 @@ public class UserAuthenticationManager {
         }
 
         for (HttpCookie c : request.getCookies()) {
+            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, "websocket");
+                } else {
+                    segueAuthCookie = c;
+                }
+            } else if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, "websocket");
+                }
                 segueAuthCookie = c;
             }
         }
 
         if (null == segueAuthCookie) {
-            throw new InvalidSessionException("There are no cookies set.");
+            throw new InvalidSessionException("There are no session cookies set.");
         }
 
         @SuppressWarnings("unchecked")
