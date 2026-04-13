@@ -94,7 +94,7 @@ public class LogEventFacade extends AbstractSegueFacade {
                   description = "The 'type' field must be provided and must not be a reserved value.")
     public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
         if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
-            log.error("Error during log operation, no event type specified. Event: " + eventJSON);
+            log.error("Invalid log request, no event type specified. Event: {}", eventJSON);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to record log message as the log has no "
                     + TYPE_FIELDNAME + " property.").toResponse();
         }
@@ -127,9 +127,8 @@ public class LogEventFacade extends AbstractSegueFacade {
             try {
                 misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.getSimpleName(), httpRequest.getContentLength());
             } catch (SegueResourceMisuseException e) {
-                log.error(String.format("Logging Event Failed - log event requested (%s bytes) "
-                        + "and would exceed daily limit size limit (%s bytes) ", httpRequest.getContentLength(),
-                        Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES));
+                log.error("Log event failed, log event ({} bytes) would exceed daily limit ({} bytes) ",
+                        httpRequest.getContentLength(), Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES);
                 return SegueErrorResponse.getRateThrottledResponse(String.format(
                         "Log event request (%s bytes) would exceed limit for this endpoint.",
                         httpRequest.getContentLength()));

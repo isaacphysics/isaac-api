@@ -64,7 +64,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
             for (UserExternalAccountChanges userRecord : userRecordsToUpdate) {
 
                 Long userId = userRecord.getUserId();
-                log.debug(String.format("Processing user: %s", userId));
+                log.debug("Processing user: {}", userId);
                 try {
 
                     String accountEmail = userRecord.getAccountEmail();
@@ -125,7 +125,7 @@ public class ExternalAccountManager implements IExternalAccountManager {
                     Thread.sleep(200);
 
                 } catch (SegueDatabaseException e) {
-                    log.error(String.format("Error storing record of MailJet update to user (%s)!", userId));
+                    log.error("Error storing record of MailJet update to user ({})!", userId);
                 } catch (MailjetClientCommunicationException e) {
                     log.error("Failed to talk to MailJet!");
                     throw new ExternalAccountSynchronisationException("Failed to successfully connect to MailJet!");

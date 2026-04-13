@@ -53,12 +53,12 @@ public class DatabaseScriptExecutionJob implements Job {
         try (Connection conn = ds.getDatabaseConnection()) {
             String sqlFileContents = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(SQLFile));
 
-            log.info(String.format("Scheduled SQL job (%s) started", SQLFile));
+            log.info("Scheduled SQL job ({}) started", SQLFile);
             // JDBC cannot cope with the Postgres ? JSONB operator in PreparedStatements. Since we pass no parameters,
             // and run infrequently, a plain Statement is safe:
             try (Statement sss = conn.createStatement()) {
                 sss.execute(sqlFileContents);
-                log.info(String.format("Scheduled SQL job (%s) completed", SQLFile));
+                log.info("Scheduled SQL job ({}) completed", SQLFile);
             }
         } catch (IOException | SQLException e) {
             log.error(String.format("Error while trying to execute scheduled job (%s)", SQLFile), e);

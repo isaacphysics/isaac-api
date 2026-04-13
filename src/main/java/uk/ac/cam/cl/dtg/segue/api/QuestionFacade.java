@@ -140,7 +140,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             String userId = registeredUser.getId().toString();
             String llmFreeTextMisuseEventName = LLMFreeTextQuestionAttemptMisuseHandler.class.getSimpleName();
             if (misuseMonitor.getRemainingUses(userId, llmFreeTextMisuseEventName) <= 0) {
-                log.warn("User " + userId + " has reached the LLM question attempt limit.");
+                log.warn("User {} has reached the LLM question attempt limit.", userId);
                 throw new SegueResourceMisuseException(
                         "You have exceeded the number of attempts you can make on LLM marked free-text questions. " +
                         "Please try again later.");
@@ -204,11 +204,10 @@ public class QuestionFacade extends AbstractSegueFacade {
                                             getProperties().getProperty(HOST_NAME));
         try {
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-            if (currentUser instanceof RegisteredUserDTO) {
-                log.warn(String.format("MethodNotAllowed: User (%s) attempted to GET the answer to the question '%s'!",
-                        ((RegisteredUserDTO) currentUser).getId(), questionId));
+            if (currentUser instanceof RegisteredUserDTO registeredUser) {
+                log.warn("MethodNotAllowed: User ({}) attempted to GET the answer to the question '{}'!", registeredUser.getId(), questionId);
             } else {
-                log.warn(String.format("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '%s'!", questionId));
+                log.warn("MethodNotAllowed: Anonymous user attempted to GET the answer to the question '{}'!", questionId);
             }
             return new SegueErrorResponse(Status.METHOD_NOT_ALLOWED, errorMessage).toResponse();
         } catch (SegueDatabaseException e) {
@@ -276,7 +275,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.").toResponse();
         } catch (SegueDatabaseException e) {
-            log.error("Unable to look up user event history for user " + userIdOfInterest, e);
+            log.error("Unable to look up user event history for user {}", userIdOfInterest, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
                     .toResponse();
         }

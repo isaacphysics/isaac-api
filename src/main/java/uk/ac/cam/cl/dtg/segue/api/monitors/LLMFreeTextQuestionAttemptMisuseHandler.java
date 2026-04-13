@@ -7,7 +7,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 public class LLMFreeTextQuestionAttemptMisuseHandler implements IMisuseHandler {
-    private static final Logger log = LoggerFactory.getLogger(QuestionAttemptMisuseHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(LLMFreeTextQuestionAttemptMisuseHandler.class);
 
     private static final Integer SOFT_THRESHOLD = 20;
     private static final Integer HARD_THRESHOLD = 30;
@@ -22,7 +22,7 @@ public class LLMFreeTextQuestionAttemptMisuseHandler implements IMisuseHandler {
             try {
                 this.overrideHardThreshold = Integer.parseInt(overrideThresholdString);
             } catch (NumberFormatException e) {
-                log.error("Failed to parse override threshold value: " + overrideThresholdString);
+                log.error("Failed to parse override threshold value: {}", overrideThresholdString);
             }
         }
     }
@@ -47,12 +47,12 @@ public class LLMFreeTextQuestionAttemptMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.info("Soft threshold limit: " + message);
+        log.info("Soft threshold limit: {}", message);
     }
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        log.warn("Hard threshold limit: " + message);
+        log.warn("Hard threshold limit: {}", message);
     }
 
 }

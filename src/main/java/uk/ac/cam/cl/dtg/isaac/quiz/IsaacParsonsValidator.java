@@ -66,14 +66,12 @@ public class IsaacParsonsValidator implements IValidator {
         // STEP 0: Is it even possible to answer this question?
 
         if (null == parsonsQuestion.getChoices() || parsonsQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question ({}) does not have any answers. File: '{}'", question.getId(), question.getCanonicalSourceFile());
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         if (null == parsonsQuestion.getItems() || parsonsQuestion.getItems().isEmpty()) {
-            log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("ParsonsQuestion ({}) does not have any items. File: '{}'", question.getId(), question.getCanonicalSourceFile());
             feedback = new Content(FEEDBACK_NO_CHOICES);
         }
 
@@ -104,9 +102,7 @@ public class IsaacParsonsValidator implements IValidator {
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof ParsonsChoice)) {
-                    log.error(String.format(
-                            "Validator for question (%s) expected there to be an ParsonsChoice. Instead it found a %s.",
-                            parsonsQuestion.getId(), c.getClass().toString()));
+                    log.error("Validator for question ({}) expected a ParsonsChoice. Instead found a ({}).", parsonsQuestion.getId(), c.getClass());
                     continue;
                 }
 
@@ -114,8 +110,7 @@ public class IsaacParsonsValidator implements IValidator {
 
                 // ... and that have a python expression ...
                 if (null == parsonsChoice.getItems() || parsonsChoice.getItems().isEmpty()) {
-                    log.error("Expected list of ParsonsItems, but none found in choice for question id: "
-                            + parsonsQuestion.getId());
+                    log.error("Expected list of ParsonsItems, but none found in choice for question ({}).", parsonsQuestion.getId());
                     continue;
                 }
 

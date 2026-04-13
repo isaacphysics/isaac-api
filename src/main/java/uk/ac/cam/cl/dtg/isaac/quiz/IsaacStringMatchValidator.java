@@ -65,8 +65,7 @@ public class IsaacStringMatchValidator implements IValidator {
         boolean responseCorrect = false;                // Whether we're right or wrong
 
         if (null == stringMatchQuestion.getChoices() || stringMatchQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question ({}) does not have any answers. File: {}.", question.getId(), question.getCanonicalSourceFile());
 
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
@@ -89,15 +88,13 @@ public class IsaacStringMatchValidator implements IValidator {
 
                 // ... that are of the StringChoice type, ...
                 if (!(c instanceof StringChoice)) {
-                    log.error("Isaac StringMatch Validator for questionId: " + stringMatchQuestion.getId()
-                            + " expected there to be a StringChoice. Instead it found a Choice.");
+                    log.error("Expected StringChoice in question ({}), instead found {}!", stringMatchQuestion.getId(), c.getClass());
                     continue;
                 }
                 StringChoice stringChoice = (StringChoice) c;
 
                 if (null == stringChoice.getValue() || stringChoice.getValue().isEmpty()) {
-                    log.error("Expected a string to match, but none found in choice for question id: "
-                            + stringMatchQuestion.getId());
+                    log.error("Expected a string to match, but none found in choice for question id: {}", stringMatchQuestion.getId());
                     continue;
                 }
 

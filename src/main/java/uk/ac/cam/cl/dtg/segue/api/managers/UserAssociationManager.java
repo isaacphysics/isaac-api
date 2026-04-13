@@ -240,8 +240,7 @@ public class UserAssociationManager {
 
         if (addToGroup) {
             userGroupManager.addUserToGroup(group, userGrantingPermission);
-            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
-                    lookedupToken.getGroupId()));
+            log.debug("Adding User ({}) to Group ({})", userGrantingPermission.getId(), lookedupToken.getGroupId());
         }
 
         // add owner association

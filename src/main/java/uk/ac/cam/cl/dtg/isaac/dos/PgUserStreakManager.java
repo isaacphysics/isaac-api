@@ -7,9 +7,9 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -148,8 +148,7 @@ public class PgUserStreakManager implements IUserStreaksManager {
 
             UserAlertsWebSocket.notifyUserOfAlert(userId, alert);
         } catch (JsonProcessingException e) {
-            log.error(String.format("Unable to serialize user streak change JSON for user %s: %s",
-                    user.getId(), e.getMessage()));
+            log.error("Unable to serialize user streak change JSON for user ({}): {}", user.getId(), e.getMessage());
         }
     }
 

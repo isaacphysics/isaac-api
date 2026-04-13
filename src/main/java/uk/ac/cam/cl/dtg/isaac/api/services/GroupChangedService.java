@@ -75,7 +75,7 @@ public class GroupChangedService implements IGroupObserver {
         this.assignmentManager = assignmentManager;
         this.quizAssignmentManager = quizAssignmentManager;
 
-        log.info("Registering GroupChangeService (" + this + ")");
+        log.info("Registering GroupChangeService ({})", this);
 
         groupManager.registerInterestInGroups(this);
     }
@@ -254,11 +254,11 @@ public class GroupChangedService implements IGroupObserver {
         } catch (ContentManagerException e) {
             log.info("Could not send group additional manager email ", e);
         } catch (NoUserException e) {
-            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+            log.info("Could not find owner user ({}) of group ({})", group.getOwnerId(), group.getId());
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group additional manager e-mail due to a database error. Failing silently.", e);
         } catch (UserGroupNotFoundException e) {
-            log.error(String.format("Changed group cannot be found %s", group.getId()));
+            log.error("Changed group cannot be found ({})", group.getId());
         }
     }
 
@@ -327,7 +327,7 @@ public class GroupChangedService implements IGroupObserver {
         } catch (ContentManagerException e) {
             log.info("Could not send group additional manager privileges modified email ", e);
         } catch (NoUserException e) {
-            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+            log.info("Could not find owner user ({}) of group ({})", group.getOwnerId(), group.getId());
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group additional manager privileges modified e-mail due to a database error. Failing silently.", e);
         }

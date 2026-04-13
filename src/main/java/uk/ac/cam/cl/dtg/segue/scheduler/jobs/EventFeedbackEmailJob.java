@@ -10,7 +10,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.EventNotificationEmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 public class EventFeedbackEmailJob implements Job {
-    private static final Logger log = LoggerFactory.getLogger(EventReminderEmailJob.class);
+    private static final Logger log = LoggerFactory.getLogger(EventFeedbackEmailJob.class);
     private final EventNotificationEmailManager scheduledEmailManager;
 
     /**
