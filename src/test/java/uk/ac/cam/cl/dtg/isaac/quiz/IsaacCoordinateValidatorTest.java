@@ -235,6 +235,26 @@ public class IsaacCoordinateValidatorTest {
     }
 
     @Test
+    public final void isaacCoordinateValidator_TestDisregardSignificantFigures() {
+        someCoordinateQuestion.setDisregardSignificantFigures(true);
+
+        // Exact match should be correct
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item2Again));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertTrue(response.isCorrect());
+
+        // Extra trailing 0 should still be correct
+        c.setItems(List.of(item1ExtraSigFig, item2Again));
+
+        response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertTrue(response.isCorrect());
+    }
+
+    @Test
     public final void isaacCoordinateValidator_TestSubsetOfCorrectChoice() {
         someCoordinateQuestion.setOrdered(false);
         CoordinateChoice c = new CoordinateChoice();

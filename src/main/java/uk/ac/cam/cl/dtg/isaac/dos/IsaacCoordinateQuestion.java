@@ -29,6 +29,7 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
     private String[] suffixes;
     private String buttonText;
 
+    private Boolean disregardSignificantFigures;
     private Integer significantFiguresMin;
     private Integer significantFiguresMax;
 
@@ -54,6 +55,25 @@ public class IsaacCoordinateQuestion extends IsaacQuestionBase {
 
     public void setOrdered(final Boolean ordered) {
         this.ordered = ordered;
+    }
+
+    /**
+     * Gets whether to disregard significant figures, i.e. allow exact answers only.
+     *
+     * @return true if significant figures should be disregarded, false or null otherwise.
+     */
+    public Boolean getDisregardSignificantFigures() {
+        return disregardSignificantFigures;
+    }
+
+    /**
+     * Sets whether to disregard significant figures, i.e. allow exact answers only.
+     *
+     * @param disregardSignificantFigures
+     *          - whether to disregard significant figures
+     */
+    public void setDisregardSignificantFigures(final Boolean disregardSignificantFigures) {
+        this.disregardSignificantFigures = disregardSignificantFigures;
     }
 
     /**
