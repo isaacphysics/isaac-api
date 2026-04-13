@@ -354,8 +354,8 @@ public class UserAccountManager implements IUserAccountManager {
             // we can't just log them in we have to set a caveat cookie
             this.logUserInWithCaveats(request, response, user, rememberMe, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
             throw new AdditionalAuthenticationRequiredException();
-        } else if (Role.ADMIN.equals(user.getRole())) {
-            // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
+        } else if (Role.ADMIN.equals(user.getRole()) || Role.EVENT_MANAGER.equals(user.getRole())) {
+            // Administrator accounts MUST have 2FA to use password login, so if we are here login cannot proceed.
             String message = "Your account type requires 2FA, but none has been configured! "
                     + "Please ask an admin to demote your account to regain access.";
             throw new MFARequiredButNotConfiguredException(message);

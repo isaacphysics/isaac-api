@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.warrenstrange.googleauth.GoogleAuthenticator;
 import org.apache.commons.codec.binary.Base64;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -47,6 +48,10 @@ public abstract class IsaacIntegrationTest extends AbstractIsaacIntegrationTest 
     private final ObjectMapper serializationMapper = new ObjectMapper();
 
     protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password) throws Exception {
+        return loginAs(httpSession, username, password, null);
+    }
+
+    protected LoginResult loginAs(final HttpSession httpSession, final String username, final String password, final String mfaSecret) throws Exception {
         Capture<Cookie> capturedUserCookie = Capture.newInstance(); // new Capture<Cookie>(); seems deprecated
 
         HttpServletRequest userLoginRequest = createNiceMock(HttpServletRequest.class);
@@ -61,7 +66,21 @@ public abstract class IsaacIntegrationTest extends AbstractIsaacIntegrationTest 
         RegisteredUserDTO user;
         try {
             user = userAccountManager.authenticateWithCredentials(userLoginRequest, userLoginResponse, AuthenticationProvider.SEGUE.toString(), username, password, false);
-        } catch (AdditionalAuthenticationRequiredException | EmailMustBeVerifiedException e) {
+        } catch (AdditionalAuthenticationRequiredException e) {
+            GoogleAuthenticator gAuth = new GoogleAuthenticator();
+            Integer totpCode = gAuth.getTotpPassword(mfaSecret);
+
+            HttpServletRequest userMfaRequest = createNiceMock(HttpServletRequest.class);
+            expect(userMfaRequest.getCookies()).andReturn(new Cookie[]{capturedUserCookie.getValue()}).atLeastOnce();
+            replay(userMfaRequest);
+
+            capturedUserCookie = Capture.newInstance();
+            HttpServletResponse userMfaResponse = createNiceMock(HttpServletResponse.class);
+            userMfaResponse.addCookie(and(capture(capturedUserCookie), isA(Cookie.class)));
+            replay(userMfaResponse);
+
+            user = userAccountManager.authenticateMFA(userMfaRequest, userMfaResponse, totpCode, false);
+        } catch (EmailMustBeVerifiedException e) {
             // In this case, we won't get a user object but the cookies have still been set.
             user = null;
         }
