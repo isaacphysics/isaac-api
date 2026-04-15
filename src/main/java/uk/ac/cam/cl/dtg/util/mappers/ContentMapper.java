@@ -58,6 +58,7 @@ public interface ContentMapper {
     @SubclassMapping(source = GraphChoice.class, target = GraphChoiceDTO.class)
     @SubclassMapping(source = LLMFreeTextChoice.class, target = LLMFreeTextChoiceDTO.class)
     @SubclassMapping(source = LogicFormula.class, target = LogicFormulaDTO.class)
+    @SubclassMapping(source = GraphFormula.class, target = GraphFormulaDTO.class)
     @SubclassMapping(source = Quantity.class, target = QuantityDTO.class)
     @SubclassMapping(source = RegexPattern.class, target = RegexPatternDTO.class)
     @SubclassMapping(source = StringChoice.class, target = StringChoiceDTO.class)
@@ -78,6 +79,7 @@ public interface ContentMapper {
     @SubclassMapping(source = GraphChoiceDTO.class, target = GraphChoice.class)
     @SubclassMapping(source = LLMFreeTextChoiceDTO.class, target = LLMFreeTextChoice.class)
     @SubclassMapping(source = LogicFormulaDTO.class, target = LogicFormula.class)
+    @SubclassMapping(source = GraphFormulaDTO.class, target = GraphFormula.class)
     @SubclassMapping(source = QuantityDTO.class, target = Quantity.class)
     @SubclassMapping(source = RegexPatternDTO.class, target = RegexPattern.class)
     @SubclassMapping(source = StringChoiceDTO.class, target = StringChoice.class)
@@ -111,6 +113,13 @@ public interface ContentMapper {
     @Mapping(target = "explanation", ignore = true)
     @Mapping(target = "correct", ignore = true)
     LogicFormula map(LogicFormulaDTO source);
+
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "requiresExactMatch", ignore = true)
+    @Mapping(target = "prioritisedSearchableContent", ignore = true)
+    @Mapping(target = "explanation", ignore = true)
+    @Mapping(target = "correct", ignore = true)
+    GraphFormula map(GraphFormulaDTO source);
 
     @SubclassMapping(source = ParsonsItem.class, target = ParsonsItemDTO.class)
     @SubclassMapping(source = DndItem.class, target = DndItemDTO.class)
