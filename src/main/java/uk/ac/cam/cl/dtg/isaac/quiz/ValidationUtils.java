@@ -219,7 +219,7 @@ public final class ValidationUtils {
 
         // Parse exactly into a BigDecimal:
         BigDecimal bd = new BigDecimal(untrustedParsedValue);
-        if (bd.equals(BigDecimal.ZERO)) {
+        if (bd.compareTo(BigDecimal.ZERO) == 0) {
             // Zero is a special case; let it be ambiguous with any number of sig figs
             return new ValidationUtils.SigFigResult(true, 0, Integer.MAX_VALUE);
         } else if (untrustedParsedValue.contains(".")) {
