@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import java.io.IOException;
 import java.util.*;
 
+import static org.h2.util.json.JSONStringSource.normalize;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FEEDBACK_NO_ANSWER_PROVIDED;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FEEDBACK_NO_CORRECT_ANSWERS;
 
@@ -47,6 +48,35 @@ public class IsaacSymbolicGraphValidator implements IValidator {
     }
 
     public IsaacSymbolicGraphValidator() {
+    }
+
+    Object normalise(Object obj, ObjectMapper mapper) {
+        if (obj instanceof Map<?, ?> map) {
+            Map<String, Object> normalised = new TreeMap<>();
+            for (var entry : map.entrySet()) {
+                normalised.put(entry.getKey().toString(), normalise(entry.getValue(), mapper));
+            }
+            return normalised;
+        }
+
+        if (obj instanceof List<?> list) {
+            List<Object> normalisedList = new ArrayList<>();
+            for (Object item : list) {
+                normalisedList.add(normalise(item, mapper));
+            }
+
+            normalisedList.sort(Comparator.comparing(o -> {
+                try {
+                    return mapper.writeValueAsString(o);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }));
+
+            return normalisedList;
+        }
+
+        return obj;
     }
 
     @Override
@@ -161,16 +191,19 @@ public class IsaacSymbolicGraphValidator implements IValidator {
                 MatchType matchType = MatchType.NONE;
 
                 try {
-                    String json = submittedGraphFormula.getPythonExpression();
                     ObjectMapper mapper = new ObjectMapper();
-                    HashMap<String, Object> map = mapper.readValue(json, HashMap.class);
+
+                    String json = submittedGraphFormula.getPythonExpression();
+                    Map<String, Object> map = mapper.readValue(json, Map.class);
 
                     String jsonAnswer = graphFormulaChoice.getPythonExpression();
-                    ObjectMapper mapperAnswer = new ObjectMapper();
-                    HashMap<String, Object> mapAnswer = mapperAnswer.readValue(jsonAnswer, HashMap.class);
+                    Map<String, Object> mapAnswer = mapper.readValue(jsonAnswer, Map.class);
 
-                    if (map.equals(mapAnswer)) {
-                        matchType = MatchType.EXACT;
+                    Object normalisedMap = normalise(map, mapper);
+                    Object normalisedAnswer = normalise(mapAnswer, mapper);
+
+                    if (normalisedMap.equals(normalisedAnswer)) {
+                        matchType = MatchType.SYMBOLIC;
                     }
 
                 } catch (Exception e) {
