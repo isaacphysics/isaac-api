@@ -499,18 +499,18 @@
         <!-- These two don't need to be included in the war package so their scope is "provided" which means we
              promise to make them available in the deployment environment, but we aren't going to because they are
              not needed at runtime anyway. -->
-<!--        <dependency>-->
-<!--            <groupId>org.owasp</groupId>-->
-<!--            <artifactId>dependency-check-maven</artifactId>-->
-<!--            <version>${dependency-check.version}</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.sonatype.ossindex.maven</groupId>-->
-<!--            <artifactId>ossindex-maven-plugin</artifactId>-->
-<!--            <version>${ossindex.version}</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>${dependency-check.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.sonatype.ossindex.maven</groupId>
+            <artifactId>ossindex-maven-plugin</artifactId>
+            <version>${ossindex.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
