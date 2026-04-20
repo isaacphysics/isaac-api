@@ -113,7 +113,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class AbstractIsaacIntegrationTest {
 
-    protected static final Logger log = LoggerFactory.getLogger(IsaacIntegrationTest.class);
+    protected static final Logger log = LoggerFactory.getLogger(AbstractIsaacIntegrationTest.class);
 
     protected static HttpSession httpSession;
     protected static PostgreSQLContainer postgres;

@@ -15,14 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
-
-import com.google.inject.Inject;
 
 /**
  * Handler to detect bruteforce login attempts.
@@ -74,11 +72,11 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
+        log.warn("Soft threshold limit: {}", message);
     }
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        log.warn("Hard threshold limit: " + message);
+        log.warn("Hard threshold limit: {}", message);
     }
 }

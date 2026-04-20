@@ -283,7 +283,7 @@ public class UserAuthenticationManager {
 
         RegisteredUser user = database.getByLinkedAccount(provider, providerId);
         if (null == user) {
-            log.debug("Unable to locate user based on provider " + "information provided.");
+            log.debug("Unable to locate user based on provider information provided.");
         }
         return user;
     }
@@ -364,18 +364,15 @@ public class UserAuthenticationManager {
             // correct CORS headers. This code will merely print warnings if something doesn't look right:
             String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
             if (null == referrer) {
-                log.warn("Authenticated request has no 'Referer' information set! Accessing: "
-                        + request.getPathInfo());
+                log.warn("Authenticated request has no 'Referer' information set! Accessing: {}", request.getPathInfo());
             } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
-                log.warn("Authenticated request has unexpected Referer: '" + referrer + "'. Accessing: "
-                        + request.getPathInfo());
+                log.warn("Authenticated request has unexpected Referer: '{}'. Accessing: {}", referrer, request.getPathInfo());
             }
             // If the client sends an Origin header, we can check its value. If they do not send the header,
             // we can draw no conclusions.
             String origin = request.getHeader("Origin");
             if (null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
-                log.warn("Authenticated request has unexpected Origin: '" + origin + "'. Accessing: "
-                        + request.getMethod() + " " + request.getPathInfo());
+                log.warn("Authenticated request has unexpected Origin: '{}'. Accessing: {} {}", origin, request.getMethod(), request.getPathInfo());
             }
         }
 
@@ -470,7 +467,7 @@ public class UserAuthenticationManager {
 
             // Check that the user's session is indeed valid:
             if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
-                log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
+                log.debug("User session has failed validation. Treating as logged out. Session: {}", currentSessionInformation);
                 return null;
             }
 
@@ -479,7 +476,7 @@ public class UserAuthenticationManager {
             log.error("Internal Database error. Failed to resolve current user.", e);
             return null;
         } catch (NumberFormatException e) {
-            log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
+            log.info("Invalid user id detected in session. {}", currentSessionInformation.get(SESSION_USER_ID));
             return null;
         }
     }
@@ -538,8 +535,7 @@ public class UserAuthenticationManager {
 
         ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<>() {});
         if (!caveatFlags.remove(caveatToRemove.toString())) {
-            log.warn(String.format("Attempted to remove caveat '%s' from user (%s) session, but no such caveat was present!",
-                    caveatToRemove, user.getId()));
+            log.warn("Attempted to remove caveat '{}' from user ({}) session, but no such caveat was present!", caveatToRemove, user.getId());
         }
         Set<AuthenticationCaveat> remainingCaveats = caveatFlags.stream().map(AuthenticationCaveat::valueOf).collect(Collectors.toSet());
 
@@ -596,7 +592,7 @@ public class UserAuthenticationManager {
                     + " has not been registered / implemented yet: " + provider);
         }
 
-        log.debug("Mapping provider: " + provider + " to " + enumProvider);
+        log.debug("Mapping provider: {} to {}", provider, enumProvider);
 
         return this.registeredAuthProviders.get(enumProvider);
     }
@@ -691,7 +687,7 @@ public class UserAuthenticationManager {
 
             // Generate reset token, whether or not they have a local password set up:
             String token = authenticator.createPasswordResetTokenForUser(userDO);
-            log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
+            log.info("Sending password reset message to '{}'.", userDO.getEmail());
 
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
                     String.format("https://%s/resetpassword?token=%s",
@@ -708,7 +704,7 @@ public class UserAuthenticationManager {
             }
 
         } catch (ContentManagerException e) {
-            log.error("ContentManagerException " + e.getMessage());
+            log.error("ContentManagerException", e);
         }
     }
     
@@ -866,8 +862,7 @@ public class UserAuthenticationManager {
                     emailTokens, EmailType.SYSTEM);
 
         } catch (ContentManagerException contentException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-                            contentException.getMessage()));
+            log.error("Error sending federated email verification message!", contentException);
         }
     }
     
@@ -940,12 +935,12 @@ public class UserAuthenticationManager {
         String csrfTokenFromProvider = request.getParameter(key);
 
         if (null == csrfTokenFromUser || !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
-            log.error("Invalid state parameter - Provider said: " + request.getParameter(STATE_PARAM_NAME)
-                    + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
+            log.error("Invalid state parameter - Provider said: '{}' Session said: '{}'.",
+                    request.getParameter(STATE_PARAM_NAME), request.getSession().getAttribute(STATE_PARAM_NAME));
             return false;
         } else {
-            log.debug("State parameter matches - Provider said: " + request.getParameter(STATE_PARAM_NAME)
-                    + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
+            log.debug("State parameter matches - Provider said: '{}' Session said: '{}'.",
+                    request.getParameter(STATE_PARAM_NAME), request.getSession().getAttribute(STATE_PARAM_NAME));
             return true;
         }
     }
@@ -1081,13 +1076,13 @@ public class UserAuthenticationManager {
 
         // Check no one has tampered with the cookie:
         if (!hasValidHmac(sessionInformation)) {
-            log.warn(String.format("Invalid Cookie HMAC detected for user id (%s)!", userId));
+            log.warn("Invalid Cookie HMAC detected for user id ({})!", userId);
             return false;
         }
 
         // Check that the session token is still valid:
         if (!userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
-            log.debug("Invalid session token detected for user id " + userId);
+            log.debug("Invalid session token detected for user id {}", userId);
             return false;
         }
 
@@ -1306,7 +1301,7 @@ public class UserAuthenticationManager {
             String result = new String(Base64.encodeBase64(rawHmac));
             return result;
         } catch (GeneralSecurityException e) {
-            log.warn("Unexpected error while creating hash: " + e.getMessage(), e);
+            log.warn("Unexpected error while creating HMAC! ", e);
             throw new IllegalArgumentException();
         }
     }

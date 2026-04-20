@@ -1107,8 +1107,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             this.bookingManager.resendEventEmail(event, bookedUser);
 
-            log.info(String.format("User (%s) has just resent an event email to user id (%s)",
-                    currentUser.getEmail(), bookedUser.getId()));
+            log.info("User ({}) resent an event email to user id ({})", currentUser.getEmail(), bookedUser.getId());
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {

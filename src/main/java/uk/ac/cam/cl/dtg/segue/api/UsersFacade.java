@@ -266,7 +266,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 SegueMetrics.USER_REGISTRATION.inc();
                 return newUserResponse;
             } catch (SegueResourceMisuseException e) {
-                log.error(String.format("Blocked a registration attempt by (%s) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request)));
+                log.error("Blocked registration attempt by ({}) after misuse limit hit!", RequestIPExtractor.getClientIpAddr(request));
                 return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later or contact us!");
             }
         }
@@ -332,7 +332,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
                 // We'll leave TEACHER hard-coded here for security until we support a wider range of requestedRoles:
                 userManager.updateUserRole(user.getId(), Role.TEACHER);
-                log.info(String.format("User (%s) has upgraded their account from %s to %s", user.getId(), user.getRole(), Role.TEACHER));
+                log.info("User ({}) has upgraded their account from {} to {}", user.getId(), user.getRole(), Role.TEACHER);
                 this.getLogManager().logEvent(user, request, SegueServerLogType.USER_UPGRADE_ROLE,
                         ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
                                     "oldRole", user.getRole(),
@@ -397,7 +397,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return Response.ok().build();
 
         } catch (NoUserException e) {
-            log.warn("Password reset requested for account that does not exist: " + e.getMessage());
+            log.warn("Password reset requested for account ({}) that does not exist!", userIdOfInterest);
             // Return OK so we don't leak account existence.
             return Response.ok().build();
         } catch (NoUserLoggedInException e) {
@@ -456,7 +456,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             return Response.ok().build();
         } catch (NoUserException e) {
-            log.warn("Password reset requested for account that does not exist: (" + userObject.getEmail() + ")");
+            log.warn("Password reset requested for account that does not exist: ({})!", userObject.getEmail());
             // Return OK so we don't leak account existence.
             return Response.ok().build();
         } catch (CommunicationException e) {
@@ -472,7 +472,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error("Password reset request blocked for email: (" + userObject.getEmail() + ")", e.toString());
+            log.error("Password reset request blocked for email: ({})!", userObject.getEmail());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
@@ -503,7 +503,7 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Invalid password reset token.");
-        log.debug(String.format("Invalid password reset token: %s", token));
+        log.debug("Invalid password reset token: {}", token);
         return error.toResponse();
     }
 
@@ -538,7 +538,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
         } catch (InvalidTokenException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");
-            log.error("Invalid password reset token supplied: " + token);
+            log.error("Invalid password reset token supplied: {}", token);
             return error.toResponse();
         } catch (InvalidPasswordException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
@@ -668,8 +668,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             this.userManager.deactivateMFAForUser(userOfInterest);
-            log.info(String.format("Admin (%s) deactivated MFA on account (%s)!",
-                    currentlyLoggedInUser.getEmail(), userOfInterest.getId()));
+            log.info("Admin ({}) deactivated MFA on account ({})!", currentlyLoggedInUser.getEmail(), userOfInterest.getId());
 
             return Response.ok().build();
 

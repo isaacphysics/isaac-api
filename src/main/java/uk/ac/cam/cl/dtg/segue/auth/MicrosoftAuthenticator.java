@@ -143,7 +143,7 @@ public class MicrosoftAuthenticator implements IOAuth2Authenticator {
         try {
             return new AuthorizationCodeResponseUrl(url).getCode();
         } catch (final Exception e) {
-            log.warn(String.format("Error extracting authentication code from %s", url), e);
+            log.warn("Error extracting authentication code from {}", url, e);
             throw new AuthenticationCodeException("Error extracting authentication code.");
         }
     }

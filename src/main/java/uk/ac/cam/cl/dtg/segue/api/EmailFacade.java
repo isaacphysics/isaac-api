@@ -290,13 +290,12 @@ public class EmailFacade extends AbstractSegueFacade {
             return error.toResponse();
         } catch (MissingRequiredFieldException | NumberFormatException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
-            log.error(String.format("Invalid parameters sent to /users/verifyemail endpoint: (%s)", e.getMessage()));
+            log.error("Invalid parameters: ({})", e.getMessage());
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)",
-                    payload.get("email")));
+            log.error("Too many verifications requested for email ({})!", payload.get("email"));
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
@@ -403,7 +402,7 @@ public class EmailFacade extends AbstractSegueFacade {
         if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
             emailType = EmailType.valueOf(emailTypeString);
         } else {
-            log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
+            log.warn("Unknown email type '{}' provided to admin endpoint!", emailTypeString);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
         }
 
@@ -483,7 +482,7 @@ public class EmailFacade extends AbstractSegueFacade {
         if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
             emailType = EmailType.valueOf(emailTypeString);
         } else {
-            log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
+            log.warn("Unknown email type '{}' provided to admin endpoint!", emailTypeString);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
         }
 
@@ -514,7 +513,7 @@ public class EmailFacade extends AbstractSegueFacade {
                     }
                 } catch (NoUserException e) {
                     // Skip missing users rather than failing hard!
-                    log.error(String.format("Skipping email to non-existent user (%s)!", userId));
+                    log.error("Skipping email to non-existent user ({})!", userId);
                 }
             }
 
@@ -586,7 +585,7 @@ public class EmailFacade extends AbstractSegueFacade {
         if (EnumUtils.isValidEnum(EmailType.class, emailTypeString)) {
             emailType = EmailType.valueOf(emailTypeString);
         } else {
-            log.warn("Unknown email type '" + emailTypeString + "' provided to admin endpoint!");
+            log.warn("Unknown email type '{}' provided to admin endpoint!", emailTypeString);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unknown email type!").toResponse();
         }
 
@@ -618,7 +617,7 @@ public class EmailFacade extends AbstractSegueFacade {
                     }
                 } catch (NoUserException e) {
                     // Skip missing users rather than failing hard!
-                    log.error(String.format("Skipping email to non-existent user (%s)!", userId));
+                    log.error("Skipping email to non-existent user ({})!", userId);
                 }
             }
 

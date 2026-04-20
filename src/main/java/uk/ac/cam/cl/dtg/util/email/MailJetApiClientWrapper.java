@@ -121,14 +121,14 @@ public class MailJetApiClientWrapper {
         } catch (MailjetClientRequestException e) {
             if (e.getMessage().contains("already exists")) {
                 // FIXME - we need to test that this response always comes back with "already exists" in the message
-                log.warn(String.format("Attempted to create a user with email (%s) that already existed!", email));
+                log.warn("Attempted to create a user with email ({}) that already existed!", email);
                 JSONObject existingMailJetAccount = getAccountByIdOrEmail(email);
                 return Long.toString(existingMailJetAccount.getLong("ID"));
             } else {
-                log.error(String.format("Failed to create user in MailJet with email: %s", email), e);
+                log.error("Failed to create user in MailJet with email ({})", email, e);
             }
         } catch (JSONException e) {
-            log.error(String.format("Failed to create user in MailJet with email: %s", email), e);
+            log.error("Failed to create user in MailJet with email ({})", email, e);
         }
         return null;
     }

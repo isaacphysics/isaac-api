@@ -56,7 +56,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
 public class MailGunEmailManager {
 
     private final Map<String, String> globalStringTokens;
-    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
+    private static final Logger log = LoggerFactory.getLogger(MailGunEmailManager.class);
 
     private MailgunMessagesApi mailgunMessagesApi;
     private final AbstractUserPreferenceManager userPreferenceManager;
@@ -159,7 +159,7 @@ public class MailGunEmailManager {
         List<String> usersToSendTo = Lists.newArrayList(recipientVariables.keySet());
         if (usersToSendTo.isEmpty()) {
             if (!userDTOs.isEmpty()) {
-                log.warn(String.format("No eligible recipients from batch of %s %s emails.", userDTOs.size(), emailType.name()));
+                log.warn("No eligible recipients from batch of {} {} emails.", userDTOs.size(), emailType.name());
             }
             return CompletableFuture.completedFuture(Optional.empty());
         }

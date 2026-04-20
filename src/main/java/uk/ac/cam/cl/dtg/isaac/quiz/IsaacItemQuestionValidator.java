@@ -66,14 +66,12 @@ public class IsaacItemQuestionValidator implements IValidator {
         // STEP 0: Is it even possible to answer this question?
 
         if (null == itemQuestion.getChoices() || itemQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question ({}) does not have any answers. File: '{}'", question.getId(), question.getCanonicalSourceFile());
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
 
         if (null == itemQuestion.getItems() || itemQuestion.getItems().isEmpty()) {
-            log.error("ItemQuestion does not have any items. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("ItemQuestion ({}) does not have any items. File: '{}'", question.getId(), question.getCanonicalSourceFile());
             feedback = new Content(FEEDBACK_NO_CHOICES);
         }
 
@@ -109,9 +107,7 @@ public class IsaacItemQuestionValidator implements IValidator {
 
                 // ... that are ItemChoices, ...
                 if (!(c instanceof ItemChoice)) {
-                    log.error(String.format(
-                            "Validator for question (%s) expected there to be an ItemChoice. Instead it found a %s.",
-                            itemQuestion.getId(), c.getClass().toString()));
+                    log.error("Validator for ItemQuestion ({}) expected an ItemChoice. Instead found a {}.", itemQuestion.getId(), c.getClass());
                     continue;
                 }
 
@@ -119,7 +115,7 @@ public class IsaacItemQuestionValidator implements IValidator {
 
                 // ... and that have items ...
                 if (null == itemChoice.getItems() || itemChoice.getItems().isEmpty()) {
-                    log.error(String.format("Missing Item list in choice for question id (%s)!", itemQuestion.getId()));
+                    log.error("Missing Item list in choice for question id ({})!", itemQuestion.getId());
                     continue;
                 }
 

@@ -233,7 +233,7 @@ public class Mailer {
         // they are configured with (using fact that hashcodes are equal only if objects equal):
         Integer propertiesHash = p.hashCode();
         Session s = sessionCache.computeIfAbsent(propertiesHash, k -> {
-            log.info(String.format("Creating new mail Session with properties: %s", p));
+            log.info("Creating new mail Session with properties: {}", p);
             return Session.getInstance(p);
         });
         // Create the message and set the recipients:

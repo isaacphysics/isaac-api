@@ -116,7 +116,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(localUserAccount.getId());
         if (!hasPasswordRegistered(luc)) {
-            log.debug(String.format("No credentials available for this account id (%s)", localUserAccount.getId()));
+            log.debug("No credentials available for user ({})", localUserAccount.getId());
             throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
         }
 
@@ -131,7 +131,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
                 // update the password
                 this.updateUsersPasswordWithoutValidation(localUserAccount, plainTextPassword);
-                log.info(String.format("Account id (%s) password algorithm automatically upgraded.", localUserAccount.getId()));
+                log.info("User ({}) password algorithm automatically upgraded.", localUserAccount.getId());
             }
 
             return localUserAccount;
