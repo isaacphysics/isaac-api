@@ -264,11 +264,11 @@ UAZFNZ	18	7
 --
 
 COPY public.user_bookmarks (user_id, content_id, content_type, created) FROM stdin;
-7	cooling_excalibur	isaacQuestionPage	2026-04-20 14:35:06.72+00
-7	man_vs_horse	isaacQuestionPage	2025-03-11 14:35:42.634+00
-7	cp_newtoniii	isaacConceptPage	2024-07-16 14:38:24.678+00
-8	man_vs_horse	isaacQuestionPage	2025-08-13 14:38:35.17+00
-9	cp_abs_temperature	isaacConceptPage	2025-10-27 14:38:43.858+00
+7	_regression_test_	isaacQuestionPage	2026-04-20 14:35:06.72+00
+7	_assignment_test	isaacQuestionPage	2025-03-11 14:35:42.634+00
+7	33935571-5a6c-4d42-a243-b5c01d4293e6	isaacConceptPage	2024-07-16 14:38:24.678+00
+9	33935571-5a6c-4d42-a243-b5c01d4293e6	isaacConceptPage	2025-10-27 14:38:43.858+00
+8	supersedes	isaacQuestionPage	2025-08-13 14:38:35.17+00
 \.
 
 
