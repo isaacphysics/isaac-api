@@ -72,7 +72,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.MailGunEmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -81,6 +80,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgAnonymousUsers;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgPasswordDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgTOTPDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -99,8 +99,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -282,14 +280,7 @@ public class AbstractIsaacIntegrationTest {
         emailManager = new EmailManager(communicator, userPreferenceManager, properties, contentManager, logManager, globalTokens);
 
         userAuthenticationManager = new UserAuthenticationManager(pgUsers, deletionTokenPersistenceManager, properties, providersToRegister, emailManager);
-        secondFactorManager = createMock(SegueTOTPAuthenticator.class);
-        // We don't care for MFA here so we can safely disable it
-        try {
-            expect(secondFactorManager.has2FAConfigured(anyObject())).andReturn(false).atLeastOnce();
-        } catch (SegueDatabaseException e) {
-            throw new RuntimeException(e);
-        }
-        replay(secondFactorManager);
+        secondFactorManager = new SegueTOTPAuthenticator(new PgTOTPDataManager(postgresSqlDb));
 
         userAccountManager = new UserAccountManager(pgUsers, questionManager, properties, providersToRegister, mainMapper, emailManager, pgAnonymousUsers, logManager, userAuthenticationManager, secondFactorManager, userPreferenceManager);
 

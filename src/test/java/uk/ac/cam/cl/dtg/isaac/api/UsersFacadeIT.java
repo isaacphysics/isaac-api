@@ -670,7 +670,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsEventManager_succeeds(RegisteredUser targetUser) throws Exception {
         // Arrange
         // log in as Event Manager
-        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.GARY_EVENTMANAGER_EMAIL, ITConstants.GARY_EVENTMANAGER_PASSWORD);
+        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.GARY_EVENTMANAGER_EMAIL, ITConstants.GARY_EVENTMANAGER_PASSWORD, ITConstants.GARY_EVENTMANAGER_MFA_SECRET);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{eventManagerLogin.cookie});
         replay(request);
 
@@ -815,8 +815,8 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManager, logManager, userAssociationManager,
                 misuseMonitor, userPreferenceManager, schoolListReader);
 
-        // log in as user
-        LoginResult login = loginAs(httpSession, user.getEmail(), "test1234");
+        // log in as user (and assume password and MFA secret same for all)
+        LoginResult login = loginAs(httpSession, user.getEmail(), "test1234", ITConstants.TEST_ADMIN_MFA_SECRET);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{login.cookie});
         replay(request);
 

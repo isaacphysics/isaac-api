@@ -1,4 +1,3 @@
-version: '2'
 services:
 
   equality-checker:
@@ -18,5 +17,5 @@ services:
 
 networks:
   default:
-    external:
-      name: isaac
+    name: isaac
+    external: true
