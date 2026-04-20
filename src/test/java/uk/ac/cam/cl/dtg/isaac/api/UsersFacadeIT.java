@@ -49,6 +49,7 @@ import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 
 public class UsersFacadeIT extends IsaacIntegrationTest {
@@ -162,7 +163,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(true, ((Map<String, Boolean>) createResponse.getEntity()).get("EMAIL_VERIFICATION_REQUIRED"));
 
         // check we have an auth cookie with INCOMPLETE_MANDATORY_EMAIL_VERIFICATION caveat only
-        assertEquals("SEGUE_AUTH_COOKIE", cookieToCapture.getValue().getName());
+        assertEquals(SECURE_SEGUE_AUTH_COOKIE, cookieToCapture.getValue().getName());
         assertEquals(List.of(Constants.AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION.name()),
                 getCaveatsFromCookie(cookieToCapture.getValue()));
 
@@ -245,7 +246,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check we were given a session cookie
-        assertEquals("SEGUE_AUTH_COOKIE", setCookie.getValue().getName());
+        assertEquals(SECURE_SEGUE_AUTH_COOKIE, setCookie.getValue().getName());
     }
 
     /**
