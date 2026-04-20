@@ -556,6 +556,11 @@ public class UserAuthenticationManager {
             request.getSession().invalidate();
             Cookie logoutCookie = generateSegueAuthCookie("", 0);
             response.addCookie(logoutCookie);
+            // FIXME old-cookies: remove once old cookies deprecated:
+            Cookie oldLogoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
+            oldLogoutCookie.setMaxAge(0);
+            oldLogoutCookie.setPath("/");
+            response.addCookie(oldLogoutCookie);
         } catch (final IllegalStateException e) {
             log.info("The session has already been invalidated. Unable to logout again...", e);
         }
