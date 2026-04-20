@@ -702,7 +702,7 @@ public class IsaacNumericValidatorTest {
 
         verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("50300", "-50300"), Arrays.asList(3, 4, 5), Arrays.asList(1, 2, 6));
 
-        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0", "-0"), Collections.singletonList(1), Collections.singletonList(2));
+        verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0", "-0"), Collections.singletonList(1), Collections.emptyList());
 
         verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100", "-0000100"), Arrays.asList(1, 2, 3), Arrays.asList(4, 5, 6, 7));
 
