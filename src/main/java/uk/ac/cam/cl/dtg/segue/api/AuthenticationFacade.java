@@ -537,11 +537,12 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (NumberFormatException e) {
             return SegueErrorResponse.getBadRequestResponse("Verification code is not in the correct format.");
         } catch (IncorrectCredentialsProvidedException | NoCredentialsAvailableException e) {
-            log.info("Incorrect 2FA code received for ({}). Error reason: {}", partiallyLoggedInUser.getEmail(), e.getMessage());
             try {
-                misuseMonitor.notifyEvent(partiallyLoggedInUser.getEmail().toLowerCase(),
-                        SegueLoginMisuseHandler.class.getSimpleName());
-
+                if (null != partiallyLoggedInUser) {
+                    log.info("Incorrect 2FA code received for ({}). Error reason: {}", partiallyLoggedInUser.getEmail(), e.getMessage());
+                    misuseMonitor.notifyEvent(partiallyLoggedInUser.getEmail().toLowerCase(),
+                            SegueLoginMisuseHandler.class.getSimpleName());
+                }
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect code provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
                 log.error("2FA verification Blocked for ({}). Rate limited - too many logins!", partiallyLoggedInUser.getEmail());
