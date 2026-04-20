@@ -735,6 +735,18 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- This ensures that transitive dependencies of any azure packages are up-to-date.
+            Taken from Microsoft's recommended config:
+             https://learn.microsoft.com/en-us/azure/developer/java/sdk/get-started-maven#add-azure-sdk-for-java-to-an-existing-project-->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-sdk-bom</artifactId>
+                <version>1.3.5</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <dependency>
                 <!-- Maven forces this to scope 'compile' since it is used by multiple transitive deps,
                      but it really is 'provided' when we run Jetty locally or in Docker! -->
