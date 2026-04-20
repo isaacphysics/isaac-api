@@ -96,7 +96,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void addCurrentUserBookmark_notFoundContent_doesNotAddBookmark() throws Exception {
+    public void addCurrentUserBookmark_notFoundContent_returnsError() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
@@ -110,7 +110,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void addCurrentUserBookmark_duplicateContent_doesNotAddBookmark() throws Exception {
+    public void addCurrentUserBookmark_duplicateContent_returnsError() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
@@ -138,16 +138,16 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void deleteCurrentUserBookmark_notFoundContent_doesNotDeleteBookmark() throws Exception {
+    public void deleteCurrentUserBookmark_notBookmarkedContent_returnsError() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
         replay(addBookmarkRequest);
 
         // Act: make request
-        Response addBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(addBookmarkRequest, "not_a_real_id");
+        Response addBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(addBookmarkRequest, ITConstants.SEARCH_TEST_SUPERSEDED_BY_ID);
 
-        // Assert: check status code is not found
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), addBookmarkResponse.getStatus());
+        // Assert: check status code is bad request
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addBookmarkResponse.getStatus());
     }
 }

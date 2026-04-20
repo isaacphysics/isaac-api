@@ -99,8 +99,13 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-        if (bookmarksDbManager.getBookmarksForUser(user.getId()).size() >= 100) {
+
+        List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
+
+        if (currentBookmarks.size() >= 100) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.").toResponse();
+        } else if (currentBookmarks.stream().anyMatch(b -> b.contentId().equals(contentId))) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You have already bookmarked this content.").toResponse();
         } else {
             try {
                 ContentDTO content = this.contentManager.getContentById(contentId);
@@ -142,6 +147,12 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
+
+        List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
+        if (currentBookmarks.stream().noneMatch(b -> b.contentId().equals(contentId))) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You have not bookmarked this content.").toResponse();
+        }
+
         bookmarksDbManager.removeBookmarkForUser(user.getId(), contentId);
         return Response.ok().build();
     }
