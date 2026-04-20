@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IBookmarks;
+import uk.ac.cam.cl.dtg.isaac.dos.PgBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -324,7 +325,8 @@ public class AbstractIsaacIntegrationTest {
         quizQuestionManager = new QuizQuestionManager(questionManager, mainMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
         userAttemptManager = new UserAttemptManager(questionManager);
         fastTrackManger = new FastTrackManger(properties, contentManager, gameManager);
-        bookmarksManager = new BookmarksManager(bookmarksDbManager);
+        bookmarksDbManager = new PgBookmarks(postgresSqlDb);
+        bookmarksManager = new BookmarksManager(bookmarksDbManager, contentManager, mainMapper);
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
