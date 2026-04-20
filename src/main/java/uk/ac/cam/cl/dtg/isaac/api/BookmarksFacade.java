@@ -119,7 +119,7 @@ public class BookmarksFacade {
                 return error.toResponse();
             }
         }
-        return Response.noContent().build();
+        return Response.ok().build();
     }
 
     /**
@@ -143,6 +143,6 @@ public class BookmarksFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
         bookmarksDbManager.removeBookmarkForUser(user.getId(), contentId);
-        return Response.noContent().build();
+        return Response.ok().build();
     }
 }
