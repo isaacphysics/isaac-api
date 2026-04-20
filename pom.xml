@@ -18,20 +18,20 @@
         <jackson.version>2.21.2</jackson.version>
         <jackson-databind.version>2.21.2</jackson-databind.version>  <!-- separate in case updated separately -->
         <jackson-annotations.version>2.21</jackson-annotations.version>  <!-- now not release with patch versions -->
-        <mockito.version>5.11.0</mockito.version>
+        <mockito.version>5.23.0</mockito.version>
         <junit-5.version>5.14.1</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
         <jetty-version>12.1.8</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>2.0.3</testcontainers.version>
+        <testcontainers.version>2.0.4</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
         <dependency-check.version>12.1.8</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <swagger-core.version>2.2.40</swagger-core.version>
+        <swagger-core.version>2.2.48</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <surefire.jacoco.args />
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>2.5</version>
+            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>org.isaacphysics.thirdparty</groupId>
@@ -234,7 +234,7 @@
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
-            <version>4.5.0</version>
+            <version>4.5.1</version>
         </dependency>
         <dependency>
             <groupId>com.auth0</groupId>
@@ -328,7 +328,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.19.0</version>
+            <version>3.20.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -343,17 +343,17 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.14.0</version>
+            <version>1.15.0</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
-            <version>1.10.0</version>
+            <version>1.10.1</version>
         </dependency>
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
-            <version>2.5.0</version>
+            <version>2.5.2</version>
         </dependency>
 
         <dependency>
@@ -390,19 +390,19 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.8</version>
+            <version>42.7.10</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-dbcp2</artifactId>
-            <version>2.13.0</version>
+            <version>2.14.0</version>
         </dependency>
 
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.14.0</version>
+            <version>2.14.1</version>
         </dependency>
 
         <dependency>
