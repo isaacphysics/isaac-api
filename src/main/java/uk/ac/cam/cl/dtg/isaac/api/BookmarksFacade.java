@@ -75,6 +75,13 @@ public class BookmarksFacade {
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
+
+        if (null != contentType && !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid content type for bookmarks query: " + contentType);
+            log.warn(error.getErrorMessage());
+            return error.toResponse();
+        }
+
         List<BookmarkDO> bookmarks = bookmarksDbManager.getBookmarksForUser(user.getId(), contentType);
         return Response.ok(bookmarksManager.mapBookmarkListToContentSummaryList(bookmarks)).build();
     }

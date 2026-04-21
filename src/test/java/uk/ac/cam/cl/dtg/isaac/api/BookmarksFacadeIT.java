@@ -82,6 +82,33 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
+    public void getCurrentUserBookmarks_noLoggedInUser_returnsError() {
+        // Arrange: create request with no cookie
+        HttpServletRequest bookmarksRequest = createRequestWithCookies(new Cookie[]{});
+        replay(bookmarksRequest);
+
+        // Act: make request
+        Response bookmarksResponse = bookmarksFacade.getCurrentUserBookmarks(bookmarksRequest, QUESTION_TYPE);
+
+        // Assert: check status code is unauthorised
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), bookmarksResponse.getStatus());
+    }
+
+    @Test
+    public void getCurrentUserBookmarks_invalidContentType_returnsError() throws Exception {
+        // Arrange: log in, create request
+        LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
+        HttpServletRequest bookmarksRequest = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(bookmarksRequest);
+
+        // Act: make request
+        Response bookmarksResponse = bookmarksFacade.getCurrentUserBookmarks(bookmarksRequest, EVENT_TYPE);
+
+        // Assert: check status code is bad request
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), bookmarksResponse.getStatus());
+    }
+
+    @Test
     public void addCurrentUserBookmark_validContent_addsBookmark() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
@@ -93,6 +120,19 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
 
         // Assert: check status code is OK
         assertEquals(Response.Status.OK.getStatusCode(), addBookmarkResponse.getStatus());
+    }
+
+    @Test
+    public void addCurrentUserBookmark_noLoggedInUser_returnsError() {
+        // Arrange: create request with no cookie
+        HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{});
+        replay(addBookmarkRequest);
+
+        // Act: make request
+        Response addBookmarkResponse = bookmarksFacade.addCurrentUserBookmark(addBookmarkRequest, ITConstants.FUZZY_MATCH_TEST_PAGE_ID);
+
+        // Assert: check status code is unauthorised
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), addBookmarkResponse.getStatus());
     }
 
     @Test
@@ -124,30 +164,57 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void deleteCurrentUserBookmark_validContent_deletesBookmark() throws Exception {
+    public void addCurrentUserBookmark_invalidContentType_returnsError() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
         replay(addBookmarkRequest);
 
         // Act: make request
-        Response deleteBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(addBookmarkRequest, ITConstants.SEARCH_TEST_CONCEPT_ID);
+        Response addBookmarkResponse = bookmarksFacade.addCurrentUserBookmark(addBookmarkRequest, ITConstants.QUIZ_TEST_QUIZ_ID);
+
+        // Assert: check status code is bad request
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addBookmarkResponse.getStatus());
+    }
+
+    @Test
+    public void deleteCurrentUserBookmark_validContent_deletesBookmark() throws Exception {
+        // Arrange: log in, create request
+        LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
+        HttpServletRequest deleteBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(deleteBookmarkRequest);
+
+        // Act: make request
+        Response deleteBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(deleteBookmarkRequest, ITConstants.SEARCH_TEST_CONCEPT_ID);
 
         // Assert: check status code is OK
         assertEquals(Response.Status.OK.getStatusCode(), deleteBookmarkResponse.getStatus());
     }
 
     @Test
+    public void deleteCurrentUserBookmark_noLoggedInUser_returnsError() throws Exception {
+        // Arrange: create request with no cookie
+        HttpServletRequest deleteBookmarkRequest = createRequestWithCookies(new Cookie[]{});
+        replay(deleteBookmarkRequest);
+
+        // Act: make request
+        Response deleteBookmarksResponse = bookmarksFacade.removeCurrentUserBookmark(deleteBookmarkRequest, ITConstants.FUZZY_MATCH_TEST_PAGE_ID);
+
+        // Assert: check status code is unauthorised
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), deleteBookmarksResponse.getStatus());
+    }
+
+    @Test
     public void deleteCurrentUserBookmark_notBookmarkedContent_returnsError() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
-        HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
-        replay(addBookmarkRequest);
+        HttpServletRequest deleteBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
+        replay(deleteBookmarkRequest);
 
         // Act: make request
-        Response addBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(addBookmarkRequest, ITConstants.SEARCH_TEST_SUPERSEDED_BY_ID);
+        Response deleteBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(deleteBookmarkRequest, ITConstants.SEARCH_TEST_SUPERSEDED_BY_ID);
 
         // Assert: check status code is bad request
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), addBookmarkResponse.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), deleteBookmarkResponse.getStatus());
     }
 }
